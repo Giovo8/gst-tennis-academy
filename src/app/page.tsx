@@ -19,6 +19,8 @@ type Section = {
 const sectionComponents: { [key: string]: React.ComponentType } = {
   hero: Hero,
   courses: CoursesSection,
+  programs: CoursesSection,  // fallback per vecchia chiave
+  subscriptions: CoursesSection,  // fallback per vecchia chiave
   staff: StaffSection,
   news: NewsSection,
   social: SocialFeed,
@@ -44,7 +46,16 @@ export default function Home() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setSections(data);
+        // Filtra per evitare duplicati: se ci sono programs o subscriptions, usa solo courses
+        const filteredSections = data.filter((section) => {
+          if (section.section_key === "programs" || section.section_key === "subscriptions") {
+            // Verifica se esiste già courses
+            const hasCourses = data.some(s => s.section_key === "courses");
+            return !hasCourses; // Mostra solo se courses non esiste
+          }
+          return true;
+        });
+        setSections(filteredSections);
       } else {
         // Fallback to default order
         setSections([
