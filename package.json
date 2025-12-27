@@ -20,7 +20,6 @@
     "react-dom": "19.2.3"
   },
   "optionalDependencies": {
-    "@sentry/nextjs": "^8",
     "stripe": "^12.18.0"
   },
   "devDependencies": {
