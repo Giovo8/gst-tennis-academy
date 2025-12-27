@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const showAll = searchParams.get("all") === "true";
 
   let query = supabaseServer
-    Server.from("staff")
+   .from("staff")
     .select("*")
     .order("order_index", { ascending: true });
 
@@ -39,8 +39,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    Server.from("profiles")
+  const { data: profile } = await supabaseServer
+   .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
-    Server.from("staff")
+  const { data, error } = await supabaseServer
+   .from("staff")
     .insert({
       full_name,
       role,
@@ -82,8 +82,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    Server.from("profiles")
+  const { data: profile } = await supabaseServer
+   .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -92,8 +92,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
-    Server.from("staff")
+  const { data, error } = await supabaseServer
+   .from("staff")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
@@ -119,8 +119,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    Server.from("profiles")
+  const { data: profile } = await supabaseServer
+   .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();

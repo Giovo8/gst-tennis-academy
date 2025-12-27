@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const showAll = searchParams.get("all") === "true";
 
   let query = supabaseServer
-    Server.from("news")
+   .from("news")
     .select("*")
     .order("date", { ascending: false });
 
@@ -34,15 +34,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Get current user from supabase auth
+  // Get current user from supabaseServer auth
   const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check if user is admin or gestore
-  const { data: profile } = await supabase
-    Server.from("profiles")
+  const { data: profile } = await supabaseServer
+   .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -51,8 +51,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
-    Server.from("news")
+  const { data, error } = await supabaseServer
+   .from("news")
     .insert({
       title,
       category,
@@ -79,15 +79,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  // Get current user from supabase auth
+  // Get current user from supabaseServer auth
   const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check if user is admin or gestore
-  const { data: profile } = await supabase
-    Server.from("profiles")
+  const { data: profile } = await supabaseServer
+   .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -96,8 +96,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
-    Server.from("news")
+  const { data, error } = await supabaseServer
+   .from("news")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
@@ -118,15 +118,15 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  // Get current user from supabase auth
+  // Get current user from supabaseServer auth
   const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check if user is admin or gestore
-  const { data: profile } = await supabase
-    Server.from("profiles")
+  const { data: profile } = await supabaseServer
+   .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
