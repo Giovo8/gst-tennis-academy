@@ -6,8 +6,7 @@ import CTASection from "@/components/landing/CTASection";
 import Header from "@/components/landing/Header";
 import Hero from "@/components/landing/Hero";
 import NewsSection from "@/components/landing/NewsSection";
-import ProgramsSection from "@/components/landing/ProgramsSection";
-import SubscriptionsSection from "@/components/landing/SubscriptionsSection";
+import CoursesSection from "@/components/landing/CoursesSection";
 import StaffSection from "@/components/landing/StaffSection";
 import SocialFeed from "@/components/landing/SocialFeed";
 
@@ -19,8 +18,7 @@ type Section = {
 
 const sectionComponents: { [key: string]: React.ComponentType } = {
   hero: Hero,
-  subscriptions: SubscriptionsSection,
-  programs: ProgramsSection,
+  courses: CoursesSection,
   staff: StaffSection,
   news: NewsSection,
   social: SocialFeed,
@@ -51,12 +49,11 @@ export default function Home() {
         // Fallback to default order
         setSections([
           { section_key: "hero", order_index: 0, active: true },
-          { section_key: "subscriptions", order_index: 1, active: true },
-          { section_key: "programs", order_index: 2, active: true },
-          { section_key: "staff", order_index: 3, active: true },
-          { section_key: "news", order_index: 4, active: true },
-          { section_key: "social", order_index: 5, active: true },
-          { section_key: "cta", order_index: 6, active: true },
+          { section_key: "courses", order_index: 1, active: true },
+          { section_key: "staff", order_index: 2, active: true },
+          { section_key: "news", order_index: 3, active: true },
+          { section_key: "social", order_index: 4, active: true },
+          { section_key: "cta", order_index: 5, active: true },
         ]);
       }
     } catch (error) {
@@ -64,12 +61,11 @@ export default function Home() {
       // Fallback to default order
       setSections([
         { section_key: "hero", order_index: 0, active: true },
-        { section_key: "subscriptions", order_index: 1, active: true },
-        { section_key: "programs", order_index: 2, active: true },
-        { section_key: "staff", order_index: 3, active: true },
-        { section_key: "news", order_index: 4, active: true },
-        { section_key: "social", order_index: 5, active: true },
-        { section_key: "cta", order_index: 6, active: true },
+        { section_key: "courses", order_index: 1, active: true },
+        { section_key: "staff", order_index: 2, active: true },
+        { section_key: "news", order_index: 3, active: true },
+        { section_key: "social", order_index: 4, active: true },
+        { section_key: "cta", order_index: 5, active: true },
       ]);
     } finally {
       setLoading(false);
