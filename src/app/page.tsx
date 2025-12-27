@@ -44,14 +44,9 @@ export default function Home() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Filtra per evitare duplicati: se ci sono programs o subscriptions, usa solo courses
+        // Filtra solo le sezioni che hanno componenti validi
         const filteredSections = data.filter((section) => {
-          if (section.section_key === "programs" || section.section_key === "subscriptions") {
-            // Verifica se esiste già courses
-            const hasCourses = data.some(s => s.section_key === "courses");
-            return !hasCourses; // Mostra solo se courses non esiste
-          }
-          return true;
+          return section.section_key in sectionComponents;
         });
         setSections(filteredSections);
       } else {

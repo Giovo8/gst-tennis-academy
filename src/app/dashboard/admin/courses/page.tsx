@@ -5,54 +5,43 @@ import { supabase } from "@/lib/supabase/client";
 import { ArrowLeft, Plus, Edit2, Trash2, Save, X } from "lucide-react";
 import Link from "next/link";
 
-type Course = {
+type CourseSection = {
   id: string;
-  type: "iscrizione" | "base" | "avanzato" | "agonistico" | "extra" | "sconto";
-  title: string;
-  description?: string;
-  frequency?: string; // mono/bi/tri
-  price_monthly?: number;
-  price_yearly?: number;
-  details?: string[];
+  layout_type: "single_box" | "frequency_grid" | "list_with_price" | "list_no_price" | "info_card";
+  section_title: string;
+  section_description?: string;
+  items: any[];
   order_index: number;
   active: boolean;
 };
 
-type FormData = {
-  type: string;
-  title: string;
-  description: string;
-  frequency: string;
-  price_monthly: string;
-  price_yearly: string;
-  details: string[];
-  order_index: number;
-  active: boolean;
-};
+const LAYOUT_TYPES = [
+  { value: "single_box", label: "Box Singolo con Prezzo", description: "Es: Quota Iscrizione, Corso Agonistico" },
+  { value: "frequency_grid", label: "Griglia 3 Frequenze", description: "Es: Corso Base (Mono/Bi/Tri)" },
+  { value: "list_with_price", label: "Lista con Prezzi", description: "Es: Extra, Tesseramenti" },
+  { value: "list_no_price", label: "Lista senza Prezzi", description: "Es: Sconti, Benefit" },
+  { value: "info_card", label: "Card Informativa", description: "Es: Note, Avvisi" },
+];
 
 export default function AdminCoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [sections, setSections] = useState<CourseSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [detailInput, setDetailInput] = useState("");
-  const [formData, setFormData] = useState<FormData>({
-    type: "base",
-    title: "",
-    description: "",
-    frequency: "",
-    price_monthly: "",
-    price_yearly: "",
-    details: [],
+  const [formData, setFormData] = useState<any>({
+    layout_type: "single_box",
+    section_title: "",
+    section_description: "",
+    items: [],
     order_index: 0,
     active: true,
   });
 
   useEffect(() => {
-    loadCourses();
+    loadSections();
   }, []);
 
-  async function loadCourses() {
+  async function loadSections() {
     try {
       const { data, error } = await supabase
         .from("courses")
@@ -60,26 +49,23 @@ export default function AdminCoursesPage() {
         .order("order_index", { ascending: true });
 
       if (error) throw error;
-      setCourses(data || []);
+      setSections(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento dei corsi:", error);
+      console.error("Errore nel caricamento:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  function handleEdit(course: Course) {
-    setEditingId(course.id);
+  function handleEdit(section: CourseSection) {
+    setEditingId(section.id);
     setFormData({
-      type: course.type,
-      title: course.title,
-      description: course.description || "",
-      frequency: course.frequency || "",
-      price_monthly: course.price_monthly?.toString() || "",
-      price_yearly: course.price_yearly?.toString() || "",
-      details: course.details || [],
-      order_index: course.order_index,
-      active: course.active,
+      layout_type: section.layout_type,
+      section_title: section.section_title,
+      section_description: section.section_description || "",
+      items: section.items,
+      order_index: section.order_index,
+      active: section.active,
     });
     setShowForm(true);
   }
@@ -87,14 +73,11 @@ export default function AdminCoursesPage() {
   function handleNew() {
     setEditingId(null);
     setFormData({
-      type: "base",
-      title: "",
-      description: "",
-      frequency: "",
-      price_monthly: "",
-      price_yearly: "",
-      details: [],
-      order_index: courses.length,
+      layout_type: "single_box",
+      section_title: "",
+      section_description: "",
+      items: [{}],
+      order_index: sections.length,
       active: true,
     });
     setShowForm(true);
@@ -103,61 +86,91 @@ export default function AdminCoursesPage() {
   function handleCancel() {
     setShowForm(false);
     setEditingId(null);
-    setDetailInput("");
   }
 
-  function addDetail() {
-    if (detailInput.trim()) {
-      setFormData({ ...formData, details: [...formData.details, detailInput.trim()] });
-      setDetailInput("");
+  function addItem() {
+    const newItem: any = {};
+    if (formData.layout_type === "frequency_grid") {
+      newItem.frequency = "";
+      newItem.price_monthly = "";
+      newItem.price_yearly = "";
+    } else if (formData.layout_type === "list_with_price") {
+      newItem.label = "";
+      newItem.price = "";
+    } else if (formData.layout_type === "list_no_price") {
+      newItem.label = "";
+      newItem.description = "";
+    } else if (formData.layout_type === "info_card") {
+      newItem.text = "";
+    } else if (formData.layout_type === "single_box") {
+      newItem.price = "";
+      newItem.details = [];
     }
+    setFormData({ ...formData, items: [...formData.items, newItem] });
   }
 
-  function removeDetail(index: number) {
-    setFormData({ ...formData, details: formData.details.filter((_, i) => i !== index) });
+  function removeItem(index: number) {
+    setFormData({ ...formData, items: formData.items.filter((_: any, i: number) => i !== index) });
+  }
+
+  function updateItem(index: number, key: string, value: any) {
+    const newItems = [...formData.items];
+    newItems[index][key] = value;
+    setFormData({ ...formData, items: newItems });
+  }
+
+  function addDetail(itemIndex: number, detail: string) {
+    if (!detail.trim()) return;
+    const newItems = [...formData.items];
+    if (!newItems[itemIndex].details) newItems[itemIndex].details = [];
+    newItems[itemIndex].details.push(detail.trim());
+    setFormData({ ...formData, items: newItems });
+  }
+
+  function removeDetail(itemIndex: number, detailIndex: number) {
+    const newItems = [...formData.items];
+    newItems[itemIndex].details = newItems[itemIndex].details.filter((_: any, i: number) => i !== detailIndex);
+    setFormData({ ...formData, items: newItems });
   }
 
   async function handleSave() {
     try {
-      const courseData: any = {
-        type: formData.type,
-        title: formData.title,
-        description: formData.description || null,
-        frequency: formData.frequency || null,
-        price_monthly: formData.price_monthly ? parseFloat(formData.price_monthly) : null,
-        price_yearly: formData.price_yearly ? parseFloat(formData.price_yearly) : null,
-        details: formData.details.length > 0 ? formData.details : null,
+      const sectionData: any = {
+        layout_type: formData.layout_type,
+        section_title: formData.section_title,
+        section_description: formData.section_description || null,
+        items: formData.items,
         order_index: formData.order_index,
         active: formData.active,
       };
 
       let result;
       if (editingId) {
-        result = await supabase.from("courses").update(courseData).eq("id", editingId);
+        result = await supabase.from("courses").update(sectionData).eq("id", editingId);
       } else {
-        result = await supabase.from("courses").insert([courseData]);
+        result = await supabase.from("courses").insert([sectionData]);
       }
 
       if (result.error) throw result.error;
 
-      await loadCourses();
+      await loadSections();
       handleCancel();
     } catch (error) {
       console.error("Errore nel salvataggio:", error);
-      alert("Errore nel salvataggio del corso");
+      alert("Errore nel salvataggio");
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Sei sicuro di voler eliminare questo corso?")) return;
+    if (!confirm("Sei sicuro di voler eliminare questa sezione?")) return;
 
     try {
       const { error } = await supabase.from("courses").delete().eq("id", id);
       if (error) throw error;
-      await loadCourses();
+      await loadSections();
     } catch (error) {
       console.error("Errore nell'eliminazione:", error);
-      alert("Errore nell'eliminazione del corso");
+      alert("Errore nell'eliminazione");
     }
   }
 
@@ -187,143 +200,204 @@ export default function AdminCoursesPage() {
             className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 font-semibold transition hover:bg-accent/80"
           >
             <Plus className="h-4 w-4" />
-            Nuovo Corso
+            Nuova Sezione
           </button>
         </div>
 
         {showForm && (
           <div className="mb-6 rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
             <h2 className="mb-4 text-xl font-semibold">
-              {editingId ? "Modifica Corso" : "Nuovo Corso"}
+              {editingId ? "Modifica Sezione" : "Nuova Sezione"}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium">Tipo</label>
+                <label className="mb-2 block text-sm font-medium">Tipo di Layout</label>
                 <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  value={formData.layout_type}
+                  onChange={(e) => setFormData({ ...formData, layout_type: e.target.value, items: [{}] })}
                   className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
                 >
-                  <option value="iscrizione">Quota Iscrizione</option>
-                  <option value="base">Corso Base</option>
-                  <option value="avanzato">Corso Avanzato</option>
-                  <option value="agonistico">Corso Agonistico</option>
-                  <option value="extra">Extra</option>
-                  <option value="sconto">Sconto</option>
+                  {LAYOUT_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label} - {type.description}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium">Titolo</label>
+                <label className="mb-2 block text-sm font-medium">Titolo Sezione</label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  value={formData.section_title}
+                  onChange={(e) => setFormData({ ...formData, section_title: e.target.value })}
                   className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
                   placeholder="Es: Corso Base"
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Descrizione</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
-                  placeholder="Es: 1 ora di tennis - 30 min di prep. fisica"
-                  rows={2}
-                />
-              </div>
-
-              {(formData.type === "base" || formData.type === "avanzato") && (
-                <>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">Frequenza</label>
-                    <select
-                      value={formData.frequency}
-                      onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                      className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
-                    >
-                      <option value="">Seleziona</option>
-                      <option value="mono">Monosettimanale</option>
-                      <option value="bi">Bisettimanale</option>
-                      <option value="tri">Trisettimanale</option>
-                    </select>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium">Prezzo Mensile (€)</label>
-                      <input
-                        type="number"
-                        value={formData.price_monthly}
-                        onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value })}
-                        className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
-                        placeholder="100"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium">Prezzo Annuale (€)</label>
-                      <input
-                        type="number"
-                        value={formData.price_yearly}
-                        onChange={(e) => setFormData({ ...formData, price_yearly: e.target.value })}
-                        className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
-                        placeholder="650"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {(formData.type === "iscrizione" || formData.type === "agonistico" || formData.type === "extra") && (
+              {formData.layout_type !== "info_card" && (
                 <div>
-                  <label className="mb-2 block text-sm font-medium">Prezzo (€)</label>
+                  <label className="mb-2 block text-sm font-medium">Descrizione (opzionale)</label>
                   <input
-                    type="number"
-                    value={formData.price_yearly}
-                    onChange={(e) => setFormData({ ...formData, price_yearly: e.target.value })}
+                    type="text"
+                    value={formData.section_description}
+                    onChange={(e) => setFormData({ ...formData, section_description: e.target.value })}
                     className="w-full rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
-                    placeholder="150"
+                    placeholder="Es: 1 ora di tennis - 30 min di prep. fisica"
                   />
                 </div>
               )}
 
               <div>
-                <label className="mb-2 block text-sm font-medium">Dettagli/Punti Chiave</label>
-                <div className="mb-2 flex gap-2">
-                  <input
-                    type="text"
-                    value={detailInput}
-                    onChange={(e) => setDetailInput(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addDetail())}
-                    className="flex-1 rounded-lg border border-white/15 bg-[#0d1f35] px-4 py-2 text-white"
-                    placeholder="Aggiungi dettaglio..."
-                  />
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-sm font-medium">Elementi</label>
                   <button
-                    onClick={addDetail}
-                    className="rounded-lg bg-accent px-4 py-2 font-semibold"
+                    onClick={addItem}
+                    className="flex items-center gap-2 rounded-lg bg-accent/20 px-3 py-1 text-sm font-semibold text-accent"
                   >
+                    <Plus className="h-4 w-4" />
                     Aggiungi
                   </button>
                 </div>
-                <ul className="space-y-2">
-                  {formData.details.map((detail, index) => (
-                    <li
-                      key={index}
-                      className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                    >
-                      <span className="text-sm">{detail}</span>
-                      <button
-                        onClick={() => removeDetail(index)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </li>
+
+                <div className="space-y-3">
+                  {formData.items.map((item: any, idx: number) => (
+                    <div key={idx} className="rounded-lg border border-white/15 bg-[#0d1f35] p-4">
+                      <div className="mb-2 flex justify-between">
+                        <span className="text-sm font-medium">Elemento {idx + 1}</span>
+                        <button
+                          onClick={() => removeItem(idx)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Single Box */}
+                      {formData.layout_type === "single_box" && (
+                        <>
+                          <input
+                            type="number"
+                            value={item.price || ""}
+                            onChange={(e) => updateItem(idx, "price", e.target.value)}
+                            className="w-full rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm mb-2"
+                            placeholder="Prezzo (€)"
+                          />
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted">Dettagli (opzionale)</label>
+                            {item.details?.map((detail: string, dIdx: number) => (
+                              <div key={dIdx} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={detail}
+                                  readOnly
+                                  className="flex-1 rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                                />
+                                <button
+                                  onClick={() => removeDetail(idx, dIdx)}
+                                  className="text-red-400"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                            <input
+                              type="text"
+                              placeholder="Nuovo dettaglio (Enter per aggiungere)"
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  addDetail(idx, e.currentTarget.value);
+                                  e.currentTarget.value = "";
+                                }
+                              }}
+                              className="w-full rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Frequency Grid */}
+                      {formData.layout_type === "frequency_grid" && (
+                        <div className="grid gap-2 md:grid-cols-3">
+                          <input
+                            type="text"
+                            value={item.frequency || ""}
+                            onChange={(e) => updateItem(idx, "frequency", e.target.value)}
+                            className="rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            placeholder="Frequenza"
+                          />
+                          <input
+                            type="number"
+                            value={item.price_monthly || ""}
+                            onChange={(e) => updateItem(idx, "price_monthly", e.target.value)}
+                            className="rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            placeholder="€/mese"
+                          />
+                          <input
+                            type="number"
+                            value={item.price_yearly || ""}
+                            onChange={(e) => updateItem(idx, "price_yearly", e.target.value)}
+                            className="rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            placeholder="€/anno"
+                          />
+                        </div>
+                      )}
+
+                      {/* List with Price */}
+                      {formData.layout_type === "list_with_price" && (
+                        <div className="grid gap-2 md:grid-cols-2">
+                          <input
+                            type="text"
+                            value={item.label || ""}
+                            onChange={(e) => updateItem(idx, "label", e.target.value)}
+                            className="rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            placeholder="Etichetta"
+                          />
+                          <input
+                            type="number"
+                            value={item.price || ""}
+                            onChange={(e) => updateItem(idx, "price", e.target.value)}
+                            className="rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            placeholder="Prezzo (€)"
+                          />
+                        </div>
+                      )}
+
+                      {/* List without Price */}
+                      {formData.layout_type === "list_no_price" && (
+                        <>
+                          <input
+                            type="text"
+                            value={item.label || ""}
+                            onChange={(e) => updateItem(idx, "label", e.target.value)}
+                            className="w-full rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm mb-2"
+                            placeholder="Etichetta"
+                          />
+                          <input
+                            type="text"
+                            value={item.description || ""}
+                            onChange={(e) => updateItem(idx, "description", e.target.value)}
+                            className="w-full rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                            placeholder="Descrizione (opzionale)"
+                          />
+                        </>
+                      )}
+
+                      {/* Info Card */}
+                      {formData.layout_type === "info_card" && (
+                        <textarea
+                          value={item.text || ""}
+                          onChange={(e) => updateItem(idx, "text", e.target.value)}
+                          className="w-full rounded-lg border border-white/15 bg-[#06101f] px-3 py-2 text-white text-sm"
+                          placeholder="Testo informativo"
+                          rows={2}
+                        />
+                      )}
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -333,7 +407,7 @@ export default function AdminCoursesPage() {
                   onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                   className="h-4 w-4"
                 />
-                <label className="text-sm">Attivo</label>
+                <label className="text-sm">Attiva</label>
               </div>
 
               <div className="flex gap-3">
@@ -356,63 +430,38 @@ export default function AdminCoursesPage() {
         )}
 
         <div className="space-y-4">
-          {courses.map((course) => (
+          {sections.map((section) => (
             <div
-              key={course.id}
+              key={section.id}
               className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-3">
                     <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold uppercase text-accent">
-                      {course.type}
+                      {LAYOUT_TYPES.find((t) => t.value === section.layout_type)?.label}
                     </span>
-                    {!course.active && (
+                    {!section.active && (
                       <span className="rounded-full bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-400">
-                        Disattivato
+                        Disattivata
                       </span>
                     )}
                   </div>
-                  <h3 className="mb-1 text-xl font-semibold">{course.title}</h3>
-                  {course.description && (
-                    <p className="mb-2 text-sm text-muted">{course.description}</p>
+                  <h3 className="mb-1 text-xl font-semibold">{section.section_title}</h3>
+                  {section.section_description && (
+                    <p className="mb-2 text-sm text-muted">{section.section_description}</p>
                   )}
-                  {course.frequency && (
-                    <p className="mb-2 text-sm text-accent">
-                      {course.frequency === "mono" && "Monosettimanale"}
-                      {course.frequency === "bi" && "Bisettimanale"}
-                      {course.frequency === "tri" && "Trisettimanale"}
-                    </p>
-                  )}
-                  {course.price_monthly && (
-                    <p className="text-lg font-bold">
-                      {course.price_monthly}€/mese
-                      {course.price_yearly && ` - ${course.price_yearly}€/anno`}
-                    </p>
-                  )}
-                  {!course.price_monthly && course.price_yearly && (
-                    <p className="text-lg font-bold">{course.price_yearly}€</p>
-                  )}
-                  {course.details && course.details.length > 0 && (
-                    <ul className="mt-3 space-y-1">
-                      {course.details.map((detail, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted">
-                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent" />
-                          {detail}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <p className="text-sm text-muted">{section.items.length} elementi</p>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleEdit(course)}
+                    onClick={() => handleEdit(section)}
                     className="rounded-full border border-white/15 p-2 transition hover:bg-white/5"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(course.id)}
+                    onClick={() => handleDelete(section.id)}
                     className="rounded-full border border-red-500/30 p-2 text-red-400 transition hover:bg-red-500/10"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -423,9 +472,9 @@ export default function AdminCoursesPage() {
           ))}
         </div>
 
-        {courses.length === 0 && (
+        {sections.length === 0 && (
           <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-12 text-center">
-            <p className="text-muted">Nessun corso trovato. Crea il primo!</p>
+            <p className="text-muted">Nessuna sezione trovata. Crea la prima!</p>
           </div>
         )}
       </div>

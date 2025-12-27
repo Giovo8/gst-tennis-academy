@@ -4,13 +4,10 @@ DROP TABLE IF EXISTS courses CASCADE;
 -- Create courses table
 CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type TEXT NOT NULL CHECK (type IN ('iscrizione', 'base', 'avanzato', 'agonistico', 'extra', 'sconto')),
-  title TEXT NOT NULL,
-  description TEXT,
-  frequency TEXT,
-  price_monthly NUMERIC,
-  price_yearly NUMERIC,
-  details TEXT[],
+  layout_type TEXT NOT NULL CHECK (layout_type IN ('single_box', 'frequency_grid', 'list_with_price', 'list_no_price', 'info_card')),
+  section_title TEXT NOT NULL,
+  section_description TEXT,
+  items JSONB NOT NULL DEFAULT '[]',
   order_index INTEGER NOT NULL DEFAULT 0,
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -18,21 +15,37 @@ CREATE TABLE courses (
 );
 
 -- Insert default courses data
-INSERT INTO courses (type, title, description, frequency, price_monthly, price_yearly, details, order_index, active) VALUES
-  ('iscrizione', 'Quota Iscrizione', 'Comprende lo starter kit Adidas', NULL, NULL, 150, NULL, 0, true),
-  ('base', 'Corso Base - Monosettimanale', '1 ora di tennis - 30 min di prep. fisica', 'mono', 100, 650, NULL, 1, true),
-  ('base', 'Corso Base - Bisettimanale', '1 ora di tennis - 30 min di prep. fisica', 'bi', 150, 1000, NULL, 2, true),
-  ('base', 'Corso Base - Trisettimanale', '1 ora di tennis - 30 min di prep. fisica', 'tri', 180, 1300, NULL, 3, true),
-  ('avanzato', 'Corso Avanzato - Monosettimanale', '1 ora e 30 min di tennis - 30 min di prep. fisica', 'mono', 135, 900, NULL, 4, true),
-  ('avanzato', 'Corso Avanzato - Bisettimanale', '1 ora e 30 min di tennis - 30 min di prep. fisica', 'bi', 180, 1350, NULL, 5, true),
-  ('avanzato', 'Corso Avanzato - Trisettimanale', '1 ora e 30 min di tennis - 30 min di prep. fisica', 'tri', 220, 1500, NULL, 6, true),
-  ('agonistico', 'Corso Agonistico', NULL, NULL, NULL, 2700, ARRAY['1 ora e 30 min di tennis', '30 min di prep. fisica o palestra presso il Time Out Sporting Village', '5 giorni a settimana'], 7, true),
-  ('extra', 'Tesseramento Agonistico', NULL, NULL, NULL, 30, NULL, 8, true),
-  ('extra', 'Tesseramento Non Agonistico', NULL, NULL, NULL, 20, NULL, 9, true),
-  ('sconto', '5% Stesso nucleo familiare', NULL, NULL, NULL, NULL, NULL, 10, true),
-  ('sconto', '5% Porta un amico', 'Se presenti un nuovo iscritto', NULL, NULL, NULL, NULL, 11, true),
-  ('sconto', '5% Pagamento anticipato', 'Saldo quota iscrizione e prima rata entro il 15 settembre (solo annuale)', NULL, NULL, NULL, NULL, 12, true),
-  ('sconto', '10% Pagamento unica soluzione', NULL, NULL, NULL, NULL, NULL, 13, true);
+INSERT INTO courses (layout_type, section_title, section_description, items, order_index, active) VALUES
+  ('single_box', 'Quota Iscrizione', 'Comprende lo starter kit Adidas', '[{"price": 150}]', 0, true),
+  ('frequency_grid', 'Corso Base', '1 ora di tennis - 30 min di prep. fisica', '[
+    {"frequency": "Monosettimanale", "price_monthly": 100, "price_yearly": 650},
+    {"frequency": "Bisettimanale", "price_monthly": 150, "price_yearly": 1000},
+    {"frequency": "Trisettimanale", "price_monthly": 180, "price_yearly": 1300}
+  ]', 1, true),
+  ('frequency_grid', 'Corso Avanzato', '1 ora e 30 min di tennis - 30 min di prep. fisica', '[
+    {"frequency": "Monosettimanale", "price_monthly": 135, "price_yearly": 900},
+    {"frequency": "Bisettimanale", "price_monthly": 180, "price_yearly": 1350},
+    {"frequency": "Trisettimanale", "price_monthly": 220, "price_yearly": 1500}
+  ]', 2, true),
+  ('single_box', 'Corso Agonistico', NULL, '[{
+    "details": ["1 ora e 30 min di tennis", "30 min di prep. fisica o palestra presso il Time Out Sporting Village", "5 giorni a settimana"],
+    "price": 2700
+  }]', 3, true),
+  ('list_with_price', 'Extra', NULL, '[
+    {"label": "Tesseramento Agonistico", "price": 30},
+    {"label": "Tesseramento Non Agonistico", "price": 20}
+  ]', 4, true),
+  ('list_no_price', 'Sconti', NULL, '[
+    {"label": "5% Stesso nucleo familiare", "description": null},
+    {"label": "5% Porta un amico", "description": "Se presenti un nuovo iscritto"},
+    {"label": "5% Pagamento anticipato", "description": "Saldo quota iscrizione e prima rata entro il 15 settembre (solo annuale)"},
+    {"label": "10% Pagamento unica soluzione", "description": null}
+  ]', 5, true),
+  ('info_card', 'Note Importanti', NULL, '[
+    {"text": "Tesseramento obbligatorio. Per il tesseramento agonistico è necessario il certificato medico."},
+    {"text": "Quando le condizioni meteo saranno avverse il corso agonistico farà 1 ora di palestra 1/2 incontri al mese con la psicologa dello sport in base alla programmazione della scuola tennis."},
+    {"text": "Gli sconti non sono cumulabili tra loro e con altre convenzioni."}
+  ]', 6, true);
 
 -- Update homepage_sections to use courses instead of programs/subscriptions
 UPDATE homepage_sections SET active = false WHERE section_key IN ('programs', 'subscriptions');
