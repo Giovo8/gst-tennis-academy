@@ -63,18 +63,38 @@ export default function AthleteDashboardPage() {
         .eq("user_id", user.id);
 
       // Load upcoming bookings with coach info
-      const { data: bookingData } = await supabase
+      const { data: bookingData, error: bookingError } = await supabase
         .from("bookings")
-        .select(`
-          id, court, type, start_time, end_time, status, coach_confirmed, manager_confirmed,
-          coach:profiles!bookings_coach_id_fkey (full_name)
-        `)
+        .select("id, court, type, start_time, end_time, status, coach_confirmed, manager_confirmed, coach_id")
         .eq("user_id", user.id)
+        .neq("status", "cancelled")
         .gte("start_time", now)
         .order("start_time", { ascending: true })
         .limit(5);
       
+      if (bookingError) {
+        console.error("Booking error:", bookingError);
+      }
+      
       if (bookingData) {
+        // Get unique coach IDs
+        const coachIds = [...new Set(bookingData.filter(b => b.coach_id).map(b => b.coach_id))];
+        
+        // Load coach names
+        let coachMap: Record<string, string> = {};
+        if (coachIds.length > 0) {
+          const { data: coaches } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", coachIds);
+          
+          if (coaches) {
+            coaches.forEach(coach => {
+              coachMap[coach.id] = coach.full_name || "Maestro";
+            });
+          }
+        }
+        
         const mapped = bookingData.map((item: any) => ({
           id: item.id,
           court: item.court,
@@ -84,7 +104,7 @@ export default function AthleteDashboardPage() {
           status: item.status,
           coach_confirmed: item.coach_confirmed,
           manager_confirmed: item.manager_confirmed,
-          coach: item.coach,
+          coach: item.coach_id ? { full_name: coachMap[item.coach_id] || "N/A" } : null,
         }));
         setBookings(mapped);
       }

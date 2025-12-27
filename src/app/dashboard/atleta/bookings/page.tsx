@@ -12,6 +12,9 @@ type Booking = {
   start_time: string;
   end_time: string;
   coach_id: string | null;
+  status: string;
+  coach_confirmed: boolean | null;
+  manager_confirmed: boolean | null;
 };
 
 export default function AthleteBookingsPage() {
@@ -31,6 +34,7 @@ export default function AthleteBookingsPage() {
       .from("bookings")
       .select("*")
       .eq("user_id", user.id)
+      .neq("status", "cancelled")
       .order("start_time", { ascending: false });
 
     if (data) setBookings(data);
@@ -121,6 +125,12 @@ export default function AthleteBookingsPage() {
                 const isPast = new Date(booking.start_time) < new Date();
                 const startTime = new Date(booking.start_time);
                 const canCancel = startTime > new Date(Date.now() + 24 * 60 * 60 * 1000);
+                
+                // Determina lo stato della prenotazione
+                const needsCoachConfirm = booking.type !== "campo" && !booking.coach_confirmed;
+                const needsManagerConfirm = !booking.manager_confirmed;
+                const isConfirmed = booking.manager_confirmed && (booking.type === "campo" || booking.coach_confirmed);
+                const isPending = !isConfirmed && !isPast;
 
                 return (
                   <div
@@ -133,7 +143,7 @@ export default function AthleteBookingsPage() {
                   >
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-semibold ${
                               booking.type === "campo"
@@ -152,6 +162,20 @@ export default function AthleteBookingsPage() {
                           {isPast && (
                             <span className="text-xs text-muted-2">
                               (Completata)
+                            </span>
+                          )}
+                          {isPending && (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/15 text-yellow-400">
+                              {needsCoachConfirm && needsManagerConfirm 
+                                ? "In attesa conferme" 
+                                : needsCoachConfirm 
+                                ? "In attesa maestro" 
+                                : "In attesa gestore"}
+                            </span>
+                          )}
+                          {isConfirmed && !isPast && (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/15 text-green-400">
+                              Confermata
                             </span>
                           )}
                           {!isPast && !canCancel && (

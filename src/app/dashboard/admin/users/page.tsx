@@ -4,7 +4,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { UserRole, roleLabels } from "@/lib/roles";
-import { Plus, Edit2, Trash2, Loader2, Search, Shield, User } from "lucide-react";
+import { Plus, Edit2, Trash2, Loader2, Search, Shield, User, Eye, EyeOff, Key } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -31,6 +31,7 @@ export default function UsersPage() {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -54,8 +55,22 @@ export default function UsersPage() {
   }
 
   async function handleCreateUser() {
+    // Validazione lato client
     if (!formData.email || !formData.password) {
       setFormError("Email e password sono obbligatorie");
+      return;
+    }
+
+    // Validazione email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setFormError("Formato email non valido");
+      return;
+    }
+
+    // Validazione password
+    if (formData.password.length < 6) {
+      setFormError("La password deve essere almeno 6 caratteri");
       return;
     }
 
@@ -77,7 +92,10 @@ export default function UsersPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          email: formData.email.toLowerCase().trim(),
+        }),
       });
 
       const data = await response.json();
@@ -86,10 +104,16 @@ export default function UsersPage() {
         throw new Error(data.error || "Errore durante la creazione");
       }
 
+      // Successo
       setShowCreateModal(false);
       setFormData({ email: "", password: "", full_name: "", role: "atleta" });
-      loadUsers();
+      setFormError("");
+      await loadUsers();
+      
+      // Notifica di successo (opzionale)
+      alert(`Utente ${data.user.email} creato con successo!`);
     } catch (err: any) {
+      console.error("Errore creazione utente:", err);
       setFormError(err.message || "Errore durante la creazione");
     } finally {
       setFormLoading(false);
@@ -107,6 +131,27 @@ export default function UsersPage() {
       loadUsers();
     } catch (err) {
       console.error("Errore aggiornamento ruolo:", err);
+    }
+  }
+
+  async function handleResetPassword(userId: string, email: string) {
+    const newPassword = prompt(`Inserisci la nuova password per ${email}:\n(minimo 6 caratteri)`);
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+      alert("La password deve essere almeno 6 caratteri");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(userId, {
+        password: newPassword,
+      });
+
+      if (error) throw error;
+      alert(`Password aggiornata con successo per ${email}`);
+    } catch (err: any) {
+      alert(`Errore: ${err.message}`);
     }
   }
 
@@ -249,13 +294,29 @@ export default function UsersPage() {
                         {new Date(user.created_at).toLocaleDateString("it-IT")}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-400/10"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Elimina
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setEditingUser(user)}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[#2f7de1] transition hover:bg-[#2f7de1]/10"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            Modifica
+                          </button>
+                          <button
+                            onClick={() => handleResetPassword(user.id, user.email)}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-yellow-400 transition hover:bg-yellow-400/10"
+                          >
+                            <Key className="h-3 w-3" />
+                            Reset Password
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-400/10"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Elimina
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -267,6 +328,78 @@ export default function UsersPage() {
                 <p className="text-sm text-[#9fb6a6]">Nessun utente trovato</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Edit User Modal */}
+        {editingUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/95 p-6 backdrop-blur">
+              <h2 className="mb-4 text-xl font-semibold text-white">Modifica Utente</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <span className="block text-xs font-medium text-[#9fb6a6]">Email</span>
+                  <p className="mt-1 text-sm text-white">{editingUser.email}</p>
+                </div>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Nome Completo</span>
+                  <input
+                    type="text"
+                    value={editingUser.full_name || ""}
+                    onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    placeholder="Mario Rossi"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Ruolo</span>
+                  <select
+                    value={editingUser.role}
+                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
+                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                  >
+                    <option value="atleta">Atleta</option>
+                    <option value="maestro">Coach</option>
+                    <option value="gestore">Gestore</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const { error } = await supabase
+                        .from("profiles")
+                        .update({ 
+                          full_name: editingUser.full_name,
+                          role: editingUser.role 
+                        })
+                        .eq("id", editingUser.id);
+
+                      if (error) throw error;
+                      setEditingUser(null);
+                      loadUsers();
+                    } catch (err: any) {
+                      alert(`Errore: ${err.message}`);
+                    }
+                  }}
+                  className="flex-1 rounded-full bg-[#2f7de1] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2563c7]"
+                >
+                  Salva Modifiche
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -290,13 +423,24 @@ export default function UsersPage() {
 
                 <label className="block">
                   <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Password</span>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 pr-10 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                      placeholder="••••••••"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9fb6a6] transition hover:text-white"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <span className="mt-1 block text-xs text-[#9fb6a6]">Minimo 6 caratteri</span>
                 </label>
 
                 <label className="block">

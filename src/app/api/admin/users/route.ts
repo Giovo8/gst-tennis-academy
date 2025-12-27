@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password, full_name, role } = body;
 
+    // Validazione input
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email e password sono obbligatorie" },
@@ -49,36 +50,102 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validazione formato email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Formato email non valido" },
+        { status: 400 }
+      );
+    }
+
+    // Validazione password (minimo 6 caratteri)
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "La password deve essere almeno 6 caratteri" },
+        { status: 400 }
+      );
+    }
+
+    // Validazione ruolo
+    const validRoles = ["atleta", "maestro", "gestore", "admin"];
+    if (role && !validRoles.includes(role)) {
+      return NextResponse.json(
+        { error: "Ruolo non valido" },
+        { status: 400 }
+      );
+    }
+
+    // Verifica se l'email esiste già (nella tabella profiles)
+    const { data: existingProfiles, error: checkError } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("email", email.toLowerCase())
+      .limit(1);
+
+    if (!checkError && existingProfiles && existingProfiles.length > 0) {
+      return NextResponse.json(
+        { error: "Questa email è già registrata nel sistema" },
+        { status: 400 }
+      );
+    }
+
     // Create user with admin client
+    console.log("Tentativo creazione utente:", { email: email.toLowerCase(), role, full_name });
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: email.toLowerCase(),
       password,
       email_confirm: true,
-      user_metadata: {
-        full_name: full_name || null,
-      },
     });
 
     if (createError) {
-      return NextResponse.json({ error: createError.message }, { status: 400 });
+      console.error("Errore auth.admin.createUser:", createError);
+      let errorMessage = "Errore durante la creazione dell'utente";
+      
+      if (createError.message.includes("already") || createError.message.includes("Database error")) {
+        errorMessage = "Questa email è già registrata nel sistema";
+      } else if (createError.message.includes("password")) {
+        errorMessage = "Password non valida";
+      } else if (createError.message.includes("email")) {
+        errorMessage = "Email non valida";
+      }
+      
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
     if (!newUser.user) {
+      console.error("newUser.user è null");
       return NextResponse.json({ error: "Errore creazione utente" }, { status: 500 });
     }
 
-    // Update profile with role
+    console.log("✅ Utente auth creato con successo, ID:", newUser.user.id);
+
+    // Create or update profile with role using upsert
+    const profileData = {
+      id: newUser.user.id,
+      email: email.toLowerCase(),
+      full_name: full_name?.trim() || null,
+      role: role || "atleta",
+    };
+    
+    console.log("Tentativo upsert profilo:", profileData);
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .update({
-        full_name: full_name || null,
-        role: role || "atleta",
-      })
-      .eq("id", newUser.user.id);
+      .upsert(profileData, {
+        onConflict: "id"
+      });
 
     if (profileError) {
-      console.error("Errore aggiornamento profilo:", profileError);
+      console.error("❌ Errore upsert profilo:", profileError);
+      // Tenta di eliminare l'utente auth se il profilo fallisce
+      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+      return NextResponse.json(
+        { error: "Errore creazione profilo. Utente non creato." },
+        { status: 500 }
+      );
     }
+
+    console.log("✅ Profilo creato con successo");
 
     return NextResponse.json({
       success: true,
