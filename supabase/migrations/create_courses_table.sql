@@ -37,8 +37,9 @@ INSERT INTO courses (type, title, description, frequency, price_monthly, price_y
 -- Update homepage_sections to use courses instead of programs/subscriptions
 UPDATE homepage_sections SET active = false WHERE section_key IN ('programs', 'subscriptions');
 
-INSERT INTO homepage_sections (section_key, order_index, active) VALUES ('courses', 1, true)
-ON CONFLICT (section_key) DO UPDATE SET active = true, order_index = 1;
+INSERT INTO homepage_sections (section_key, section_name, order_index, active) 
+VALUES ('courses', 'Corsi e Abbonamenti', 1, true)
+ON CONFLICT (section_key) DO UPDATE SET active = true, order_index = 1, section_name = 'Corsi e Abbonamenti';
 
 -- Enable RLS
 ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
