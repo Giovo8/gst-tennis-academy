@@ -26,9 +26,9 @@ Il sistema di gestione ruoli permette agli amministratori di creare e gestire ac
 - Ruolo amministrativo base
 - Accesso a:
   - Dashboard admin (`/dashboard/admin`)
-  - Gestione utenti
-  - Creazione account atleti e coach
-  - Visualizzazione ordini e prenotazioni
+  - Gestione utenti (eccetto admin)
+  - Creazione account atleti, coach e gestori
+  - Gestione prenotazioni
 
 ### 4. **Admin** (`admin`)
 - Ruolo amministrativo completo

@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -35,7 +36,22 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadUsers();
+    loadCurrentUser();
   }, []);
+
+  async function loadCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      if (profile) {
+        setCurrentUserRole(profile.role);
+      }
+    }
+  }
 
   async function loadUsers() {
     try {
@@ -279,12 +295,13 @@ export default function UsersPage() {
                         <select
                           value={user.role}
                           onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
-                          className="rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-3 py-1.5 text-xs text-white focus:border-[#2f7de1] focus:outline-none"
+                          disabled={currentUserRole === "gestore" && user.role === "admin"}
+                          className="rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-3 py-1.5 text-xs text-white focus:border-[#2f7de1] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <option value="atleta">Atleta</option>
                           <option value="maestro">Coach</option>
                           <option value="gestore">Gestore</option>
-                          <option value="admin">Admin</option>
+                          {currentUserRole === "admin" && <option value="admin">Admin</option>}
                         </select>
                       </td>
                       <td className="px-4 py-3 text-sm text-[#c6d8c9]">
@@ -297,21 +314,27 @@ export default function UsersPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setEditingUser(user)}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[#2f7de1] transition hover:bg-[#2f7de1]/10"
+                            disabled={currentUserRole === "gestore" && user.role === "admin"}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[#2f7de1] transition hover:bg-[#2f7de1]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : ""}
                           >
                             <Edit2 className="h-3 w-3" />
                             Modifica
                           </button>
                           <button
                             onClick={() => handleResetPassword(user.id, user.email)}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-yellow-400 transition hover:bg-yellow-400/10"
+                            disabled={currentUserRole === "gestore" && user.role === "admin"}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-yellow-400 transition hover:bg-yellow-400/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : ""}
                           >
                             <Key className="h-3 w-3" />
                             Reset Password
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-400/10"
+                            disabled={currentUserRole === "gestore" && user.role === "admin"}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-400/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi eliminare admin" : ""}
                           >
                             <Trash2 className="h-3 w-3" />
                             Elimina
@@ -360,12 +383,16 @@ export default function UsersPage() {
                     value={editingUser.role}
                     onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
                     className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    disabled={currentUserRole === "gestore" && editingUser.role === "admin"}
                   >
                     <option value="atleta">Atleta</option>
                     <option value="maestro">Coach</option>
                     <option value="gestore">Gestore</option>
-                    <option value="admin">Admin</option>
+                    {currentUserRole === "admin" && <option value="admin">Admin</option>}
                   </select>
+                  {currentUserRole === "gestore" && editingUser.role === "admin" && (
+                    <span className="mt-1 block text-xs text-yellow-400">Non puoi modificare utenti admin</span>
+                  )}
                 </label>
               </div>
 
@@ -464,8 +491,11 @@ export default function UsersPage() {
                     <option value="atleta">Atleta</option>
                     <option value="maestro">Coach</option>
                     <option value="gestore">Gestore</option>
-                    <option value="admin">Admin</option>
+                    {currentUserRole === "admin" && <option value="admin">Admin</option>}
                   </select>
+                  {currentUserRole === "gestore" && (
+                    <span className="mt-1 block text-xs text-yellow-400">Solo gli admin possono creare altri admin</span>
+                  )}
                 </label>
 
                 {formError && (

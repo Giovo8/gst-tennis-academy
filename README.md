@@ -79,12 +79,11 @@ Apri [http://localhost:3000](http://localhost:3000)
 ### Tabelle Principali
 - `profiles`: Utenti con ruoli
 - `bookings`: Prenotazioni con sistema conferme
-- `products`: Catalogo prodotti shop
+- `products`: Catalogo prodotti shop (solo visualizzazione)
 - `services`: Servizi offerti
 - `courses`: Corsi di tennis
 - `enrollments`: Iscrizioni ai corsi
 - `events`: Eventi e tornei
-- `orders`: Ordini shop
 
 ## 🔐 Flusso Prenotazioni
 
@@ -116,8 +115,6 @@ When `STRIPE_MOCK=1` the existing `POST /api/stripe/checkout` will return a mock
 ```bash
 curl -X POST http://localhost:3000/api/stripe/simulate -H "Content-Type: application/json" -d '{"type":"checkout.session.completed","session":{"id":"MOCK_123","amount_total":9900,"currency":"eur","customer_details":{"email":"test@example.com"},"metadata":{}}}'
 ```
-
-This will insert an order into the `orders` table (if Supabase service role key is configured) or return success for local testing.
 
 ### Instagram oEmbed (optional)
 
@@ -179,7 +176,7 @@ After installing Stripe the route `POST /api/stripe/checkout` will create real c
 
 ### Webhook Stripe
 
-For receiving payment notifications (e.g. `checkout.session.completed`) configure `STRIPE_WEBHOOK_SECRET` and add an endpoint at (e.g.) `/api/stripe/webhook`. The route verifies the signature and inserts the order in the `orders` table.
+For receiving payment notifications (e.g. `checkout.session.completed`) configure `STRIPE_WEBHOOK_SECRET` and add an endpoint at (e.g.) `/api/stripe/webhook`. The route verifies the signature and processes the payment confirmation.
 
 ## API Endpoints (high level)
 
@@ -309,7 +306,7 @@ Dopo l'installazione la route `POST /api/stripe/checkout` creerà sessioni reali
 
 ### Webhook Stripe
 
-Per ricevere notifiche di pagamento (es. `checkout.session.completed`) configurare `STRIPE_WEBHOOK_SECRET` e aggiungere un endpoint al provider (es. `/api/stripe/webhook`). La route verifica la firma e inserisce l'ordine nella tabella `orders`.
+Per ricevere notifiche di pagamento (es. `checkout.session.completed`) configurare `STRIPE_WEBHOOK_SECRET` e aggiungere un endpoint al provider (es. `/api/stripe/webhook`). La route verifica la firma e processa la conferma del pagamento.
 
 Altri comandi utili:
 

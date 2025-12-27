@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 type NewsItem = {
   id: string;
@@ -10,6 +10,7 @@ type NewsItem = {
   date: string;
   category: string;
   summary: string;
+  content: string;
   image_url: string | null;
 };
 
@@ -20,6 +21,7 @@ const defaultNews: NewsItem[] = [
     date: new Date("2026-01-18").toISOString(),
     category: "Clinic Pro",
     summary: "Sessione speciale di footwork e anticipo con live tracking e video review individuale.",
+    content: "Siamo entusiasti di annunciare una clinic esclusiva con un coach ATP professionista. Durante questa sessione speciale, i partecipanti avranno l'opportunità di lavorare su footwork avanzato e tecniche di anticipo. Ogni sessione include live tracking dei movimenti e video review personalizzata per massimizzare il miglioramento tecnico.",
     image_url: null,
   },
   {
@@ -28,6 +30,7 @@ const defaultNews: NewsItem[] = [
     date: new Date("2026-02-25").toISOString(),
     category: "Tornei FITP",
     summary: "Tabelloni maschili e femminili, live scoring e supporto tattico per ogni match.",
+    content: "Il nostro torneo Winter Series U14 è pronto ad accogliere giovani talenti. Con tabelloni sia maschili che femminili, ogni partecipante avrà l'opportunità di competere al massimo livello con live scoring professionale. Il nostro staff tecnico fornirà supporto tattico durante i match per aiutare i giovani atleti a crescere.",
     image_url: null,
   },
   {
@@ -36,6 +39,7 @@ const defaultNews: NewsItem[] = [
     date: new Date("2026-03-01").toISOString(),
     category: "Struttura",
     summary: "Superficie omologata ITF, illuminazione pro e sistema di sensori per rilevare velocità di palla.",
+    content: "Abbiamo inaugurato il nostro nuovo campo indoor con superficie in resina omologata ITF. La struttura dispone di illuminazione professionale e un avanzato sistema di sensori che rileva la velocità della palla in tempo reale, offrendo un'esperienza di gioco all'avanguardia.",
     image_url: null,
   },
 ];
@@ -43,6 +47,7 @@ const defaultNews: NewsItem[] = [
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
+  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
   useEffect(() => {
     loadNews();
@@ -97,13 +102,19 @@ export default function NewsSection() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {news.map((item) => (
-          <article key={item.id} className="flex h-full flex-col gap-3 rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 overflow-hidden">
+          <article 
+            key={item.id} 
+            onClick={() => setSelectedNews(item)}
+            className="flex h-full flex-col rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 overflow-hidden cursor-pointer transition hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80"
+          >
             {item.image_url && (
-              <img
-                src={item.image_url}
-                alt={item.title}
-                className="w-full h-48 object-cover"
-              />
+              <div className="w-full aspect-[16/9] overflow-hidden bg-[#0c1424]">
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
             )}
             <div className="px-5 pb-5 pt-3 flex flex-col gap-3 flex-1">
               <div className="flex items-center justify-between gap-3">
@@ -126,6 +137,63 @@ export default function NewsSection() {
           </article>
         ))}
       </div>
+
+      {/* News Modal */}
+      {selectedNews && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setSelectedNews(null)}
+        >
+          <div 
+            className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[#2f7de1]/30 bg-[#0c1424] p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedNews(null)}
+              className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {selectedNews.image_url && (
+              <div className="w-full max-h-96 overflow-hidden rounded-2xl mb-6 bg-[#1a3d5c]/60 flex items-center justify-center">
+                <img
+                  src={selectedNews.image_url}
+                  alt={selectedNews.title}
+                  className="w-full h-full object-contain max-h-96"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 mb-4">
+              <span className="rounded-full bg-accent-15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                {selectedNews.category}
+              </span>
+              <p className="text-xs text-muted-2">
+                {new Date(selectedNews.date).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+
+            <h2 className="text-3xl font-bold text-white mb-6">
+              {selectedNews.title}
+            </h2>
+
+            <p className="text-lg leading-relaxed text-[#c6d8c9] mb-6 font-medium">
+              {selectedNews.summary}
+            </p>
+
+            <div className="prose prose-invert max-w-none">
+              <p className="text-base leading-relaxed text-muted whitespace-pre-wrap">
+                {selectedNews.content}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

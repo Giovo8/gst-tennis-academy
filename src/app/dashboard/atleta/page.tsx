@@ -317,7 +317,7 @@ export default function AthleteDashboardPage() {
                             ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                             : "bg-green-500/20 text-green-300 border border-green-500/30"
                         }`}>
-                          {booking.type === "campo" ? "Campo" : booking.type === "lezione_privata" ? "Lezione Privata" : "Lezione Gruppo"}
+                          {booking.type === "campo" ? "Campo" : booking.type === "lezione_privata" ? "Lezione Privata" : "Lezione Privata di Gruppo"}
                         </span>
                         {booking.coach && (
                           <span className="text-xs text-muted">

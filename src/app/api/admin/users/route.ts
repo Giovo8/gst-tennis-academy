@@ -76,6 +76,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Impedisci a gestore di creare admin
+    if (profile.role === "gestore" && role === "admin") {
+      return NextResponse.json(
+        { error: "I gestori non possono creare utenti admin" },
+        { status: 403 }
+      );
+    }
+
     // Verifica se l'email esiste già (nella tabella profiles)
     const { data: existingProfiles, error: checkError } = await supabaseAdmin
       .from("profiles")
@@ -203,11 +211,25 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Non puoi eliminare il tuo account" }, { status: 400 });
     }
 
+    // Delete profile first
+    const { error: profileDeleteError } = await supabaseAdmin
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+
+    if (profileDeleteError) {
+      console.error("Errore eliminazione profilo:", profileDeleteError);
+      // Continua comunque a eliminare l'utente auth
+    }
+
+    // Delete auth user
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 400 });
     }
+
+    console.log("✅ Utente eliminato con successo:", userId);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

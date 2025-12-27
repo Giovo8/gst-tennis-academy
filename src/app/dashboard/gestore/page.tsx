@@ -242,7 +242,7 @@ export default function GestoreDashboardPage() {
                           : "bg-green-500/20 text-green-300"
                       }`}>
                         {booking.type === "lezione_privata" ? "Lezione Privata" : 
-                         booking.type === "lezione_gruppo" ? "Lezione Gruppo" : "Campo"}
+                         booking.type === "lezione_gruppo" ? "Lezione Privata di Gruppo" : "Campo"}
                       </span>
                       {booking.coach && (
                         <span className="text-sm text-muted">

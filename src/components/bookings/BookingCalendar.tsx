@@ -314,7 +314,7 @@ export default function BookingCalendar() {
           >
             <option value="campo">Campo</option>
             <option value="lezione_privata">Lezione privata</option>
-            <option value="lezione_gruppo">Lezione di gruppo</option>
+            <option value="lezione_gruppo">Lezione privata di gruppo</option>
           </select>
         </label>
         <label className="text-sm text-muted">
@@ -331,7 +331,7 @@ export default function BookingCalendar() {
             ))}
           </select>
         </label>
-        {bookingType === "lezione_privata" && (
+        {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
           <label className="text-sm text-muted">
             Seleziona Maestro
             <select

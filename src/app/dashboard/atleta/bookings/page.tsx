@@ -157,7 +157,7 @@ export default function AthleteBookingsPage() {
                               ? "Campo"
                               : booking.type === "lezione_privata"
                               ? "Lezione Privata"
-                              : "Lezione Gruppo"}
+                              : "Lezione Privata di Gruppo"}
                           </span>
                           {isPast && (
                             <span className="text-xs text-muted-2">
