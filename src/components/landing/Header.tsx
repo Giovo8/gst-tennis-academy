@@ -9,8 +9,8 @@ import Image from "next/image";
 
 const navItems = [
   { label: "Programmi", href: "#programmi" },
-  { label: "Allenatori", href: "#staff" },
-  { label: "Struttura", href: "#struttura" },
+  { label: "Abbonamenti", href: "#subscriptions" },
+  { label: "Staff", href: "#staff" },
   { label: "News", href: "#news" },
   { label: "Contatti", href: "#contatti" },
 ];
