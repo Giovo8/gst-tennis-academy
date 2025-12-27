@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function ServicesPage() {
   return (
-    <AuthGuard requiredRole={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="mx-auto max-w-4xl p-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-white">Servizi</h1>

@@ -147,7 +147,7 @@ export default function UsersPage() {
   );
 
   return (
-    <AuthGuard requiredRole={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="mx-auto max-w-6xl p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>

@@ -85,7 +85,7 @@ export default function AthleteBookingsPage() {
   }
 
   return (
-    <AuthGuard requiredRole={["atleta", "maestro", "admin", "gestore"]}>
+    <AuthGuard allowedRoles={["atleta", "maestro", "admin", "gestore"]}>
       <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12 bg-[#021627] text-white">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
