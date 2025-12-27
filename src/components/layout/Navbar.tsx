@@ -53,9 +53,9 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="text-xl font-bold text-white flex items-center gap-2">
-            <Shield className="h-6 w-6 text-accent" />
-            <span>GST Academy</span>
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/images/logo-tennis.png" alt="GST Academy Logo" className="h-8 w-8" />
+            <span className="text-lg font-bold text-white">GST Academy</span>
           </Link>
 
           {/* Desktop Menu */}
