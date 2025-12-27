@@ -57,9 +57,9 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 1. Vai su Supabase → SQL Editor
 2. Esegui in ordine:
-   - `supabase/RESET_FINALE.sql` (crea schema completo)
-   - `supabase/FIX_RLS_DEFINITIVO.sql` (configura RLS policies)
-   - `supabase/AGGIUNGI_CONFERME.sql` (aggiunge sistema conferme)
+   - `supabase/schema.sql` (crea schema base con profili, prenotazioni, servizi, prodotti, corsi, eventi)
+   - `supabase/FIX_COMPLETO_RLS.sql` (configura Row Level Security policies)
+   - `supabase/migrations/complete_migration.sql` (aggiunge tabelle staff, hero_images, hero_content, subscriptions, programs, homepage_sections)
 
 3. Crea utenti test da Authentication → Users:
    - admin@gst.it (password: Password123!)
@@ -77,13 +77,27 @@ Apri [http://localhost:3000](http://localhost:3000)
 ## 📋 Struttura Database
 
 ### Tabelle Principali
-- `profiles`: Utenti con ruoli
-- `bookings`: Prenotazioni con sistema conferme
-- `products`: Catalogo prodotti shop (solo visualizzazione)
-- `services`: Servizi offerti
-- `courses`: Corsi di tennis
+- `profiles`: Utenti con ruoli (atleta, maestro, gestore, admin)
+- `bookings`: Prenotazioni campi e lezioni con sistema doppia conferma
+- `subscription_credits`: Sistema crediti settimanali per abbonamenti
+- `services`: Servizi offerti dall'accademia
+- `products`: Catalogo prodotti shop
+- `orders`: Ordini e-commerce
+- `courses`: Corsi e sezioni homepage dinamiche
 - `enrollments`: Iscrizioni ai corsi
 - `events`: Eventi e tornei
+- `event_registrations`: Iscrizioni agli eventi
+- `news`: Sistema notizie e blog
+- `staff`: Membri dello staff visualizzati in homepage
+- `hero_images`: Carousel immagini sezione hero
+- `hero_content`: Contenuti testuali sezione hero (titoli, statistiche, CTA)
+- `subscriptions`: Piani abbonamento disponibili
+- `programs`: Programmi di allenamento
+- `homepage_sections`: Ordine e visibilità delle sezioni homepage
+- `recruitment_applications`: Candidature lavoro
+- `notifications`: Sistema notifiche utenti
+- `messages`: Messaggistica interna
+- `payments`: Storico pagamenti
 
 ## 🔐 Flusso Prenotazioni
 
@@ -110,219 +124,164 @@ Apri [http://localhost:3000](http://localhost:3000)
 - [ ] Integrazione pagamenti Stripe
 - [ ] Sistema messaggistica interna
 
-When `STRIPE_MOCK=1` the existing `POST /api/stripe/checkout` will return a mock `url` pointing to `/shop/success?session_id=MOCK_<timestamp>` so you can test the client redirect flow. You can also simulate webhook events by POSTing to `/api/stripe/simulate` with the event payload:
+## 💳 Modalità Mock Stripe
+
+Quando `STRIPE_MOCK=1` l'endpoint `POST /api/stripe/checkout` restituirà un URL mock che punta a `/shop/success?session_id=MOCK_<timestamp>` per testare il flusso di checkout. Puoi simulare eventi webhook con una POST a `/api/stripe/simulate`:
 
 ```bash
-curl -X POST http://localhost:3000/api/stripe/simulate -H "Content-Type: application/json" -d '{"type":"checkout.session.completed","session":{"id":"MOCK_123","amount_total":9900,"currency":"eur","customer_details":{"email":"test@example.com"},"metadata":{}}}'
+curl -X POST http://localhost:3000/api/stripe/simulate \
+  -H "Content-Type: application/json" \
+  -d '{"type":"checkout.session.completed","session":{"id":"MOCK_123","amount_total":9900,"currency":"eur","customer_details":{"email":"test@example.com"},"metadata":{}}}'
 ```
 
-### Instagram oEmbed (optional)
+## 📱 Instagram oEmbed (opzionale)
 
-This project can fetch Instagram post embeds server-side via the Facebook Graph API `instagram_oembed` endpoint. To enable:
+Il progetto può recuperare embed di post Instagram lato server tramite l'endpoint `instagram_oembed` della Facebook Graph API. Per abilitarlo:
 
-1. Create a Facebook App at https://developers.facebook.com/apps and add the **Instagram oEmbed** product (or enable the appropriate API access).
-2. Obtain an App Access Token by combining your `APP_ID` and `APP_SECRET` as `APP_ID|APP_SECRET` or using the Graph API Explorer to generate a token.
-3. Set `INSTAGRAM_OEMBED_TOKEN` in your `.env.local` to the app access token.
-4. Add the posts you want to display to `INSTAGRAM_POST_URLS`, example:
+1. Crea una Facebook App su https://developers.facebook.com/apps e aggiungi il prodotto **Instagram oEmbed**
+2. Ottieni un App Access Token combinando `APP_ID|APP_SECRET` o usando Graph API Explorer
+3. Imposta `INSTAGRAM_OEMBED_TOKEN` nel tuo `.env.local`
+4. Aggiungi i post che vuoi mostrare in `INSTAGRAM_POST_URLS`:
 
 ```env
 INSTAGRAM_POST_URLS=https://www.instagram.com/p/CXabc123/,https://www.instagram.com/p/CYdef456/
 ```
 
-Notes:
-- The server endpoint `GET /api/social/instagram` will call the oEmbed endpoint for each URL and return the HTML embed snippet.
-- If you prefer to request a single post from the client, call `/api/social/instagram?url=<POST_URL>`.
-- If `INSTAGRAM_OEMBED_TOKEN` is not set, the feed will fall back to a profile link and placeholders.
+**Note:**
+- L'endpoint server `GET /api/social/instagram` chiamerà l'endpoint oEmbed per ogni URL e restituirà lo snippet HTML
+- Per richiedere un singolo post dal client, chiama `/api/social/instagram?url=<POST_URL>`
+- Se `INSTAGRAM_OEMBED_TOKEN` non è impostato, il feed mostrerà un link al profilo e placeholder
 
-### Seed test accounts (optional)
+## 🧪 Test e Seed
 
-You can create a handful of test accounts (athletes, coaches, admin) using the Supabase Service Role Key. Set these env vars in `.env.local`:
+### Seed account di test
 
+Puoi creare account di test (atleti, maestri, admin) usando la Supabase Service Role Key. Imposta queste variabili in `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
 SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 ```
 
-#### Generic seed script (products, courses, events, demo users)
-
-To populate the database with demo products, courses, events, and users, run:
-
-```bash
-npx tsx scripts/seed_demo.ts
-```
-
-This will insert generic demo data for local/dev testing. Requires the Supabase Service Role Key.
-
-#### Run API and dashboard tests
-
-To run API and dashboard tests (Vitest):
-
-```bash
-npm run test
-```
-
-You can set `TEST_BASE_URL` (default: http://localhost:3000) and, for admin dashboard tests, `TEST_ADMIN_COOKIE` (a valid session cookie for an admin user).
-
-### Optional dependencies
-
-To enable Stripe and Sentry install the optional packages:
-
-```bash
-npm install stripe @sentry/nextjs
-```
-
-After installing Stripe the route `POST /api/stripe/checkout` will create real checkout sessions.
-
-### Webhook Stripe
-
-For receiving payment notifications (e.g. `checkout.session.completed`) configure `STRIPE_WEBHOOK_SECRET` and add an endpoint at (e.g.) `/api/stripe/webhook`. The route verifies the signature and processes the payment confirmation.
-
-## API Endpoints (high level)
-
-- `GET/POST/PUT/DELETE /api/bookings` — bookings management
-- `GET/POST/PUT/DELETE /api/courses` — courses
-- `GET/POST/PUT/DELETE /api/enrollments` — enrollments (course registrations)
-- `GET/POST/PUT/DELETE /api/events` — events
-- `GET/POST/PUT/DELETE /api/services` — services
-- `GET /api/products` — product listing (server reads `products` table)
-- `POST /api/stripe/checkout` — create Stripe checkout session (or mock session if `STRIPE_MOCK=1`)
-- `POST /api/stripe/webhook` — stripe webhook receiver (verifies signature)
-- `POST /api/stripe/simulate` — simulate Stripe webhook events locally (for testing)
-
-## Formatting & Lint
-
-Project includes basic `prettier` and `eslint` configs. Install dev tools locally and run `npm run lint`.
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Environment & Setup
-
-Copy `.env.example` to `.env.local` and fill the required values before running locally.
-
-Required keys (minimum):
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_SITE_URL` (e.g. `http://localhost:3000`)
-
-Optional keys (used for integrations):
-
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `NEXT_PUBLIC_SENTRY_DSN`
-- `INSTAGRAM_OEMBED_TOKEN` (see below)
-- `INSTAGRAM_POST_URLS` (comma-separated list of Instagram post URLs)
-
-Run the dev server:
-
-```bash
-npm install
-npm run dev
-```
-
-For deployment, set the same env vars on your hosting provider (Vercel, etc.).
-
-### Instagram oEmbed (optional)
-
-This project can fetch Instagram post embeds server-side via the Facebook Graph API `instagram_oembed` endpoint. To enable:
-
-1. Create a Facebook App at https://developers.facebook.com/apps and add the **Instagram oEmbed** product (or enable the appropriate API access).
-2. Obtain an App Access Token by combining your `APP_ID` and `APP_SECRET` as `APP_ID|APP_SECRET` or using the Graph API Explorer to generate a token.
-3. Set `INSTAGRAM_OEMBED_TOKEN` in your `.env.local` to the app access token.
-4. Add the posts you want to display to `INSTAGRAM_POST_URLS`, example:
-
-```env
-INSTAGRAM_POST_URLS=https://www.instagram.com/p/CXabc123/,https://www.instagram.com/p/CYdef456/
-```
-
-Notes:
-- The server endpoint `GET /api/social/instagram` will call the oEmbed endpoint for each URL and return the HTML embed snippet.
-- If you prefer to request a single post from the client, call `/api/social/instagram?url=<POST_URL>`.
-- If `INSTAGRAM_OEMBED_TOKEN` is not set, the feed will fall back to a profile link and placeholders.
-
-### Seed test accounts (optional)
-
-You can create a handful of test accounts (athletes, coaches, admin) using the Supabase Service Role Key. Set these env vars in `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-```
-
-Then run:
+Quindi esegui:
 
 ```bash
 npm run seed:test
 ```
 
-This will create example accounts (emails like `athlete1@gst.example`) and corresponding rows in the `profiles` table. Use these only for local/dev testing.
+Verranno creati account di esempio (email come `athlete1@gst.example`) con righe corrispondenti nella tabella `profiles`. Usa solo per testing locale/dev.
 
-### Dipendenze opzionali
+### Script seed generico (prodotti, corsi, eventi, utenti demo)
 
-Per attivare Stripe and Sentry installare le dipendenze opzionali:
+Per popolare il database con dati demo:
+
+```bash
+npx tsx scripts/seed_demo.ts
+```
+
+Richiede la Supabase Service Role Key.
+
+### Eseguire test API e dashboard
+
+Per eseguire i test (Vitest):
+
+```bash
+npm run test
+```
+
+Puoi impostare `TEST_BASE_URL` (default: http://localhost:3000) e, per i test dashboard admin, `TEST_ADMIN_COOKIE` (cookie di sessione valido per un utente admin).
+
+## 🔌 Dipendenze opzionali
+
+Per abilitare Stripe e Sentry, installa i pacchetti opzionali:
 
 ```bash
 npm install stripe @sentry/nextjs
 ```
 
-Dopo l'installazione la route `POST /api/stripe/checkout` creerà sessioni reali di checkout.
+Dopo l'installazione di Stripe, la route `POST /api/stripe/checkout` creerà sessioni di checkout reali.
 
 ### Webhook Stripe
 
-Per ricevere notifiche di pagamento (es. `checkout.session.completed`) configurare `STRIPE_WEBHOOK_SECRET` e aggiungere un endpoint al provider (es. `/api/stripe/webhook`). La route verifica la firma e processa la conferma del pagamento.
+Per ricevere notifiche di pagamento (es. `checkout.session.completed`) configura `STRIPE_WEBHOOK_SECRET` e aggiungi un endpoint (es. `/api/stripe/webhook`). La route verifica la firma e processa la conferma del pagamento.
 
-Altri comandi utili:
+## 🛠️ Comandi utili
 
 ```bash
-npm run format
-npm run test
+npm run dev      # Avvia server di sviluppo
+npm run build    # Build di produzione
+npm run start    # Avvia build di produzione
+npm run lint     # Esegui ESLint
+npm run format   # Formatta codice con Prettier
+npm run test     # Esegui test con Vitest
 ```
-- Authentication is implemented with Supabase. The client is in `src/lib/supabase/client.ts` and server client in `src/lib/supabase/serverClient.ts` (usa `SUPABASE_SERVICE_ROLE_KEY`).
-- Registration and profile pages are in `src/app/register` and `src/app/profile` and use Supabase signup and `profiles` table.
-- Protected dashboard pages are wrapped with a client `AuthGuard` component: `src/components/auth/AuthGuard.tsx`.
 
-## API Endpoints
+## 📚 API Endpoints (panoramica)
 
-- `POST /api/bookings` — crea una prenotazione (usa `SUPABASE_SERVICE_ROLE_KEY`). Body JSON: `user_id, coach_id, starts_at, ends_at, note`.
-- `POST /api/stripe/checkout` — stub per integrazione Stripe; implementare reale integrazione server-side quando si aggiunge la dipendenza `stripe`.
+- `GET/POST/PUT/DELETE /api/bookings` — Gestione prenotazioni
+- `GET/POST/PUT/DELETE /api/courses` — Gestione corsi
+- `GET/POST/PUT/DELETE /api/enrollments` — Iscrizioni ai corsi
+- `GET/POST/PUT/DELETE /api/events` — Eventi
+- `GET/POST/PUT/DELETE /api/services` — Servizi
+- `GET/POST/PUT/DELETE /api/programs` — Programmi
+- `GET/POST/PUT/DELETE /api/subscriptions` — Abbonamenti
+- `GET/POST/PUT/DELETE /api/staff` — Staff
+- `GET/POST/PATCH /api/hero-content` — Contenuti sezione hero
+- `GET/POST/PUT/DELETE /api/hero-images` — Immagini hero carousel
+- `GET/POST/PUT/DELETE /api/homepage-sections` — Ordine sezioni homepage
+- `GET/POST/PUT/DELETE /api/news` — News e blog
+- `GET/POST /api/products` — Prodotti
+- `POST /api/stripe/checkout` — Crea Stripe checkout session (o mock se `STRIPE_MOCK=1`)
+- `POST /api/stripe/webhook` — Receiver webhook Stripe (verifica firma)
+- `POST /api/stripe/simulate` — Simula eventi webhook Stripe (testing locale)
+- `GET /api/social/instagram` — Recupera embed Instagram
 
-## Formatting & Lint
+## 🔐 Autenticazione
 
-Project includes basic `prettier` and `eslint` configs. Install dev tools locally and run `npm run lint`.
+- L'autenticazione è implementata con Supabase Auth
+- Client Supabase: `src/lib/supabase/client.ts`
+- Server Client: `src/lib/supabase/serverClient.ts` (usa `SUPABASE_SERVICE_ROLE_KEY`)
+- Le pagine di registrazione e profilo sono in `src/app/register` e `src/app/profile`
+- Le pagine dashboard protette usano il componente `AuthGuard`: `src/components/auth/AuthGuard.tsx`
+
+## 🎨 Formattazione & Lint
+
+Il progetto include configurazioni base per `prettier` ed `eslint`. Esegui `npm run lint` per verificare il codice.
+
+## 📖 Learn More
+
+Questo è un progetto [Next.js](https://nextjs.org) creato con [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+Per saperne di più su Next.js:
+
+- [Next.js Documentation](https://nextjs.org/docs) - Caratteristiche e API di Next.js
+- [Learn Next.js](https://nextjs.org/learn) - Tutorial interattivo Next.js
+
+Dai un'occhiata al [repository GitHub di Next.js](https://github.com/vercel/next.js) - feedback e contributi sono benvenuti!
+
+## 🚀 Deploy su Vercel
+
+Il modo più semplice per fare il deploy della tua app Next.js è usare la [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) dai creatori di Next.js.
+
+Consulta la [documentazione sul deployment di Next.js](https://nextjs.org/docs/app/building-your-application/deploying) per maggiori dettagli.
+
+## ⚙️ Environment & Setup
+
+Copia `.env.example` in `.env.local` e compila i valori richiesti prima di eseguire localmente.
+
+**Chiavi richieste (minimo):**
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SITE_URL` (es. `http://localhost:3000`)
+
+**Chiavi opzionali (per integrazioni):**
+
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_MOCK` (imposta a `1` per modalità mock)
+- `NEXT_PUBLIC_SENTRY_DSN`
+- `INSTAGRAM_OEMBED_TOKEN`
+- `INSTAGRAM_POST_URLS` (lista separata da virgole di URL post Instagram)

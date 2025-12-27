@@ -35,6 +35,13 @@ type Coach = {
   role: UserRole;
 };
 
+type Athlete = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  role: UserRole;
+};
+
 const courts = ["Campo 1", "Campo 2", "Campo 3"];
 const slotStartHour = 8;
 const slotEndHour = 21; // last start 21:00 -> ends 22:00
@@ -71,8 +78,11 @@ export default function BookingCalendar() {
   const [selectedCourt, setSelectedCourt] = useState<string>(courts[0]);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [bookingType, setBookingType] = useState<BookingType>("campo");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [selectedCoach, setSelectedCoach] = useState<string>("");
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [selectedAthlete, setSelectedAthlete] = useState<string>("");
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -82,6 +92,17 @@ export default function BookingCalendar() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const slots = useMemo(() => buildSlots(selectedDate), [selectedDate]);
+
+  // Chiudi date picker quando si clicca fuori
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDatePicker && !(event.target as HTMLElement).closest('.date-picker-container')) {
+        setShowDatePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDatePicker]);
 
   // Carica il ruolo utente al mount
   useEffect(() => {
@@ -115,6 +136,7 @@ export default function BookingCalendar() {
       const [
         { data: bookingData, error: bookingError },
         { data: coachData },
+        { data: athleteData },
       ] = await Promise.all([
         supabase
           .from("bookings")
@@ -124,6 +146,7 @@ export default function BookingCalendar() {
           .gte("start_time", startDay.toISOString())
           .lt("start_time", endDay.toISOString()),
         supabase.from("profiles").select("id, full_name, role").eq("role", "maestro"),
+        supabase.from("profiles").select("id, full_name, email, role").eq("role", "atleta").order("full_name"),
       ]);
 
       if (bookingError) {
@@ -134,6 +157,7 @@ export default function BookingCalendar() {
 
       setBookings((bookingData as BookingRecord[]) ?? []);
       setCoaches((coachData as Coach[]) ?? []);
+      setAthletes((athleteData as Athlete[]) ?? []);
       setLoading(false);
     };
 
@@ -161,14 +185,20 @@ export default function BookingCalendar() {
 
   const isSlotAvailable = (slot: Date) => {
     const now = new Date();
-    const twentyFourHoursFromNow = addHours(now, 24);
     const isAdminOrGestore = userRole === "admin" || userRole === "gestore";
     
-    // Slot è nel passato
+    // Admin e gestore non hanno limitazioni
+    if (isAdminOrGestore) {
+      // Solo gli slot confermati li bloccano
+      return !isSlotConfirmed(slot);
+    }
+    
+    // Per altri utenti: slot nel passato non disponibile
     if (slot < now) return false;
     
-    // Slot è entro 24h da ora (escluso admin/gestore)
-    if (!isAdminOrGestore && slot < twentyFourHoursFromNow) return false;
+    // Slot è entro 24h da ora (solo per non admin/gestore)
+    const twentyFourHoursFromNow = addHours(now, 24);
+    if (slot < twentyFourHoursFromNow) return false;
     
     // Slot è confermato (solo confermate bloccano per tutti)
     if (isSlotConfirmed(slot)) return false;
@@ -204,7 +234,17 @@ export default function BookingCalendar() {
 
     const isAdminOrGestore = profileData?.role === "admin" || profileData?.role === "gestore";
 
-    // Validazione 24h (escluso admin/gestore che possono prenotare anche sotto 24h)
+    // Se admin/gestore, deve selezionare un atleta
+    if (isAdminOrGestore && !selectedAthlete) {
+      setError("Seleziona l'atleta per cui vuoi prenotare.");
+      setSaving(false);
+      return;
+    }
+
+    // Determina l'ID utente da usare per la prenotazione
+    const bookingUserId = isAdminOrGestore ? selectedAthlete : user.id;
+
+    // Validazione 24h - NON SI APPLICA ad admin/gestore
     if (!isAdminOrGestore) {
       const now = new Date();
       const twentyFourHoursFromNow = addHours(now, 24);
@@ -232,7 +272,7 @@ export default function BookingCalendar() {
     }
 
     const payload = {
-      user_id: user.id,
+      user_id: bookingUserId,
       coach_id: bookingType === "lezione_privata" ? selectedCoach : null,
       court: selectedCourt,
       type: bookingType,
@@ -240,7 +280,7 @@ export default function BookingCalendar() {
       end_time: slotEnd.toISOString(),
       status: bookingType === "lezione_privata" && !isAdminOrGestore ? "pending" : "confirmed",
       coach_confirmed: bookingType !== "lezione_privata" || isAdminOrGestore, // Admin/Gestore bypassano conferma coach
-      manager_confirmed: false,
+      manager_confirmed: isAdminOrGestore, // Admin/Gestore auto-approvano
       note: null,
     };
 
@@ -291,20 +331,67 @@ export default function BookingCalendar() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
-            className="rounded-full border border-white/15 px-3 py-2 text-sm text-white transition hover:border-white/30 hover:bg-white/5"
+            className="rounded-lg border border-white/15 bg-[#1a3d5c]/60 p-3 text-white transition hover:border-accent/50 hover:bg-[#1a3d5c]/80 hover:scale-105"
+            aria-label="Giorno precedente"
           >
-            ← Giorno prec.
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
+          <div className="relative date-picker-container">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="rounded-lg border border-accent/30 bg-accent/10 p-3 text-accent transition hover:bg-accent/20 hover:border-accent/50 hover:scale-105"
+              aria-label="Seleziona data"
+            >
+              <CalendarDays className="h-5 w-5" />
+            </button>
+            {showDatePicker && (
+              <div className="absolute right-0 top-full mt-2 z-50 rounded-lg border border-white/15 bg-[#0d1f35] p-4 shadow-xl">
+                <input
+                  type="date"
+                  value={format(selectedDate, "yyyy-MM-dd")}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSelectedDate(new Date(e.target.value + "T00:00:00"));
+                      setShowDatePicker(false);
+                    }
+                  }}
+                  className="rounded-lg border border-white/15 bg-surface px-3 py-2 text-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                />
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setSelectedDate((d) => addDays(d, 1))}
-            className="rounded-full border border-white/15 px-3 py-2 text-sm text-white transition hover:border-white/30 hover:bg-white/5"
+            className="rounded-lg border border-white/15 bg-[#1a3d5c]/60 p-3 text-white transition hover:border-accent/50 hover:bg-[#1a3d5c]/80 hover:scale-105"
+            aria-label="Giorno successivo"
           >
-            Giorno succ. →
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {(userRole === "admin" || userRole === "gestore") && (
+          <label className="text-sm text-muted">
+            Seleziona Atleta *
+            <select
+              className="mt-2 w-full rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
+              value={selectedAthlete}
+              onChange={(e) => setSelectedAthlete(e.target.value)}
+            >
+              <option value="">Scegli atleta</option>
+              {athletes.map((athlete) => (
+                <option key={athlete.id} value={athlete.id}>
+                  {athlete.full_name ?? athlete.email}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="text-sm text-muted">
           Tipo prenotazione
           <select

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Link from "next/link";
 import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target } from "lucide-react";
+import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
+import StatCard from "@/components/dashboard/StatCard";
 import { supabase } from "@/lib/supabase/client";
 
 type Booking = {
@@ -193,53 +195,10 @@ export default function AthleteDashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-[#2f7de1]/30 bg-gradient-to-br from-blue-500/20 to-blue-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-blue-500/20 p-3">
-                <Calendar className="h-6 w-6 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.upcomingBookings}</p>
-                <p className="text-sm text-muted">Prossime</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#2f7de1]/30 bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-yellow-500/20 p-3">
-                <Clock className="h-6 w-6 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.pendingLessons}</p>
-                <p className="text-sm text-muted">In attesa</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#2f7de1]/30 bg-gradient-to-br from-green-500/20 to-green-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-green-500/20 p-3">
-                <Award className="h-6 w-6 text-green-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.completedBookings}</p>
-                <p className="text-sm text-muted">Completate</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#2f7de1]/30 bg-gradient-to-br from-purple-500/20 to-purple-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-purple-500/20 p-3">
-                <Target className="h-6 w-6 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.totalBookings}</p>
-                <p className="text-sm text-muted">Totali</p>
-              </div>
-            </div>
-          </div>
+          <StatCard title="Prossime" value={stats.upcomingBookings} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="blue" />
+          <StatCard title="In attesa" value={stats.pendingLessons} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
+          <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-green-400" />} color="green" />
+          <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-purple-400" />} color="purple" />
         </div>
 
         {/* Subscription Card */}
@@ -264,29 +223,13 @@ export default function AthleteDashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/bookings" className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10">
-            <Calendar className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />
-            <h3 className="font-semibold text-white mb-2">Prenota Campo</h3>
-            <p className="text-xs text-muted">Match o allenamento libero</p>
-          </Link>
-          
-          <Link href="/bookings" className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10">
-            <User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />
-            <h3 className="font-semibold text-white mb-2">Lezione Privata</h3>
-            <p className="text-xs text-muted">Prenota con un maestro</p>
-          </Link>
-          
-          <Link href="/dashboard/atleta/bookings" className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10">
-            <TrendingUp className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />
-            <h3 className="font-semibold text-white mb-2">Storico</h3>
-            <p className="text-xs text-muted">Tutte le prenotazioni</p>
-          </Link>
-          
-          <Link href="/profile" className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10">
-            <User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />
-            <h3 className="font-semibold text-white mb-2">Profilo</h3>
-            <p className="text-xs text-muted">Dati personali</p>
-          </Link>
+          <DashboardLinkCard href="/bookings" icon={<Calendar className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Prenota Campo" description="Match o allenamento libero" footer={<span className="text-xs text-muted">Apri il calendario</span>} />
+
+          <DashboardLinkCard href="/bookings" icon={<User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Lezione Privata" description="Prenota con un maestro" footer={<span className="text-xs text-muted">Seleziona maestro e orario</span>} />
+
+          <DashboardLinkCard href="/dashboard/atleta/bookings" icon={<TrendingUp className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Storico" description="Tutte le prenotazioni" footer={<span className="text-xs text-muted">Visualizza lo storico</span>} />
+
+          <DashboardLinkCard href="/profile" icon={<User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Profilo" description="Dati personali" footer={<span className="text-xs text-muted">Gestisci i tuoi dati</span>} />
         </div>
 
         {/* Upcoming Bookings */}

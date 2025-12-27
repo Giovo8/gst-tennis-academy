@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { Calendar, Check, X, Clock, User, AlertCircle, CheckCircle2, XCircle, Award } from "lucide-react";
+import StatCard from "@/components/dashboard/StatCard";
 import { supabase } from "@/lib/supabase/client";
 import { format, formatDistanceToNow, isFuture, isPast } from "date-fns";
 import { it } from "date-fns/locale";
@@ -182,43 +183,9 @@ export default function MaestroDashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-yellow-500/20 p-3">
-                <Clock className="h-6 w-6 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{pendingCount}</p>
-                <p className="text-sm text-muted">In Attesa</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-green-500/30 bg-gradient-to-br from-green-500/20 to-green-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-green-500/20 p-3">
-                <CheckCircle2 className="h-6 w-6 text-green-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">
-                  {allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length}
-                </p>
-                <p className="text-sm text-muted">Confermate</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/20 to-blue-500/5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-blue-500/20 p-3">
-                <Calendar className="h-6 w-6 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{allLessons.length}</p>
-                <p className="text-sm text-muted">Totali</p>
-              </div>
-            </div>
-          </div>
+          <StatCard title="In Attesa" value={pendingCount} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
+          <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-green-400" />} color="green" />
+          <StatCard title="Totali" value={allLessons.length} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="blue" />
         </div>
 
         {/* Filters */}

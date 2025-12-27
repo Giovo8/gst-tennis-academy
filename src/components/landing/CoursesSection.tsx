@@ -63,9 +63,9 @@ export default function CoursesSection() {
         if (section.layout_type === "single_box") {
           const item = section.items[0];
           return (
-            <div key={section.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-              <div className="flex items-center justify-between">
-                <div>
+            <div key={section.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 md:p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white mb-1">{section.section_title}</h3>
                   {section.section_description && (
                     <p className="text-sm text-muted">{section.section_description}</p>
@@ -78,7 +78,7 @@ export default function CoursesSection() {
                     </div>
                   )}
                 </div>
-                <div className="text-right">
+                <div className="text-left md:text-right shrink-0">
                   <span className="text-3xl font-bold text-white">{item.price}€</span>
                   {item.details && <span className="text-sm text-muted block mt-1">/anno</span>}
                 </div>

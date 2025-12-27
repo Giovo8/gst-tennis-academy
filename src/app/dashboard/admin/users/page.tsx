@@ -4,7 +4,8 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { UserRole, roleLabels } from "@/lib/roles";
-import { Plus, Edit2, Trash2, Loader2, Search, Shield, User, Eye, EyeOff, Key } from "lucide-react";
+import { Plus, Edit2, Trash2, Loader2, Search, Shield, User, Eye, EyeOff, Key, Phone, MapPin, Calendar, FileText, X, Users } from "lucide-react";
+import StatCard from "@/components/dashboard/StatCard";
 
 interface Profile {
   id: string;
@@ -12,6 +13,12 @@ interface Profile {
   full_name: string | null;
   role: UserRole;
   subscription_type: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  notes: string | null;
   created_at: string;
 }
 
@@ -21,6 +28,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [viewingUser, setViewingUser] = useState<Profile | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
 
   // Form state
@@ -209,180 +217,405 @@ export default function UsersPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="mx-auto max-w-6xl p-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Gestione Utenti</h1>
-            <p className="mt-1 text-sm text-[#c6d8c9]">
-              Crea e gestisci account coach e atleti
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-[#2f7de1] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2563c7]"
-          >
-            <Plus className="h-4 w-4" />
-            Crea Utente
-          </button>
+      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-12 bg-[#021627] text-white">
+        {/* Header */}
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Gestione Utenti
+          </p>
+          <h1 className="text-4xl font-bold text-white">Utenti</h1>
+          <p className="text-sm text-muted">Crea e gestisci account coach e atleti</p>
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9fb6a6]" />
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard title="Totale" value={users.length} icon={<Users className="h-8 w-8 text-blue-400" />} color="blue" />
+          <StatCard title="Atleti" value={users.filter(u => u.role === 'atleta').length} icon={<User className="h-8 w-8 text-green-400" />} color="green" />
+          <StatCard title="Coach" value={users.filter(u => u.role === 'maestro').length} icon={<User className="h-8 w-8 text-purple-400" />} color="purple" />
+          <StatCard title="Staff" value={users.filter(u => u.role === 'gestore' || u.role === 'admin').length} icon={<Shield className="h-8 w-8 text-yellow-400" />} color="yellow" />
+        </div>
+
+        {/* Search and Actions */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-2" />
             <input
               type="text"
               placeholder="Cerca per email o nome..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 px-10 py-2.5 text-sm text-white placeholder:text-[#9fb6a6] focus:border-[#2f7de1] focus:outline-none"
+              className="w-full rounded-xl border border-white/15 bg-[#1a3d5c]/60 pl-10 pr-4 py-3 text-sm text-white placeholder:text-muted-2 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
             />
           </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-[#06101f] transition hover:bg-[#5fc7e0] hover:shadow-lg hover:shadow-accent/20"
+          >
+            <Plus className="h-5 w-5" />
+            Crea Utente
+          </button>
         </div>
 
-        {/* Users Table */}
+        {/* Users List */}
+        {/* Users List */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-[#2f7de1]" />
+          <div className="flex items-center justify-center py-12 rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-accent mx-auto mb-3" />
+              <p className="text-sm text-muted">Caricamento utenti...</p>
+            </div>
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="py-16 text-center rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60">
+            <User className="h-12 w-12 text-muted-2 mx-auto mb-4" />
+            <p className="text-lg font-medium text-white mb-2">Nessun utente trovato</p>
+            <p className="text-sm text-muted">
+              {searchQuery ? "Prova a modificare i criteri di ricerca" : "Inizia creando il primo utente"}
+            </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#2f7de1]/20 bg-[#0c1424]/50">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#9fb6a6]">
-                      UTENTE
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#9fb6a6]">
-                      RUOLO
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#9fb6a6]">
-                      ABBONAMENTO
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#9fb6a6]">
-                      DATA ISCRIZIONE
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#9fb6a6]">
-                      AZIONI
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="border-b border-[#2f7de1]/10 transition hover:bg-[#0c1424]/30"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2f7de1]/20">
-                            {user.role === "admin" || user.role === "gestore" ? (
-                              <Shield className="h-4 w-4 text-[#2f7de1]" />
-                            ) : (
-                              <User className="h-4 w-4 text-[#2f7de1]" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-white">
-                              {user.full_name || "N/A"}
-                            </p>
-                            <p className="text-xs text-[#9fb6a6]">{user.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
-                          disabled={currentUserRole === "gestore" && user.role === "admin"}
-                          className="rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-3 py-1.5 text-xs text-white focus:border-[#2f7de1] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <option value="atleta">Atleta</option>
-                          <option value="maestro">Coach</option>
-                          <option value="gestore">Gestore</option>
-                          {currentUserRole === "admin" && <option value="admin">Admin</option>}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[#c6d8c9]">
-                        {user.subscription_type || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[#c6d8c9]">
-                        {new Date(user.created_at).toLocaleDateString("it-IT")}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setEditingUser(user)}
-                            disabled={currentUserRole === "gestore" && user.role === "admin"}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[#2f7de1] transition hover:bg-[#2f7de1]/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : ""}
-                          >
-                            <Edit2 className="h-3 w-3" />
-                            Modifica
-                          </button>
-                          <button
-                            onClick={() => handleResetPassword(user.id, user.email)}
-                            disabled={currentUserRole === "gestore" && user.role === "admin"}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-yellow-400 transition hover:bg-yellow-400/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : ""}
-                          >
-                            <Key className="h-3 w-3" />
-                            Reset Password
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            disabled={currentUserRole === "gestore" && user.role === "admin"}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-400/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi eliminare admin" : ""}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            Elimina
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {filteredUsers.length === 0 && (
-              <div className="py-12 text-center">
-                <p className="text-sm text-[#9fb6a6]">Nessun utente trovato</p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10"
+              >
+                {/* User Avatar and Role Badge */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30">
+                      {user.role === "admin" || user.role === "gestore" ? (
+                        <Shield className="h-6 w-6 text-accent" />
+                      ) : (
+                        <User className="h-6 w-6 text-accent" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-white">{user.full_name || "N/A"}</p>
+                      <p className="text-xs text-muted truncate max-w-[140px]">{user.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role Select */}
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-muted-2 mb-2">Ruolo</label>
+                  <select
+                    value={user.role}
+                    onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
+                    disabled={currentUserRole === "gestore" && user.role === "admin"}
+                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <option value="atleta">Atleta</option>
+                    <option value="maestro">Coach</option>
+                    <option value="gestore">Gestore</option>
+                    {currentUserRole === "admin" && <option value="admin">Admin</option>}
+                  </select>
+                </div>
+
+                {/* Date */}
+                <div className="mb-4 pt-4 border-t border-white/10">
+                  <p className="text-xs text-muted-2">Iscritto il</p>
+                  <p className="text-sm font-medium text-white mt-1">
+                    {new Date(user.created_at).toLocaleDateString("it-IT", { 
+                      day: '2-digit', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setViewingUser(user)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Dettagli
+                  </button>
+                  <button
+                    onClick={() => handleResetPassword(user.id, user.email)}
+                    disabled={currentUserRole === "gestore" && user.role === "admin"}
+                    className="inline-flex items-center justify-center rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-2 text-yellow-400 transition hover:bg-yellow-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : "Reset password"}
+                  >
+                    <Key className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(user.id)}
+                    disabled={currentUserRole === "gestore" && user.role === "admin"}
+                    className="inline-flex items-center justify-center rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-red-400 transition hover:bg-red-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi eliminare admin" : "Elimina utente"}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
-            )}
+            ))}
+          </div>
+        )}
+
+        {/* View User Details Modal - Scheda Anagrafica */}
+        {viewingUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto">
+            <div className="w-full max-w-4xl rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-8 shadow-2xl my-8">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 ring-4 ring-accent/30">
+                    {viewingUser.role === "admin" || viewingUser.role === "gestore" ? (
+                      <Shield className="h-8 w-8 text-accent" />
+                    ) : (
+                      <User className="h-8 w-8 text-accent" />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-white">{viewingUser.full_name || "Utente"}</h2>
+                    <p className="text-sm text-muted mt-1">{viewingUser.email}</p>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-accent">
+                      {roleLabels[viewingUser.role]}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingUser(null)}
+                  className="rounded-lg p-2 text-muted-2 transition hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Content Grid */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Informazioni Personali */}
+                <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <User className="h-5 w-5 text-accent" />
+                    Informazioni Personali
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Nome Completo</label>
+                      <input
+                        type="text"
+                        value={viewingUser.full_name || ""}
+                        onChange={(e) => setViewingUser({ ...viewingUser, full_name: e.target.value })}
+                        disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                        className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        placeholder="Mario Rossi"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Telefono</label>
+                      <div className="relative mt-1">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-2" />
+                        <input
+                          type="tel"
+                          value={viewingUser.phone || ""}
+                          onChange={(e) => setViewingUser({ ...viewingUser, phone: e.target.value })}
+                          disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                          className="w-full rounded-lg border border-white/15 bg-[#0c1424]/50 pl-10 pr-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          placeholder="+39 123 456 7890"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Data di Nascita</label>
+                      <div className="relative mt-1">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-2" />
+                        <input
+                          type="date"
+                          value={viewingUser.date_of_birth || ""}
+                          onChange={(e) => setViewingUser({ ...viewingUser, date_of_birth: e.target.value })}
+                          disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                          className="w-full rounded-lg border border-white/15 bg-[#0c1424]/50 pl-10 pr-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Indirizzo */}
+                <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-accent" />
+                    Indirizzo
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Via</label>
+                      <input
+                        type="text"
+                        value={viewingUser.address || ""}
+                        onChange={(e) => setViewingUser({ ...viewingUser, address: e.target.value })}
+                        disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                        className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        placeholder="Via Roma, 123"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-2">Città</label>
+                        <input
+                          type="text"
+                          value={viewingUser.city || ""}
+                          onChange={(e) => setViewingUser({ ...viewingUser, city: e.target.value })}
+                          disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          placeholder="Roma"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-2">CAP</label>
+                        <input
+                          type="text"
+                          value={viewingUser.postal_code || ""}
+                          onChange={(e) => setViewingUser({ ...viewingUser, postal_code: e.target.value })}
+                          disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          placeholder="00100"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Ruolo</label>
+                      <select
+                        value={viewingUser.role}
+                        onChange={(e) => setViewingUser({ ...viewingUser, role: e.target.value as UserRole })}
+                        disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                        className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      >
+                        <option value="atleta">Atleta</option>
+                        <option value="maestro">Coach</option>
+                        <option value="gestore">Gestore</option>
+                        {currentUserRole === "admin" && <option value="admin">Admin</option>}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 md:col-span-2">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-accent" />
+                    Note
+                  </h3>
+                  <textarea
+                    value={viewingUser.notes || ""}
+                    onChange={(e) => setViewingUser({ ...viewingUser, notes: e.target.value })}
+                    disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                    rows={4}
+                    className="w-full rounded-lg border border-white/15 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition resize-none"
+                    placeholder="Aggiungi note sull'utente..."
+                  />
+                </div>
+
+                {/* Info Sistema */}
+                <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 md:col-span-2">
+                  <h3 className="text-lg font-semibold text-white mb-4">Informazioni Sistema</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Data Iscrizione</label>
+                      <p className="mt-1 text-sm text-white">
+                        {new Date(viewingUser.created_at).toLocaleDateString("it-IT", { 
+                          day: '2-digit', 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-2">Email</label>
+                      <p className="mt-1 text-sm text-white break-all">{viewingUser.email}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setViewingUser(null)}
+                  className="flex-1 rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/5 hover:border-white/30"
+                >
+                  Chiudi
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const { error } = await supabase
+                        .from("profiles")
+                        .update({ 
+                          full_name: viewingUser.full_name,
+                          phone: viewingUser.phone,
+                          date_of_birth: viewingUser.date_of_birth,
+                          address: viewingUser.address,
+                          city: viewingUser.city,
+                          postal_code: viewingUser.postal_code,
+                          notes: viewingUser.notes,
+                          role: viewingUser.role 
+                        })
+                        .eq("id", viewingUser.id);
+
+                      if (error) throw error;
+                      setViewingUser(null);
+                      loadUsers();
+                    } catch (err: any) {
+                      alert(`Errore: ${err.message}`);
+                    }
+                  }}
+                  disabled={currentUserRole === "gestore" && viewingUser.role === "admin"}
+                  className="flex-1 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-[#06101f] transition hover:bg-[#5fc7e0] hover:shadow-lg hover:shadow-accent/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Salva Modifiche
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Edit User Modal */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="w-full max-w-md rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/95 p-6 backdrop-blur">
-              <h2 className="mb-4 text-xl font-semibold text-white">Modifica Utente</h2>
-              
-              <div className="space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-8 shadow-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30">
+                  <Edit2 className="h-6 w-6 text-accent" />
+                </div>
                 <div>
-                  <span className="block text-xs font-medium text-[#9fb6a6]">Email</span>
-                  <p className="mt-1 text-sm text-white">{editingUser.email}</p>
+                  <h2 className="text-2xl font-bold text-white">Modifica Utente</h2>
+                  <p className="text-sm text-muted">Aggiorna le informazioni dell'utente</p>
+                </div>
+              </div>
+              
+              <div className="space-y-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
+                  <span className="block text-xs font-medium text-muted-2 mb-1">Email</span>
+                  <p className="text-sm font-medium text-white flex items-center gap-2">
+                    <User className="h-4 w-4 text-accent" />
+                    {editingUser.email}
+                  </p>
                 </div>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Nome Completo</span>
+                  <span className="mb-2 block text-sm font-semibold text-white">Nome Completo</span>
                   <input
                     type="text"
                     value={editingUser.full_name || ""}
                     onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    className="w-full rounded-lg border border-white/15 bg-[#1a3d5c]/60 px-4 py-3 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
                     placeholder="Mario Rossi"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Ruolo</span>
+                  <span className="mb-2 block text-sm font-semibold text-white">Ruolo</span>
                   <select
                     value={editingUser.role}
                     onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    className="w-full rounded-lg border border-white/15 bg-[#1a3d5c]/60 px-4 py-3 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
                     disabled={currentUserRole === "gestore" && editingUser.role === "admin"}
                   >
                     <option value="atleta">Atleta</option>
@@ -391,15 +624,18 @@ export default function UsersPage() {
                     {currentUserRole === "admin" && <option value="admin">Admin</option>}
                   </select>
                   {currentUserRole === "gestore" && editingUser.role === "admin" && (
-                    <span className="mt-1 block text-xs text-yellow-400">Non puoi modificare utenti admin</span>
+                    <span className="mt-2 block text-xs text-yellow-400 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Non puoi modificare utenti admin
+                    </span>
                   )}
                 </label>
               </div>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-8 flex gap-3">
                 <button
                   onClick={() => setEditingUser(null)}
-                  className="flex-1 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5"
+                  className="flex-1 rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/5 hover:border-white/30"
                 >
                   Annulla
                 </button>
@@ -421,7 +657,7 @@ export default function UsersPage() {
                       alert(`Errore: ${err.message}`);
                     }
                   }}
-                  className="flex-1 rounded-full bg-[#2f7de1] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2563c7]"
+                  className="flex-1 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-[#06101f] transition hover:bg-[#5fc7e0] hover:shadow-lg hover:shadow-accent/20"
                 >
                   Salva Modifiche
                 </button>
@@ -432,61 +668,69 @@ export default function UsersPage() {
 
         {/* Create User Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="w-full max-w-md rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/95 p-6 backdrop-blur">
-              <h2 className="mb-4 text-xl font-semibold text-white">Crea Nuovo Utente</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-8 shadow-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30">
+                  <Plus className="h-6 w-6 text-accent" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Crea Nuovo Utente</h2>
+                  <p className="text-sm text-muted">Aggiungi un nuovo utente al sistema</p>
+                </div>
+              </div>
               
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Email</span>
+                  <span className="mb-2 block text-sm font-semibold text-white">Email *</span>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    className="w-full rounded-lg border border-white/15 bg-[#1a3d5c]/60 px-4 py-3 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
                     placeholder="email@esempio.it"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Password</span>
+                  <span className="mb-2 block text-sm font-semibold text-white">Password *</span>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 pr-10 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                      className="w-full rounded-lg border border-white/15 bg-[#1a3d5c]/60 px-4 py-3 pr-12 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
                       placeholder="••••••••"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9fb6a6] transition hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-2 transition hover:bg-white/5 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <span className="mt-1 block text-xs text-[#9fb6a6]">Minimo 6 caratteri</span>
+                  <span className="mt-2 block text-xs text-muted-2">Minimo 6 caratteri</span>
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Nome Completo</span>
+                  <span className="mb-2 block text-sm font-semibold text-white">Nome Completo</span>
                   <input
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    className="w-full rounded-lg border border-white/15 bg-[#1a3d5c]/60 px-4 py-3 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
                     placeholder="Mario Rossi"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-[#c6d8c9]">Ruolo</span>
+                  <span className="mb-2 block text-sm font-semibold text-white">Ruolo</span>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-4 py-2 text-sm text-white focus:border-[#2f7de1] focus:outline-none"
+                    className="w-full rounded-lg border border-white/15 bg-[#1a3d5c]/60 px-4 py-3 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition"
                   >
                     <option value="atleta">Atleta</option>
                     <option value="maestro">Coach</option>
@@ -494,44 +738,56 @@ export default function UsersPage() {
                     {currentUserRole === "admin" && <option value="admin">Admin</option>}
                   </select>
                   {currentUserRole === "gestore" && (
-                    <span className="mt-1 block text-xs text-yellow-400">Solo gli admin possono creare altri admin</span>
+                    <span className="mt-2 block text-xs text-yellow-400 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Solo gli admin possono creare altri admin
+                    </span>
                   )}
                 </label>
 
                 {formError && (
-                  <p className="rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs text-red-200">
-                    {formError}
-                  </p>
+                  <div className="rounded-lg border border-red-400/30 bg-red-400/10 p-4">
+                    <p className="text-sm text-red-200 flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-400/20">!</span>
+                      {formError}
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-8 flex gap-3">
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     setFormData({ email: "", password: "", full_name: "", role: "atleta" });
                     setFormError("");
                   }}
-                  className="flex-1 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5"
+                  className="flex-1 rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/5 hover:border-white/30"
                 >
                   Annulla
                 </button>
                 <button
                   onClick={handleCreateUser}
                   disabled={formLoading}
-                  className="flex-1 rounded-full bg-[#2f7de1] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2563c7] disabled:opacity-60"
+                  className="flex-1 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-[#06101f] transition hover:bg-[#5fc7e0] hover:shadow-lg hover:shadow-accent/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {formLoading ? (
-                    <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creazione...
+                    </span>
                   ) : (
-                    "Crea Utente"
+                    <span className="flex items-center justify-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Crea Utente
+                    </span>
                   )}
                 </button>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </main>
     </AuthGuard>
   );
 }

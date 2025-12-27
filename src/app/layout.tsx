@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   title: "GST Tennis Academy",
   description:
     "Programmi di tennis professionali, coaching personalizzato e percorsi di crescita per atleti di ogni livello.",
+  icons: {
+    icon: [
+      { url: '/images/logo-tennis.svg', type: 'image/svg+xml' },
+      { url: '/images/logo-tennis.png', type: 'image/png' },
+    ],
+    apple: '/images/logo-tennis.png',
+  },
 };
 
 export default function RootLayout({

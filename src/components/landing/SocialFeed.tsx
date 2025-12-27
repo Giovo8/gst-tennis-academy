@@ -95,13 +95,14 @@ export default function SocialFeed() {
         <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 overflow-hidden">
           <iframe
             title="Facebook Page"
-            src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
+            src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
             width="100%"
             height={500}
-            style={{ border: 'none', overflow: 'hidden' }}
+            style={{ border: 'none', overflow: 'hidden', maxWidth: '100%' }}
             scrolling="no"
             frameBorder={0}
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+            className="w-full"
           />
         </div>
 
