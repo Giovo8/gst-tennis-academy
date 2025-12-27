@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand palette: celeste / blu */
+  --background: #031226; /* deep navy */
+  --foreground: #e6f8ff; /* very light cyan for text */
+  --accent-strong: #7de3ff; /* bright celeste */
+  --accent-mid: #4fb3ff;
+  --accent-dark: #2f7de1;
+  --accent-15: rgba(125, 227, 255, 0.15);
+  --accent-12: rgba(125, 227, 255, 0.12);
+  --accent-20: rgba(125, 227, 255, 0.2);
+  --accent-shadow: rgba(79, 209, 255, 0.35);
+
+  --bg-dark: #0c1424;
+  --bg-dark-60: rgba(12, 20, 36, 0.6);
+  --bg-dark-50: rgba(12, 20, 36, 0.5);
+  --bg-dark-30: rgba(12, 20, 36, 0.3);
+  --bg-dark-80: rgba(12, 20, 36, 0.8);
+
+  --muted: #c6d8c9;
+  --muted-2: #9fb6a6;
+  --text-dark: #06101f;
+  --border-strong: rgba(125, 227, 255, 0.18);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent-strong);
+  --color-muted: var(--muted);
+  --color-surface: rgba(255,255,255,0.03);
+  --color-border: var(--border-strong);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: radial-gradient(circle at 18% 22%, rgba(125,227,255,0.08), transparent 28%),
+    radial-gradient(circle at 82% 2%, rgba(79,163,255,0.06), transparent 24%),
+    linear-gradient(180deg, rgba(3,18,38,0.95), rgba(3,18,38,1)),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(125, 227, 255, 0.18);
+  color: var(--background);
+}
+
+.glass-panel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  backdrop-filter: blur(8px);
+}
+
+/* Accent gradient used across CTA buttons */
+.accent-gradient {
+  background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent-mid) 45%, var(--accent-dark) 100%);
+  color: var(--text-dark);
+}
+
+/* Map common Tailwind arbitrary color classes to brand variables so components
+   using inline hex classes pick up the brand tokens without changing every file. */
+
+/* Text colors */
+.text-\[\#7de3ff\] { color: var(--accent-strong) !important; }
+.text-\[\#c6d8c9\] { color: var(--muted) !important; }
+.text-\[\#9fb6a6\] { color: var(--muted-2) !important; }
+.text-\[\#06101f\] { color: var(--text-dark) !important; }
+.text-\[\#0a1526\] { color: var(--text-dark) !important; }
+
+/* Background variants (common opacity variants used in code) */
+.bg-\[\#0c1424\]\/60 { background-color: var(--bg-dark-60) !important; }
+.bg-\[\#0c1424\]\/50 { background-color: var(--bg-dark-50) !important; }
+.bg-\[\#0c1424\]\/30 { background-color: var(--bg-dark-30) !important; }
+.bg-\[\#0c1424\]\/80 { background-color: var(--bg-dark-80) !important; }
+
+.bg-\[\#7de3ff\]\/15 { background-color: var(--accent-15) !important; }
+.bg-\[\#7de3ff\]\/12 { background-color: var(--accent-12) !important; }
+.bg-\[\#7de3ff\]\/20 { background-color: var(--accent-20) !important; }
+
+/* Border and ring colors */
+.border-\[\#7de3ff\] { border-color: var(--accent-dark) !important; }
+.border-\[\#2f7de1\] { border-color: var(--accent-dark) !important; }
+.focus\:border-\[\#7de3ff\]\/60:focus { border-color: var(--accent-15) !important; }
+
+/* Shadow helper used in several components */
+.shadow-accent { box-shadow: 0 12px 30px var(--accent-shadow) !important; }
+
+/* Utility for small rounded brand badge (used in several places) */
+.brand-badge { background-color: var(--accent-15); color: var(--accent-strong); }
+
+/* Convenience utility classes to replace inline hex usages across components */
+.text-muted { color: var(--muted) !important; }
+.text-muted-2 { color: var(--muted-2) !important; }
+.text-accent { color: var(--accent-strong) !important; }
+.bg-surface { background-color: var(--bg-dark-60) !important; }
+.bg-surface-50 { background-color: var(--bg-dark-50) !important; }
+.bg-input { background-color: #071022 !important; }
+.bg-header { background-color: rgba(5,15,16,0.8) !important; }
+.bg-footer { background-color: rgba(5,10,20,0.9) !important; }
+.bg-hero-gradient { background: linear-gradient(135deg, rgba(3,27,46,1) 0%, rgba(7,17,34,1) 60%, rgba(5,10,20,1) 100%) !important; }
+
+.focus-ring-accent:focus { box-shadow: 0 0 0 3px rgba(125,227,255,0.12); }
+
+/* Friendly brand helpers */
+.bg-accent-15 { background-color: var(--accent-15) !important; }
+.bg-accent-12 { background-color: var(--accent-12) !important; }
+.bg-accent-20 { background-color: var(--accent-20) !important; }
+
+.bg-accent-strong { background-color: var(--accent-strong) !important; }
+
+
+
+
