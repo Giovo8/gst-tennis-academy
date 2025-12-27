@@ -7,14 +7,6 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-const navItems = [
-  { label: "Programmi", href: "#programmi" },
-  { label: "Abbonamenti", href: "#subscriptions" },
-  { label: "Staff", href: "#staff" },
-  { label: "News", href: "#news" },
-  { label: "Contatti", href: "#contatti" },
-];
-
 export default function Header() {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -90,19 +82,6 @@ export default function Header() {
             />
             <span className="text-lg font-bold text-white">GST Academy</span>
           </Link>
-
-          {/* Desktop Menu */}
-          <nav role="navigation" className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-muted transition hover:text-white focus:outline-none focus-ring-accent"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
