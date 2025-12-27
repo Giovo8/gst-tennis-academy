@@ -1,5 +1,8 @@
+-- Drop existing courses table if it exists
+DROP TABLE IF EXISTS courses CASCADE;
+
 -- Create courses table
-CREATE TABLE IF NOT EXISTS courses (
+CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type TEXT NOT NULL CHECK (type IN ('iscrizione', 'base', 'avanzato', 'agonistico', 'extra', 'sconto')),
   title TEXT NOT NULL,
@@ -29,8 +32,7 @@ INSERT INTO courses (type, title, description, frequency, price_monthly, price_y
   ('sconto', '5% Stesso nucleo familiare', NULL, NULL, NULL, NULL, 10, true),
   ('sconto', '5% Porta un amico', 'Se presenti un nuovo iscritto', NULL, NULL, NULL, 11, true),
   ('sconto', '5% Pagamento anticipato', 'Saldo quota iscrizione e prima rata entro il 15 settembre (solo annuale)', NULL, NULL, NULL, 12, true),
-  ('sconto', '10% Pagamento unica soluzione', NULL, NULL, NULL, NULL, 13, true)
-ON CONFLICT DO NOTHING;
+  ('sconto', '10% Pagamento unica soluzione', NULL, NULL, NULL, NULL, 13, true);
 
 -- Update homepage_sections to use courses instead of programs/subscriptions
 UPDATE homepage_sections SET active = false WHERE section_key IN ('programs', 'subscriptions');
