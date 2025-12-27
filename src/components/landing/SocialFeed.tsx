@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Instagram, ExternalLink } from "lucide-react";
+import { Instagram, Facebook } from "lucide-react";
 
 export default function SocialFeed() {
   const [embeds, setEmbeds] = React.useState<Array<{ html?: string; url?: string }>|null>(null);
@@ -59,12 +59,11 @@ export default function SocialFeed() {
   }, [embeds]);
 
   return (
-    <section id="social" className="space-y-4 rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-3">
+    <section id="social" className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Social Feed</p>
-          <h2 className="text-2xl font-semibold text-white">Ultimi highlight da Instagram e Facebook</h2>
-          <p className="text-sm text-muted">Contenuti ufficiali: segui i nostri canali per aggiornamenti.</p>
+          <h2 className="text-2xl font-semibold text-white">Seguici sui social</h2>
         </div>
 
         <div className="flex items-center gap-3">
@@ -75,8 +74,8 @@ export default function SocialFeed() {
             aria-label="Segui su Facebook"
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
           >
-            <ExternalLink className="h-4 w-4" />
-            Segui su Facebook
+            <Facebook className="h-4 w-4" />
+            Facebook
           </a>
 
           <a
@@ -87,13 +86,13 @@ export default function SocialFeed() {
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
           >
             <Instagram className="h-4 w-4" />
-            Segui su IG
+            Instagram
           </a>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-2">
+        <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 overflow-hidden">
           <iframe
             title="Facebook Page"
             src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
@@ -135,7 +134,7 @@ export default function SocialFeed() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Apri Instagram gst_tennis"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#2f7de1] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2563c7]"
                 >
                   <Instagram className="h-4 w-4" />
                   Vai su Instagram

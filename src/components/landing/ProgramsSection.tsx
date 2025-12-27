@@ -80,9 +80,6 @@ export default function ProgramsSection() {
             Percorsi su misura per ogni livello
           </h2>
         </div>
-        <div className="hidden rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent sm:inline-flex">
-          Indoor & Outdoor
-        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

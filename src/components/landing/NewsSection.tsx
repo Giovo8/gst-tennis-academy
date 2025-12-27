@@ -62,7 +62,6 @@ export default function NewsSection() {
       .limit(3);
 
     if (error) {
-      console.error("Error loading news:", error);
       // Usa le news di default se c'è un errore (es. tabella non esiste ancora)
       setNews(defaultNews);
     } else if (data && data.length > 0) {
@@ -86,18 +85,13 @@ export default function NewsSection() {
 
   return (
     <section id="news" className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-            News
-          </p>
-          <h2 className="text-2xl font-semibold text-white">
-            Ultimi aggiornamenti dalla Academy
-          </h2>
-        </div>
-        <span className="hidden text-sm font-semibold text-accent sm:inline">
-          Aggiornato settimanalmente
-        </span>
+      <div>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+          News
+        </p>
+        <h2 className="text-2xl font-semibold text-white">
+          Ultimi aggiornamenti dalla Academy
+        </h2>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

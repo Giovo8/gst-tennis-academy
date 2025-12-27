@@ -99,7 +99,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user with admin client
-    console.log("Tentativo creazione utente:", { email: email.toLowerCase(), role, full_name });
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
@@ -126,8 +125,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Errore creazione utente" }, { status: 500 });
     }
 
-    console.log("✅ Utente auth creato con successo, ID:", newUser.user.id);
-
     // Create or update profile with role using upsert
     const profileData = {
       id: newUser.user.id,
@@ -136,7 +133,6 @@ export async function POST(request: NextRequest) {
       role: role || "atleta",
     };
     
-    console.log("Tentativo upsert profilo:", profileData);
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert(profileData, {
@@ -144,7 +140,6 @@ export async function POST(request: NextRequest) {
       });
 
     if (profileError) {
-      console.error("❌ Errore upsert profilo:", profileError);
       // Tenta di eliminare l'utente auth se il profilo fallisce
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
       return NextResponse.json(
@@ -152,8 +147,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    console.log("✅ Profilo creato con successo");
 
     return NextResponse.json({
       success: true,
@@ -229,11 +222,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: deleteError.message }, { status: 400 });
     }
 
-    console.log("✅ Utente eliminato con successo:", userId);
-
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Errore eliminazione utente:", error);
     return NextResponse.json(
       { error: error.message || "Errore interno" },
       { status: 500 }

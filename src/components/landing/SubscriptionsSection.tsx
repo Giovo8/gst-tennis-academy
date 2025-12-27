@@ -44,27 +44,37 @@ export default function SubscriptionsSection() {
   }
 
   return (
-    <section aria-labelledby="subscriptions-heading" className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 shadow mb-8">
-      <div className="max-w-6xl mx-auto">
-        <h2 id="subscriptions-heading" className="text-2xl font-bold text-white mb-4">Abbonamenti</h2>
+    <section id="subscriptions" className="space-y-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+          Abbonamenti
+        </p>
+        <h2 className="text-2xl font-semibold text-white">
+          Scegli il piano perfetto per te
+        </h2>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div key={plan.id} className="rounded-lg border border-[#2f7de1]/50 p-4 bg-[#0d1f35]/80">
-              <div className="flex items-baseline justify-between">
-                <h3 className="font-semibold text-white">{plan.name}</h3>
-                <div className="text-xl font-bold text-white">€{plan.price}</div>
-              </div>
-              <p className="mt-2 text-sm text-white/80">{plan.billing}</p>
-              <ul className="mt-3 text-sm text-white/80 list-disc list-inside">
-                {plan.benefits.map((b, i) => <li key={i}>{b}</li>)}
-              </ul>
-              <div className="mt-4">
-                <a href="/register" className="inline-block rounded-full bg-[#2f7de1] px-4 py-2 text-sm font-semibold text-white">Sottoscrivi</a>
+      <div className="grid gap-4 md:grid-cols-3">
+        {plans.map((plan) => (
+          <article key={plan.id} className="flex flex-col rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 transition hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80">
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-white">€{plan.price}</span>
+                <span className="text-sm text-muted">{plan.billing}</span>
               </div>
             </div>
-          ))}
-        </div>
+            
+            <ul className="mb-6 flex-1 space-y-2 text-sm text-muted">
+              {plan.benefits.map((b, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
       </div>
     </section>
   );
