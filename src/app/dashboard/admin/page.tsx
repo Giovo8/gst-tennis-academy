@@ -167,21 +167,12 @@ export default function AdminDashboardPage() {
           </Link>
 
           <Link 
-            href="/dashboard/admin/subscriptions" 
-            className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10"
-          >
-            <CreditCard className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />
-            <h3 className="text-xl font-semibold text-white mb-2">Gestione Abbonamenti</h3>
-            <p className="text-sm text-muted">Gestisci i piani di abbonamento e i prezzi.</p>
-          </Link>
-
-          <Link 
-            href="/dashboard/admin/programs" 
+            href="/dashboard/admin/courses" 
             className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10"
           >
             <Target className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />
-            <h3 className="text-xl font-semibold text-white mb-2">Gestione Programmi</h3>
-            <p className="text-sm text-muted">Gestisci i programmi di allenamento offerti.</p>
+            <h3 className="text-xl font-semibold text-white mb-2">Gestione Corsi</h3>
+            <p className="text-sm text-muted">Gestisci corsi, abbonamenti e prezzi.</p>
           </Link>
 
           <Link 
