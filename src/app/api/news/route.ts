@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase/serverClient";
+import { supabaseServer } from "@/lib/supabase/serverClient";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const showAll = searchParams.get("all") === "true";
 
-  let query = supabase
+  let query = supabaseServer
     .from("news")
     .select("*")
     .order("date", { ascending: false });
