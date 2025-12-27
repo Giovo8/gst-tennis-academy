@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const showAll = searchParams.get("all") === "true";
 
   let query = supabaseServer
-    .from("staff")
+    Server.from("staff")
     .select("*")
     .order("order_index", { ascending: true });
 
@@ -34,13 +34,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { data: profile } = await supabase
-    .from("profiles")
+    Server.from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from("staff")
+    Server.from("staff")
     .insert({
       full_name,
       role,
@@ -77,13 +77,13 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { data: profile } = await supabase
-    .from("profiles")
+    Server.from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -93,7 +93,7 @@ export async function PATCH(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from("staff")
+    Server.from("staff")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
@@ -114,13 +114,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { data: profile } = await supabase
-    .from("profiles")
+    Server.from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -129,7 +129,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabase.from("staff").delete().eq("id", id);
+  const { error } = await supabaseServer.from("staff").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

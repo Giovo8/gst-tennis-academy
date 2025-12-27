@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const showAll = searchParams.get("all") === "true";
 
   let query = supabaseServer
-    .from("news")
+    Server.from("news")
     .select("*")
     .order("date", { ascending: false });
 
@@ -35,14 +35,14 @@ export async function POST(request: Request) {
   }
 
   // Get current user from supabase auth
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check if user is admin or gestore
   const { data: profile } = await supabase
-    .from("profiles")
+    Server.from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from("news")
+    Server.from("news")
     .insert({
       title,
       category,
@@ -80,14 +80,14 @@ export async function PATCH(request: Request) {
   }
 
   // Get current user from supabase auth
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check if user is admin or gestore
   const { data: profile } = await supabase
-    .from("profiles")
+    Server.from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -97,7 +97,7 @@ export async function PATCH(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from("news")
+    Server.from("news")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
@@ -119,14 +119,14 @@ export async function DELETE(request: Request) {
   }
 
   // Get current user from supabase auth
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseServer.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Check if user is admin or gestore
   const { data: profile } = await supabase
-    .from("profiles")
+    Server.from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
@@ -135,7 +135,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabase.from("news").delete().eq("id", id);
+  const { error } = await supabaseServer.from("news").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
