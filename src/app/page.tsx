@@ -19,8 +19,6 @@ type Section = {
 const sectionComponents: { [key: string]: React.ComponentType } = {
   hero: Hero,
   courses: CoursesSection,
-  programs: CoursesSection,  // fallback per vecchia chiave
-  subscriptions: CoursesSection,  // fallback per vecchia chiave
   staff: StaffSection,
   news: NewsSection,
   social: SocialFeed,
