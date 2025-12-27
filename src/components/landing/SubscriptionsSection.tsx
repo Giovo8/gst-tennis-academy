@@ -68,7 +68,7 @@ export default function SubscriptionsSection() {
             <ul className="mb-6 flex-1 space-y-2 text-sm text-muted">
               {plan.benefits.map((b, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
+                  <span className="mt-[0.4rem] h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
                   <span>{b}</span>
                 </li>
               ))}

@@ -102,7 +102,7 @@ export default function ProgramsSection() {
                   key={index}
                   className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2"
                 >
-                  <span className="mt-0.5 inline-block h-2 w-2 rounded-full bg-accent-strong" />
+                  <span className="mt-[0.4rem] h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
                   <span>{point}</span>
                 </li>
               ))}
