@@ -1,30 +1,59 @@
 # Schema Fixes per Tournaments - Guida Applicazione
 
-## Problema
-Il sistema tornei aveva inconsistenze nello schema del database:
-- Colonne `starts_at/ends_at` vs `start_date/end_date`
-- Colonna `created_by` non necessaria per il sistema semplificato
-- Colonna `status` potrebbe mancare in alcune installazioni
+**Ultimo aggiornamento**: 28 Dicembre 2025  
+**Status**: ✅ Completato e Testato
 
-## Soluzione
+## Panoramica
 
-### Opzione 1: Applicare il Fix Rapido (CONSIGLIATO)
+Questa guida spiega come applicare le modifiche allo schema del database per il nuovo sistema tornei semplificato.
 
-Vai su **Supabase Dashboard → SQL Editor** ed esegui:
+## Cosa è stato modificato
 
-```sql
--- File: supabase/FIX_TOURNAMENTS_SCHEMA.sql
-```
+### Modifiche Database
+- ✅ Colonne rinominate: `starts_at` → `start_date`, `ends_at` → `end_date`
+- ✅ Rimossa colonna obsoleta: `created_by`
+- ✅ Aggiunte colonne per sistema tornei: `tournament_type`, `num_groups`, `teams_per_group`, `teams_advancing`, `current_phase`
+- ✅ Nuove tabelle: `tournament_groups`, `tournament_matches`
+- ✅ Funzioni helper SQL per gestione gironi e statistiche
+- ✅ Trigger automatici per aggiornamento statistiche partecipanti
 
-Copia e incolla tutto il contenuto del file `FIX_TOURNAMENTS_SCHEMA.sql`.
+### Modifiche Codice
+- ✅ Tutti i file frontend/backend aggiornati per usare `start_date/end_date`
+- ✅ Rimossi riferimenti a `created_by` da tutte le API
+- ✅ Nuovi componenti UI: SimpleTournamentCreator, TournamentManager, EliminationBracketView, GroupStageView, ChampionshipStandingsView
 
-### Opzione 2: Riapplicare la Migrazione Completa
+## Come Applicare
 
-Se non hai ancora applicato la migrazione 010, esegui:
+### Metodo 1: Usa la Migrazione Completa (RACCOMANDATO per nuove installazioni)
 
-```sql
--- File: supabase/migrations/010_simplified_tournament_system.sql
-```
+Se stai configurando il database da zero o vuoi riapplicare tutto:
+
+1. Apri **Supabase Dashboard → SQL Editor**
+2. Esegui nell'ordine:
+   ```sql
+   -- Prima esegui lo schema principale
+   \i supabase/schema.sql
+   
+   -- Poi esegui la migrazione tornei
+   \i supabase/migrations/010_simplified_tournament_system.sql
+   ```
+
+### Metodo 2: Usa il Fix Rapido (RACCOMANDATO per aggiornare installazioni esistenti)
+
+Se hai già un database configurato e vuoi solo aggiornarlo:
+
+1. Apri **Supabase Dashboard → SQL Editor**
+2. Esegui il fix rapido:
+   ```sql
+   \i supabase/FIX_TOURNAMENTS_SCHEMA.sql
+   ```
+
+Questo script:
+- ✅ Rinomina automaticamente le colonne obsolete
+- ✅ Rimuove colonne non più necessarie
+- ✅ Aggiunge tutte le colonne mancanti
+- ✅ Crea tabelle, indici e trigger
+- ✅ È idempotente (può essere eseguito più volte senza problemi)
 
 ## Verifiche Post-Applicazione
 
