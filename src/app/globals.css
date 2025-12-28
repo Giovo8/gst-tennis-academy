@@ -73,8 +73,8 @@ body {
 
 /* Section spacing for consistent layout */
 .section {
-  padding-top: var(--space-5); /* 24px vertical spacing */
-  padding-bottom: var(--space-5);
+  padding-top: var(--space-4); /* 16px vertical spacing */
+  padding-bottom: var(--space-4);
   margin-bottom: 0; /* No additional spacing between sections */
 }
 
