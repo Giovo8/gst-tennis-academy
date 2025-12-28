@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test": "vitest",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "seed:test": "node scripts/create_test_users.js"
   },
   "dependencies": {
@@ -23,8 +25,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6",
-    "@testing-library/react": "^15",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^15.0.7",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.19.27",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -32,6 +35,8 @@
     "eslint-config-next": "16.1.1",
     "eslint-plugin-jsx-a11y": "^6",
     "husky": "^8",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "jsdom": "^27.4.0",
     "lint-staged": "^13",
     "prettier": "^2",

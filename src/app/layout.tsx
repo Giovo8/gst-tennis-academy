@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/layout/Footer";
 import InfoSection from "@/components/landing/InfoSection";
+import { defaultMetadata, generateOrganizationSchema } from "@/lib/seo/metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GST Tennis Academy",
-  description:
-    "Programmi di tennis professionali, coaching personalizzato e percorsi di crescita per atleti di ogni livello.",
+  ...defaultMetadata,
   icons: {
     icon: [
       { url: '/images/logo-tennis.svg', type: 'image/svg+xml' },
@@ -32,8 +31,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationSchema = generateOrganizationSchema();
+
   return (
     <html lang="it">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-[var(--foreground)]`}>
         {children}
         <InfoSection />

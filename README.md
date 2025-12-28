@@ -1,33 +1,445 @@
-# GST Tennis Academy 🎾
+# GST Tennis Academy
 
-Piattaforma completa per la gestione di un'accademia di tennis con sistema di prenotazioni, gestione utenti e ruoli multipli.
+🎾 Piattaforma completa per la gestione di un'accademia di tennis con sistema di prenotazioni, tornei, corsi e comunicazione integrata.
 
-## 🚀 Funzionalità Principali
+## 📋 Indice
 
-### 👥 Sistema Ruoli
-- **Atleti**: Prenotazione campi e lezioni private
-- **Maestri**: Conferma/rifiuta lezioni private assegnate
-- **Gestori**: Approvazione finale prenotazioni dopo conferma maestro
-- **Admin**: Gestione completa utenti, ruoli e sistema
+- [Caratteristiche](#caratteristiche)
+- [Tecnologie](#tecnologie)
+- [Prerequisiti](#prerequisiti)
+- [Installazione](#installazione)
+- [Configurazione](#configurazione)
+- [Utilizzo](#utilizzo)
+- [Struttura del Progetto](#struttura-del-progetto)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Contribuire](#contribuire)
+- [Licenza](#licenza)
 
-### 📅 Sistema Prenotazioni
-- **Calendario interattivo** con slot orari (8:00-22:00)
-- **3 tipi di prenotazioni**:
-  - Campo libero (conferma automatica)
-  - Lezione privata (richiede conferma maestro + gestore)
-  - Lezione di gruppo
-- **Sistema doppia conferma** per lezioni private
-- **Gestione conflitti** slot orari
-- **Storico prenotazioni** con filtri
+## ✨ Caratteristiche
 
-### 🎨 UI/UX
-- Design moderno con Tailwind CSS
-- Navbar dinamica con info ruolo utente
-- Dashboard personalizzate per ogni ruolo
-- Responsive mobile-first
-- Dark theme professionale
+### Sistema di Prenotazioni
+- 📅 Calendario interattivo per prenotazione campi
+- ⏰ Slot orari personalizzabili (08:00-22:00)
+- 👥 Prenotazioni per lezioni singole o di gruppo
+- ✅ Sistema di conferme a 3 livelli (utente, coach, gestore)
+- 💳 Gestione pagamenti e storico prenotazioni
 
-## 🛠️ Stack Tecnologico
+### Gestione Tornei
+- 🏆 Tornei a gironi e a eliminazione diretta
+- 📊 Punteggi tennis autentici (set, game, tie-break)
+- 🥇 Classifiche e statistiche dettagliate
+- 📱 Iscrizioni online con conferma automatica
+- 📧 Notifiche email per match e risultati
+
+### Profili Atleti Avanzati
+- 📈 Statistiche tennis complete (aces, doppi falli, break point)
+- 🎯 Tracking progressi con grafici
+- 💯 Percentuale completamento profilo
+- 🏅 Livelli skill (principiante → professionista)
+- 📱 Informazioni emergenza e preferenze orarie
+
+### Sistema Email Integrato
+- 📨 11 template email HTML con branding GST
+- 🔄 Automazione trigger per eventi (prenotazioni, tornei, lezioni)
+- 📊 Dashboard analytics con metriche delivery/open/click
+- ⏱️ Scheduler cron per reminder automatici
+- 🚫 Gestione unsubscribe e preferenze utente
+
+### Chat e Comunicazione
+- 💬 Chat real-time con Supabase Realtime
+- 🔔 Notifiche messaggi non letti
+- 👥 Conversazioni tra utenti e staff
+- 📎 Supporto allegati e emoji
+
+### Bacheca Annunci
+- 📢 Annunci prioritari per amministrazione
+- 🤝 Bacheca partner per sponsor e collaborazioni
+- 🔒 Visibilità controllata per ruolo utente
+- 📅 Scadenza automatica annunci
+
+### Sistema di Ruoli
+- 👨‍💼 **Admin**: Controllo completo sistema
+- 🏢 **Gestore**: Gestione operativa e prenotazioni
+- 🎓 **Maestro**: Gestione corsi e lezioni
+- 🎾 **Coach**: Conferma lezioni e disponibilità
+- 👤 **Atleta**: Prenotazioni e partecipazione tornei
+
+## 🛠 Tecnologie
+
+### Frontend
+- **Next.js 16.1.1** - React framework con App Router
+- **React 19.2.3** - UI library
+- **TypeScript 5.9.3** - Type safety
+- **Tailwind CSS 4** - Utility-first styling
+- **Lucide React** - Icon library
+
+### Backend
+- **Supabase** - PostgreSQL database con RLS
+- **Supabase Realtime** - WebSocket per chat
+- **Resend 6.6.0** - Email service provider
+
+### Testing
+- **Jest 30.2.0** - Testing framework
+- **React Testing Library 15.0.7** - Component testing
+- **@testing-library/jest-dom** - DOM matchers
+
+### DevOps
+- **Vercel** - Hosting e deployment
+- **Vercel Cron** - Scheduled jobs
+- **GitHub Actions** - CI/CD (optional)
+- **ESLint + Prettier** - Code quality
+
+## 📦 Prerequisiti
+
+- **Node.js** 20.x o superiore
+- **npm** 10.x o superiore
+- **Account Supabase** (free tier disponibile)
+- **Account Resend** per email (free tier: 100 email/giorno)
+- **Git** per version control
+
+## 🚀 Installazione
+
+### 1. Clona il repository
+
+```bash
+git clone https://github.com/your-username/gst-tennis-academy.git
+cd gst-tennis-academy
+```
+
+### 2. Installa le dipendenze
+
+```bash
+npm install
+```
+
+### 3. Configura Supabase
+
+1. Crea un nuovo progetto su [supabase.com](https://supabase.com)
+2. Vai su SQL Editor e esegui i migration files in ordine:
+
+```bash
+supabase/migrations/001_create_tournaments_and_participants.sql
+supabase/migrations/002_rls_policies_tournaments.sql
+supabase/migrations/003_add_competition_types.sql
+supabase/migrations/004_add_tennis_scoring.sql
+supabase/migrations/005_add_chat_system.sql
+supabase/migrations/006_add_announcements.sql
+supabase/migrations/007_email_system.sql
+supabase/migrations/008_profile_enhancements.sql
+```
+
+3. Copia le chiavi API da Settings > API
+
+### 4. Configura variabili ambiente
+
+Crea file `.env.local`:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Resend Email
+RESEND_API_KEY=your-resend-api-key
+EMAIL_FROM=noreply@your-domain.com
+EMAIL_REPLY_TO=info@your-domain.com
+RESEND_WEBHOOK_SECRET=your-webhook-secret
+
+# Vercel Cron
+CRON_SECRET=your-random-secret-key
+
+# App URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 5. Avvia il server di sviluppo
+
+```bash
+npm run dev
+```
+
+Apri [http://localhost:3000](http://localhost:3000) nel browser.
+
+## ⚙️ Configurazione
+
+### Email Templates
+
+I template email sono in `src/lib/email/templates/`. Personalizza:
+- Colori branding (blu GST: #2f7de1)
+- Logo e immagini
+- Testi e messaggi
+
+### Vercel Cron Jobs
+
+Il file `vercel.json` configura i job schedulati:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/email/scheduler",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
+```
+
+Schedule: Giornaliero alle 9:00 UTC (10:00 ora italiana).
+
+### Webhook Resend
+
+Configura webhook su Resend Dashboard:
+- URL: `https://your-domain.com/api/webhooks/email`
+- Eventi: email.sent, email.delivered, email.opened, email.clicked, email.bounced
+
+## 📖 Utilizzo
+
+### Creazione Primo Admin
+
+```bash
+npm run seed:test
+```
+
+Crea utenti test:
+- admin@test.com (Admin)
+- gestore@test.com (Gestore)
+- maestro@test.com (Maestro)
+- coach@test.com (Coach)
+- atleta@test.com (Atleta)
+
+Password: `password123`
+
+### Dashboard Amministrazione
+
+Accedi come admin e vai su `/dashboard/admin` per:
+- Gestire utenti e ruoli
+- Creare tornei e corsi
+- Visualizzare statistiche prenotazioni
+- Configurare hero content e sezioni homepage
+- Monitorare email dashboard
+
+### Gestione Tornei
+
+1. Admin crea torneo (`/dashboard/admin/tornei`)
+2. Atleti si iscrivono dalla pagina pubblica (`/tornei`)
+3. Gestore conferma iscrizioni
+4. Sistema genera gironi automaticamente
+5. Coach/Admin inseriscono risultati match
+6. Sistema calcola classifiche e avanza fasi
+
+### Prenotazione Campi
+
+1. Atleta va su `/bookings`
+2. Seleziona data, campo e orario
+3. Sceglie tipo: campo libero, lezione singola o gruppo
+4. Sistema invia richiesta a coach (se lezione)
+5. Coach conferma disponibilità
+6. Gestore approva definitivamente
+7. Email di conferma automatica
+
+## 📁 Struttura del Progetto
+
+```
+gst-tennis-academy/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── api/               # API Routes
+│   │   │   ├── bookings/      # Prenotazioni endpoints
+│   │   │   ├── tournaments/   # Tornei + matches
+│   │   │   ├── email/         # Email scheduler
+│   │   │   └── webhooks/      # Resend webhooks
+│   │   ├── dashboard/         # Dashboard per ruolo
+│   │   │   ├── admin/        # Admin pages
+│   │   │   ├── atleta/       # Athlete pages
+│   │   │   ├── coach/        # Coach pages
+│   │   │   ├── gestore/      # Manager pages
+│   │   │   └── maestro/      # Teacher pages
+│   │   ├── bookings/         # Prenotazioni page
+│   │   ├── tornei/           # Tornei pubblici
+│   │   └── profile/          # Profilo utente
+│   ├── components/            # React components
+│   │   ├── bookings/         # Booking calendar
+│   │   ├── tournaments/      # Bracket, standings
+│   │   ├── profile/          # ProfileEditor, AthleteStatsView
+│   │   ├── email/            # EmailDashboard
+│   │   ├── chat/             # ChatPanel, notifications
+│   │   ├── announcements/    # Announcement boards
+│   │   ├── layout/           # Navbar, Footer
+│   │   └── landing/          # Homepage sections
+│   └── lib/
+│       ├── email/            # Email service + templates
+│       ├── seo/              # Metadata + JSON-LD
+│       ├── supabase/         # Supabase clients
+│       └── roles.ts          # Role checking utils
+├── supabase/
+│   └── migrations/           # SQL migrations (8 files)
+├── public/
+│   ├── images/              # Logo, OG images
+│   ├── robots.txt           # SEO robots
+│   └── sitemap.xml          # SEO sitemap
+├── jest.config.js           # Jest configuration
+├── jest.setup.js            # Test globals + mocks
+├── tailwind.config.ts       # Tailwind theming
+├── tsconfig.json            # TypeScript config
+├── vercel.json              # Vercel cron config
+└── package.json             # Dependencies + scripts
+```
+
+## 🧪 Testing
+
+### Esegui tutti i test
+
+```bash
+npm test
+```
+
+### Watch mode (sviluppo)
+
+```bash
+npm run test:watch
+```
+
+### Coverage report
+
+```bash
+npm run test:coverage
+```
+
+### Test Coverage (Baseline)
+- **Branches**: 10%
+- **Functions**: 10%
+- **Lines**: 10%
+- **Statements**: 10%
+
+Test suite:
+- 19 test passanti
+- 4 component test files
+- Mock completi per Supabase e Next.js
+
+## 🚀 Deployment
+
+### Vercel (Raccomandato)
+
+1. **Push su GitHub**
+   ```bash
+   git add .
+   git commit -m "feat: ready for deployment"
+   git push origin main
+   ```
+
+2. **Connetti Vercel**
+   - Vai su [vercel.com](https://vercel.com)
+   - Importa progetto da GitHub
+   - Configura variabili ambiente (copia da `.env.local`)
+
+3. **Configura Environment Variables**
+   ```
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY
+   RESEND_API_KEY
+   EMAIL_FROM
+   EMAIL_REPLY_TO
+   RESEND_WEBHOOK_SECRET
+   CRON_SECRET
+   NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
+   ```
+
+4. **Deploy**
+   - Vercel auto-deploya su ogni push
+   - Cron jobs attivi automaticamente
+   - SSL certificate generato
+
+### Build Locale
+
+```bash
+npm run build
+npm start
+```
+
+Build output: `.next/`
+
+## 🔒 Sicurezza
+
+### Row Level Security (RLS)
+Tutte le tabelle Supabase hanno policy RLS attive:
+- Gli utenti vedono solo i propri dati
+- Admin/gestore hanno accesso esteso
+- Policy verificano `auth.uid()` e `role` da profiles
+
+### API Routes
+- Validazione input con Zod (da implementare)
+- Rate limiting su endpoints sensibili
+- CRON_SECRET per proteggere scheduler
+
+### Autenticazione
+- Supabase Auth con JWT
+- Password hashing bcrypt
+- Email verification (opzionale)
+
+## 📊 Metriche Sistema
+
+### Database
+- 8 migration SQL
+- 15+ tabelle con RLS
+- 3 stored functions per calcoli
+- 5+ trigger per auto-sync
+
+### Email System
+- 11 template HTML
+- 4 categorie email (transactional, notifications, marketing, system)
+- Tracking aperture/click
+- Retry automatico (max 3 tentativi)
+
+### Statistiche Tennis
+- 30+ metriche per atleta
+- Auto-sync da risultati tornei
+- Calcoli automatici (win rate, differenziali)
+- Storico completo partite
+
+## 🤝 Contribuire
+
+1. Fork il progetto
+2. Crea feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit modifiche (`git commit -m 'feat: add amazing feature'`)
+4. Push su branch (`git push origin feature/amazing-feature`)
+5. Apri Pull Request
+
+### Commit Convention
+Usa [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` Nuove funzionalità
+- `fix:` Bug fix
+- `docs:` Documentazione
+- `style:` Formattazione
+- `refactor:` Refactoring codice
+- `test:` Test
+- `chore:` Manutenzione
+
+## 📄 Licenza
+
+Questo progetto è sotto licenza MIT. Vedi file `LICENSE` per dettagli.
+
+## 🙏 Ringraziamenti
+
+- [Next.js](https://nextjs.org/) - Framework React
+- [Supabase](https://supabase.com/) - Backend as a Service
+- [Resend](https://resend.com/) - Email infrastructure
+- [Vercel](https://vercel.com/) - Hosting e deployment
+- [Tailwind CSS](https://tailwindcss.com/) - Styling framework
+- [Lucide](https://lucide.dev/) - Icon library
+
+## 📞 Supporto
+
+Per domande o supporto:
+- 📧 Email: info@gst-tennis-academy.com
+- 🐛 Issues: [GitHub Issues](https://github.com/your-username/gst-tennis-academy/issues)
+- 📖 Docs: [Wiki](https://github.com/your-username/gst-tennis-academy/wiki)
+
+---
+
+**Made with ❤️ and 🎾 by GST Tennis Academy**
 
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Backend**: Supabase (PostgreSQL + Auth)
