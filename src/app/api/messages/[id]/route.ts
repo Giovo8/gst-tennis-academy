@@ -10,7 +10,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const supabase = await supabaseServer();
+    const supabase = supabaseServer;
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -119,7 +119,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = await supabaseServer();
+    const supabase = supabaseServer;
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

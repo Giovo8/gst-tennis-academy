@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 // GET /api/conversations - Get all conversations for current user
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = supabaseServer;
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
 
     // Filter out null values and sort by last message
     const validConversations = conversationsWithParticipants
-      .filter((c) => c !== null)
+      .filter((c: any) => c !== null)
       .sort((a: any, b: any) => 
         new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
       );
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
 // POST /api/conversations - Create new conversation
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = supabaseServer;
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

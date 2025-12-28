@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 // POST /api/messages - Send new message
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = supabaseServer;
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
