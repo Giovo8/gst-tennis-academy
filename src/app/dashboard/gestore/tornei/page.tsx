@@ -140,7 +140,7 @@ function GestoreTorneiPageInner() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-6 py-12">
+    <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
       <div style={{background: '#222', color: '#fff', padding: 8, borderRadius: 8, marginBottom: 16}}>
         <b>DEBUG SESSIONE</b><br/>
         User ID: {sessionInfo.userId || 'N/A'}<br/>

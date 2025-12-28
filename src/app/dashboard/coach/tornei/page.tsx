@@ -4,7 +4,7 @@ import React from "react";
 
 export default function CoachTorneiPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-6 py-12">
+    <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Area Coach</p>
         <h1 className="text-3xl font-semibold text-white">Tornei (Coach)</h1>

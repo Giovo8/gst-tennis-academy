@@ -46,7 +46,7 @@ export default function WorkWithUsPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-10 px-6 py-16 bg-[#021627]">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-10 px-6 py-16 bg-[#021627]">
       {/* Header Section */}
       <div className="space-y-4 text-center">
         <p className="text-xs uppercase tracking-[0.2em] text-accent">Entra nel Team</p>

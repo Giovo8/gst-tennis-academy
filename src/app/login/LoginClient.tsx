@@ -67,7 +67,8 @@ export default function LoginClient() {
   };
 
   return (
-    <main className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center gap-8 px-6 py-12">
+    <main className="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-center gap-8 px-6 py-16">
+      <div className="mx-auto w-full max-w-md">
       {/* Animated background gradients */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/4 top-20 h-64 w-64 rounded-full blur-3xl bg-blue-400/10 animate-pulse" />
@@ -171,6 +172,7 @@ export default function LoginClient() {
             Email
           </a>
         </div>
+      </div>
       </div>
     </main>
   );

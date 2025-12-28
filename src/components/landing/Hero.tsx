@@ -100,7 +100,8 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-6 py-12 sm:px-10 sm:py-16 shadow-2xl shadow-[var(--accent-strong)]/10">
+    <section className="max-w-7xl mx-auto px-6 py-16">
+      <div className="relative overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-6 py-12 sm:px-10 sm:py-16 shadow-2xl shadow-[var(--accent-strong)]/10">
       {/* Animated background gradients */}
       <div className="pointer-events-none absolute left-16 top-10 h-40 w-40 rounded-full blur-3xl bg-[var(--accent-strong)]/20 animate-pulse" />
       <div className="pointer-events-none absolute right-12 bottom-10 h-32 w-32 rounded-full blur-3xl bg-[var(--accent-strong)]/15 animate-pulse" style={{animationDelay: '1s'}} />
@@ -206,6 +207,7 @@ export default function Hero() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </section>
   );

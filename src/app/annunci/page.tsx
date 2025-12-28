@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function AnnunciPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-12">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-16">
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.2em] text-[#9fb6a6]">Annunci</p>
         <h1 className="text-3xl font-semibold text-white">

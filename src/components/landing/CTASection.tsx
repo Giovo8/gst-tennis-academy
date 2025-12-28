@@ -2,9 +2,9 @@ import { Mail, MessageCircle, MapPin, Phone, Clock } from "lucide-react";
 
 export default function CTASection() {
   return (
-    <section id="contatti" className="section py-20">
-      <div className="container">
-        <div className="section-header flex flex-wrap items-center justify-between gap-6 mb-12">
+    <section id="contatti" className="max-w-7xl mx-auto px-6 py-16">
+      <div className="space-y-12">
+        <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
               Contattaci

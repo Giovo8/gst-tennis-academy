@@ -48,8 +48,8 @@ export default function TorneiPage() {
   }, []);
 
   return (
-    <main className="container section">
-      <div className="space-y-3">
+    <main className="mx-auto max-w-7xl px-6 py-16 min-h-screen">
+      <div className="space-y-3 mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-[#9fb6a6]">Tornei</p>
         <h1 className="text-3xl font-semibold text-white">Tornei in arrivo</h1>
         <p className="text-sm text-[#c6d8c9]">Iscriviti ai tornei organizzati dall'Academy.</p>

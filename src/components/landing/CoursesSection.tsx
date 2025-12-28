@@ -52,9 +52,9 @@ export default function CoursesSection() {
   }
 
   return (
-    <section id="programmi" className="py-20">
-      <div className="container section">
-        <div className="section-header space-y-2 mb-12">
+    <section id="programmi" className="max-w-7xl mx-auto px-6 py-16">
+      <div className="space-y-12">
+        <div className="space-y-3 mb-12">
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
             Corsi e Abbonamenti
           </p>
@@ -63,7 +63,7 @@ export default function CoursesSection() {
         </h2>
       </div>
 
-      <div className="flex flex-col gap-lg">
+      <div className="flex flex-col gap-8">
           {sections.map((section) => {
         // Layout: Single Box (Quota Iscrizione, Agonistico)
         if (section.layout_type === "single_box") {

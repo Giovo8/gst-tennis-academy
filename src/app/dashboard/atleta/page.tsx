@@ -184,7 +184,7 @@ export default function AthleteDashboardPage() {
   return (
     <AuthGuard allowedRoles={["atleta"]}>
       <div className="min-h-screen bg-[#021627] text-white">
-        <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12">
+        <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-16">
           {/* Header */}
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Dashboard Atleta</p>
@@ -328,6 +328,7 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
           </div>
+        </div>
         </main>
       </div>
     </AuthGuard>

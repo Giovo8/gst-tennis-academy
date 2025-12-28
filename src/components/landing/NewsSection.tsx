@@ -87,9 +87,9 @@ export default function NewsSection() {
 
   return (
     <>
-      <section id="news" className="py-20">
-        <div className="container section">
-          <div className="section-header space-y-2 mb-12">
+      <section id="news" className="max-w-7xl mx-auto px-6 py-16">
+        <div className="space-y-12">
+          <div className="space-y-3 mb-12">
             <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
               Ultime News
             </p>
@@ -135,8 +135,8 @@ export default function NewsSection() {
           </article>
         ))}
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
 
     {/* News Modal */}
     {selectedNews && (

@@ -14,6 +14,17 @@ interface Tournament {
   is_active: boolean;
   start_date: string | null;
   max_participants: number;
+  competition_type?: 'torneo' | 'campionato';
+  format?: 'eliminazione_diretta' | 'gironi' | 'misto';
+  category?: string;
+  end_date?: string | null;
+  match_format?: string;
+  surface_type?: string;
+  entry_fee?: number;
+  prize_money?: number;
+  prize_pool?: number;
+  level?: string;
+  status?: string;
 }
 
 export default function AdminTorneiPage() {
@@ -94,7 +105,7 @@ export default function AdminTorneiPage() {
   );
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-12">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-16">
       {/* Header */}
       <div className="space-y-3">
         <p className="text-xs uppercase tracking-[0.2em] font-semibold text-blue-400">
