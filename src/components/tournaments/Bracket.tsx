@@ -121,19 +121,19 @@ export default function Bracket({
 
   return (
     <div className="mt-6">
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-8 min-w-max">
+      <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex gap-4 md:gap-8 min-w-max">
           {rounds.map((round, roundIndex) => {
             const roundName = getRoundName(roundIndex, rounds.length);
             
             return (
-              <div key={roundIndex} className="min-w-[200px]">
-                <div className="mb-4 sticky top-0 bg-[#031226]/90 backdrop-blur py-2 z-10">
-                  <h4 className="text-sm font-semibold text-white">{roundName}</h4>
-                  <p className="text-xs text-muted-2">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>
+              <div key={roundIndex} className="min-w-[160px] md:min-w-[200px]">
+                <div className="mb-3 md:mb-4 sticky top-0 bg-[#031226]/95 backdrop-blur py-2 z-10">
+                  <h4 className="text-xs md:text-sm font-semibold text-white">{roundName}</h4>
+                  <p className="text-[10px] md:text-xs text-muted-2">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {round.map((match, matchIndex) => {
                     const isFinished = !!match.winner;
                     const hasBye = match.isBye;
@@ -141,7 +141,7 @@ export default function Bracket({
                     return (
                       <div 
                         key={matchIndex} 
-                        className={`rounded-xl border p-4 transition-all ${
+                        className={`rounded-lg md:rounded-xl border p-3 md:p-4 transition-all ${
                           hasBye 
                             ? 'border-yellow-500/30 bg-yellow-500/5'
                             : isFinished
@@ -162,7 +162,7 @@ export default function Bracket({
                                 : 'bg-[#0c1424]/60 text-white'
                             }`}
                           >
-                            <span className="text-sm truncate">{match.player1}</span>
+                            <span className="text-xs md:text-sm truncate">{match.player1}</span>
                             {match.winner === match.player1 && (
                               <span className="ml-2 text-xs">✓</span>
                             )}
@@ -170,7 +170,7 @@ export default function Bracket({
                           
                           {/* VS divider */}
                           <div className="text-center">
-                            <span className="text-xs text-muted-2 uppercase tracking-wider">vs</span>
+                            <span className="text-[10px] md:text-xs text-muted-2 uppercase tracking-wider">vs</span>
                           </div>
                           
                           {/* Player 2 */}
@@ -185,7 +185,7 @@ export default function Bracket({
                                 : 'bg-[#0c1424]/60 text-white'
                             }`}
                           >
-                            <span className="text-sm truncate">{match.player2}</span>
+                            <span className="text-xs md:text-sm truncate">{match.player2}</span>
                             {match.winner === match.player2 && (
                               <span className="ml-2 text-xs">✓</span>
                             )}

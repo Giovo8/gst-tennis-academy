@@ -254,13 +254,13 @@ function GestoreTorneiPageInner() {
           </form>
         </div>
 
-        <div className="rounded-xl border border-[#2f7de1]/30 p-6 bg-[#1a3d5c]/60">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Competizioni</h2>
-            <div className="flex gap-2">
+        <div className="rounded-xl border border-[#2f7de1]/30 p-4 md:p-6 bg-[#1a3d5c]/60">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-base md:text-lg font-semibold text-white">Competizioni</h2>
+            <div className="flex gap-2 overflow-x-auto pb-1">
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                   filterType === 'all'
                     ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
                     : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
@@ -270,7 +270,7 @@ function GestoreTorneiPageInner() {
               </button>
               <button
                 onClick={() => setFilterType('torneo')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                   filterType === 'torneo'
                     ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
                     : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
@@ -280,7 +280,7 @@ function GestoreTorneiPageInner() {
               </button>
               <button
                 onClick={() => setFilterType('campionato')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                   filterType === 'campionato'
                     ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
                     : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
@@ -295,8 +295,8 @@ function GestoreTorneiPageInner() {
               {tournaments
                 .filter(t => filterType === 'all' || t.competition_type === filterType || (!t.competition_type && filterType === 'torneo'))
                 .map(t => (
-                <li key={t.id} className="rounded-xl border border-[#2f7de1]/30 p-4 bg-[#0f2131]">
-                  <div className="flex items-start justify-between mb-2">
+                <li key={t.id} className="rounded-lg md:rounded-xl border border-[#2f7de1]/30 p-3 md:p-4 bg-[#0f2131]">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`px-2 py-0.5 text-xs font-semibold uppercase rounded-full ${
@@ -329,9 +329,9 @@ function GestoreTorneiPageInner() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <a href={`/tornei/${t.id}`} className="rounded-full border border-accent px-3 py-1 text-sm text-accent hover:bg-accent/10 transition">Apri</a>
-                    <a href={`/dashboard/gestore/tornei?t=${t.id}`} className="rounded-full bg-accent px-3 py-1 text-sm font-semibold text-[#06101f] hover:shadow-accent transition">Iscritti</a>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <a href={`/tornei/${t.id}`} className="text-center rounded-full border border-accent px-3 py-1 text-sm text-accent hover:bg-accent/10 transition">Apri</a>
+                    <a href={`/dashboard/gestore/tornei?t=${t.id}`} className="text-center rounded-full bg-accent px-3 py-1 text-sm font-semibold text-[#06101f] hover:shadow-accent transition">Iscritti</a>
                   </div>
                 </li>
               ))}

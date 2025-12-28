@@ -57,10 +57,10 @@ export default function TournamentsSection() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto pb-2">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
               filter === 'all'
                 ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
                 : 'bg-[#1a3d5c]/40 text-muted-2 border border-[#2f7de1]/20 hover:border-[#2f7de1]/40'
@@ -70,7 +70,7 @@ export default function TournamentsSection() {
           </button>
           <button
             onClick={() => setFilter('torneo')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
               filter === 'torneo'
                 ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
                 : 'bg-[#1a3d5c]/40 text-muted-2 border border-[#2f7de1]/20 hover:border-[#2f7de1]/40'
@@ -81,7 +81,7 @@ export default function TournamentsSection() {
           </button>
           <button
             onClick={() => setFilter('campionato')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
               filter === 'campionato'
                 ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
                 : 'bg-[#1a3d5c]/40 text-muted-2 border border-[#2f7de1]/20 hover:border-[#2f7de1]/40'
@@ -93,7 +93,7 @@ export default function TournamentsSection() {
         </div>
 
         {/* Content Grid */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 md:gap-6 md:grid-cols-3">
         {loading ? (
           <div className="col-span-3 flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-accent" />
@@ -115,17 +115,17 @@ export default function TournamentsSection() {
             return (
               <article 
                 key={t.id} 
-                className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 space-y-4 hover:border-[#7de3ff]/40 hover:bg-[#1a3d5c]/80 transition-all"
+                className="rounded-xl md:rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 md:p-6 space-y-3 md:space-y-4 hover:border-[#7de3ff]/40 hover:bg-[#1a3d5c]/80 transition-all"
               >
                 {/* Header with icon and type badge */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     {isTorneo ? (
-                      <Trophy className="w-5 h-5 text-[#7de3ff]" />
+                      <Trophy className="w-4 h-4 md:w-5 md:h-5 text-[#7de3ff]" />
                     ) : (
-                      <Award className="w-5 h-5 text-[#4fb3ff]" />
+                      <Award className="w-4 h-4 md:w-5 md:h-5 text-[#4fb3ff]" />
                     )}
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${
+                    <span className={`text-[10px] md:text-xs font-semibold uppercase tracking-wider ${
                       isTorneo ? 'text-[#7de3ff]' : 'text-[#4fb3ff]'
                     }`}>
                       {isTorneo ? 'Torneo' : 'Campionato'}
@@ -146,11 +146,11 @@ export default function TournamentsSection() {
 
                 {/* Title */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white line-clamp-2">{t.title}</h3>
+                  <h3 className="text-base md:text-lg font-semibold text-white line-clamp-2">{t.title}</h3>
                 </div>
 
                 {/* Info */}
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-xs md:text-sm">
                   {t.starts_at && (
                     <div className="flex items-center gap-2 text-muted-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,10 +184,10 @@ export default function TournamentsSection() {
                 </div>
 
                 {/* CTA Button */}
-                <div className="pt-2">
+                <div className="pt-1 md:pt-2">
                   <Link 
                     href={`/tornei/${t.id}`} 
-                    className="block w-full text-center rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2.5 text-sm font-semibold text-[#06101f] hover:shadow-accent transition-all"
+                    className="block w-full text-center rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-[#06101f] hover:shadow-accent transition-all"
                   >
                     Vedi Dettagli
                   </Link>
