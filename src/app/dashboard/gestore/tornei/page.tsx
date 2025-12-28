@@ -27,7 +27,6 @@ function GestoreTorneiPageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
-  const [sessionInfo, setSessionInfo] = useState<{userId?: string, role?: string, token?: string}>({});
   const searchParams = useSearchParams();
   const selectedTournament = searchParams?.get("t");
   const [filterType, setFilterType] = useState<'all' | 'torneo' | 'campionato'>('all');
@@ -61,69 +60,6 @@ function GestoreTorneiPageInner() {
       else setError(json.error || 'Errore caricamento partecipanti');
     } catch (err) {
       // ignore
-    }
-  } 
-        max_participants: maxPart, 
-        entry_fee: form.entry_fee ? Number(form.entry_fee) : undefined,
-        start_date: form.start_date,
-        competition_type: form.competition_type,
-        format: form.format,
-        status: form.status,
-        category: form.category,
-        surface_type: form.surface_type,
-        match_format: form.match_format
-      };
-
-      // Forza refresh sessione
-      await supabase.auth.refreshSession();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token ?? null;
-      let userRole = null;
-      let userId = sessionData?.session?.user?.id;
-      if (userId) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single();
-        userRole = profile?.role;
-      }
-      setSessionInfo({ userId: userId ?? undefined, role: userRole ?? undefined, token: token ?? undefined });
-      if (!token) {
-        setError('Sessione non valida. Fai logout/login e riprova.');
-        setSubmitting(false);
-        return;
-      }
-      const res = await fetch('/api/tournaments', {
-        method: 'POST', 
-        headers: { 
-          'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}` 
-        }, 
-        body: JSON.stringify(payload)
-      });
-      let json: any = {};
-      try { json = await res.json(); } catch (e) { json = {}; }
-      if (!res.ok) {
-        setError(json.error || 'Errore creazione');
-      } else {
-        setForm({ 
-          title: '', 
-          description: '', 
-          start_date: '', 
-          max_participants: '16',
-          competition_type: 'torneo',
-          format: 'eliminazione_diretta',
-          status: 'Aperto',
-          category: 'Open',
-          surface_type: 'terra',
-          match_format: 'best_of_3',
-          entry_fee: ''
-        });
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 5000);
-        load();
-      }
-    } catch (err: any) {
-      setError(err.message || 'Errore rete');
-    } finally {
-      setSubmitting(false);
     }
   }
 
