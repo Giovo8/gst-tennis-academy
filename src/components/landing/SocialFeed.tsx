@@ -61,7 +61,7 @@ export default function SocialFeed() {
     return (
       <section id="social">
         <div className="container section">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="section-header flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Social Feed</p>
               <h2 className="text-2xl font-semibold text-white">Seguici sui social</h2>

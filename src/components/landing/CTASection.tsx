@@ -43,7 +43,7 @@ export default function CTASection() {
           <p className="text-white font-semibold mb-1">VIA CASSIA KM 24300 snc</p>
           <p className="text-sm text-muted">Formello (Roma), Italy</p>
         </article>
-        <article className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+        <article className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 card-content">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 mb-3">
             Contatti
           </p>
