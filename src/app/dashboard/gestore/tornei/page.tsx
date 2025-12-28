@@ -219,6 +219,7 @@ function GestoreTorneiPageInner() {
               </button>
             </div>
           </div>
+          </div>
           {loading && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="relative">
