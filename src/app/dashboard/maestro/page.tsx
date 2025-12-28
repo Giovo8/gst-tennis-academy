@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
+import MaestroNavbar from "@/components/layout/MaestroNavbar";
 import { Calendar, Check, X, Clock, User, AlertCircle, CheckCircle2, XCircle, Award } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import { supabase } from "@/lib/supabase/client";
@@ -216,22 +217,26 @@ export default function MaestroDashboardPage() {
 
   return (
     <AuthGuard allowedRoles={["maestro"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-12 bg-[#021627] text-white">
-        {/* Header */}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
-            <Award className="h-4 w-4" />
-            Dashboard Maestro
-          </p>
-          <h1 className="text-4xl font-bold text-white">
-            Benvenuto, {userName || "Maestro"}
-          </h1>
-          <p className="text-sm text-muted">
-            Gestisci le tue lezioni private e conferma le richieste degli atleti
-          </p>
-        </div>
-
-        {/* Stats Cards */}
+      <div className="min-h-screen bg-[#021627] text-white">
+        <MaestroNavbar 
+          userName={userName}
+          pendingLessonsCount={pendingCount}
+          notificationsCount={0}
+        />
+        <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12">
+          {/* Header */}
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Dashboard Maestro
+            </p>
+            <h1 className="text-4xl font-bold text-white">
+              Benvenuto, {userName || "Maestro"}
+            </h1>
+            <p className="text-sm text-muted">
+              Gestisci le tue lezioni private e conferma le richieste degli atleti
+            </p>
+          </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard title="In Attesa" value={pendingCount} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
           <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-green-400" />} color="green" />
@@ -439,6 +444,7 @@ export default function MaestroDashboardPage() {
           )}
         </div>
       </main>
+      </div>
     </AuthGuard>
   );
 }

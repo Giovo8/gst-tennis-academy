@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import CTASection from "@/components/landing/CTASection";
-import Header from "@/components/landing/Header";
+import PublicNavbar from "@/components/layout/PublicNavbar";
 import Hero from "@/components/landing/Hero";
 import NewsSection from "@/components/landing/NewsSection";
 import CoursesSection from "@/components/landing/CoursesSection";
@@ -86,7 +86,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#021627] text-white">
-        <Header />
+        <PublicNavbar />
         <main className="flex flex-col gap-12 px-6 pb-16 pt-10">
           <p className="text-center text-muted">Caricamento...</p>
         </main>
@@ -96,7 +96,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#021627] text-white">
-      <Header />
+      <PublicNavbar />
       <main className="container section-lg">
         {/* Accessibility skip link */}
         <a href="#main-content" className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4">Vai al contenuto</a>

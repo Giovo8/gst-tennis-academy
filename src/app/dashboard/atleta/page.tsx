@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
+import AtletaNavbar from "@/components/layout/AtletaNavbar";
 import Link from "next/link";
 import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target } from "lucide-react";
 import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
@@ -183,15 +184,21 @@ export default function AthleteDashboardPage() {
 
   return (
     <AuthGuard allowedRoles={["atleta"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-12 bg-[#021627] text-white">
-        {/* Header */}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Dashboard Atleta</p>
-          <h1 className="text-4xl font-bold text-white">
-            Benvenuto, {userName || "Atleta"}!
-          </h1>
-          <p className="text-sm text-muted">Gestisci le tue prenotazioni e monitora i tuoi allenamenti</p>
-        </div>
+      <div className="min-h-screen bg-[#021627] text-white">
+        <AtletaNavbar 
+          userName={userName} 
+          subscriptionType={subscriptionType as "basic" | "premium" | "vip" | null}
+          notificationsCount={stats.pendingLessons}
+        />
+        <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12">
+          {/* Header */}
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Dashboard Atleta</p>
+            <h1 className="text-4xl font-bold text-white">
+              Benvenuto, {userName || "Atleta"}!
+            </h1>
+            <p className="text-sm text-muted">Gestisci le tue prenotazioni e monitora i tuoi allenamenti</p>
+          </div>
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -289,8 +296,8 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
           )}
-        </div>
-      </main>
+        </main>
+      </div>
     </AuthGuard>
   );
 }

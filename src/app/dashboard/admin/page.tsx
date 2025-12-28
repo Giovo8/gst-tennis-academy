@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/auth/AuthGuard";
+import AdminNavbar from "@/components/layout/AdminNavbar";
 import { Users, Calendar, Settings, TrendingUp, FileText, Target, CreditCard, ImageIcon, List, Type } from "lucide-react";
 import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
 import StatCard from "@/components/dashboard/StatCard";
@@ -53,16 +54,18 @@ export default function AdminDashboardPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-12 bg-[#021627] text-white">
-        {/* Header */}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Area Amministrazione
-          </p>
-          <h1 className="text-4xl font-bold text-white">Dashboard Admin</h1>
-          <p className="text-sm text-muted">Gestisci utenti, prenotazioni e servizi</p>
-        </div>
+      <div className="min-h-screen bg-[#021627] text-white">
+        <AdminNavbar notificationsCount={0} />
+        <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12">
+          {/* Header */}
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Area Amministrazione
+            </p>
+            <h1 className="text-4xl font-bold text-white">Dashboard Admin</h1>
+            <p className="text-sm text-muted">Gestisci utenti, prenotazioni e servizi</p>
+          </div>
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -137,6 +140,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </main>
+      </div>
     </AuthGuard>
   );
 }
