@@ -52,9 +52,9 @@ export default function CoursesSection() {
   }
 
   return (
-    <section id="programmi">
-      <div className="container section">
-        <div>
+    <section id="programmi" className="section">
+      <div className="container">
+        <div className="section-header">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
             Corsi e Abbonamenti
           </p>
@@ -63,13 +63,13 @@ export default function CoursesSection() {
           </h2>
         </div>
 
-        <div className="mt-6 space-y-6">
+        <div className="space-y-6">
           {sections.map((section) => {
         // Layout: Single Box (Quota Iscrizione, Agonistico)
         if (section.layout_type === "single_box") {
           const item = section.items[0];
           return (
-            <div key={section.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 md:p-6">
+            <div key={section.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 card-content">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white mb-1">{section.section_title}</h3>

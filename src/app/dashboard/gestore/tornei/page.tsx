@@ -10,18 +10,30 @@ type Tournament = {
   description?: string;
   starts_at?: string;
   max_participants?: number;
+  competition_type?: 'torneo' | 'campionato';
+  format?: 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
+  status?: string;
 };
 
 
 function GestoreTorneiPageInner() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: '', description: '', starts_at: '', max_participants: '16' });
+  const [form, setForm] = useState({ 
+    title: '', 
+    description: '', 
+    starts_at: '', 
+    max_participants: '16',
+    competition_type: 'torneo' as 'torneo' | 'campionato',
+    format: 'eliminazione_diretta' as 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione',
+    status: 'Aperto'
+  });
   const [error, setError] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [sessionInfo, setSessionInfo] = useState<{userId?: string, role?: string, token?: string}>({});
   const searchParams = useSearchParams();
   const selectedTournament = searchParams?.get("t");
+  const [filterType, setFilterType] = useState<'all' | 'torneo' | 'campionato'>('all');
 
   useEffect(() => {
     load();
@@ -58,7 +70,14 @@ function GestoreTorneiPageInner() {
     e.preventDefault();
     setError(null);
     try {
-      const payload = { ...form, max_participants: Number(form.max_participants), starts_at: form.starts_at };
+      const payload = { 
+        ...form, 
+        max_participants: Number(form.max_participants), 
+        starts_at: form.starts_at,
+        competition_type: form.competition_type,
+        format: form.format,
+        status: form.status
+      };
       // Forza refresh sessione
       await supabase.auth.refreshSession();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -82,7 +101,15 @@ function GestoreTorneiPageInner() {
       if (!res.ok) {
         setError(json.error || 'Errore creazione');
       } else {
-        setForm({ title: '', description: '', starts_at: '', max_participants: '16' });
+        setForm({ 
+          title: '', 
+          description: '', 
+          starts_at: '', 
+          max_participants: '16',
+          competition_type: 'torneo',
+          format: 'eliminazione_diretta',
+          status: 'Aperto'
+        });
         load();
       }
     } catch (err: any) {
@@ -128,32 +155,183 @@ function GestoreTorneiPageInner() {
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div className="rounded-xl border border-[#2f7de1]/30 p-6 bg-[#1a3d5c]/60">
-          <h2 className="text-lg font-semibold text-white mb-4">Crea Torneo</h2>
-          <form onSubmit={handleCreate} className="space-y-3">
-            <input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Titolo" className="w-full rounded-md p-2 bg-[#081e2b] text-white" />
-            <textarea value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descrizione" className="w-full rounded-md p-2 bg-[#081e2b] text-white" />
-            <input value={form.starts_at} onChange={(e) => setForm(f => ({ ...f, starts_at: e.target.value }))} type="datetime-local" className="w-full rounded-md p-2 bg-[#081e2b] text-white" />
-            <input value={form.max_participants} onChange={(e) => setForm(f => ({ ...f, max_participants: e.target.value }))} type="number" className="w-full rounded-md p-2 bg-[#081e2b] text-white" />
+          <h2 className="text-lg font-semibold text-white mb-4">Crea Competizione</h2>
+          <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <button type="submit" className="rounded-full bg-accent px-4 py-2 text-sm font-semibold">Crea</button>
+              <label className="block text-sm font-medium text-muted-2 mb-2">Tipo Competizione</label>
+              <select 
+                value={form.competition_type} 
+                onChange={(e) => setForm(f => ({ 
+                  ...f, 
+                  competition_type: e.target.value as 'torneo' | 'campionato',
+                  // Auto-adjust format based on type
+                  format: e.target.value === 'campionato' ? 'round_robin' : 'eliminazione_diretta'
+                }))} 
+                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
+              >
+                <option value="torneo">Torneo</option>
+                <option value="campionato">Campionato</option>
+              </select>
             </div>
-            {error && <div className="text-sm text-red-400">{error}</div>}
+
+            <div>
+              <label className="block text-sm font-medium text-muted-2 mb-2">Formato</label>
+              <select 
+                value={form.format} 
+                onChange={(e) => setForm(f => ({ ...f, format: e.target.value as any }))} 
+                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
+              >
+                <option value="eliminazione_diretta">Eliminazione Diretta</option>
+                <option value="round_robin">Round-robin (Tutti contro tutti)</option>
+                <option value="girone_eliminazione">Fase a Gironi + Eliminazione</option>
+              </select>
+              <p className="mt-1 text-xs text-muted-2">
+                {form.format === 'eliminazione_diretta' && 'I partecipanti devono essere una potenza di 2 (2, 4, 8, 16, 32, ecc.)'}
+                {form.format === 'round_robin' && 'Tutti i partecipanti giocano contro tutti. Ideale per campionati.'}
+                {form.format === 'girone_eliminazione' && 'Prima fase a gironi, poi eliminazione diretta con i migliori.'}
+              </p>
+            </div>
+            
+            <input 
+              value={form.title} 
+              onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} 
+              placeholder="Titolo (es: Torneo Primavera 2026)" 
+              className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30" 
+              required
+            />
+            
+            <textarea 
+              value={form.description} 
+              onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} 
+              placeholder="Descrizione (opzionale)" 
+              className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
+              rows={3}
+            />
+            
+            <div>
+              <label className="block text-sm font-medium text-muted-2 mb-2">Data e Ora Inizio</label>
+              <input 
+                value={form.starts_at} 
+                onChange={(e) => setForm(f => ({ ...f, starts_at: e.target.value }))} 
+                type="datetime-local" 
+                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-muted-2 mb-2">Numero Massimo Partecipanti</label>
+              <input 
+                value={form.max_participants} 
+                onChange={(e) => setForm(f => ({ ...f, max_participants: e.target.value }))} 
+                type="number" 
+                min="2"
+                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-muted-2 mb-2">Stato</label>
+              <select 
+                value={form.status} 
+                onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))} 
+                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
+              >
+                <option value="Aperto">Aperto (iscrizioni attive)</option>
+                <option value="Chiuso">Chiuso (iscrizioni chiuse)</option>
+                <option value="In corso">In corso</option>
+                <option value="Completato">Completato</option>
+              </select>
+            </div>
+            
+            <div>
+              <button type="submit" className="w-full rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 text-sm font-semibold text-[#06101f] hover:shadow-accent transition-all">
+                Crea Competizione
+              </button>
+            </div>
+            {error && <div className="text-sm text-red-400 p-3 rounded-lg bg-red-500/10 border border-red-500/30">{error}</div>}
           </form>
         </div>
 
         <div className="rounded-xl border border-[#2f7de1]/30 p-6 bg-[#1a3d5c]/60">
-          <h2 className="text-lg font-semibold text-white mb-4">Tornei</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">Competizioni</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  filterType === 'all'
+                    ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
+                    : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
+                }`}
+              >
+                Tutte
+              </button>
+              <button
+                onClick={() => setFilterType('torneo')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  filterType === 'torneo'
+                    ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
+                    : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
+                }`}
+              >
+                Tornei
+              </button>
+              <button
+                onClick={() => setFilterType('campionato')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  filterType === 'campionato'
+                    ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
+                    : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
+                }`}
+              >
+                Campionati
+              </button>
+            </div>
+          </div>
           {loading ? <div className="text-sm text-[#c6d8c9]">Caricamento...</div> : (
             <ul className="space-y-3">
-              {tournaments.map(t => (
+              {tournaments
+                .filter(t => filterType === 'all' || t.competition_type === filterType || (!t.competition_type && filterType === 'torneo'))
+                .map(t => (
                 <li key={t.id} className="rounded-xl border border-[#2f7de1]/30 p-4 bg-[#0f2131]">
-                  <div>
-                    <div className="font-medium text-white">{t.title}</div>
-                    <div className="text-sm text-[#c6d8c9]">{t.starts_at ? new Date(t.starts_at).toLocaleString() : ''}</div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 text-xs font-semibold uppercase rounded-full ${
+                          (t.competition_type === 'campionato')
+                            ? 'bg-[#4fb3ff]/15 text-[#4fb3ff]'
+                            : 'bg-[#7de3ff]/15 text-[#7de3ff]'
+                        }`}>
+                          {t.competition_type === 'campionato' ? 'Campionato' : 'Torneo'}
+                        </span>
+                        {t.status && (
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            t.status === 'Aperto' 
+                              ? 'bg-green-500/10 text-green-400'
+                              : t.status === 'In corso'
+                              ? 'bg-blue-500/10 text-blue-400'
+                              : 'bg-gray-500/10 text-gray-400'
+                          }`}>
+                            {t.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-medium text-white">{t.title}</div>
+                      <div className="text-sm text-[#c6d8c9]">
+                        {t.starts_at ? new Date(t.starts_at).toLocaleString('it-IT') : 'Data da definire'}
+                      </div>
+                      {t.format && (
+                        <div className="text-xs text-muted-2 mt-1 capitalize">
+                          {t.format.replace('_', ' ')}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <a href={`/tornei/${t.id}`} className="rounded-full border border-accent px-3 py-1 text-sm text-accent">Apri</a>
-                    <a href={`/dashboard/gestore/tornei?t=${t.id}`} className="rounded-full bg-accent px-3 py-1 text-sm font-semibold text-[#06101f]">Iscritti</a>
+                    <a href={`/tornei/${t.id}`} className="rounded-full border border-accent px-3 py-1 text-sm text-accent hover:bg-accent/10 transition">Apri</a>
+                    <a href={`/dashboard/gestore/tornei?t=${t.id}`} className="rounded-full bg-accent px-3 py-1 text-sm font-semibold text-[#06101f] hover:shadow-accent transition">Iscritti</a>
                   </div>
                 </li>
               ))}
