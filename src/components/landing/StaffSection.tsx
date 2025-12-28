@@ -73,19 +73,20 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff">
-      <div className="section-header">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-          Il nostro staff
-        </p>
-        <h2 className="text-2xl font-semibold text-white">
-          Incontra il team
-        </h2>
-      </div>
+    <section id="staff" className="py-20">
+      <div className="container section">
+        <div className="section-header space-y-2 mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-emerald-400">
+            Il nostro staff
+          </p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent leading-tight">
+            Incontra il team
+          </h2>
+        </div>
 
-      <div className="grid gap-lg md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
         {staff.map((member) => (
-          <article key={member.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 overflow-hidden">
+          <article key={member.id} className="group rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-emerald-400/40 hover:shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-1 transition-all duration-300">
             {member.image_url ? (
               <img
                 src={member.image_url}
@@ -93,25 +94,26 @@ export default function StaffSection() {
                 className="w-full h-64 object-cover"
               />
             ) : (
-              <div className="w-full h-64 bg-[#0d1b2a] flex items-center justify-center">
-                <User className="h-20 w-20 text-muted-2" />
+              <div className="w-full h-64 bg-gradient-to-br from-emerald-900/30 to-gray-900/50 flex items-center justify-center group-hover:from-emerald-800/40 transition-all">
+                <User className="h-20 w-20 text-emerald-300/60 group-hover:text-emerald-300 transition-colors" />
               </div>
             )}
-            <div className="p-5 space-y-3">
+            <div className="p-6 space-y-3">
               <div>
-                <h3 className="text-lg font-semibold text-white">{member.full_name}</h3>
-                <span className="inline-block mt-2 rounded-full bg-accent-15 px-3 py-1 text-xs font-semibold text-accent">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent">{member.full_name}</h3>
+                <span className="inline-block mt-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-400/30">
                   {member.role}
                 </span>
               </div>
               {member.bio && (
-                <p className="text-sm leading-relaxed text-muted">
+                <p className="text-sm leading-relaxed text-gray-300">
                   {member.bio}
                 </p>
               )}
             </div>
           </article>
         ))}
+      </div>
       </div>
     </section>
   );

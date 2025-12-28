@@ -52,12 +52,13 @@ export default function CoursesSection() {
   }
 
   return (
-    <section id="programmi">
-      <div className="section-header">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-          Corsi e Abbonamenti
-        </p>
-        <h2 className="text-2xl font-semibold text-white">
+    <section id="programmi" className="py-20">
+      <div className="container section">
+        <div className="section-header space-y-2 mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-blue-400">
+            Corsi e Abbonamenti
+          </p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent leading-tight">
           Scegli il tuo percorso tennis
         </h2>
       </div>
@@ -68,24 +69,27 @@ export default function CoursesSection() {
         if (section.layout_type === "single_box") {
           const item = section.items[0];
           return (
-            <div key={section.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 card-content">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div key={section.id} className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-8 hover:border-blue-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1">
+              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white mb-1">{section.section_title}</h3>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">{section.section_title}</h3>
                   {section.section_description && (
-                    <p className="text-sm text-muted">{section.section_description}</p>
+                    <p className="text-base text-gray-400">{section.section_description}</p>
                   )}
                   {item.details && item.details.length > 0 && (
-                    <div className="mt-3 space-y-1 text-sm text-muted">
+                    <div className="mt-4 space-y-2 text-sm text-gray-400">
                       {item.details.map((detail: string, i: number) => (
-                        <p key={i}>{detail}</p>
+                        <p key={i} className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                          {detail}
+                        </p>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="text-left md:text-right shrink-0">
-                  <span className="text-3xl font-bold text-white">{item.price}€</span>
-                  {item.details && <span className="text-sm text-muted block mt-1">/anno</span>}
+                  <span className="text-4xl font-bold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">{item.price}€</span>
+                  {item.details && <span className="text-sm text-gray-400 block mt-1">/anno</span>}
                 </div>
               </div>
             </div>
@@ -95,27 +99,27 @@ export default function CoursesSection() {
         // Layout: Frequency Grid (Base, Avanzato)
         if (section.layout_type === "frequency_grid") {
           return (
-            <div key={section.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold text-white mb-2">{section.section_title}</h3>
+            <div key={section.id} className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-8">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">{section.section_title}</h3>
                 {section.section_description && (
-                  <p className="text-sm text-muted">{section.section_description}</p>
+                  <p className="text-base text-gray-400">{section.section_description}</p>
                 )}
               </div>
               
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-3">
                 {section.items.map((item, idx) => (
-                  <div key={idx} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-wider text-accent mb-2">{item.frequency}</p>
-                    <div className="space-y-1">
+                  <div key={idx} className="group rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/10">
+                    <p className="text-xs uppercase tracking-wider text-blue-300 mb-3 font-bold">{item.frequency}</p>
+                    <div className="space-y-2">
                       {item.price_monthly && (
-                        <p className="text-lg font-bold text-white">
-                          {item.price_monthly}€<span className="text-sm font-normal text-muted"> /mese</span>
+                        <p className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
+                          {item.price_monthly}€<span className="text-sm font-normal text-gray-400"> /mese</span>
                         </p>
                       )}
                       {item.price_yearly && (
-                        <p className="text-lg font-bold text-white">
-                          {item.price_yearly}€<span className="text-sm font-normal text-muted"> /anno</span>
+                        <p className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
+                          {item.price_yearly}€<span className="text-sm font-normal text-gray-400"> /anno</span>
                         </p>
                       )}
                     </div>
@@ -184,6 +188,7 @@ export default function CoursesSection() {
         return null;
           })}
         </div>
+      </div>
     </section>
   );
 }

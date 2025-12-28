@@ -265,7 +265,7 @@ export default function AdminSubscriptionsPage() {
                       <span className="text-sm">{benefit}</span>
                       <button
                         onClick={() => removeBenefit(index)}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-cyan-300 hover:text-red-300"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -336,7 +336,7 @@ export default function AdminSubscriptionsPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold text-white text-lg">{subscription.name}</h3>
                       {!subscription.active && (
-                        <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
+                        <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs text-cyan-300">
                           Non attivo
                         </span>
                       )}
@@ -365,9 +365,9 @@ export default function AdminSubscriptionsPage() {
                     </button>
                     <button
                       onClick={() => handleDelete(subscription.id)}
-                      className="rounded-lg border border-red-500/30 bg-[#021627] p-2 hover:bg-red-500/20 transition"
+                      className="rounded-lg border border-cyan-500/30 bg-[#021627] p-2 hover:bg-cyan-500/20 transition"
                     >
-                      <Trash2 className="h-4 w-4 text-red-400" />
+                      <Trash2 className="h-4 w-4 text-cyan-300" />
                     </button>
                   </div>
                 </div>

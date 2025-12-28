@@ -70,23 +70,23 @@ export default function WorkWithUsPage() {
           </p>
           <ul className="space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-blue-300" />
               Certificazione FIT richiesta
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-blue-300" />
               Esperienza con bambini e adulti
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-blue-300" />
               Disponibilità part-time/full-time
             </li>
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6">
-          <div className="mb-4 inline-flex rounded-full bg-purple-500/20 p-3">
-            <Users className="h-6 w-6 text-purple-400" />
+        <div className="rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/5 p-6">
+          <div className="mb-4 inline-flex rounded-full bg-cyan-500/20 p-3">
+            <Users className="h-6 w-6 text-cyan-300" />
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Personale di Campo</h3>
           <p className="text-sm text-muted mb-4">
@@ -95,15 +95,15 @@ export default function WorkWithUsPage() {
           </p>
           <ul className="space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-blue-300" />
               Accoglienza e front office
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-blue-300" />
               Gestione prenotazioni
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-blue-300" />
               Manutenzione ordinaria campi
             </li>
           </ul>
@@ -180,12 +180,12 @@ export default function WorkWithUsPage() {
               {loading ? "Invio in corso..." : "Invia candidatura"}
             </button>
             {success && (
-              <div className="flex items-center gap-2 text-sm text-green-400">
+              <div className="flex items-center gap-2 text-sm text-blue-300">
                 <CheckCircle className="h-4 w-4" />
                 {success}
               </div>
             )}
-            {error && <span className="text-sm text-red-400">{error}</span>}
+            {error && <span className="text-sm text-cyan-300">{error}</span>}
           </div>
         </form>
       </div>

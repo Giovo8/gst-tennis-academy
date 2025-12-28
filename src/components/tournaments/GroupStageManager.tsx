@@ -296,8 +296,8 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
         <div
           className={`flex items-center gap-3 rounded-lg border p-4 ${
             message.type === "success"
-              ? "border-green-500/30 bg-green-500/10 text-green-400"
-              : "border-red-500/30 bg-red-500/10 text-red-400"
+              ? "border-blue-500/30 bg-blue-500/10 text-blue-300"
+              : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
           }`}
         >
           {message.type === "success" ? (
@@ -343,12 +343,12 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
                     <tr
                       key={standing.participant_id}
                       className={`${
-                        isQualified ? "bg-green-500/5" : ""
+                        isQualified ? "bg-blue-500/5" : ""
                       } hover:bg-white/5 transition`}
                     >
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                          isQualified ? "bg-green-500/20 text-green-400" : "bg-white/10 text-muted"
+                          isQualified ? "bg-blue-500/20 text-blue-300" : "bg-white/10 text-muted"
                         }`}>
                           {standing.position}
                         </span>
@@ -370,7 +370,7 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`flex items-center justify-center gap-1 ${
-                          standing.set_diff > 0 ? "text-green-400" : standing.set_diff < 0 ? "text-red-400" : "text-muted"
+                          standing.set_diff > 0 ? "text-blue-300" : standing.set_diff < 0 ? "text-cyan-300" : "text-muted"
                         }`}>
                           {standing.set_diff > 0 ? <TrendingUp className="h-4 w-4" /> : standing.set_diff < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                           {standing.set_diff > 0 ? `+${standing.set_diff}` : standing.set_diff}
@@ -381,7 +381,7 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`flex items-center justify-center gap-1 ${
-                          standing.game_diff > 0 ? "text-green-400" : standing.game_diff < 0 ? "text-red-400" : "text-muted"
+                          standing.game_diff > 0 ? "text-blue-300" : standing.game_diff < 0 ? "text-cyan-300" : "text-muted"
                         }`}>
                           {standing.game_diff > 0 ? <TrendingUp className="h-4 w-4" /> : standing.game_diff < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                           {standing.game_diff > 0 ? `+${standing.game_diff}` : standing.game_diff}
@@ -419,7 +419,7 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
 
                 <div className="ml-8 text-right">
                   {match.match_status === "completed" ? (
-                    <div className="text-sm text-green-400 font-medium">Completata</div>
+                    <div className="text-sm text-blue-300 font-medium">Completata</div>
                   ) : (
                     <div className="text-sm text-yellow-400 font-medium">Da giocare</div>
                   )}

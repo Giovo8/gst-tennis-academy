@@ -76,14 +76,14 @@ export default function GestoreDashboardPage() {
           <StatCard
             title="Prenotazioni"
             value={loading ? "..." : stats.totalBookings}
-            icon={<Calendar className="h-8 w-8 text-green-400" />}
+            icon={<Calendar className="h-8 w-8 text-blue-300" />}
             color="green"
           />
 
           <StatCard
             title="Oggi"
             value={loading ? "..." : stats.todayBookings}
-            icon={<TrendingUp className="h-8 w-8 text-purple-400" />}
+            icon={<TrendingUp className="h-8 w-8 text-cyan-300" />}
             color="purple"
           />
         </div>

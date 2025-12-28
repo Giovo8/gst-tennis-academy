@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Save, Calendar, MapPin, Clock } from "lucide-react";
+import { Trophy, Save, Calendar, MapPin, Clock, Loader2, Users, Edit2, X } from "lucide-react";
 
 interface TennisMatch {
   id: string;
@@ -192,15 +192,22 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
   }
 
   if (loading) {
-    return <div className="text-center py-12 text-muted">Caricamento tabellone...</div>;
+    return (
+      <div className="flex items-center justify-center py-16 rounded-2xl border border-amber-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-amber-400 mx-auto mb-4" />
+          <p className="text-sm text-gray-400">Caricamento tabellone...</p>
+        </div>
+      </div>
+    );
   }
 
   if (matches.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/5 p-8 text-center">
-        <Trophy className="h-12 w-12 text-muted-2 mx-auto mb-4" />
+      <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-12 text-center">
+        <Trophy className="h-12 w-12 text-blue-400/50 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">Fase a eliminazione diretta non iniziata</h3>
-        <p className="text-sm text-muted">Il tabellone verrà generato al termine della fase a gironi</p>
+        <p className="text-sm text-gray-400">Il tabellone verrà generato al termine della fase a gironi</p>
       </div>
     );
   }
@@ -214,9 +221,16 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Trophy className="h-6 w-6 text-accent" />
-        <h2 className="text-2xl font-bold text-white">Tabellone Eliminazione Diretta</h2>
+      <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="rounded-xl bg-blue-500/20 p-2">
+            <Trophy className="h-6 w-6 text-blue-300" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent">Tabellone Eliminazione Diretta</h2>
+            <p className="text-sm text-gray-400">Formato: {matchFormat === 'best_of_5' ? 'Best of 5' : matchFormat === 'best_of_3' ? 'Best of 3' : 'Best of 1'} set</p>
+          </div>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -226,11 +240,13 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
 
             return (
               <div key={roundName} className="min-w-[320px]">
-                <div className="mb-4 sticky top-0 bg-[#021627]/95 backdrop-blur py-3 z-10 border-b border-white/10">
-                  <h3 className="text-lg font-bold text-white">{roundName}</h3>
-                  <p className="text-xs text-muted-2">
-                    {roundMatches.filter(m => m.match_status === "completed").length}/{roundMatches.length} completate
-                  </p>
+                <div className="mb-4 sticky top-0 backdrop-blur-xl py-3 z-10 border-b border-blue-400/20">
+                  <div className="rounded-xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl px-4 py-2">
+                    <h3 className="text-lg font-bold text-white">{roundName}</h3>
+                    <p className="text-xs text-blue-400">
+                      {roundMatches.filter(m => m.match_status === "completed").length}/{roundMatches.length} completate
+                    </p>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -244,7 +260,7 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
                         key={match.id}
                         className={`rounded-xl border p-4 transition-all ${
                           isCompleted
-                            ? "border-green-500/30 bg-green-500/5"
+                            ? "border-blue-500/30 bg-blue-500/5"
                             : "border-white/10 bg-white/5"
                         }`}
                       >
@@ -270,7 +286,7 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
                             )}
                           </div>
                           {isCompleted && (
-                            <div className="text-xs font-semibold text-green-400">Completata</div>
+                            <div className="text-xs font-semibold text-blue-300">Completata</div>
                           )}
                         </div>
 

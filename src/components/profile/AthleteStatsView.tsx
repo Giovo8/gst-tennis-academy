@@ -104,7 +104,7 @@ export default function AthleteStatsView() {
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats.total_matches}
               </p>
-              <p className="text-sm text-green-600 mt-1">
+              <p className="text-sm text-blue-400 mt-1">
                 {stats.matches_won}V - {stats.matches_lost}S
               </p>
             </div>
@@ -123,14 +123,14 @@ export default function AthleteStatsView() {
                 {stats.win_rate?.toFixed(1) || "0.0"}%
               </p>
               <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                <p className="text-sm text-green-600">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
+                <p className="text-sm text-blue-400">
                   {stats.current_win_streak > 0 ? `${stats.current_win_streak} consecutive` : "In crescita"}
                 </p>
               </div>
             </div>
-            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
-              <Target className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+              <Target className="w-8 h-8 text-blue-400 dark:text-blue-300" />
             </div>
           </div>
         </div>
@@ -143,12 +143,12 @@ export default function AthleteStatsView() {
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats.total_sets}
               </p>
-              <p className={`text-sm mt-1 ${setDifferential >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {setDifferential >= 0 ? "+" : ""}{setDifferential} differenziale
+              <p className={`text-sm mt-1 ${setDifferential >= 0 ? "text-blue-400" : "text-cyan-400"}`}>
+                {setDifferential >= 0 ? "+" : ""}{setDifferential} Set Diff
               </p>
             </div>
-            <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg">
-              <Activity className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            <div className="bg-cyan-100 dark:bg-cyan-900 p-3 rounded-lg">
+              <Activity className="w-8 h-8 text-cyan-400 dark:text-cyan-300" />
             </div>
           </div>
         </div>
@@ -161,10 +161,10 @@ export default function AthleteStatsView() {
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats.longest_win_streak}
               </p>
-              <p className="text-sm text-orange-600 mt-1">vittorie consecutive</p>
+              <p className="text-sm text-blue-400 mt-1">vittorie consecutive</p>
             </div>
-            <div className="bg-orange-100 dark:bg-orange-900 p-3 rounded-lg">
-              <Flame className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+            <div className="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-lg">
+              <Flame className="w-8 h-8 text-blue-400 dark:text-blue-300" />
             </div>
           </div>
         </div>
@@ -198,15 +198,15 @@ export default function AthleteStatsView() {
 
             {/* Aces vs Double Faults */}
             <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Aces</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <p className="text-2xl font-bold text-blue-400 dark:text-blue-300">
                   {stats.aces}
                 </p>
               </div>
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Doppi Falli</p>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <p className="text-2xl font-bold text-cyan-400 dark:text-cyan-300">
                   {stats.double_faults}
                 </p>
               </div>
@@ -233,7 +233,7 @@ export default function AthleteStatsView() {
         {/* Return Statistics */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-purple-600" />
+            <Target className="w-5 h-5 text-cyan-400" />
             Statistiche Risposta
           </h3>
 
@@ -248,7 +248,7 @@ export default function AthleteStatsView() {
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
-                  className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${breakPointConversion}%` }}
                 ></div>
               </div>
@@ -258,9 +258,9 @@ export default function AthleteStatsView() {
             </div>
 
             {/* Return Games Won */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+            <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Game di Risposta Vinti</p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">
+              <p className="text-3xl font-bold text-cyan-400 dark:text-cyan-300 mt-1">
                 {stats.return_games_won}
               </p>
             </div>
@@ -279,7 +279,7 @@ export default function AthleteStatsView() {
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.games_lost}</p>
                 </div>
               </div>
-              <p className={`text-sm mt-2 font-semibold ${gameDifferential >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <p className={`text-sm mt-2 font-semibold ${gameDifferential >= 0 ? "text-blue-400" : "text-cyan-400"}`}>
                 {gameDifferential >= 0 ? "+" : ""}{gameDifferential} differenziale
               </p>
             </div>
@@ -290,20 +290,20 @@ export default function AthleteStatsView() {
       {/* Point Quality Analysis */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5 text-yellow-600" />
+          <Award className="w-5 h-5 text-blue-400" />
           Qualità dei Punti
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Winners vs Errors */}
           <div className="space-y-3">
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Colpi Vincenti</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.winners}</p>
+              <p className="text-3xl font-bold text-blue-400 dark:text-blue-300">{stats.winners}</p>
             </div>
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+            <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Errori Non Forzati</p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.unforced_errors}</p>
+              <p className="text-3xl font-bold text-cyan-400 dark:text-cyan-300">{stats.unforced_errors}</p>
             </div>
           </div>
 
@@ -330,7 +330,7 @@ export default function AthleteStatsView() {
                     strokeWidth="12"
                     fill="none"
                     strokeDasharray={`${(stats.winners / (stats.winners + stats.unforced_errors || 1)) * 351.86} 351.86`}
-                    className="text-green-600 dark:text-green-400"
+                    className="text-blue-400 dark:text-blue-300"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -369,20 +369,20 @@ export default function AthleteStatsView() {
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_tournaments}</p>
           </div>
 
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-            <Activity className="w-8 h-8 text-green-600 dark:text-green-400 mb-2" />
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+            <Activity className="w-8 h-8 text-blue-400 dark:text-blue-300 mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Lezioni</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_lessons}</p>
           </div>
 
-          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-            <Calendar className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-2" />
+          <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4">
+            <Calendar className="w-8 h-8 text-cyan-400 dark:text-cyan-300 mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Prenotazioni</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_bookings}</p>
           </div>
 
-          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-            <Medal className="w-8 h-8 text-orange-600 dark:text-orange-400 mb-2" />
+          <div className="bg-orange-50 dark:bg-blue-900/20 rounded-lg p-4">
+            <Medal className="w-8 h-8 text-blue-400 dark:text-blue-300 mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Ultima Partita</p>
             <p className="text-sm font-semibold text-gray-900 dark:text-white">
               {stats.last_match_date
@@ -400,8 +400,8 @@ export default function AthleteStatsView() {
       {stats.best_victory && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg shadow p-6">
           <div className="flex items-start gap-4">
-            <div className="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-lg">
-              <Medal className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+            <div className="bg-cyan-100 dark:bg-yellow-900 p-3 rounded-lg">
+              <Medal className="w-8 h-8 text-blue-400 dark:text-yellow-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">

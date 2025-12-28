@@ -7,7 +7,7 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6 py-12 bg-[#021627]">
       <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-8 text-center">
-        <XCircle className="mx-auto h-16 w-16 text-red-400 mb-4" />
+        <XCircle className="mx-auto h-16 w-16 text-cyan-300 mb-4" />
         <h1 className="text-2xl font-semibold text-white mb-3">
           Registrazione Non Disponibile
         </h1>

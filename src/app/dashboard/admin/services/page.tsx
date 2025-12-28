@@ -20,7 +20,7 @@ export default function ServicesPage() {
             <p className="text-sm text-[#9fb6a6]">Durata: 1h · Prezzo: €40</p>
             <div className="mt-3 flex gap-2">
               <Link href="#" className="text-sm text-[#7de3ff]">Modifica</Link>
-              <button className="text-sm text-red-400">Elimina</button>
+              <button className="text-sm text-cyan-300">Elimina</button>
             </div>
           </div>
         </div>

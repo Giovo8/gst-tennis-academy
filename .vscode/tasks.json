@@ -8,6 +8,17 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Run tests with Jest",
+			"type": "shell",
+			"command": "npm test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$jest-stylish"
+			],
+			"group": "test"
 		}
 	]
 }

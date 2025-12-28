@@ -14,54 +14,72 @@ interface StatCardProps {
   className?: string;
 }
 
-const styles: Record<Color, { wrapper: string; circle: string }> = {
+const styles: Record<Color, { wrapper: string; gradient: string; iconBg: string }> = {
   blue: {
-    wrapper: "rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 hover:opacity-95 transition",
-    circle: "",
+    wrapper: "rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-xl p-6 hover:border-blue-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1",
+    gradient: "from-blue-400 to-cyan-400",
+    iconBg: "bg-blue-500/20 text-blue-300",
   },
   green: {
-    wrapper: "rounded-xl border border-green-400/30 bg-green-400/10 p-4 hover:opacity-95 transition",
-    circle: "",
+    wrapper: "rounded-2xl border border-green-400/20 bg-gradient-to-br from-blue-500/10 to-emerald-600/5 backdrop-blur-xl p-6 hover:border-green-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/20 hover:-translate-y-1",
+    gradient: "from-green-400 to-emerald-400",
+    iconBg: "bg-blue-500/20 text-green-300",
   },
   purple: {
-    wrapper: "rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 hover:opacity-95 transition",
-    circle: "",
+    wrapper: "rounded-2xl border border-purple-400/20 bg-gradient-to-br from-cyan-500/10 to-violet-600/5 backdrop-blur-xl p-6 hover:border-purple-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1",
+    gradient: "from-cyan-400 to-violet-400",
+    iconBg: "bg-cyan-500/20 text-purple-300",
   },
   yellow: {
-    wrapper: "rounded-xl border border-yellow-400/30 bg-yellow-400/10 p-4 hover:opacity-95 transition",
-    circle: "",
+    wrapper: "rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 backdrop-blur-xl p-6 hover:border-yellow-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/20 hover:-translate-y-1",
+    gradient: "from-yellow-400 to-amber-400",
+    iconBg: "bg-yellow-500/20 text-yellow-300",
   },
   red: {
-    wrapper: "rounded-xl border border-red-400/30 bg-red-400/10 p-4 hover:opacity-95 transition",
-    circle: "",
+    wrapper: "rounded-2xl border border-red-400/20 bg-gradient-to-br from-red-500/10 to-rose-600/5 backdrop-blur-xl p-6 hover:border-red-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1",
+    gradient: "from-red-400 to-rose-400",
+    iconBg: "bg-cyan-500/20 text-red-300",
   },
   neutral: {
-    wrapper: "rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 hover:opacity-95 transition",
-    circle: "",
+    wrapper: "rounded-2xl border border-slate-400/20 bg-gradient-to-br from-slate-500/10 to-slate-600/5 backdrop-blur-xl p-6 hover:border-slate-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-slate-500/20 hover:-translate-y-1",
+    gradient: "from-slate-400 to-gray-400",
+    iconBg: "bg-slate-500/20 text-slate-300",
   },
 };
 
 export default function StatCard({ title, value, icon, color = "blue", size = "md", footer, className = "" }: StatCardProps) {
   const s = styles[color] || styles.blue;
 
-  const sizeMap: Record<string, { wrapperExtras: string; valueClass: string; titleClass: string }> = {
-    sm: { wrapperExtras: "p-3", valueClass: "text-lg", titleClass: "text-xs uppercase tracking-wider text-muted-2" },
-    md: { wrapperExtras: "p-4", valueClass: "text-2xl", titleClass: "text-xs uppercase tracking-wider text-muted-2" },
-    lg: { wrapperExtras: "p-6", valueClass: "text-3xl", titleClass: "text-sm uppercase tracking-wider text-muted-2" },
+  const sizeMap: Record<string, { valueClass: string; titleClass: string; iconSize: string }> = {
+    sm: { valueClass: "text-2xl", titleClass: "text-xs uppercase tracking-wider", iconSize: "w-10 h-10" },
+    md: { valueClass: "text-3xl", titleClass: "text-sm uppercase tracking-wider", iconSize: "w-12 h-12" },
+    lg: { valueClass: "text-4xl", titleClass: "text-base uppercase tracking-wider", iconSize: "w-14 h-14" },
   };
 
   const sizeCfg = sizeMap[size] || sizeMap.md;
 
   return (
-    <div className={`${s.wrapper} ${sizeCfg.wrapperExtras} ${className}`.trim()}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className={`${sizeCfg.titleClass}`}>{title}</p>
-          <p className={`${sizeCfg.valueClass} font-bold text-white mt-1`}>{value}</p>
+    <div className={`${s.wrapper} ${className} group relative overflow-hidden`.trim()}>
+      {/* Animated background gradient on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+           style={{background: `linear-gradient(135deg, rgba(125,227,255,0.05) 0%, rgba(47,125,225,0.1) 100%)`}} />
+      
+      <div className="relative z-10 flex items-start justify-between">
+        <div className="flex-1">
+          <p className={`${sizeCfg.titleClass} text-gray-400 mb-2`}>{title}</p>
+          <p className={`${sizeCfg.valueClass} font-bold bg-gradient-to-r ${s.gradient} bg-clip-text text-transparent`}>
+            {value}
+          </p>
         </div>
-        <div className="flex-shrink-0">{icon}</div>
+        <div className={`${sizeCfg.iconSize} ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+          {icon}
+        </div>
       </div>
-      {footer && <div className="pt-2 border-t border-white/5 mt-3">{footer}</div>}
+      {footer && (
+        <div className="relative z-10 pt-4 mt-4 border-t border-white/10">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

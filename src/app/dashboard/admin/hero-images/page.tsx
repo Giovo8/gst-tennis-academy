@@ -40,9 +40,10 @@ export default function AdminHeroImagesPage() {
     try {
       const response = await fetch("/api/hero-images?all=true");
       const data = await response.json();
-      setImages(data || []);
+      setImages(Array.isArray(data) ? data : (data?.images || []));
     } catch (error) {
-      // Handle error silently
+      console.error("Error loading images:", error);
+      setImages([]);
     } finally {
       setLoading(false);
     }
@@ -97,29 +98,35 @@ export default function AdminHeroImagesPage() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to update");
+          throw new Error(errorData.details || errorData.error || "Failed to update");
         }
       } else {
         // Create new
         const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+          throw new Error("Sessione non valida. Effettua il login.");
+        }
+
         const response = await fetch("/api/hero-images", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${session?.access_token}`,
+            "Authorization": `Bearer ${session.access_token}`,
           },
           body: JSON.stringify(formData),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create");
+          throw new Error(errorData.details || errorData.error || "Failed to create");
         }
       }
 
       await loadImages();
       handleCancel();
     } catch (error: any) {
+      console.error("Save error:", error);
       alert(`Errore nel salvataggio dell'immagine: ${error.message}`);
     }
   }
@@ -296,7 +303,7 @@ export default function AdminHeroImagesPage() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <p className="text-sm text-white line-clamp-2">{image.alt_text}</p>
                     {!image.active && (
-                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400 flex-shrink-0">
+                      <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs text-cyan-300 flex-shrink-0">
                         Non attiva
                       </span>
                     )}
@@ -313,9 +320,9 @@ export default function AdminHeroImagesPage() {
                     </button>
                     <button
                       onClick={() => handleDelete(image.id)}
-                      className="flex-1 rounded-lg border border-red-500/30 bg-[#021627] px-3 py-2 text-sm hover:bg-red-500/20 transition inline-flex items-center justify-center gap-2"
+                      className="flex-1 rounded-lg border border-cyan-500/30 bg-[#021627] px-3 py-2 text-sm hover:bg-cyan-500/20 transition inline-flex items-center justify-center gap-2"
                     >
-                      <Trash2 className="h-4 w-4 text-red-400" />
+                      <Trash2 className="h-4 w-4 text-cyan-300" />
                       Elimina
                     </button>
                   </div>

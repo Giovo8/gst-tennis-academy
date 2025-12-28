@@ -269,7 +269,7 @@ export default function AdminCoursesPage() {
                         <span className="text-sm font-medium">Elemento {idx + 1}</span>
                         <button
                           onClick={() => removeItem(idx)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-cyan-300 hover:text-red-300"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -297,7 +297,7 @@ export default function AdminCoursesPage() {
                                 />
                                 <button
                                   onClick={() => removeDetail(idx, dIdx)}
-                                  className="text-red-400"
+                                  className="text-cyan-300"
                                 >
                                   <X className="h-4 w-4" />
                                 </button>
@@ -442,7 +442,7 @@ export default function AdminCoursesPage() {
                       {LAYOUT_TYPES.find((t) => t.value === section.layout_type)?.label}
                     </span>
                     {!section.active && (
-                      <span className="rounded-full bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-400">
+                      <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-300">
                         Disattivata
                       </span>
                     )}
@@ -462,7 +462,7 @@ export default function AdminCoursesPage() {
                   </button>
                   <button
                     onClick={() => handleDelete(section.id)}
-                    className="rounded-full border border-red-500/30 p-2 text-red-400 transition hover:bg-red-500/10"
+                    className="rounded-full border border-cyan-500/30 p-2 text-cyan-300 transition hover:bg-cyan-500/10"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

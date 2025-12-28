@@ -59,41 +59,43 @@ export default function SocialFeed() {
   }, [embeds]);
 
     return (
-      <section id="social">
+      <section id="social" className="py-20">
         <div className="container section">
-          <div className="section-header flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Social Feed</p>
-              <h2 className="text-2xl font-semibold text-white">Seguici sui social</h2>
-            </div>
+          <div className="section-header space-y-2 mb-12">
+            <div className="flex flex-wrap items-center justify-between gap-6">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-pink-400 mb-2">Social Feed</p>
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-200 to-purple-300 bg-clip-text text-transparent leading-tight">Seguici sui social</h2>
+              </div>
 
-            <div className="flex items-center gap-3">
-              <a
-                href="https://www.facebook.com/TnnisTimeOut/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Segui su Facebook"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
-              >
-                <Facebook className="h-4 w-4" />
-                Facebook
-              </a>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://www.facebook.com/TnnisTimeOut/"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Segui su Facebook"
+                  className="group inline-flex items-center gap-2 rounded-xl border border-blue-400/30 bg-gradient-to-r from-blue-500/20 to-transparent backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
+                >
+                  <Facebook className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                  Facebook
+                </a>
 
-              <a
-                href="https://www.instagram.com/gst_tennis/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Segui su Instagram"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
-              >
-                <Instagram className="h-4 w-4" />
-                Instagram
-              </a>
+                <a
+                  href="https://www.instagram.com/gst_tennis/"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Segui su Instagram"
+                  className="group inline-flex items-center gap-2 rounded-xl border border-pink-400/30 bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-pink-400/50 hover:shadow-lg hover:shadow-pink-500/20 hover:-translate-y-0.5"
+                >
+                  <Instagram className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                  Instagram
+                </a>
+              </div>
             </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+            <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 transition-all">
               <iframe
                 title="Facebook Page"
                 src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
@@ -107,8 +109,8 @@ export default function SocialFeed() {
               />
             </div>
 
-            <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-              {loading && <p className="text-sm text-muted">Caricamento Instagram...</p>}
+            <div className="rounded-2xl border border-pink-400/20 bg-gradient-to-br from-pink-500/10 to-purple-500/10 backdrop-blur-xl p-6 hover:border-pink-400/40 hover:shadow-xl hover:shadow-pink-500/20 transition-all">
+              {loading && <p className="text-sm text-gray-400">Caricamento Instagram...</p>}
 
               {!loading && embeds && embeds.length > 0 ? (
                 <div className="space-y-4">
@@ -126,16 +128,16 @@ export default function SocialFeed() {
                 </div>
               ) : !loading ? (
                 <div className="text-center">
-                  <Instagram className="h-12 w-12 mx-auto mb-4 text-white/30" />
-                  <p className="text-lg font-semibold text-white mb-2">Seguici su Instagram!</p>
-                  <p className="text-sm text-muted mb-6">Segui il profilo Instagram ufficiale per gli ultimi post.</p>
+                  <Instagram className="h-12 w-12 mx-auto mb-4 text-pink-300/60" />
+                  <p className="text-lg font-bold bg-gradient-to-r from-pink-200 to-purple-300 bg-clip-text text-transparent mb-2">Seguici su Instagram!</p>
+                  <p className="text-sm text-gray-400 mb-6">Segui il profilo Instagram ufficiale per gli ultimi post.</p>
 
                   <a
                     href="https://www.instagram.com/gst_tennis/"
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Apri Instagram gst_tennis"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#2f7de1] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2563c7]"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-3 text-sm font-bold text-white transition-all hover:shadow-xl hover:shadow-pink-500/30 hover:-translate-y-1"
                   >
                     <Instagram className="h-5 w-5" />
                     Vai su Instagram

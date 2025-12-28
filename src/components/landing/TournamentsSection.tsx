@@ -49,30 +49,33 @@ export default function TournamentsSection() {
   const campionatiCount = items.filter(t => t.competition_type === 'campionato').length;
 
   return (
-    <section id="tornei">
-      <div className="section-header">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Competizioni</p>
-        <h2 className="text-2xl font-semibold text-white">Tornei e Campionati</h2>
-      </div>
+    <section id="tornei" className="py-20">
+      <div className="container section">
+        <div className="section-header space-y-2 mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-amber-400">Competizioni</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text text-transparent leading-tight">
+            Tornei e Campionati
+          </h2>
+        </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
+            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'all'
-                ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
-                : 'bg-[#1a3d5c]/40 text-muted-2 border border-[#2f7de1]/20 hover:border-[#2f7de1]/40'
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-amber-500/30'
+                : 'bg-amber-500/10 text-gray-400 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20'
             }`}
           >
             Tutte ({items.length})
           </button>
           <button
             onClick={() => setFilter('torneo')}
-            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'torneo'
-                ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
-                : 'bg-[#1a3d5c]/40 text-muted-2 border border-[#2f7de1]/20 hover:border-[#2f7de1]/40'
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-amber-500/30'
+                : 'bg-amber-500/10 text-gray-400 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20'
             }`}
           >
             <Trophy className="w-4 h-4" />
@@ -80,10 +83,10 @@ export default function TournamentsSection() {
           </button>
           <button
             onClick={() => setFilter('campionato')}
-            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'campionato'
-                ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
-                : 'bg-[#1a3d5c]/40 text-muted-2 border border-[#2f7de1]/20 hover:border-[#2f7de1]/40'
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-amber-500/30'
+                : 'bg-amber-500/10 text-gray-400 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20'
             }`}
           >
             <Award className="w-4 h-4" />
@@ -114,29 +117,33 @@ export default function TournamentsSection() {
             return (
               <article 
                 key={t.id} 
-                className="rounded-xl md:rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 md:p-6 space-y-3 md:space-y-4 hover:border-[#7de3ff]/40 hover:bg-[#1a3d5c]/80 transition-all"
+                className="group rounded-2xl border border-amber-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 space-y-4 hover:border-amber-400/40 hover:shadow-xl hover:shadow-amber-500/20 hover:-translate-y-2 transition-all duration-300"
               >
                 {/* Header with icon and type badge */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     {isTorneo ? (
-                      <Trophy className="w-4 h-4 md:w-5 md:h-5 text-[#7de3ff]" />
+                      <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 group-hover:scale-110 transition-transform">
+                        <Trophy className="w-5 h-5" />
+                      </div>
                     ) : (
-                      <Award className="w-4 h-4 md:w-5 md:h-5 text-[#4fb3ff]" />
+                      <div className="p-2 rounded-xl bg-yellow-500/20 text-yellow-300 group-hover:scale-110 transition-transform">
+                        <Award className="w-5 h-5" />
+                      </div>
                     )}
-                    <span className={`text-[10px] md:text-xs font-semibold uppercase tracking-wider ${
-                      isTorneo ? 'text-[#7de3ff]' : 'text-[#4fb3ff]'
+                    <span className={`text-xs font-bold uppercase tracking-wider ${
+                      isTorneo ? 'text-amber-300' : 'text-yellow-300'
                     }`}>
                       {isTorneo ? 'Torneo' : 'Campionato'}
                     </span>
                   </div>
                   {t.status && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${
+                    <span className={`text-xs px-3 py-1 rounded-full font-bold ${
                       t.status === 'Aperto' 
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                        ? 'bg-blue-500/20 text-green-300 border border-blue-500/40'
                         : t.status === 'In corso'
-                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                        : 'bg-gray-500/10 text-gray-400 border border-gray-500/30'
+                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                        : 'bg-gray-500/20 text-gray-300 border border-gray-500/40'
                     }`}>
                       {t.status}
                     </span>
@@ -145,14 +152,14 @@ export default function TournamentsSection() {
 
                 {/* Title */}
                 <div>
-                  <h3 className="text-base md:text-lg font-semibold text-white line-clamp-2">{t.title}</h3>
+                  <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-amber-300 transition-colors">{t.title}</h3>
                 </div>
 
                 {/* Info */}
-                <div className="space-y-2 text-xs md:text-sm">
+                <div className="space-y-2.5 text-sm">
                   {t.starts_at && (
-                    <div className="flex items-center gap-2 text-muted-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span>{new Date(t.starts_at).toLocaleDateString('it-IT', { 
@@ -165,16 +172,16 @@ export default function TournamentsSection() {
                     </div>
                   )}
                   {t.max_participants && (
-                    <div className="flex items-center gap-2 text-muted-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                       <span>{t.max_participants} partecipanti</span>
                     </div>
                   )}
                   {t.format && (
-                    <div className="flex items-center gap-2 text-muted-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                       </svg>
                       <span className="capitalize">{t.format.replace('_', ' ')}</span>
@@ -183,10 +190,10 @@ export default function TournamentsSection() {
                 </div>
 
                 {/* CTA Button */}
-                <div className="pt-1 md:pt-2">
+                <div className="pt-2">
                   <Link 
                     href={`/tornei/${t.id}`} 
-                    className="block w-full text-center rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-[#06101f] hover:shadow-accent transition-all"
+                    className="block w-full text-center rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-105"
                   >
                     Vedi Dettagli
                   </Link>

@@ -112,11 +112,11 @@ export default function EmailDashboard() {
 
   const statusColors: Record<string, string> = {
     sent: "bg-blue-100 text-blue-800",
-    delivered: "bg-green-100 text-green-800",
-    opened: "bg-purple-100 text-purple-800",
+    delivered: "bg-blue-100 text-green-800",
+    opened: "bg-cyan-100 text-purple-800",
     clicked: "bg-pink-100 text-pink-800",
-    failed: "bg-red-100 text-red-800",
-    bounced: "bg-orange-100 text-orange-800",
+    failed: "bg-cyan-100 text-red-800",
+    bounced: "bg-blue-100 text-orange-800",
     pending: "bg-gray-100 text-gray-800",
   };
 
@@ -178,8 +178,8 @@ export default function EmailDashboard() {
                   {stats.total_delivered}
                 </p>
               </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-blue-400" />
               </div>
             </div>
             <div className="mt-4 flex items-center gap-1 text-sm">
@@ -197,8 +197,8 @@ export default function EmailDashboard() {
                   {stats.total_opened}
                 </p>
               </div>
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <Eye className="w-6 h-6 text-purple-600" />
+              <div className="bg-cyan-100 p-3 rounded-lg">
+                <Eye className="w-6 h-6 text-cyan-400" />
               </div>
             </div>
             <div className="mt-4 flex items-center gap-1 text-sm">

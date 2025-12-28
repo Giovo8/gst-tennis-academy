@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     const token = authHeader?.replace("Bearer ", "");
 
     if (!token) {
+      console.error("No token provided in POST request");
       return NextResponse.json({ error: "Unauthorized - No token" }, { status: 401 });
     }
 
@@ -40,22 +41,33 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
 
     if (!user || authError) {
+      console.error("Auth error:", authError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Verifica ruolo utente usando service role per bypassare RLS
-    const { data: profile } = await supabaseServer
+    const { data: profile, error: profileError } = await supabaseServer
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
+    if (profileError) {
+      console.error("Profile error:", profileError);
+      return NextResponse.json({ error: "Failed to verify user role" }, { status: 500 });
+    }
+
     if (!profile || !["admin", "gestore"].includes(profile.role)) {
+      console.error("User does not have required role:", profile?.role);
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
     const { image_url, alt_text, order_index, active } = body;
+
+    if (!image_url || !alt_text) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
 
     // Usa service role per inserire bypassando RLS
     const { data, error } = await supabaseServer
@@ -63,18 +75,24 @@ export async function POST(request: NextRequest) {
       .insert({
         image_url,
         alt_text,
-        order_index,
-        active,
+        order_index: order_index ?? 0,
+        active: active ?? true,
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Database insert error:", error);
+      throw error;
+    }
 
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating hero image:", error);
-    return NextResponse.json({ error: "Failed to create hero image" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to create hero image", 
+      details: error?.message || "Unknown error" 
+    }, { status: 500 });
   }
 }
 

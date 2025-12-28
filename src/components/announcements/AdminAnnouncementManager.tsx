@@ -183,8 +183,8 @@ export default function AdminAnnouncementManager() {
   const priorityColors: Record<string, string> = {
     low: "bg-gray-100 text-gray-800",
     medium: "bg-blue-100 text-blue-800",
-    high: "bg-orange-100 text-orange-800",
-    urgent: "bg-red-100 text-red-800",
+    high: "bg-blue-100 text-orange-800",
+    urgent: "bg-cyan-100 text-red-800",
   };
 
   const filteredAnnouncements = filterType === "all"
@@ -490,7 +490,7 @@ export default function AdminAnnouncementManager() {
                 </button>
                 <button
                   onClick={() => handleDelete(announcement.id)}
-                  className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-600 transition-colors"
+                  className="p-2 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg text-cyan-400 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

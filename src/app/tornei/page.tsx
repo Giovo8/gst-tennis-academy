@@ -59,7 +59,7 @@ export default function TorneiPage() {
         {loading ? (
           <div className="text-sm text-[#c6d8c9]">Caricamento...</div>
         ) : error ? (
-          <div className="text-sm text-red-400">{error}</div>
+          <div className="text-sm text-cyan-300">{error}</div>
         ) : tournaments.length === 0 ? (
           <div className="text-sm text-[#c6d8c9]">Nessun torneo programmato.</div>
         ) : (

@@ -324,7 +324,7 @@ export default function AdminStaffPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-white">{member.full_name}</h3>
                     {!member.active && (
-                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
+                      <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs text-cyan-300">
                         Non attivo
                       </span>
                     )}
@@ -343,9 +343,9 @@ export default function AdminStaffPage() {
                   </button>
                   <button
                     onClick={() => handleDelete(member.id)}
-                    className="rounded-lg border border-red-500/30 bg-[#021627] p-2 hover:bg-red-500/20 transition"
+                    className="rounded-lg border border-cyan-500/30 bg-[#021627] p-2 hover:bg-cyan-500/20 transition"
                   >
-                    <Trash2 className="h-4 w-4 text-red-400" />
+                    <Trash2 className="h-4 w-4 text-cyan-300" />
                   </button>
                 </div>
               </div>

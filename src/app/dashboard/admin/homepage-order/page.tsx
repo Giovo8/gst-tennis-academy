@@ -154,7 +154,7 @@ export default function AdminHomepageOrderPage() {
                 {/* Status badge */}
                 <div className="flex-shrink-0">
                   {section.active ? (
-                    <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs text-green-400">
+                    <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs text-blue-300">
                       Visibile
                     </span>
                   ) : (

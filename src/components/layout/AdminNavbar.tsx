@@ -131,7 +131,7 @@ export default function AdminNavbar({
   }, []);
 
   return (
-    <nav className="border-b border-orange-500/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-blue-500/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container py">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -156,7 +156,7 @@ export default function AdminNavbar({
                   <div key={section.id} className="relative">
                     <button
                       onClick={() => toggleDropdown(section.id)}
-                      className="flex items-center gap-1.5 text-sm font-medium text-muted-2 transition hover:text-orange-400"
+                      className="flex items-center gap-1.5 text-sm font-medium text-muted-2 transition hover:text-blue-300"
                     >
                       <Icon className="h-4 w-4" />
                       {section.label}
@@ -172,7 +172,7 @@ export default function AdminNavbar({
                               key={item.href}
                               href={item.href}
                               onClick={() => setActiveDropdown(null)}
-                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-2 transition hover:bg-orange-500/10 hover:text-orange-400"
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-2 transition hover:bg-orange-500/10 hover:text-blue-300"
                             >
                               <ItemIcon className="h-4 w-4" />
                               {item.label}
@@ -189,7 +189,7 @@ export default function AdminNavbar({
                 <Link
                   key={section.id}
                   href={section.href!}
-                  className="flex items-center gap-2 text-sm font-medium text-muted-2 transition hover:text-orange-400"
+                  className="flex items-center gap-2 text-sm font-medium text-muted-2 transition hover:text-blue-300"
                 >
                   <Icon className="h-4 w-4" />
                   {section.label}
@@ -201,7 +201,7 @@ export default function AdminNavbar({
           {/* Right Section - Desktop */}
           <div className="hidden lg:flex items-center gap-4">
             {/* Admin Badge */}
-            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-blue-300 border border-blue-500/30">
               <Shield className="inline h-3 w-3 mr-1" />
               Admin
             </div>
@@ -223,7 +223,7 @@ export default function AdminNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 transition hover:border-orange-400 hover:bg-orange-500/20"
+              className="flex items-center gap-2 rounded-full border border-blue-500/30 bg-orange-500/10 px-3 py-1.5 transition hover:border-orange-400 hover:bg-orange-500/20"
             >
               {userAvatar ? (
                 <Image 
@@ -244,7 +244,7 @@ export default function AdminNavbar({
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-red-500/10 hover:border-red-500/30"
+              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-cyan-500/10 hover:border-cyan-500/30"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -254,7 +254,7 @@ export default function AdminNavbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-orange-500/30 p-2 text-white transition hover:bg-orange-500/10"
+            className="lg:hidden rounded-lg border border-blue-500/30 p-2 text-white transition hover:bg-orange-500/10"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -263,9 +263,9 @@ export default function AdminNavbar({
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-orange-500/10 pt-4 mt-4 space-y-2 pb-4">
+          <div className="lg:hidden border-t border-blue-500/10 pt-4 mt-4 space-y-2 pb-4">
             {/* User Info Mobile */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-orange-500/5 border border-orange-500/20 mb-4">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-orange-500/5 border border-blue-500/20 mb-4">
               {userAvatar ? (
                 <Image 
                   src={userAvatar} 
@@ -281,7 +281,7 @@ export default function AdminNavbar({
               )}
               <div>
                 <p className="text-sm font-semibold text-white">{userName}</p>
-                <p className="text-xs text-orange-400 font-medium flex items-center gap-1">
+                <p className="text-xs text-blue-300 font-medium flex items-center gap-1">
                   <Shield className="h-3 w-3" />
                   Admin
                 </p>
@@ -300,7 +300,7 @@ export default function AdminNavbar({
               if (section.items) {
                 return (
                   <div key={section.id} className="space-y-1">
-                    <div className="px-4 py-2 text-xs font-semibold text-orange-400 uppercase tracking-wider">
+                    <div className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                       {section.label}
                     </div>
                     {section.items.map((item) => {
@@ -310,7 +310,7 @@ export default function AdminNavbar({
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-2 hover:bg-orange-500/10 hover:text-orange-400 transition pl-8"
+                          className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-2 hover:bg-orange-500/10 hover:text-blue-300 transition pl-8"
                         >
                           <ItemIcon className="h-4 w-4" />
                           {item.label}
@@ -326,7 +326,7 @@ export default function AdminNavbar({
                   key={section.id}
                   href={section.href!}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-orange-500/10 hover:text-orange-400 transition"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-orange-500/10 hover:text-blue-300 transition"
                 >
                   <Icon className="h-5 w-5" />
                   {section.label}
@@ -340,7 +340,7 @@ export default function AdminNavbar({
                 setIsOpen(false);
                 handleLogout();
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-500/30 px-4 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/10 mt-4"
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-cyan-500/30 px-4 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/10 mt-4"
             >
               <LogOut className="h-5 w-5" />
               Esci

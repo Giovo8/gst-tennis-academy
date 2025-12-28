@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
-import AtletaNavbar from "@/components/layout/AtletaNavbar";
 import Link from "next/link";
-import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target } from "lucide-react";
+import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target, Trophy, UserCircle, CreditCard } from "lucide-react";
 import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
 import StatCard from "@/components/dashboard/StatCard";
 import { supabase } from "@/lib/supabase/client";
@@ -152,26 +151,26 @@ export default function AthleteDashboardPage() {
 
   function getStatusBadge(booking: Booking) {
     if (booking.status === "cancelled" || booking.status.includes("rejected")) {
-      return <span className="text-xs bg-red-500/15 text-red-400 px-3 py-1 rounded-full border border-red-500/30 flex items-center gap-1">
+      return <span className="text-xs bg-cyan-500/15 text-cyan-300 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1">
         <XCircle className="h-3 w-3" />
         Annullata
       </span>;
     }
     if (booking.status === "confirmed" && booking.manager_confirmed) {
-      return <span className="text-xs bg-green-500/15 text-green-400 px-3 py-1 rounded-full border border-green-500/30 flex items-center gap-1">
+      return <span className="text-xs bg-blue-500/15 text-blue-300 px-3 py-1 rounded-full border border-blue-500/30 flex items-center gap-1">
         <CheckCircle className="h-3 w-3" />
         Confermata
       </span>;
     }
     if (booking.type === "lezione_privata") {
       if (!booking.coach_confirmed) {
-        return <span className="text-xs bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full border border-yellow-500/30 flex items-center gap-1">
+        return <span className="text-xs bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1">
           <Clock className="h-3 w-3" />
           Attesa maestro
         </span>;
       }
       if (!booking.manager_confirmed) {
-        return <span className="text-xs bg-orange-500/15 text-orange-400 px-3 py-1 rounded-full border border-orange-500/30 flex items-center gap-1">
+        return <span className="text-xs bg-orange-500/15 text-blue-300 px-3 py-1 rounded-full border border-blue-500/30 flex items-center gap-1">
           <Clock className="h-3 w-3" />
           Attesa gestore
         </span>;
@@ -185,11 +184,6 @@ export default function AthleteDashboardPage() {
   return (
     <AuthGuard allowedRoles={["atleta"]}>
       <div className="min-h-screen bg-[#021627] text-white">
-        <AtletaNavbar 
-          userName={userName} 
-          subscriptionType={subscriptionType as "basic" | "premium" | "vip" | null}
-          notificationsCount={stats.pendingLessons}
-        />
         <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12">
           {/* Header */}
           <div className="space-y-2">
@@ -204,8 +198,8 @@ export default function AthleteDashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Prossime" value={stats.upcomingBookings} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="blue" />
           <StatCard title="In attesa" value={stats.pendingLessons} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
-          <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-green-400" />} color="green" />
-          <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-purple-400" />} color="purple" />
+          <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-blue-300" />} color="green" />
+          <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-cyan-300" />} color="purple" />
         </div>
 
         {/* Subscription Card */}
@@ -262,10 +256,10 @@ export default function AthleteDashboardPage() {
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           booking.type === "lezione_privata" 
-                            ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                            ? "bg-cyan-500/20 text-purple-300 border border-cyan-500/30"
                             : booking.type === "lezione_gruppo"
                             ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                            : "bg-green-500/20 text-green-300 border border-green-500/30"
+                            : "bg-blue-500/20 text-green-300 border border-blue-500/30"
                         }`}>
                           {booking.type === "campo" ? "Campo" : booking.type === "lezione_privata" ? "Lezione Privata" : "Lezione Privata di Gruppo"}
                         </span>
@@ -296,6 +290,44 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
           )}
+
+          {/* Quick Links - Funzionalità dalle navbar */}
+          <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-8 mt-8">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full"></div>
+              Accesso Rapido
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Link 
+                href="/bookings"
+                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
+              >
+                <Calendar className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-semibold text-white">Prenota Campo</span>
+              </Link>
+              <Link 
+                href="/profile"
+                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
+              >
+                <UserCircle className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-semibold text-white">Il Mio Profilo</span>
+              </Link>
+              <Link 
+                href="/tornei"
+                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
+              >
+                <Trophy className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-semibold text-white">Tornei</span>
+              </Link>
+              <Link 
+                href="/courses"
+                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
+              >
+                <CreditCard className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-semibold text-white">Abbonamenti</span>
+              </Link>
+            </div>
+          </div>
         </main>
       </div>
     </AuthGuard>

@@ -242,9 +242,9 @@ export default function BookingsPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <StatCard title="Totale" value={stats.total} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="neutral" />
               <StatCard title="In Attesa" value={stats.pending} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
-              <StatCard title="Confermate" value={stats.confirmed} icon={<CheckCircle className="h-8 w-8 text-green-400" />} color="green" />
+              <StatCard title="Confermate" value={stats.confirmed} icon={<CheckCircle className="h-8 w-8 text-blue-300" />} color="green" />
               <StatCard title="Lezioni Private" value={stats.private} icon={<Users className="h-8 w-8 text-accent" />} color="blue" />
-              <StatCard title="Annullate" value={stats.cancelled} icon={<XCircle className="h-8 w-8 text-red-400" />} color="red" />
+              <StatCard title="Annullate" value={stats.cancelled} icon={<XCircle className="h-8 w-8 text-cyan-300" />} color="red" />
             </div>
 
             {/* Filtri */}
@@ -414,7 +414,7 @@ export default function BookingsPage() {
                               <>
                                 <button
                                   onClick={() => handleApprove(booking.id)}
-                                  className="rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-600 flex items-center gap-2"
+                                  className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 flex items-center gap-2"
                                   title="Approva prenotazione"
                                 >
                                   <CheckCircle className="h-4 w-4" />
@@ -422,7 +422,7 @@ export default function BookingsPage() {
                                 </button>
                                 <button
                                   onClick={() => handleReject(booking.id)}
-                                  className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 flex items-center gap-2"
+                                  className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 flex items-center gap-2"
                                   title="Rifiuta prenotazione"
                                 >
                                   <XCircle className="h-4 w-4" />
@@ -432,7 +432,7 @@ export default function BookingsPage() {
                             )}
                             <button
                               onClick={() => handleDelete(booking.id)}
-                              className="rounded-lg bg-red-900/50 border border-red-500/50 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-900/80 flex items-center gap-2"
+                              className="rounded-lg bg-cyan-900/50 border border-cyan-500/50 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-cyan-900/80 flex items-center gap-2"
                               title="Elimina prenotazione"
                             >
                               <Trash2 className="h-4 w-4" />

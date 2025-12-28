@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
-import MaestroNavbar from "@/components/layout/MaestroNavbar";
-import { Calendar, Check, X, Clock, User, AlertCircle, CheckCircle2, XCircle, Award } from "lucide-react";
+import { Calendar, Check, X, Clock, User, AlertCircle, CheckCircle2, XCircle, Award, Users, Trophy, ClipboardList } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import { supabase } from "@/lib/supabase/client";
 import { format, formatDistanceToNow, isFuture, isPast } from "date-fns";
@@ -218,11 +217,6 @@ export default function MaestroDashboardPage() {
   return (
     <AuthGuard allowedRoles={["maestro"]}>
       <div className="min-h-screen bg-[#021627] text-white">
-        <MaestroNavbar 
-          userName={userName}
-          pendingLessonsCount={pendingCount}
-          notificationsCount={0}
-        />
         <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12">
           {/* Header */}
           <div className="space-y-2">
@@ -239,7 +233,7 @@ export default function MaestroDashboardPage() {
           </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard title="In Attesa" value={pendingCount} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
-          <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-green-400" />} color="green" />
+          <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-blue-300" />} color="green" />
           <StatCard title="Totali" value={allLessons.length} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="blue" />
         </div>
 
@@ -250,7 +244,7 @@ export default function MaestroDashboardPage() {
             className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
               filter === "pending"
                 ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/30"
-                : "border border-white/15 text-muted hover:border-yellow-500/50 hover:text-white"
+                : "border border-white/15 text-muted hover:border-cyan-500/50 hover:text-white"
             }`}
           >
             <Clock className="h-4 w-4" />
@@ -260,8 +254,8 @@ export default function MaestroDashboardPage() {
             onClick={() => setFilter("confirmed")}
             className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
               filter === "confirmed"
-                ? "bg-green-500 text-black shadow-lg shadow-green-500/30"
-                : "border border-white/15 text-muted hover:border-green-500/50 hover:text-white"
+                ? "bg-blue-500 text-black shadow-lg shadow-green-500/30"
+                : "border border-white/15 text-muted hover:border-blue-500/50 hover:text-white"
             }`}
           >
             <CheckCircle2 className="h-4 w-4" />
@@ -326,9 +320,9 @@ export default function MaestroDashboardPage() {
                   key={lesson.id}
                   className={`rounded-xl border p-6 transition-all hover:shadow-lg ${
                     !lesson.coach_confirmed
-                      ? "border-yellow-500/50 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 hover:border-yellow-500"
+                      ? "border-cyan-500/50 bg-gradient-to-br from-yellow-500/10 to-cyan-500/5 hover:border-cyan-500"
                       : lesson.manager_confirmed
-                      ? "border-green-500/30 bg-[#1a3d5c]/60 hover:border-green-500/50"
+                      ? "border-blue-500/30 bg-[#1a3d5c]/60 hover:border-blue-500/50"
                       : "border-blue-500/30 bg-[#1a3d5c]/60 hover:border-blue-500/50"
                   }`}
                 >
@@ -386,12 +380,12 @@ export default function MaestroDashboardPage() {
                       {/* Status Badges */}
                       <div className="flex flex-wrap gap-2">
                         {lesson.coach_confirmed ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/20 border border-green-500/30 px-3 py-1 text-xs font-semibold text-green-400">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-300">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Confermata da te
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-500/20 border border-yellow-500/30 px-3 py-1 text-xs font-semibold text-yellow-400">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-500/20 border border-cyan-500/30 px-3 py-1 text-xs font-semibold text-yellow-400">
                             <Clock className="h-3.5 w-3.5" />
                             In attesa di conferma
                           </span>
@@ -402,7 +396,7 @@ export default function MaestroDashboardPage() {
                             Approvata dal gestore
                           </span>
                         ) : lesson.coach_confirmed && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/20 border border-orange-500/30 px-3 py-1 text-xs font-semibold text-orange-400">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/20 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-300">
                             <Clock className="h-3.5 w-3.5" />
                             In attesa di approvazione
                           </span>
@@ -415,14 +409,14 @@ export default function MaestroDashboardPage() {
                       <div className="flex flex-col gap-3 lg:min-w-[200px]">
                         <button
                           onClick={() => handleConfirm(lesson.id)}
-                          className="inline-flex items-center justify-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700 shadow-lg shadow-green-600/30 hover:shadow-green-600/50"
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-lg shadow-green-600/30 hover:shadow-green-600/50"
                         >
                           <Check className="h-4 w-4" />
                           Conferma Lezione
                         </button>
                         <button
                           onClick={() => handleReject(lesson.id)}
-                          className="inline-flex items-center justify-center gap-2 rounded-full border border-red-500/50 bg-red-500/10 px-6 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/20 hover:border-red-500"
+                          className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-500/50 bg-cyan-500/10 px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/20 hover:border-cyan-500"
                         >
                           <X className="h-4 w-4" />
                           Rifiuta
@@ -442,6 +436,44 @@ export default function MaestroDashboardPage() {
               );
             })
           )}
+        </div>
+
+        {/* Quick Links - Funzionalità dalle navbar */}
+        <div className="rounded-2xl border border-purple-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl p-8 mt-8">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-gradient-to-b from-cyan-400 to-cyan-400 rounded-full"></div>
+            Accesso Rapido
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <a 
+              href="/dashboard/maestro/lezioni"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+            >
+              <ClipboardList className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-white">Tutte le Lezioni</span>
+            </a>
+            <a 
+              href="/dashboard/maestro/calendario"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+            >
+              <Calendar className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-white">Calendario</span>
+            </a>
+            <a 
+              href="/dashboard/maestro/atleti"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+            >
+              <Users className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-white">I Miei Atleti</span>
+            </a>
+            <a 
+              href="/tornei"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+            >
+              <Trophy className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-white">Tornei</span>
+            </a>
+          </div>
         </div>
       </main>
       </div>

@@ -488,7 +488,7 @@ export default function BookingCalendar() {
                     <Clock className="mr-1 inline h-3 w-3" />
                     1h · {selectedCourt}
                   </span>
-                  {(confirmed || isPast || tooSoon) && <span className="mt-1 text-xs text-red-400">{statusLabel}</span>}
+                  {(confirmed || isPast || tooSoon) && <span className="mt-1 text-xs text-cyan-300">{statusLabel}</span>}
                   {pending && <span className="mt-1 text-xs text-yellow-400">{statusLabel}</span>}
                 </button>
               );

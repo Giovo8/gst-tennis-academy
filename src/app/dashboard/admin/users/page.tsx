@@ -64,15 +64,31 @@ export default function UsersPage() {
   async function loadUsers() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error("Nessuna sessione attiva");
+        return;
+      }
 
-      if (error) throw error;
-      setUsers(data || []);
+      // Use API endpoint to get all users (bypasses RLS)
+      const response = await fetch("/api/admin/users", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Errore caricamento utenti");
+      }
+
+      const data = await response.json();
+      setUsers(data.users || []);
     } catch (err) {
-      // Handle error silently
+      console.error("Errore caricamento utenti:", err);
     } finally {
       setLoading(false);
     }
@@ -145,15 +161,35 @@ export default function UsersPage() {
 
   async function handleUpdateRole(userId: string, newRole: UserRole) {
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ role: newRole })
-        .eq("id", userId);
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert("Sessione scaduta, effettua nuovamente il login");
+        return;
+      }
 
-      if (error) throw error;
+      // Use API endpoint to update role (bypasses RLS)
+      const response = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          userId,
+          role: newRole,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Errore aggiornamento ruolo");
+      }
+
       loadUsers();
-    } catch (err) {
-      // Handle error silently
+    } catch (err: any) {
+      alert(`Errore: ${err.message}`);
     }
   }
 
@@ -230,8 +266,8 @@ export default function UsersPage() {
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Totale" value={users.length} icon={<Users className="h-8 w-8 text-blue-400" />} color="blue" />
-          <StatCard title="Atleti" value={users.filter(u => u.role === 'atleta').length} icon={<User className="h-8 w-8 text-green-400" />} color="green" />
-          <StatCard title="Coach" value={users.filter(u => u.role === 'maestro').length} icon={<User className="h-8 w-8 text-purple-400" />} color="purple" />
+          <StatCard title="Atleti" value={users.filter(u => u.role === 'atleta').length} icon={<User className="h-8 w-8 text-blue-300" />} color="green" />
+          <StatCard title="Coach" value={users.filter(u => u.role === 'maestro').length} icon={<User className="h-8 w-8 text-cyan-300" />} color="purple" />
           <StatCard title="Staff" value={users.filter(u => u.role === 'gestore' || u.role === 'admin').length} icon={<Shield className="h-8 w-8 text-yellow-400" />} color="yellow" />
         </div>
 
@@ -345,7 +381,7 @@ export default function UsersPage() {
                   <button
                     onClick={() => handleDeleteUser(user.id)}
                     disabled={currentUserRole === "gestore" && user.role === "admin"}
-                    className="inline-flex items-center justify-center rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-red-400 transition hover:bg-red-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-cyan-300 transition hover:bg-red-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi eliminare admin" : "Elimina utente"}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

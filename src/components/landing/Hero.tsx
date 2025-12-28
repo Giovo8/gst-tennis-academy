@@ -100,22 +100,28 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-hero-gradient px-6 py-12 sm:px-10 sm:py-16">
-      <div className="pointer-events-none absolute left-16 top-10 h-32 w-32 rounded-full blur-3xl" style={{ backgroundColor: 'rgba(125,227,255,0.18)' }} />
-      <div className="pointer-events-none absolute right-12 bottom-10 h-20 w-20 rounded-full blur-2xl" style={{ backgroundColor: 'rgba(79,179,255,0.12)' }} />
+    <section className="relative overflow-hidden rounded-3xl border border-blue-400/20 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 backdrop-blur-xl px-6 py-12 sm:px-10 sm:py-16 shadow-2xl shadow-blue-500/10">
+      {/* Animated background gradients */}
+      <div className="pointer-events-none absolute left-16 top-10 h-40 w-40 rounded-full blur-3xl bg-blue-400/20 animate-pulse" />
+      <div className="pointer-events-none absolute right-12 bottom-10 h-32 w-32 rounded-full blur-3xl bg-cyan-400/15 animate-pulse" style={{animationDelay: '1s'}} />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full blur-3xl bg-blue-500/10" />
 
-      <div className="relative grid gap-8 lg:grid-cols-2 lg:items-stretch">
-        <div className="flex flex-col space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-accent w-fit">
+      <div className="relative grid gap-10 lg:grid-cols-2 lg:items-stretch">
+        <div className="flex flex-col space-y-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-blue-400/30 bg-blue-500/10 backdrop-blur-xl px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-blue-300 w-fit shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
             {content.badge_text}
           </div>
-          <div className="space-y-5 flex-1">
-            <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
-              {content.title.split(content.title_highlight)[0]}
-              <span className="text-accent">{content.title_highlight}</span>
-              {content.title.split(content.title_highlight)[1]}
+          <div className="space-y-6 flex-1">
+            <h1 className="text-5xl font-bold leading-tight sm:text-6xl">
+              <span className="text-white">{content.title.split(content.title_highlight)[0]}</span>
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent animate-gradient">{content.title_highlight}</span>
+              <span className="text-white">{content.title.split(content.title_highlight)[1]}</span>
             </h1>
-            <p className="max-w-2xl text-lg leading-relaxed text-muted">
+            <p className="max-w-2xl text-lg leading-relaxed text-gray-300">
               {content.subtitle}
             </p>
           </div>
@@ -127,10 +133,13 @@ export default function Hero() {
             ].map((stat, i) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 px-4 py-3 text-center"
+                className="group relative overflow-hidden rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl px-4 py-4 text-center hover:border-blue-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1"
               >
-                  <div className="text-2xl font-semibold text-accent">{stat.value}</div>
-                  <p className="text-sm text-muted">{stat.label}</p>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">{stat.value}</div>
+                  <p className="text-sm text-gray-400 mt-1">{stat.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -138,12 +147,12 @@ export default function Hero() {
 
         {/* Carousel immagini */}
         <div className="relative group flex items-stretch">
-          <div className="relative overflow-hidden rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-2 w-full">
+          <div className="relative overflow-hidden rounded-3xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-3 w-full shadow-2xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-500">
             <div className="relative h-full min-h-[500px] overflow-hidden rounded-2xl">
               {images.map((image, idx) => (
                 <div
                   key={image.id}
-                  className={`absolute inset-0 transition-opacity duration-500 ${
+                  className={`absolute inset-0 transition-opacity duration-700 ${
                     idx === currentIndex ? "opacity-100" : "opacity-0"
                   }`}
                 >
@@ -154,11 +163,11 @@ export default function Hero() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#1a3d5c] via-[#2f7de1]/20 to-[#1a3d5c] flex items-center justify-center">
-                      <div className="text-center space-y-3">
-                        <div className="text-4xl">🎾</div>
-                        <p className="text-sm text-muted">{image.alt_text}</p>
-                        <p className="text-xs text-muted-2">Superfici professionali ITF</p>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0a2744] via-blue-900/30 to-[#0a2744] flex items-center justify-center">
+                      <div className="text-center space-y-4">
+                        <div className="text-6xl animate-bounce">🎾</div>
+                        <p className="text-base text-gray-300 font-semibold">{image.alt_text}</p>
+                        <p className="text-sm text-gray-400">Superfici professionali ITF</p>
                       </div>
                     </div>
                   )}
@@ -168,27 +177,27 @@ export default function Hero() {
               {/* Controlli carousel */}
               <button
                 onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/60 backdrop-blur-sm p-3 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100 hover:scale-110 border border-white/10"
                 aria-label="Immagine precedente"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/60 backdrop-blur-sm p-3 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100 hover:scale-110 border border-white/10"
                 aria-label="Immagine successiva"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
 
               {/* Indicatori carousel */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/40 backdrop-blur-md rounded-full px-3 py-2 border border-white/10">
                 {images.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentIndex(idx)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      idx === currentIndex ? "w-8 bg-accent" : "w-1.5 bg-white/30"
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      idx === currentIndex ? "w-8 bg-gradient-to-r from-blue-400 to-cyan-400" : "w-2 bg-white/40 hover:bg-white/60"
                     }`}
                     aria-label={`Vai all'immagine ${idx + 1}`}
                   />

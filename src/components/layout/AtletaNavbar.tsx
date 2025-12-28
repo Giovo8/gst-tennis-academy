@@ -42,8 +42,8 @@ export default function AtletaNavbar({
 
   const subscriptionBadges = {
     basic: { label: "Basic", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-    premium: { label: "Premium", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
-    vip: { label: "VIP", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" }
+    premium: { label: "Premium", color: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" },
+    vip: { label: "VIP", color: "bg-yellow-500/20 text-yellow-400 border-cyan-500/30" }
   };
 
   const handleLogout = async () => {
@@ -132,7 +132,7 @@ export default function AtletaNavbar({
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-red-500/10 hover:border-red-500/30"
+              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-cyan-500/10 hover:border-cyan-500/30"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -204,7 +204,7 @@ export default function AtletaNavbar({
                 setIsOpen(false);
                 handleLogout();
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-500/30 px-4 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/10 mt-4"
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-cyan-500/30 px-4 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/10 mt-4"
             >
               <LogOut className="h-5 w-5" />
               Esci

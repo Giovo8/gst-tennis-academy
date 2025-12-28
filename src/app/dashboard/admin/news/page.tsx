@@ -280,7 +280,7 @@ export default function AdminNewsPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-                      item.published ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                      item.published ? 'bg-blue-500/20 text-blue-300' : 'bg-cyan-500/20 text-cyan-300'
                     }`}>
                       {item.category}
                     </span>
@@ -321,7 +321,7 @@ export default function AdminNewsPage() {
                     </button>
                     <button
                       onClick={() => deleteNews(item.id)}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-400 hover:bg-red-400/20"
+                      className="flex items-center justify-center gap-2 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-cyan-300 hover:bg-red-400/20"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Trophy } from 'lucide-react';
 
 interface StandingEntry {
   position: number;
@@ -41,8 +42,10 @@ export default function ChampionshipStandings({
 
   if (!standings || standings.length === 0) {
     return (
-      <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 text-center">
-        <p className="text-muted-2">
+      <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-12 text-center">
+        <Trophy className="h-12 w-12 text-blue-400/50 mx-auto mb-4" />
+        <p className="text-lg font-bold text-white mb-2">Classifica in aggiornamento</p>
+        <p className="text-sm text-gray-400">
           La classifica verrà aggiornata non appena verranno giocati i primi match.
         </p>
       </div>
@@ -50,14 +53,21 @@ export default function ChampionshipStandings({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="section-header">
-        <h3 className="text-xl font-semibold text-white">Classifica Campionato</h3>
-        <p className="text-sm text-muted-2">Round-robin - Tutti contro tutti</p>
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-500/20 p-2">
+            <Trophy className="h-6 w-6 text-blue-300" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent">Classifica Campionato</h3>
+            <p className="text-sm text-gray-400">Round-robin - Tutti contro tutti</p>
+          </div>
+        </div>
       </div>
 
       {/* Desktop view - Table */}
-      <div className="hidden md:block overflow-x-auto rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60">
+      <div className="hidden md:block overflow-x-auto rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#2f7de1]/20 bg-[#0c1424]/40">
@@ -119,19 +129,19 @@ export default function ChampionshipStandings({
                   <td className="py-4 px-4 text-center text-white">
                     {entry.matches_played}
                   </td>
-                  <td className="py-4 px-4 text-center text-green-400 font-medium">
+                  <td className="py-4 px-4 text-center text-blue-300 font-medium">
                     {entry.wins}
                   </td>
-                  <td className="py-4 px-4 text-center text-red-400">
+                  <td className="py-4 px-4 text-center text-cyan-300">
                     {entry.losses}
                   </td>
                   <td className="py-4 px-4 text-center text-white">
-                    <span className={setsDiff > 0 ? 'text-green-400' : setsDiff < 0 ? 'text-red-400' : ''}>
+                    <span className={setsDiff > 0 ? 'text-blue-300' : setsDiff < 0 ? 'text-cyan-300' : ''}>
                       {entry.sets_won}/{entry.sets_lost}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center text-white">
-                    <span className={gamesDiff > 0 ? 'text-green-400' : gamesDiff < 0 ? 'text-red-400' : ''}>
+                    <span className={gamesDiff > 0 ? 'text-blue-300' : gamesDiff < 0 ? 'text-cyan-300' : ''}>
                       {entry.games_won}/{entry.games_lost}
                     </span>
                   </td>
@@ -192,15 +202,15 @@ export default function ChampionshipStandings({
                 <div>
                   <div className="text-xs text-muted-2 mb-1">V/P</div>
                   <div className="text-white font-medium">
-                    <span className="text-green-400">{entry.wins}</span>
+                    <span className="text-blue-300">{entry.wins}</span>
                     /
-                    <span className="text-red-400">{entry.losses}</span>
+                    <span className="text-cyan-300">{entry.losses}</span>
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-2 mb-1">Set Diff</div>
                   <div className={`font-medium ${
-                    setsDiff > 0 ? 'text-green-400' : setsDiff < 0 ? 'text-red-400' : 'text-white'
+                    setsDiff > 0 ? 'text-blue-300' : setsDiff < 0 ? 'text-cyan-300' : 'text-white'
                   }`}>
                     {setsDiff > 0 ? '+' : ''}{setsDiff}
                   </div>

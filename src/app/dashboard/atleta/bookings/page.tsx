@@ -149,8 +149,8 @@ export default function AthleteBookingsPage() {
                               booking.type === "campo"
                                 ? "bg-blue-500/15 text-blue-400"
                                 : booking.type === "lezione_privata"
-                                ? "bg-green-500/15 text-green-400"
-                                : "bg-purple-500/15 text-purple-400"
+                                ? "bg-blue-500/15 text-blue-300"
+                                : "bg-cyan-500/15 text-cyan-300"
                             }`}
                           >
                             {booking.type === "campo"
@@ -174,7 +174,7 @@ export default function AthleteBookingsPage() {
                             </span>
                           )}
                           {isConfirmed && !isPast && (
-                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/15 text-green-400">
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-300">
                               Confermata
                             </span>
                           )}
@@ -195,7 +195,7 @@ export default function AthleteBookingsPage() {
                         <button
                           onClick={() => handleDelete(booking.id)}
                           disabled={deletingId === booking.id}
-                          className="flex items-center gap-2 rounded-full border border-red-400/30 px-4 py-2 text-sm font-semibold text-red-400 transition hover:border-red-400/50 hover:bg-red-400/10 disabled:opacity-50"
+                          className="flex items-center gap-2 rounded-full border border-red-400/30 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:border-red-400/50 hover:bg-red-400/10 disabled:opacity-50"
                         >
                           <Trash2 className="h-4 w-4" />
                           {deletingId === booking.id ? "..." : "Cancella"}

@@ -52,7 +52,7 @@ export default function MaestroNavbar({
   };
 
   return (
-    <nav className="border-b border-purple-500/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-cyan-500/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container py">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -75,7 +75,7 @@ export default function MaestroNavbar({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-2 text-sm font-medium text-muted-2 transition hover:text-purple-400"
+                  className="flex items-center gap-2 text-sm font-medium text-muted-2 transition hover:text-cyan-300"
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
@@ -93,7 +93,7 @@ export default function MaestroNavbar({
                 <button
                   key={action.label}
                   onClick={action.action}
-                  className="flex items-center gap-2 rounded-lg bg-purple-500/20 border border-purple-500/30 px-3 py-1.5 text-xs font-semibold text-purple-300 transition hover:bg-purple-500/30 hover:border-purple-400"
+                  className="flex items-center gap-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-purple-300 transition hover:bg-cyan-500/30 hover:border-purple-400"
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {action.label}
@@ -120,7 +120,7 @@ export default function MaestroNavbar({
             >
               <Bell className="h-5 w-5" />
               {notificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-xs font-bold text-white">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold text-white">
                   {notificationsCount > 9 ? "9+" : notificationsCount}
                 </span>
               )}
@@ -129,7 +129,7 @@ export default function MaestroNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 transition hover:border-purple-400 hover:bg-purple-500/20"
+              className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 transition hover:border-purple-400 hover:bg-cyan-500/20"
             >
               {userAvatar ? (
                 <Image 
@@ -140,18 +140,18 @@ export default function MaestroNavbar({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold text-white">
+                <div className="h-6 w-6 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
               <span className="text-sm font-medium text-white">{userName}</span>
-              <span className="text-xs text-purple-400 font-semibold">Coach</span>
+              <span className="text-xs text-cyan-300 font-semibold">Coach</span>
             </Link>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-red-500/10 hover:border-red-500/30"
+              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-cyan-500/10 hover:border-cyan-500/30"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -161,7 +161,7 @@ export default function MaestroNavbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-purple-500/30 p-2 text-white transition hover:bg-purple-500/10"
+            className="lg:hidden rounded-lg border border-cyan-500/30 p-2 text-white transition hover:bg-cyan-500/10"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -170,9 +170,9 @@ export default function MaestroNavbar({
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-purple-500/10 pt-4 mt-4 space-y-2 pb-4">
+          <div className="lg:hidden border-t border-cyan-500/10 pt-4 mt-4 space-y-2 pb-4">
             {/* User Info Mobile */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-purple-500/5 border border-purple-500/20 mb-4">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 mb-4">
               {userAvatar ? (
                 <Image 
                   src={userAvatar} 
@@ -182,17 +182,17 @@ export default function MaestroNavbar({
                   className="h-10 w-10 rounded-full"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center text-lg font-bold text-white">
+                <div className="h-10 w-10 rounded-full bg-cyan-500 flex items-center justify-center text-lg font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div>
                 <p className="text-sm font-semibold text-white">{userName}</p>
-                <p className="text-xs text-purple-400 font-medium">Coach</p>
+                <p className="text-xs text-cyan-300 font-medium">Coach</p>
               </div>
               <div className="ml-auto flex flex-col gap-1">
                 {notificationsCount > 0 && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-xs font-bold text-white">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold text-white">
                     {notificationsCount > 9 ? "9+" : notificationsCount}
                   </div>
                 )}
@@ -215,7 +215,7 @@ export default function MaestroNavbar({
                       setIsOpen(false);
                       action.action();
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-purple-500/20 border border-purple-500/30 px-4 py-3 text-sm font-semibold text-purple-300 transition hover:bg-purple-500/30"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-4 py-3 text-sm font-semibold text-purple-300 transition hover:bg-cyan-500/30"
                   >
                     <Icon className="h-5 w-5" />
                     {action.label}
@@ -232,7 +232,7 @@ export default function MaestroNavbar({
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-purple-500/10 hover:text-purple-400 transition"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-cyan-500/10 hover:text-cyan-300 transition"
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}
@@ -246,7 +246,7 @@ export default function MaestroNavbar({
                 setIsOpen(false);
                 handleLogout();
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-500/30 px-4 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-500/10 mt-4"
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-cyan-500/30 px-4 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/10 mt-4"
             >
               <LogOut className="h-5 w-5" />
               Esci

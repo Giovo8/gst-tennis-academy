@@ -642,7 +642,7 @@ export default function ProfileEditor() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 {saving ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

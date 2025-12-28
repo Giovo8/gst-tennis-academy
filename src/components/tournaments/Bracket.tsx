@@ -143,9 +143,9 @@ export default function Bracket({
                         key={matchIndex} 
                         className={`rounded-lg md:rounded-xl border p-3 md:p-4 transition-all ${
                           hasBye 
-                            ? 'border-yellow-500/30 bg-yellow-500/5'
+                            ? 'border-cyan-500/30 bg-cyan-500/5'
                             : isFinished
-                            ? 'border-green-500/30 bg-green-500/5'
+                            ? 'border-blue-500/30 bg-blue-500/5'
                             : 'border-[#2f7de1]/30 bg-[#1a3d5c]/60'
                         }`}
                       >
@@ -154,7 +154,7 @@ export default function Bracket({
                           <div 
                             className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                               match.player1 === 'BYE'
-                                ? 'bg-yellow-500/10 text-yellow-500'
+                                ? 'bg-cyan-500/10 text-cyan-400'
                                 : match.winner === match.player1
                                 ? 'bg-[#7de3ff]/15 text-[#7de3ff] font-semibold'
                                 : match.player1 === 'TBD'
@@ -177,7 +177,7 @@ export default function Bracket({
                           <div 
                             className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                               match.player2 === 'BYE'
-                                ? 'bg-yellow-500/10 text-yellow-500'
+                                ? 'bg-cyan-500/10 text-cyan-400'
                                 : match.winner === match.player2
                                 ? 'bg-[#7de3ff]/15 text-[#7de3ff] font-semibold'
                                 : match.player2 === 'TBD'
@@ -201,8 +201,8 @@ export default function Bracket({
                         
                         {/* BYE indicator */}
                         {hasBye && (
-                          <div className="mt-2 pt-2 border-t border-yellow-500/20 text-center">
-                            <span className="text-xs text-yellow-500">Auto-avanzamento</span>
+                          <div className="mt-2 pt-2 border-t border-cyan-500/20 text-center">
+                            <span className="text-xs text-cyan-400">Auto-avanzamento</span>
                           </div>
                         )}
                       </div>
@@ -222,7 +222,7 @@ export default function Bracket({
           <span>Vincitore</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-yellow-500/10 border border-yellow-500/30"></div>
+          <div className="w-3 h-3 rounded bg-cyan-500/10 border border-cyan-500/30"></div>
           <span>BYE (Passaggio automatico)</span>
         </div>
         <div className="flex items-center gap-2">

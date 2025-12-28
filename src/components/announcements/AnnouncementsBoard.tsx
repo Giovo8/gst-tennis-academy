@@ -80,8 +80,8 @@ export default function AnnouncementsBoard() {
 
   const typeColors: Record<string, string> = {
     announcement: "bg-blue-500",
-    partner: "bg-purple-500",
-    event: "bg-green-500",
+    partner: "bg-cyan-500",
+    event: "bg-blue-500",
     tournament: "bg-orange-500",
     lesson: "bg-pink-500",
     promotion: "bg-yellow-500",
@@ -91,7 +91,7 @@ export default function AnnouncementsBoard() {
     low: "border-gray-200",
     medium: "border-blue-300",
     high: "border-orange-400",
-    urgent: "border-red-500 ring-2 ring-red-200",
+    urgent: "border-cyan-500 ring-2 ring-red-200",
   };
 
   const filteredAnnouncements = filterType === "all"
@@ -228,7 +228,7 @@ export default function AnnouncementsBoard() {
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span>{formatDate(announcement.created_at)}</span>
                         {announcement.days_until_expiry !== null && announcement.days_until_expiry <= 7 && (
-                          <span className="flex items-center gap-1 text-orange-600">
+                          <span className="flex items-center gap-1 text-blue-400">
                             <Clock className="w-3 h-3" />
                             {announcement.days_until_expiry === 0
                               ? "Scade oggi"
@@ -278,8 +278,8 @@ export default function AnnouncementsBoard() {
 
                   {/* Priority indicator */}
                   {announcement.priority === "urgent" && (
-                    <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <div className="mt-4 bg-cyan-50 dark:bg-cyan-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                       <span className="text-xs text-red-800 dark:text-red-200 font-semibold">
                         URGENTE
                       </span>

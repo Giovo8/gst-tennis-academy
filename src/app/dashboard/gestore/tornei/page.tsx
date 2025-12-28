@@ -250,7 +250,7 @@ function GestoreTorneiPageInner() {
                 Crea Competizione
               </button>
             </div>
-            {error && <div className="text-sm text-red-400 p-3 rounded-lg bg-red-500/10 border border-red-500/30">{error}</div>}
+            {error && <div className="text-sm text-cyan-300 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">{error}</div>}
           </form>
         </div>
 
@@ -309,7 +309,7 @@ function GestoreTorneiPageInner() {
                         {t.status && (
                           <span className={`px-2 py-0.5 text-xs rounded-full ${
                             t.status === 'Aperto' 
-                              ? 'bg-green-500/10 text-green-400'
+                              ? 'bg-blue-500/10 text-blue-300'
                               : t.status === 'In corso'
                               ? 'bg-blue-500/10 text-blue-400'
                               : 'bg-gray-500/10 text-gray-400'
@@ -375,7 +375,7 @@ function GestoreTorneiPageInner() {
                             alert(j.error || 'Errore');
                           }
                         } catch (err: any) { alert(err.message || 'Errore'); }
-                      }} className="rounded-full border border-red-500 px-3 py-1 text-sm text-red-400">Rimuovi</button>
+                      }} className="rounded-full border border-cyan-500 px-3 py-1 text-sm text-cyan-300">Rimuovi</button>
                     </div>
                   </li>
                 ))}

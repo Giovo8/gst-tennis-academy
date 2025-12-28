@@ -403,7 +403,7 @@ export default function ChatPanel() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Messaggi</h2>
             {totalUnread > 0 && (
-              <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              <span className="bg-cyan-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 {totalUnread}
               </span>
             )}

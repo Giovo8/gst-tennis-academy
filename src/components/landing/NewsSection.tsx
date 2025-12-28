@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Newspaper } from "lucide-react";
 
 type NewsItem = {
   id: string;
@@ -75,10 +75,10 @@ export default function NewsSection() {
 
   if (loading) {
     return (
-      <section id="news">
+      <section id="news" className="py-20">
         <div className="container section">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
           </div>
         </div>
       </section>
@@ -86,38 +86,40 @@ export default function NewsSection() {
   }
 
   return (
-    <section id="news">
-      <div className="section-header">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-          News
-        </p>
-        <h2 className="text-2xl font-semibold text-white">
-          Ultimi aggiornamenti dalla Academy
-        </h2>
-      </div>
+    <>
+      <section id="news" className="py-20">
+        <div className="container section">
+          <div className="section-header space-y-2 mb-12">
+            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-cyan-400">
+              Ultime News
+            </p>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-cyan-200 to-blue-300 bg-clip-text text-transparent leading-tight">
+              Novità e Aggiornamenti
+            </h2>
+          </div>
 
-      <div className="grid gap-lg md:grid-cols-3">
-        {news.map((item) => (
-          <article 
-            key={item.id} 
-            onClick={() => setSelectedNews(item)}
-            className="flex h-full flex-col rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 overflow-hidden cursor-pointer transition hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80"
-          >
-            {item.image_url && (
-              <div className="w-full aspect-[16/9] overflow-hidden bg-[#0c1424]">
-                <img
-                  src={item.image_url}
-                  alt={item.title}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
-            <div className="px-5 pb-5 pt-3 flex flex-col gap-3 flex-1">
-              <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full bg-accent-15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  {item.category}
-                </span>
-                <p className="text-xs text-muted-2">
+        <div className="grid gap-6 md:grid-cols-3">
+          {news.map((item) => (
+            <article 
+              key={item.id} 
+              onClick={() => setSelectedNews(item)}
+              className="group flex h-full flex-col rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl overflow-hidden cursor-pointer hover:border-cyan-400/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
+            >
+              {item.image_url && (
+                <div className="w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-cyan-900/30 to-gray-900/50 group-hover:from-cyan-800/40 transition-all">
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              )}
+              <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300 border border-cyan-400/30">
+                    {item.category}
+                  </span>
+                  <p className="text-xs text-gray-400">
                   {new Date(item.date).toLocaleDateString("it-IT", {
                     day: "numeric",
                     month: "long",
@@ -125,74 +127,74 @@ export default function NewsSection() {
                   })}
                 </p>
               </div>
-              <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-muted">
+              <h3 className="text-lg font-bold bg-gradient-to-r from-cyan-200 to-blue-300 bg-clip-text text-transparent">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-gray-300">
                 {item.summary}
               </p>
             </div>
           </article>
         ))}
+        </div>
       </div>
+    </section>
 
-      </div>
-
-      {/* News Modal */}
-      {selectedNews && (
+    {/* News Modal */}
+    {selectedNews && (
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        onClick={() => setSelectedNews(null)}
+      >
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setSelectedNews(null)}
+          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-gray-900/95 to-cyan-900/30 backdrop-blur-xl p-8 shadow-2xl shadow-cyan-500/20"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[#2f7de1]/30 bg-[#0c1424] p-8"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            onClick={() => setSelectedNews(null)}
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-cyan-400/30 hover:scale-110"
           >
-            <button
-              onClick={() => setSelectedNews(null)}
-              className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <X className="h-5 w-5" />
+          </button>
 
-            {selectedNews.image_url && (
-              <div className="w-full max-h-96 overflow-hidden rounded-2xl mb-6 bg-[#1a3d5c]/60 flex items-center justify-center">
-                <img
-                  src={selectedNews.image_url}
-                  alt={selectedNews.title}
-                  className="w-full h-full object-contain max-h-96"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center gap-3 mb-4">
-              <span className="rounded-full bg-accent-15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                {selectedNews.category}
-              </span>
-              <p className="text-xs text-muted-2">
-                {new Date(selectedNews.date).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
+          {selectedNews.image_url && (
+            <div className="w-full max-h-96 overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-cyan-900/30 to-gray-900/50 flex items-center justify-center">
+              <img
+                src={selectedNews.image_url}
+                alt={selectedNews.title}
+                className="w-full h-full object-contain max-h-96"
+              />
             </div>
+          )}
 
-            <h2 className="text-3xl font-bold text-white mb-6">
-              {selectedNews.title}
-            </h2>
-
-            <p className="text-lg leading-relaxed text-[#c6d8c9] mb-6 font-medium">
-              {selectedNews.summary}
+          <div className="flex items-center gap-3 mb-4">
+            <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300 border border-cyan-400/30">
+              {selectedNews.category}
+            </span>
+            <p className="text-xs text-gray-400">
+              {new Date(selectedNews.date).toLocaleDateString("it-IT", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
             </p>
+          </div>
 
-            <div className="prose prose-invert max-w-none">
-              <p className="text-base leading-relaxed text-muted whitespace-pre-wrap">
-                {selectedNews.content}
-              </p>
-            </div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-200 to-blue-300 bg-clip-text text-transparent mb-6">
+            {selectedNews.title}
+          </h2>
+
+          <p className="text-lg leading-relaxed text-cyan-100 mb-6 font-medium">
+            {selectedNews.summary}
+          </p>
+
+          <div className="prose prose-invert max-w-none">
+            <p className="text-base leading-relaxed text-gray-300 whitespace-pre-wrap">
+              {selectedNews.content}
+            </p>
           </div>
         </div>
-      )}
-    </section>
+      </div>
+    )}
+    </>
   );
 }
 
