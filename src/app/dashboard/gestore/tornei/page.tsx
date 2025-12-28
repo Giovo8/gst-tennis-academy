@@ -286,12 +286,13 @@ function GestoreTorneiPageInner() {
                         <div className="text-gray-400">
                           {t.start_date ? new Date(t.start_date).toLocaleString('it-IT') : 'Data da definire'}
                         </div>
-                      {t.format && (
-                        <div className="text-gray-500 capitalize">
-                          • {t.format.replace('_', ' ')}
-                      )}
+                        {t.format && (
+                          <div className="text-gray-500 capitalize">
+                            • {t.format.replace('_', ' ')}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                     <div className="relative flex items-center gap-2 sm:ml-3">
                       <button
                         onClick={() => {
