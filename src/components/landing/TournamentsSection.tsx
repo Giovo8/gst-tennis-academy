@@ -52,8 +52,8 @@ export default function TournamentsSection() {
     <section id="tornei" className="py-20">
       <div className="container section">
         <div className="section-header space-y-2 mb-12">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-amber-400">Competizioni</p>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text text-transparent leading-tight">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">Competizioni</p>
+          <h2 className="text-4xl font-bold gradient-text leading-tight">
             Tornei e Campionati
           </h2>
         </div>
@@ -64,8 +64,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('all')}
             className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'all'
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-amber-500/30'
-                : 'bg-amber-500/10 text-gray-400 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20'
+                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
+                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
             }`}
           >
             Tutte ({items.length})
@@ -74,8 +74,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('torneo')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'torneo'
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-amber-500/30'
-                : 'bg-amber-500/10 text-gray-400 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20'
+                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
+                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
             }`}
           >
             <Trophy className="w-4 h-4" />
@@ -85,8 +85,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('campionato')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'campionato'
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-amber-500/30'
-                : 'bg-amber-500/10 text-gray-400 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20'
+                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
+                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
             }`}
           >
             <Award className="w-4 h-4" />
@@ -117,32 +117,30 @@ export default function TournamentsSection() {
             return (
               <article 
                 key={t.id} 
-                className="group rounded-2xl border border-amber-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 space-y-4 hover:border-amber-400/40 hover:shadow-xl hover:shadow-amber-500/20 hover:-translate-y-2 transition-all duration-300"
+                className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 space-y-4 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-2 transition-all duration-300"
               >
                 {/* Header with icon and type badge */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     {isTorneo ? (
-                      <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 group-hover:scale-110 transition-transform">
+                      <div className="p-2 rounded-xl bg-accent-20 text-accent group-hover:scale-110 transition-transform">
                         <Trophy className="w-5 h-5" />
                       </div>
                     ) : (
-                      <div className="p-2 rounded-xl bg-yellow-500/20 text-yellow-300 group-hover:scale-110 transition-transform">
+                      <div className="p-2 rounded-xl bg-accent-15 text-accent group-hover:scale-110 transition-transform">
                         <Award className="w-5 h-5" />
                       </div>
                     )}
-                    <span className={`text-xs font-bold uppercase tracking-wider ${
-                      isTorneo ? 'text-amber-300' : 'text-yellow-300'
-                    }`}>
+                    <span className="text-xs font-bold uppercase tracking-wider text-accent">
                       {isTorneo ? 'Torneo' : 'Campionato'}
                     </span>
                   </div>
                   {t.status && (
                     <span className={`text-xs px-3 py-1 rounded-full font-bold ${
                       t.status === 'Aperto' 
-                        ? 'bg-blue-500/20 text-green-300 border border-blue-500/40'
+                        ? 'bg-accent-15 text-accent border border-[var(--glass-border)]'
                         : t.status === 'In corso'
-                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                        ? 'bg-accent-20 text-accent border border-[var(--glass-border)]'
                         : 'bg-gray-500/20 text-gray-300 border border-gray-500/40'
                     }`}>
                       {t.status}
@@ -152,7 +150,7 @@ export default function TournamentsSection() {
 
                 {/* Title */}
                 <div>
-                  <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-amber-300 transition-colors">{t.title}</h3>
+                  <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-accent transition-colors">{t.title}</h3>
                 </div>
 
                 {/* Info */}
@@ -193,7 +191,7 @@ export default function TournamentsSection() {
                 <div className="pt-2">
                   <Link 
                     href={`/tornei/${t.id}`} 
-                    className="block w-full text-center rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-105"
+                    className="block w-full text-center rounded-xl accent-gradient px-6 py-3 text-sm font-bold text-text-dark hover:shadow-lg hover:shadow-accent-strong/30 transition-all duration-300 group-hover:scale-105"
                   >
                     Vedi Dettagli
                   </Link>

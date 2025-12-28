@@ -16,19 +16,19 @@ interface StatCardProps {
 
 const styles: Record<Color, { wrapper: string; gradient: string; iconBg: string }> = {
   blue: {
-    wrapper: "rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-blue-600/5 backdrop-blur-xl p-6 hover:border-blue-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1",
-    gradient: "from-blue-400 to-cyan-400",
-    iconBg: "bg-blue-500/20 text-blue-300",
+    wrapper: "rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-accent-dark/5 backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1",
+    gradient: "from-accent-mid to-accent-strong",
+    iconBg: "bg-accent-20 text-accent",
   },
   green: {
-    wrapper: "rounded-2xl border border-green-400/20 bg-gradient-to-br from-blue-500/10 to-emerald-600/5 backdrop-blur-xl p-6 hover:border-green-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/20 hover:-translate-y-1",
-    gradient: "from-green-400 to-emerald-400",
-    iconBg: "bg-blue-500/20 text-green-300",
+    wrapper: "rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-accent-dark/5 backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1",
+    gradient: "from-accent-mid to-accent-strong",
+    iconBg: "bg-accent-20 text-accent",
   },
   purple: {
-    wrapper: "rounded-2xl border border-purple-400/20 bg-gradient-to-br from-cyan-500/10 to-violet-600/5 backdrop-blur-xl p-6 hover:border-purple-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1",
-    gradient: "from-cyan-400 to-violet-400",
-    iconBg: "bg-cyan-500/20 text-purple-300",
+    wrapper: "rounded-2xl border border-purple-400/20 bg-gradient-to-br from-accent-strong/10 to-violet-600/5 backdrop-blur-xl p-6 hover:border-purple-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1",
+    gradient: "from-accent-strong to-violet-400",
+    iconBg: "bg-accent-20 text-purple-300",
   },
   yellow: {
     wrapper: "rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 backdrop-blur-xl p-6 hover:border-yellow-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/20 hover:-translate-y-1",
@@ -38,7 +38,7 @@ const styles: Record<Color, { wrapper: string; gradient: string; iconBg: string 
   red: {
     wrapper: "rounded-2xl border border-red-400/20 bg-gradient-to-br from-red-500/10 to-rose-600/5 backdrop-blur-xl p-6 hover:border-red-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1",
     gradient: "from-red-400 to-rose-400",
-    iconBg: "bg-cyan-500/20 text-red-300",
+    iconBg: "bg-accent-20 text-red-300",
   },
   neutral: {
     wrapper: "rounded-2xl border border-slate-400/20 bg-gradient-to-br from-slate-500/10 to-slate-600/5 backdrop-blur-xl p-6 hover:border-slate-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-slate-500/20 hover:-translate-y-1",

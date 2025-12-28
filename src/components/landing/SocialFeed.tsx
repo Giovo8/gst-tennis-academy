@@ -64,8 +64,8 @@ export default function SocialFeed() {
           <div className="section-header space-y-2 mb-12">
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-pink-400 mb-2">Social Feed</p>
-                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-200 to-purple-300 bg-clip-text text-transparent leading-tight">Seguici sui social</h2>
+                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2">Social Feed</p>
+                <h2 className="text-4xl font-bold gradient-text leading-tight">Seguici sui social</h2>
               </div>
 
               <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export default function SocialFeed() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Segui su Facebook"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-blue-400/30 bg-gradient-to-r from-blue-500/20 to-transparent backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
+                  className="group inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-gradient-to-r from-accent-mid/20 to-transparent backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-lg hover:shadow-[var(--shadow-glow)] hover:-translate-y-0.5"
                 >
                   <Facebook className="h-4 w-4 group-hover:scale-110 transition-transform" />
                   Facebook
@@ -95,7 +95,7 @@ export default function SocialFeed() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 transition-all">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] transition-all">
               <iframe
                 title="Facebook Page"
                 src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}

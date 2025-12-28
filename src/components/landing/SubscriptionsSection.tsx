@@ -55,7 +55,7 @@ export default function SubscriptionsSection() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {plans.map((plan) => (
-          <article key={plan.id} className="flex flex-col rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 transition hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80">
+          <article key={plan.id} className="flex flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 transition hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-dark/30">
             <div className="mb-4">
               <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
               <div className="mt-2 flex items-baseline gap-1">

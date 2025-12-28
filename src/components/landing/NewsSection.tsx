@@ -90,10 +90,10 @@ export default function NewsSection() {
       <section id="news" className="py-20">
         <div className="container section">
           <div className="section-header space-y-2 mb-12">
-            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-cyan-400">
+            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
               Ultime News
             </p>
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-cyan-200 to-blue-300 bg-clip-text text-transparent leading-tight">
+            <h2 className="text-4xl font-bold gradient-text leading-tight">
               Novità e Aggiornamenti
             </h2>
           </div>
@@ -103,10 +103,10 @@ export default function NewsSection() {
             <article 
               key={item.id} 
               onClick={() => setSelectedNews(item)}
-              className="group flex h-full flex-col rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl overflow-hidden cursor-pointer hover:border-cyan-400/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
+              className="group flex h-full flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden cursor-pointer hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300"
             >
               {item.image_url && (
-                <div className="w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-cyan-900/30 to-gray-900/50 group-hover:from-cyan-800/40 transition-all">
+                <div className="w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-accent-dark/30 to-gray-900/50 group-hover:from-accent-dark/40 transition-all">
                   <img
                     src={item.image_url}
                     alt={item.title}
@@ -116,7 +116,7 @@ export default function NewsSection() {
               )}
               <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300 border border-cyan-400/30">
+                  <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-accent border border-[var(--glass-border)]">
                     {item.category}
                   </span>
                   <p className="text-xs text-gray-400">
@@ -127,7 +127,7 @@ export default function NewsSection() {
                   })}
                 </p>
               </div>
-              <h3 className="text-lg font-bold bg-gradient-to-r from-cyan-200 to-blue-300 bg-clip-text text-transparent">{item.title}</h3>
+              <h3 className="text-lg font-bold gradient-text">{item.title}</h3>
               <p className="text-sm leading-relaxed text-gray-300">
                 {item.summary}
               </p>
@@ -145,18 +145,18 @@ export default function NewsSection() {
         onClick={() => setSelectedNews(null)}
       >
         <div 
-          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-gray-900/95 to-cyan-900/30 backdrop-blur-xl p-8 shadow-2xl shadow-cyan-500/20"
+          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-gray-900/95 to-accent-dark/30 backdrop-blur-xl p-8 shadow-2xl shadow-[var(--shadow-glow-strong)]"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => setSelectedNews(null)}
-            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-cyan-400/30 hover:scale-110"
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-accent-20 hover:scale-110"
           >
             <X className="h-5 w-5" />
           </button>
 
           {selectedNews.image_url && (
-            <div className="w-full max-h-96 overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-cyan-900/30 to-gray-900/50 flex items-center justify-center">
+            <div className="w-full max-h-96 overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-accent-dark/30 to-gray-900/50 flex items-center justify-center">
               <img
                 src={selectedNews.image_url}
                 alt={selectedNews.title}
@@ -166,7 +166,7 @@ export default function NewsSection() {
           )}
 
           <div className="flex items-center gap-3 mb-4">
-            <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300 border border-cyan-400/30">
+            <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-accent border border-[var(--glass-border)]">
               {selectedNews.category}
             </span>
             <p className="text-xs text-gray-400">
@@ -178,11 +178,11 @@ export default function NewsSection() {
             </p>
           </div>
 
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-200 to-blue-300 bg-clip-text text-transparent mb-6">
+          <h2 className="text-3xl font-bold gradient-text mb-6">
             {selectedNews.title}
           </h2>
 
-          <p className="text-lg leading-relaxed text-cyan-100 mb-6 font-medium">
+          <p className="text-lg leading-relaxed text-white mb-6 font-medium">
             {selectedNews.summary}
           </p>
 

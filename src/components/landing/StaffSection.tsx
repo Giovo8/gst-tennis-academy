@@ -76,17 +76,17 @@ export default function StaffSection() {
     <section id="staff" className="py-20">
       <div className="container section">
         <div className="section-header space-y-2 mb-12">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-emerald-400">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
             Il nostro staff
           </p>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent leading-tight">
+          <h2 className="text-4xl font-bold gradient-text leading-tight">
             Incontra il team
           </h2>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
         {staff.map((member) => (
-          <article key={member.id} className="group rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-emerald-400/40 hover:shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-1 transition-all duration-300">
+          <article key={member.id} className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             {member.image_url ? (
               <img
                 src={member.image_url}
@@ -94,14 +94,14 @@ export default function StaffSection() {
                 className="w-full h-64 object-cover"
               />
             ) : (
-              <div className="w-full h-64 bg-gradient-to-br from-emerald-900/30 to-gray-900/50 flex items-center justify-center group-hover:from-emerald-800/40 transition-all">
-                <User className="h-20 w-20 text-emerald-300/60 group-hover:text-emerald-300 transition-colors" />
+              <div className="w-full h-64 bg-gradient-to-br from-accent-dark/30 to-gray-900/50 flex items-center justify-center group-hover:from-accent-dark/40 transition-all">
+                <User className="h-20 w-20 text-accent/60 group-hover:text-accent transition-colors" />
               </div>
             )}
             <div className="p-6 space-y-3">
               <div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent">{member.full_name}</h3>
-                <span className="inline-block mt-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-400/30">
+                <h3 className="text-xl font-bold gradient-text">{member.full_name}</h3>
+                <span className="inline-block mt-2 rounded-full bg-accent-20 px-3 py-1 text-xs font-bold text-accent border border-[var(--glass-border)]">
                   {member.role}
                 </span>
               </div>

@@ -8,10 +8,10 @@ export default function InfoSection() {
       <div className="container py-lg">
         <div className="grid gap-6 md:grid-cols-3">
           {/* Location */}
-          <div className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 transition-all duration-300">
+          <div className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-blue-500/20 p-3 group-hover:scale-110 transition-transform">
-                <MapPin className="h-6 w-6 text-blue-300" />
+              <div className="rounded-xl bg-accent-20 p-3 group-hover:scale-110 transition-transform">
+                <MapPin className="h-6 w-6 text-accent" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">La nostra sede</h3>
@@ -25,19 +25,19 @@ export default function InfoSection() {
           </div>
 
           {/* Contatti */}
-          <div className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 transition-all duration-300">
+          <div className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-blue-500/20 p-3 group-hover:scale-110 transition-transform">
-                <Phone className="h-6 w-6 text-blue-300" />
+              <div className="rounded-xl bg-accent-20 p-3 group-hover:scale-110 transition-transform">
+                <Phone className="h-6 w-6 text-accent" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">Contatti</h3>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <a href="tel:+393762351777" className="flex items-center gap-2 hover:text-blue-300 transition-colors">
+                  <a href="tel:+393762351777" className="flex items-center gap-2 hover:text-accent transition-colors">
                     <Phone className="h-4 w-4" />
                     +39 376 235 1777
                   </a>
-                  <a href="mailto:info@gsttennisacademy.it" className="flex items-center gap-2 hover:text-blue-300 transition-colors">
+                  <a href="mailto:info@gsttennisacademy.it" className="flex items-center gap-2 hover:text-accent transition-colors">
                     <Mail className="h-4 w-4" />
                     info@gsttennisacademy.it
                   </a>
@@ -47,10 +47,10 @@ export default function InfoSection() {
           </div>
 
           {/* Orari */}
-          <div className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 transition-all duration-300">
+          <div className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-blue-500/20 p-3 group-hover:scale-110 transition-transform">
-                <Clock className="h-6 w-6 text-blue-300" />
+              <div className="rounded-xl bg-accent-20 p-3 group-hover:scale-110 transition-transform">
+                <Clock className="h-6 w-6 text-accent" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">Orari di apertura</h3>

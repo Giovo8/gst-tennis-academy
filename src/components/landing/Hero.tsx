@@ -100,25 +100,25 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-blue-400/20 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 backdrop-blur-xl px-6 py-12 sm:px-10 sm:py-16 shadow-2xl shadow-blue-500/10">
+    <section className="relative overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-6 py-12 sm:px-10 sm:py-16 shadow-2xl shadow-[var(--accent-strong)]/10">
       {/* Animated background gradients */}
-      <div className="pointer-events-none absolute left-16 top-10 h-40 w-40 rounded-full blur-3xl bg-blue-400/20 animate-pulse" />
-      <div className="pointer-events-none absolute right-12 bottom-10 h-32 w-32 rounded-full blur-3xl bg-cyan-400/15 animate-pulse" style={{animationDelay: '1s'}} />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full blur-3xl bg-blue-500/10" />
+      <div className="pointer-events-none absolute left-16 top-10 h-40 w-40 rounded-full blur-3xl bg-[var(--accent-strong)]/20 animate-pulse" />
+      <div className="pointer-events-none absolute right-12 bottom-10 h-32 w-32 rounded-full blur-3xl bg-[var(--accent-strong)]/15 animate-pulse" style={{animationDelay: '1s'}} />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full blur-3xl bg-[var(--accent-mid)]/10" />
 
       <div className="relative grid gap-10 lg:grid-cols-2 lg:items-stretch">
         <div className="flex flex-col space-y-8">
-          <div className="inline-flex items-center gap-3 rounded-full border border-blue-400/30 bg-blue-500/10 backdrop-blur-xl px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-blue-300 w-fit shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300">
+          <div className="inline-flex items-center gap-3 rounded-full border border-[var(--glass-border)] bg-accent-15 backdrop-blur-xl px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-accent w-fit shadow-lg shadow-accent-strong/10 hover:shadow-accent-strong/20 transition-all duration-300">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-strong opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-mid"></span>
             </span>
             {content.badge_text}
           </div>
           <div className="space-y-6 flex-1">
             <h1 className="text-5xl font-bold leading-tight sm:text-6xl">
               <span className="text-white">{content.title.split(content.title_highlight)[0]}</span>
-              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent animate-gradient">{content.title_highlight}</span>
+              <span className="gradient-text">{content.title_highlight}</span>
               <span className="text-white">{content.title.split(content.title_highlight)[1]}</span>
             </h1>
             <p className="max-w-2xl text-lg leading-relaxed text-gray-300">
@@ -133,11 +133,11 @@ export default function Hero() {
             ].map((stat, i) => (
               <div
                 key={stat.label}
-                className="group relative overflow-hidden rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl px-4 py-4 text-center hover:border-blue-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl px-4 py-4 text-center hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-mid/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">{stat.value}</div>
+                  <div className="text-3xl font-bold gradient-text">{stat.value}</div>
                   <p className="text-sm text-gray-400 mt-1">{stat.label}</p>
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function Hero() {
 
         {/* Carousel immagini */}
         <div className="relative group flex items-stretch">
-          <div className="relative overflow-hidden rounded-3xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-3 w-full shadow-2xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-500">
+          <div className="relative overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-3 w-full shadow-2xl shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-glow-strong)] transition-all duration-500">
             <div className="relative h-full min-h-[500px] overflow-hidden rounded-2xl">
               {images.map((image, idx) => (
                 <div
@@ -163,7 +163,7 @@ export default function Hero() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0a2744] via-blue-900/30 to-[#0a2744] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-dark)] via-accent-dark/30 to-[var(--bg-dark)] flex items-center justify-center">
                       <div className="text-center space-y-4">
                         <div className="text-6xl animate-bounce">🎾</div>
                         <p className="text-base text-gray-300 font-semibold">{image.alt_text}</p>
@@ -197,7 +197,7 @@ export default function Hero() {
                     key={idx}
                     onClick={() => setCurrentIndex(idx)}
                     className={`h-2 rounded-full transition-all duration-300 ${
-                      idx === currentIndex ? "w-8 bg-gradient-to-r from-blue-400 to-cyan-400" : "w-2 bg-white/40 hover:bg-white/60"
+                      idx === currentIndex ? "w-8 bg-gradient-to-r from-accent-mid to-accent-strong" : "w-2 bg-white/40 hover:bg-white/60"
                     }`}
                     aria-label={`Vai all'immagine ${idx + 1}`}
                   />

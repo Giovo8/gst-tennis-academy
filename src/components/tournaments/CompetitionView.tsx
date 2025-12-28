@@ -39,7 +39,7 @@ export default function CompetitionView({
       <div className="space-y-6">
         <div className="section-header">
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-[#7de3ff]/15 text-[#7de3ff]">
+            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
               Torneo
             </span>
             <span className="text-sm text-muted-2">Eliminazione Diretta</span>
@@ -62,7 +62,7 @@ export default function CompetitionView({
       <div className="space-y-6">
         <div className="section-header">
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-[#4fb3ff]/15 text-[#4fb3ff]">
+            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
               Campionato
             </span>
             <span className="text-sm text-muted-2">Round-robin (Tutti contro tutti)</span>
@@ -76,13 +76,13 @@ export default function CompetitionView({
         />
         
         {participants.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+          <div className="mt-6 rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6">
             <h4 className="text-sm font-semibold text-white mb-4">Partecipanti ({participants.length})</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {participants.map((p: any) => (
                 <div 
                   key={p.id} 
-                  className="px-3 py-2 rounded-lg bg-[#0c1424]/60 border border-[#2f7de1]/20 text-sm text-white"
+                  className="px-3 py-2 rounded-lg bg-surface border border-[var(--glass-border)] text-sm text-white"
                 >
                   {p.user?.full_name || p.user_id}
                 </div>
@@ -100,7 +100,7 @@ export default function CompetitionView({
       <div className="space-y-8">
         <div className="section-header">
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-[#2f7de1]/15 text-[#2f7de1]">
+            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
               {competition_type === 'torneo' ? 'Torneo' : 'Campionato'}
             </span>
             <span className="text-sm text-muted-2">Fase a Gironi + Eliminazione Diretta</span>
@@ -115,9 +115,9 @@ export default function CompetitionView({
               {groups_data.map((group: any, idx: number) => (
                 <div 
                   key={idx}
-                  className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-5"
+                  className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-5"
                 >
-                  <h4 className="text-sm font-semibold text-[#7de3ff] mb-3">
+                  <h4 className="text-sm font-semibold text-accent mb-3">
                     Girone {String.fromCharCode(65 + idx)}
                   </h4>
                   <ChampionshipStandings 
@@ -146,7 +146,7 @@ export default function CompetitionView({
 
         {/* Fallback se non ci sono ancora dati */}
         {(!groups_data || groups_data.length === 0) && (!rounds_data || rounds_data.length === 0) && (
-          <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 text-center">
+          <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-8 text-center">
             <p className="text-muted-2">
               La struttura della competizione verrà generata una volta raggiunti i partecipanti necessari.
             </p>
@@ -158,7 +158,7 @@ export default function CompetitionView({
 
   // Default fallback
   return (
-    <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 text-center">
+    <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-8 text-center">
       <p className="text-muted-2 mb-2">Formato competizione: {format}</p>
       <p className="text-sm text-muted-2">
         La visualizzazione per questo formato verrà implementata a breve.
@@ -170,7 +170,7 @@ export default function CompetitionView({
             {participants.map((p: any) => (
               <div 
                 key={p.id} 
-                className="px-3 py-2 rounded-lg bg-[#0c1424]/60 border border-[#2f7de1]/20 text-sm text-white"
+                className="px-3 py-2 rounded-lg bg-surface border border-[var(--glass-border)] text-sm text-white"
               >
                 {p.user?.full_name || p.user_id}
               </div>

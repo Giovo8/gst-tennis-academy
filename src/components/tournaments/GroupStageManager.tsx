@@ -282,7 +282,7 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
             onClick={() => setSelectedGroup(group.id)}
             className={`px-6 py-3 rounded-lg font-semibold transition ${
               selectedGroup === group.id
-                ? "bg-accent text-[#06101f] shadow-lg shadow-accent/30"
+                ? "bg-accent text-text-dark shadow-lg shadow-accent/30"
                 : "bg-white/5 border border-white/10 text-muted hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -486,7 +486,7 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
                     <button
                       onClick={() => saveMatchScore(match.id)}
                       disabled={saving}
-                      className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2 font-semibold text-[#06101f] transition hover:bg-accent-mid disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2 font-semibold text-text-dark transition hover:bg-accent-mid disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
                       {saving ? "Salvataggio..." : "Salva Punteggio"}

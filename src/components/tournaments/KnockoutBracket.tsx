@@ -394,7 +394,7 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
                                   <button
                                     onClick={() => saveMatchScore(match.id)}
                                     disabled={saving}
-                                    className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#06101f] hover:bg-accent-mid disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-text-dark hover:bg-accent-mid disabled:opacity-50"
                                   >
                                     <Save className="h-4 w-4" />
                                     {saving ? "Salvataggio..." : "Salva"}

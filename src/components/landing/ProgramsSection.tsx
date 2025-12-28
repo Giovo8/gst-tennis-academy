@@ -72,25 +72,25 @@ export default function ProgramsSection() {
     <section id="programmi" className="py-20">
       <div className="container section">
         <div className="section-header space-y-2 mb-12">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-cyan-300">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
             Programmi
           </p>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-200 to-pink-300 bg-clip-text text-transparent leading-tight">
+          <h2 className="text-4xl font-bold gradient-text leading-tight">
           Percorsi su misura per ogni livello
         </h2>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
         {programs.map((program) => (
-          <article key={program.id} className="group flex h-full flex-col rounded-2xl border border-purple-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl p-6 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1 transition-all duration-300">
+          <article key={program.id} className="group flex h-full flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-purple-200 to-pink-300 bg-clip-text text-transparent">
+                <h3 className="text-xl font-bold gradient-text">
                   {program.title}
                 </h3>
                 <p className="text-sm text-gray-400">{program.focus}</p>
               </div>
-              <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-bold text-purple-300 border border-purple-400/30">
+              <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold text-accent border border-[var(--glass-border)]">
                 Focus
               </span>
             </div>
@@ -98,9 +98,9 @@ export default function ProgramsSection() {
               {program.points.map((point, index) => (
                 <li
                   key={index}
-                  className="flex items-start gap-2 rounded-xl border border-purple-400/20 bg-cyan-500/5 px-3 py-2 hover:border-purple-400/30 hover:bg-cyan-500/10 transition-all"
+                  className="flex items-start gap-2 rounded-xl border border-[var(--glass-border)] bg-accent-12 px-3 py-2 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15 transition-all"
                 >
-                  <span className="mt-[0.4rem] h-1.5 w-1.5 rounded-full bg-purple-400 flex-shrink-0" />
+                  <span className="mt-[0.4rem] h-1.5 w-1.5 rounded-full bg-accent-strong flex-shrink-0" />
                   <span>{point}</span>
                 </li>
               ))}
