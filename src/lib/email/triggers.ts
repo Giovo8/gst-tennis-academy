@@ -215,16 +215,16 @@ export async function sendLessonConfirmation(lessonData: {
 }
 
 // User Events
-exif (!isEmailServiceAvailable()) {
-    console.log("Skipping welcome email: RESEND_API_KEY not configured");
-    return { success: true, message: "Email service not configured" };
-  }
-
-  port async function sendWelcomeEmail(userData: {
+export async function sendWelcomeEmail(userData: {
   userEmail: string;
   userName: string;
   userId: string;
 }) {
+  if (!isEmailServiceAvailable()) {
+    console.log("Skipping welcome email: RESEND_API_KEY not configured");
+    return { success: true, message: "Email service not configured" };
+  }
+
   const html = welcomeEmailTemplate({
     user_name: userData.userName,
     site_url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
