@@ -310,6 +310,7 @@ function GestoreTorneiPageInner() {
                         <span className="relative">Gestisci</span>
                       </button>
                     </div>
+                  </div>
                 </li>
               ))}
             </ul>
