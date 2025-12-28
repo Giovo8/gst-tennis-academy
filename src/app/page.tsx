@@ -107,7 +107,11 @@ export default function Home() {
           if (!Component) return null;
 
           return (
-            <section key={section.section_key} id={index === 0 ? "main-content" : undefined}>
+            <section
+              key={section.section_key}
+              id={index === 0 ? "main-content" : undefined}
+              className="section"
+            >
               <Component />
             </section>
           );

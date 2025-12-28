@@ -71,16 +71,38 @@ body {
   padding-right: var(--space-4);
 }
 
+/* Section spacing for consistent layout */
 .section {
-  padding-top: var(--space-6);
+  padding-top: var(--space-6); /* 32px vertical spacing */
   padding-bottom: var(--space-6);
+  margin-bottom: var(--space-6); /* 32px spacing between sections */
 }
 
+/* Section header standardization */
+.section-header {
+  margin-bottom: var(--space-5); /* 24px */
+}
+
+/* Card standardization */
 .card {
   padding: var(--space-4);
   border-radius: 12px;
   border: 1px solid var(--border-strong);
   background: var(--bg-dark-60);
+}
+
+.card-content {
+  padding: var(--space-5); /* 24px internal card padding */
+}
+
+/* Ensure consistent spacing for headings and text */
+h1, h2, h3 {
+  margin-bottom: var(--space-4);
+}
+
+p {
+  margin-bottom: var(--space-3);
+  line-height: 1.6; /* Improved readability */
 }
 
 /* Utility spacing classes (minimal, chosen to reduce inline px usage) */

@@ -86,9 +86,9 @@ export default function NewsSection() {
   }
 
   return (
-    <section id="news">
-      <div className="container section">
-        <div>
+    <section id="news" className="section">
+      <div className="container">
+        <div className="section-header">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
             News
           </p>
@@ -97,7 +97,7 @@ export default function NewsSection() {
           </h2>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
         {news.map((item) => (
           <article 
             key={item.id} 

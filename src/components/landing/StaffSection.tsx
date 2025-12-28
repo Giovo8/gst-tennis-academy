@@ -73,17 +73,18 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff">
-      <div className="container section">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Il nostro
-            staff
+    <section id="staff" className="section">
+      <div className="container">
+        <div className="section-header">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+            Il nostro staff
           </p>
-          <h2 className="text-2xl font-semibold text-white">Incontra il team
+          <h2 className="text-2xl font-semibold text-white">
+            Incontra il team
           </h2>
         </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {staff.map((member) => (
           <article key={member.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 overflow-hidden">
             {member.image_url ? (
