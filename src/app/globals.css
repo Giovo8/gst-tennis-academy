@@ -73,9 +73,9 @@ body {
 
 /* Section spacing for consistent layout */
 .section {
-  padding-top: var(--space-6); /* 32px vertical spacing */
-  padding-bottom: var(--space-6);
-  margin-bottom: var(--space-3); /* 12px spacing between sections (reduced by 50%) */
+  padding-top: var(--space-5); /* 24px vertical spacing */
+  padding-bottom: var(--space-5);
+  margin-bottom: 0; /* No additional spacing between sections */
 }
 
 /* Section header standardization */
