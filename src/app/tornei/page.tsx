@@ -7,8 +7,8 @@ type Tournament = {
   id: string;
   title: string;
   description?: string;
-  starts_at?: string;
-  ends_at?: string;
+  start_date?: string;
+  end_date?: string;
   category?: string;
   level?: string;
   max_participants?: number;
@@ -75,7 +75,7 @@ export default function TorneiPage() {
                 <p className="mt-2 text-sm text-muted overflow-hidden">{t.description}</p>
               </div>
               <div className="mt-2 text-sm flex items-center justify-between">
-                <div className="text-sm text-muted-2">{t.starts_at ? new Date(t.starts_at).toLocaleDateString() : ''}</div>
+                <div className="text-sm text-muted-2">{t.start_date ? new Date(t.start_date).toLocaleDateString() : ''}</div>
                 <div className="text-sm text-muted">{t.category ?? ''} {t.level ? `· ${t.level}` : ''}</div>
               </div>
             </Link>

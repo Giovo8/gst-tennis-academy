@@ -8,7 +8,7 @@ type Tournament = {
   id: string;
   title: string;
   description?: string;
-  starts_at?: string;
+  start_date?: string;
   max_participants?: number;
   competition_type?: 'torneo' | 'campionato';
   format?: 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
@@ -22,7 +22,7 @@ function GestoreTorneiPageInner() {
   const [form, setForm] = useState({ 
     title: '', 
     description: '', 
-    starts_at: '', 
+    start_date: '', 
     max_participants: '16',
     competition_type: 'torneo' as 'torneo' | 'campionato',
     format: 'eliminazione_diretta' as 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione',
@@ -73,7 +73,7 @@ function GestoreTorneiPageInner() {
       const payload = { 
         ...form, 
         max_participants: Number(form.max_participants), 
-        starts_at: form.starts_at,
+        start_date: form.start_date,
         competition_type: form.competition_type,
         format: form.format,
         status: form.status
@@ -104,7 +104,7 @@ function GestoreTorneiPageInner() {
         setForm({ 
           title: '', 
           description: '', 
-          starts_at: '', 
+          start_date: '', 
           max_participants: '16',
           competition_type: 'torneo',
           format: 'eliminazione_diretta',
@@ -211,8 +211,8 @@ function GestoreTorneiPageInner() {
             <div>
               <label className="block text-sm font-medium text-muted-2 mb-2">Data e Ora Inizio</label>
               <input 
-                value={form.starts_at} 
-                onChange={(e) => setForm(f => ({ ...f, starts_at: e.target.value }))} 
+                value={form.start_date} 
+                onChange={(e) => setForm(f => ({ ...f, start_date: e.target.value }))} 
                 type="datetime-local" 
                 className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
                 required
@@ -320,7 +320,7 @@ function GestoreTorneiPageInner() {
                       </div>
                       <div className="font-medium text-white">{t.title}</div>
                       <div className="text-sm text-[#c6d8c9]">
-                        {t.starts_at ? new Date(t.starts_at).toLocaleString('it-IT') : 'Data da definire'}
+                        {t.start_date ? new Date(t.start_date).toLocaleString('it-IT') : 'Data da definire'}
                       </div>
                       {t.format && (
                         <div className="text-xs text-muted-2 mt-1 capitalize">

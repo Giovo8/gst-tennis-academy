@@ -12,7 +12,7 @@ interface Tournament {
   title: string;
   description: string;
   is_active: boolean;
-  starts_at: string | null;
+  start_date: string | null;
   max_participants: number;
 }
 
@@ -211,7 +211,7 @@ export default function AdminTorneiPage() {
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2 text-sm text-gray-300">
                   <Calendar className="h-4 w-4 text-blue-400" />
-                  <span>{tournament.starts_at ? new Date(tournament.starts_at).toLocaleDateString('it-IT') : "Non definita"}</span>
+                  <span>{tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('it-IT') : "Non definita"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-300">
                   <Users className="h-4 w-4 text-blue-400" />

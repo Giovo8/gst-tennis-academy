@@ -6,7 +6,8 @@ type CompetitionFormat = 'eliminazione_diretta' | 'round_robin' | 'girone_elimin
 
 interface TournamentBody {
   title: string;
-  starts_at: string;
+  start_date: string; // Use start_date (actual DB column)
+  end_date?: string;  // Use end_date (actual DB column)
   max_participants: number;
   status: string;
   competition_type?: CompetitionType;
@@ -43,7 +44,10 @@ export async function GET(req: Request) {
         .select(`*`)
         .eq("id", id)
         .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+      if (error) {
+        console.error('[tournaments GET by id] error:', error);
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
       if (!data) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
 
       // count participants
@@ -51,7 +55,10 @@ export async function GET(req: Request) {
         .from("tournament_participants")
         .select("id", { count: "exact", head: true })
         .eq("tournament_id", id);
-      if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
+      if (countErr) {
+        console.error('[tournaments GET participants count] error:', countErr);
+        return NextResponse.json({ error: countErr.message }, { status: 500 });
+      }
 
       // try to load creator profile if exists
       let creator = null;
@@ -63,25 +70,32 @@ export async function GET(req: Request) {
       return NextResponse.json({ tournament: data, created_by_profile: creator, current_participants: count ?? 0 });
     }
 
+    // Build query - use start_date column (actual DB column name)
     let query = supabaseServer
       .from("tournaments")
       .select("*")
-      .order("starts_at", { ascending: true });
+      .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
-      query = query.gte("starts_at", new Date().toISOString());
+      query = query.gte("start_date", new Date().toISOString());
     }
 
-    // Filter by competition type if provided
+    // Filter by competition type if column exists
     if (type && (type === 'torneo' || type === 'campionato')) {
       query = query.eq("competition_type", type);
     }
 
     const { data, error } = await query;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ tournaments: data });
+    
+    if (error) {
+      console.error('[tournaments GET] error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({ tournaments: data || [] });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('[tournaments GET] catch error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
 

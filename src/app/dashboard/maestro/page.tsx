@@ -144,7 +144,7 @@ export default function MaestroDashboardPage() {
     // load tournaments and athletes for coach enrollment
     async function loadEnrollData() {
       try {
-        const { data: tData } = await supabase.from('tournaments').select('id, title, starts_at').gte('starts_at', new Date().toISOString()).order('starts_at');
+        const { data: tData } = await supabase.from('tournaments').select('id, title, start_date').gte('start_date', new Date().toISOString()).order('start_date');
         setTournaments((tData as any) ?? []);
         const { data: aData } = await supabase.from('profiles').select('id, full_name').eq('role', 'atleta').order('full_name');
         setAthletes((aData as any) ?? []);
