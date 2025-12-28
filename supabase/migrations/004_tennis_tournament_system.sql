@@ -200,7 +200,7 @@ RETURNS TABLE (
   games_won INT,
   games_lost INT,
   game_diff INT,
-  position INT
+  group_position INT
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -224,11 +224,11 @@ BEGIN
         (tp.sets_won - tp.sets_lost) DESC,
         (tp.games_won - tp.games_lost) DESC,
         tp.games_won DESC
-    )::INT AS position
+    )::INT AS group_position
   FROM tournament_participants tp
   LEFT JOIN profiles p ON tp.user_id = p.id
   WHERE tp.group_id = group_uuid
-  ORDER BY position;
+  ORDER BY group_position;
 END;
 $$ LANGUAGE plpgsql;
 
