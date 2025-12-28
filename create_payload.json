@@ -1,0 +1,9 @@
+﻿{
+  "title": "E2E Test Tournament File",
+  "description": "Automated E2E test (file payload)",
+  "starts_at": "2026-01-10T10:00:00.000Z",
+  "max_participants": 2,
+  "category": "Test",
+  "level": "Beginner",
+  "status": "Aperto"
+}

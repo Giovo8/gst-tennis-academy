@@ -73,15 +73,15 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff" className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-          Staff
-        </p>
-        <h2 className="text-2xl font-semibold text-white">
-          Un team multidisciplinare sul campo
-        </h2>
-      </div>
+    <section id="staff">
+      <div className="container section">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Il nostro
+            staff
+          </p>
+          <h2 className="text-2xl font-semibold text-white">Incontra il team
+          </h2>
+        </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {staff.map((member) => (
@@ -112,6 +112,7 @@ export default function StaffSection() {
             </div>
           </article>
         ))}
+      </div>
       </div>
     </section>
   );

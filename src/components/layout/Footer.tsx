@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-footer">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between">
+      <div className="container section flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-white">GST Tennis Academy</p>
           <p className="text-xs text-muted-2">
@@ -22,8 +22,8 @@ export default function Footer() {
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <a
+          <div className="flex items-center gap-3">
+            <a
             href="https://instagram.com"
             target="_blank"
             rel="noreferrer"

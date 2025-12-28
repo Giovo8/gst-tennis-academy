@@ -58,13 +58,13 @@ export default function SocialFeed() {
     document.body.appendChild(s);
   }, [embeds]);
 
-  return (
-    <section id="social" className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Social Feed</p>
-          <h2 className="text-2xl font-semibold text-white">Seguici sui social</h2>
-        </div>
+    return (
+      <section id="social">
+        <div className="container section">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Social Feed</p>
+            <h2 className="text-2xl font-semibold text-white">Seguici sui social</h2>
+          </div>
 
         <div className="flex items-center gap-3">
           <a
@@ -91,8 +91,8 @@ export default function SocialFeed() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 overflow-hidden">
+        <div className="grid gap-4 md:grid-cols-2 mt-6">
+          <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 overflow-hidden md:max-w-[640px] mx-auto">
           <iframe
             title="Facebook Page"
             src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}

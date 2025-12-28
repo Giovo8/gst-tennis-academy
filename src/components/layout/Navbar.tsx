@@ -50,8 +50,8 @@ export default function Navbar() {
 
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+      <div className="container py-sm">
+        <div className="flex items-center justify-between gap-4 py-sm">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <img src="/images/logo-tennis.png" alt="GST Academy Logo" className="h-8 w-8" />
@@ -59,7 +59,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             <Link
               href="/"
               className={`flex items-center gap-2 text-sm font-medium transition ${
@@ -101,7 +101,7 @@ export default function Navbar() {
           </div>
 
           {/* User Info & Logout */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             {profile && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted">{profile.full_name || user.email}</span>
@@ -114,7 +114,7 @@ export default function Navbar() {
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-full bg-red-600/20 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-600/30"
+              className="flex items-center gap-2 rounded-full bg-red-600/20 px py-sm text-sm font-semibold text-red-300 transition hover:bg-red-600/30"
             >
               <LogOut className="h-4 w-4" />
               Esci

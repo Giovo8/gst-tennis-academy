@@ -69,8 +69,8 @@ export default function Header() {
       <a href="#content" className="sr-only focus:not-sr-only">
         Salta al contenuto
       </a>
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+      <div className="container">
+        <div className="flex items-center justify-between py">
           {/* Logo */}
           <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-3">
             <Image 
@@ -131,7 +131,7 @@ export default function Header() {
               <>
                 <Link
                   href={getDashboardUrl()}
-                  className="rounded-full bg-[#2f7de1] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2563c7]"
+                  className="rounded-full bg-accent-strong px py-sm text-sm font-semibold text-[#06101f] transition hover:opacity-95"
                 >
                   Area GST
                 </Link>

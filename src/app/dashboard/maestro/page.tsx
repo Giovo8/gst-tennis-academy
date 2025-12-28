@@ -29,6 +29,12 @@ export default function MaestroDashboardPage() {
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("pending");
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>("");
+  const [tournaments, setTournaments] = useState<Array<{id:string; title:string}>>([]);
+  const [selectedTournament, setSelectedTournament] = useState<string>("");
+  const [athletes, setAthletes] = useState<Array<{id:string; full_name?:string}>>([]);
+  const [selectedAthlete, setSelectedAthlete] = useState<string>("");
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollMsg, setEnrollMsg] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -134,6 +140,50 @@ export default function MaestroDashboardPage() {
     setLoading(false);
   }
 
+  useEffect(() => {
+    // load tournaments and athletes for coach enrollment
+    async function loadEnrollData() {
+      try {
+        const { data: tData } = await supabase.from('tournaments').select('id, title, starts_at').gte('starts_at', new Date().toISOString()).order('starts_at');
+        setTournaments((tData as any) ?? []);
+        const { data: aData } = await supabase.from('profiles').select('id, full_name').eq('role', 'atleta').order('full_name');
+        setAthletes((aData as any) ?? []);
+      } catch (err) {
+        // ignore
+      }
+    }
+    loadEnrollData();
+  }, []);
+
+  async function handleEnrollForTournament() {
+    setEnrollMsg(null);
+    setEnrollLoading(true);
+    try {
+      if (!selectedTournament || !selectedAthlete) {
+        setEnrollMsg('Seleziona torneo e atleta');
+        setEnrollLoading(false);
+        return;
+      }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token ?? null;
+      const res = await fetch('/api/tournament_participants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ user_id: selectedAthlete, tournament_id: selectedTournament }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEnrollMsg(json.error || 'Errore iscrizione');
+      } else {
+        setEnrollMsg('Atleta iscritto con successo');
+      }
+    } catch (err: any) {
+      setEnrollMsg(err.message || 'Errore rete');
+    } finally {
+      setEnrollLoading(false);
+    }
+  }
+
   async function handleConfirm(lessonId: string) {
     const { error } = await supabase
       .from("bookings")
@@ -223,6 +273,26 @@ export default function MaestroDashboardPage() {
             <Calendar className="h-4 w-4" />
             Tutte
           </button>
+        </div>
+
+        {/* Coach: Enroll Athletes to Tournaments */}
+        <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+          <h2 className="text-lg font-semibold text-white">Gestione Iscrizioni Tornei</h2>
+          <p className="text-sm text-muted mb-4">Seleziona un torneo e un atleta per iscriverlo manualmente.</p>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="px py-sm bg-input rounded-md text-sm md:mr-4">
+              <option value="">Scegli torneo</option>
+              {tournaments.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+            </select>
+            <select value={selectedAthlete} onChange={(e) => setSelectedAthlete(e.target.value)} className="px py-sm bg-input rounded-md text-sm md:mr-4">
+              <option value="">Scegli atleta</option>
+              {athletes.map(a => <option key={a.id} value={a.id}>{a.full_name ?? a.id}</option>)}
+            </select>
+            <div>
+              <button onClick={handleEnrollForTournament} disabled={enrollLoading} className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-[#06101f]">{enrollLoading ? 'Iscrivendo...' : 'Iscrivi atleta'}</button>
+            </div>
+          </div>
+          {enrollMsg && <div className="mt-3 text-sm text-muted">{enrollMsg}</div>}
         </div>
 
         {/* Lessons List */}

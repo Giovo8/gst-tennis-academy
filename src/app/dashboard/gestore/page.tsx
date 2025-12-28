@@ -107,6 +107,13 @@ export default function GestoreDashboardPage() {
           <DashboardLinkCard href="/dashboard/admin/courses" icon={<Target className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Gestione Corsi" description="Gestisci corsi, abbonamenti e prezzi." />
 
           <DashboardLinkCard href="/dashboard/admin/services" icon={<Settings className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Servizi" description="Configura corsi, abbonamenti e servizi dell'academy." />
+ 
+          <DashboardLinkCard
+            href="/dashboard/gestore/tornei"
+            icon={<Target className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />}
+            title="Gestione Tornei"
+            description="Crea tornei e visualizza gli iscritti."
+          />
         </div>
 
         {/* Quick Actions */}

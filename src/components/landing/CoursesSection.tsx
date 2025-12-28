@@ -41,24 +41,30 @@ export default function CoursesSection() {
 
   if (loading) {
     return (
-      <section id="programmi" className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+      <section id="programmi">
+        <div className="container section">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          </div>
+        </div>
       </section>
     );
   }
 
   return (
-    <section id="programmi" className="space-y-8">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-          Corsi e Abbonamenti
-        </p>
-        <h2 className="text-2xl font-semibold text-white">
-          Scegli il tuo percorso tennis
-        </h2>
-      </div>
+    <section id="programmi">
+      <div className="container section">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+            Corsi e Abbonamenti
+          </p>
+          <h2 className="text-2xl font-semibold text-white">
+            Scegli il tuo percorso tennis
+          </h2>
+        </div>
 
-      {sections.map((section) => {
+        <div className="mt-6 space-y-6">
+          {sections.map((section) => {
         // Layout: Single Box (Quota Iscrizione, Agonistico)
         if (section.layout_type === "single_box") {
           const item = section.items[0];
@@ -177,7 +183,9 @@ export default function CoursesSection() {
         }
 
         return null;
-      })}
+          })}
+        </div>
+      </div>
     </section>
   );
 }

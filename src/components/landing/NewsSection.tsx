@@ -75,26 +75,29 @@ export default function NewsSection() {
 
   if (loading) {
     return (
-      <section id="news" className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+      <section id="news">
+        <div className="container section">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          </div>
         </div>
       </section>
     );
   }
 
   return (
-    <section id="news" className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-          News
-        </p>
-        <h2 className="text-2xl font-semibold text-white">
-          Ultimi aggiornamenti dalla Academy
-        </h2>
-      </div>
+    <section id="news">
+      <div className="container section">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+            News
+          </p>
+          <h2 className="text-2xl font-semibold text-white">
+            Ultimi aggiornamenti dalla Academy
+          </h2>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
         {news.map((item) => (
           <article 
             key={item.id} 
@@ -130,6 +133,8 @@ export default function NewsSection() {
             </div>
           </article>
         ))}
+      </div>
+
       </div>
 
       {/* News Modal */}

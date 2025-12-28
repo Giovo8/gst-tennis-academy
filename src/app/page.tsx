@@ -9,6 +9,7 @@ import NewsSection from "@/components/landing/NewsSection";
 import CoursesSection from "@/components/landing/CoursesSection";
 import StaffSection from "@/components/landing/StaffSection";
 import SocialFeed from "@/components/landing/SocialFeed";
+import TournamentsSection from "@/components/landing/TournamentsSection";
 
 type Section = {
   section_key: string;
@@ -23,6 +24,7 @@ const sectionComponents: { [key: string]: React.ComponentType } = {
   news: NewsSection,
   social: SocialFeed,
   cta: CTASection,
+  tornei: TournamentsSection,
 };
 
 export default function Home() {
@@ -44,20 +46,26 @@ export default function Home() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Filtra solo le sezioni che hanno componenti validi
         const filteredSections = data.filter((section) => {
           return section.section_key in sectionComponents;
         });
+
+        // Ensure `tornei` is included in the filtered sections
+        if (!filteredSections.find((s) => s.section_key === "tornei")) {
+          filteredSections.push({ section_key: "tornei", order_index: 2, active: true });
+        }
+
         setSections(filteredSections);
       } else {
-        // Fallback to default order
+        // Fallback to default order (include tornei)
         setSections([
           { section_key: "hero", order_index: 0, active: true },
           { section_key: "courses", order_index: 1, active: true },
-          { section_key: "staff", order_index: 2, active: true },
-          { section_key: "news", order_index: 3, active: true },
-          { section_key: "social", order_index: 4, active: true },
-          { section_key: "cta", order_index: 5, active: true },
+          { section_key: "tornei", order_index: 2, active: true },
+          { section_key: "staff", order_index: 3, active: true },
+          { section_key: "news", order_index: 4, active: true },
+          { section_key: "social", order_index: 5, active: true },
+          { section_key: "cta", order_index: 6, active: true },
         ]);
       }
     } catch (error) {
@@ -80,7 +88,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-[#021627] text-white">
         <Header />
-        <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pb-16 pt-10">
+        <main className="flex flex-col gap-12 px-6 pb-16 pt-10">
           <p className="text-center text-muted">Caricamento...</p>
         </main>
       </div>
