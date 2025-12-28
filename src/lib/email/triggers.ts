@@ -15,6 +15,11 @@ import {
  * These functions are called after specific events to send automated emails
  */
 
+// Helper to check if email service is configured
+function isEmailServiceAvailable(): boolean {
+  return !!(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder_key_for_build");
+}
+
 // Booking Events
 export async function sendBookingConfirmation(bookingData: {
   userEmail: string;
@@ -27,6 +32,11 @@ export async function sendBookingConfirmation(bookingData: {
   totalPrice: string;
   bookingId: string;
 }) {
+  if (!isEmailServiceAvailable()) {
+    console.log("Email service not configured, skipping booking confirmation");
+    return { success: true, message: "Email service not configured" };
+  }
+
   const html = bookingConfirmationTemplate({
     user_name: bookingData.userName,
     court_name: bookingData.courtName,
@@ -60,6 +70,11 @@ export async function sendBookingCancellation(bookingData: {
   cancellationReason?: string;
   refundAmount?: string;
 }) {
+  if (!isEmailServiceAvailable()) {
+    console.log("Skipping booking cancellation email: RESEND_API_KEY not configured");
+    return { success: true, message: "Email service not configured" };
+  }
+
   const html = bookingCancelledTemplate({
     user_name: bookingData.userName,
     court_name: bookingData.courtName,
@@ -94,6 +109,11 @@ export async function sendTournamentRegistration(tournamentData: {
   registrationFee: string;
   tournamentId: string;
 }) {
+  if (!isEmailServiceAvailable()) {
+    console.log("Skipping tournament registration email: RESEND_API_KEY not configured");
+    return { success: true, message: "Email service not configured" };
+  }
+
   const html = tournamentRegistrationTemplate({
     user_name: tournamentData.userName,
     tournament_name: tournamentData.tournamentName,
@@ -127,6 +147,11 @@ export async function sendTournamentMatchReminder(matchData: {
   opponentName?: string;
   courtNumber: string;
 }) {
+  if (!isEmailServiceAvailable()) {
+    console.log("Skipping tournament match reminder: RESEND_API_KEY not configured");
+    return { success: true, message: "Email service not configured" };
+  }
+
   const html = tournamentReminderTemplate({
     user_name: matchData.userName,
     tournament_name: matchData.tournamentName,
@@ -161,6 +186,11 @@ export async function sendLessonConfirmation(lessonData: {
   lessonType: string;
   duration: string;
 }) {
+  if (!isEmailServiceAvailable()) {
+    console.log("Skipping lesson confirmation email: RESEND_API_KEY not configured");
+    return { success: true, message: "Email service not configured" };
+  }
+
   const html = lessonConfirmedTemplate({
     student_name: lessonData.userName,
     coach_name: lessonData.coachName,
@@ -185,7 +215,12 @@ export async function sendLessonConfirmation(lessonData: {
 }
 
 // User Events
-export async function sendWelcomeEmail(userData: {
+exif (!isEmailServiceAvailable()) {
+    console.log("Skipping welcome email: RESEND_API_KEY not configured");
+    return { success: true, message: "Email service not configured" };
+  }
+
+  port async function sendWelcomeEmail(userData: {
   userEmail: string;
   userName: string;
   userId: string;
@@ -210,6 +245,12 @@ export async function sendWelcomeEmail(userData: {
 // Batch reminder function (called by scheduler)
 export async function sendBookingReminders() {
   try {
+    // Skip if email service not configured
+    if (!isEmailServiceAvailable()) {
+      console.log("Skipping email reminders: RESEND_API_KEY not configured");
+      return { success: true, sent: 0, message: "Email service not configured" };
+    }
+
     const { supabaseServer } = await import("@/lib/supabase/serverClient");
     const supabase = supabaseServer;
 

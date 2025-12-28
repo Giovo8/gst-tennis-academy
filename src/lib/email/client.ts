@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend client with fallback for build time
+const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder_key_for_build");
 
 export { resend };
 
