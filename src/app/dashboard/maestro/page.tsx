@@ -79,7 +79,7 @@ export default function MaestroDashboardPage() {
     const { data: bookingsData, error: bookingsError } = await query;
 
     if (bookingsError) {
-      console.error("Errore caricamento lezioni:", bookingsError);
+      // Handle error silently
       setLoading(false);
       return;
     }

@@ -69,8 +69,7 @@ export default function Home() {
         ]);
       }
     } catch (error) {
-      console.error("Errore nel caricamento dell'ordine delle sezioni:", error);
-      // Fallback to default order
+      // Fallback to default order on error
       setSections([
         { section_key: "hero", order_index: 0, active: true },
         { section_key: "courses", order_index: 1, active: true },
@@ -98,24 +97,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#021627] text-white">
       <Header />
-      <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pb-16 pt-10">
+      <main className="container section-lg">
         {/* Accessibility skip link */}
         <a href="#main-content" className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4">Vai al contenuto</a>
 
-        {sections.map((section, index) => {
-          const Component = sectionComponents[section.section_key];
-          if (!Component) return null;
+        <div className="flex flex-col gap-lg">
+          {sections.map((section, index) => {
+            const Component = sectionComponents[section.section_key];
+            if (!Component) return null;
 
-          return (
-            <section
-              key={section.section_key}
-              id={index === 0 ? "main-content" : undefined}
-              className="section"
-            >
-              <Component />
-            </section>
-          );
-        })}
+            return (
+              <section
+                key={section.section_key}
+                id={index === 0 ? "main-content" : undefined}
+              >
+                <Component />
+              </section>
+            );
+          })}
+        </div>
       </main>
     </div>
   );

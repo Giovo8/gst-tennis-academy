@@ -75,7 +75,7 @@ export default function Hero() {
         setImages(data);
       }
     } catch (error) {
-      console.error("Errore nel caricamento delle immagini hero:", error);
+      // Use default images on error
     }
   }
 
@@ -87,7 +87,7 @@ export default function Hero() {
         setContent(data);
       }
     } catch (error) {
-      console.error("Errore nel caricamento contenuti hero:", error);
+      // Use default content on error
     }
   }
 

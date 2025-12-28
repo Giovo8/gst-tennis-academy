@@ -46,7 +46,7 @@ export default function AdminProgramsPage() {
       const data = await response.json();
       setPrograms(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento dei programmi:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -131,7 +131,7 @@ export default function AdminProgramsPage() {
       await loadPrograms();
       handleCancel();
     } catch (error) {
-      console.error("Errore nel salvataggio:", error);
+      // Handle error with user feedback
       alert("Errore nel salvataggio del programma");
     }
   }
@@ -150,7 +150,7 @@ export default function AdminProgramsPage() {
 
       await loadPrograms();
     } catch (error) {
-      console.error("Errore nell'eliminazione:", error);
+      // Handle error with user feedback
       alert("Errore nell'eliminazione del programma");
     }
   }

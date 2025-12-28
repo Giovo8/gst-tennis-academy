@@ -38,8 +38,7 @@ export default function SubscriptionsSection() {
         setPlans(data);
       }
     } catch (error) {
-      console.error("Errore nel caricamento degli abbonamenti:", error);
-      // Mantiene i default in caso di errore
+      // Use default plans on error
     }
   }
 

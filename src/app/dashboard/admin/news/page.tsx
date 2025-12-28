@@ -43,7 +43,7 @@ export default function AdminNewsPage() {
       .order("date", { ascending: false });
 
     if (error) {
-      console.error("Error loading news:", error);
+      // Handle error silently
     } else {
       setNews(data || []);
     }

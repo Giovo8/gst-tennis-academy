@@ -52,7 +52,7 @@ export default function StaffSection() {
       .order("order_index", { ascending: true });
 
     if (error) {
-      console.error("Error loading staff:", error);
+      // Use default staff on error
       setStaff(defaultStaff);
     } else if (data && data.length > 0) {
       setStaff(data);
@@ -73,18 +73,17 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff" className="section">
-      <div className="container">
-        <div className="section-header">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-            Il nostro staff
-          </p>
-          <h2 className="text-2xl font-semibold text-white">
-            Incontra il team
-          </h2>
-        </div>
+    <section id="staff">
+      <div className="section-header">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+          Il nostro staff
+        </p>
+        <h2 className="text-2xl font-semibold text-white">
+          Incontra il team
+        </h2>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-lg md:grid-cols-3">
         {staff.map((member) => (
           <article key={member.id} className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 overflow-hidden">
             {member.image_url ? (
@@ -113,7 +112,6 @@ export default function StaffSection() {
             </div>
           </article>
         ))}
-      </div>
       </div>
     </section>
   );

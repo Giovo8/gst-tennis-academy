@@ -72,7 +72,7 @@ export default function UsersPage() {
       if (error) throw error;
       setUsers(data || []);
     } catch (err) {
-      console.error("Errore caricamento utenti:", err);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -134,10 +134,9 @@ export default function UsersPage() {
       setFormError("");
       await loadUsers();
       
-      // Notifica di successo (opzionale)
-      alert(`Utente ${data.user.email} creato con successo!`);
+      // Notifica di successo
+      setFormError("");
     } catch (err: any) {
-      console.error("Errore creazione utente:", err);
       setFormError(err.message || "Errore durante la creazione");
     } finally {
       setFormLoading(false);
@@ -154,7 +153,7 @@ export default function UsersPage() {
       if (error) throw error;
       loadUsers();
     } catch (err) {
-      console.error("Errore aggiornamento ruolo:", err);
+      // Handle error silently
     }
   }
 

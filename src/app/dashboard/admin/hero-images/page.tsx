@@ -42,7 +42,7 @@ export default function AdminHeroImagesPage() {
       const data = await response.json();
       setImages(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento delle immagini:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function AdminHeroImagesPage() {
 
       await loadImages();
     } catch (error) {
-      console.error("Errore nell'eliminazione:", error);
+      // Handle error with user feedback
       alert("Errore nell'eliminazione dell'immagine");
     }
   }

@@ -49,12 +49,11 @@ export default function TournamentsSection() {
   const campionatiCount = items.filter(t => t.competition_type === 'campionato').length;
 
   return (
-    <section id="tornei" className="section">
-      <div className="container">
-        <div className="section-header">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Competizioni</p>
-          <h2 className="text-2xl font-semibold text-white">Tornei e Campionati</h2>
-        </div>
+    <section id="tornei">
+      <div className="section-header">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Competizioni</p>
+        <h2 className="text-2xl font-semibold text-white">Tornei e Campionati</h2>
+      </div>
 
         {/* Filter Tabs */}
         <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto pb-2">

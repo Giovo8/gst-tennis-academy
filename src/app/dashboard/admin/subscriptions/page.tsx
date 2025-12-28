@@ -49,7 +49,7 @@ export default function AdminSubscriptionsPage() {
       const data = await response.json();
       setSubscriptions(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento degli abbonamenti:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,7 @@ export default function AdminSubscriptionsPage() {
       await loadSubscriptions();
       handleCancel();
     } catch (error) {
-      console.error("Errore nel salvataggio:", error);
+      // Handle error with user feedback
       alert("Errore nel salvataggio dell'abbonamento");
     }
   }
@@ -156,7 +156,7 @@ export default function AdminSubscriptionsPage() {
 
       await loadSubscriptions();
     } catch (error) {
-      console.error("Errore nell'eliminazione:", error);
+      // Handle error with user feedback
       alert("Errore nell'eliminazione dell'abbonamento");
     }
   }

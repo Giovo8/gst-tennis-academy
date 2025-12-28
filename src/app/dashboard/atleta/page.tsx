@@ -75,7 +75,7 @@ export default function AthleteDashboardPage() {
         .limit(5);
       
       if (bookingError) {
-        console.error("Booking error:", bookingError);
+        // Handle booking error silently
       }
       
       if (bookingData) {

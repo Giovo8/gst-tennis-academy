@@ -27,7 +27,7 @@ export default function AdminHomepageOrderPage() {
       const data = await response.json();
       setSections(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento delle sezioni:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function AdminHomepageOrderPage() {
 
       alert("Ordine salvato con successo!");
     } catch (error) {
-      console.error("Errore nel salvataggio:", error);
+      // Handle error with user feedback
       alert("Errore nel salvataggio dell'ordine");
     } finally {
       setSaving(false);

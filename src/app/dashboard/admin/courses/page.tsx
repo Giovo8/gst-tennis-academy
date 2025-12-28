@@ -51,7 +51,7 @@ export default function AdminCoursesPage() {
       if (error) throw error;
       setSections(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -156,7 +156,7 @@ export default function AdminCoursesPage() {
       await loadSections();
       handleCancel();
     } catch (error) {
-      console.error("Errore nel salvataggio:", error);
+      // Handle error with user feedback
       alert("Errore nel salvataggio");
     }
   }
@@ -169,7 +169,7 @@ export default function AdminCoursesPage() {
       if (error) throw error;
       await loadSections();
     } catch (error) {
-      console.error("Errore nell'eliminazione:", error);
+      // Handle error with user feedback
       alert("Errore nell'eliminazione");
     }
   }

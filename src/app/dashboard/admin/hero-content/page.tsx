@@ -40,7 +40,7 @@ export default function AdminHeroContentPage() {
       setContent(data);
       setFormData(data);
     } catch (error) {
-      console.error("Errore caricamento:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }

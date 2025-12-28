@@ -86,18 +86,17 @@ export default function NewsSection() {
   }
 
   return (
-    <section id="news" className="section">
-      <div className="container">
-        <div className="section-header">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-            News
-          </p>
-          <h2 className="text-2xl font-semibold text-white">
-            Ultimi aggiornamenti dalla Academy
-          </h2>
-        </div>
+    <section id="news">
+      <div className="section-header">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+          News
+        </p>
+        <h2 className="text-2xl font-semibold text-white">
+          Ultimi aggiornamenti dalla Academy
+        </h2>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-lg md:grid-cols-3">
         {news.map((item) => (
           <article 
             key={item.id} 

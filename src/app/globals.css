@@ -110,9 +110,36 @@ p {
 .mt { margin-top: var(--space-4); }
 .mt-lg { margin-top: var(--space-6); }
 .mb { margin-bottom: var(--space-4); }
+.mb-sm { margin-bottom: var(--space-2); }
+.mb-lg { margin-bottom: var(--space-6); }
 .py-sm { padding-top: var(--space-2); padding-bottom: var(--space-2); }
 .py { padding-top: var(--space-4); padding-bottom: var(--space-4); }
+.py-lg { padding-top: var(--space-6); padding-bottom: var(--space-6); }
 .px { padding-left: var(--space-4); padding-right: var(--space-4); }
+.px-sm { padding-left: var(--space-2); padding-right: var(--space-2); }
+.px-lg { padding-left: var(--space-6); padding-right: var(--space-6); }
+
+/* Gap utilities for flex/grid layouts */
+.gap-sm { gap: var(--space-2); }
+.gap { gap: var(--space-4); }
+.gap-lg { gap: var(--space-6); }
+.gap-xl { gap: var(--space-8); }
+
+/* Section spacing variants */
+.section-sm {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.section-lg {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-6);
+}
+
+.section-xl {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+}
 
 @media (min-width: var(--breakpoint-md)) {
   .container { padding-left: var(--space-5); padding-right: var(--space-5); }

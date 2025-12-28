@@ -33,7 +33,7 @@ export default function CoursesSection() {
       if (error) throw error;
       setSections(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento delle sezioni:", error);
+      // Use empty sections on error
     } finally {
       setLoading(false);
     }
@@ -52,18 +52,17 @@ export default function CoursesSection() {
   }
 
   return (
-    <section id="programmi" className="section">
-      <div className="container">
-        <div className="section-header">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-            Corsi e Abbonamenti
-          </p>
-          <h2 className="text-2xl font-semibold text-white">
-            Scegli il tuo percorso tennis
-          </h2>
-        </div>
+    <section id="programmi">
+      <div className="section-header">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
+          Corsi e Abbonamenti
+        </p>
+        <h2 className="text-2xl font-semibold text-white">
+          Scegli il tuo percorso tennis
+        </h2>
+      </div>
 
-        <div className="space-y-6">
+      <div className="flex flex-col gap-lg">
           {sections.map((section) => {
         // Layout: Single Box (Quota Iscrizione, Agonistico)
         if (section.layout_type === "single_box") {
@@ -185,7 +184,6 @@ export default function CoursesSection() {
         return null;
           })}
         </div>
-      </div>
     </section>
   );
 }

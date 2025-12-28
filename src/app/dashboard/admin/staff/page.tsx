@@ -52,7 +52,7 @@ export default function AdminStaffPage() {
       if (error) throw error;
       setStaff(data || []);
     } catch (error) {
-      console.error("Errore nel caricamento dello staff:", error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -131,7 +131,7 @@ export default function AdminStaffPage() {
       await loadStaff();
       handleCancel();
     } catch (error) {
-      console.error("Errore nel salvataggio:", error);
+      // Handle error with user feedback
       alert("Errore nel salvataggio dello staff member");
     }
   }
@@ -148,7 +148,7 @@ export default function AdminStaffPage() {
 
       await loadStaff();
     } catch (error) {
-      console.error("Errore nell'eliminazione:", error);
+      // Handle error with user feedback
       alert("Errore nell'eliminazione dello staff member");
     }
   }

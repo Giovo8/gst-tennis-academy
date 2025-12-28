@@ -64,8 +64,7 @@ export default function ProgramsSection() {
         setPrograms(data);
       }
     } catch (error) {
-      console.error("Errore nel caricamento dei programmi:", error);
-      // Mantiene i default in caso di errore
+      // Use default programs on error
     }
   }
 
