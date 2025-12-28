@@ -3,6 +3,8 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { Loader2, Trophy, Award, CheckCircle, Plus } from "lucide-react";
+import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
 
 type Tournament = {
   id: string;
@@ -13,27 +15,23 @@ type Tournament = {
   competition_type?: 'torneo' | 'campionato';
   format?: 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
   status?: string;
+  category?: string;
+  surface_type?: string;
+  match_format?: string;
+  entry_fee?: number;
 };
 
 
 function GestoreTorneiPageInner() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ 
-    title: '', 
-    description: '', 
-    start_date: '', 
-    max_participants: '16',
-    competition_type: 'torneo' as 'torneo' | 'campionato',
-    format: 'eliminazione_diretta' as 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione',
-    status: 'Aperto'
-  });
   const [error, setError] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [sessionInfo, setSessionInfo] = useState<{userId?: string, role?: string, token?: string}>({});
   const searchParams = useSearchParams();
   const selectedTournament = searchParams?.get("t");
   const [filterType, setFilterType] = useState<'all' | 'torneo' | 'campionato'>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     load();
@@ -64,20 +62,18 @@ function GestoreTorneiPageInner() {
     } catch (err) {
       // ignore
     }
-  }
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    try {
-      const payload = { 
-        ...form, 
-        max_participants: Number(form.max_participants), 
+  } 
+        max_participants: maxPart, 
+        entry_fee: form.entry_fee ? Number(form.entry_fee) : undefined,
         start_date: form.start_date,
         competition_type: form.competition_type,
         format: form.format,
-        status: form.status
+        status: form.status,
+        category: form.category,
+        surface_type: form.surface_type,
+        match_format: form.match_format
       };
+
       // Forza refresh sessione
       await supabase.auth.refreshSession();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -91,10 +87,16 @@ function GestoreTorneiPageInner() {
       setSessionInfo({ userId: userId ?? undefined, role: userRole ?? undefined, token: token ?? undefined });
       if (!token) {
         setError('Sessione non valida. Fai logout/login e riprova.');
+        setSubmitting(false);
         return;
       }
       const res = await fetch('/api/tournaments', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload)
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json', 
+          Authorization: `Bearer ${token}` 
+        }, 
+        body: JSON.stringify(payload)
       });
       let json: any = {};
       try { json = await res.json(); } catch (e) { json = {}; }
@@ -108,12 +110,20 @@ function GestoreTorneiPageInner() {
           max_participants: '16',
           competition_type: 'torneo',
           format: 'eliminazione_diretta',
-          status: 'Aperto'
+          status: 'Aperto',
+          category: 'Open',
+          surface_type: 'terra',
+          match_format: 'best_of_3',
+          entry_fee: ''
         });
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 5000);
         load();
       }
     } catch (err: any) {
       setError(err.message || 'Errore rete');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -141,198 +151,228 @@ function GestoreTorneiPageInner() {
 
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
-      <div style={{background: '#222', color: '#fff', padding: 8, borderRadius: 8, marginBottom: 16}}>
-        <b>DEBUG SESSIONE</b><br/>
-        User ID: {sessionInfo.userId || 'N/A'}<br/>
-        Ruolo: {sessionInfo.role || 'N/A'}<br/>
-        Token: {sessionInfo.token ? sessionInfo.token.slice(0, 16) + '...' : 'N/A'}
-      </div>
-      <div className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Area Gestore</p>
-        <h1 className="text-3xl font-semibold text-white">Gestione Tornei</h1>
-        <p className="text-sm text-muted">Crea nuovi tornei e visualizza gli iscritti.</p>
+      {/* Header Section with Gradient */}
+      <div className="relative mb-8">
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full bg-[#7de3ff]/10 blur-3xl" />
+          <div className="absolute right-1/4 top-20 h-48 w-48 rounded-full bg-[#4fb3ff]/10 blur-3xl" />
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-12 rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff]" />
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7de3ff]">Area Gestore</p>
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-white via-[#7de3ff] to-white bg-clip-text text-transparent">
+              Gestione Tornei
+            </span>
+          </h1>
+          <p className="text-sm text-gray-400 max-w-2xl">
+            Crea e gestisci tornei e campionati con il sistema semplificato. 
+            Scegli tra eliminazione diretta, girone + eliminazione o campionato.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-[#2f7de1]/30 p-6 bg-[#1a3d5c]/60">
-          <h2 className="text-lg font-semibold text-white mb-4">Crea Competizione</h2>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-muted-2 mb-2">Tipo Competizione</label>
-              <select 
-                value={form.competition_type} 
-                onChange={(e) => setForm(f => ({ 
-                  ...f, 
-                  competition_type: e.target.value as 'torneo' | 'campionato',
-                  // Auto-adjust format based on type
-                  format: e.target.value === 'campionato' ? 'round_robin' : 'eliminazione_diretta'
-                }))} 
-                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
-              >
-                <option value="torneo">Torneo</option>
-                <option value="campionato">Campionato</option>
-              </select>
+      <div className="mt-8 grid gap-6">
+        {/* Nuovo form semplificato con design moderno */}
+        <div className="group relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl shadow-2xl shadow-[#7de3ff]/5 transition-all hover:border-[#7de3ff]/40 hover:shadow-[#7de3ff]/10">
+          {/* Animated background orbs */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-10 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" style={{animationDuration: '4s'}} />
+            <div className="absolute right-10 bottom-10 h-24 w-24 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-2xl" style={{animationDuration: '6s', animationDelay: '2s'}} />
+          </div>
+          
+          <div className="relative p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="group-hover:scale-110 transition-transform duration-300">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-20 blur-lg" />
+                    <div className="relative rounded-xl bg-gradient-to-br from-[#7de3ff]/30 to-[#4fb3ff]/30 p-3 ring-1 ring-[#7de3ff]/50">
+                      <Trophy className="w-7 h-7 text-[#7de3ff] drop-shadow-[0_0_8px_rgba(125,227,255,0.5)]" />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">Crea Nuovo Torneo</h2>
+                  <p className="text-sm text-gray-400">Sistema semplificato con wizard in 3 step</p>
+                </div>
+              </div>
+              
+              {!showCreateForm && (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="group/btn relative overflow-hidden rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 font-bold text-[#0a1929] shadow-lg shadow-[#7de3ff]/30 transition-all hover:shadow-xl hover:shadow-[#7de3ff]/40 hover:scale-105 active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
+                  <div className="relative flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    <span>Nuovo Torneo</span>
+                  </div>
+                </button>
+              )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-muted-2 mb-2">Formato</label>
-              <select 
-                value={form.format} 
-                onChange={(e) => setForm(f => ({ ...f, format: e.target.value as any }))} 
-                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
-              >
-                <option value="eliminazione_diretta">Eliminazione Diretta</option>
-                <option value="round_robin">Round-robin (Tutti contro tutti)</option>
-                <option value="girone_eliminazione">Fase a Gironi + Eliminazione</option>
-              </select>
-              <p className="mt-1 text-xs text-muted-2">
-                {form.format === 'eliminazione_diretta' && 'I partecipanti devono essere una potenza di 2 (2, 4, 8, 16, 32, ecc.)'}
-                {form.format === 'round_robin' && 'Tutti i partecipanti giocano contro tutti. Ideale per campionati.'}
-                {form.format === 'girone_eliminazione' && 'Prima fase a gironi, poi eliminazione diretta con i migliori.'}
+          {showCreateForm && (
+            <SimpleTournamentCreator 
+              onSuccess={() => {
+                setShowCreateForm(false);
+                load();
+              }}
+            />
+          )}
+
+          {!showCreateForm && (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30 mb-4">
+                <Trophy className="w-8 h-8 text-[#7de3ff]/60" />
+              </div>
+              <p className="text-sm text-gray-400 max-w-md mx-auto">
+                Clicca su <span className="font-semibold text-[#7de3ff]">&quot;Nuovo Torneo&quot;</span> per creare un torneo semplificato con wizard intuitivo in 3 step
               </p>
             </div>
-            
-            <input 
-              value={form.title} 
-              onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} 
-              placeholder="Titolo (es: Torneo Primavera 2026)" 
-              className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30" 
-              required
-            />
-            
-            <textarea 
-              value={form.description} 
-              onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} 
-              placeholder="Descrizione (opzionale)" 
-              className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
-              rows={3}
-            />
-            
-            <div>
-              <label className="block text-sm font-medium text-muted-2 mb-2">Data e Ora Inizio</label>
-              <input 
-                value={form.start_date} 
-                onChange={(e) => setForm(f => ({ ...f, start_date: e.target.value }))} 
-                type="datetime-local" 
-                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-muted-2 mb-2">Numero Massimo Partecipanti</label>
-              <input 
-                value={form.max_participants} 
-                onChange={(e) => setForm(f => ({ ...f, max_participants: e.target.value }))} 
-                type="number" 
-                min="2"
-                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-muted-2 mb-2">Stato</label>
-              <select 
-                value={form.status} 
-                onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))} 
-                className="w-full rounded-md p-2 bg-[#081e2b] text-white border border-[#2f7de1]/30"
-              >
-                <option value="Aperto">Aperto (iscrizioni attive)</option>
-                <option value="Chiuso">Chiuso (iscrizioni chiuse)</option>
-                <option value="In corso">In corso</option>
-                <option value="Completato">Completato</option>
-              </select>
-            </div>
-            
-            <div>
-              <button type="submit" className="w-full rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 text-sm font-semibold text-[#06101f] hover:shadow-accent transition-all">
-                Crea Competizione
-              </button>
-            </div>
-            {error && <div className="text-sm text-cyan-300 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">{error}</div>}
-          </form>
+          )}
+          </div>
         </div>
 
-        <div className="rounded-xl border border-[#2f7de1]/30 p-4 md:p-6 bg-[#1a3d5c]/60">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h2 className="text-base md:text-lg font-semibold text-white">Competizioni</h2>
-            <div className="flex gap-2 overflow-x-auto pb-1">
+        {/* Lista Competizioni */}
+        <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl shadow-2xl shadow-[#7de3ff]/5">
+          {/* Animated background for list */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute right-20 top-20 h-40 w-40 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-3xl" style={{animationDuration: '8s'}} />
+          </div>
+          
+          <div className="relative p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">Competizioni Attive</h2>
+                <p className="text-sm text-gray-400">Gestisci e monitora tutti i tornei</p>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                   filterType === 'all'
-                    ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
-                    : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
                 }`}
               >
                 Tutte
               </button>
               <button
                 onClick={() => setFilterType('torneo')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                   filterType === 'torneo'
-                    ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
-                    : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
                 }`}
               >
                 Tornei
               </button>
               <button
                 onClick={() => setFilterType('campionato')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                   filterType === 'campionato'
-                    ? 'bg-[#7de3ff]/20 text-[#7de3ff] border border-[#7de3ff]/50'
-                    : 'bg-[#0c1424]/40 text-muted-2 border border-[#2f7de1]/20'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
                 }`}
               >
                 Campionati
               </button>
             </div>
           </div>
-          {loading ? <div className="text-sm text-[#c6d8c9]">Caricamento...</div> : (
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-[#7de3ff]/20 blur-xl animate-pulse" />
+                <Loader2 className="relative w-10 h-10 animate-spin text-[#7de3ff]" />
+              </div>
+              <p className="mt-4 text-sm text-gray-400 animate-pulse">Caricamento tornei...</p>
+            </div>
+          )}
+
+          {!loading && tournaments.filter(t => filterType === 'all' || t.competition_type === filterType || (!t.competition_type && filterType === 'torneo')).length === 0 && (
+            <div className="py-20 text-center">
+              <div className="relative inline-flex mb-6">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 blur-xl" />
+                <div className="relative rounded-2xl bg-[#0a1929]/60 p-6 ring-1 ring-[#7de3ff]/20">
+                  <Trophy className="w-16 h-16 text-[#7de3ff]/40" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Nessun torneo ancora</h3>
+              <p className="text-sm text-gray-400 max-w-sm mx-auto">Inizia creando il tuo primo torneo con il sistema semplificato</p>
+            </div>
+          )}
+
+          {!loading && (
             <ul className="space-y-3">
               {tournaments
                 .filter(t => filterType === 'all' || t.competition_type === filterType || (!t.competition_type && filterType === 'torneo'))
                 .map(t => (
-                <li key={t.id} className="rounded-lg md:rounded-xl border border-[#2f7de1]/30 p-3 md:p-4 bg-[#0f2131]">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-0.5 text-xs font-semibold uppercase rounded-full ${
+                <li key={t.id} className="group/item relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/40 hover:bg-[#0a1929]/80 transition-all duration-300 hover:shadow-lg hover:shadow-[#7de3ff]/10 hover:-translate-y-0.5">
+                  {/* Hover gradient effect */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#7de3ff]/0 via-[#7de3ff]/5 to-[#7de3ff]/0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500" />
+                  
+                  <div className="relative flex items-start gap-4 flex-1">
+                    <div className="group-hover/item:scale-110 transition-transform duration-300">
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-0 group-hover/item:opacity-20 blur-lg transition-opacity" />
+                        <div className="relative p-3 rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30">
+                          <Trophy className="w-5 h-5 text-[#7de3ff]" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2.5 py-1 text-xs font-bold uppercase rounded-lg ring-1 ${
                           (t.competition_type === 'campionato')
-                            ? 'bg-[#4fb3ff]/15 text-[#4fb3ff]'
-                            : 'bg-[#7de3ff]/15 text-[#7de3ff]'
+                            ? 'bg-[#4fb3ff]/10 text-[#4fb3ff] ring-[#4fb3ff]/20'
+                            : 'bg-[#7de3ff]/10 text-[#7de3ff] ring-[#7de3ff]/20'
                         }`}>
                           {t.competition_type === 'campionato' ? 'Campionato' : 'Torneo'}
                         </span>
                         {t.status && (
-                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                          <span className={`px-2.5 py-1 text-xs font-semibold rounded-lg ring-1 ${
                             t.status === 'Aperto' 
-                              ? 'bg-blue-500/10 text-blue-300'
+                              ? 'bg-blue-500/10 text-blue-300 ring-blue-500/20'
                               : t.status === 'In corso'
-                              ? 'bg-blue-500/10 text-blue-400'
-                              : 'bg-gray-500/10 text-gray-400'
+                              ? 'bg-green-500/10 text-green-300 ring-green-500/20'
+                              : 'bg-gray-500/10 text-gray-400 ring-gray-500/20'
                           }`}>
                             {t.status}
                           </span>
                         )}
                       </div>
-                      <div className="font-medium text-white">{t.title}</div>
-                      <div className="text-sm text-[#c6d8c9]">
-                        {t.start_date ? new Date(t.start_date).toLocaleString('it-IT') : 'Data da definire'}
-                      </div>
-                      {t.format && (
-                        <div className="text-xs text-muted-2 mt-1 capitalize">
-                          {t.format.replace('_', ' ')}
+                      <h3 className="font-bold text-white mb-2 truncate group-hover/item:text-[#7de3ff] transition-colors">{t.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <div className="text-gray-400">
+                          {t.start_date ? new Date(t.start_date).toLocaleString('it-IT') : 'Data da definire'}
                         </div>
+                      {t.format && (
+                        <div className="text-gray-500 capitalize">
+                          • {t.format.replace('_', ' ')}
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <a href={`/tornei/${t.id}`} className="text-center rounded-full border border-accent px-3 py-1 text-sm text-accent hover:bg-accent/10 transition">Apri</a>
-                    <a href={`/dashboard/gestore/tornei?t=${t.id}`} className="text-center rounded-full bg-accent px-3 py-1 text-sm font-semibold text-[#06101f] hover:shadow-accent transition">Iscritti</a>
-                  </div>
+                    <div className="relative flex items-center gap-2 sm:ml-3">
+                      <button
+                        onClick={() => {
+                          window.location.href = `/tornei/${t.id}`;
+                        }}
+                        className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all hover:shadow-md"
+                      >
+                        Apri
+                      </button>
+                      <button
+                        onClick={() => loadParticipants(t.id)}
+                        className="group/manage relative overflow-hidden px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/manage:translate-x-[100%] transition-transform duration-700" />
+                        <span className="relative">Gestisci</span>
+                      </button>
+                    </div>
                 </li>
               ))}
             </ul>
@@ -340,52 +380,77 @@ function GestoreTorneiPageInner() {
         </div>
       </div>
 
-      {/* Partecipanti panel */}
-      <div className="rounded-xl border border-[#2f7de1]/30 p-6 bg-[#1a3d5c]/60 mt-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Statistiche Partecipanti</h2>
-        {selectedTournament ? (
-          <div>
-            <div className="text-sm text-[#c6d8c9] mb-3">Torneo selezionato: {selectedTournament}</div>
-            <button onClick={() => loadParticipants(selectedTournament)} className="mb-3 inline-flex items-center gap-2 rounded-full border border-accent px-3 py-1 text-sm text-accent">Aggiorna statistiche</button>
-            {participants.length === 0 ? (
-              <div className="text-sm text-[#c6d8c9]">Nessun iscritto trovato.</div>
-            ) : (
-              <ul className="space-y-2">
-                {participants.map(p => (
-                  <li key={p.id} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-white">{p.profiles?.full_name ?? p.user_id}</div>
-                      <div className="text-sm text-[#c6d8c9]">{p.profiles?.email ?? ''}</div>
-                    </div>
-                    <div>
-                      <button onClick={async () => {
-                        if (!p.user_id) {
-                          alert('ID partecipante non valido.');
-                          return;
-                        }
-                        if (!confirm('Rimuovere questo partecipante?')) return;
-                        try {
-                          const { data: sessionData } = await supabase.auth.getSession();
-                          const token = sessionData?.session?.access_token ?? null;
-                          const res = await fetch(`/api/tournament_participants?tournament_id=${selectedTournament}&user_id=${p.user_id}`, { method: 'DELETE', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-                          if (res.ok) {
-                            setParticipants(prev => prev.filter(x => x.id !== p.id));
-                          } else {
-                            const j = await res.json();
-                            alert(j.error || 'Errore');
-                          }
-                        } catch (err: any) { alert(err.message || 'Errore'); }
-                      }} className="rounded-full border border-cyan-500 px-3 py-1 text-sm text-cyan-300">Rimuovi</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+      {/* Partecipanti del torneo selezionato */}
+      {selectedTournament && participants.length > 0 && (
+        <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl shadow-xl shadow-[#7de3ff]/5">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-20 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" />
           </div>
-        ) : (
-          <div className="text-sm text-[#c6d8c9]">Seleziona un torneo per vedere le statistiche.</div>
-        )}
-      </div>
+          
+          <div className="relative p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
+                <Award className="w-5 h-5 text-[#7de3ff]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  Iscritti ({participants.length})
+                </h3>
+                <p className="text-xs text-gray-400">Partecipanti registrati al torneo</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {participants.map((p: any) => (
+                <div
+                  key={p.id}
+                  className="group/participant flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:bg-[#0a1929]/80 transition-all hover:shadow-md hover:shadow-[#7de3ff]/10"
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-20 blur-md group-hover/participant:opacity-40 transition-opacity" />
+                    <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30 flex items-center justify-center">
+                      <span className="text-[#7de3ff] font-bold text-sm">
+                        {(p.profiles?.full_name || p.user_id || '?').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-white truncate group-hover/participant:text-[#7de3ff] transition-colors">
+                    {p.profiles?.full_name || p.user_id}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error notification with better design */}
+      {error && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-xl p-4 shadow-2xl shadow-red-500/20 max-w-md">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent" />
+            <div className="relative flex items-start gap-3">
+              <div className="rounded-lg bg-red-500/20 p-2 ring-1 ring-red-500/30">
+                <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-red-300 mb-1">Errore</p>
+                <p className="text-xs text-red-200/80">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-300 hover:text-red-200 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

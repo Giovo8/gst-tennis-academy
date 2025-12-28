@@ -1,492 +1,410 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { useForm } from "react-hook-form";
-import { Loader2, Plus, Search, Trophy, Users, Calendar, TrendingUp, CheckCircle, Flag } from "lucide-react";
-import StatCard from "@/components/dashboard/StatCard";
+import { Loader2, Trophy, Award, CheckCircle, Plus } from "lucide-react";
+import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
 
-// Define the Tournament type
-interface Tournament {
+type Tournament = {
   id: string;
   title: string;
-  description: string;
-  is_active: boolean;
-  start_date: string | null;
-  max_participants: number;
+  description?: string;
+  start_date?: string;
+  max_participants?: number;
   competition_type?: 'torneo' | 'campionato';
-  format?: 'eliminazione_diretta' | 'gironi' | 'misto';
-  category?: string;
-  end_date?: string | null;
-  match_format?: string;
-  surface_type?: string;
-  entry_fee?: number;
-  prize_money?: number;
-  prize_pool?: number;
-  level?: string;
+  format?: 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
   status?: string;
-}
+  category?: string;
+  surface_type?: string;
+  match_format?: string;
+  entry_fee?: number;
+};
 
-export default function AdminTorneiPage() {
+
+function AdminTorneiPageInner() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  // Adjust the type for react-hook-form
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<Tournament>();
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [sessionInfo, setSessionInfo] = useState<{userId?: string, role?: string, token?: string}>({});
+  const searchParams = useSearchParams();
+  const selectedTournament = searchParams?.get("t");
+  const [filterType, setFilterType] = useState<'all' | 'torneo' | 'campionato'>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
-    loadTournaments();
+    load();
   }, []);
 
-  async function loadTournaments() {
+  async function load() {
     setLoading(true);
     try {
-      const res = await fetch("/api/tournaments");
+      const res = await fetch('/api/tournaments');
       let json: any = {};
       try { json = await res.json(); } catch (e) { json = {}; }
-      if (res.ok) {
-        setTournaments(json.tournaments || []);
-      } else {
-        setError(json.error || "Errore nel caricamento dei tornei");
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Errore di rete");
-      }
+      if (res.ok) setTournaments(json.tournaments ?? []);
+      else setError(json.error || 'Errore caricamento tornei');
+    } catch (err: any) {
+      setError(err?.message || 'Errore rete');
     } finally {
       setLoading(false);
     }
   }
 
-  async function createTournament(data: Tournament) {
+  async function loadParticipants(tournamentId: string) {
     try {
-      // use auth token for admin-created tournaments
-      await supabase.auth.refreshSession();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token ?? null;
-      const res = await fetch("/api/tournaments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(data),
-      });
+      const res = await fetch(`/api/tournament_participants?tournament_id=${tournamentId}`);
       let json: any = {};
       try { json = await res.json(); } catch (e) { json = {}; }
-      if (res.ok) {
-        loadTournaments();
-        reset();
-      } else {
-        alert(json.error || "Errore nella creazione del torneo");
-      }
+      if (res.ok) setParticipants(json.participants ?? []);
+      else setError(json.error || 'Errore caricamento partecipanti');
     } catch (err) {
-      if (err instanceof Error) {
-        alert(err.message);
-      } else {
-        alert("Errore di rete");
-      }
+      // ignore
     }
   }
 
-  const filteredTournaments = tournaments.filter((tournament) =>
-    (tournament.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (tournament.description || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  async function handleEditTournament(tournamentId: string, updatedData: Partial<Tournament>) {
+    setError(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token ?? null;
+      const res = await fetch(`/api/tournaments?id=${tournamentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(updatedData),
+      });
+      let json: any = {};
+      try { json = await res.json(); } catch (e) { json = {}; }
+      if (!res.ok) {
+        setError(json.error || 'Errore modifica');
+      } else {
+        load();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Errore rete');
+    }
+  }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-16">
-      {/* Header */}
-      <div className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.2em] font-semibold text-blue-400">
-          Gestione Tornei
-        </p>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent leading-tight">Tornei e Campionati</h1>
-        <p className="text-sm text-gray-400">Crea e gestisci tutte le competizioni</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-blue-500/20 p-3 group-hover:scale-110 transition-transform">
-              <Trophy className="h-8 w-8 text-blue-300" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wider text-blue-400 font-bold">Totale</p>
-              <p className="text-3xl font-bold text-white">{tournaments.length}</p>
-            </div>
-          </div>
+    <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
+      {/* Header Section with Gradient */}
+      <div className="relative mb-8">
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full bg-[#7de3ff]/10 blur-3xl" />
+          <div className="absolute right-1/4 top-20 h-48 w-48 rounded-full bg-[#4fb3ff]/10 blur-3xl" />
         </div>
         
-        <div className="group rounded-2xl border border-green-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-green-400/40 hover:shadow-xl hover:shadow-green-500/20 hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-blue-500/20 p-3 group-hover:scale-110 transition-transform">
-              <CheckCircle className="h-8 w-8 text-green-300" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wider text-blue-300 font-bold">Attivi</p>
-              <p className="text-3xl font-bold text-white">{tournaments.filter((t) => t.is_active).length}</p>
-            </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-12 rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff]" />
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7de3ff]">Area Admin</p>
           </div>
-        </div>
-        
-        <div className="group rounded-2xl border border-purple-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl p-6 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-cyan-500/20 p-3 group-hover:scale-110 transition-transform">
-              <Flag className="h-8 w-8 text-purple-300" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wider text-cyan-300 font-bold">Conclusi</p>
-              <p className="text-3xl font-bold text-white">{tournaments.filter((t) => !t.is_active).length}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Actions */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Cerca per titolo o descrizione..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 pl-12 pr-4 py-3 text-white placeholder-gray-500 outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-          />
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-3 text-sm font-bold text-white transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5"
-        >
-          <Plus className="h-5 w-5" />
-          Crea Torneo
-        </button>
-      </div>
-
-      {/* Tournaments List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-16 rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
-          <div className="text-center">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-400 mx-auto mb-4" />
-            <p className="text-sm text-gray-400">Caricamento tornei...</p>
-          </div>
-        </div>
-      ) : filteredTournaments.length === 0 ? (
-        <div className="py-20 text-center rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
-          <Trophy className="h-16 w-16 text-blue-400/50 mx-auto mb-4" />
-          <p className="text-xl font-bold text-white mb-2">Nessun torneo trovato</p>
-          <p className="text-sm text-gray-400 mb-6">
-            {searchQuery ? "Prova a modificare i criteri di ricerca" : "Inizia creando il primo torneo"}
+          <h1 className="text-4xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-white via-[#7de3ff] to-white bg-clip-text text-transparent">
+              Gestione Tornei
+            </span>
+          </h1>
+          <p className="text-sm text-gray-400 max-w-2xl">
+            Crea e gestisci tornei e campionati con il sistema semplificato. 
+            Scegli tra eliminazione diretta, girone + eliminazione o campionato.
           </p>
-          {!searchQuery && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-3 text-sm font-bold text-white transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5"
-            >
-              <Plus className="h-5 w-5" />
-              Crea il primo torneo
-            </button>
+        </div>
+      </div>
+
+      <div className="mt-8 grid gap-6">
+        {/* Nuovo form semplificato con design moderno */}
+        <div className="group relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl shadow-2xl shadow-[#7de3ff]/5 transition-all hover:border-[#7de3ff]/40 hover:shadow-[#7de3ff]/10">
+          {/* Animated background orbs */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-10 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" style={{animationDuration: '4s'}} />
+            <div className="absolute right-10 bottom-10 h-24 w-24 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-2xl" style={{animationDuration: '6s', animationDelay: '2s'}} />
+          </div>
+          
+          <div className="relative p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="group-hover:scale-110 transition-transform duration-300">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-20 blur-lg" />
+                    <div className="relative rounded-xl bg-gradient-to-br from-[#7de3ff]/30 to-[#4fb3ff]/30 p-3 ring-1 ring-[#7de3ff]/50">
+                      <Trophy className="w-7 h-7 text-[#7de3ff] drop-shadow-[0_0_8px_rgba(125,227,255,0.5)]" />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">Crea Nuovo Torneo</h2>
+                  <p className="text-sm text-gray-400">Sistema semplificato con wizard in 3 step</p>
+                </div>
+              </div>
+              
+              {!showCreateForm && (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="group/btn relative overflow-hidden rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 font-bold text-[#0a1929] shadow-lg shadow-[#7de3ff]/30 transition-all hover:shadow-xl hover:shadow-[#7de3ff]/40 hover:scale-105 active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
+                  <div className="relative flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    <span>Nuovo Torneo</span>
+                  </div>
+                </button>
+              )}
+            </div>
+
+          {showCreateForm && (
+            <SimpleTournamentCreator 
+              onSuccess={() => {
+                setShowCreateForm(false);
+                load();
+              }}
+            />
+          )}
+
+          {!showCreateForm && (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30 mb-4">
+                <Trophy className="w-8 h-8 text-[#7de3ff]/60" />
+              </div>
+              <p className="text-sm text-gray-400 max-w-md mx-auto">
+                Clicca su <span className="font-semibold text-[#7de3ff]">&quot;Nuovo Torneo&quot;</span> per creare un torneo semplificato con wizard intuitivo in 3 step
+              </p>
+            </div>
+          )}
+          </div>
+        </div>
+
+        {/* Lista Competizioni */}
+        <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl shadow-2xl shadow-[#7de3ff]/5">
+          {/* Animated background for list */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute right-20 top-20 h-40 w-40 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-3xl" style={{animationDuration: '8s'}} />
+          </div>
+          
+          <div className="relative p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">Competizioni Attive</h2>
+                <p className="text-sm text-gray-400">Gestisci e monitora tutti i tornei</p>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                  filterType === 'all'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
+                }`}
+              >
+                Tutte
+              </button>
+              <button
+                onClick={() => setFilterType('torneo')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                  filterType === 'torneo'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
+                }`}
+              >
+                Tornei
+              </button>
+              <button
+                onClick={() => setFilterType('campionato')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                  filterType === 'campionato'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
+                }`}
+              >
+                Campionati
+              </button>
+              </div>
+            </div>
+          </div>
+          
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-[#7de3ff]/20 blur-xl animate-pulse" />
+                <Loader2 className="relative w-10 h-10 animate-spin text-[#7de3ff]" />
+              </div>
+              <p className="mt-4 text-sm text-gray-400 animate-pulse">Caricamento tornei...</p>
+            </div>
+          )}
+
+          {!loading && tournaments.length === 0 && (
+            <div className="py-20 text-center">
+              <div className="relative inline-flex mb-6">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 blur-xl" />
+                <div className="relative rounded-2xl bg-[#0a1929]/60 p-6 ring-1 ring-[#7de3ff]/20">
+                  <Trophy className="w-16 h-16 text-[#7de3ff]/40" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Nessun torneo ancora</h3>
+              <p className="text-sm text-gray-400 max-w-sm mx-auto">Inizia creando il tuo primo torneo con il sistema semplificato</p>
+            </div>
+          )}
+
+          {!loading && tournaments.length > 0 && (
+            <div className="space-y-3">
+              {tournaments
+                .filter((t) => filterType === 'all' || t.competition_type === filterType)
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    className="group/item relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/40 hover:bg-[#0a1929]/80 transition-all duration-300 hover:shadow-lg hover:shadow-[#7de3ff]/10 hover:-translate-y-0.5"
+                  >
+                    {/* Hover gradient effect */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#7de3ff]/0 via-[#7de3ff]/5 to-[#7de3ff]/0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500" />
+                    
+                    <div className="relative flex items-start gap-4 flex-1">
+                      <div className="group-hover/item:scale-110 transition-transform duration-300">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-0 group-hover/item:opacity-20 blur-lg transition-opacity" />
+                          <div className="relative p-3 rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30">
+                        {t.competition_type === 'campionato' ? (
+                          <Award className="w-5 h-5 text-[#4fb3ff]" />
+                        ) : (
+                          <Trophy className="w-5 h-5 text-[#7de3ff]" />
+                        )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-white mb-2 truncate group-hover/item:text-[#7de3ff] transition-colors">{t.title}</h3>
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <span className={`px-2 py-0.5 rounded-full ${
+                            t.competition_type === 'campionato'
+                              ? 'bg-[#4fb3ff]/10 text-[#4fb3ff]'
+                              : 'bg-[#7de3ff]/10 text-[#7de3ff]'
+                          }`}>
+                            {t.competition_type === 'campionato' ? 'Campionato' : 'Torneo'}
+                          </span>
+                          {t.start_date && (
+                            <span>📅 {new Date(t.start_date).toLocaleDateString('it-IT')}</span>
+                          )}
+                          <span>👥 {t.max_participants || 0} max</span>
+                          {t.status && (
+                            <span className={`px-2 py-0.5 rounded-full ${
+                              t.status === 'Aperto' ? 'bg-green-500/10 text-green-400' :
+                              t.status === 'In Corso' || t.status === 'In corso' ? 'bg-yellow-500/10 text-yellow-400' :
+                              t.status === 'Completato' || t.status === 'Concluso' ? 'bg-gray-500/10 text-gray-400' :
+                              'bg-[#0c1424]/40 text-muted-2'
+                            }`}>
+                              {t.status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="relative flex items-center gap-2 sm:ml-3">
+                      <button
+                        onClick={() => {
+                          if (confirm('Vuoi chiudere le iscrizioni?')) {
+                            handleEditTournament(t.id, { status: 'Chiuso' });
+                          }
+                        }}
+                        className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all hover:shadow-md"
+                      >
+                        Chiudi
+                      </button>
+                      <button
+                        onClick={() => loadParticipants(t.id)}
+                        className="group/manage relative overflow-hidden px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/manage:translate-x-[100%] transition-transform duration-700" />
+                        <span className="relative">Gestisci</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
           )}
         </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredTournaments.map((tournament) => (
-            <div
-              key={tournament.id}
-              className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 hover:border-blue-400/40 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20 ring-2 ring-blue-400/30 group-hover:scale-110 transition-transform">
-                    <Trophy className="h-6 w-6 text-blue-300" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-white mb-1 truncate group-hover:text-blue-300 transition-colors">{tournament.title}</h3>
-                    <p className="text-xs text-gray-400 line-clamp-2">{tournament.description}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Calendar className="h-4 w-4 text-blue-400" />
-                  <span>{tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('it-IT') : "Non definita"}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Users className="h-4 w-4 text-blue-400" />
-                  <span>Max {tournament.max_participants} partecipanti</span>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  className="flex-1 rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-white transition-all hover:border-blue-400/50 hover:bg-blue-500/20"
-                >
-                  Dettagli
-                </button>
-                <button
-                  className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-bold text-white transition-all hover:shadow-lg hover:shadow-blue-500/30"
-                >
-                  Gestisci
-                </button>
-              </div>
+        {/* Partecipanti del torneo selezionato */}
+        {selectedTournament && participants.length > 0 && (
+          <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl shadow-xl shadow-[#7de3ff]/5">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute left-20 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Create Tournament Modal - Modernized */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl shadow-2xl shadow-blue-500/20">
-            {/* Animated background */}
-            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-              <div className="absolute left-1/4 top-10 h-32 w-32 rounded-full blur-3xl bg-blue-400/10 animate-pulse" />
-              <div className="absolute right-1/4 bottom-10 h-24 w-24 rounded-full blur-3xl bg-cyan-400/10 animate-pulse" style={{animationDelay: '1s'}} />
-            </div>
-
-            <div className="relative p-8">
-              <div className="flex items-center justify-between mb-6">
+            
+            <div className="relative p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
+                  <Award className="w-5 h-5 text-[#7de3ff]" />
+                </div>
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent">Crea un nuovo torneo</h2>
-                  <p className="text-sm text-gray-400 mt-1">Configura tutti i dettagli della competizione</p>
+                  <h3 className="text-lg font-bold text-white">
+                    Iscritti ({participants.length})
+                  </h3>
+                  <p className="text-xs text-gray-400">Partecipanti registrati al torneo</p>
                 </div>
-                <button 
-                  onClick={() => setShowCreateModal(false)} 
-                  className="rounded-xl border border-blue-400/30 bg-blue-500/10 p-2 text-gray-300 hover:text-white hover:border-blue-400/50 transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
-              
-              <form
-                onSubmit={handleSubmit((data) => createTournament(data))}
-                className="space-y-6"
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {participants.map((p: any) => (
+                  <div
+                    key={p.id}
+                    className="group/participant flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:bg-[#0a1929]/80 transition-all hover:shadow-md hover:shadow-[#7de3ff]/10"
+                  >
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-20 blur-md group-hover/participant:opacity-40 transition-opacity" />
+                      <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30 flex items-center justify-center">
+                        <span className="text-[#7de3ff] font-bold text-sm">
+                          {(p.user?.full_name || p.user_id || '?').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-white truncate group-hover/participant:text-[#7de3ff] transition-colors">
+                      {p.user?.full_name || p.user_id}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Error notification with better design */}
+      {error && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-xl p-4 shadow-2xl shadow-red-500/20 max-w-md">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent" />
+            <div className="relative flex items-start gap-3">
+              <div className="rounded-lg bg-red-500/20 p-2 ring-1 ring-red-500/30">
+                <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-red-300 mb-1">Errore</p>
+                <p className="text-xs text-red-200/80">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-300 hover:text-red-200 transition-colors"
               >
-                {/* Tipo Competizione */}
-                <div className="rounded-xl border border-blue-400/20 bg-gradient-to-br from-blue-500/5 to-transparent p-5">
-                  <label className="block text-sm font-bold text-blue-300 mb-3">Tipo di Competizione</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="group relative flex items-center gap-3 rounded-xl border border-blue-400/30 bg-blue-500/10 p-4 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/20 transition-all">
-                      <input
-                        type="radio"
-                        {...register("competition_type")}
-                        value="torneo"
-                        defaultChecked
-                        className="text-blue-500 focus:ring-blue-500"
-                      />
-                      <div>
-                        <p className="font-semibold text-white">Torneo</p>
-                        <p className="text-xs text-gray-400">Eliminazione diretta</p>
-                      </div>
-                    </label>
-                    <label className="group relative flex items-center gap-3 rounded-xl border border-blue-400/30 bg-blue-500/10 p-4 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/20 transition-all">
-                      <input
-                        type="radio"
-                        {...register("competition_type")}
-                        value="campionato"
-                        className="text-blue-500 focus:ring-blue-500"
-                      />
-                      <div>
-                        <p className="font-semibold text-white">Campionato</p>
-                        <p className="text-xs text-gray-400">Round-robin</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Formato Torneo */}
-                <div className="rounded-xl border border-blue-400/20 bg-gradient-to-br from-blue-500/5 to-transparent p-5">
-                  <label className="block text-sm font-bold text-blue-300 mb-3">Formato</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <label className="group relative flex flex-col items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 p-4 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/20 transition-all">
-                      <input
-                        type="radio"
-                        {...register("format")}
-                        value="eliminazione_diretta"
-                        defaultChecked
-                        className="text-blue-500 focus:ring-blue-500"
-                      />
-                      <div className="text-center">
-                        <p className="font-semibold text-white text-sm">Eliminazione</p>
-                        <p className="text-xs text-gray-400">Bracket classico</p>
-                      </div>
-                    </label>
-                    <label className="group relative flex flex-col items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 p-4 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/20 transition-all">
-                      <input
-                        type="radio"
-                        {...register("format")}
-                        value="girone_eliminazione"
-                        className="text-blue-500 focus:ring-blue-500"
-                      />
-                      <div className="text-center">
-                        <p className="font-semibold text-white text-sm">Gironi + Finale</p>
-                        <p className="text-xs text-gray-400">Con fase a gruppi</p>
-                      </div>
-                    </label>
-                    <label className="group relative flex flex-col items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 p-4 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/20 transition-all">
-                      <input
-                        type="radio"
-                        {...register("format")}
-                        value="round_robin"
-                        className="text-blue-500 focus:ring-blue-500"
-                      />
-                      <div className="text-center">
-                        <p className="font-semibold text-white text-sm">Round Robin</p>
-                        <p className="text-xs text-gray-400">Tutti vs tutti</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Info Base */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Titolo</label>
-                    <input
-                      {...register("title", { required: "Il titolo è obbligatorio" })}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                      placeholder="Es: Torneo Primavera 2025"
-                    />
-                    {errors.title && <p className="text-sm text-cyan-300 mt-1">{String(errors.title.message)}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Categoria</label>
-                    <input
-                      {...register("category")}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                      placeholder="Es: Open, U16, Doppio"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Descrizione</label>
-                  <textarea
-                    {...register("description")}
-                    rows={3}
-                    className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                    placeholder="Descrizione del torneo..."
-                  />
-                </div>
-
-                {/* Date e Partecipanti */}
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Data Inizio</label>
-                    <input
-                      type="datetime-local"
-                      {...register("start_date", { required: "Data obbligatoria" })}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                    />
-                    {errors.start_date && <p className="text-sm text-cyan-300 mt-1">{String(errors.start_date.message)}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Data Fine</label>
-                    <input
-                      type="datetime-local"
-                      {...register("end_date")}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Max Partecipanti</label>
-                    <select
-                      {...register("max_participants", { required: true, valueAsNumber: true })}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                    >
-                      <option value="4">4</option>
-                      <option value="8">8</option>
-                      <option value="16">16</option>
-                      <option value="32">32</option>
-                      <option value="64">64</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Configurazione Match */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Formato Match</label>
-                    <select
-                      {...register("match_format")}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                    >
-                      <option value="best_of_1">Best of 1 set</option>
-                      <option value="best_of_3">Best of 3 set</option>
-                      <option value="best_of_5">Best of 5 set</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Superficie</label>
-                    <select
-                      {...register("surface_type")}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                    >
-                      <option value="terra">Terra battuta</option>
-                      <option value="cemento">Cemento</option>
-                      <option value="erba">Erba</option>
-                      <option value="sintetico">Sintetico</option>
-                      <option value="indoor">Indoor</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Quote e Premi */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Quota Iscrizione (€)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      {...register("entry_fee", { valueAsNumber: true })}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Montepremi (€)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      {...register("prize_pool", { valueAsNumber: true })}
-                      className="w-full rounded-xl border border-blue-400/30 bg-blue-900/20 px-4 py-3 text-white placeholder-gray-500 outline-none transition-all focus:border-blue-400/60 focus:bg-blue-900/30 focus:ring-2 focus:ring-blue-400/20"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-4 text-base font-bold text-white transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                >
-                  <Trophy className="h-5 w-5" />
-                  Crea Torneo
-                </button>
-              </form>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       )}
     </main>
+  );
+}
+
+export default function AdminTorneiPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    }>
+      <AdminTorneiPageInner />
+    </Suspense>
   );
 }

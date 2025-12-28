@@ -164,13 +164,13 @@ export default function AthleteDashboardPage() {
     }
     if (booking.type === "lezione_privata") {
       if (!booking.coach_confirmed) {
-        return <span className="text-xs bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1">
+        return <span className="text-xs bg-cyan-500/15 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1">
           <Clock className="h-3 w-3" />
           Attesa maestro
         </span>;
       }
       if (!booking.manager_confirmed) {
-        return <span className="text-xs bg-orange-500/15 text-blue-300 px-3 py-1 rounded-full border border-blue-500/30 flex items-center gap-1">
+        return <span className="text-xs bg-blue-500/15 text-blue-300 px-3 py-1 rounded-full border border-blue-500/30 flex items-center gap-1">
           <Clock className="h-3 w-3" />
           Attesa gestore
         </span>;
@@ -196,10 +196,10 @@ export default function AthleteDashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Prossime" value={stats.upcomingBookings} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="blue" />
-          <StatCard title="In attesa" value={stats.pendingLessons} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
-          <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-blue-300" />} color="green" />
-          <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-cyan-300" />} color="purple" />
+          <StatCard title="Prossime" value={stats.upcomingBookings} icon={<Calendar className="h-8 w-8 text-sky-300" />} color="sky" />
+          <StatCard title="In attesa" value={stats.pendingLessons} icon={<Clock className="h-8 w-8 text-orange-300" />} color="orange" />
+          <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-lime-300" />} color="lime" />
+          <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-violet-300" />} color="violet" />
         </div>
 
         {/* Subscription Card */}
@@ -256,7 +256,7 @@ export default function AthleteDashboardPage() {
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           booking.type === "lezione_privata" 
-                            ? "bg-cyan-500/20 text-purple-300 border border-cyan-500/30"
+                            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
                             : booking.type === "lezione_gruppo"
                             ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                             : "bg-blue-500/20 text-green-300 border border-blue-500/30"
@@ -302,28 +302,28 @@ export default function AthleteDashboardPage() {
                 href="/bookings"
                 className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
               >
-                <Calendar className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <Calendar className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-semibold text-white">Prenota Campo</span>
               </Link>
               <Link 
                 href="/profile"
-                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
+                className="group flex flex-col items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-cyan-400/40 transition-all duration-300 hover:-translate-y-1"
               >
-                <UserCircle className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <UserCircle className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-semibold text-white">Il Mio Profilo</span>
               </Link>
               <Link 
                 href="/tornei"
                 className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
               >
-                <Trophy className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <Trophy className="h-8 w-8 text-blue-400 group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-semibold text-white">Tornei</span>
               </Link>
               <Link 
                 href="/courses"
-                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
+                className="group flex flex-col items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-cyan-400/40 transition-all duration-300 hover:-translate-y-1"
               >
-                <CreditCard className="h-8 w-8 text-blue-300 group-hover:scale-110 transition-transform" />
+                <CreditCard className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-semibold text-white">Abbonamenti</span>
               </Link>
             </div>

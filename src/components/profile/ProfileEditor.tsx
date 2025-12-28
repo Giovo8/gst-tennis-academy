@@ -206,10 +206,10 @@ export default function ProfileEditor() {
             <div key={step.id} className="flex items-center flex-1">
               <button
                 onClick={() => setCurrentStep(step.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
                   currentStep === step.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
+                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 scale-105"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                 }`}
               >
                 <step.icon className="w-5 h-5" />
@@ -423,10 +423,10 @@ export default function ProfileEditor() {
                     key={time}
                     type="button"
                     onClick={() => togglePreferredTime(time)}
-                    className={`px-4 py-2 rounded-lg border-2 transition-colors capitalize ${
+                    className={`px-4 py-2 rounded-xl border-2 transition-all duration-300 capitalize ${
                       formData.preferred_times.includes(time)
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
+                        ? "border-blue-500 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-200 shadow-lg shadow-blue-500/20 scale-105"
+                        : "border-gray-300 dark:border-gray-600 hover:border-blue-400/50 dark:hover:border-blue-400/50"
                     }`}
                   >
                     {time}
@@ -624,7 +624,7 @@ export default function ProfileEditor() {
           <button
             onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
             disabled={currentStep === 1}
-            className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 border-2 border-gray-400/40 rounded-xl bg-gradient-to-r from-gray-500/20 to-gray-600/20 text-gray-300 hover:from-gray-500/30 hover:to-gray-600/30 hover:border-gray-400/60 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             Indietro
           </button>
@@ -633,7 +633,7 @@ export default function ProfileEditor() {
             {currentStep < 4 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-2 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
               >
                 Avanti
                 <ChevronRight className="w-5 h-5" />
@@ -642,7 +642,7 @@ export default function ProfileEditor() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 disabled:from-gray-500 disabled:to-gray-600 text-white px-6 py-2 rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-105 disabled:hover:scale-100 transition-all duration-300"
               >
                 {saving ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

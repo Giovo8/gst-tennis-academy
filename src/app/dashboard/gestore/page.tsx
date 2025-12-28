@@ -69,51 +69,106 @@ export default function GestoreDashboardPage() {
           <StatCard
             title="Utenti"
             value={loading ? "..." : stats.totalUsers}
-            icon={<Users className="h-8 w-8 text-blue-400" />}
-            color="blue"
+            icon={<Users className="h-8 w-8 text-teal-300" />}
+            color="teal"
           />
 
           <StatCard
             title="Prenotazioni"
             value={loading ? "..." : stats.totalBookings}
-            icon={<Calendar className="h-8 w-8 text-blue-300" />}
-            color="green"
+            icon={<Calendar className="h-8 w-8 text-violet-300" />}
+            color="violet"
           />
 
           <StatCard
             title="Oggi"
             value={loading ? "..." : stats.todayBookings}
-            icon={<TrendingUp className="h-8 w-8 text-cyan-300" />}
-            color="purple"
+            icon={<TrendingUp className="h-8 w-8 text-orange-300" />}
+            color="orange"
           />
         </div>
 
         {/* Management Sections */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <DashboardLinkCard href="/dashboard/admin/users" icon={<Users className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Gestione Utenti" description="Crea, modifica ed elimina utenti. Gestisci ruoli e permessi." />
+          <Link href="/dashboard/admin/users" className="rounded-xl border-2 border-cyan-400/50 bg-gradient-to-br from-cyan-500/20 to-transparent p-5 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 flex items-center justify-center mb-3">
+              <Users className="h-6 w-6 text-cyan-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Gestione Utenti</h3>
+            <p className="text-sm text-gray-400">Crea, modifica ed elimina utenti. Gestisci ruoli e permessi.</p>
+          </Link>
 
-          <DashboardLinkCard href="/bookings" icon={<Calendar className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Gestione Prenotazioni" description="Visualizza, gestisci e crea prenotazioni per campi e lezioni." />
+          <Link href="/bookings" className="rounded-xl border-2 border-blue-400/50 bg-gradient-to-br from-blue-500/20 to-transparent p-5 hover:border-blue-400/70 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/40 to-blue-600/30 flex items-center justify-center mb-3">
+              <Calendar className="h-6 w-6 text-blue-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Gestione Prenotazioni</h3>
+            <p className="text-sm text-gray-400">Visualizza, gestisci e crea prenotazioni per campi e lezioni.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/news" icon={<FileText className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Gestione News" description="Crea, modifica ed elimina le news visibili nella homepage." />
+          <Link href="/dashboard/admin/news" className="rounded-xl border-2 border-sky-400/50 bg-gradient-to-br from-sky-500/20 to-transparent p-5 hover:border-sky-400/70 hover:shadow-lg hover:shadow-sky-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-sky-500/40 to-sky-600/30 flex items-center justify-center mb-3">
+              <FileText className="h-6 w-6 text-sky-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Gestione News</h3>
+            <p className="text-sm text-gray-400">Crea, modifica ed elimina le news visibili nella homepage.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/hero-images" icon={<ImageIcon className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Immagini Hero" description="Gestisci il carousel di immagini della sezione hero." />
+          <Link href="/dashboard/admin/hero-images" className="rounded-xl border-2 border-indigo-400/50 bg-gradient-to-br from-indigo-500/20 to-transparent p-5 hover:border-indigo-400/70 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500/40 to-indigo-600/30 flex items-center justify-center mb-3">
+              <ImageIcon className="h-6 w-6 text-indigo-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Immagini Hero</h3>
+            <p className="text-sm text-gray-400">Gestisci il carousel di immagini della sezione hero.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/hero-content" icon={<Type className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Contenuti Hero" description="Personalizza testi, pulsanti e statistiche della hero." />
+          <Link href="/dashboard/admin/hero-content" className="rounded-xl border-2 border-blue-400/50 bg-gradient-to-br from-blue-500/20 to-transparent p-5 hover:border-blue-400/70 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/40 to-indigo-600/30 flex items-center justify-center mb-3">
+              <Type className="h-6 w-6 text-blue-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Contenuti Hero</h3>
+            <p className="text-sm text-gray-400">Personalizza testi, pulsanti e statistiche della hero.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/homepage-order" icon={<List className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Ordine Homepage" description="Riordina le sezioni visibili nella homepage." />
+          <Link href="/dashboard/admin/homepage-order" className="rounded-xl border-2 border-cyan-400/50 bg-gradient-to-br from-cyan-500/20 to-transparent p-5 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/40 to-sky-600/30 flex items-center justify-center mb-3">
+              <List className="h-6 w-6 text-cyan-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Ordine Homepage</h3>
+            <p className="text-sm text-gray-400">Riordina le sezioni visibili nella homepage.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/staff" icon={<Users className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Gestione Staff" description="Gestisci i membri dello staff con foto e biografie." />
+          <Link href="/dashboard/admin/staff" className="rounded-xl border-2 border-sky-400/50 bg-gradient-to-br from-sky-500/20 to-transparent p-5 hover:border-sky-400/70 hover:shadow-lg hover:shadow-sky-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-sky-500/40 to-blue-600/30 flex items-center justify-center mb-3">
+              <Users className="h-6 w-6 text-sky-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Gestione Staff</h3>
+            <p className="text-sm text-gray-400">Gestisci i membri dello staff con foto e biografie.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/courses" icon={<Target className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Gestione Corsi" description="Gestisci corsi, abbonamenti e prezzi." />
+          <Link href="/dashboard/admin/courses" className="rounded-xl border-2 border-blue-400/50 bg-gradient-to-br from-blue-500/20 to-transparent p-5 hover:border-blue-400/70 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/40 to-cyan-600/30 flex items-center justify-center mb-3">
+              <Target className="h-6 w-6 text-blue-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Gestione Corsi</h3>
+            <p className="text-sm text-gray-400">Gestisci corsi, abbonamenti e prezzi.</p>
+          </Link>
 
-          <DashboardLinkCard href="/dashboard/admin/services" icon={<Settings className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Servizi" description="Configura corsi, abbonamenti e servizi dell'academy." />
+          <Link href="/dashboard/admin/services" className="rounded-xl border-2 border-indigo-400/50 bg-gradient-to-br from-indigo-500/20 to-transparent p-5 hover:border-indigo-400/70 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500/40 to-cyan-600/30 flex items-center justify-center mb-3">
+              <Settings className="h-6 w-6 text-indigo-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Servizi</h3>
+            <p className="text-sm text-gray-400">Configura corsi, abbonamenti e servizi dell'academy.</p>
+          </Link>
  
-          <DashboardLinkCard
-            href="/dashboard/gestore/tornei"
-            icon={<Target className="h-12 w-12 text-accent mb-4 group-hover:scale-110 transition-transform" />}
-            title="Gestione Tornei"
-            description="Crea tornei e visualizza gli iscritti."
-          />
+          <Link href="/dashboard/gestore/tornei" className="rounded-xl border-2 border-cyan-400/50 bg-gradient-to-br from-cyan-500/20 to-transparent p-5 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/40 to-blue-700/30 flex items-center justify-center mb-3">
+              <Target className="h-6 w-6 text-cyan-200" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Gestione Tornei</h3>
+            <p className="text-sm text-gray-400">Crea tornei e visualizza gli iscritti.</p>
+          </Link>
         </div>
 
         {/* Quick Actions */}
@@ -122,14 +177,14 @@ export default function GestoreDashboardPage() {
           <div className="flex flex-wrap gap-3">
             <Link 
               href="/dashboard/admin/users?action=create"
-              className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-[#06101f] hover:bg-[#5fc7e0] transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300"
             >
               <Users className="h-4 w-4" />
               Nuovo Utente
             </Link>
             <Link 
               href="/bookings"
-              className="inline-flex items-center gap-2 rounded-full border border-accent px-6 py-3 text-sm font-semibold text-accent hover:bg-accent/10 transition"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-blue-400/50 bg-gradient-to-r from-blue-500/20 to-transparent px-5 py-2.5 text-sm font-semibold text-blue-200 hover:border-blue-400/70 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
             >
               <Calendar className="h-4 w-4" />
               Nuova Prenotazione

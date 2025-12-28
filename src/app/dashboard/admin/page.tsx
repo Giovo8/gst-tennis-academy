@@ -72,22 +72,22 @@ export default function AdminDashboardPage() {
           <StatCard
             title="Utenti"
             value={loading ? "..." : stats.totalUsers}
-            icon={<Users className="h-7 w-7" />}
-            color="blue"
+            icon={<Users className="h-8 w-8 text-sky-300" />}
+            color="sky"
           />
 
           <StatCard
             title="Prenotazioni"
             value={loading ? "..." : stats.totalBookings}
-            icon={<Calendar className="h-7 w-7" />}
-            color="green"
+            icon={<Calendar className="h-8 w-8 text-lime-300" />}
+            color="lime"
           />
 
           <StatCard
             title="Oggi"
             value={loading ? "..." : stats.todayBookings}
-            icon={<TrendingUp className="h-7 w-7" />}
-            color="purple"
+            icon={<TrendingUp className="h-7 w-7 text-indigo-300" />}
+            color="indigo"
           />
         </div>
 

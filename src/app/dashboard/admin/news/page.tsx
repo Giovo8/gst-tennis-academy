@@ -176,7 +176,7 @@ export default function AdminNewsPage() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-sm text-muted hover:text-white"
+                className="text-sm px-4 py-2 rounded-xl border-2 border-gray-400/40 bg-gradient-to-r from-gray-500/20 to-gray-600/20 text-gray-300 hover:from-gray-500/30 hover:to-gray-600/30 hover:border-gray-400/60 hover:text-white transition-all duration-300"
               >
                 Annulla modifica
               </button>
@@ -314,14 +314,14 @@ export default function AdminNewsPage() {
                   <div className="flex items-center gap-2 pt-2">
                     <button
                       onClick={() => editNews(item)}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm font-semibold text-accent hover:bg-accent/20"
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-amber-400/40 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-3 py-2 text-sm font-semibold text-amber-200 hover:from-amber-500/30 hover:to-yellow-500/30 hover:border-amber-400/60 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
                     >
                       <Pencil className="h-4 w-4" />
                       Modifica
                     </button>
                     <button
                       onClick={() => deleteNews(item.id)}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-cyan-300 hover:bg-red-400/20"
+                      className="flex items-center justify-center gap-2 rounded-xl border-2 border-red-400/40 bg-gradient-to-r from-red-500/20 to-rose-500/20 px-3 py-2 text-sm font-semibold text-red-200 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

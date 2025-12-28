@@ -165,7 +165,7 @@ export default function AthleteBookingsPage() {
                             </span>
                           )}
                           {isPending && (
-                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/15 text-yellow-400">
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-400">
                               {needsCoachConfirm && needsManagerConfirm 
                                 ? "In attesa conferme" 
                                 : needsCoachConfirm 
@@ -179,7 +179,7 @@ export default function AthleteBookingsPage() {
                             </span>
                           )}
                           {!isPast && !canCancel && (
-                            <span className="text-xs text-yellow-400">
+                            <span className="text-xs text-cyan-400">
                               (Non cancellabile)
                             </span>
                           )}

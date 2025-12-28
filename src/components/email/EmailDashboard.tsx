@@ -113,10 +113,10 @@ export default function EmailDashboard() {
   const statusColors: Record<string, string> = {
     sent: "bg-blue-100 text-blue-800",
     delivered: "bg-blue-100 text-green-800",
-    opened: "bg-cyan-100 text-purple-800",
-    clicked: "bg-pink-100 text-pink-800",
+    opened: "bg-cyan-100 text-cyan-800",
+    clicked: "bg-blue-100 text-blue-800",
     failed: "bg-cyan-100 text-red-800",
-    bounced: "bg-blue-100 text-orange-800",
+    bounced: "bg-blue-100 text-cyan-800",
     pending: "bg-gray-100 text-gray-800",
   };
 

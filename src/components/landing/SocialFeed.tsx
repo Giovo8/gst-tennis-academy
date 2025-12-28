@@ -85,7 +85,7 @@ export default function SocialFeed() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Segui su Instagram"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-pink-400/30 bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-pink-400/50 hover:shadow-lg hover:shadow-pink-500/20 hover:-translate-y-0.5"
+                  className="group inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5"
                 >
                   <Instagram className="h-4 w-4 group-hover:scale-110 transition-transform" />
                   Instagram
@@ -109,7 +109,7 @@ export default function SocialFeed() {
               />
             </div>
 
-            <div className="rounded-2xl border border-pink-400/20 bg-gradient-to-br from-pink-500/10 to-purple-500/10 backdrop-blur-xl p-6 hover:border-pink-400/40 hover:shadow-xl hover:shadow-pink-500/20 transition-all">
+            <div className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-xl p-6 hover:border-cyan-400/40 hover:shadow-xl hover:shadow-cyan-500/20 transition-all">
               {loading && <p className="text-sm text-gray-400">Caricamento Instagram...</p>}
 
               {!loading && embeds && embeds.length > 0 ? (
@@ -137,7 +137,7 @@ export default function SocialFeed() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Apri Instagram gst_tennis"
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-3 text-sm font-bold text-white transition-all hover:shadow-xl hover:shadow-pink-500/30 hover:-translate-y-1"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-bold text-white transition-all hover:shadow-xl hover:shadow-cyan-500/30 hover:-translate-y-1"
                   >
                     <Instagram className="h-5 w-5" />
                     Vai su Instagram

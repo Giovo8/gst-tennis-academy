@@ -232,19 +232,19 @@ export default function MaestroDashboardPage() {
             </p>
           </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard title="In Attesa" value={pendingCount} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
-          <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-blue-300" />} color="green" />
-          <StatCard title="Totali" value={allLessons.length} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="blue" />
+          <StatCard title="In Attesa" value={pendingCount} icon={<Clock className="h-8 w-8 text-orange-300" />} color="orange" />
+          <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-lime-300" />} color="lime" />
+          <StatCard title="Totali" value={allLessons.length} icon={<Calendar className="h-8 w-8 text-teal-300" />} color="teal" />
         </div>
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setFilter("pending")}
-            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
+            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 ${
               filter === "pending"
-                ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/30"
-                : "border border-white/15 text-muted hover:border-cyan-500/50 hover:text-white"
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/40 scale-105"
+                : "border-2 border-orange-400/40 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-200 hover:from-orange-500/30 hover:to-amber-500/30 hover:border-orange-400/60 hover:shadow-lg hover:shadow-orange-500/30"
             }`}
           >
             <Clock className="h-4 w-4" />
@@ -252,10 +252,10 @@ export default function MaestroDashboardPage() {
           </button>
           <button
             onClick={() => setFilter("confirmed")}
-            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
+            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 ${
               filter === "confirmed"
-                ? "bg-blue-500 text-black shadow-lg shadow-green-500/30"
-                : "border border-white/15 text-muted hover:border-blue-500/50 hover:text-white"
+                ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-xl shadow-emerald-500/40 scale-105"
+                : "border-2 border-emerald-400/40 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-200 hover:from-emerald-500/30 hover:to-green-500/30 hover:border-emerald-400/60 hover:shadow-lg hover:shadow-emerald-500/30"
             }`}
           >
             <CheckCircle2 className="h-4 w-4" />
@@ -263,10 +263,10 @@ export default function MaestroDashboardPage() {
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
+            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 ${
               filter === "all"
-                ? "bg-accent text-[#06101f] shadow-lg shadow-accent/30"
-                : "border border-white/15 text-muted hover:border-accent/50 hover:text-white"
+                ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-xl shadow-cyan-500/40 scale-105"
+                : "border-2 border-cyan-400/40 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-200 hover:from-cyan-500/30 hover:to-blue-500/30 hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/30"
             }`}
           >
             <Calendar className="h-4 w-4" />
@@ -385,7 +385,7 @@ export default function MaestroDashboardPage() {
                             Confermata da te
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-500/20 border border-cyan-500/30 px-3 py-1 text-xs font-semibold text-yellow-400">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 px-3 py-1 text-xs font-semibold text-cyan-400">
                             <Clock className="h-3.5 w-3.5" />
                             In attesa di conferma
                           </span>
@@ -396,7 +396,7 @@ export default function MaestroDashboardPage() {
                             Approvata dal gestore
                           </span>
                         ) : lesson.coach_confirmed && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/20 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-300">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-300">
                             <Clock className="h-3.5 w-3.5" />
                             In attesa di approvazione
                           </span>
@@ -439,7 +439,7 @@ export default function MaestroDashboardPage() {
         </div>
 
         {/* Quick Links - Funzionalità dalle navbar */}
-        <div className="rounded-2xl border border-purple-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl p-8 mt-8">
+        <div className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl p-8 mt-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             <div className="w-1.5 h-8 bg-gradient-to-b from-cyan-400 to-cyan-400 rounded-full"></div>
             Accesso Rapido
@@ -447,30 +447,30 @@ export default function MaestroDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <a 
               href="/dashboard/maestro/lezioni"
-              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-cyan-400/40 transition-all duration-300 hover:-translate-y-1"
             >
-              <ClipboardList className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <ClipboardList className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-semibold text-white">Tutte le Lezioni</span>
             </a>
             <a 
               href="/dashboard/maestro/calendario"
-              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
             >
-              <Calendar className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <Calendar className="h-8 w-8 text-blue-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-semibold text-white">Calendario</span>
             </a>
             <a 
               href="/dashboard/maestro/atleti"
-              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-cyan-400/40 transition-all duration-300 hover:-translate-y-1"
             >
-              <Users className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <Users className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-semibold text-white">I Miei Atleti</span>
             </a>
             <a 
               href="/tornei"
-              className="group flex flex-col items-center gap-3 rounded-xl border border-purple-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-purple-400/40 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
             >
-              <Trophy className="h-8 w-8 text-purple-300 group-hover:scale-110 transition-transform" />
+              <Trophy className="h-8 w-8 text-blue-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-semibold text-white">Tornei</span>
             </a>
           </div>

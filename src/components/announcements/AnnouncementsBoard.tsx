@@ -82,16 +82,16 @@ export default function AnnouncementsBoard() {
     announcement: "bg-blue-500",
     partner: "bg-cyan-500",
     event: "bg-blue-500",
-    tournament: "bg-orange-500",
-    lesson: "bg-pink-500",
-    promotion: "bg-yellow-500",
+    tournament: "bg-blue-600",
+    lesson: "bg-cyan-600",
+    promotion: "bg-blue-400",
   };
 
   const priorityBorders: Record<string, string> = {
     low: "border-gray-200",
     medium: "border-blue-300",
-    high: "border-orange-400",
-    urgent: "border-cyan-500 ring-2 ring-red-200",
+    high: "border-cyan-400",
+    urgent: "border-cyan-500 ring-2 ring-cyan-200",
   };
 
   const filteredAnnouncements = filterType === "all"
@@ -203,7 +203,7 @@ export default function AnnouncementsBoard() {
                       className="w-full h-full object-cover"
                     />
                     {announcement.is_pinned && (
-                      <div className="absolute top-3 right-3 bg-orange-500 text-white p-2 rounded-full shadow-lg">
+                      <div className="absolute top-3 right-3 bg-cyan-500 text-white p-2 rounded-full shadow-lg">
                         <Pin className="w-4 h-4" />
                       </div>
                     )}

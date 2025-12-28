@@ -60,14 +60,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: countErr.message }, { status: 500 });
       }
 
-      // try to load creator profile if exists
-      let creator = null;
-      if (data && data.created_by) {
-        const { data: p } = await supabaseServer.from('profiles').select('id, full_name, email').eq('id', data.created_by).single();
-        creator = p ?? null;
-      }
-
-      return NextResponse.json({ tournament: data, created_by_profile: creator, current_participants: count ?? 0 });
+      return NextResponse.json({ tournament: data, current_participants: count ?? 0 });
     }
 
     // Build query - use start_date column (actual DB column name)

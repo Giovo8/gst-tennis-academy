@@ -43,7 +43,7 @@ export default function AtletaNavbar({
   const subscriptionBadges = {
     basic: { label: "Basic", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
     premium: { label: "Premium", color: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" },
-    vip: { label: "VIP", color: "bg-yellow-500/20 text-yellow-400 border-cyan-500/30" }
+    vip: { label: "VIP", color: "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30" }
   };
 
   const handleLogout = async () => {
@@ -132,7 +132,7 @@ export default function AtletaNavbar({
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-cyan-500/10 hover:border-cyan-500/30"
+              className="rounded-lg border-2 border-red-400/40 p-2 text-red-200 bg-gradient-to-br from-red-500/20 to-rose-500/20 transition-all duration-300 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/30 hover:scale-105"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />

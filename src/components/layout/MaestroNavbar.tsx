@@ -93,7 +93,7 @@ export default function MaestroNavbar({
                 <button
                   key={action.label}
                   onClick={action.action}
-                  className="flex items-center gap-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-purple-300 transition hover:bg-cyan-500/30 hover:border-purple-400"
+                  className="flex items-center gap-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/30 hover:border-cyan-400"
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {action.label}
@@ -105,7 +105,7 @@ export default function MaestroNavbar({
             {pendingLessonsCount > 0 && (
               <Link
                 href="/dashboard/maestro/lezioni?filter=pending"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/30 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/30"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/30"
               >
                 <ClipboardList className="h-3.5 w-3.5" />
                 {pendingLessonsCount} {pendingLessonsCount === 1 ? "Richiesta" : "Richieste"}
@@ -129,7 +129,7 @@ export default function MaestroNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 transition hover:border-purple-400 hover:bg-cyan-500/20"
+              className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 transition hover:border-cyan-400 hover:bg-cyan-500/20"
             >
               {userAvatar ? (
                 <Image 
@@ -151,7 +151,7 @@ export default function MaestroNavbar({
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-cyan-500/10 hover:border-cyan-500/30"
+              className="rounded-lg border-2 border-red-400/40 p-2 text-red-200 bg-gradient-to-br from-red-500/20 to-rose-500/20 transition-all duration-300 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/30 hover:scale-105"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -246,7 +246,7 @@ export default function MaestroNavbar({
                 setIsOpen(false);
                 handleLogout();
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-cyan-500/30 px-4 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/10 mt-4"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-red-400/40 px-4 py-3 text-sm font-semibold text-red-200 bg-gradient-to-r from-red-500/20 to-rose-500/20 transition-all duration-300 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/30 mt-4"
             >
               <LogOut className="h-5 w-5" />
               Esci

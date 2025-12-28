@@ -193,9 +193,9 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 rounded-2xl border border-amber-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
+      <div className="flex items-center justify-center py-16 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-amber-400 mx-auto mb-4" />
+          <Loader2 className="h-10 w-10 animate-spin text-cyan-400 mx-auto mb-4" />
           <p className="text-sm text-gray-400">Caricamento tabellone...</p>
         </div>
       </div>

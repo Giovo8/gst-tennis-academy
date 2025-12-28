@@ -549,6 +549,113 @@ create index messages_sender_idx on public.messages (sender_id);
 create index messages_recipient_idx on public.messages (recipient_id, is_read);
 create index messages_created_idx on public.messages (created_at);
 
+-- Tournaments system with competition types
+-- Create ENUM types for competition
+create type public.competition_type as enum ('torneo', 'campionato');
+create type public.competition_format as enum (
+  'eliminazione_diretta',  -- Single/Double elimination
+  'round_robin',            -- Round-robin (all-play-all)
+  'girone_eliminazione'     -- Group stage + elimination brackets
+);
+
+-- Tournaments table
+create table public.tournaments (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text,
+  starts_at timestamptz not null,
+  ends_at timestamptz,
+  category text,
+  level text,
+  max_participants int not null default 0,
+  status text not null default 'Aperto', -- 'Aperto', 'In Corso', 'Concluso', 'Annullato'
+  
+  -- Competition type and format
+  competition_type competition_type default 'torneo' not null,
+  format competition_format default 'eliminazione_diretta' not null,
+  
+  -- Tennis specific fields
+  match_format text default 'best_of_3', -- 'best_of_1', 'best_of_3', 'best_of_5'
+  surface_type text default 'terra', -- 'terra', 'erba', 'cemento', 'sintetico', 'indoor', 'carpet'
+  
+  -- Structure data (JSON)
+  rounds_data jsonb default '[]'::jsonb,
+  groups_data jsonb default '[]'::jsonb,
+  standings jsonb default '[]'::jsonb,
+  
+  -- Stage management
+  has_groups boolean default false,
+  current_stage text default 'registration', -- 'registration', 'groups', 'knockout', 'completed', 'cancelled'
+  
+  -- Financial
+  entry_fee decimal(10,2),
+  prize_money decimal(10,2),
+  
+  created_by uuid references auth.users on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.tournaments enable row level security;
+
+create policy "Anyone can view active tournaments"
+  on public.tournaments
+  for select
+  using (true);
+
+create policy "Admin and gestore can manage tournaments"
+  on public.tournaments
+  for all
+  using (exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role in ('gestore', 'admin')
+  ));
+
+create index tournaments_starts_at_idx on public.tournaments (starts_at);
+create index tournaments_status_idx on public.tournaments (status);
+create index tournaments_competition_type_idx on public.tournaments (competition_type);
+create index tournaments_format_idx on public.tournaments (format);
+
+-- Tournament participants
+create table public.tournament_participants (
+  id uuid primary key default gen_random_uuid(),
+  tournament_id uuid not null references public.tournaments on delete cascade,
+  user_id uuid not null references auth.users on delete cascade,
+  role text,
+  seed int,
+  group_name text,
+  created_at timestamptz not null default now(),
+  unique(tournament_id, user_id)
+);
+
+alter table public.tournament_participants enable row level security;
+
+create policy "Anyone can view tournament participants"
+  on public.tournament_participants
+  for select
+  using (true);
+
+create policy "Users can register themselves"
+  on public.tournament_participants
+  for insert
+  with check (auth.uid() = user_id);
+
+create policy "Admin can manage participants"
+  on public.tournament_participants
+  for all
+  using (exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role in ('gestore', 'admin')
+  ));
+
+create index tournament_participants_tournament_idx on public.tournament_participants (tournament_id);
+create index tournament_participants_user_idx on public.tournament_participants (user_id);
+
+-- Trigger for tournaments updated_at
+create trigger update_tournaments_updated_at
+  before update on public.tournaments
+  for each row execute procedure public.update_updated_at_column();
+
 -- Payments table (track all payments)
 create table public.payments (
   id uuid primary key default gen_random_uuid(),

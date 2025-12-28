@@ -85,7 +85,7 @@ import { POST as joinParticipant } from '../app/api/tournament_participants/rout
 
 describe('Tournaments API (mocked)', () => {
   it('allows gestore to create a tournament', async () => {
-    const req = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Mock Cup', starts_at: '2026-01-01T10:00:00Z', max_participants: 2, status: 'Aperto' }) });
+    const req = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Mock Cup', start_date: '2026-01-01T10:00:00Z', max_participants: 2, status: 'Aperto' }) });
     const res = await createTournament(req as unknown as Request);
     expect(res.status).toBe(201);
     const json = await res.json();
@@ -95,7 +95,7 @@ describe('Tournaments API (mocked)', () => {
 
   it('allows athletes to join until sold out', async () => {
     // first, create tournament as gestore
-    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Capacity Cup', starts_at: '2026-02-01T10:00:00Z', max_participants: 2, status: 'Aperto' }) });
+    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Capacity Cup', start_date: '2026-02-01T10:00:00Z', max_participants: 2, status: 'Aperto' }) });
     const createRes = await createTournament(createReq as unknown as Request);
     const createJson = await createRes.json();
     console.log('CREATE TOURNAMENT RESULT:', createRes.status, createJson?.tournament?.id);
@@ -124,7 +124,7 @@ describe('Tournaments API (mocked)', () => {
 
   it('allows maestro to register an athlete but not other roles', async () => {
     // create tournament as gestore
-    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'CoachEnroll Cup', starts_at: '2026-03-01T10:00:00Z', max_participants: 4, status: 'Aperto' }) });
+    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'CoachEnroll Cup', start_date: '2026-03-01T10:00:00Z', max_participants: 4, status: 'Aperto' }) });
     const createRes = await createTournament(createReq as unknown as Request);
     const createJson = await createRes.json();
     const tournamentId = createJson.tournament.id;

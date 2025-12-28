@@ -172,7 +172,7 @@ export default function AdminNavbar({
                               key={item.href}
                               href={item.href}
                               onClick={() => setActiveDropdown(null)}
-                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-2 transition hover:bg-orange-500/10 hover:text-blue-300"
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-2 transition hover:bg-blue-500/10 hover:text-cyan-300"
                             >
                               <ItemIcon className="h-4 w-4" />
                               {item.label}
@@ -201,7 +201,7 @@ export default function AdminNavbar({
           {/* Right Section - Desktop */}
           <div className="hidden lg:flex items-center gap-4">
             {/* Admin Badge */}
-            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-blue-300 border border-blue-500/30">
+            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-cyan-300 border border-cyan-500/30">
               <Shield className="inline h-3 w-3 mr-1" />
               Admin
             </div>
@@ -214,7 +214,7 @@ export default function AdminNavbar({
             >
               <Bell className="h-5 w-5" />
               {notificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold text-[#031226]">
                   {notificationsCount > 9 ? "9+" : notificationsCount}
                 </span>
               )}
@@ -223,7 +223,7 @@ export default function AdminNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-blue-500/30 bg-orange-500/10 px-3 py-1.5 transition hover:border-orange-400 hover:bg-orange-500/20"
+              className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-blue-500/10 px-3 py-1.5 transition hover:border-cyan-400 hover:bg-cyan-500/20"
             >
               {userAvatar ? (
                 <Image 
@@ -234,7 +234,7 @@ export default function AdminNavbar({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold text-white">
+                <div className="h-6 w-6 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-[#031226]">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -254,7 +254,7 @@ export default function AdminNavbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-blue-500/30 p-2 text-white transition hover:bg-orange-500/10"
+            className="lg:hidden rounded-lg border border-blue-500/30 p-2 text-white transition hover:bg-blue-500/10"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -265,7 +265,7 @@ export default function AdminNavbar({
         {isOpen && (
           <div className="lg:hidden border-t border-blue-500/10 pt-4 mt-4 space-y-2 pb-4">
             {/* User Info Mobile */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-orange-500/5 border border-blue-500/20 mb-4">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-500/5 border border-blue-500/20 mb-4">
               {userAvatar ? (
                 <Image 
                   src={userAvatar} 
@@ -275,7 +275,7 @@ export default function AdminNavbar({
                   className="h-10 w-10 rounded-full"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center text-lg font-bold text-white">
+                <div className="h-10 w-10 rounded-full bg-cyan-500 flex items-center justify-center text-lg font-bold text-[#031226]">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -287,7 +287,7 @@ export default function AdminNavbar({
                 </p>
               </div>
               {notificationsCount > 0 && (
-                <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white">
+                <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold text-[#031226]">
                   {notificationsCount > 9 ? "9+" : notificationsCount}
                 </div>
               )}
@@ -310,7 +310,7 @@ export default function AdminNavbar({
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-2 hover:bg-orange-500/10 hover:text-blue-300 transition pl-8"
+                          className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-2 hover:bg-blue-500/10 hover:text-cyan-300 transition pl-8"
                         >
                           <ItemIcon className="h-4 w-4" />
                           {item.label}
@@ -326,7 +326,7 @@ export default function AdminNavbar({
                   key={section.id}
                   href={section.href!}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-orange-500/10 hover:text-blue-300 transition"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-blue-500/10 hover:text-cyan-300 transition"
                 >
                   <Icon className="h-5 w-5" />
                   {section.label}

@@ -265,10 +265,10 @@ export default function UsersPage() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Totale" value={users.length} icon={<Users className="h-8 w-8 text-blue-400" />} color="blue" />
-          <StatCard title="Atleti" value={users.filter(u => u.role === 'atleta').length} icon={<User className="h-8 w-8 text-blue-300" />} color="green" />
-          <StatCard title="Coach" value={users.filter(u => u.role === 'maestro').length} icon={<User className="h-8 w-8 text-cyan-300" />} color="purple" />
-          <StatCard title="Staff" value={users.filter(u => u.role === 'gestore' || u.role === 'admin').length} icon={<Shield className="h-8 w-8 text-yellow-400" />} color="yellow" />
+          <StatCard title="Totale" value={users.length} icon={<Users className="h-8 w-8 text-teal-300" />} color="teal" />
+          <StatCard title="Atleti" value={users.filter(u => u.role === 'atleta').length} icon={<User className="h-8 w-8 text-lime-300" />} color="lime" />
+          <StatCard title="Coach" value={users.filter(u => u.role === 'maestro').length} icon={<User className="h-8 w-8 text-violet-300" />} color="violet" />
+          <StatCard title="Staff" value={users.filter(u => u.role === 'gestore' || u.role === 'admin').length} icon={<Shield className="h-8 w-8 text-orange-300" />} color="orange" />
         </div>
 
         {/* Search and Actions */}
@@ -373,7 +373,7 @@ export default function UsersPage() {
                   <button
                     onClick={() => handleResetPassword(user.id, user.email)}
                     disabled={currentUserRole === "gestore" && user.role === "admin"}
-                    className="inline-flex items-center justify-center rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-2 text-yellow-400 transition hover:bg-yellow-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 p-2 text-cyan-400 transition hover:bg-cyan-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : "Reset password"}
                   >
                     <Key className="h-3.5 w-3.5" />
@@ -659,7 +659,7 @@ export default function UsersPage() {
                     {currentUserRole === "admin" && <option value="admin">Admin</option>}
                   </select>
                   {currentUserRole === "gestore" && editingUser.role === "admin" && (
-                    <span className="mt-2 block text-xs text-yellow-400 flex items-center gap-1">
+                    <span className="mt-2 block text-xs text-cyan-400 flex items-center gap-1">
                       <Shield className="h-3 w-3" />
                       Non puoi modificare utenti admin
                     </span>
@@ -773,7 +773,7 @@ export default function UsersPage() {
                     {currentUserRole === "admin" && <option value="admin">Admin</option>}
                   </select>
                   {currentUserRole === "gestore" && (
-                    <span className="mt-2 block text-xs text-yellow-400 flex items-center gap-1">
+                    <span className="mt-2 block text-xs text-cyan-400 flex items-center gap-1">
                       <Shield className="h-3 w-3" />
                       Solo gli admin possono creare altri admin
                     </span>

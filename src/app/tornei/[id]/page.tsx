@@ -13,8 +13,8 @@ type Tournament = {
   id: string;
   title: string;
   description?: string;
-  starts_at?: string;
-  ends_at?: string;
+  start_date?: string;
+  end_date?: string;
   category?: string;
   level?: string;
   max_participants?: number;
@@ -228,14 +228,14 @@ export default function TournamentDetail() {
         )}
         
         <div className="grid md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
-          {tournament.starts_at && (
+          {tournament.start_date && (
             <div className="flex items-start gap-2 text-muted-2">
               <svg className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <div>
                 <div className="text-xs text-muted-2">Inizio</div>
-                <div className="text-white">{new Date(tournament.starts_at).toLocaleDateString('it-IT', { 
+                <div className="text-white">{new Date(tournament.start_date).toLocaleDateString('it-IT', { 
                   day: 'numeric', 
                   month: 'long', 
                   year: 'numeric',
@@ -246,14 +246,14 @@ export default function TournamentDetail() {
             </div>
           )}
           
-          {tournament.ends_at && (
+          {tournament.end_date && (
             <div className="flex items-start gap-2 text-muted-2">
               <svg className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <div>
                 <div className="text-xs text-muted-2">Fine</div>
-                <div className="text-white">{new Date(tournament.ends_at).toLocaleDateString('it-IT', { 
+                <div className="text-white">{new Date(tournament.end_date).toLocaleDateString('it-IT', { 
                   day: 'numeric', 
                   month: 'long', 
                   year: 'numeric'

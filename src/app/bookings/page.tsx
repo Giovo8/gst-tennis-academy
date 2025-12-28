@@ -240,11 +240,11 @@ export default function BookingsPage() {
           <>
             {/* Statistiche rapide */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <StatCard title="Totale" value={stats.total} icon={<Calendar className="h-8 w-8 text-blue-400" />} color="neutral" />
-              <StatCard title="In Attesa" value={stats.pending} icon={<Clock className="h-8 w-8 text-yellow-400" />} color="yellow" />
-              <StatCard title="Confermate" value={stats.confirmed} icon={<CheckCircle className="h-8 w-8 text-blue-300" />} color="green" />
-              <StatCard title="Lezioni Private" value={stats.private} icon={<Users className="h-8 w-8 text-accent" />} color="blue" />
-              <StatCard title="Annullate" value={stats.cancelled} icon={<XCircle className="h-8 w-8 text-cyan-300" />} color="red" />
+              <StatCard title="Totale" value={stats.total} icon={<Calendar className="h-8 w-8 text-indigo-300" />} color="indigo" />
+              <StatCard title="In Attesa" value={stats.pending} icon={<Clock className="h-8 w-8 text-yellow-300" />} color="yellow" />
+              <StatCard title="Confermate" value={stats.confirmed} icon={<CheckCircle className="h-8 w-8 text-lime-300" />} color="lime" />
+              <StatCard title="Lezioni Private" value={stats.private} icon={<Users className="h-8 w-8 text-sky-300" />} color="sky" />
+              <StatCard title="Annullate" value={stats.cancelled} icon={<XCircle className="h-8 w-8 text-red-300" />} color="red" />
             </div>
 
             {/* Filtri */}

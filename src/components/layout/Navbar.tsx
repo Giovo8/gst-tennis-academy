@@ -41,9 +41,9 @@ export default function Navbar() {
 
   const roleColors: Record<UserRole, string> = {
     atleta: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-    maestro: "bg-cyan-500/20 text-purple-300 border-cyan-500/30",
-    gestore: "bg-orange-500/20 text-orange-300 border-blue-500/30",
-    admin: "bg-cyan-500/20 text-red-300 border-cyan-500/30",
+    maestro: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+    gestore: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    admin: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
   };
 
   if (!user) return null;
@@ -126,7 +126,7 @@ export default function Navbar() {
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-xl bg-cyan-500/20 px-4 py-2 text-sm font-semibold text-red-300 border border-cyan-500/30 transition-all duration-300 hover:bg-cyan-500/30 hover:shadow-lg hover:shadow-red-500/20"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500/20 to-rose-500/20 px-4 py-2 text-sm font-semibold text-red-200 border-2 border-red-400/40 transition-all duration-300 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-xl hover:shadow-red-500/30 hover:scale-105"
             >
               <LogOut className="h-4 w-4" />
               Esci
@@ -196,7 +196,7 @@ export default function Navbar() {
                   setIsOpen(false);
                   handleLogout();
                 }}
-                className="w-full flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-red-300 bg-cyan-500/20 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all duration-300"
+                className="w-full flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-red-200 bg-gradient-to-r from-red-500/20 to-rose-500/20 border-2 border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300"
               >
                 <LogOut className="h-4 w-4" />
                 Esci
