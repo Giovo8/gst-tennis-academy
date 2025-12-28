@@ -1,5 +1,8 @@
 # Sistema Tornei Semplificato - Documentazione
 
+**Ultimo aggiornamento**: 28 Dicembre 2025  
+**Status**: ✅ Implementato e Testato
+
 ## Panoramica
 
 Il sistema gestisce 3 tipi di torneo in modo intuitivo:
@@ -7,6 +10,17 @@ Il sistema gestisce 3 tipi di torneo in modo intuitivo:
 1. **Eliminazione Diretta** - Tabellone classico ad eliminazione
 2. **Girone + Eliminazione** - Fase a gironi seguita da eliminazione diretta
 3. **Campionato** - Round-robin (tutti contro tutti)
+
+## Modifiche Recenti
+
+### v1.0.0 - 28 Dicembre 2025
+- ✅ Implementato sistema completo con 3 tipi di torneo
+- ✅ Aggiornato schema database (start_date/end_date)
+- ✅ Rimossa colonna obsoleta created_by
+- ✅ Creati componenti UI: SimpleTournamentCreator, TournamentManager, KnockoutBracket
+- ✅ Implementate API complete per gestione tornei
+- ✅ Migrazione 010 con funzioni helper per gironi
+- ✅ Script SQL di fix automatico dello schema
 
 ## Architettura
 

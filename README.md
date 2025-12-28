@@ -25,9 +25,16 @@
 - ✅ Sistema di conferme a 3 livelli (utente, coach, gestore)
 - 💳 Gestione pagamenti e storico prenotazioni
 
-### Gestione Tornei
-- 🏆 Tornei a gironi e a eliminazione diretta
+### Gestione Tornei ⭐ AGGIORNATO
+- 🎯 **3 Tipi di Torneo**: 
+  - Eliminazione Diretta (tabellone classico)
+  - Girone + Eliminazione (fase a gironi + tabellone finale)
+  - Campionato (round-robin, tutti contro tutti)
+- 🏆 Sistema completo con wizard di creazione intuitivo
 - 📊 Punteggi tennis autentici (set, game, tie-break)
+- 📋 Classifiche automatiche con differenze set/games
+- 🎮 Tabelloni interattivi e aggiornamento risultati in tempo reale
+- 📱 Visualizzazione ottimizzata per desktop e mobile
 - 🥇 Classifiche e statistiche dettagliate
 - 📱 Iscrizioni online con conferma automatica
 - 📧 Notifiche email per match e risultati

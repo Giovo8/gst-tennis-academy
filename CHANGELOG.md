@@ -5,6 +5,49 @@ All notable changes to GST Tennis Academy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-28
+
+### Added
+
+#### Sistema Tornei Semplificato
+- **3 Tipi di Torneo Supportati**:
+  - Eliminazione Diretta (tabellone classico a eliminazione)
+  - Girone + Eliminazione (fase a gironi seguita da tabellone finale)
+  - Campionato Round-Robin (tutti contro tutti)
+- **Componenti UI Nuovi**:
+  - SimpleTournamentCreator: wizard in 3 step per creazione tornei
+  - TournamentManager: gestione unificata di tutti i tipi di torneo
+  - EliminationBracketView: visualizzazione tabellone eliminazione diretta
+  - GroupStageView: gestione gironi con classifiche e partite
+  - ChampionshipStandingsView: classifica completa per campionati
+- **API Endpoints Completi**:
+  - POST /api/tournaments/create: creazione tornei con validazione
+  - POST /api/tournaments/[id]/start: avvio torneo con assegnazione gironi
+  - GET/POST /api/tournaments/[id]/group-matches: gestione partite gironi
+  - PUT /api/tournaments/matches/[matchId]: aggiornamento risultati
+- **Database**:
+  - Nuove tabelle: tournament_groups, tournament_matches
+  - Funzioni helper: create_tournament_groups, assign_participants_to_groups, calculate_group_standings
+  - Trigger automatici: update_match_stats per aggiornamento statistiche
+  - Migrazione 010: simplified_tournament_system.sql
+- **Documentazione**:
+  - TOURNAMENT_SYSTEM.md: documentazione completa con esempi
+  - Script SQL di fix: FIX_TOURNAMENTS_SCHEMA.sql
+  - Guide di applicazione: APPLY_SCHEMA_FIXES.md
+
+### Changed
+
+#### Schema Database Aggiornato
+- Rinominate colonne: starts_at → start_date, ends_at → end_date
+- Rimossa colonna obsoleta: created_by (non più necessaria)
+- Aggiunte colonne per tornei: tournament_type, num_groups, teams_per_group, teams_advancing, current_phase
+- Statistiche partecipanti: campo stats JSONB con tracking automatico
+
+### Fixed
+- Risolto errore "competition_type column not found"
+- Corretta gestione colori nei componenti tornei (cyan invece di amber)
+- Migliorata validazione numero partecipanti per eliminazione diretta
+
 ## [1.0.0] - 2024-12-28
 
 ### Added
