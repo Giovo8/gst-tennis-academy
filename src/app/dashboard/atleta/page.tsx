@@ -29,6 +29,19 @@ type Stats = {
   completedBookings: number;
 };
 
+type Tournament = {
+  id: string;
+  title: string;
+  tournament_type: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
+  start_date?: string;
+  max_participants?: number;
+  status?: string;
+  current_phase?: string;
+  participant_count?: number;
+  is_enrolled?: boolean;
+  participation_id?: string;
+};
+
 export default function AthleteDashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -40,6 +53,9 @@ export default function AthleteDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>("");
   const [subscriptionType, setSubscriptionType] = useState<string | null>(null);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loadingTournaments, setLoadingTournaments] = useState(true);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -136,7 +152,82 @@ export default function AthleteDashboardPage() {
     }
 
     loadData();
+    loadTournaments();
   }, []);
+
+  async function loadTournaments() {
+    setLoadingTournaments(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Carica tornei in fase iscrizioni
+      const { data: availableTournaments } = await supabase
+        .from("tournaments")
+        .select("*")
+        .eq("current_phase", "iscrizioni")
+        .order("start_date", { ascending: true });
+
+      // Carica partecipazioni dell'atleta
+      const { data: participations } = await supabase
+        .from("tournament_participants")
+        .select("tournament_id, id")
+        .eq("user_id", user.id);
+
+      const participationMap = new Map(participations?.map(p => [p.tournament_id, p.id]) || []);
+
+      // Carica tornei a cui è iscritto
+      const { data: enrolledTournaments } = await supabase
+        .from("tournaments")
+        .select("*")
+        .in("id", Array.from(participationMap.keys()))
+        .order("start_date", { ascending: true });
+
+      // Conta i partecipanti per ogni torneo
+      const allTournamentIds = [
+        ...(availableTournaments?.map(t => t.id) || []),
+        ...(enrolledTournaments?.map(t => t.id) || [])
+      ];
+
+      let participantCounts: Record<string, number> = {};
+      if (allTournamentIds.length > 0) {
+        const { data: counts } = await supabase
+          .from("tournament_participants")
+          .select("tournament_id")
+          .in("tournament_id", allTournamentIds);
+        
+        if (counts) {
+          counts.forEach(c => {
+            participantCounts[c.tournament_id] = (participantCounts[c.tournament_id] || 0) + 1;
+          });
+        }
+      }
+
+      // Combina i tornei disponibili con info iscrizione
+      const available = (availableTournaments || []).map(t => ({
+        ...t,
+        participant_count: participantCounts[t.id] || 0,
+        is_enrolled: participationMap.has(t.id),
+        participation_id: participationMap.get(t.id)
+      }));
+
+      // Combina i tornei a cui è iscritto
+      const enrolled = (enrolledTournaments || [])
+        .filter(t => t.current_phase !== 'iscrizioni')
+        .map(t => ({
+          ...t,
+          participant_count: participantCounts[t.id] || 0,
+          is_enrolled: true,
+          participation_id: participationMap.get(t.id)
+        }));
+
+      setTournaments([...available, ...enrolled]);
+    } catch (error) {
+      console.error("Error loading tournaments:", error);
+    } finally {
+      setLoadingTournaments(false);
+    }
+  }
 
   function formatDateTime(dateString: string) {
     const date = new Date(dateString);
@@ -179,6 +270,98 @@ export default function AthleteDashboardPage() {
     return <span className="text-xs bg-blue-500/15 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30">
       In attesa
     </span>;
+  }
+
+  async function handleEnrollTournament(tournamentId: string) {
+    setEnrolling(tournamentId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!session?.access_token || !user) {
+        alert('Sessione non valida');
+        return;
+      }
+
+      const res = await fetch('/api/tournament_participants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          tournament_id: tournamentId,
+          user_id: user.id
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Iscrizione completata con successo!');
+        loadTournaments();
+      } else {
+        alert(data.error || 'Errore nell\'iscrizione');
+      }
+    } catch (error) {
+      console.error('Error enrolling:', error);
+      alert('Errore nell\'iscrizione al torneo');
+    } finally {
+      setEnrolling(null);
+    }
+  }
+
+  async function handleUnenrollTournament(participationId: string, tournamentTitle: string) {
+    if (!confirm(`Sei sicuro di voler cancellare l'iscrizione a "${tournamentTitle}"?`)) {
+      return;
+    }
+
+    setEnrolling(participationId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        alert('Sessione non valida');
+        return;
+      }
+
+      const res = await fetch(`/api/tournament_participants?id=${participationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (res.ok) {
+        alert('Iscrizione cancellata con successo');
+        loadTournaments();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Errore nella cancellazione');
+      }
+    } catch (error) {
+      console.error('Error unenrolling:', error);
+      alert('Errore nella cancellazione dell\'iscrizione');
+    } finally {
+      setEnrolling(null);
+    }
+  }
+
+  function getTournamentTypeLabel(type?: string) {
+    switch(type) {
+      case 'eliminazione_diretta': return 'Eliminazione Diretta';
+      case 'girone_eliminazione': return 'Girone + Eliminazione';
+      case 'campionato': return 'Campionato';
+      default: return 'Torneo';
+    }
+  }
+
+  function getTournamentTypeIcon(type?: string) {
+    switch(type) {
+      case 'campionato': return Award;
+      case 'girone_eliminazione': return Target;
+      default: return Trophy;
+    }
   }
 
   return (
@@ -328,6 +511,175 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Tournaments Section */}
+        <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-[#7de3ff]" />
+              I Miei Tornei
+            </h2>
+            <Link href="/tornei" className="text-sm text-[#7de3ff] hover:underline">
+              Esplora tutti i tornei →
+            </Link>
+          </div>
+          
+          {loadingTournaments ? (
+            <p className="text-sm text-muted text-center py-8">Caricamento tornei...</p>
+          ) : tournaments.length > 0 ? (
+            <div className="space-y-6">
+              {/* Tornei a cui è iscritto */}
+              {tournaments.filter(t => t.is_enrolled).length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                    Iscrizioni Attive ({tournaments.filter(t => t.is_enrolled).length})
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {tournaments.filter(t => t.is_enrolled).map((tournament) => {
+                      const Icon = getTournamentTypeIcon(tournament.tournament_type);
+                      return (
+                        <div key={tournament.id} className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="p-2 rounded-lg bg-green-500/20 border border-green-500/30">
+                                <Icon className="h-5 w-5 text-green-400" />
+                              </div>
+                              <div>
+                                <span className="text-xs font-semibold text-green-400 uppercase tracking-wider">
+                                  {getTournamentTypeLabel(tournament.tournament_type)}
+                                </span>
+                              </div>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full font-bold ${
+                              tournament.current_phase === 'iscrizioni' 
+                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
+                                : tournament.current_phase === 'eliminazione' || tournament.current_phase === 'gironi'
+                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                                : 'bg-gray-500/20 text-gray-400 border border-gray-500/40'
+                            }`}>
+                              {tournament.current_phase === 'iscrizioni' ? 'Iscrizioni' : 
+                               tournament.current_phase === 'eliminazione' ? 'In Corso' :
+                               tournament.current_phase === 'gironi' ? 'Gironi' : 'Concluso'}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-white mb-2">{tournament.title}</h4>
+                          <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
+                            {tournament.start_date && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(tournament.start_date).toLocaleDateString('it-IT')}
+                              </span>
+                            )}
+                            {tournament.max_participants && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {tournament.participant_count || 0}/{tournament.max_participants}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Link 
+                              href={`/tornei/${tournament.id}`}
+                              className="flex-1 text-center rounded-lg bg-[#7de3ff]/20 border border-[#7de3ff]/30 px-3 py-2 text-sm font-semibold text-[#7de3ff] hover:bg-[#7de3ff]/30 transition-all"
+                            >
+                              Visualizza
+                            </Link>
+                            {tournament.current_phase === 'iscrizioni' && (
+                              <button
+                                onClick={() => handleUnenrollTournament(tournament.participation_id!, tournament.title)}
+                                disabled={enrolling === tournament.participation_id}
+                                className="flex-1 rounded-lg bg-red-500/20 border border-red-500/30 px-3 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                              >
+                                {enrolling === tournament.participation_id ? 'Rimozione...' : 'Cancella Iscrizione'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Tornei disponibili per iscrizione */}
+              {tournaments.filter(t => !t.is_enrolled && t.current_phase === 'iscrizioni').length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-[#7de3ff]" />
+                    Tornei Disponibili ({tournaments.filter(t => !t.is_enrolled && t.current_phase === 'iscrizioni').length})
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {tournaments.filter(t => !t.is_enrolled && t.current_phase === 'iscrizioni').map((tournament) => {
+                      const Icon = getTournamentTypeIcon(tournament.tournament_type);
+                      const isFull = tournament.participant_count! >= tournament.max_participants!;
+                      return (
+                        <div key={tournament.id} className="rounded-lg border border-[#7de3ff]/20 bg-gradient-to-br from-[#7de3ff]/5 to-transparent p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="p-2 rounded-lg bg-[#7de3ff]/20 border border-[#7de3ff]/30">
+                                <Icon className="h-5 w-5 text-[#7de3ff]" />
+                              </div>
+                              <div>
+                                <span className="text-xs font-semibold text-[#7de3ff] uppercase tracking-wider">
+                                  {getTournamentTypeLabel(tournament.tournament_type)}
+                                </span>
+                              </div>
+                            </div>
+                            {isFull && (
+                              <span className="text-xs px-2 py-1 rounded-full font-bold bg-red-500/20 text-red-400 border border-red-500/40">
+                                Completo
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-bold text-white mb-2">{tournament.title}</h4>
+                          <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
+                            {tournament.start_date && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(tournament.start_date).toLocaleDateString('it-IT')}
+                              </span>
+                            )}
+                            {tournament.max_participants && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {tournament.participant_count || 0}/{tournament.max_participants}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Link 
+                              href={`/tornei/${tournament.id}`}
+                              className="flex-1 text-center rounded-lg bg-[#0a1929]/60 border border-[#7de3ff]/20 px-3 py-2 text-sm font-semibold text-gray-300 hover:bg-[#0a1929]/80 hover:text-white transition-all"
+                            >
+                              Dettagli
+                            </Link>
+                            <button
+                              onClick={() => handleEnrollTournament(tournament.id)}
+                              disabled={enrolling === tournament.id || isFull}
+                              className="flex-1 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-3 py-2 text-sm font-bold text-[#0a1929] hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {enrolling === tournament.id ? 'Iscrizione...' : isFull ? 'Completo' : 'Iscriviti'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Trophy className="h-12 w-12 text-muted-2 mx-auto mb-4" />
+              <p className="text-muted mb-4">Nessun torneo disponibile al momento</p>
+              <Link href="/tornei" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 text-sm font-semibold text-[#0a1929] hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all">
+                <Trophy className="h-4 w-4" />
+                Esplora tornei
+              </Link>
+            </div>
+          )}
         </div>
         </main>
       </div>
