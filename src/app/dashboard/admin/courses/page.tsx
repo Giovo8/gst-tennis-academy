@@ -44,7 +44,7 @@ export default function AdminCoursesPage() {
   async function loadSections() {
     try {
       const { data, error } = await supabase
-        .from("courses")
+        .from("course_sections")
         .select("*")
         .order("order_index", { ascending: true });
 
@@ -141,23 +141,31 @@ export default function AdminCoursesPage() {
         section_description: formData.section_description || null,
         items: formData.items,
         order_index: formData.order_index,
-        active: formData.active,
+        is_active: formData.active,
       };
+
+      console.log('Saving section data:', sectionData);
 
       let result;
       if (editingId) {
-        result = await supabase.from("courses").update(sectionData).eq("id", editingId);
+        result = await supabase.from("course_sections").update(sectionData).eq("id", editingId);
       } else {
-        result = await supabase.from("courses").insert([sectionData]);
+        result = await supabase.from("course_sections").insert([sectionData]);
       }
 
-      if (result.error) throw result.error;
+      console.log('Save result:', result);
+
+      if (result.error) {
+        console.error('Database error:', result.error);
+        throw result.error;
+      }
 
       await loadSections();
       handleCancel();
-    } catch (error) {
+    } catch (error: any) {
       // Handle error with user feedback
-      alert("Errore nel salvataggio");
+      console.error('Save error:', error);
+      alert("Errore nel salvataggio: " + (error?.message || error?.toString() || 'Errore sconosciuto'));
     }
   }
 
@@ -165,7 +173,7 @@ export default function AdminCoursesPage() {
     if (!confirm("Sei sicuro di voler eliminare questa sezione?")) return;
 
     try {
-      const { error } = await supabase.from("courses").delete().eq("id", id);
+      const { error } = await supabase.from("course_sections").delete().eq("id", id);
       if (error) throw error;
       await loadSections();
     } catch (error) {

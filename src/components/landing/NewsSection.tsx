@@ -7,40 +7,52 @@ import { Loader2, X, Newspaper } from "lucide-react";
 type NewsItem = {
   id: string;
   title: string;
-  date: string;
   category: string;
-  summary: string;
   content: string;
+  excerpt?: string;
   image_url: string | null;
+  is_published: boolean;
+  published_at?: string;
+  created_at: string;
+  updated_at: string;
 };
 
 const defaultNews: NewsItem[] = [
   {
     id: "default-1",
     title: "Clinic con coach ATP",
-    date: new Date("2026-01-18").toISOString(),
-    category: "Clinic Pro",
-    summary: "Sessione speciale di footwork e anticipo con live tracking e video review individuale.",
+    category: "eventi",
     content: "Siamo entusiasti di annunciare una clinic esclusiva con un coach ATP professionista. Durante questa sessione speciale, i partecipanti avranno l'opportunità di lavorare su footwork avanzato e tecniche di anticipo. Ogni sessione include live tracking dei movimenti e video review personalizzata per massimizzare il miglioramento tecnico.",
+    excerpt: "Sessione speciale di footwork e anticipo con live tracking e video review individuale.",
     image_url: null,
+    is_published: true,
+    published_at: new Date("2026-01-18").toISOString(),
+    created_at: new Date("2026-01-18").toISOString(),
+    updated_at: new Date("2026-01-18").toISOString(),
   },
   {
     id: "default-2",
     title: "Torneo U14 - Winter Series",
-    date: new Date("2026-02-25").toISOString(),
-    category: "Tornei FITP",
-    summary: "Tabelloni maschili e femminili, live scoring e supporto tattico per ogni match.",
+    category: "tornei",
     content: "Il nostro torneo Winter Series U14 è pronto ad accogliere giovani talenti. Con tabelloni sia maschili che femminili, ogni partecipante avrà l'opportunità di competere al massimo livello con live scoring professionale. Il nostro staff tecnico fornirà supporto tattico durante i match per aiutare i giovani atleti a crescere.",
+    excerpt: "Tabelloni maschili e femminili, live scoring e supporto tattico per ogni match.",
     image_url: null,
+    is_published: true,
+    published_at: new Date("2026-02-25").toISOString(),
+    created_at: new Date("2026-02-25").toISOString(),
+    updated_at: new Date("2026-02-25").toISOString(),
   },
   {
     id: "default-3",
     title: "Nuovo campo indoor in resina",
-    date: new Date("2026-03-01").toISOString(),
-    category: "Struttura",
-    summary: "Superficie omologata ITF, illuminazione pro e sistema di sensori per rilevare velocità di palla.",
+    category: "generale",
     content: "Abbiamo inaugurato il nostro nuovo campo indoor con superficie in resina omologata ITF. La struttura dispone di illuminazione professionale e un avanzato sistema di sensori che rileva la velocità della palla in tempo reale, offrendo un'esperienza di gioco all'avanguardia.",
+    excerpt: "Superficie omologata ITF, illuminazione pro e sistema di sensori per rilevare velocità di palla.",
     image_url: null,
+    is_published: true,
+    published_at: new Date("2026-03-01").toISOString(),
+    created_at: new Date("2026-03-01").toISOString(),
+    updated_at: new Date("2026-03-01").toISOString(),
   },
 ];
 
@@ -57,11 +69,12 @@ export default function NewsSection() {
     const { data, error } = await supabase
       .from("news")
       .select("*")
-      .eq("published", true)
-      .order("date", { ascending: false })
+      .eq("is_published", true)
+      .order("published_at", { ascending: false })
       .limit(3);
 
     if (error) {
+      console.error("Error loading news:", error);
       // Usa le news di default se c'è un errore (es. tabella non esiste ancora)
       setNews(defaultNews);
     } else if (data && data.length > 0) {
@@ -120,7 +133,7 @@ export default function NewsSection() {
                     {item.category}
                   </span>
                   <p className="text-xs text-gray-400">
-                  {new Date(item.date).toLocaleDateString("it-IT", {
+                  {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
@@ -129,7 +142,7 @@ export default function NewsSection() {
               </div>
               <h3 className="text-lg font-bold gradient-text">{item.title}</h3>
               <p className="text-sm leading-relaxed text-gray-300">
-                {item.summary}
+                {item.excerpt || item.content.substring(0, 150) + '...'}
               </p>
             </div>
           </article>
@@ -170,7 +183,7 @@ export default function NewsSection() {
               {selectedNews.category}
             </span>
             <p className="text-xs text-gray-400">
-              {new Date(selectedNews.date).toLocaleDateString("it-IT", {
+              {new Date(selectedNews.published_at || selectedNews.created_at).toLocaleDateString("it-IT", {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
@@ -182,9 +195,11 @@ export default function NewsSection() {
             {selectedNews.title}
           </h2>
 
-          <p className="text-lg leading-relaxed text-white mb-6 font-medium">
-            {selectedNews.summary}
-          </p>
+          {selectedNews.excerpt && (
+            <p className="text-lg leading-relaxed text-white mb-6 font-medium">
+              {selectedNews.excerpt}
+            </p>
+          )}
 
           <div className="prose prose-invert max-w-none">
             <p className="text-base leading-relaxed text-gray-300 whitespace-pre-wrap">

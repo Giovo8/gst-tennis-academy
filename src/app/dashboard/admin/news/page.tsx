@@ -9,11 +9,15 @@ type News = {
   id: string;
   title: string;
   category: string;
-  summary: string;
+  summary?: string;
+  content: string;
+  excerpt?: string;
   image_url: string | null;
-  date: string;
-  published: boolean;
+  author_id?: string;
+  is_published: boolean;
+  published_at?: string;
   created_at: string;
+  updated_at: string;
 };
 
 export default function AdminNewsPage() {
@@ -31,6 +35,14 @@ export default function AdminNewsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const categoryLabels: Record<string, string> = {
+    'notizie': 'Notizie',
+    'risultati': 'Risultati',
+    'eventi': 'Eventi',
+    'generale': 'Generale',
+    'tornei': 'Tornei'
+  };
+
   useEffect(() => {
     loadNews();
   }, []);
@@ -40,7 +52,7 @@ export default function AdminNewsPage() {
     const { data, error } = await supabase
       .from("news")
       .select("*")
-      .order("date", { ascending: false });
+      .order("published_at", { ascending: false });
 
     if (error) {
       // Handle error silently
@@ -64,9 +76,9 @@ export default function AdminNewsPage() {
   function editNews(item: News) {
     setTitle(item.title);
     setCategory(item.category);
-    setSummary(item.summary);
+    setSummary(item.excerpt || item.content);
     setImageUrl(item.image_url || "");
-    setPublished(item.published);
+    setPublished(item.is_published);
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -91,9 +103,11 @@ export default function AdminNewsPage() {
           .update({
             title,
             category,
-            summary,
+            content: summary,
+            excerpt: summary.substring(0, 200),
             image_url: imageUrl || null,
-            published,
+            is_published: published,
+            published_at: published ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
           })
           .eq("id", editingId);
@@ -108,10 +122,12 @@ export default function AdminNewsPage() {
           .insert({
             title,
             category,
-            summary,
+            content: summary,
+            excerpt: summary.substring(0, 200),
             image_url: imageUrl || null,
-            published,
-            created_by: userData.user?.id,
+            is_published: published,
+            author_id: userData.user?.id,
+            published_at: published ? new Date().toISOString() : null,
           });
 
         if (error) throw error;
@@ -141,9 +157,14 @@ export default function AdminNewsPage() {
   }
 
   async function togglePublished(id: string, currentState: boolean) {
+    const newState = !currentState;
     const { error } = await supabase
       .from("news")
-      .update({ published: !currentState, updated_at: new Date().toISOString() })
+      .update({ 
+        is_published: newState,
+        published_at: newState ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString() 
+      })
       .eq("id", id);
 
     if (error) {
@@ -192,23 +213,49 @@ export default function AdminNewsPage() {
               className="rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
               required
             />
-            <input
-              type="text"
-              placeholder="Categoria *"
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
               required
-            />
+            >
+              <option value="">Seleziona Categoria *</option>
+              <option value="notizie">Notizie</option>
+              <option value="risultati">Risultati</option>
+              <option value="eventi">Eventi</option>
+              <option value="generale">Generale</option>
+              <option value="tornei">Tornei</option>
+            </select>
           </div>
 
-          <input
-            type="url"
-            placeholder="URL Immagine (opzionale)"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
-          />
+          <div className="space-y-2">
+            <input
+              type="url"
+              placeholder="URL Immagine (opzionale)"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
+            />
+            {imageUrl && (
+              <div className="relative w-full rounded-xl overflow-hidden border border-white/15 bg-surface/50">
+                <div className="aspect-video w-full">
+                  <img
+                    src={imageUrl}
+                    alt="Anteprima"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = '<div class="flex items-center justify-center h-full text-sm text-red-400"><svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>URL immagine non valido</div>';
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           <textarea
             placeholder="Sommario *"
@@ -280,31 +327,36 @@ export default function AdminNewsPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-                      item.published ? 'bg-blue-500/20 text-blue-300' : 'bg-cyan-500/20 text-cyan-300'
+                      item.is_published ? 'bg-blue-500/20 text-blue-300' : 'bg-cyan-500/20 text-cyan-300'
                     }`}>
-                      {item.category}
+                      {categoryLabels[item.category] || item.category}
                     </span>
                     <button
-                      onClick={() => togglePublished(item.id, item.published)}
+                      onClick={() => togglePublished(item.id, item.is_published)}
                       className="text-muted hover:text-white"
-                      title={item.published ? "Nascondi" : "Pubblica"}
+                      title={item.is_published ? "Nascondi" : "Pubblica"}
                     >
-                      {item.published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      {item.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
                   </div>
 
                   {item.image_url && (
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
+                    <div className="w-full rounded-lg overflow-hidden bg-surface/50">
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-40 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
                   )}
 
                   <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-                  <p className="text-sm text-muted line-clamp-3">{item.summary}</p>
+                  <p className="text-sm text-muted line-clamp-3">{item.excerpt || item.content}</p>
                   <p className="text-xs text-muted-2">
-                    {new Date(item.date).toLocaleDateString("it-IT", {
+                    {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",

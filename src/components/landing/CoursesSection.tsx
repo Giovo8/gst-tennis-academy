@@ -25,9 +25,9 @@ export default function CoursesSection() {
   async function loadSections() {
     try {
       const { data, error } = await supabase
-        .from("courses")
+        .from("course_sections")
         .select("*")
-        .eq("active", true)
+        .eq("is_active", true)
         .order("order_index", { ascending: true});
 
       if (error) throw error;
