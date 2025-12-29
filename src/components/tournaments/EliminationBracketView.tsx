@@ -117,7 +117,7 @@ export default function EliminationBracket({
       const url = `/api/tournaments/${tournamentId}/group-matches?phase=eliminazione`;
       const response = await fetch(url);
       const data = await response.json();
-      if (res.ok) {
+      if (response.ok) {
         setMatches(data.matches || []);
       } else {
         console.error('Error response:', data);
