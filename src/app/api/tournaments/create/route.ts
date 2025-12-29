@@ -109,9 +109,9 @@ export async function POST(req: Request) {
     }
     
     if (body.tournament_type === 'girone_eliminazione') {
-      if (!body.num_groups || body.num_groups < 2) {
+      if (!body.num_groups || body.num_groups < 1) {
         return NextResponse.json(
-          { error: "Per girone_eliminazione, num_groups deve essere almeno 2" },
+          { error: "Per girone_eliminazione, num_groups deve essere almeno 1" },
           { status: 400 }
         );
       }

@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Users, Trophy, TrendingUp, RefreshCw, Target } from 'lucide-react';
+import { Users, Trophy, TrendingUp, RefreshCw, Target, Calendar } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+
+type TabType = 'participants' | 'standings' | 'matches';
 
 interface Participant {
   id: string;
@@ -68,6 +70,7 @@ export default function GroupStageView({
   const [generating, setGenerating] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('participants');
 
   useEffect(() => {
     if (groups.length > 0) {
@@ -84,7 +87,7 @@ export default function GroupStageView({
   const loadGroupMatches = async (groupId: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/group-matches?group_id=${groupId}&phase=gironi`);
+      const res = await fetch(`/api/tournaments/${tournamentId}/group-matches?group_id=${groupId}`);
       const data = await res.json();
       if (res.ok) {
         setMatches(data.matches || []);
@@ -254,7 +257,8 @@ export default function GroupStageView({
   }
 
   return (
-    <div className="space-y-6">      {/* Admin Actions */}
+    <div className="space-y-6">
+      {/* Admin Actions */}
       {isAdmin && (
         <div className="flex gap-3 justify-end">
           <button
@@ -267,118 +271,207 @@ export default function GroupStageView({
           </button>
         </div>
       )}
-      {/* Tab gironi */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {groups.map(group => (
-          <button
-            key={group.id}
-            onClick={() => setSelectedGroup(group.id)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
-              selectedGroup === group.id
-                ? 'bg-accent text-white'
-                : 'bg-surface border border-border text-muted hover:text-white'
-            }`}
-          >
-            {group.group_name}
-          </button>
-        ))}
+
+      {/* Tab principale: Partecipanti, Classifica, Calendario */}
+      <div className="flex gap-2 border-b border-border">
+        <button
+          onClick={() => setActiveTab('participants')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors relative ${
+            activeTab === 'participants'
+              ? 'text-accent'
+              : 'text-muted hover:text-white'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Partecipanti ({participants.length})
+          {activeTab === 'participants' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('standings')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors relative ${
+            activeTab === 'standings'
+              ? 'text-accent'
+              : 'text-muted hover:text-white'
+          }`}
+        >
+          <Trophy className="h-4 w-4" />
+          Classifica
+          {activeTab === 'standings' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('matches')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors relative ${
+            activeTab === 'matches'
+              ? 'text-accent'
+              : 'text-muted hover:text-white'
+          }`}
+        >
+          <Calendar className="h-4 w-4" />
+          Calendario
+          {activeTab === 'matches' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+          )}
+        </button>
       </div>
 
-      {selectedGroup && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Classifica */}
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-white flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-accent" />
-                Classifica
-              </h4>
-              <span className="text-xs text-muted">
-                Top {teamsAdvancing} qualificati
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {getGroupStandings(selectedGroup).map((participant, index) => {
-                const stats = participant.stats || {
-                  matches_played: 0,
-                  matches_won: 0,
-                  matches_lost: 0,
-                  sets_won: 0,
-                  sets_lost: 0,
-                  points: 0
-                };
-                const isQualified = index < teamsAdvancing;
-
-                return (
-                  <div
-                    key={participant.id}
-                    className={`flex items-center gap-3 rounded-lg p-3 ${
-                      isQualified
-                        ? 'bg-accent/10 border border-accent/30'
-                        : 'bg-surface-lighter border border-border'
-                    }`}
-                  >
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${
-                      isQualified ? 'bg-accent text-white' : 'bg-surface text-muted'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="font-medium text-white text-sm">
-                        {participant.user_id}
-                      </div>
-                      <div className="text-xs text-muted">
-                        {stats.matches_played} partite • {stats.matches_won}V - {stats.matches_lost}S
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="font-bold text-white">{stats.points}</div>
-                      <div className="text-xs text-muted">punti</div>
-                    </div>
-                    
-                    <div className="text-right hidden sm:block">
-                      <div className="text-sm text-white">
-                        {stats.sets_won - stats.sets_lost > 0 ? '+' : ''}
-                        {stats.sets_won - stats.sets_lost}
-                      </div>
-                      <div className="text-xs text-muted">diff. set</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Partite */}
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <h4 className="font-semibold text-white mb-4">Partite</h4>
-
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-              </div>
-            ) : matches.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted">Nessuna partita generata per questo girone</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {matches.map(match => (
-                  <BracketMatchCard
-                    key={match.id}
-                    match={match}
-                    isAdmin={isAdmin}
-                    bestOf={bestOf}
-                    onScoreSubmit={handleScoreSubmit}
+      {/* Tab Partecipanti */}
+      {activeTab === 'participants' && (
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-accent" />
+            Tutti i Partecipanti
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {participants.map((participant) => (
+              <div
+                key={participant.id}
+                className="rounded-lg border border-border bg-surface-lighter p-4 flex items-center gap-3"
+              >
+                {participant.profiles?.avatar_url && (
+                  <img
+                    src={participant.profiles.avatar_url}
+                    alt=""
+                    className="h-10 w-10 rounded-full object-cover"
                   />
-                ))}
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-white truncate">
+                    {participant.profiles?.full_name || 'Sconosciuto'}
+                  </div>
+                  <div className="text-xs text-muted truncate">
+                    {participant.profiles?.email || participant.user_id}
+                  </div>
+                  {participant.group_id && (
+                    <div className="text-xs text-accent mt-1">
+                      {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
+      )}
+
+      {/* Tab Classifica e Calendario (per girone) */}
+      {(activeTab === 'standings' || activeTab === 'matches') && (
+        <>
+          {/* Tab gironi */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {groups.map(group => (
+              <button
+                key={group.id}
+                onClick={() => setSelectedGroup(group.id)}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+                  selectedGroup === group.id
+                    ? 'bg-accent text-white'
+                    : 'bg-surface border border-border text-muted hover:text-white'
+                }`}
+              >
+                {group.group_name}
+              </button>
+            ))}
+          </div>
+
+          {selectedGroup && activeTab === 'standings' && (
+            <div className="rounded-2xl border border-border bg-surface p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-white flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-accent" />
+                  Classifica
+                </h4>
+                <span className="text-xs text-muted">
+                  Top {teamsAdvancing} qualificati
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {getGroupStandings(selectedGroup).map((participant, index) => {
+                  const stats = participant.stats || {
+                    matches_played: 0,
+                    matches_won: 0,
+                    matches_lost: 0,
+                    sets_won: 0,
+                    sets_lost: 0,
+                    points: 0
+                  };
+                  const isQualified = index < teamsAdvancing;
+
+                  return (
+                    <div
+                      key={participant.id}
+                      className={`flex items-center gap-3 rounded-lg p-3 ${
+                        isQualified
+                          ? 'bg-accent/10 border border-accent/30'
+                          : 'bg-surface-lighter border border-border'
+                      }`}
+                    >
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${
+                        isQualified ? 'bg-accent text-white' : 'bg-surface text-muted'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="font-medium text-white text-sm">
+                          {participant.profiles?.full_name || 'Sconosciuto'}
+                        </div>
+                        <div className="text-xs text-muted">
+                          {stats.matches_played} partite • {stats.matches_won}V - {stats.matches_lost}S
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="font-bold text-white">{stats.points}</div>
+                        <div className="text-xs text-muted">punti</div>
+                      </div>
+                      
+                      <div className="text-right hidden sm:block">
+                        <div className="text-sm text-white">
+                          {stats.sets_won - stats.sets_lost > 0 ? '+' : ''}
+                          {stats.sets_won - stats.sets_lost}
+                        </div>
+                        <div className="text-xs text-muted">diff. set</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {selectedGroup && activeTab === 'matches' && (
+            <div className="rounded-2xl border border-border bg-surface p-6">
+              <h4 className="font-semibold text-white mb-4">Partite</h4>
+
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                </div>
+              ) : matches.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted">Nessuna partita generata per questo girone</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {matches.map(match => (
+                    <BracketMatchCard
+                      key={match.id}
+                      match={match}
+                      isAdmin={isAdmin}
+                      bestOf={bestOf}
+                      onScoreSubmit={handleScoreSubmit}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

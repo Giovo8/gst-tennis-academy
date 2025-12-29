@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Bracket from './Bracket';
-import ChampionshipStandings from './ChampionshipStandings';
+import ChampionshipStandingsView from './ChampionshipStandingsView';
+import GroupStageView from './GroupStageView';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -13,6 +14,8 @@ interface Tournament {
   max_participants?: number;
   best_of?: number;
   phase?: string;
+  current_phase?: string;
+  teams_advancing?: number;
   rounds_data?: any[];
   groups_data?: any[];
   standings?: any[];
@@ -31,7 +34,31 @@ export default function CompetitionView({
   isAdmin = false 
 }: CompetitionViewProps) {
   
-  const { tournament_type, rounds_data, standings, groups_data, phase } = tournament;
+  const { tournament_type, rounds_data, standings, groups_data, phase, current_phase } = tournament;
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
+  // Carica i gruppi per tornei girone_eliminazione
+  useEffect(() => {
+    if (tournament_type === 'girone_eliminazione') {
+      loadGroups();
+    }
+  }, [tournament.id, tournament_type]);
+
+  const loadGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}/groups`);
+      const data = await res.json();
+      if (res.ok) {
+        setGroups(data.groups || []);
+      }
+    } catch (error) {
+      console.error('Error loading groups:', error);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
 
   // Eliminazione diretta - mostra bracket
   if (tournament_type === 'eliminazione_diretta') {
@@ -69,89 +96,86 @@ export default function CompetitionView({
           </div>
         </div>
 
-        <ChampionshipStandings 
-          standings={standings || []}
+        <ChampionshipStandingsView 
           tournamentId={tournament.id}
+          participants={participants}
+          bestOf={tournament.best_of || 3}
           isAdmin={isAdmin}
         />
-        
-        {participants.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6">
-            <h4 className="text-sm font-semibold text-white mb-4">Partecipanti ({participants.length})</h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {participants.map((p: any) => (
-                <div 
-                  key={p.id} 
-                  className="px-3 py-2 rounded-lg bg-surface border border-[var(--glass-border)] text-sm text-white"
-                >
-                  {p.user?.full_name || p.user_id}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
   // Girone + Eliminazione
   if (tournament_type === 'girone_eliminazione') {
-    return (
-      <div className="space-y-5">
-        <div className="section-header">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
-              Torneo
-            </span>
-            <span className="text-sm text-muted-2">Fase a Gironi + Eliminazione Diretta</span>
-          </div>
-        </div>
-
-        {/* Fase a gironi */}
-        {groups_data && groups_data.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Fase a Gironi</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {groups_data.map((group: any, idx: number) => (
-                <div 
-                  key={idx}
-                  className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-5"
-                >
-                  <h4 className="text-sm font-semibold text-accent mb-3">
-                    Girone {String.fromCharCode(65 + idx)}
-                  </h4>
-                  <ChampionshipStandings 
-                    standings={group.standings || []}
-                    tournamentId={tournament.id}
-                    isAdmin={isAdmin}
-                  />
-                </div>
-              ))}
+    if (current_phase === 'gironi') {
+      // Usa GroupStageView per la fase gironi
+      return (
+        <div className="space-y-5">
+          <div className="section-header">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
+                Torneo
+              </span>
+              <span className="text-sm text-muted-2">Fase a Gironi</span>
             </div>
           </div>
-        )}
 
-        {/* Fase ad eliminazione */}
-        {rounds_data && rounds_data.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Fase ad Eliminazione Diretta</h3>
+          {loadingGroups ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            </div>
+          ) : (
+            <GroupStageView
+              tournamentId={tournament.id}
+              groups={groups}
+              participants={participants}
+              bestOf={tournament.best_of || 3}
+              teamsAdvancing={tournament.teams_advancing || 2}
+              isAdmin={isAdmin}
+            />
+          )}
+        </div>
+      );
+    }
+
+    if (current_phase === 'eliminazione') {
+      // Mostra bracket per fase eliminazione
+      return (
+        <div className="space-y-5">
+          <div className="section-header">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
+                Torneo
+              </span>
+              <span className="text-sm text-muted-2">Fase ad Eliminazione Diretta</span>
+            </div>
+          </div>
+
+          {rounds_data && rounds_data.length > 0 ? (
             <Bracket 
               participants={participants} 
               tournamentId={tournament.id}
               maxParticipants={tournament.max_participants || 16}
               roundsData={rounds_data || []}
             />
-          </div>
-        )}
+          ) : (
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 text-center">
+              <p className="text-muted-2">
+                Il tabellone eliminatorio verrà generato dopo la fase a gironi.
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    }
 
-        {/* Fallback se non ci sono ancora dati */}
-        {(!groups_data || groups_data.length === 0) && (!rounds_data || rounds_data.length === 0) && (
-          <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 text-center">
-            <p className="text-muted-2">
-              La struttura della competizione verrà generata una volta raggiunti i partecipanti necessari.
-            </p>
-          </div>
-        )}
+    // Fase iscrizioni o altro
+    return (
+      <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 text-center">
+        <p className="text-muted-2">
+          Il torneo è in fase: {current_phase || 'iscrizioni'}
+        </p>
       </div>
     );
   }

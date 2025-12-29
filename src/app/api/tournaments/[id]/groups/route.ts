@@ -4,8 +4,9 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 // GET /api/tournaments/[id]/groups - Get groups for a tournament
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const params = context.params instanceof Promise ? await context.params : context.params;
   const supabase = supabaseServer;
 
   try {
@@ -53,8 +54,9 @@ export async function GET(
 // POST /api/tournaments/[id]/groups - Create groups for tournament
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const params = context.params instanceof Promise ? await context.params : context.params;
   const supabase = supabaseServer;
 
   try {

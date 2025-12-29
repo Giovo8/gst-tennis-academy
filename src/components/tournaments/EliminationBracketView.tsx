@@ -59,7 +59,6 @@ export default function EliminationBracket({
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    console.log('EliminationBracket mounted/updated, tournamentId:', tournamentId);
     loadMatches();
     checkAdminRole();
   }, [tournamentId]);
@@ -116,11 +115,8 @@ export default function EliminationBracket({
     setLoading(true);
     try {
       const url = `/api/tournaments/${tournamentId}/group-matches?phase=eliminazione`;
-      console.log('Loading matches from:', url);
-      const res = await fetch(url);
-      const data = await res.json();
-      console.log('API Response:', data);
-      console.log('Matches loaded:', data.matches?.length || 0);
+      const response = await fetch(url);
+      const data = await response.json();
       if (res.ok) {
         setMatches(data.matches || []);
       } else {
@@ -159,7 +155,6 @@ export default function EliminationBracket({
       const data = await res.json();
 
       if (res.ok) {
-        console.log('Bracket generated successfully, reloading matches...');
         // Aspetta un attimo prima di ricaricare
         await new Promise(resolve => setTimeout(resolve, 1000));
         await loadMatches(); // Ricarica i match
@@ -228,9 +223,6 @@ export default function EliminationBracket({
       </div>
     );
   }
-
-  console.log('Matches count:', matches.length); // Debug
-  console.log('Participants count:', participants.length); // Debug
 
   if (matches.length === 0) {
     return (

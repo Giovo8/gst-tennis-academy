@@ -180,7 +180,80 @@ export async function POST(
         );
       }
       
-      // PASSO 3: Aggiorna fase a gironi
+      // PASSO 3: Genera i match per ogni girone (round-robin)
+      // Carica i gironi appena creati
+      const { data: groups, error: groupsError } = await supabaseServer
+        .from('tournament_groups')
+        .select('id, group_name')
+        .eq('tournament_id', tournamentId)
+        .order('group_order');
+      
+      if (groupsError || !groups) {
+        console.error('Error loading groups:', groupsError);
+        return NextResponse.json(
+          { error: 'Errore nel caricamento dei gironi' },
+          { status: 500 }
+        );
+      }
+      
+      // Carica i partecipanti con i gironi assegnati
+      const { data: participants, error: participantsError } = await supabaseServer
+        .from('tournament_participants')
+        .select('id, group_id')
+        .eq('tournament_id', tournamentId);
+      
+      if (participantsError) {
+        console.error('Error loading participants:', participantsError);
+        return NextResponse.json(
+          { error: 'Errore nel caricamento dei partecipanti' },
+          { status: 500 }
+        );
+      }
+      
+      // Genera match round-robin per ogni girone
+      const allMatches: any[] = [];
+      let totalMatches = 0;
+      
+      for (const group of groups) {
+        const groupParticipants = participants?.filter((p: any) => p.group_id === group.id) || [];
+        
+        // Generate all possible match pairings (round-robin)
+        for (let i = 0; i < groupParticipants.length; i++) {
+          for (let j = i + 1; j < groupParticipants.length; j++) {
+            totalMatches++;
+            
+            allMatches.push({
+              tournament_id: tournamentId,
+              phase: 'gironi',
+              round_number: 0,
+              round_name: group.group_name,
+              match_number: totalMatches,
+              player1_id: groupParticipants[i].id,
+              player2_id: groupParticipants[j].id,
+              status: 'programmata',
+              scheduled_at: null
+            });
+          }
+        }
+      }
+      
+      // Insert all matches at once
+      if (allMatches.length > 0) {
+        const { error: matchError } = await supabaseServer
+          .from('tournament_matches')
+          .insert(allMatches);
+        
+        if (matchError) {
+          return NextResponse.json(
+            { error: `Errore nella creazione delle partite: ${matchError.message}` },
+            { status: 500 }
+          );
+        }
+        
+        console.log(`Successfully inserted ${allMatches.length} matches`);
+      }
+      
+      // PASSO 4: Aggiorna fase a gironi
       const { error: updateError } = await supabaseServer
         .from("tournaments")
         .update({ 
@@ -197,9 +270,9 @@ export async function POST(
       }
       
       return NextResponse.json({
-        message: "Fase a gironi avviata! I partecipanti sono stati assegnati ai gironi.",
+        message: `Fase a gironi avviata! Creati ${allMatches.length} match per ${groups.length} gironi.`,
         tournament_type: 'girone_eliminazione',
-        next_step: 'schedule_group_matches'
+        matches_created: allMatches.length
       });
     }
     

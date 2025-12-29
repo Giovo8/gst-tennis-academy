@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Trophy, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
+import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 
 interface Participant {
@@ -16,7 +16,7 @@ interface Participant {
 
 interface Match {
   id: string;
-  round: string;
+  round_name?: string;
   round_number: number;
   match_number: number;
   player1?: Participant;
@@ -26,7 +26,7 @@ interface Match {
   sets?: Array<{ player1_score: number; player2_score: number }>;
   winner_id?: string;
   status: string;
-  scheduled_time?: string;
+  scheduled_at?: string;
 }
 
 interface Standing {
@@ -45,6 +45,8 @@ interface Standing {
   points: number;
 }
 
+type TabType = 'participants' | 'calendar' | 'standings';
+
 interface ChampionshipStandingsViewProps {
   tournamentId: string;
   participants: Participant[];
@@ -60,6 +62,7 @@ export default function ChampionshipStandingsView({
   onMatchUpdate,
   isAdmin = false
 }: ChampionshipStandingsViewProps) {
+  const [activeTab, setActiveTab] = useState<TabType>('participants');
   const [matches, setMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
@@ -81,27 +84,30 @@ export default function ChampionshipStandingsView({
       setLoading(true);
       const { supabase } = await import('@/lib/supabase/client');
 
+      // Carica i match con i participant IDs
       const { data, error } = await supabase
         .from('tournament_matches')
-        .select(`
-          *,
-          player1:tournament_participants!tournament_matches_player1_id_fkey(
-            id,
-            user_id,
-            profiles(id, full_name, avatar_url)
-          ),
-          player2:tournament_participants!tournament_matches_player2_id_fkey(
-            id,
-            user_id,
-            profiles(id, full_name, avatar_url)
-          )
-        `)
+        .select('*')
         .eq('tournament_id', tournamentId)
         .order('round_number', { ascending: true })
         .order('match_number', { ascending: true });
 
       if (error) throw error;
-      setMatches(data || []);
+
+      // Crea una mappa dei participants per ID
+      const participantsMap = new Map();
+      participants.forEach(p => {
+        participantsMap.set(p.id, p);
+      });
+
+      // Arricchisci i match con i dati dei partecipanti
+      const enrichedMatches = (data || []).map((match: any) => ({
+        ...match,
+        player1: participantsMap.get(match.player1_id),
+        player2: participantsMap.get(match.player2_id)
+      }));
+
+      setMatches(enrichedMatches);
     } catch (error) {
       console.error('Error loading matches:', error);
     } finally {
@@ -297,138 +303,246 @@ export default function ChampionshipStandingsView({
 
   return (
     <div className="space-y-6">
-      {/* Classifica */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Trophy className="h-5 w-5 text-accent" />
-          <h3 className="text-lg font-semibold text-white">Classifica</h3>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {/* Header */}
-            <div className="grid grid-cols-[40px_1fr_80px_80px_100px_100px] gap-4 px-4 py-2 text-xs font-semibold text-muted uppercase border-b border-border">
-              <div>Pos</div>
-              <div>Squadra</div>
-              <div className="text-center">PG</div>
-              <div className="text-center">Punti</div>
-              <div className="text-center hidden sm:block">Diff. Set</div>
-              <div className="text-center hidden sm:block">Diff. Game</div>
-            </div>
-
-            {/* Standings */}
-            {standings.map((standing) => (
-              <div
-                key={standing.participant.id}
-                className={`grid grid-cols-[40px_1fr_80px_80px_100px_100px] gap-4 items-center px-4 py-3 rounded-lg transition-colors ${
-                  standing.position <= 3
-                    ? 'bg-accent/10 border border-accent/30'
-                    : 'bg-surface-secondary hover:bg-surface-secondary/80'
-                }`}
-              >
-                <div className="flex items-center justify-center">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    standing.position === 1 ? 'bg-yellow-500 text-black' :
-                    standing.position === 2 ? 'bg-gray-400 text-black' :
-                    standing.position === 3 ? 'bg-amber-600 text-white' :
-                    'bg-surface text-white'
-                  }`}>
-                    {standing.position}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {standing.participant.profiles?.avatar_url && (
-                    <img
-                      src={standing.participant.profiles.avatar_url}
-                      alt=""
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  )}
-                  <div>
-                    <div className="font-semibold text-white">
-                      {standing.participant.profiles?.full_name || 'Sconosciuto'}
-                    </div>
-                    <div className="text-xs text-muted">
-                      {standing.matchesWon}V - {standing.matchesLost}S
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center text-white">{standing.matchesPlayed}</div>
-                <div className="text-center font-bold text-white">{standing.points}</div>
-                <div className="text-center text-white hidden sm:block">
-                  {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
-                </div>
-                <div className="text-center text-white hidden sm:block">
-                  {standing.gamesDiff > 0 ? '+' : ''}{standing.gamesDiff}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Tab Navigation */}
+      <div className="flex gap-2 border-b border-border">
+        <button
+          onClick={() => setActiveTab('participants')}
+          className={`px-4 py-3 text-sm font-semibold transition-all relative ${
+            activeTab === 'participants'
+              ? 'text-accent'
+              : 'text-muted hover:text-white'
+          }`}
+        >
+          <Users className="h-4 w-4 inline-block mr-2" />
+          Partecipanti
+          {activeTab === 'participants' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('calendar')}
+          className={`px-4 py-3 text-sm font-semibold transition-all relative ${
+            activeTab === 'calendar'
+              ? 'text-accent'
+              : 'text-muted hover:text-white'
+          }`}
+        >
+          <Calendar className="h-4 w-4 inline-block mr-2" />
+          Calendario
+          {activeTab === 'calendar' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('standings')}
+          className={`px-4 py-3 text-sm font-semibold transition-all relative ${
+            activeTab === 'standings'
+              ? 'text-accent'
+              : 'text-muted hover:text-white'
+          }`}
+        >
+          <Trophy className="h-4 w-4 inline-block mr-2" />
+          Classifica
+          {activeTab === 'standings' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+          )}
+        </button>
       </div>
 
-      {/* Giornate */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-accent" />
-            <h3 className="text-lg font-semibold text-white">Calendario</h3>
+      {/* Tab Content */}
+      {activeTab === 'participants' && (
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Users className="h-5 w-5 text-accent" />
+            <h3 className="text-lg font-semibold text-white">Partecipanti ({participants.length})</h3>
           </div>
 
-          {/* Round selector */}
-          {rounds.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto">
-              <button
-                onClick={() => setSelectedRound(null)}
-                className={`rounded-lg px-3 py-1 text-sm font-semibold transition-all whitespace-nowrap ${
-                  selectedRound === null
-                    ? 'bg-accent text-white'
-                    : 'bg-surface-secondary text-muted hover:text-white'
-                }`}
-              >
-                Tutte
-              </button>
-              {rounds.map(round => (
-                <button
-                  key={round}
-                  onClick={() => setSelectedRound(round)}
-                  className={`rounded-lg px-3 py-1 text-sm font-semibold transition-all whitespace-nowrap ${
-                    selectedRound === round
-                      ? 'bg-accent text-white'
-                      : 'bg-surface-secondary text-muted hover:text-white'
-                  }`}
+          {participants.length === 0 ? (
+            <div className="text-center py-8 text-muted">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nessun partecipante iscritto al momento</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {participants.map((participant: any) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-surface-secondary border border-border hover:border-accent/30 transition-colors"
                 >
-                  Giornata {round}
-                </button>
+                  {participant.profiles?.avatar_url && (
+                    <img
+                      src={participant.profiles.avatar_url}
+                      alt=""
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-white truncate">
+                      {participant.profiles?.full_name || 'Sconosciuto'}
+                    </div>
+                    <div className="text-xs text-muted truncate">
+                      {participant.profiles?.email || participant.user_id}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
+      )}
 
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      {activeTab === 'calendar' && (
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-accent" />
+              <h3 className="text-lg font-semibold text-white">Calendario Partite</h3>
+            </div>
+
+            {/* Round selector */}
+            {rounds.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto w-full sm:w-auto">
+                <button
+                  onClick={() => setSelectedRound(null)}
+                  className={`rounded-lg px-3 py-1 text-sm font-semibold transition-all whitespace-nowrap ${
+                    selectedRound === null
+                      ? 'bg-accent text-white'
+                      : 'bg-surface-secondary text-muted hover:text-white'
+                  }`}
+                >
+                  Tutte
+                </button>
+                {rounds.map(round => (
+                  <button
+                    key={round}
+                    onClick={() => setSelectedRound(round)}
+                    className={`rounded-lg px-3 py-1 text-sm font-semibold transition-all whitespace-nowrap ${
+                      selectedRound === round
+                        ? 'bg-accent text-white'
+                        : 'bg-surface-secondary text-muted hover:text-white'
+                    }`}
+                  >
+                    Giornata {round}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredMatches.map(match => (
-              <BracketMatchCard
-                key={match.id}
-                match={match}
-                isAdmin={isAdmin}
-                bestOf={bestOf}
-                onScoreSubmit={handleScoreSubmit}
-              />
-            ))}
+
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            </div>
+          ) : filteredMatches.length === 0 ? (
+            <div className="text-center py-8 text-muted">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nessuna partita trovata per questa giornata</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredMatches.map(match => (
+                <BracketMatchCard
+                  key={match.id}
+                  match={match}
+                  isAdmin={isAdmin}
+                  bestOf={bestOf}
+                  onScoreSubmit={handleScoreSubmit}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'standings' && (
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Trophy className="h-5 w-5 text-accent" />
+            <h3 className="text-lg font-semibold text-white">Classifica</h3>
           </div>
-        )}
-      </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            </div>
+          ) : standings.length === 0 ? (
+            <div className="text-center py-8 text-muted">
+              <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nessuna classifica disponibile. Completa alcune partite per vedere la classifica.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[600px]">
+                {/* Header */}
+                <div className="grid grid-cols-[40px_1fr_80px_80px_100px_100px] gap-4 px-4 py-2 text-xs font-semibold text-muted uppercase border-b border-border">
+                  <div>Pos</div>
+                  <div>Squadra</div>
+                  <div className="text-center">PG</div>
+                  <div className="text-center">Punti</div>
+                  <div className="text-center">Diff. Set</div>
+                  <div className="text-center">Diff. Game</div>
+                </div>
+
+                {/* Standings */}
+                <div className="space-y-2 mt-2">
+                  {standings.map((standing) => (
+                    <div
+                      key={standing.participant.id}
+                      className={`grid grid-cols-[40px_1fr_80px_80px_100px_100px] gap-4 items-center px-4 py-3 rounded-lg transition-colors ${
+                        standing.position <= 3
+                          ? 'bg-accent/10 border border-accent/30'
+                          : 'bg-surface-secondary hover:bg-surface-secondary/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          standing.position === 1 ? 'bg-yellow-500 text-black' :
+                          standing.position === 2 ? 'bg-gray-400 text-black' :
+                          standing.position === 3 ? 'bg-amber-600 text-white' :
+                          'bg-surface text-white'
+                        }`}>
+                          {standing.position}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {standing.participant.profiles?.avatar_url && (
+                          <img
+                            src={standing.participant.profiles.avatar_url}
+                            alt=""
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        )}
+                        <div>
+                          <div className="font-semibold text-white">
+                            {standing.participant.profiles?.full_name || 'Sconosciuto'}
+                          </div>
+                          <div className="text-xs text-muted">
+                            {standing.matchesWon}V - {standing.matchesLost}S
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-center text-white">{standing.matchesPlayed}</div>
+                      <div className="text-center font-bold text-white">{standing.points}</div>
+                      <div className="text-center text-white">
+                        <span className={standing.setsDiff > 0 ? 'text-green-400' : standing.setsDiff < 0 ? 'text-red-400' : ''}>
+                          {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
+                        </span>
+                      </div>
+                      <div className="text-center text-white">
+                        <span className={standing.gamesDiff > 0 ? 'text-green-400' : standing.gamesDiff < 0 ? 'text-red-400' : ''}>
+                          {standing.gamesDiff > 0 ? '+' : ''}{standing.gamesDiff}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

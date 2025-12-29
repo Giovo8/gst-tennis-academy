@@ -10,6 +10,19 @@ export async function POST(
   const tournamentId = params.id;
 
   try {
+    // Verifica autenticazione
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7); // Rimuove "Bearer "
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+    }
+
     // Get tournament
     const { data: tournament, error: tournamentError } = await supabaseServer
       .from("tournaments")
@@ -25,13 +38,6 @@ export async function POST(
     if (tournament.tournament_type !== 'girone_eliminazione') {
       return NextResponse.json({ 
         error: "Questo endpoint è solo per tornei di tipo 'girone_eliminazione'" 
-      }, { status: 400 });
-    }
-
-    // Check phase
-    if (tournament.current_phase !== 'gironi') {
-      return NextResponse.json({ 
-        error: `Il torneo deve essere in fase 'gironi'. Fase attuale: ${tournament.current_phase}` 
       }, { status: 400 });
     }
 
@@ -118,32 +124,54 @@ export async function POST(
     }
 
     // Generate round-robin matches for each group
+    const allMatches: any[] = [];
     let totalMatches = 0;
+    
     for (const group of groups) {
       const groupParticipants = groupAssignments[group.id];
       
       // Generate all possible match pairings (round-robin)
       for (let i = 0; i < groupParticipants.length; i++) {
         for (let j = i + 1; j < groupParticipants.length; j++) {
-          const matchNumber = totalMatches + 1;
-          
-          await supabaseServer
-            .from("tournament_matches")
-            .insert({
-              tournament_id: tournamentId,
-              round_number: 0, // Group stage = round 0
-              round_name: group.group_name,
-              match_number: matchNumber,
-              player1_id: groupParticipants[i].id,
-              player2_id: groupParticipants[j].id,
-              match_status: 'scheduled',
-              group_id: group.id
-            });
-
           totalMatches++;
+          
+          allMatches.push({
+            tournament_id: tournamentId,
+            phase: 'gironi',
+            round_number: 0,
+            round_name: group.group_name,
+            match_number: totalMatches,
+            player1_id: groupParticipants[i].id,
+            player2_id: groupParticipants[j].id,
+            status: 'programmata',
+            scheduled_at: null
+          });
         }
       }
     }
+    
+    // Insert all matches at once
+    const { data: insertedMatches, error: matchError } = await supabaseServer
+      .from("tournament_matches")
+      .insert(allMatches)
+      .select();
+    
+    if (matchError) {
+      console.error('Error inserting matches:', matchError);
+      return NextResponse.json(
+        { error: `Errore nella creazione delle partite: ${matchError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Aggiorna lo stato del torneo
+    await supabaseServer
+      .from("tournaments")
+      .update({
+        current_phase: 'gironi',
+        status: 'In Corso'
+      })
+      .eq("id", tournamentId);
 
     return NextResponse.json({
       success: true,
@@ -153,7 +181,7 @@ export async function POST(
         name: g.group_name,
         participants: groupAssignments[g.id].length
       })),
-      total_matches: totalMatches
+      total_matches: allMatches.length
     });
 
   } catch (error: any) {

@@ -315,7 +315,7 @@ export default function SimpleTournamentCreator({ onSuccess }: SimpleTournamentC
                   </span>
                   <input
                     type="number"
-                    min="2"
+                    min="1"
                     max="8"
                     value={formData.num_groups}
                     onChange={(e) => handleGroupConfigChange('num_groups', Number(e.target.value))}

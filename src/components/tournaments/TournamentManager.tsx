@@ -429,7 +429,7 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
       )}
 
       {/* Campionato */}
-      {tournament.tournament_type === 'campionato' && tournament.status === 'In Corso' && (
+      {tournament.tournament_type === 'campionato' && (
         <ChampionshipStandingsView 
           tournamentId={tournament.id}
           participants={participants}
@@ -439,8 +439,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
         />
       )}
 
-      {/* Lista Partecipanti - Solo per tipi diversi da eliminazione_diretta in fase eliminazione */}
-      {participants.length > 0 && !(tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione') && (
+      {/* Lista Partecipanti - Solo per tipi diversi da campionato, girone_eliminazione e eliminazione_diretta in fase eliminazione */}
+      {participants.length > 0 && tournament.tournament_type !== 'campionato' && tournament.tournament_type !== 'girone_eliminazione' && !(tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione') && (
         <div className="rounded-2xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-semibold text-white">

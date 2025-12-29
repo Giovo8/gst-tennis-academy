@@ -45,40 +45,32 @@ export async function GET(
     const groupId = url.searchParams.get("group_id");
     const phase = url.searchParams.get("phase"); // 'gironi' o 'eliminazione'
     
-    console.log('GET group-matches:', { tournamentId, groupId, phase });
-    
     let query = supabaseServer
       .from("tournament_matches")
-      .select(`
-        *,
-        player1:tournament_participants!tournament_matches_player1_id_fkey(
-          id,
-          user_id,
-          seed,
-          group_position,
-          stats
-        ),
-        player2:tournament_participants!tournament_matches_player2_id_fkey(
-          id,
-          user_id,
-          seed,
-          group_position,
-          stats
-        ),
-        winner:tournament_participants!tournament_matches_winner_id_fkey(
-          id,
-          user_id
-        )
-      `)
+      .select('*')
       .eq("tournament_id", tournamentId);
     
     if (groupId) {
-      // Filtra per girone attraverso i partecipanti
-      query = query.or(`player1.group_id.eq.${groupId},player2.group_id.eq.${groupId}`);
+      // Trova il nome del girone dall'ID
+      const { data: group } = await supabaseServer
+        .from('tournament_groups')
+        .select('group_name')
+        .eq('id', groupId)
+        .single();
+      
+      if (group) {
+        // Filtra per round_name che corrisponde al group_name
+        query = query.eq("round_name", group.group_name);
+      }
     }
     
     if (phase) {
-      query = query.eq("phase", phase);
+      // Per la fase gironi, verifica che il round_number sia 0 (fase gironi)
+      if (phase === 'gironi') {
+        query = query.eq("round_number", 0);
+      } else {
+        query = query.neq("round_number", 0);
+      }
     }
     
     query = query.order("round_number", { ascending: true })
@@ -89,42 +81,53 @@ export async function GET(
     if (error) {
       console.error("Error fetching matches:", error);
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, details: error },
         { status: 500 }
       );
     }
     
-    console.log(`Loaded ${matches?.length || 0} matches for tournament ${tournamentId}`);
+
     
-    // Carica i profili separatamente per ogni partecipante
-    if (matches && matches.length > 0) {
-      const userIds = new Set<string>();
-      matches.forEach(match => {
-        if (match.player1?.user_id) userIds.add(match.player1.user_id);
-        if (match.player2?.user_id) userIds.add(match.player2.user_id);
-      });
+    // Carica i partecipanti del torneo
+    const { data: participants } = await supabaseServer
+      .from('tournament_participants')
+      .select('*')
+      .eq('tournament_id', tournamentId);
+    
+    // Carica i profili degli utenti
+    const userIds = new Set<string>();
+    (participants || []).forEach((p: any) => {
+      if (p.user_id) userIds.add(p.user_id);
+    });
+    
+    let profilesMap = new Map();
+    if (userIds.size > 0) {
+      const { data: profiles } = await supabaseServer
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', Array.from(userIds));
       
-      if (userIds.size > 0) {
-        const { data: profiles } = await supabaseServer
-          .from('profiles')
-          .select('id, full_name, email, avatar_url')
-          .in('id', Array.from(userIds));
-        
-        const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
-        
-        // Aggiungi i profili ai match
-        matches.forEach(match => {
-          if (match.player1?.user_id) {
-            match.player1.profiles = profilesMap.get(match.player1.user_id);
-          }
-          if (match.player2?.user_id) {
-            match.player2.profiles = profilesMap.get(match.player2.user_id);
-          }
-        });
-      }
+      profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
     }
     
-    return NextResponse.json({ matches: matches || [] });
+    // Crea mappa partecipanti per ID
+    const participantsMap = new Map();
+    (participants || []).forEach((p: any) => {
+      const enrichedParticipant = {
+        ...p,
+        profiles: profilesMap.get(p.user_id)
+      };
+      participantsMap.set(p.id, enrichedParticipant);
+    });
+    
+    // Arricchisci i match con i dati dei partecipanti
+    const enrichedMatches = (matches || []).map((match: any) => ({
+      ...match,
+      player1: participantsMap.get(match.player1_id),
+      player2: participantsMap.get(match.player2_id)
+    }));
+    
+    return NextResponse.json({ matches: enrichedMatches });
     
   } catch (error: any) {
     console.error("Error in GET matches:", error);

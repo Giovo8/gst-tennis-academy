@@ -11,10 +11,20 @@ export async function POST(
 ) {
   try {
     const { id: tournamentId } = await params;
-    const supabase = supabaseServer;
 
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Extract Bearer token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Non autorizzato' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+
+    // Verify authentication using service role client
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Non autorizzato' },
@@ -22,10 +32,10 @@ export async function POST(
       );
     }
 
-    // Get tournament
-    const { data: tournament, error: tournamentError } = await supabase
+    // Get tournament using service role client
+    const { data: tournament, error: tournamentError } = await supabaseServer
       .from('tournaments')
-      .select('*, created_by')
+      .select('*')
       .eq('id', tournamentId)
       .single();
 
@@ -36,8 +46,8 @@ export async function POST(
       );
     }
 
-    // Check permissions
-    const { data: profile } = await supabase
+    // Check permissions using service role client
+    const { data: profile } = await supabaseServer
       .from('profiles')
       .select('role')
       .eq('id', user.id)
@@ -45,9 +55,8 @@ export async function POST(
 
     const isAdmin = profile?.role === 'admin';
     const isGestore = profile?.role === 'gestore';
-    const isCreator = tournament.created_by === user.id;
 
-    if (!isAdmin && !isGestore && !isCreator) {
+    if (!isAdmin && !isGestore) {
       return NextResponse.json(
         { error: 'Non hai i permessi per questa azione' },
         { status: 403 }
@@ -62,30 +71,8 @@ export async function POST(
       );
     }
 
-    // Verify tournament is in the correct phase
-    if (tournament.phase !== 'registration' && tournament.phase !== 'not_started') {
-      return NextResponse.json(
-        { error: 'Il campionato è già iniziato' },
-        { status: 400 }
-      );
-    }
-
-    // Get all participants
-    const { data: participants, error: participantsError } = await supabase
-      .from('tournament_participants')
-      .select('id, user_id, profiles(id, full_name, avatar_url)')
-      .eq('tournament_id', tournamentId)
-      .eq('status', 'accepted');
-
-    if (participantsError || !participants || participants.length < 2) {
-      return NextResponse.json(
-        { error: 'Servono almeno 2 partecipanti per generare il calendario' },
-        { status: 400 }
-      );
-    }
-
     // Check if matches already exist
-    const { data: existingMatches } = await supabase
+    const { data: existingMatches } = await supabaseServer
       .from('tournament_matches')
       .select('id')
       .eq('tournament_id', tournamentId)
@@ -98,8 +85,35 @@ export async function POST(
       );
     }
 
+    // Get all participants using service role client
+    const { data: participants, error: participantsError } = await supabaseServer
+      .from('tournament_participants')
+      .select('id, user_id, status')
+      .eq('tournament_id', tournamentId);
+
+    console.log('Participants query result:', { 
+      participantsError, 
+      participantsCount: participants?.length,
+      participants: participants?.map(p => ({ id: p.id, user_id: p.user_id, status: (p as any).status }))
+    });
+
+    if (participantsError) {
+      console.error('Error fetching participants:', participantsError);
+      return NextResponse.json(
+        { error: `Errore nel recuperare i partecipanti: ${participantsError.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!participants || participants.length < 2) {
+      return NextResponse.json(
+        { error: `Servono almeno 2 partecipanti per generare il calendario (trovati: ${participants?.length || 0})` },
+        { status: 400 }
+      );
+    }
+
     // Generate round-robin schedule
-    const participantIds = participants.map(p => p.id);
+    const participantIds = participants.map((p: any) => p.id);
     const matches: any[] = [];
     let matchNumber = 1;
 
@@ -112,7 +126,7 @@ export async function POST(
     const halfSize = participantIds.length / 2;
 
     // Generate matches using round-robin algorithm
-    const playerIndexes = participantIds.map((_, i) => i);
+    const playerIndexes = participantIds.map((_: any, i: number) => i);
 
     for (let round = 0; round < numRounds; round++) {
       const roundMatches = [];
@@ -128,13 +142,14 @@ export async function POST(
         if (homeId && awayId) {
           roundMatches.push({
             tournament_id: tournamentId,
-            round: `giornata_${round + 1}`,
+            phase: 'gironi',
+            round_name: `Giornata ${round + 1}`,
             round_number: round + 1,
             match_number: matchNumber++,
             player1_id: homeId,
             player2_id: awayId,
-            status: 'pending',
-            scheduled_time: null
+            status: 'programmata',
+            scheduled_at: null
           });
         }
       }
@@ -145,8 +160,8 @@ export async function POST(
       playerIndexes.splice(1, 0, playerIndexes.pop()!);
     }
 
-    // Insert matches
-    const { error: insertError } = await supabase
+    // Insert matches using service role client
+    const { error: insertError } = await supabaseServer
       .from('tournament_matches')
       .insert(matches);
 
@@ -158,11 +173,12 @@ export async function POST(
       );
     }
 
-    // Update tournament phase
-    const { error: updateError } = await supabase
+    // Update tournament phase using service role client
+    const { error: updateError } = await supabaseServer
       .from('tournaments')
       .update({ 
-        phase: 'in_progress',
+        current_phase: 'completato',
+        status: 'In Corso',
         start_date: tournament.start_date || new Date().toISOString()
       })
       .eq('id', tournamentId);

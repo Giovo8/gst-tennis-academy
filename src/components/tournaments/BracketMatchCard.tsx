@@ -18,7 +18,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
     if (!player) return 'TBD';
     if (player.profiles?.full_name) return player.profiles.full_name;
     if (player.profiles?.[0]?.full_name) return player.profiles[0].full_name;
-    return player.user_id || 'Giocatore';
+    return 'Giocatore';
   };
 
   const isWinner = (playerId: string | undefined) => {
@@ -90,16 +90,16 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
           <div className="p-4 space-y-2">
             {/* Player 1 */}
             <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-              isWinner(match.player1?.user_id) 
+              isWinner(match.player1?.id) 
                 ? 'bg-gradient-to-r from-[#7de3ff]/20 to-transparent ring-2 ring-[#7de3ff]/50' 
                 : 'bg-[#0a1929]/40'
             }`}>
               <div className="flex items-center gap-2 flex-1">
-                {isWinner(match.player1?.user_id) && (
+                {isWinner(match.player1?.id) && (
                   <Trophy className="h-4 w-4 text-[#7de3ff]" />
                 )}
                 <span className={`text-sm font-medium ${
-                  isWinner(match.player1?.user_id) ? 'text-white' : 'text-gray-300'
+                  isWinner(match.player1?.id) ? 'text-white' : 'text-gray-300'
                 }`}>
                   {getPlayerName(match.player1)}
                 </span>
@@ -125,7 +125,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                   </div>
                 )}
                 <span className={`text-lg font-bold min-w-[2rem] text-right ${
-                  isWinner(match.player1?.user_id) ? 'text-[#7de3ff]' : 'text-gray-400'
+                  isWinner(match.player1?.id) ? 'text-[#7de3ff]' : 'text-gray-400'
                 }`}>
                   {player1SetsWon}
                 </span>
@@ -134,16 +134,16 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
 
             {/* Player 2 */}
             <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-              isWinner(match.player2?.user_id) 
+              isWinner(match.player2?.id) 
                 ? 'bg-gradient-to-r from-[#7de3ff]/20 to-transparent ring-2 ring-[#7de3ff]/50' 
                 : 'bg-[#0a1929]/40'
             }`}>
               <div className="flex items-center gap-2 flex-1">
-                {isWinner(match.player2?.user_id) && (
+                {isWinner(match.player2?.id) && (
                   <Trophy className="h-4 w-4 text-[#7de3ff]" />
                 )}
                 <span className={`text-sm font-medium ${
-                  isWinner(match.player2?.user_id) ? 'text-white' : 'text-gray-300'
+                  isWinner(match.player2?.id) ? 'text-white' : 'text-gray-300'
                 }`}>
                   {getPlayerName(match.player2)}
                 </span>
@@ -169,7 +169,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                   </div>
                 )}
                 <span className={`text-lg font-bold min-w-[2rem] text-right ${
-                  isWinner(match.player2?.user_id) ? 'text-[#7de3ff]' : 'text-gray-400'
+                  isWinner(match.player2?.id) ? 'text-[#7de3ff]' : 'text-gray-400'
                 }`}>
                   {player2SetsWon}
                 </span>
