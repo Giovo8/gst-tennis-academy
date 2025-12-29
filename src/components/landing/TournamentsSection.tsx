@@ -27,7 +27,10 @@ export default function TournamentsSection() {
         const res = await fetch("/api/tournaments?upcoming=true");
         const json = await res.json();
         if (res.ok) {
-          if (mounted) setItems(json.tournaments ?? []);
+          if (mounted) {
+            console.log('Tornei caricati:', json.tournaments);
+            setItems(json.tournaments ?? []);
+          }
         }
       } catch (err) {
         // ignore

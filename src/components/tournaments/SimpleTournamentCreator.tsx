@@ -8,8 +8,8 @@ type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campiona
 interface TournamentFormData {
   title: string;
   description: string;
-  start_date: string;
-  end_date: string;
+  start_date?: string;
+  end_date?: string;
   tournament_type: TournamentType;
   max_participants: number;
   num_groups: number;
@@ -134,7 +134,7 @@ export default function SimpleTournamentCreator({ onSuccess }: SimpleTournamentC
       const payload: any = {
         title: formData.title,
         description: formData.description,
-        start_date: formData.start_date,
+        start_date: formData.start_date || new Date().toISOString().split('T')[0],
         end_date: formData.end_date || undefined,
         tournament_type: formData.tournament_type,
         max_participants: formData.max_participants,
@@ -449,12 +449,11 @@ export default function SimpleTournamentCreator({ onSuccess }: SimpleTournamentC
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-medium text-white mb-2 block">
-                  Data Inizio *
+                  Data Inizio (opzionale)
                 </span>
                 <input
                   type="date"
-                  required
-                  value={formData.start_date}
+                  value={formData.start_date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                   className="w-full rounded-lg border border-border bg-surface-lighter px-4 py-2 text-white"
                 />
@@ -462,11 +461,11 @@ export default function SimpleTournamentCreator({ onSuccess }: SimpleTournamentC
 
               <label className="block">
                 <span className="text-sm font-medium text-white mb-2 block">
-                  Data Fine
+                  Data Fine (opzionale)
                 </span>
                 <input
                   type="date"
-                  value={formData.end_date}
+                  value={formData.end_date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
                   className="w-full rounded-lg border border-border bg-surface-lighter px-4 py-2 text-white"
                 />

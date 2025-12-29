@@ -39,7 +39,7 @@ async function getUserProfile(req: Request) {
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const { profile } = await getUserProfile(req);
@@ -51,6 +51,8 @@ export async function POST(
       );
     }
     
+    // Await params if it's a Promise (Next.js 15+)
+    const params = context.params instanceof Promise ? await context.params : context.params;
     const tournamentId = params.id;
     
     // Carica il torneo
@@ -99,6 +101,27 @@ export async function POST(
     
     // Gestione in base al tipo di torneo
     if (tournament.tournament_type === 'eliminazione_diretta') {
+      // Assegna seed ai partecipanti se non li hanno già
+      const { data: participants } = await supabaseServer
+        .from("tournament_participants")
+        .select("id, seed")
+        .eq("tournament_id", tournamentId)
+        .order("created_at", { ascending: true });
+      
+      if (participants) {
+        // Assegna seed solo a chi non ce l'ha già
+        let seedCounter = 1;
+        for (const participant of participants) {
+          if (!participant.seed) {
+            await supabaseServer
+              .from("tournament_participants")
+              .update({ seed: seedCounter })
+              .eq("id", participant.id);
+            seedCounter++;
+          }
+        }
+      }
+      
       // Aggiorna fase a eliminazione
       const { error: updateError } = await supabaseServer
         .from("tournaments")
@@ -123,7 +146,27 @@ export async function POST(
     }
     
     if (tournament.tournament_type === 'girone_eliminazione') {
-      // Assegna partecipanti ai gironi
+      // Verifica che num_groups sia configurato
+      const numGroups = tournament.num_groups || 2;
+      
+      // PASSO 1: Crea i gironi
+      const { error: createGroupsError } = await supabaseServer.rpc(
+        'create_tournament_groups',
+        { 
+          p_tournament_id: tournamentId,
+          p_num_groups: numGroups
+        }
+      );
+      
+      if (createGroupsError) {
+        console.error("Error creating groups:", createGroupsError);
+        return NextResponse.json(
+          { error: "Errore nella creazione dei gironi: " + createGroupsError.message },
+          { status: 500 }
+        );
+      }
+      
+      // PASSO 2: Assegna partecipanti ai gironi
       const { error: assignError } = await supabaseServer.rpc(
         'assign_participants_to_groups',
         { p_tournament_id: tournamentId }
@@ -137,7 +180,7 @@ export async function POST(
         );
       }
       
-      // Aggiorna fase a gironi
+      // PASSO 3: Aggiorna fase a gironi
       const { error: updateError } = await supabaseServer
         .from("tournaments")
         .update({ 

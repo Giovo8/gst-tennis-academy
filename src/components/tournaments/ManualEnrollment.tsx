@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { UserPlus, Search, X, Loader2, Check } from 'lucide-react';
 
 interface ManualEnrollmentProps {
@@ -29,11 +30,13 @@ export default function ManualEnrollment({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (showModal) {
       loadUsers();
+      setSelectedUserIds(new Set());
+      setSearchQuery('');
     }
   }, [showModal]);
 
@@ -63,7 +66,7 @@ export default function ManualEnrollment({
         return;
       }
 
-      // Carica tutti gli utenti tramite API
+      // Carica solo gli atleti tramite API
       const res = await fetch('/api/users', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -76,8 +79,10 @@ export default function ManualEnrollment({
       }
 
       const data = await res.json();
-      setUsers(data.users || []);
-      setFilteredUsers(data.users || []);
+      // Filtra solo gli utenti con ruolo "atleta"
+      const athletes = (data.users || []).filter((user: User) => user.role === 'atleta');
+      setUsers(athletes);
+      setFilteredUsers(athletes);
     } catch (error: any) {
       console.error('Error loading users:', error);
       alert(error.message || 'Errore nel caricamento degli utenti');
@@ -86,14 +91,33 @@ export default function ManualEnrollment({
     }
   };
 
-  const handleEnroll = async (userId: string) => {
-    if (currentParticipants >= maxParticipants) {
-      alert('Numero massimo di partecipanti raggiunto');
+  const toggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUserIds);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      // Verifica che non si superi il limite
+      if (currentParticipants + newSelection.size >= maxParticipants) {
+        alert('Numero massimo di partecipanti raggiunto');
+        return;
+      }
+      newSelection.add(userId);
+    }
+    setSelectedUserIds(newSelection);
+  };
+
+  const handleEnrollSelected = async () => {
+    if (selectedUserIds.size === 0) {
+      alert('Seleziona almeno un atleta');
+      return;
+    }
+
+    if (currentParticipants + selectedUserIds.size > maxParticipants) {
+      alert('Numero massimo di partecipanti superato');
       return;
     }
 
     setEnrolling(true);
-    setSelectedUserId(userId);
 
     try {
       const { supabase } = await import('@/lib/supabase/client');
@@ -104,65 +128,77 @@ export default function ManualEnrollment({
         return;
       }
 
-      const res = await fetch('/api/tournament_participants', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          tournament_id: tournamentId,
-          user_id: userId
+      // Iscrivi tutti gli atleti selezionati
+      const enrollmentPromises = Array.from(selectedUserIds).map(userId =>
+        fetch('/api/tournament_participants', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            tournament_id: tournamentId,
+            user_id: userId
+          })
         })
-      });
+      );
 
-      const data = await res.json();
+      const results = await Promise.all(enrollmentPromises);
+      const failedEnrollments = results.filter(res => !res.ok);
 
-      if (res.ok) {
-        alert('Atleta iscritto con successo!');
+      if (failedEnrollments.length === 0) {
+        alert(`${selectedUserIds.size} atleta/i iscritto/i con successo!`);
         setShowModal(false);
+        setSelectedUserIds(new Set());
         onEnrollmentSuccess();
       } else {
-        alert(data.error || 'Errore nell\'iscrizione');
+        alert(`${results.length - failedEnrollments.length} atleti iscritti, ${failedEnrollments.length} errori`);
+        onEnrollmentSuccess();
       }
     } catch (error) {
-      console.error('Error enrolling user:', error);
+      console.error('Error enrolling users:', error);
       alert('Errore nell\'iscrizione');
     } finally {
       setEnrolling(false);
-      setSelectedUserId(null);
     }
   };
 
-  return (
-    <>
-      <button
-        onClick={() => setShowModal(true)}
-        disabled={currentParticipants >= maxParticipants}
-        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <UserPlus className="h-4 w-4" />
-        Iscrivi Atleta
-      </button>
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl rounded-2xl border border-[#7de3ff]/30 bg-gradient-to-br from-[#0d1f35] to-[#0a1929] shadow-2xl shadow-[#7de3ff]/20">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#7de3ff]/20 p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
-                  <UserPlus className="h-5 w-5 text-[#7de3ff]" />
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setShowModal(false);
+          setSelectedUserIds(new Set());
+          setSearchQuery('');
+        }
+      }}
+    >
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl sm:rounded-2xl border border-[#7de3ff]/30 bg-gradient-to-br from-[#0d1f35] to-[#0a1929] shadow-2xl shadow-[#7de3ff]/20 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#7de3ff]/20 p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2 sm:p-2.5 ring-1 ring-[#7de3ff]/30">
+                  <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-[#7de3ff]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Iscrivi Atleta al Torneo</h3>
+                  <h3 className="text-base sm:text-lg font-bold text-white">Iscrivi Atleti al Torneo</h3>
                   <p className="text-xs text-gray-400">
                     Posti disponibili: {maxParticipants - currentParticipants} su {maxParticipants}
                   </p>
+                  {selectedUserIds.size > 0 && (
+                    <p className="text-xs text-[#7de3ff] mt-1">
+                      {selectedUserIds.size} atleta/i selezionato/i
+                    </p>
+                  )}
                 </div>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedUserIds(new Set());
+                  setSearchQuery('');
+                }}
                 className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
@@ -170,7 +206,7 @@ export default function ManualEnrollment({
             </div>
 
             {/* Search */}
-            <div className="p-6 border-b border-[#7de3ff]/10">
+            <div className="p-4 sm:p-6 border-b border-[#7de3ff]/10">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -184,53 +220,90 @@ export default function ManualEnrollment({
             </div>
 
             {/* User List */}
-            <div className="max-h-96 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-[#7de3ff]" />
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-400">Nessun utente trovato</p>
+                  <p className="text-gray-400">Nessun atleta trovato</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between rounded-lg border border-[#7de3ff]/10 bg-gradient-to-r from-[#0a1929]/60 to-transparent p-4 hover:border-[#7de3ff]/30 transition-all"
-                    >
-                      <div className="flex-1">
-                        <p className="font-semibold text-white">{user.full_name || 'Senza nome'}</p>
-                        <p className="text-sm text-gray-400">{user.email}</p>
-                        <span className="mt-1 inline-block rounded-full bg-[#7de3ff]/10 px-2 py-0.5 text-xs text-[#7de3ff]">
-                          {user.role}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleEnroll(user.id)}
-                        disabled={enrolling && selectedUserId === user.id}
-                        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 text-sm font-bold text-[#0a1929] hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all disabled:opacity-50"
+                  {filteredUsers.map((user) => {
+                    const isSelected = selectedUserIds.has(user.id);
+                    return (
+                      <div
+                        key={user.id}
+                        onClick={() => toggleUserSelection(user.id)}
+                        className={`flex items-center justify-between rounded-lg border p-3 sm:p-4 cursor-pointer transition-all min-h-[60px] ${
+                          isSelected
+                            ? 'border-[#7de3ff] bg-[#7de3ff]/10'
+                            : 'border-[#7de3ff]/10 bg-gradient-to-r from-[#0a1929]/60 to-transparent hover:border-[#7de3ff]/30'
+                        }`}
                       >
-                        {enrolling && selectedUserId === user.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Iscrizione...
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-4 w-4" />
-                            Iscrivi
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? 'border-[#7de3ff] bg-[#7de3ff]'
+                              : 'border-gray-500'
+                          }`}>
+                            {isSelected && <Check className="h-3 w-3 text-[#0a1929]" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white text-sm sm:text-base truncate">{user.full_name || 'Senza nome'}</p>
+                            <p className="text-xs sm:text-sm text-gray-400 truncate">{user.email}</p>
+                            <span className="mt-1 inline-block rounded-full bg-[#7de3ff]/10 px-2 py-0.5 text-xs text-[#7de3ff]">
+                              {user.role}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
-          </div>
-        </div>
+
+            {/* Footer con bottone iscrizione multipla */}
+            <div className="border-t border-[#7de3ff]/20 p-4 sm:p-6 flex-shrink-0">
+              <button
+                onClick={handleEnrollSelected}
+                disabled={enrolling || selectedUserIds.size === 0}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 text-sm font-bold text-[#0a1929] hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+              >
+                {enrolling ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Iscrizione in corso...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-5 w-5" />
+                    Iscrivi {selectedUserIds.size > 0 ? `${selectedUserIds.size} Atleta/i` : 'Atleti Selezionati'}
+                  </>
+                )}
+              </button>
+            </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button
+        onClick={() => setShowModal(true)}
+        disabled={currentParticipants >= maxParticipants}
+        className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+      >
+        <UserPlus className="h-4 w-4" />
+        Iscrivi Atleta
+      </button>
+
+      {typeof window !== 'undefined' && showModal && createPortal(
+        modalContent,
+        document.body
       )}
     </>
   );

@@ -213,6 +213,82 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  try {
+    // Verify admin authentication
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+    }
+
+    // Check if user is admin or gestore
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || (profile.role !== "admin" && profile.role !== "gestore")) {
+      return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { userId, full_name, phone, date_of_birth, address, city, postal_code, notes, role } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: "userId richiesto" }, { status: 400 });
+    }
+
+    // Check if gestore is trying to modify an admin
+    if (profile.role === "gestore") {
+      const { data: targetUser } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .single();
+      
+      if (targetUser?.role === "admin") {
+        return NextResponse.json({ error: "Non puoi modificare un admin" }, { status: 403 });
+      }
+    }
+
+    // Update user profile using service role
+    const { error: updateError } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name,
+        phone,
+        date_of_birth,
+        address,
+        city,
+        postal_code,
+        notes,
+        role
+      })
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("Errore aggiornamento profilo:", updateError);
+      return NextResponse.json({ error: "Errore aggiornamento profilo" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Utente aggiornato con successo" });
+  } catch (error: any) {
+    console.error("Errore PATCH utente:", error);
+    return NextResponse.json(
+      { error: error.message || "Errore interno" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     // Verify admin authentication
@@ -271,82 +347,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Errore interno" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    // Verify admin authentication
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
-
-    // Check if user is admin or gestore
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || (profile.role !== "admin" && profile.role !== "gestore")) {
-      return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { userId, role } = body;
-
-    if (!userId || !role) {
-      return NextResponse.json({ error: "userId e role sono obbligatori" }, { status: 400 });
-    }
-
-    // Validazione ruolo
-    const validRoles = ["atleta", "maestro", "gestore", "admin"];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json({ error: "Ruolo non valido" }, { status: 400 });
-    }
-
-    // Impedisci a gestore di assegnare ruolo admin
-    if (profile.role === "gestore" && role === "admin") {
-      return NextResponse.json(
-        { error: "I gestori non possono assegnare il ruolo admin" },
-        { status: 403 }
-      );
-    }
-
-    // Prevent self-role change to avoid locking out
-    if (userId === user.id && profile.role === "admin" && role !== "admin") {
-      return NextResponse.json(
-        { error: "Non puoi rimuovere il tuo ruolo admin" },
-        { status: 400 }
-      );
-    }
-
-    // Update role using service role
-    const { error: updateError } = await supabaseAdmin
-      .from("profiles")
-      .update({ role })
-      .eq("id", userId);
-
-    if (updateError) {
-      console.error("Errore aggiornamento ruolo:", updateError);
-      return NextResponse.json({ error: "Errore aggiornamento ruolo" }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("Errore PATCH utente:", error);
     return NextResponse.json(
       { error: error.message || "Errore interno" },
       { status: 500 }

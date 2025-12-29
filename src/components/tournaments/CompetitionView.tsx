@@ -4,15 +4,15 @@ import React from 'react';
 import Bracket from './Bracket';
 import ChampionshipStandings from './ChampionshipStandings';
 
-type CompetitionType = 'torneo' | 'campionato';
-type CompetitionFormat = 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
+type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
 interface Tournament {
   id: string;
   title: string;
-  competition_type?: CompetitionType;
-  format?: CompetitionFormat;
+  tournament_type?: TournamentType;
   max_participants?: number;
+  best_of?: number;
+  phase?: string;
   rounds_data?: any[];
   groups_data?: any[];
   standings?: any[];
@@ -31,10 +31,10 @@ export default function CompetitionView({
   isAdmin = false 
 }: CompetitionViewProps) {
   
-  const { competition_type, format, rounds_data, standings, groups_data } = tournament;
+  const { tournament_type, rounds_data, standings, groups_data, phase } = tournament;
 
-  // Torneo con eliminazione diretta - mostra bracket
-  if (competition_type === 'torneo' && format === 'eliminazione_diretta') {
+  // Eliminazione diretta - mostra bracket
+  if (tournament_type === 'eliminazione_diretta') {
     return (
       <div className="space-y-6">
         <div className="section-header">
@@ -57,7 +57,7 @@ export default function CompetitionView({
   }
 
   // Campionato round-robin - mostra classifica
-  if (competition_type === 'campionato' && format === 'round_robin') {
+  if (tournament_type === 'campionato') {
     return (
       <div className="space-y-6">
         <div className="section-header">
@@ -94,14 +94,14 @@ export default function CompetitionView({
     );
   }
 
-  // Formato misto: girone + eliminazione
-  if (format === 'girone_eliminazione') {
+  // Girone + Eliminazione
+  if (tournament_type === 'girone_eliminazione') {
     return (
       <div className="space-y-5">
         <div className="section-header">
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
-              {competition_type === 'torneo' ? 'Torneo' : 'Campionato'}
+              Torneo
             </span>
             <span className="text-sm text-muted-2">Fase a Gironi + Eliminazione Diretta</span>
           </div>
@@ -159,9 +159,9 @@ export default function CompetitionView({
   // Default fallback
   return (
     <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-8 text-center">
-      <p className="text-muted-2 mb-2">Formato competizione: {format}</p>
+      <p className="text-muted-2 mb-2">Tipo torneo: {tournament_type || 'Non specificato'}</p>
       <p className="text-sm text-muted-2">
-        La visualizzazione per questo formato verrà implementata a breve.
+        {tournament_type ? 'Il torneo non è ancora stato avviato.' : 'Tipo di torneo non riconosciuto.'}
       </p>
       {participants.length > 0 && (
         <div className="mt-6">

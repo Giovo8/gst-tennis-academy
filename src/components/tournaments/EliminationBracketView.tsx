@@ -39,21 +39,27 @@ interface EliminationBracketProps {
   tournamentId: string;
   maxParticipants: number;
   participants: Participant[];
+  bestOf?: number;
   onMatchUpdate?: () => void;
+  onBracketGenerated?: () => void;
 }
 
 export default function EliminationBracket({
   tournamentId,
   maxParticipants,
   participants,
-  onMatchUpdate
+  bestOf = 3,
+  onMatchUpdate,
+  onBracketGenerated
 }: EliminationBracketProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    console.log('EliminationBracket mounted/updated, tournamentId:', tournamentId);
     loadMatches();
     checkAdminRole();
   }, [tournamentId]);
@@ -75,7 +81,7 @@ export default function EliminationBracket({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, player1Score: number, player2Score: number) => {
+  const handleScoreSubmit = async (matchId: string, sets: Array<{ player1_score: number; player2_score: number }>) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
       const { data: { session } } = await supabase.auth.getSession();
@@ -85,19 +91,17 @@ export default function EliminationBracket({
       }
 
       const res = await fetch(`/api/tournaments/${tournamentId}/matches/${matchId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          player1_score: player1Score,
-          player2_score: player2Score
-        })
+        body: JSON.stringify({ sets })
       });
 
       if (!res.ok) {
-        throw new Error('Errore nell\'aggiornamento del punteggio');
+        const data = await res.json();
+        throw new Error(data.error || 'Errore nell\'aggiornamento del punteggio');
       }
 
       await loadMatches();
@@ -109,11 +113,18 @@ export default function EliminationBracket({
   };
 
   const loadMatches = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/group-matches?phase=eliminazione`);
+      const url = `/api/tournaments/${tournamentId}/group-matches?phase=eliminazione`;
+      console.log('Loading matches from:', url);
+      const res = await fetch(url);
       const data = await res.json();
+      console.log('API Response:', data);
+      console.log('Matches loaded:', data.matches?.length || 0);
       if (res.ok) {
         setMatches(data.matches || []);
+      } else {
+        console.error('Error response:', data);
       }
     } catch (error) {
       console.error('Error loading matches:', error);
@@ -123,26 +134,90 @@ export default function EliminationBracket({
   };
 
   const generateBracket = async () => {
+    if (!confirm('Sei sicuro di voler generare il bracket? Assicurati che tutti i partecipanti siano iscritti.')) {
+      return;
+    }
+    
     setGenerating(true);
     try {
-      // TODO: Implementare API per generare bracket
-      // Per ora usa logica locale
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Calcola numero di turni
-      const numRounds = Math.log2(maxParticipants);
-      const roundNames = ['Finale', 'Semifinale', 'Quarti', 'Ottavi', 'Sedicesimi', 'Trentaduesimi'];
-      
-      // Shuffle participants per il seeding casuale o usa seed esistente
-      const seededParticipants = [...participants].sort((a, b) => 
-        (a.seed || 0) - (b.seed || 0)
-      );
-      
-      alert('Generazione bracket in sviluppo - implementare API endpoint');
-      
+      if (!session?.access_token) {
+        alert('Sessione non valida');
+        setGenerating(false);
+        return;
+      }
+
+      const res = await fetch(`/api/tournaments/${tournamentId}/generate-bracket`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log('Bracket generated successfully, reloading matches...');
+        // Aspetta un attimo prima di ricaricare
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await loadMatches(); // Ricarica i match
+        if (onBracketGenerated) onBracketGenerated(); // Cambia al tab bracket
+        if (onMatchUpdate) onMatchUpdate();
+        alert(data.message || 'Bracket generato con successo!');
+      } else {
+        // Se dice che è già generato, prova a ricaricare comunque
+        if (data.error?.includes('già stato generato')) {
+          await loadMatches();
+          if (onBracketGenerated) onBracketGenerated();
+        }
+        alert(data.error || 'Errore nella generazione del bracket');
+      }
     } catch (error) {
       console.error('Error generating bracket:', error);
+      alert('Errore nella generazione del bracket');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDeleteMatches = async () => {
+    if (!confirm('⚠️ ATTENZIONE: Sei sicuro di voler eliminare tutti i match del bracket?\n\nQuesta azione eliminerà tutti i risultati e dovrai rigenerare il bracket.')) {
+      return;
+    }
+    
+    setDeleting(true);
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        alert('Sessione non valida');
+        return;
+      }
+
+      const res = await fetch(`/api/tournaments/${tournamentId}/delete-matches`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message || 'Match eliminati con successo!');
+        await loadMatches(); // Ricarica (dovrebbe essere vuoto)
+        if (onMatchUpdate) onMatchUpdate();
+      } else {
+        alert(data.error || 'Errore nell\'eliminazione dei match');
+      }
+    } catch (error) {
+      console.error('Error deleting matches:', error);
+      alert('Errore nell\'eliminazione dei match');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -153,6 +228,9 @@ export default function EliminationBracket({
       </div>
     );
   }
+
+  console.log('Matches count:', matches.length); // Debug
+  console.log('Participants count:', participants.length); // Debug
 
   if (matches.length === 0) {
     return (
@@ -185,13 +263,25 @@ export default function EliminationBracket({
     matchesByRound[match.round_number].push(match);
   });
 
-  const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => b - a);
+  // Ordina i round in ordine CRESCENTE (1, 2, 3... verso la finale)
+  const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Tabellone Eliminazione Diretta</h3>
-        <span className="text-sm text-muted">{participants.length} partecipanti</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted">{participants.length} partecipanti</span>
+          {isAdmin && matches.length > 0 && (
+            <button
+              onClick={handleDeleteMatches}
+              disabled={deleting}
+              className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+            >
+              {deleting ? 'Eliminazione...' : 'Rigenera Bracket'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Visualizzazione bracket */}
@@ -211,6 +301,7 @@ export default function EliminationBracket({
                       key={match.id}
                       match={match}
                       isAdmin={isAdmin}
+                      bestOf={bestOf}
                       onScoreSubmit={handleScoreSubmit}
                     />
                   ))}

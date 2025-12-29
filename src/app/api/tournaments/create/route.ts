@@ -16,7 +16,7 @@ interface CreateTournamentRequest {
   // Informazioni base
   title: string;
   description?: string;
-  start_date: string;
+  start_date?: string;
   end_date?: string;
   category?: string;
   
@@ -81,9 +81,9 @@ export async function POST(req: Request) {
     const body: CreateTournamentRequest = await req.json();
     
     // Validazione campi obbligatori
-    if (!body.title || !body.start_date || !body.tournament_type || !body.max_participants) {
+    if (!body.title || !body.tournament_type || !body.max_participants) {
       return NextResponse.json(
-        { error: "Campi obbligatori mancanti: title, start_date, tournament_type, max_participants" },
+        { error: "Campi obbligatori mancanti: title, tournament_type, max_participants" },
         { status: 400 }
       );
     }
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
     const tournamentData = {
       title: body.title,
       description: body.description || '',
-      start_date: body.start_date,
+      start_date: body.start_date || new Date().toISOString(),
       end_date: body.end_date,
       category: body.category || 'Open',
       tournament_type: body.tournament_type,

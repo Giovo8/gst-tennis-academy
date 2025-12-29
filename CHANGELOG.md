@@ -5,6 +5,57 @@ All notable changes to GST Tennis Academy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-29
+
+### Added
+- **Mobile Optimization**: Complete responsive design for smartphone devices
+  - Touch-friendly buttons (min 44x44px) across all pages
+  - Responsive grids: single/double column on mobile, multiple on desktop
+  - Mobile-first padding: px-4 on mobile, scaling on larger screens
+  - Scrollable modals: max-h-[90vh] with overflow-y-auto
+  - Responsive text sizing: proper scaling from mobile to desktop
+
+- **User Management Enhancements**:
+  - List layout for user management (more scalable than grid)
+  - Inline user info with pipe separators (Name | Email | Date)
+  - New button color scheme: slate (details), amber (reset), red (delete)
+  - Full profile update via API with service role bypass
+
+### Changed
+- **API Architecture**: Admin operations now use service role via API endpoints
+  - `/api/users` (GET): Fetch users bypassing RLS for booking/enrollment
+  - `/api/admin/users` (PATCH): Update complete user profiles
+  - Authentication via Bearer token pattern
+  
+- **Tournament Detail Page**: Complete UI redesign
+  - Modern gradient hero header with badges
+  - Info cards grid with icons (Calendar, Users, Zap)
+  - Role-based action buttons
+  - Responsive layout with backdrop-blur effects
+
+- **UI Components**:
+  - BookingCalendar: Athletes and coaches loaded via API
+  - ManualEnrollment: Fixed modal rendering with React Portal
+  - User cards: Compact single-line format for better scalability
+
+### Fixed
+- **Modal Rendering**: ManualEnrollment now uses React Portal for proper overlay
+- **RLS Bypass**: Athlete/coach dropdowns now load via API with service role
+- **User Profile Save**: Fixed modifications not saving due to RLS restrictions
+- **Duplicate Functions**: Removed duplicate PATCH function in admin API
+- **Console Cleanup**: Removed 15+ debug console.log statements
+
+### Optimized
+- **Code Cleanup**: 
+  - Removed temporary documentation files (FIX_AVVIA_TORNEO.md)
+  - Cleaned debug logging from BookingCalendar and user management
+  - Verified no unused imports
+  
+- **Documentation**:
+  - Updated DATABASE.md with current schema (20 tables, all fields)
+  - Updated API.md with 40+ endpoints and service role patterns
+  - Added mobile optimization notes
+
 ## [1.1.0] - 2025-12-28
 
 ### Added

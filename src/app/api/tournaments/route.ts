@@ -70,7 +70,10 @@ export async function GET(req: Request) {
       .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
-      query = query.gte("start_date", new Date().toISOString());
+      // Include tornei che iniziano oggi o in futuro (considera solo la data, non l'ora)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      query = query.gte("start_date", today.toISOString());
     }
 
     // Filter by competition type if column exists

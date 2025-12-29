@@ -19,6 +19,7 @@ interface Tournament {
   teams_advancing?: number;
   current_phase: string;
   status: string;
+  best_of?: number;
 }
 
 interface TournamentManagerProps {
@@ -31,6 +32,7 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'bracket'>('overview');
 
   useEffect(() => {
     loadData();
@@ -277,6 +279,38 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
         </div>
       </div>
 
+      {/* Tabs per Eliminazione Diretta */}
+      {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione' && (
+        <div className="flex gap-2 border-b border-border">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+              activeTab === 'overview'
+                ? 'text-accent'
+                : 'text-muted hover:text-white'
+            }`}
+          >
+            Panoramica
+            {activeTab === 'overview' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('bracket')}
+            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+              activeTab === 'bracket'
+                ? 'text-accent'
+                : 'text-muted hover:text-white'
+            }`}
+          >
+            Tabellone
+            {activeTab === 'bracket' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Contenuto in base al tipo e fase */}
       {tournament.current_phase === 'iscrizioni' && (
         <div className="rounded-2xl border border-border bg-surface p-6 text-center">
@@ -297,12 +331,66 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Eliminazione Diretta */}
       {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione' && (
-        <EliminationBracketView
-          tournamentId={tournament.id}
-          maxParticipants={tournament.max_participants}
-          participants={participants}
-          onMatchUpdate={loadData}
-        />
+        <>
+          {activeTab === 'bracket' && (
+            <EliminationBracketView
+              tournamentId={tournament.id}
+              maxParticipants={tournament.max_participants}
+              participants={participants}
+              bestOf={tournament.best_of || 3}
+              onMatchUpdate={loadData}
+              onBracketGenerated={() => setActiveTab('bracket')}
+            />
+          )}
+          
+          {activeTab === 'overview' && (
+            <>
+              {/* Lista Partecipanti */}
+              {participants.length > 0 && (
+                <div className="rounded-2xl border border-border bg-surface p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-white">
+                      Partecipanti ({participants.length})
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {participants.map((participant: any) => (
+                      <div
+                        key={participant.id}
+                        className="rounded-lg border border-border bg-surface-lighter p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
+                              {participant.profiles?.full_name || participant.user_id || 'Giocatore'}
+                            </p>
+                            {participant.profiles?.email && (
+                              <p className="text-xs text-muted mt-1 truncate">
+                                {participant.profiles.email}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              {participant.seed && (
+                                <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
+                                  Testa di serie #{participant.seed}
+                                </span>
+                              )}
+                              {participant.stats?.matches_played > 0 && (
+                                <span className="text-xs text-muted">
+                                  {participant.stats.matches_won}W - {participant.stats.matches_lost}L
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </>
       )}
 
       {/* Girone + Eliminazione */}
@@ -313,8 +401,10 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
               tournamentId={tournament.id}
               groups={groups}
               participants={participants}
+              bestOf={tournament.best_of || 3}
               teamsAdvancing={tournament.teams_advancing || 2}
               onMatchUpdate={loadData}
+              isAdmin={isAdmin}
             />
           )}
           
@@ -330,6 +420,7 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
                 tournamentId={tournament.id}
                 maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)}
                 participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))}
+                bestOf={tournament.best_of || 3}
                 onMatchUpdate={loadData}
               />
             </div>
@@ -339,11 +430,17 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Campionato */}
       {tournament.tournament_type === 'campionato' && tournament.status === 'In Corso' && (
-        <ChampionshipStandingsView participants={participants} />
+        <ChampionshipStandingsView 
+          tournamentId={tournament.id}
+          participants={participants}
+          bestOf={tournament.best_of || 3}
+          onMatchUpdate={loadData}
+          isAdmin={isAdmin}
+        />
       )}
 
-      {/* Lista Partecipanti */}
-      {participants.length > 0 && (
+      {/* Lista Partecipanti - Solo per tipi diversi da eliminazione_diretta in fase eliminazione */}
+      {participants.length > 0 && !(tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione') && (
         <div className="rounded-2xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-semibold text-white">

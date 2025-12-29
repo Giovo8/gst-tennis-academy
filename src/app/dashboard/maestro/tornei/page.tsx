@@ -1,0 +1,277 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { Trophy, Calendar, Users, Award, Eye } from 'lucide-react';
+
+interface Tournament {
+  id: string;
+  title: string;
+  description?: string;
+  start_date: string;
+  tournament_type: string;
+  max_participants: number;
+  status: string;
+  participant_count?: number;
+}
+
+export default function MaestroTorneiPage() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'Aperto' | 'In Corso' | 'Completato'>('all');
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
+  const loadTournaments = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/tournaments');
+      if (res.ok) {
+        const data = await res.json();
+        const tournamentsWithCounts = await Promise.all(
+          (data.tournaments || []).map(async (tournament: Tournament) => {
+            const countRes = await fetch(`/api/tournament_participants?tournament_id=${tournament.id}`);
+            if (countRes.ok) {
+              const countData = await countRes.json();
+              return {
+                ...tournament,
+                participant_count: countData.participants?.length || 0
+              };
+            }
+            return { ...tournament, participant_count: 0 };
+          })
+        );
+        setTournaments(tournamentsWithCounts);
+      }
+    } catch (error) {
+      console.error('Error loading tournaments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTournamentTypeLabel = (type?: string) => {
+    switch(type) {
+      case 'eliminazione_diretta': return 'Eliminazione Diretta';
+      case 'girone_eliminazione': return 'Girone + Eliminazione';
+      case 'campionato': return 'Campionato';
+      default: return 'Torneo';
+    }
+  };
+
+  const getTournamentTypeIcon = (type?: string) => {
+    switch(type) {
+      case 'campionato': return Award;
+      default: return Trophy;
+    }
+  };
+
+  const getStatusColor = (status?: string) => {
+    switch(status) {
+      case 'Aperto': return 'bg-green-500/10 text-green-400 border-green-500/30';
+      case 'In Corso':
+      case 'In corso': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+      case 'Completato':
+      case 'Concluso': return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
+      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const filteredTournaments = tournaments.filter(t => {
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'In Corso') return t.status === 'In Corso' || t.status === 'In corso';
+    if (filterStatus === 'Completato') return t.status === 'Completato' || t.status === 'Concluso';
+    return t.status === filterStatus;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto min-h-screen max-w-7xl px-6 py-16 space-y-8">
+      {/* Header */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-12 rounded-full bg-gradient-to-r from-accent to-accent-dark" />
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-accent">Area Maestro</p>
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight text-white">
+          Visualizzazione Tornei
+        </h1>
+        <p className="text-sm text-muted max-w-2xl">
+          Monitora tutti i tornei e i campionati dell'accademia
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-500/10 p-2">
+              <Trophy className="h-5 w-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-xs text-muted">Tornei Totali</p>
+              <p className="text-2xl font-bold text-white">{tournaments.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-green-500/10 p-2">
+              <Calendar className="h-5 w-5 text-green-400" />
+            </div>
+            <div>
+              <p className="text-xs text-muted">Aperti</p>
+              <p className="text-2xl font-bold text-white">
+                {tournaments.filter(t => t.status === 'Aperto').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-yellow-500/10 p-2">
+              <Trophy className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-xs text-muted">In Corso</p>
+              <p className="text-2xl font-bold text-white">
+                {tournaments.filter(t => t.status === 'In Corso' || t.status === 'In corso').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-gray-500/10 p-2">
+              <Award className="h-5 w-5 text-gray-400" />
+            </div>
+            <div>
+              <p className="text-xs text-muted">Completati</p>
+              <p className="text-2xl font-bold text-white">
+                {tournaments.filter(t => t.status === 'Completato' || t.status === 'Concluso').length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        <button
+          onClick={() => setFilterStatus('all')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+            filterStatus === 'all'
+              ? 'bg-accent text-white'
+              : 'bg-surface border border-border text-muted hover:text-white'
+          }`}
+        >
+          Tutti
+        </button>
+        <button
+          onClick={() => setFilterStatus('Aperto')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+            filterStatus === 'Aperto'
+              ? 'bg-accent text-white'
+              : 'bg-surface border border-border text-muted hover:text-white'
+          }`}
+        >
+          Aperti
+        </button>
+        <button
+          onClick={() => setFilterStatus('In Corso')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+            filterStatus === 'In Corso'
+              ? 'bg-accent text-white'
+              : 'bg-surface border border-border text-muted hover:text-white'
+          }`}
+        >
+          In Corso
+        </button>
+        <button
+          onClick={() => setFilterStatus('Completato')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+            filterStatus === 'Completato'
+              ? 'bg-accent text-white'
+              : 'bg-surface border border-border text-muted hover:text-white'
+          }`}
+        >
+          Completati
+        </button>
+      </div>
+
+      {/* Tournaments List */}
+      <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Trophy className="h-5 w-5 text-accent" />
+          <h2 className="text-xl font-bold text-white">
+            Tornei ({filteredTournaments.length})
+          </h2>
+        </div>
+        
+        {filteredTournaments.length === 0 ? (
+          <div className="text-center py-12">
+            <Trophy className="h-12 w-12 text-muted mx-auto mb-4" />
+            <p className="text-sm text-muted">Nessun torneo trovato</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredTournaments.map((tournament) => {
+              const Icon = getTournamentTypeIcon(tournament.tournament_type);
+              
+              return (
+                <div
+                  key={tournament.id}
+                  className="flex items-center justify-between p-5 rounded-xl bg-surface-secondary border border-border hover:border-accent/30 transition-all"
+                >
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="rounded-lg bg-accent/10 p-3">
+                      <Icon className="h-5 w-5 text-accent" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-white mb-2">{tournament.title}</h3>
+                      {tournament.description && (
+                        <p className="text-xs text-muted mb-2 line-clamp-1">{tournament.description}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                          {getTournamentTypeLabel(tournament.tournament_type)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full border ${getStatusColor(tournament.status)}`}>
+                          {tournament.status}
+                        </span>
+                        <span className="text-muted">
+                          📅 {new Date(tournament.start_date).toLocaleDateString('it-IT')}
+                        </span>
+                        <span className="text-muted">
+                          👥 {tournament.participant_count || 0}/{tournament.max_participants}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <a
+                    href={`/tornei/${tournament.id}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-sm font-semibold whitespace-nowrap"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Visualizza</span>
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

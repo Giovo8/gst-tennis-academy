@@ -126,43 +126,74 @@ export default function BookingCalendar() {
       setLoading(true);
       setError(null);
 
-      // Calcola l'inizio e la fine del giorno selezionato in formato locale
-      const startDay = new Date(selectedDate);
-      startDay.setHours(slotStartHour, 0, 0, 0);
-      
-      const endDay = new Date(selectedDate);
-      endDay.setHours(slotEndHour + 1, 0, 0, 0); // Include l'ultima ora
+      try {
+        // Calcola l'inizio e la fine del giorno selezionato in formato locale
+        const startDay = new Date(selectedDate);
+        startDay.setHours(slotStartHour, 0, 0, 0);
+        
+        const endDay = new Date(selectedDate);
+        endDay.setHours(slotEndHour + 1, 0, 0, 0); // Include l'ultima ora
 
-      const [
-        { data: bookingData, error: bookingError },
-        { data: coachData },
-        { data: athleteData },
-      ] = await Promise.all([
-        supabase
+        // Carica prenotazioni dal database
+        const { data: bookingData, error: bookingError } = await supabase
           .from("bookings")
           .select("id,user_id,coach_id,court,type,start_time,end_time,status,coach_confirmed,manager_confirmed")
           .neq("status", "cancelled")
-          .not("status", "in", "(rejected_by_coach,rejected_by_manager)")
           .gte("start_time", startDay.toISOString())
-          .lt("start_time", endDay.toISOString()),
-        supabase.from("profiles").select("id, full_name, role").eq("role", "maestro"),
-        supabase.from("profiles").select("id, full_name, email, role").eq("role", "atleta").order("full_name"),
-      ]);
+          .lt("start_time", endDay.toISOString());
 
-      if (bookingError) {
-        setError("Impossibile caricare le prenotazioni.");
-        setLoading(false);
-        return;
+        if (bookingError) {
+          setError("Impossibile caricare le prenotazioni.");
+        } else {
+          setBookings((bookingData as BookingRecord[]) ?? []);
+        }
+
+        // Carica profili utenti tramite API (bypassa RLS)
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        
+        if (token && (userRole === 'admin' || userRole === 'gestore')) {
+          
+          const response = await fetch('/api/users', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            const users = data.users || [];
+            
+            // Filtra per ruolo
+            const coachData = users.filter((p: any) => {
+              const role = String(p.role || '').toLowerCase();
+              return role === 'maestro';
+            });
+            
+            const athleteData = users.filter((p: any) => {
+              const role = String(p.role || '').toLowerCase();
+              return role === 'atleta';
+            });
+            
+            setCoaches(coachData);
+            setAthletes(athleteData);
+          } else {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            setError(`Errore caricamento utenti: ${response.status}`);
+          }
+        }
+      } catch (err) {
+        setError("Errore nel caricamento dei dati: " + (err as Error).message);
       }
 
-      setBookings((bookingData as BookingRecord[]) ?? []);
-      setCoaches((coachData as Coach[]) ?? []);
-      setAthletes((athleteData as Athlete[]) ?? []);
       setLoading(false);
     };
 
     void fetchData();
-  }, [selectedDate]);
+  }, [selectedDate, userRole]);
 
   const isSlotConfirmed = (slot: Date) => {
     const slotEnd = new Date(slot);
@@ -320,13 +351,13 @@ export default function BookingCalendar() {
   const dayLabel = format(selectedDate, "EEEE dd MMMM");
 
   return (
-    <div className="space-y-6 rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-4 sm:space-y-6 rounded-2xl sm:rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
             Calendario prenotazioni
           </p>
-          <h3 className="text-2xl font-semibold text-white">{dayLabel}</h3>
+          <h3 className="text-xl sm:text-2xl font-semibold text-white">{dayLabel}</h3>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -374,7 +405,7 @@ export default function BookingCalendar() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {(userRole === "admin" || userRole === "gestore") && (
           <label className="text-sm text-muted">
             Seleziona Atleta *
@@ -386,7 +417,9 @@ export default function BookingCalendar() {
               <option value="">Scegli atleta</option>
               {athletes.map((athlete) => (
                 <option key={athlete.id} value={athlete.id}>
-                  {athlete.full_name ?? athlete.email}
+                  {athlete.full_name && athlete.full_name.trim() !== '' 
+                    ? `${athlete.full_name} (${athlete.email})`
+                    : athlete.email}
                 </option>
               ))}
             </select>
@@ -429,7 +462,9 @@ export default function BookingCalendar() {
               <option value="">Scegli un maestro</option>
               {coaches.map((coach) => (
                 <option key={coach.id} value={coach.id}>
-                  {coach.full_name ?? "Maestro"} ({coach.role})
+                  {coach.full_name && coach.full_name.trim() !== '' 
+                    ? coach.full_name
+                    : 'Maestro'}
                 </option>
               ))}
             </select>
@@ -442,7 +477,7 @@ export default function BookingCalendar() {
           <CalendarDays className="h-4 w-4 text-accent" />
           Seleziona uno slot da 1 ora (08:00-22:00). Le prenotazioni richiedono 24h di anticipo.
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" aria-busy={loading}>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" aria-busy={loading}>
           {loading ? (
             <div className="col-span-full flex items-center gap-2 text-sm text-muted">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
@@ -473,7 +508,7 @@ export default function BookingCalendar() {
                   onClick={() => setSelectedSlot(slot)}
                   aria-pressed={active ? "true" : "false"}
                   aria-label={`${format(slot, "HH:mm")}-${format(slotEnd, "HH:mm")} ${selectedCourt} ${!available ? "(non disponibile)" : pending ? "(in attesa conferma)" : "(disponibile)"}`}
-                  className={`flex flex-col rounded-xl border px-3 py-3 text-left text-sm transition ${
+                  className={`flex flex-col rounded-lg sm:rounded-xl border px-2.5 sm:px-3 py-2.5 sm:py-3 text-left text-xs sm:text-sm transition min-h-[60px] ${
                     confirmed || isPast || tooSoon
                       ? "cursor-not-allowed border-red-400/30 bg-red-400/10 text-red-300"
                       : pending
@@ -497,11 +532,11 @@ export default function BookingCalendar() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
         <button
           onClick={handleCreateBooking}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold bg-[#2f7de1] text-white transition hover:bg-[#2563c7] disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold bg-[#2f7de1] text-white transition hover:bg-[#2563c7] disabled:opacity-60 min-h-[44px] w-full sm:w-auto"
         >
           {saving ? (
             <>
@@ -516,7 +551,7 @@ export default function BookingCalendar() {
           )}
         </button>
         {selectedSlot && (
-          <span className="text-sm text-[#c6d8c9]">
+          <span className="text-xs sm:text-sm text-[#c6d8c9] text-center sm:text-left">
             Slot: {format(selectedSlot, "HH:mm")}-{format(addHours(selectedSlot, 1), "HH:mm")} · {format(selectedSlot, "dd/MM/yyyy")} · {selectedCourt}
           </span>
         )}

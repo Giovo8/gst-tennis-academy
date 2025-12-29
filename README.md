@@ -25,23 +25,44 @@
 - ✅ Sistema di conferme a 3 livelli (utente, coach, gestore)
 - 💳 Gestione pagamenti e storico prenotazioni
 
-### Gestione Tornei ⭐ AGGIORNATO
-- 🎯 **3 Tipi di Torneo**: 
-  - Eliminazione Diretta (tabellone classico)
-  - Girone + Eliminazione (fase a gironi + tabellone finale)
-  - Campionato (round-robin, tutti contro tutti)
-- 🏆 Sistema completo con wizard di creazione intuitivo
-- � **Iscrizione manuale atleti** da parte di admin/gestore
-- 🔍 Ricerca e selezione utenti con filtri
-- 📊 Punteggi tennis autentici (set, game, tie-break)
-- 📋 Classifiche automatiche con differenze set/games
-- 🎮 **Tabelloni interattivi** con inserimento risultati real-time
-- 🏅 **Visualizzazione vincitori** con evidenziazione e trofei
-- 📱 Visualizzazione ottimizzata per desktop e mobile
-- 🗑️ Rimozione partecipanti e eliminazione tornei
-- 🥇 Classifiche e statistiche dettagliate
-- 📱 Iscrizioni online con conferma automatica
-- 📧 Notifiche email per match e risultati
+### Sistema Tornei Completo 🎾 ⭐ NUOVO
+- 🏆 **3 Tipi di Torneo Professionali**:
+  - **Eliminazione Diretta**: Tabellone classico a eliminazione
+  - **Girone + Eliminazione**: Fase a gironi + tabellone knockout
+  - **Campionato**: Round-robin (tutti contro tutti)
+- ✨ **Wizard Creazione Intuitivo** in 3 step
+- 🎯 **Gestione Completa Match**:
+  - Punteggi tennis autentici (set, game, tie-break)
+  - Best-of-3 o Best-of-5
+  - Inserimento risultati real-time
+  - Avanzamento automatico vincitori
+- 📊 **Classifiche e Statistiche Avanzate**:
+  - Classifica generale giocatori
+  - Win rate e performance
+  - Statistiche set/game vinti/persi
+  - Tornei giocati e vinti
+  - Top performers (più tornei vinti, miglior win rate, più attivi)
+- 👥 **Dashboard per Tutti i Ruoli**:
+  - **Admin/Gestore**: Creazione, gestione, statistiche, eliminazione tornei
+  - **Maestro**: Visualizzazione read-only con statistiche
+  - **Atleta**: Iscrizioni, visualizzazione match personali
+- 🥇 **Pagina Classifiche Pubblica**:
+  - Podio visivo con top 3 giocatori
+
+### Gestione Utenti & Admin
+- 👥 Sistema ruoli avanzato (Admin, Gestore, Maestro, Atleta)
+- 📝 Gestione completa profili utente via API con service role
+- 🔐 Autenticazione sicura con JWT Bearer token
+- 📊 Dashboard admin con statistiche real-time
+- 🎨 UI ottimizzata per mobile e desktop
+- 🔒 Row Level Security (RLS) con bypass controllato via API
+  - Classifica completa con tutti i dettagli
+  - Statistiche aggregate in tempo reale
+- 🔄 **Algoritmi Avanzati**:
+  - Snake draft per distribuzione gironi bilanciata
+  - Seeding intelligente per knockout
+  - Round-robin con bye per numeri dispari
+  - Calcolo tiebreaker (punti → set diff → game diff)
 
 ### Profili Atleti Avanzati
 - 📈 Statistiche tennis complete (aces, doppi falli, break point)
@@ -231,10 +252,69 @@ Accedi come admin e vai su `/dashboard/admin` per:
 - Configurare hero content e sezioni homepage
 - Monitorare email dashboard
 
-### Gestione Tornei
+### Gestione Tornei Completa
 
-1. Admin crea torneo (`/dashboard/admin/tornei`)
-2. Atleti si iscrivono dalla pagina pubblica (`/tornei`)
+#### Creazione Torneo (Admin/Gestore)
+1. Vai su `/dashboard/admin/tornei` (o `/dashboard/gestore/tornei`)
+2. Click "Nuovo Torneo"
+3. Wizard in 3 step:
+   - **Step 1**: Informazioni base (titolo, descrizione, date)
+   - **Step 2**: Configurazione (tipo torneo, partecipanti, best-of)
+   - **Step 3**: Dettagli extra (categoria, superficie, quota)
+4. Torneo creato con stato "Aperto"
+
+#### Iscrizione Atleti
+**Metodo 1 - Atleti si iscrivono autonomamente:**
+1. Atleta va su `/tornei` o `/dashboard/atleta/tornei`
+2. Visualizza tornei disponibili
+3. Click "Iscriviti" su torneo aperto
+4. Iscrizione confermata automaticamente
+
+#### Avvio Torneo
+**Eliminazione Diretta:**
+1. Admin clicca "Gestisci" sul torneo
+2. Click "Genera Tabellone"
+3. Sistema crea bracket con seeding automatico
+4. Torneo passa a "In Corso"
+
+**Girone + Eliminazione:**
+1. Admin clicca "Gestisci"
+2. Click "Genera Gironi" → seleziona numero gironi (2, 4, 8)
+3. Sistema distribuisce partecipanti con snake draft
+4. Gioca tutti i match dei gironi
+5. Click "Avanza alla Fase a Eliminazione"
+6. Top 2 di ogni girone avanzano al knockout
+
+**Campionato:**
+1. Admin clicka "Gestisci"
+2. Click "Genera Calendario"
+3. Sistema crea calendario round-robin con giornate
+4. Filtra match per giornata e inserisci risultati
+5. Classifica si aggiorna automaticamente
+
+#### Inserimento Risultati
+1. Vai alla scheda match del torneo
+2. Click "Inserisci Punteggio" su un match
+3. Inserisci punteggi set per set:
+   - Best-of-3: Massimo 3 set
+   - Best-of-5: Massimo 5 set
+   - Supporto tie-break (7-6)
+4. Salva → vincitore avanza automaticamente
+
+#### Statistiche e Report
+**Dashboard Admin/Gestore:**
+- Visualizza statistiche aggregate (tornei, match, giocatori)
+- Espandi "Statistiche e Report Avanzati"
+- 3 Tab disponibili:
+  - **Panoramica**: Overview + top performers
+  - **Classifiche**: Top 50 giocatori con statistiche complete
+  - **Tornei**: Dettagli tutti i tornei con completion rate
+
+**Pagina Pubblica Classifiche:**
+- Vai su `/classifiche`
+- Visualizza podio con top 3 giocatori
+- Consulta classifica completa
+- Vedi statistiche: win rate, tornei vinti, match giocati
 3. Gestore conferma iscrizioni
 4. Sistema genera gironi automaticamente
 5. Coach/Admin inseriscono risultati match
@@ -266,26 +346,50 @@ gst-tennis-academy/
 │   │   │   ├── atleta/       # Athlete pages
 │   │   │   ├── coach/        # Coach pages
 │   │   │   ├── gestore/      # Manager pages
-│   │   │   └── maestro/      # Teacher pages
+│   │   │   ├── maestro/      # Teacher pages (read-only tornei)
+│   │   │   └── atleta/       # Athlete pages (enrollment + match viewing)
 │   │   ├── bookings/         # Prenotazioni page
 │   │   ├── tornei/           # Tornei pubblici
+│   │   ├── classifiche/      # Classifiche pubbliche (NEW)
 │   │   └── profile/          # Profilo utente
 │   ├── components/            # React components
 │   │   ├── bookings/         # Booking calendar
-│   │   ├── tournaments/      # Bracket, standings
+│   │   ├── tournaments/      # Tournament system (UPDATED)
+│   │   │   ├── BracketView.tsx              # Elimination bracket
+│   │   │   ├── GroupStageView.tsx           # Group stage with standings
+│   │   │   ├── ChampionshipStandingsView.tsx # Round-robin standings
+│   │   │   ├── BracketMatchCard.tsx         # Match card with scoring
+│   │   │   ├── TennisScoreInput.tsx         # Set-by-set input
+│   │   │   ├── SimpleTournamentCreator.tsx  # 3-step wizard
+│   │   │   ├── TournamentManagerWrapper.tsx # Management panel
+│   │   │   ├── TournamentStats.tsx          # Statistics dashboard
+│   │   │   └── TournamentReports.tsx        # Advanced reports (NEW)
 │   │   ├── profile/          # ProfileEditor, AthleteStatsView
 │   │   ├── email/            # EmailDashboard
 │   │   ├── chat/             # ChatPanel, notifications
 │   │   ├── announcements/    # Announcement boards
 │   │   ├── layout/           # Navbar, Footer
 │   │   └── landing/          # Homepage sections
+│   ├── __tests__/            # Test files
+│   │   ├── tournaments.test.ts              # Original tests
+│   │   └── tournament-flows.test.ts         # Complete E2E tests (NEW)
 │   └── lib/
 │       ├── email/            # Email service + templates
 │       ├── seo/              # Metadata + JSON-LD
 │       ├── supabase/         # Supabase clients
 │       └── roles.ts          # Role checking utils
+├── scripts/
+│   └── test-tournaments.js   # Quick test script (NEW)
+├── docs/
+│   ├── TESTING.md            # Testing documentation (NEW)
+│   ├── TESTING_GUIDE.md      # Manual testing guide (NEW)
+│   ├── TOURNAMENT_SYSTEM.md  # Tournament system docs
+│   └── ROLES_SYSTEM.md       # Role permissions
 ├── supabase/
-│   └── migrations/           # SQL migrations (8 files)
+│   └── migrations/           # SQL migrations
+│       ├── 010_simplified_tournament_system.sql
+│       ├── 013_tennis_scoring_system.sql (apply this!)
+│       └── ... (other migrations)
 ├── public/
 │   ├── images/              # Logo, OG images
 │   ├── robots.txt           # SEO robots
@@ -300,17 +404,61 @@ gst-tennis-academy/
 
 ## 🧪 Testing
 
-### Esegui tutti i test
+Il sistema di testing è completo con test automatici e manuali. Consulta la documentazione completa in [docs/TESTING.md](docs/TESTING.md).
+
+### Quick Test (Connettività e API)
 
 ```bash
+node scripts/test-tournaments.js
+```
+
+Testa:
+- ✅ Connettività server
+- ✅ Endpoint API disponibili
+- ✅ Database accessibile
+- ✅ Pagine pubbliche funzionanti
+- ✅ Generazione report
+
+### Test Automatici (Jest)
+
+```bash
+# Esegui tutti i test
 npm test
-```
 
-### Watch mode (sviluppo)
-
-```bash
+# Watch mode (sviluppo)
 npm run test:watch
+
+# Test specifici per tornei
+npm test tournament-flows.test.ts
 ```
+
+I test automatici coprono:
+- ✅ Flusso completo Eliminazione Diretta
+- ✅ Flusso completo Girone + Eliminazione
+- ✅ Flusso completo Campionato
+- ✅ Generazione statistiche e report
+- ✅ Controllo accessi basato su ruoli
+- ✅ Validazione punteggi tennis
+- ✅ Gestione errori
+
+### Test Manuali
+
+Segui la guida completa in [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) per:
+- 📋 8 scenari di test dettagliati
+- ✅ Checklist per ogni tipo di torneo
+- 👥 Test per tutti i ruoli (admin, gestore, maestro, atleta)
+- 🎯 Test statistiche e report
+- 🎾 Test validazione punteggi tennis
+- 🐛 Template per bug report
+
+### Test Coverage
+
+**Componenti Testati:**
+- ✅ API Endpoints: 100% dei tornei
+- ✅ Tipi Torneo: Tutti e 3 i tipi
+- ✅ Ruoli Utente: Tutti e 4 i ruoli
+- ✅ Sistema Scoring: Regole tennis complete
+- ✅ Statistiche: Generazione report
 
 ### Coverage report
 

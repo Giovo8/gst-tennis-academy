@@ -1,20 +1,74 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, X, LogIn, LayoutDashboard, Instagram, Facebook, Youtube } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, LogOut, LayoutDashboard, Instagram, Facebook, Youtube, Shield } from "lucide-react";
 import Image from "next/image";
+import { supabase } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 export default function PublicNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userFullName, setUserFullName] = useState<string | null>(null);
 
-  const menuItems = [
-    { href: "/", label: "Home" },
-    { href: "/tornei", label: "Tornei" },
-    { href: "/news", label: "News" },
-    { href: "/courses", label: "Corsi" },
-    { href: "/#contatti", label: "Contatti" },
-  ];
+  useEffect(() => {
+    // Check current user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        // Get user role and full name
+        supabase
+          .from("profiles")
+          .select("role, full_name")
+          .eq("id", user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setUserRole(data.role);
+              setUserFullName(data.full_name);
+            }
+          });
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        supabase
+          .from("profiles")
+          .select("role, full_name")
+          .eq("id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setUserRole(data.role);
+              setUserFullName(data.full_name);
+            }
+          });
+      } else {
+        setUserRole(null);
+        setUserFullName(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const getDashboardLink = () => {
+    if (!userRole) return "/login";
+    if (userRole === "admin" || userRole === "gestore") return "/dashboard/admin";
+    if (userRole === "maestro") return "/dashboard/maestro";
+    if (userRole === "atleta") return "/dashboard/atleta";
+    return "/dashboard";
+  };
 
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
@@ -32,19 +86,6 @@ export default function PublicNavbar() {
             <span className="text-lg font-bold text-white">GST Academy</span>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden lg:flex items-center gap-8">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-muted-2 transition hover:text-accent"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
           {/* CTA Buttons & Social - Desktop */}
           <div className="hidden lg:flex items-center gap-3">
             {/* Social Icons */}
@@ -52,7 +93,7 @@ export default function PublicNavbar() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
               aria-label="Instagram"
             >
               <Instagram className="h-4 w-4" />
@@ -61,7 +102,7 @@ export default function PublicNavbar() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
               aria-label="Facebook"
             >
               <Facebook className="h-4 w-4" />
@@ -70,7 +111,7 @@ export default function PublicNavbar() {
               href="#youtube"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
               aria-label="YouTube"
             >
               <Youtube className="h-4 w-4" />
@@ -79,7 +120,7 @@ export default function PublicNavbar() {
               href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
               aria-label="WhatsApp"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -87,16 +128,40 @@ export default function PublicNavbar() {
               </svg>
             </a>
 
-            <div className="w-px h-6 bg-white/10 mx-1"></div>
+            <div className="w-px h-6 bg-white/10"></div>
+
+            {/* User Status (shown when logged in) */}
+            {user && userRole && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl">
+                <div className="text-sm">
+                  <span className="text-white font-medium">{userFullName || user.email}</span>
+                  <span className="mx-2 text-muted-2">•</span>
+                  <span className="text-blue-300 font-semibold">
+                    {userRole.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Area GST Button */}
             <Link
-              href="/login"
-              className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 text-sm font-semibold text-[#06101f] transition hover:shadow-lg hover:shadow-accent/30 hover:scale-105"
+              href={getDashboardLink()}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300"
             >
-              <LayoutDashboard className="h-4 w-4" />
-              Area GST
+              <Shield className="h-4 w-4 text-white" />
+              <span className="text-white">Area GST</span>
             </Link>
+
+            {/* Logout Button (shown when logged in) */}
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 transition-all duration-300"
+              >
+                <LogOut className="h-4 w-4 text-white" />
+                <span className="text-white">Esci</span>
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -112,17 +177,6 @@ export default function PublicNavbar() {
         {/* Mobile Menu */}
         {isOpen && (
           <div className="lg:hidden border-t border-white/10 pt-4 mt-4 space-y-2 pb-4">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-white/5 hover:text-white transition"
-              >
-                {item.label}
-              </Link>
-            ))}
-            
             {/* Mobile Social & CTA */}
             <div className="pt-4 space-y-3 border-t border-white/10">
               {/* Social Icons */}
@@ -131,7 +185,7 @@ export default function PublicNavbar() {
                   href="https://instagram.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
                   aria-label="Instagram"
                 >
                   <Instagram className="h-5 w-5" />
@@ -140,7 +194,7 @@ export default function PublicNavbar() {
                   href="https://facebook.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
                   aria-label="Facebook"
                 >
                   <Facebook className="h-5 w-5" />
@@ -149,7 +203,7 @@ export default function PublicNavbar() {
                   href="#youtube"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
                   aria-label="YouTube"
                 >
                   <Youtube className="h-5 w-5" />
@@ -158,7 +212,7 @@ export default function PublicNavbar() {
                   href="https://wa.me/393762351777"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-muted-2 transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
                   aria-label="WhatsApp"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -167,15 +221,40 @@ export default function PublicNavbar() {
                 </a>
               </div>
 
+              {/* User Status (shown when logged in) */}
+              {user && userRole && (
+                <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl text-center">
+                  <span className="text-sm text-white font-medium">{userFullName || user.email}</span>
+                  <span className="mx-2 text-muted-2">•</span>
+                  <span className="text-sm text-blue-300 font-semibold">
+                    {userRole.toUpperCase()}
+                  </span>
+                </div>
+              )}
+
               {/* Area GST Button */}
               <Link
-                href="/login"
+                href={getDashboardLink()}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-3 text-sm font-semibold text-[#06101f] transition hover:shadow-lg hover:shadow-accent/30"
+                className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300"
               >
-                <LayoutDashboard className="h-4 w-4" />
-                Area GST
+                <Shield className="h-4 w-4 text-white" />
+                <span className="text-white">Area GST</span>
               </Link>
+
+              {/* Logout Button (shown when logged in) */}
+              {user && (
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 transition-all duration-300"
+                >
+                  <LogOut className="h-4 w-4 text-white" />
+                  <span className="text-white">Esci</span>
+                </button>
+              )}
             </div>
           </div>
         )}

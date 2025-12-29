@@ -88,7 +88,7 @@ export default function UsersPage() {
       const data = await response.json();
       setUsers(data.users || []);
     } catch (err) {
-      console.error("Errore caricamento utenti:", err);
+      // Gestione silenziosa dell'errore
     } finally {
       setLoading(false);
     }
@@ -252,19 +252,19 @@ export default function UsersPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10 bg-[#021627] text-white">
+      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10 bg-[#021627] text-white">
         {/* Header */}
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
             <Users className="h-4 w-4" />
             Gestione Utenti
           </p>
-          <h1 className="text-4xl font-bold text-white">Utenti</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white">Utenti</h1>
           <p className="text-sm text-muted">Crea e gestisci account coach e atleti</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <StatCard title="Totale" value={users.length} icon={<Users className="h-8 w-8 text-teal-300" />} color="teal" />
           <StatCard title="Atleti" value={users.filter(u => u.role === 'atleta').length} icon={<User className="h-8 w-8 text-lime-300" />} color="lime" />
           <StatCard title="Coach" value={users.filter(u => u.role === 'maestro').length} icon={<User className="h-8 w-8 text-violet-300" />} color="violet" />
@@ -272,7 +272,7 @@ export default function UsersPage() {
         </div>
 
         {/* Search and Actions */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-2" />
             <input
@@ -285,7 +285,7 @@ export default function UsersPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-[#06101f] transition hover:bg-[#5fc7e0] hover:shadow-lg hover:shadow-accent/20"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-[#06101f] transition hover:bg-[#5fc7e0] hover:shadow-lg hover:shadow-accent/20 min-h-[44px]"
           >
             <Plus className="h-5 w-5" />
             Crea Utente
@@ -310,82 +310,78 @@ export default function UsersPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-3">
             {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10"
+                className="group rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-3 sm:p-4 hover:bg-[#1a3d5c]/80 transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10"
               >
-                {/* User Avatar and Role Badge */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  {/* User Info */}
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30 flex-shrink-0">
                       {user.role === "admin" || user.role === "gestore" ? (
                         <Shield className="h-6 w-6 text-accent" />
                       ) : (
                         <User className="h-6 w-6 text-accent" />
                       )}
                     </div>
-                    <div>
-                      <p className="text-base font-semibold text-white">{user.full_name || "N/A"}</p>
-                      <p className="text-xs text-muted truncate max-w-[140px]">{user.email}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-1 min-w-0 text-sm">
+                      <span className="font-semibold text-white truncate">{user.full_name || "N/A"}</span>
+                      <span className="hidden sm:inline text-muted-2">|</span>
+                      <span className="text-muted text-xs sm:text-sm truncate">{user.email}</span>
+                      <span className="hidden sm:inline text-muted-2">|</span>
+                      <span className="text-muted-2 text-xs sm:text-sm whitespace-nowrap">
+                        Iscritto il {new Date(user.created_at).toLocaleDateString("it-IT", { 
+                          day: '2-digit', 
+                          month: 'short', 
+                          year: 'numeric' 
+                        })}
+                      </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Role Select */}
-                <div className="mb-4">
-                  <label className="block text-xs font-medium text-muted-2 mb-2">Ruolo</label>
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
-                    disabled={currentUserRole === "gestore" && user.role === "admin"}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    <option value="atleta">Atleta</option>
-                    <option value="maestro">Coach</option>
-                    <option value="gestore">Gestore</option>
-                    {currentUserRole === "admin" && <option value="admin">Admin</option>}
-                  </select>
-                </div>
+                  {/* Role Select */}
+                  <div className="w-full sm:w-40">
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
+                      disabled={currentUserRole === "gestore" && user.role === "admin"}
+                      className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#0c1424]/50 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      <option value="atleta">Atleta</option>
+                      <option value="maestro">Coach</option>
+                      <option value="gestore">Gestore</option>
+                      {currentUserRole === "admin" && <option value="admin">Admin</option>}
+                    </select>
+                  </div>
 
-                {/* Date */}
-                <div className="mb-4 pt-4 border-t border-white/10">
-                  <p className="text-xs text-muted-2">Iscritto il</p>
-                  <p className="text-sm font-medium text-white mt-1">
-                    {new Date(user.created_at).toLocaleDateString("it-IT", { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    })}
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setViewingUser(user)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    Dettagli
-                  </button>
-                  <button
-                    onClick={() => handleResetPassword(user.id, user.email)}
-                    disabled={currentUserRole === "gestore" && user.role === "admin"}
-                    className="inline-flex items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 p-2 text-cyan-400 transition hover:bg-cyan-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : "Reset password"}
-                  >
-                    <Key className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(user.id)}
-                    disabled={currentUserRole === "gestore" && user.role === "admin"}
-                    className="inline-flex items-center justify-center rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-cyan-300 transition hover:bg-red-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi eliminare admin" : "Elimina utente"}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => setViewingUser(user)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-400/30 bg-slate-400/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-400/20 min-h-[44px] flex-1 sm:flex-none"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sm:inline">Dettagli</span>
+                    </button>
+                    <button
+                      onClick={() => handleResetPassword(user.id, user.email)}
+                      disabled={currentUserRole === "gestore" && user.role === "admin"}
+                      className="inline-flex items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 p-2.5 text-amber-400 transition hover:bg-amber-400/20 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                      title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi modificare admin" : "Reset password"}
+                    >
+                      <Key className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      disabled={currentUserRole === "gestore" && user.role === "admin"}
+                      className="inline-flex items-center justify-center rounded-lg border border-red-400/30 bg-red-400/10 p-2.5 text-red-400 transition hover:bg-red-400/20 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                      title={currentUserRole === "gestore" && user.role === "admin" ? "Non puoi eliminare admin" : "Elimina utente"}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -395,7 +391,7 @@ export default function UsersPage() {
         {/* View User Details Modal - Scheda Anagrafica */}
         {viewingUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto">
-            <div className="w-full max-w-4xl rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-6 shadow-2xl my-8">
+            <div className="w-full max-w-4xl rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-4 sm:p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
@@ -423,7 +419,7 @@ export default function UsersPage() {
               </div>
 
               {/* Content Grid */}
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
                 {/* Informazioni Personali */}
                 <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -580,9 +576,22 @@ export default function UsersPage() {
                 <button
                   onClick={async () => {
                     try {
-                      const { error } = await supabase
-                        .from("profiles")
-                        .update({ 
+                      // Get current session token
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session) {
+                        alert("Sessione scaduta, effettua nuovamente il login");
+                        return;
+                      }
+
+                      // Use API endpoint to update user (bypasses RLS)
+                      const response = await fetch("/api/admin/users", {
+                        method: "PATCH",
+                        headers: {
+                          "Authorization": `Bearer ${session.access_token}`,
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          userId: viewingUser.id,
                           full_name: viewingUser.full_name,
                           phone: viewingUser.phone,
                           date_of_birth: viewingUser.date_of_birth,
@@ -590,11 +599,16 @@ export default function UsersPage() {
                           city: viewingUser.city,
                           postal_code: viewingUser.postal_code,
                           notes: viewingUser.notes,
-                          role: viewingUser.role 
-                        })
-                        .eq("id", viewingUser.id);
+                          role: viewingUser.role
+                        }),
+                      });
 
-                      if (error) throw error;
+                      if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Errore durante l'aggiornamento");
+                      }
+
+                      alert("Modifiche salvate con successo!");
                       setViewingUser(null);
                       loadUsers();
                     } catch (err: any) {

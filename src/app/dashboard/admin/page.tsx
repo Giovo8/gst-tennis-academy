@@ -12,6 +12,8 @@ type Stats = {
   totalUsers: number;
   totalBookings: number;
   todayBookings: number;
+  totalTournaments: number;
+  activeTournaments: number;
 };
 
 export default function AdminDashboardPage() {
@@ -19,33 +21,24 @@ export default function AdminDashboardPage() {
     totalUsers: 0,
     totalBookings: 0,
     todayBookings: 0,
+    totalTournaments: 0,
+    activeTournaments: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const [usersRes, bookingsRes, todayBookingsRes] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("bookings").select("id", { count: "exact", head: true }),
-        supabase
-          .from("bookings")
-          .select("id", { count: "exact", head: true })
-          .gte("start_time", today.toISOString())
-          .lt("start_time", tomorrow.toISOString()),
-      ]);
-
-      setStats({
-        totalUsers: usersRes.count || 0,
-        totalBookings: bookingsRes.count || 0,
-        todayBookings: todayBookingsRes.count || 0,
-      });
-
-      setLoading(false);
+      try {
+        const response = await fetch("/api/admin/stats");
+        if (!response.ok) throw new Error("Errore caricamento statistiche");
+        
+        const data = await response.json();
+        setStats(data);
+      } catch (error) {
+        console.error("Errore caricamento statistiche:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadStats();
@@ -68,7 +61,7 @@ export default function AdminDashboardPage() {
           </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           <StatCard
             title="Utenti"
             value={loading ? "..." : stats.totalUsers}
@@ -88,6 +81,20 @@ export default function AdminDashboardPage() {
             value={loading ? "..." : stats.todayBookings}
             icon={<TrendingUp className="h-7 w-7 text-indigo-300" />}
             color="indigo"
+          />
+
+          <StatCard
+            title="Tornei"
+            value={loading ? "..." : stats.totalTournaments}
+            icon={<Trophy className="h-8 w-8 text-orange-300" />}
+            color="orange"
+          />
+
+          <StatCard
+            title="Tornei Attivi"
+            value={loading ? "..." : stats.activeTournaments}
+            icon={<Trophy className="h-8 w-8 text-violet-300" />}
+            color="violet"
           />
         </div>
 

@@ -34,12 +34,18 @@ async function getUserProfile(req: Request) {
 // GET: Ottieni tutte le partite di un torneo o girone
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    // Await params if it's a Promise (Next.js 15+)
+    const params = context.params instanceof Promise ? await context.params : context.params;
+    const tournamentId = params.id;
+    
     const url = new URL(req.url);
     const groupId = url.searchParams.get("group_id");
     const phase = url.searchParams.get("phase"); // 'gironi' o 'eliminazione'
+    
+    console.log('GET group-matches:', { tournamentId, groupId, phase });
     
     let query = supabaseServer
       .from("tournament_matches")
@@ -64,7 +70,7 @@ export async function GET(
           user_id
         )
       `)
-      .eq("tournament_id", params.id);
+      .eq("tournament_id", tournamentId);
     
     if (groupId) {
       // Filtra per girone attraverso i partecipanti
@@ -86,6 +92,36 @@ export async function GET(
         { error: error.message },
         { status: 500 }
       );
+    }
+    
+    console.log(`Loaded ${matches?.length || 0} matches for tournament ${tournamentId}`);
+    
+    // Carica i profili separatamente per ogni partecipante
+    if (matches && matches.length > 0) {
+      const userIds = new Set<string>();
+      matches.forEach(match => {
+        if (match.player1?.user_id) userIds.add(match.player1.user_id);
+        if (match.player2?.user_id) userIds.add(match.player2.user_id);
+      });
+      
+      if (userIds.size > 0) {
+        const { data: profiles } = await supabaseServer
+          .from('profiles')
+          .select('id, full_name, email, avatar_url')
+          .in('id', Array.from(userIds));
+        
+        const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        
+        // Aggiungi i profili ai match
+        matches.forEach(match => {
+          if (match.player1?.user_id) {
+            match.player1.profiles = profilesMap.get(match.player1.user_id);
+          }
+          if (match.player2?.user_id) {
+            match.player2.profiles = profilesMap.get(match.player2.user_id);
+          }
+        });
+      }
     }
     
     return NextResponse.json({ matches: matches || [] });

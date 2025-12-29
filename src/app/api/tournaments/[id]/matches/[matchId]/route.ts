@@ -52,8 +52,9 @@ export async function GET(
 // PUT /api/tournaments/[id]/matches/[matchId] - Update match score (tennis scoring)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; matchId: string } }
+  context: { params: Promise<{ id: string; matchId: string }> | { id: string; matchId: string } }
 ) {
+  const params = context.params instanceof Promise ? await context.params : context.params;
   const supabase = supabaseServer;
 
   try {
@@ -63,13 +64,14 @@ export async function PUT(
       return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
-    // Get current match
+    // Get current match and tournament info
     const { data: currentMatch, error: matchError } = await supabase
       .from("tournament_matches")
       .select(`
         *,
         player1:player1_id(user_id),
-        player2:player2_id(user_id)
+        player2:player2_id(user_id),
+        tournament:tournaments(best_of)
       `)
       .eq("id", params.matchId)
       .single();
@@ -93,98 +95,98 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const {
-      score_detail, // Tennis scoring: { sets: [{set: 1, p1_games: 6, p2_games: 4, tiebreak: null}, ...] }
-      match_status,
-      court_number,
-      scheduled_time,
-      start_time,
-      end_time,
-      stats, // Optional tennis stats
-    } = body;
+    const { sets } = body; // Array: [{ player1_score: 6, player2_score: 3 }, ...]
 
-    // Calculate match result from score_detail
-    let player1_sets = 0;
-    let player2_sets = 0;
-    let winner_id = null;
-    let total_games_p1 = 0;
-    let total_games_p2 = 0;
+    if (!sets || !Array.isArray(sets)) {
+      return NextResponse.json({ error: "Sets array richiesto" }, { status: 400 });
+    }
 
-    if (score_detail && score_detail.sets) {
-      score_detail.sets.forEach((set: any) => {
-        total_games_p1 += set.p1_games || 0;
-        total_games_p2 += set.p2_games || 0;
+    // Validate tennis scoring
+    for (const set of sets) {
+      const { player1_score, player2_score } = set;
+      
+      // Basic validation
+      if (typeof player1_score !== 'number' || typeof player2_score !== 'number') {
+        return NextResponse.json({ error: "Punteggi devono essere numeri" }, { status: 400 });
+      }
 
-        // Determine set winner
-        if (set.p1_games > set.p2_games) {
-          player1_sets++;
-        } else if (set.p2_games > set.p1_games) {
-          player2_sets++;
+      // Tennis rules validation
+      const max_score = Math.max(player1_score, player2_score);
+      const min_score = Math.min(player1_score, player2_score);
+      
+      // Must win by 2 games (unless tiebreak 7-6)
+      if (max_score === 7 && min_score === 6) {
+        // Valid: 7-6 (tiebreak)
+        continue;
+      } else if (max_score >= 6) {
+        if (max_score - min_score < 2) {
+          return NextResponse.json({ 
+            error: `Punteggio non valido: ${player1_score}-${player2_score}. Devi vincere con 2 game di differenza.` 
+          }, { status: 400 });
         }
-      });
-
-      // Determine match winner based on match_format
-      const { data: tournament } = await supabase
-        .from("tournaments")
-        .select("match_format")
-        .eq("id", params.id)
-        .single();
-
-      const setsToWin = tournament?.match_format === "best_of_5" ? 3 : 2;
-
-      if (player1_sets >= setsToWin) {
-        winner_id = currentMatch.player1_id;
-      } else if (player2_sets >= setsToWin) {
-        winner_id = currentMatch.player2_id;
+      } else {
+        return NextResponse.json({ 
+          error: `Punteggio non valido: ${player1_score}-${player2_score}. Servono almeno 6 game per vincere un set.` 
+        }, { status: 400 });
       }
     }
 
-    // Calculate match duration
-    let duration_minutes = null;
-    if (start_time && end_time) {
-      const start = new Date(start_time);
-      const end = new Date(end_time);
-      duration_minutes = Math.round((end.getTime() - start.getTime()) / 60000);
+    // Calculate sets won by each player
+    let player1_sets_won = 0;
+    let player2_sets_won = 0;
+
+    sets.forEach((set: any) => {
+      if (set.player1_score > set.player2_score) {
+        player1_sets_won++;
+      } else if (set.player2_score > set.player1_score) {
+        player2_sets_won++;
+      }
+    });
+
+    // Determine winner based on best_of format
+    const bestOf = (currentMatch.tournament as any)?.best_of || 3;
+    const setsToWin = Math.ceil(bestOf / 2); // 2 for best of 3, 3 for best of 5
+    
+    let winner_id = null;
+    let match_status = 'in_corso';
+
+    if (player1_sets_won >= setsToWin) {
+      winner_id = currentMatch.player1_id;
+      match_status = 'completato';
+    } else if (player2_sets_won >= setsToWin) {
+      winner_id = currentMatch.player2_id;
+      match_status = 'completato';
     }
 
     // Update match
-    const updateData: any = {};
-
-    if (score_detail !== undefined) {
-      updateData.score_detail = score_detail;
-      updateData.player1_sets = player1_sets;
-      updateData.player2_sets = player2_sets;
-      updateData.winner_id = winner_id;
-    }
-
-    if (match_status !== undefined) updateData.match_status = match_status;
-    if (court_number !== undefined) updateData.court_number = court_number;
-    if (scheduled_time !== undefined) updateData.scheduled_time = scheduled_time;
-    if (start_time !== undefined) updateData.start_time = start_time;
-    if (end_time !== undefined) updateData.end_time = end_time;
-    if (duration_minutes !== null) updateData.duration_minutes = duration_minutes;
-    if (stats !== undefined) updateData.stats = stats;
-
-    updateData.updated_at = new Date().toISOString();
-
     const { data: updatedMatch, error: updateError } = await supabase
       .from("tournament_matches")
-      .update(updateData)
+      .update({
+        sets,
+        winner_id,
+        match_status,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", params.matchId)
       .select()
       .single();
 
     if (updateError) throw updateError;
 
-    // If match is completed, update participant stats (trigger will handle this automatically)
+    // If match completed, advance winner to next round
+    if (winner_id && match_status === 'completato') {
+      await advanceWinnerToNextRound(supabase, updatedMatch, winner_id);
+    }
 
     return NextResponse.json({
       success: true,
       message: "Punteggio aggiornato con successo",
       match: updatedMatch,
       winner_id,
+      sets_summary: `${player1_sets_won}-${player2_sets_won}`,
     });
   } catch (error: any) {
+    console.error('Error updating match score:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -247,6 +249,17 @@ export async function PATCH(
       .single();
 
     if (updateError) throw updateError;
+    
+    // Se il match è completato, avanza il vincitore al turno successivo
+    if (winner_id) {
+      await advanceWinnerToNextRound(
+        supabase,
+        params.id,
+        updatedMatch.round_number,
+        updatedMatch.match_number,
+        winner_id
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -300,5 +313,86 @@ export async function DELETE(
       { success: false, error: error.message },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Avanza il vincitore di un match al turno successivo
+ * @param supabase Client Supabase
+ * @param tournamentId ID del torneo
+ * @param currentRound Numero del turno corrente
+ * @param currentMatchNumber Numero del match corrente
+ * @param winnerId ID del vincitore
+ */
+async function advanceWinnerToNextRound(
+  supabase: any,
+  tournamentId: string,
+  currentRound: number,
+  currentMatchNumber: number,
+  winnerId: string
+) {
+  try {
+    // Calcola quale match del turno successivo
+    const nextRound = currentRound + 1;
+    const nextMatchNumber = Math.ceil(currentMatchNumber / 2);
+    
+    // Trova il match del turno successivo
+    const { data: nextMatch, error: findError } = await supabase
+      .from("tournament_matches")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .eq("round_number", nextRound)
+      .eq("match_number", nextMatchNumber)
+      .maybeSingle();
+    
+    if (findError) {
+      console.error("Error finding next match:", findError);
+      return;
+    }
+    
+    if (!nextMatch) {
+      // Non c'è un turno successivo (finale completata)
+      console.log("Tournament completed - no next round");
+      return;
+    }
+    
+    // Determina se il vincitore va in player1 o player2
+    // Match dispari del round corrente -> player1 del prossimo
+    // Match pari del round corrente -> player2 del prossimo
+    const isPlayer1 = currentMatchNumber % 2 === 1;
+    
+    const updateData: any = {};
+    if (isPlayer1) {
+      updateData.player1_id = winnerId;
+    } else {
+      updateData.player2_id = winnerId;
+    }
+    
+    // Se entrambi i giocatori sono ora presenti, cambia lo status a 'scheduled'
+    if (nextMatch.player1_id && isPlayer1 === false) {
+      updateData.match_status = 'scheduled';
+    } else if (nextMatch.player2_id && isPlayer1 === true) {
+      updateData.match_status = 'scheduled';
+    } else if (isPlayer1 && !nextMatch.player2_id) {
+      // Player1 è settato ma player2 no, rimane pending
+      updateData.match_status = 'pending';
+    } else if (!isPlayer1 && !nextMatch.player1_id) {
+      // Player2 è settato ma player1 no, rimane pending
+      updateData.match_status = 'pending';
+    }
+    
+    // Aggiorna il match successivo
+    const { error: updateError } = await supabase
+      .from("tournament_matches")
+      .update(updateData)
+      .eq("id", nextMatch.id);
+    
+    if (updateError) {
+      console.error("Error updating next match:", updateError);
+    } else {
+      console.log(`Winner ${winnerId} advanced to round ${nextRound}, match ${nextMatchNumber}`);
+    }
+  } catch (error) {
+    console.error("Error in advanceWinnerToNextRound:", error);
   }
 }

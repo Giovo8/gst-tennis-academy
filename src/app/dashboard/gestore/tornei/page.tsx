@@ -3,8 +3,11 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Trophy, Award, CheckCircle, Plus } from "lucide-react";
+import { Loader2, Trophy, Award, CheckCircle, Plus, Trash2, BarChart3 } from "lucide-react";
 import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
+import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
+import TournamentStats from "@/components/tournaments/TournamentStats";
+import TournamentReports from "@/components/tournaments/TournamentReports";
 
 type Tournament = {
   id: string;
@@ -31,6 +34,8 @@ function GestoreTorneiPageInner() {
   const selectedTournament = searchParams?.get("t");
   const [filterType, setFilterType] = useState<'all' | 'torneo' | 'campionato'>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [managingTournamentId, setManagingTournamentId] = useState<string | null>(null);
+  const [showReports, setShowReports] = useState(false);
 
   useEffect(() => {
     load();
@@ -52,6 +57,7 @@ function GestoreTorneiPageInner() {
   }
 
   async function loadParticipants(tournamentId: string) {
+    setManagingTournamentId(tournamentId);
     try {
       const res = await fetch(`/api/tournament_participants?tournament_id=${tournamentId}`);
       let json: any = {};
@@ -60,6 +66,31 @@ function GestoreTorneiPageInner() {
       else setError(json.error || 'Errore caricamento partecipanti');
     } catch (err) {
       // ignore
+    }
+  }
+
+  async function handleDeleteTournament(tournamentId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo torneo? Questa azione è irreversibile e cancellerà anche tutti i match e i partecipanti associati.')) {
+      return;
+    }
+
+    setError(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token ?? null;
+      const res = await fetch(`/api/tournaments?id=${tournamentId}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      let json: any = {};
+      try { json = await res.json(); } catch (e) { json = {}; }
+      if (!res.ok) {
+        setError(json.error || 'Errore eliminazione');
+      } else {
+        load();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Errore rete');
     }
   }
 
@@ -109,6 +140,42 @@ function GestoreTorneiPageInner() {
             Scegli tra eliminazione diretta, girone + eliminazione o campionato.
           </p>
         </div>
+      </div>
+
+      {/* Statistics Section */}
+      <div className="mt-8">
+        <TournamentStats />
+      </div>
+
+      {/* Reports Section */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowReports(!showReports)}
+          className="w-full group relative overflow-hidden rounded-xl border border-[#7de3ff]/20 bg-gradient-to-r from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl p-4 transition-all hover:border-[#7de3ff]/40 hover:shadow-lg hover:shadow-[#7de3ff]/10"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-[#7de3ff]/30 to-[#4fb3ff]/30 ring-1 ring-[#7de3ff]/50">
+                <BarChart3 className="w-5 h-5 text-[#7de3ff]" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-bold text-white">Statistiche e Report Avanzati</h3>
+                <p className="text-xs text-gray-400">Classifiche giocatori, performance e storico tornei</p>
+              </div>
+            </div>
+            <div className={`transform transition-transform ${showReports ? 'rotate-180' : ''}`}>
+              <svg className="w-5 h-5 text-[#7de3ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </button>
+        
+        {showReports && (
+          <div className="mt-4 rounded-xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl p-6">
+            <TournamentReports />
+          </div>
+        )}
       </div>
 
       <div className="mt-8 grid gap-6">
@@ -296,12 +363,21 @@ function GestoreTorneiPageInner() {
                     </div>
                     <div className="relative flex items-center gap-2 sm:ml-3">
                       <button
+                        onClick={() => handleDeleteTournament(t.id)}
+                        className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/20 transition-all hover:shadow-md"
+                        title="Elimina torneo"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => {
-                          window.location.href = `/tornei/${t.id}`;
+                          if (confirm('Vuoi chiudere le iscrizioni?')) {
+                            handleEditTournament(t.id, { status: 'Chiuso' });
+                          }
                         }}
                         className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all hover:shadow-md"
                       >
-                        Apri
+                        Chiudi
                       </button>
                       <button
                         onClick={() => loadParticipants(t.id)}
@@ -318,6 +394,39 @@ function GestoreTorneiPageInner() {
           )}
         </div>
       </div>
+
+      {/* Pannello di Gestione Torneo */}
+      {managingTournamentId && (
+        <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl shadow-xl shadow-[#7de3ff]/5">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-20 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" />
+          </div>
+          
+          <div className="relative p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
+                  <Trophy className="w-6 h-6 text-[#7de3ff]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Gestione Torneo</h3>
+                  <p className="text-xs text-gray-400">Gestisci partecipanti, gironi e tabelloni</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setManagingTournamentId(null);
+                  setParticipants([]);
+                }}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all"
+              >
+                Chiudi
+              </button>
+            </div>
+            <TournamentManagerWrapper tournamentId={managingTournamentId} isAdmin={true} />
+          </div>
+        </div>
+      )}
 
       {/* Partecipanti del torneo selezionato */}
       {selectedTournament && participants.length > 0 && (

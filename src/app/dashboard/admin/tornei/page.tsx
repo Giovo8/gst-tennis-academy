@@ -3,9 +3,11 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Trophy, Award, CheckCircle, Plus } from "lucide-react";
+import { Loader2, Trophy, Award, CheckCircle, Plus, Trash2, BarChart3 } from "lucide-react";
 import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
+import TournamentStats from "@/components/tournaments/TournamentStats";
+import TournamentReports from "@/components/tournaments/TournamentReports";
 
 type Tournament = {
   id: string;
@@ -31,6 +33,7 @@ function AdminTorneiPageInner() {
   const searchParams = useSearchParams();
   const selectedTournament = searchParams?.get("t");
   const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
+  const [showReports, setShowReports] = useState(false);
 
   const getTournamentTypeLabel = (type?: string) => {
     switch(type) {
@@ -104,6 +107,31 @@ function AdminTorneiPageInner() {
     }
   }
 
+  async function handleDeleteTournament(tournamentId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo torneo? Questa azione è irreversibile e cancellerà anche tutti i match e i partecipanti associati.')) {
+      return;
+    }
+
+    setError(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token ?? null;
+      const res = await fetch(`/api/tournaments?id=${tournamentId}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      let json: any = {};
+      try { json = await res.json(); } catch (e) { json = {}; }
+      if (!res.ok) {
+        setError(json.error || 'Errore eliminazione');
+      } else {
+        load();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Errore rete');
+    }
+  }
+
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
       {/* Header Section with Gradient */}
@@ -128,6 +156,42 @@ function AdminTorneiPageInner() {
             Scegli tra eliminazione diretta, girone + eliminazione o campionato.
           </p>
         </div>
+      </div>
+
+      {/* Statistics Section */}
+      <div className="mt-8">
+        <TournamentStats />
+      </div>
+
+      {/* Reports Section */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowReports(!showReports)}
+          className="w-full group relative overflow-hidden rounded-xl border border-[#7de3ff]/20 bg-gradient-to-r from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl p-4 transition-all hover:border-[#7de3ff]/40 hover:shadow-lg hover:shadow-[#7de3ff]/10"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-[#7de3ff]/30 to-[#4fb3ff]/30 ring-1 ring-[#7de3ff]/50">
+                <BarChart3 className="w-5 h-5 text-[#7de3ff]" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-bold text-white">Statistiche e Report Avanzati</h3>
+                <p className="text-xs text-gray-400">Classifiche giocatori, performance e storico tornei</p>
+              </div>
+            </div>
+            <div className={`transform transition-transform ${showReports ? 'rotate-180' : ''}`}>
+              <svg className="w-5 h-5 text-[#7de3ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </button>
+        
+        {showReports && (
+          <div className="mt-4 rounded-xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl p-6">
+            <TournamentReports />
+          </div>
+        )}
       </div>
 
       <div className="mt-8 grid gap-6">
@@ -321,6 +385,13 @@ function AdminTorneiPageInner() {
                       </div>
                     </div>
                     <div className="relative flex items-center gap-2 sm:ml-3">
+                      <button
+                        onClick={() => handleDeleteTournament(t.id)}
+                        className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/20 transition-all hover:shadow-md"
+                        title="Elimina torneo"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => {
                           if (confirm('Vuoi chiudere le iscrizioni?')) {
