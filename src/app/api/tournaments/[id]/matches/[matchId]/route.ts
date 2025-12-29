@@ -175,7 +175,13 @@ export async function PUT(
 
     // If match completed, advance winner to next round
     if (winner_id && match_status === 'completato') {
-      await advanceWinnerToNextRound(supabase, updatedMatch, winner_id);
+      await advanceWinnerToNextRound(
+        supabase,
+        params.id,
+        updatedMatch.round_number,
+        updatedMatch.match_number,
+        winner_id
+      );
     }
 
     return NextResponse.json({
