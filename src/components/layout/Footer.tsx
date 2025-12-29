@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="bg-[#050a14] border-t border-white/5">
       <div className="container py-lg">
         {/* Main Footer Content */}
-        <div className="grid gap-lg md:grid-cols-4 mb-8">
+        <div className="grid gap-lg md:grid-cols-4 mb-5">
           {/* Brand Column */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">

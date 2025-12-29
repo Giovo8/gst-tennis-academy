@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function DashboardLinkCard({ href, icon, title, description, footer, size = "md", className = "" }: Props) {
-  const sizeClasses = size === "lg" ? "p-8" : "p-6";
+  const sizeClasses = size === "lg" ? "p-6" : "p-5";
   
   return (
     <Link

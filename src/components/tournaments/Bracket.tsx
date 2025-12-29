@@ -54,7 +54,7 @@ export default function Bracket({
   
   if (total === 0) {
     return (
-      <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 text-center">
+      <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 text-center">
         <p className="text-muted-2">
           Nessun partecipante ancora. Il tabellone verrà generato quando ci saranno iscrizioni.
         </p>

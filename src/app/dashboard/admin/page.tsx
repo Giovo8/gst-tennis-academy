@@ -54,9 +54,9 @@ export default function AdminDashboardPage() {
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="min-h-screen bg-gradient-to-br from-[#021627] via-[#031a35] to-[#021627] text-white">
-        <main className="mx-auto flex max-w-7xl flex-col gap-10 px-6 py-16">
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10">
           {/* Header */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 text-blue-400">
               <Settings className="h-5 w-5" />
               <p className="text-sm uppercase tracking-[0.2em] font-semibold">Area Amministrazione</p>
@@ -141,7 +141,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-8">
+        <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             <div className="w-1.5 h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full"></div>
             Azioni Rapide

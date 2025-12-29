@@ -67,7 +67,7 @@ export default function LoginClient() {
   };
 
   return (
-    <main className="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-center gap-8 px-6 py-16">
+    <main className="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-center gap-5 px-6 py-16">
       <div className="mx-auto w-full max-w-md">
       {/* Animated background gradients */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -76,16 +76,16 @@ export default function LoginClient() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full blur-3xl bg-blue-500/5" />
       </div>
 
-      <div className="relative space-y-3 text-center">
-        <p className="text-xs uppercase tracking-[0.2em] font-semibold text-blue-400">Area Riservata</p>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent leading-tight">Accedi</h1>
+      <div className="relative space-y-1 text-center">
+        <p className="text-xs uppercase tracking-[0.2em] font-semibold text-blue-400 mb-1">Area Riservata</p>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-200 to-cyan-300 bg-clip-text text-transparent leading-tight mb-2">Accedi</h1>
         <p className="text-sm text-gray-300">Inserisci le tue credenziali per continuare.</p>
       </div>
 
-      <div className="relative rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-8 shadow-2xl shadow-blue-500/10">
-        <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="relative rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6 shadow-2xl shadow-blue-500/10">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
               Email
             </label>
             <input
@@ -99,7 +99,7 @@ export default function LoginClient() {
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -142,13 +142,13 @@ export default function LoginClient() {
         </form>
         
         {error && (
-          <div className="mt-5 rounded-xl border border-red-400/30 bg-gradient-to-br from-red-500/10 to-transparent backdrop-blur-sm p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="mt-4 rounded-xl border border-red-400/30 bg-gradient-to-br from-red-500/10 to-transparent backdrop-blur-sm p-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <p className="text-sm text-red-200 font-medium">{error}</p>
           </div>
         )}
       </div>
 
-      <div className="relative text-center space-y-4">
+      <div className="relative text-center space-y-3">
         <p className="text-sm text-gray-400 font-medium">Per richiedere un account, contatta l'amministrazione:</p>
         <div className="flex items-center justify-center gap-3 flex-wrap">
           <a

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Trophy, Users, Calendar } from 'lucide-react';
+import BracketMatchCard from './BracketMatchCard';
 
 interface Participant {
   id: string;
@@ -50,10 +51,62 @@ export default function EliminationBracket({
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     loadMatches();
+    checkAdminRole();
   }, [tournamentId]);
+
+  const checkAdminRole = async () => {
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setIsAdmin(['admin', 'gestore'].includes(profile?.role?.toLowerCase() || ''));
+      }
+    } catch (error) {
+      console.error('Error checking role:', error);
+    }
+  };
+
+  const handleScoreSubmit = async (matchId: string, player1Score: number, player2Score: number) => {
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Non autenticato');
+      }
+
+      const res = await fetch(`/api/tournaments/${tournamentId}/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          player1_score: player1Score,
+          player2_score: player2Score
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Errore nell\'aggiornamento del punteggio');
+      }
+
+      await loadMatches();
+      if (onMatchUpdate) onMatchUpdate();
+    } catch (error) {
+      console.error('Error updating match:', error);
+      throw error;
+    }
+  };
 
   const loadMatches = async () => {
     try {
@@ -103,7 +156,7 @@ export default function EliminationBracket({
 
   if (matches.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
         <Trophy className="mx-auto h-12 w-12 text-muted mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">Bracket non ancora generato</h3>
         <p className="text-sm text-muted mb-6">
@@ -154,10 +207,11 @@ export default function EliminationBracket({
                 
                 <div className="space-y-3">
                   {roundMatches.map(match => (
-                    <MatchCard
+                    <BracketMatchCard
                       key={match.id}
                       match={match}
-                      onUpdate={onMatchUpdate}
+                      isAdmin={isAdmin}
+                      onScoreSubmit={handleScoreSubmit}
                     />
                   ))}
                 </div>
@@ -166,58 +220,6 @@ export default function EliminationBracket({
           })}
         </div>
       </div>
-    </div>
-  );
-}
-
-function MatchCard({ match, onUpdate }: { match: Match; onUpdate?: () => void }) {
-  const isCompleted = match.status === 'completata';
-  
-  return (
-    <div className="rounded-lg border border-border bg-surface-lighter overflow-hidden">
-      {/* Player 1 */}
-      <div className={`flex items-center justify-between p-3 ${
-        isCompleted && match.winner_id === match.player1?.id 
-          ? 'bg-accent/20 border-l-4 border-l-accent' 
-          : ''
-      }`}>
-        <span className="text-sm text-white flex-1">
-          {match.player1?.user_id || 'TBD'}
-        </span>
-        {isCompleted && (
-          <span className="text-sm font-bold text-white ml-2">
-            {match.player1_score}
-          </span>
-        )}
-      </div>
-      
-      <div className="h-px bg-border" />
-      
-      {/* Player 2 */}
-      <div className={`flex items-center justify-between p-3 ${
-        isCompleted && match.winner_id === match.player2?.id 
-          ? 'bg-accent/20 border-l-4 border-l-accent' 
-          : ''
-      }`}>
-        <span className="text-sm text-white flex-1">
-          {match.player2?.user_id || 'TBD'}
-        </span>
-        {isCompleted && (
-          <span className="text-sm font-bold text-white ml-2">
-            {match.player2_score}
-          </span>
-        )}
-      </div>
-      
-      {/* Status */}
-      {!isCompleted && match.player1 && match.player2 && (
-        <div className="border-t border-border bg-surface p-2 text-center">
-          <span className="text-xs text-muted">
-            {match.status === 'programmata' ? 'Da giocare' : 
-             match.status === 'in_corso' ? 'In corso' : match.status}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

@@ -167,7 +167,7 @@ export default function AdminStaffPage() {
     <div className="min-h-screen bg-[#021627] text-white p-6">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/dashboard/admin"
@@ -188,7 +188,7 @@ export default function AdminStaffPage() {
 
         {/* Form */}
         {showForm && (
-          <div className="mb-8 rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+          <div className="mb-5 rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
             <h2 className="text-xl font-semibold mb-4">
               {editingId ? "Modifica Membro" : "Nuovo Membro"}
             </h2>
@@ -295,7 +295,7 @@ export default function AdminStaffPage() {
         {/* Staff List */}
         <div className="space-y-4">
           {staff.length === 0 ? (
-            <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8 text-center">
+            <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 text-center">
               <p className="text-muted">Nessun membro dello staff presente.</p>
             </div>
           ) : (

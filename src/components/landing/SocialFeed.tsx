@@ -59,12 +59,12 @@ export default function SocialFeed() {
   }, [embeds]);
 
     return (
-      <section id="social" className="max-w-7xl mx-auto px-6 py-16">
-        <div className="space-y-12">
-          <div className="space-y-3 mb-12">
+      <section id="social" className="max-w-7xl mx-auto px-6 py-10">
+        <div className="space-y-8">
+          <div className="space-y-1 mb-6">
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2">Social Feed</p>
+                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-1">Social Feed</p>
                 <h2 className="text-4xl font-bold gradient-text leading-tight">Seguici sui social</h2>
               </div>
 
@@ -94,7 +94,7 @@ export default function SocialFeed() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] transition-all">
               <iframe
                 title="Facebook Page"

@@ -2,10 +2,10 @@ import { Mail, MessageCircle, MapPin, Phone, Clock } from "lucide-react";
 
 export default function CTASection() {
   return (
-    <section id="contatti" className="max-w-7xl mx-auto px-6 py-16">
-      <div className="space-y-12">
-        <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
-          <div className="space-y-2">
+    <section id="contatti" className="max-w-7xl mx-auto px-6 py-10">
+      <div className="space-y-8">
+        <div className="flex flex-wrap items-center justify-between gap-6 mb-6">
+          <div className="space-y-1">
             <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
               Contattaci
             </p>
@@ -35,7 +35,7 @@ export default function CTASection() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3">
           {/* Location */}
           <article className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2, Trophy, Award, CheckCircle, Plus } from "lucide-react";
 import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
+import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 
 type Tournament = {
   id: string;
@@ -12,8 +13,7 @@ type Tournament = {
   description?: string;
   start_date?: string;
   max_participants?: number;
-  competition_type?: 'torneo' | 'campionato';
-  format?: 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
+  tournament_type?: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
   status?: string;
   category?: string;
   surface_type?: string;
@@ -30,8 +30,25 @@ function AdminTorneiPageInner() {
   const [sessionInfo, setSessionInfo] = useState<{userId?: string, role?: string, token?: string}>({});
   const searchParams = useSearchParams();
   const selectedTournament = searchParams?.get("t");
-  const [filterType, setFilterType] = useState<'all' | 'torneo' | 'campionato'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
+
+  const getTournamentTypeLabel = (type?: string) => {
+    switch(type) {
+      case 'eliminazione_diretta': return 'Eliminazione Diretta';
+      case 'girone_eliminazione': return 'Girone + Eliminazione';
+      case 'campionato': return 'Campionato';
+      default: return 'Torneo';
+    }
+  };
+
+  const getTournamentTypeIcon = (type?: string) => {
+    switch(type) {
+      case 'campionato': return Award;
+      default: return Trophy;
+    }
+  };
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [managingTournamentId, setManagingTournamentId] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -53,6 +70,7 @@ function AdminTorneiPageInner() {
   }
 
   async function loadParticipants(tournamentId: string) {
+    setManagingTournamentId(tournamentId);
     try {
       const res = await fetch(`/api/tournament_participants?tournament_id=${tournamentId}`);
       let json: any = {};
@@ -89,7 +107,7 @@ function AdminTorneiPageInner() {
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
       {/* Header Section with Gradient */}
-      <div className="relative mb-8">
+      <div className="relative mb-5">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full bg-[#7de3ff]/10 blur-3xl" />
           <div className="absolute right-1/4 top-20 h-48 w-48 rounded-full bg-[#4fb3ff]/10 blur-3xl" />
@@ -121,7 +139,7 @@ function AdminTorneiPageInner() {
             <div className="absolute right-10 bottom-10 h-24 w-24 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-2xl" style={{animationDuration: '6s', animationDelay: '2s'}} />
           </div>
           
-          <div className="relative p-8">
+          <div className="relative p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="group-hover:scale-110 transition-transform duration-300">
@@ -199,14 +217,24 @@ function AdminTorneiPageInner() {
                 Tutte
               </button>
               <button
-                onClick={() => setFilterType('torneo')}
+                onClick={() => setFilterType('eliminazione_diretta')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                  filterType === 'torneo'
+                  filterType === 'eliminazione_diretta'
                     ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
                     : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
                 }`}
               >
-                Tornei
+                Eliminazione
+              </button>
+              <button
+                onClick={() => setFilterType('girone_eliminazione')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                  filterType === 'girone_eliminazione'
+                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
+                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
+                }`}
+              >
+                Gironi
               </button>
               <button
                 onClick={() => setFilterType('campionato')}
@@ -248,8 +276,11 @@ function AdminTorneiPageInner() {
           {!loading && tournaments.length > 0 && (
             <div className="space-y-3">
               {tournaments
-                .filter((t) => filterType === 'all' || t.competition_type === filterType)
-                .map((t) => (
+                .filter((t) => filterType === 'all' || t.tournament_type === filterType)
+                .map((t) => {
+                  const Icon = getTournamentTypeIcon(t.tournament_type);
+                  const typeLabel = getTournamentTypeLabel(t.tournament_type);
+                  return (
                   <div
                     key={t.id}
                     className="group/item relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/40 hover:bg-[#0a1929]/80 transition-all duration-300 hover:shadow-lg hover:shadow-[#7de3ff]/10 hover:-translate-y-0.5"
@@ -262,23 +293,15 @@ function AdminTorneiPageInner() {
                         <div className="relative">
                           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-0 group-hover/item:opacity-20 blur-lg transition-opacity" />
                           <div className="relative p-3 rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30">
-                        {t.competition_type === 'campionato' ? (
-                          <Award className="w-5 h-5 text-[#4fb3ff]" />
-                        ) : (
-                          <Trophy className="w-5 h-5 text-[#7de3ff]" />
-                        )}
+                            <Icon className="w-5 h-5 text-[#7de3ff]" />
                           </div>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-white mb-2 truncate group-hover/item:text-[#7de3ff] transition-colors">{t.title}</h3>
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className={`px-2 py-0.5 rounded-full ${
-                            t.competition_type === 'campionato'
-                              ? 'bg-[#4fb3ff]/10 text-[#4fb3ff]'
-                              : 'bg-[#7de3ff]/10 text-[#7de3ff]'
-                          }`}>
-                            {t.competition_type === 'campionato' ? 'Campionato' : 'Torneo'}
+                          <span className="px-2 py-0.5 rounded-full bg-[#7de3ff]/10 text-[#7de3ff]">
+                            {typeLabel}
                           </span>
                           {t.start_date && (
                             <span>📅 {new Date(t.start_date).toLocaleDateString('it-IT')}</span>
@@ -317,10 +340,44 @@ function AdminTorneiPageInner() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
             </div>
           )}
         </div>
+
+        {/* Pannello di Gestione Torneo */}
+        {managingTournamentId && (
+          <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl shadow-xl shadow-[#7de3ff]/5">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute left-20 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" />
+            </div>
+            
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
+                    <Trophy className="w-6 h-6 text-[#7de3ff]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Gestione Torneo</h3>
+                    <p className="text-xs text-gray-400">Gestisci partecipanti, gironi e tabelloni</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setManagingTournamentId(null);
+                    setParticipants([]);
+                  }}
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all"
+                >
+                  Chiudi
+                </button>
+              </div>
+              <TournamentManagerWrapper tournamentId={managingTournamentId} isAdmin={true} />
+            </div>
+          </div>
+        )}
 
         {/* Partecipanti del torneo selezionato */}
         {selectedTournament && participants.length > 0 && (

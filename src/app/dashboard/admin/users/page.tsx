@@ -252,7 +252,7 @@ export default function UsersPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-16 bg-[#021627] text-white">
+      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10 bg-[#021627] text-white">
         {/* Header */}
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
@@ -395,7 +395,7 @@ export default function UsersPage() {
         {/* View User Details Modal - Scheda Anagrafica */}
         {viewingUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto">
-            <div className="w-full max-w-4xl rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-8 shadow-2xl my-8">
+            <div className="w-full max-w-4xl rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-6 shadow-2xl my-8">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">

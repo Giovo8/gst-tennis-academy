@@ -100,15 +100,15 @@ export default function Hero() {
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16">
-      <div className="relative overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-6 py-12 sm:px-10 sm:py-16 shadow-2xl shadow-[var(--accent-strong)]/10">
+    <section className="max-w-7xl mx-auto px-6 py-10">
+      <div className="relative overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-6 py-10 sm:px-10 sm:py-12 shadow-2xl shadow-[var(--accent-strong)]/10">
       {/* Animated background gradients */}
       <div className="pointer-events-none absolute left-16 top-10 h-40 w-40 rounded-full blur-3xl bg-[var(--accent-strong)]/20 animate-pulse" />
       <div className="pointer-events-none absolute right-12 bottom-10 h-32 w-32 rounded-full blur-3xl bg-[var(--accent-strong)]/15 animate-pulse" style={{animationDelay: '1s'}} />
       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full blur-3xl bg-[var(--accent-mid)]/10" />
 
-      <div className="relative grid gap-10 lg:grid-cols-2 lg:items-stretch">
-        <div className="flex flex-col space-y-8">
+      <div className="relative grid gap-8 lg:grid-cols-2 lg:items-stretch">
+        <div className="flex flex-col space-y-5">
           <div className="inline-flex items-center gap-3 rounded-full border border-[var(--glass-border)] bg-accent-15 backdrop-blur-xl px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-accent w-fit shadow-lg shadow-accent-strong/10 hover:shadow-accent-strong/20 transition-all duration-300">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-strong opacity-75"></span>
@@ -116,7 +116,7 @@ export default function Hero() {
             </span>
             {content.badge_text}
           </div>
-          <div className="space-y-6 flex-1">
+          <div className="space-y-4 flex-1">
             <h1 className="text-5xl font-bold leading-tight sm:text-6xl">
               <span className="text-white">{content.title.split(content.title_highlight)[0]}</span>
               <span className="gradient-text">{content.title_highlight}</span>

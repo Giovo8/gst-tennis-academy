@@ -64,7 +64,7 @@ export default function ChampionshipStandingsView({ participants }: Championship
 
   if (participants.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
         <Trophy className="mx-auto h-12 w-12 text-muted mb-4" />
         <p className="text-sm text-muted">Nessun partecipante ancora</p>
       </div>

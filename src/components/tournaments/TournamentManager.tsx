@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Trophy, Users, Target, Loader2 } from 'lucide-react';
+import { Trophy, Users, Target, Loader2, Trash2 } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
+import ManualEnrollment from './ManualEnrollment';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -100,6 +101,74 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
     }
   };
 
+  const handleRemoveParticipant = async (participantId: string, participantName: string) => {
+    if (!confirm(`Sei sicuro di voler rimuovere ${participantName} dal torneo?`)) {
+      return;
+    }
+
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        alert('Sessione non valida');
+        return;
+      }
+
+      const res = await fetch(`/api/tournament_participants?id=${participantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (res.ok) {
+        alert('Partecipante rimosso con successo');
+        loadData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Errore nella rimozione del partecipante');
+      }
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      alert('Errore nella rimozione del partecipante');
+    }
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!confirm('⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo torneo?\n\nQuesta azione è irreversibile e cancellerà:\n- Il torneo\n- Tutti i partecipanti\n- Tutte le partite\n- Tutte le statistiche')) {
+      return;
+    }
+
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        alert('Sessione non valida');
+        return;
+      }
+
+      const res = await fetch(`/api/tournaments?id=${tournament.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (res.ok) {
+        alert('Torneo eliminato con successo');
+        window.location.href = '/dashboard/admin/tornei';
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Errore nell\'eliminazione del torneo');
+      }
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+      alert('Errore nell\'eliminazione del torneo');
+    }
+  };
+
   const getTournamentTypeInfo = () => {
     switch (tournament.tournament_type) {
       case 'eliminazione_diretta':
@@ -168,28 +237,49 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
           </div>
 
           {/* Azioni Admin */}
-          {isAdmin && tournament.current_phase === 'iscrizioni' && participants.length >= 2 && (
-            <button
-              onClick={handleStartTournament}
-              disabled={starting}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 disabled:opacity-50"
-            >
-              {starting ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Avvio...
-                </span>
-              ) : (
-                'Avvia Torneo'
-              )}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {isAdmin && tournament.current_phase === 'iscrizioni' && (
+              <ManualEnrollment 
+                tournamentId={tournament.id}
+                currentParticipants={participants.length}
+                maxParticipants={tournament.max_participants}
+                onEnrollmentSuccess={loadData}
+              />
+            )}
+            
+            {isAdmin && tournament.current_phase === 'iscrizioni' && participants.length >= 2 && (
+              <button
+                onClick={handleStartTournament}
+                disabled={starting}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 disabled:opacity-50"
+              >
+                {starting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Avvio...
+                  </span>
+                ) : (
+                  'Avvia Torneo'
+                )}
+              </button>
+            )}
+
+            {isAdmin && (
+              <button
+                onClick={handleDeleteTournament}
+                className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all"
+                title="Elimina torneo"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Contenuto in base al tipo e fase */}
       {tournament.current_phase === 'iscrizioni' && (
-        <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+        <div className="rounded-2xl border border-border bg-surface p-6 text-center">
           <Users className="mx-auto h-12 w-12 text-muted mb-4" />
           <h4 className="text-lg font-semibold text-white mb-2">
             Fase Iscrizioni
@@ -255,21 +345,61 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
       {/* Lista Partecipanti */}
       {participants.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-6">
-          <h4 className="font-semibold text-white mb-4">
-            Partecipanti ({participants.length})
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-semibold text-white">
+              Partecipanti ({participants.length})
+            </h4>
+            {isAdmin && tournament.current_phase === 'iscrizioni' && (
+              <ManualEnrollment 
+                tournamentId={tournament.id}
+                currentParticipants={participants.length}
+                maxParticipants={tournament.max_participants}
+                onEnrollmentSuccess={loadData}
+              />
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {participants.map((participant: any) => (
               <div
                 key={participant.id}
-                className="rounded-lg border border-border bg-surface-lighter px-3 py-2 text-sm text-white"
+                className="rounded-lg border border-border bg-surface-lighter p-3"
               >
-                {participant.user_id}
-                {participant.seed && (
-                  <span className="ml-2 text-xs text-muted">
-                    #{participant.seed}
-                  </span>
-                )}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {participant.profiles?.full_name || participant.user_id || 'Giocatore'}
+                    </p>
+                    {participant.profiles?.email && (
+                      <p className="text-xs text-muted mt-1 truncate">
+                        {participant.profiles.email}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {participant.seed && (
+                        <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
+                          Testa di serie #{participant.seed}
+                        </span>
+                      )}
+                      {participant.stats?.matches_played > 0 && (
+                        <span className="text-xs text-muted">
+                          {participant.stats.matches_won}W - {participant.stats.matches_lost}L
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {isAdmin && tournament.current_phase === 'iscrizioni' && (
+                    <button
+                      onClick={() => handleRemoveParticipant(
+                        participant.id, 
+                        participant.profiles?.full_name || participant.user_id || 'Giocatore'
+                      )}
+                      className="flex-shrink-0 rounded-lg p-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                      title="Rimuovi partecipante"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -53,9 +53,9 @@ export default function GestoreDashboardPage() {
 
   return (
     <AuthGuard allowedRoles={["gestore", "admin"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-12 bg-[#021627] text-white">
+      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10 bg-[#021627] text-white">
         {/* Header */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Area Gestione

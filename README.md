@@ -31,10 +31,14 @@
   - Girone + Eliminazione (fase a gironi + tabellone finale)
   - Campionato (round-robin, tutti contro tutti)
 - 🏆 Sistema completo con wizard di creazione intuitivo
+- � **Iscrizione manuale atleti** da parte di admin/gestore
+- 🔍 Ricerca e selezione utenti con filtri
 - 📊 Punteggi tennis autentici (set, game, tie-break)
 - 📋 Classifiche automatiche con differenze set/games
-- 🎮 Tabelloni interattivi e aggiornamento risultati in tempo reale
+- 🎮 **Tabelloni interattivi** con inserimento risultati real-time
+- 🏅 **Visualizzazione vincitori** con evidenziazione e trofei
 - 📱 Visualizzazione ottimizzata per desktop e mobile
+- 🗑️ Rimozione partecipanti e eliminazione tornei
 - 🥇 Classifiche e statistiche dettagliate
 - 📱 Iscrizioni online con conferma automatica
 - 📧 Notifiche email per match e risultati

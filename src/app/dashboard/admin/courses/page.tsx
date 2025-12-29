@@ -185,7 +185,7 @@ export default function AdminCoursesPage() {
   return (
     <div className="min-h-screen bg-[#021627] p-6 text-white">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/dashboard/admin"
@@ -205,7 +205,7 @@ export default function AdminCoursesPage() {
         </div>
 
         {showForm && (
-          <div className="mb-6 rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+          <div className="mb-5 rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
             <h2 className="mb-4 text-xl font-semibold">
               {editingId ? "Modifica Sezione" : "Nuova Sezione"}
             </h2>

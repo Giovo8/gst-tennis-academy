@@ -97,7 +97,7 @@ export default function CompetitionView({
   // Formato misto: girone + eliminazione
   if (format === 'girone_eliminazione') {
     return (
-      <div className="space-y-8">
+      <div className="space-y-5">
         <div className="section-header">
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
@@ -146,7 +146,7 @@ export default function CompetitionView({
 
         {/* Fallback se non ci sono ancora dati */}
         {(!groups_data || groups_data.length === 0) && (!rounds_data || rounds_data.length === 0) && (
-          <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-8 text-center">
+          <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 text-center">
             <p className="text-muted-2">
               La struttura della competizione verrà generata una volta raggiunti i partecipanti necessari.
             </p>

@@ -85,7 +85,7 @@ export default function AdminHeroContentPage() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
@@ -107,7 +107,7 @@ export default function AdminHeroContentPage() {
           </button>
         </div>
 
-        <div className="space-y-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="space-y-5 rounded-2xl border border-white/10 bg-white/5 p-6">
           {/* Badge */}
           <div>
             <label className="block text-sm font-medium text-white mb-2">Badge Testo</label>

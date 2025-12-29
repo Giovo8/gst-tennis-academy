@@ -2,24 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Trophy, Award } from "lucide-react";
+import { Loader2, Trophy, Award, Target } from "lucide-react";
 
-type CompetitionType = 'torneo' | 'campionato';
+type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
 type Tournament = {
   id: string;
   title: string;
   start_date?: string;
   max_participants?: number;
-  competition_type?: CompetitionType;
-  format?: string;
+  tournament_type?: TournamentType;
   status?: string;
 };
 
 export default function TournamentsSection() {
   const [items, setItems] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | CompetitionType>('all');
+  const [filter, setFilter] = useState<'all' | TournamentType>('all');
 
   useEffect(() => {
     let mounted = true;
@@ -43,15 +42,34 @@ export default function TournamentsSection() {
   // Filter items based on selected tab
   const filteredItems = filter === 'all' 
     ? items 
-    : items.filter(item => item.competition_type === filter);
+    : items.filter(item => item.tournament_type === filter);
 
-  const torneiCount = items.filter(t => t.competition_type === 'torneo' || !t.competition_type).length;
-  const campionatiCount = items.filter(t => t.competition_type === 'campionato').length;
+  const eliminazioneCount = items.filter(t => t.tournament_type === 'eliminazione_diretta').length;
+  const gironeCount = items.filter(t => t.tournament_type === 'girone_eliminazione').length;
+  const campionatoCount = items.filter(t => t.tournament_type === 'campionato').length;
+
+  const getTournamentTypeLabel = (type?: TournamentType) => {
+    switch(type) {
+      case 'eliminazione_diretta': return 'Eliminazione Diretta';
+      case 'girone_eliminazione': return 'Girone + Eliminazione';
+      case 'campionato': return 'Campionato';
+      default: return 'Torneo';
+    }
+  };
+
+  const getTournamentTypeIcon = (type?: TournamentType) => {
+    switch(type) {
+      case 'eliminazione_diretta': return Trophy;
+      case 'girone_eliminazione': return Target;
+      case 'campionato': return Award;
+      default: return Trophy;
+    }
+  };
 
   return (
-    <section id="tornei" className="max-w-7xl mx-auto px-6 py-16">
-      <div className="space-y-12">
-        <div className="space-y-3 mb-12">
+    <section id="tornei" className="max-w-7xl mx-auto px-6 py-10">
+      <div className="space-y-8">
+        <div className="space-y-1 mb-6">
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">Competizioni</p>
           <h2 className="text-4xl font-bold gradient-text leading-tight">
             Tornei e Campionati
@@ -68,18 +86,29 @@ export default function TournamentsSection() {
                 : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
             }`}
           >
-            Tutte ({items.length})
+            Tutti ({items.length})
           </button>
           <button
-            onClick={() => setFilter('torneo')}
+            onClick={() => setFilter('eliminazione_diretta')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-              filter === 'torneo'
+              filter === 'eliminazione_diretta'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
                 : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
             }`}
           >
             <Trophy className="w-4 h-4" />
-            Tornei ({torneiCount})
+            Eliminazione ({eliminazioneCount})
+          </button>
+          <button
+            onClick={() => setFilter('girone_eliminazione')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+              filter === 'girone_eliminazione'
+                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
+                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            Gironi ({gironeCount})
           </button>
           <button
             onClick={() => setFilter('campionato')}
@@ -90,12 +119,12 @@ export default function TournamentsSection() {
             }`}
           >
             <Award className="w-4 h-4" />
-            Campionati ({campionatiCount})
+            Campionati ({campionatoCount})
           </button>
         </div>
 
         {/* Content Grid */}
-        <div className="grid gap-4 md:gap-6 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3">
         {loading ? (
           <div className="col-span-3 flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-accent" />
@@ -104,97 +133,80 @@ export default function TournamentsSection() {
           <div className="col-span-3 text-center py-12">
             <p className="text-sm text-muted-2">
               {filter === 'all' 
-                ? 'Nessuna competizione imminente.' 
-                : filter === 'torneo'
-                ? 'Nessun torneo imminente.'
-                : 'Nessun campionato imminente.'}
+                ? 'Nessun torneo imminente.' 
+                : `Nessun torneo di tipo "${getTournamentTypeLabel(filter as TournamentType)}" imminente.`}
             </p>
           </div>
         ) : (
           filteredItems.slice(0, 6).map(t => {
-            const isTorneo = t.competition_type === 'torneo' || !t.competition_type;
+            const Icon = getTournamentTypeIcon(t.tournament_type);
+            const typeLabel = getTournamentTypeLabel(t.tournament_type);
             
             return (
               <article 
                 key={t.id} 
-                className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 space-y-4 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-2 transition-all duration-300"
+                className="group flex h-full flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300"
               >
-                {/* Header with icon and type badge */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    {isTorneo ? (
-                      <div className="p-2 rounded-xl bg-accent-20 text-accent group-hover:scale-110 transition-transform">
-                        <Trophy className="w-5 h-5" />
+                <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
+                  {/* Header with icon and type badge */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-accent-20 text-accent group-hover:scale-110 transition-transform border border-[var(--glass-border)]">
+                        <Icon className="w-5 h-5" />
                       </div>
-                    ) : (
-                      <div className="p-2 rounded-xl bg-accent-15 text-accent group-hover:scale-110 transition-transform">
-                        <Award className="w-5 h-5" />
+                      <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-accent border border-[var(--glass-border)]">
+                        {typeLabel}
+                      </span>
+                    </div>
+                    {t.status && (
+                      <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                        t.status === 'Aperto' 
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                          : t.status === 'In Corso'
+                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                          : 'bg-gray-500/20 text-gray-300 border border-gray-500/40'
+                      }`}>
+                        {t.status}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-lg font-bold gradient-text">{t.title}</h3>
+
+                  {/* Info */}
+                  <div className="space-y-2.5 text-sm">
+                    {t.start_date && (
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{new Date(t.start_date).toLocaleDateString('it-IT', { 
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric'
+                        })}</span>
                       </div>
                     )}
-                    <span className="text-xs font-bold uppercase tracking-wider text-accent">
-                      {isTorneo ? 'Torneo' : 'Campionato'}
-                    </span>
+                    {t.max_participants && (
+                      <div className="flex items-center gap-3 text-gray-300">
+                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>{t.max_participants} partecipanti</span>
+                      </div>
+                    )}
                   </div>
-                  {t.status && (
-                    <span className={`text-xs px-3 py-1 rounded-full font-bold ${
-                      t.status === 'Aperto' 
-                        ? 'bg-accent-15 text-accent border border-[var(--glass-border)]'
-                        : t.status === 'In corso'
-                        ? 'bg-accent-20 text-accent border border-[var(--glass-border)]'
-                        : 'bg-gray-500/20 text-gray-300 border border-gray-500/40'
-                    }`}>
-                      {t.status}
-                    </span>
-                  )}
-                </div>
 
-                {/* Title */}
-                <div>
-                  <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-accent transition-colors">{t.title}</h3>
-                </div>
-
-                {/* Info */}
-                <div className="space-y-2.5 text-sm">
-                  {t.start_date && (
-                    <div className="flex items-center gap-3 text-gray-400">
-                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{new Date(t.start_date).toLocaleDateString('it-IT', { 
-                        day: 'numeric', 
-                        month: 'long', 
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}</span>
-                    </div>
-                  )}
-                  {t.max_participants && (
-                    <div className="flex items-center gap-3 text-gray-400">
-                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <span>{t.max_participants} partecipanti</span>
-                    </div>
-                  )}
-                  {t.format && (
-                    <div className="flex items-center gap-3 text-gray-400">
-                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <span className="capitalize">{t.format.replace('_', ' ')}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* CTA Button */}
-                <div className="pt-2">
-                  <Link 
-                    href={`/tornei/${t.id}`} 
-                    className="block w-full text-center rounded-xl accent-gradient px-6 py-3 text-sm font-bold text-text-dark hover:shadow-lg hover:shadow-accent-strong/30 transition-all duration-300 group-hover:scale-105"
-                  >
-                    Vedi Dettagli
-                  </Link>
+                  {/* CTA Button */}
+                  <div className="pt-2 mt-auto">
+                    <Link 
+                      href={`/tornei/${t.id}`} 
+                      className="block w-full text-center rounded-xl accent-gradient px-6 py-3 text-sm font-bold text-text-dark hover:shadow-lg hover:shadow-accent-strong/30 transition-all duration-300 group-hover:scale-105"
+                    >
+                      Vedi Dettagli
+                    </Link>
+                  </div>
                 </div>
               </article>
             );

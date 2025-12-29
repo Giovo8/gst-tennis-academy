@@ -192,6 +192,74 @@ export async function PUT(
   }
 }
 
+// PATCH /api/tournaments/[id]/matches/[matchId] - Quick score update (simple scoring)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string; matchId: string } }
+) {
+  const supabase = supabaseServer;
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "gestore", "Admin", "Gestore"].includes(profile.role)) {
+      return NextResponse.json({ error: "Permesso negato" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { player1_score, player2_score } = body;
+
+    if (player1_score === undefined || player2_score === undefined) {
+      return NextResponse.json({ error: "Punteggi mancanti" }, { status: 400 });
+    }
+
+    // Get current match
+    const { data: currentMatch, error: matchError } = await supabase
+      .from("tournament_matches")
+      .select("*")
+      .eq("id", params.matchId)
+      .single();
+
+    if (matchError) throw matchError;
+
+    const winner_id = player1_score > player2_score ? currentMatch.player1_id : currentMatch.player2_id;
+
+    const { data: updatedMatch, error: updateError } = await supabase
+      .from("tournament_matches")
+      .update({
+        player1_sets: player1_score,
+        player2_sets: player2_score,
+        winner_id: winner_id,
+        match_status: 'completed',
+        end_time: new Date().toISOString()
+      })
+      .eq("id", params.matchId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({
+      success: true,
+      match: updatedMatch,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/tournaments/[id]/matches/[matchId] - Delete match (admin only)
 export async function DELETE(
   request: NextRequest,

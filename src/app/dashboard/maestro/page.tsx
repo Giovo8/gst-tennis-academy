@@ -217,7 +217,7 @@ export default function MaestroDashboardPage() {
   return (
     <AuthGuard allowedRoles={["maestro"]}>
       <div className="min-h-screen bg-[#021627] text-white">
-        <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-16">
+        <main className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-10">
           {/* Header */}
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">

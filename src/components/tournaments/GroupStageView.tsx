@@ -141,7 +141,7 @@ export default function GroupStageView({
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
         <Users className="mx-auto h-12 w-12 text-muted mb-4" />
         <p className="text-sm text-muted">Nessun girone configurato</p>
       </div>

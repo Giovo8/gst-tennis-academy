@@ -20,7 +20,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 py-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 py-10">
       <div className="max-w-7xl mx-auto">
         <ChatPanel />
       </div>

@@ -74,7 +74,7 @@ export default function AthleteStatsView() {
 
   if (!stats) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
         <Activity className="w-16 h-16 mx-auto text-gray-400 mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           Nessuna Statistica Disponibile

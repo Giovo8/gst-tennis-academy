@@ -1,6 +1,6 @@
 # Sistema Tornei Semplificato - Documentazione
 
-**Ultimo aggiornamento**: 28 Dicembre 2025  
+**Ultimo aggiornamento**: 29 Dicembre 2025  
 **Status**: ✅ Implementato e Testato
 
 ## Panoramica
@@ -13,8 +13,20 @@ Il sistema gestisce 3 tipi di torneo in modo intuitivo:
 
 ## Modifiche Recenti
 
+### v1.2.0 - 29 Dicembre 2025
+- ✅ Implementato sistema completo di iscrizione manuale atleti
+- ✅ Aggiunto componente ManualEnrollment con ricerca utenti
+- ✅ Implementato BracketMatchCard per visualizzazione partite migliorata
+- ✅ Aggiunta possibilità di inserire risultati partite (solo admin/gestore)
+- ✅ Implementata rimozione partecipanti da tornei in fase iscrizioni
+- ✅ Aggiunta funzione eliminazione torneo con conferma
+- ✅ Aggiornato TournamentsSection home page con layout coerente
+- ✅ Corretti tipi tournament_type su tutta l'applicazione
+- ✅ API endpoint /api/users per caricamento utenti
+- ✅ API endpoint PATCH per aggiornamento punteggi partite
+
 ### v1.0.0 - 28 Dicembre 2025
-- ✅ Implementato sistema completo con 3 tipi di torneo
+- ✅ Implementato sistema base con 3 tipi di torneo
 - ✅ Aggiornato schema database (start_date/end_date)
 - ✅ Rimossa colonna obsoleta created_by
 - ✅ Creati componenti UI: SimpleTournamentCreator, TournamentManager, KnockoutBracket

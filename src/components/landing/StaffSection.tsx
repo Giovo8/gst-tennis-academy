@@ -73,9 +73,9 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff" className="max-w-7xl mx-auto px-6 py-16">
-      <div className="space-y-12">
-        <div className="space-y-3 mb-12">
+    <section id="staff" className="max-w-7xl mx-auto px-6 py-10">
+      <div className="space-y-8">
+        <div className="space-y-1 mb-6">
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
             Il nostro staff
           </p>
@@ -84,7 +84,7 @@ export default function StaffSection() {
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3">
         {staff.map((member) => (
           <article key={member.id} className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
             {member.image_url ? (

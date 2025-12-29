@@ -5,7 +5,7 @@ import { XCircle } from "lucide-react";
 
 export default function RegisterPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center gap-6 px-6 py-16 bg-[#021627]">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center gap-5 px-6 py-10 bg-[#021627]">
       <div className="mx-auto w-full max-w-md">
       <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-8 text-center">
         <XCircle className="mx-auto h-16 w-16 text-cyan-300 mb-4" />

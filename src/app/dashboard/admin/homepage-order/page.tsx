@@ -107,7 +107,7 @@ export default function AdminHomepageOrderPage() {
     <div className="min-h-screen bg-[#021627] text-white p-6">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/dashboard/admin"
