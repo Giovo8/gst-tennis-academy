@@ -70,17 +70,20 @@ export default function TournamentsSection() {
   };
 
   return (
-    <section id="tornei" className="max-w-7xl mx-auto px-6 py-10">
-      <div className="space-y-8">
-        <div className="space-y-1 mb-6">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">Competizioni</p>
-          <h2 className="text-4xl font-bold gradient-text leading-tight">
+    <section id="tornei" className="max-w-7xl mx-auto px-6 py-20">
+      <div className="space-y-12">
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3">Competizioni</p>
+          <h2 className="text-5xl font-bold gradient-text mb-4">
             Tornei e Campionati
           </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Partecipa alle nostre competizioni e metti alla prova le tue abilità
+          </p>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
+        <div className="flex justify-center gap-3 mb-8 overflow-x-auto pb-2">
           <button
             onClick={() => setFilter('all')}
             className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${

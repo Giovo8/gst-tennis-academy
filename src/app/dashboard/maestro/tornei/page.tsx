@@ -142,7 +142,7 @@ export default function MaestroTorneiPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex justify-center gap-2 overflow-x-auto pb-2">
         <button
           onClick={() => setFilterStatus('all')}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${

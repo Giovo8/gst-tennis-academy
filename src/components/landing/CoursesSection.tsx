@@ -52,15 +52,18 @@ export default function CoursesSection() {
   }
 
   return (
-    <section id="programmi" className="max-w-7xl mx-auto px-6 py-10">
-      <div className="space-y-8">
-        <div className="space-y-1 mb-6">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
+    <section id="programmi" className="max-w-7xl mx-auto px-6 py-20">
+      <div className="space-y-12">
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3">
             Corsi e Abbonamenti
           </p>
-          <h2 className="text-4xl font-bold gradient-text leading-tight">
+          <h2 className="text-5xl font-bold gradient-text mb-4">
           Scegli il tuo percorso tennis
         </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Scopri i nostri programmi di allenamento personalizzati per tutti i livelli
+          </p>
       </div>
 
       <div className="flex flex-col gap-6">

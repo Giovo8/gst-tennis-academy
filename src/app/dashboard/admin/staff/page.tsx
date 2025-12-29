@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Edit2, Trash2, Save, X, User } from "lucide-react";
 import Link from "next/link";
 
 type StaffMember = {
-  id: number;
+  id: string;
   full_name: string;
   role: string;
   bio: string;
@@ -27,7 +27,7 @@ type FormData = {
 export default function AdminStaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     full_name: "",
@@ -113,7 +113,10 @@ export default function AdminStaffPage() {
           })
           .eq("id", editingId);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Errore update:", error);
+          throw error;
+        }
       } else {
         // Create new
         const { error } = await supabase.from("staff").insert({
@@ -125,18 +128,22 @@ export default function AdminStaffPage() {
           active: formData.active,
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Errore insert:", error);
+          throw error;
+        }
       }
 
       await loadStaff();
       handleCancel();
-    } catch (error) {
+    } catch (error: any) {
       // Handle error with user feedback
-      alert("Errore nel salvataggio dello staff member");
+      console.error("Errore completo:", error);
+      alert(`Errore nel salvataggio dello staff member: ${error.message || error.toString()}`);
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!confirm("Sei sicuro di voler eliminare questo membro dello staff?")) {
       return;
     }

@@ -73,15 +73,19 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff" className="max-w-7xl mx-auto px-6 py-10">
-      <div className="space-y-8">
-        <div className="space-y-1 mb-6">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
+    <section id="staff" className="max-w-7xl mx-auto px-6 py-20">
+      <div className="space-y-12">
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3 text-center">
             Il nostro staff
           </p>
-          <h2 className="text-4xl font-bold gradient-text leading-tight">
-            Incontra il team
+          <h2 className="text-5xl font-bold gradient-text mb-4">
+            I nostri professionisti
           </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Un team di esperti dedicato al tuo miglioramento
+          </p>
+
         </div>
 
         <div className="grid gap-5 md:grid-cols-3">

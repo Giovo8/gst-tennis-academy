@@ -1,150 +1,80 @@
 "use client";
 
 import React from "react";
-import { Instagram, Facebook } from "lucide-react";
+import { Instagram, Facebook, Youtube } from "lucide-react";
 
 export default function SocialFeed() {
-  const [embeds, setEmbeds] = React.useState<Array<{ html?: string; url?: string }>|null>(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    let mounted = true;
-    async function load() {
-      setLoading(true);
-      try {
-        // request recent posts by username gst_tennis
-        const res = await fetch('/api/social/instagram?username=gst_tennis');
-        const json = await res.json();
-        if (!res.ok || !json.ok) {
-          // Silently fail - show fallback UI
-          setEmbeds([]);
-        } else {
-          const items = (json.results || []).map((r: any) => ({ html: r.html, url: r.url }));
-          if (mounted) setEmbeds(items);
-        }
-      } catch (err: any) {
-        // Silently fail - show fallback UI
-        setEmbeds([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    load();
-    return () => { mounted = false; };
-  }, []);
-
-  // load Instagram embed script when we have url-only results
-  React.useEffect(() => {
-    if (!embeds) return;
-    const hasUrlOnly = embeds.some(e => !!e.url && !e.html);
-    if (!hasUrlOnly) return;
-    const id = 'instagram-embed-script';
-    if (document.getElementById(id)) {
-      // process existing embeds
-      // @ts-ignore
-      if ((window as any).instgrm && (window as any).instgrm.Embeds) (window as any).instgrm.Embeds.process();
-      return;
-    }
-    const s = document.createElement('script');
-    s.id = id;
-    s.async = true;
-    s.defer = true;
-    s.src = 'https://www.instagram.com/embed.js';
-    s.onload = () => {
-      // @ts-ignore
-      if ((window as any).instgrm && (window as any).instgrm.Embeds) (window as any).instgrm.Embeds.process();
-    };
-    document.body.appendChild(s);
-  }, [embeds]);
 
     return (
-      <section id="social" className="max-w-7xl mx-auto px-6 py-10">
-        <div className="space-y-8">
-          <div className="space-y-1 mb-6">
-            <div className="flex flex-wrap items-center justify-between gap-6">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-1">Social Feed</p>
-                <h2 className="text-4xl font-bold gradient-text leading-tight">Seguici sui social</h2>
-              </div>
+      <section id="social" className="max-w-7xl mx-auto px-6 py-20">
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3">Social Feed</p>
+          <h2 className="text-5xl font-bold gradient-text mb-4">Seguici sui social</h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Resta aggiornato su tutte le nostre attività, eventi e successi seguendoci sui nostri canali social
+          </p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+            <a
+              href="https://www.facebook.com/TnnisTimeOut/"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Segui su Facebook"
+              className="group inline-flex items-center gap-3 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-500/20 to-blue-600/10 backdrop-blur-sm px-6 py-3.5 text-base font-bold text-white transition-all hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-1"
+            >
+              <Facebook className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              Facebook
+            </a>
 
-              <div className="flex items-center gap-3">
-                <a
-                  href="https://www.facebook.com/TnnisTimeOut/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Segui su Facebook"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-gradient-to-r from-accent-mid/20 to-transparent backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-lg hover:shadow-[var(--shadow-glow)] hover:-translate-y-0.5"
-                >
-                  <Facebook className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  Facebook
-                </a>
+            <a
+              href="https://www.instagram.com/gst_tennis/"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Segui su Instagram"
+              className="group inline-flex items-center gap-3 rounded-2xl border border-pink-500/30 bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-purple-600/10 backdrop-blur-sm px-6 py-3.5 text-base font-bold text-white transition-all hover:border-pink-500/50 hover:shadow-lg hover:shadow-pink-500/20 hover:-translate-y-1"
+            >
+              <Instagram className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              Instagram
+            </a>
 
-                <a
-                  href="https://www.instagram.com/gst_tennis/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Segui su Instagram"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-sm px-4 py-2 text-sm font-bold text-white transition-all hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5"
-                >
-                  <Instagram className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  Instagram
-                </a>
-              </div>
-            </div>
+            <a
+              href="#youtube"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Segui su YouTube"
+              className="group inline-flex items-center gap-3 rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/20 to-red-600/10 backdrop-blur-sm px-6 py-3.5 text-base font-bold text-white transition-all hover:border-red-500/50 hover:shadow-lg hover:shadow-red-500/20 hover:-translate-y-1"
+            >
+              <Youtube className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              YouTube
+            </a>
+
+            <a
+              href="https://wa.me/393762351777"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Contattaci su WhatsApp"
+              className="group inline-flex items-center gap-3 rounded-2xl border border-green-500/30 bg-gradient-to-r from-green-500/20 to-green-600/10 backdrop-blur-sm px-6 py-3.5 text-base font-bold text-white transition-all hover:border-green-500/50 hover:shadow-lg hover:shadow-green-500/20 hover:-translate-y-1"
+            >
+              <svg className="h-5 w-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+              WhatsApp
+            </a>
           </div>
+        </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] transition-all">
-              <iframe
-                title="Facebook Page"
-                src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`}
-                width="100%"
-                height={500}
-                style={{ border: 'none', overflow: 'hidden', maxWidth: '100%' }}
-                scrolling="no"
-                frameBorder={0}
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                className="w-full"
-              />
-            </div>
-
-            <div className="rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-xl p-6 hover:border-cyan-400/40 hover:shadow-xl hover:shadow-cyan-500/20 transition-all">
-              {loading && <p className="text-sm text-gray-400">Caricamento Instagram...</p>}
-
-              {!loading && embeds && embeds.length > 0 ? (
-                <div className="space-y-4">
-                  {embeds.map((it, idx) => (
-                    <div key={idx}>
-                      {it.html ? (
-                        <div className="instagram-embed" dangerouslySetInnerHTML={{ __html: it.html }} />
-                      ) : it.url ? (
-                        <blockquote className="instagram-media" data-instgrm-permalink={it.url} data-instgrm-version="14">
-                          <a href={it.url}>{it.url}</a>
-                        </blockquote>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              ) : !loading ? (
-                <div className="text-center">
-                  <Instagram className="h-12 w-12 mx-auto mb-4 text-pink-300/60" />
-                  <p className="text-lg font-bold bg-gradient-to-r from-pink-200 to-purple-300 bg-clip-text text-transparent mb-2">Seguici su Instagram!</p>
-                  <p className="text-sm text-gray-400 mb-6">Segui il profilo Instagram ufficiale per gli ultimi post.</p>
-
-                  <a
-                    href="https://www.instagram.com/gst_tennis/"
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Apri Instagram gst_tennis"
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-bold text-white transition-all hover:shadow-xl hover:shadow-cyan-500/30 hover:-translate-y-1"
-                  >
-                    <Instagram className="h-5 w-5" />
-                    Vai su Instagram
-                  </a>
-                </div>
-              ) : null}
-            </div>
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 backdrop-blur-xl overflow-hidden shadow-xl shadow-blue-500/20 w-fit mx-auto">
+            <iframe
+              title="Facebook Page"
+              src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=500&height=650&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`}
+              width="500"
+              height={650}
+              style={{ border: 'none', overflow: 'hidden', display: 'block' }}
+              scrolling="no"
+              frameBorder={0}
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+            />
           </div>
         </div>
       </section>

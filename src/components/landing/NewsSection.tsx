@@ -100,15 +100,18 @@ export default function NewsSection() {
 
   return (
     <>
-      <section id="news" className="max-w-7xl mx-auto px-6 py-10">
-        <div className="space-y-8">
-          <div className="space-y-1 mb-6">
-            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
+      <section id="news" className="max-w-7xl mx-auto px-6 py-20">
+        <div className="space-y-12">
+          <div className="text-center mb-12">
+            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3 text-center">
               Ultime News
             </p>
-            <h2 className="text-4xl font-bold gradient-text leading-tight">
+            <h2 className="text-5xl font-bold gradient-text mb-4">
               Novità e Aggiornamenti
             </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Resta aggiornato su tutte le novità e gli eventi della nostra accademia
+            </p>
           </div>
 
         <div className="grid gap-5 md:grid-cols-3">
@@ -119,11 +122,11 @@ export default function NewsSection() {
               className="group flex h-full flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden cursor-pointer hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300"
             >
               {item.image_url && (
-                <div className="w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-accent-dark/30 to-gray-900/50 group-hover:from-accent-dark/40 transition-all">
+                <div className="w-full aspect-[16/9] overflow-hidden">
                   <img
                     src={item.image_url}
                     alt={item.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
               )}
@@ -169,11 +172,11 @@ export default function NewsSection() {
           </button>
 
           {selectedNews.image_url && (
-            <div className="w-full max-h-96 overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-accent-dark/30 to-gray-900/50 flex items-center justify-center">
+            <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl mb-6">
               <img
                 src={selectedNews.image_url}
                 alt={selectedNews.title}
-                className="w-full h-full object-contain max-h-96"
+                className="w-full h-full object-cover"
               />
             </div>
           )}

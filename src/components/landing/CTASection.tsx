@@ -2,19 +2,20 @@ import { Mail, MessageCircle, MapPin, Phone, Clock } from "lucide-react";
 
 export default function CTASection() {
   return (
-    <section id="contatti" className="max-w-7xl mx-auto px-6 py-10">
-      <div className="space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-6 mb-6">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent">
-              Contattaci
-            </p>
-            <h2 className="text-4xl font-bold gradient-text leading-tight">
-              Informazioni e orari
-            </h2>
-          </div>
+    <section id="contatti" className="max-w-7xl mx-auto px-6 py-20">
+      <div className="space-y-12">
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3">
+            Contattaci
+          </p>
+          <h2 className="text-5xl font-bold gradient-text mb-4">
+            Informazioni e orari
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto mb-8">
+            Siamo a tua disposizione per qualsiasi informazione
+          </p>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <a
               href="https://wa.me/393762351777"
               target="_blank"

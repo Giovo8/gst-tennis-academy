@@ -253,7 +253,7 @@ function GestoreTorneiPageInner() {
                 <h2 className="text-xl font-bold text-white mb-1">Competizioni Attive</h2>
                 <p className="text-sm text-gray-400">Gestisci e monitora tutti i tornei</p>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex justify-center gap-2 overflow-x-auto pb-1">
               <button
                 onClick={() => setFilterType('all')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${

@@ -5,6 +5,47 @@ All notable changes to GST Tennis Academy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-12-29
+
+### Changed
+- **Footer Redesign**: Simplified and centered footer layout
+  - Removed multi-column grid layout
+  - Centered all content vertically
+  - Kept logo, tagline, social icons, and "Lavora con noi" link
+  - Removed "Fatto con ❤️ per il tennis" text
+  - Removed contact info cards (Location, Contatti, Orari)
+  
+- **Dashboard Components**: Restored all dashboards to original dark theme
+  - Reverted from white sidebar layout to dark glassmorphism design
+  - Admin, Maestro, and Atleta dashboards use original StatCard and DashboardLinkCard components
+  - Maintained gradient backgrounds, backdrop-blur effects, and cyan accent color (#7de3ff)
+
+- **Staff Management**:
+  - Fixed TypeScript types: changed `StaffMember.id` from `number` to `string` (UUID compatibility)
+  - Changed `editingId` type from `number | null` to `string | null`
+  - Enhanced error logging in handleSave function
+
+- **UI Polish**:
+  - Added explicit `text-center` class to section badges (StaffSection, NewsSection)
+  - Removed duplicate "Incontra il team" heading from StaffSection
+  - Applied dark glassmorphism styling to Facebook social feed
+  - Fixed social feed container sizing to match iframe width (500px)
+
+### Fixed
+- **TypeScript Errors**: 
+  - Removed invalid `coach` role from DashboardSidebar roleLabels (only valid roles: atleta, maestro, gestore, admin)
+  - All TypeScript compilation errors resolved
+
+### Added
+- **Database Migration**: Created `FIX_STAFF_RLS.sql` with Row Level Security policies for staff table
+  - SELECT policy for public access
+  - INSERT, UPDATE, DELETE policies for admin and gestore roles
+  - Awaiting execution in Supabase dashboard
+
+### Documentation
+- Updated CHANGELOG.md with recent changes
+- All code changes properly documented
+
 ## [1.2.0] - 2025-12-29
 
 ### Added
