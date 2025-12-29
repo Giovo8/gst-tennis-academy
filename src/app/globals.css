@@ -245,7 +245,7 @@ p {
   padding-bottom: var(--space-8);
 }
 
-@media (min-width: var(--breakpoint-md)) {
+@media (min-width: 768px) {
   .container { padding-left: var(--space-5); padding-right: var(--space-5); }
 }
 
