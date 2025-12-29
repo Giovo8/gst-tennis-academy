@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Trophy, TrendingUp, Target, Flame, Calendar, Award, Activity, Medal } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import StatCard from "@/components/dashboard/StatCard";
 
 interface AthleteStats {
   user_id: string;
