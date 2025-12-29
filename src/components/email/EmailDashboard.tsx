@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import StatCard from "@/components/dashboard/StatCard";
 import {
   Mail,
   Send,
@@ -151,79 +152,57 @@ export default function EmailDashboard() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Inviate</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {stats.total_sent}
-                </p>
+          <StatCard
+            title="Inviate"
+            value={stats.total_sent}
+            icon={<Mail className="h-8 w-8 text-blue-300" />}
+            color="blue"
+            footer={
+              <div className="flex items-center gap-1 text-sm">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 font-semibold">{stats.delivery_rate}%</span>
+                <span className="text-gray-400">consegnate</span>
               </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Mail className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-sm">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="text-green-500 font-semibold">{stats.delivery_rate}%</span>
-              <span className="text-gray-500">consegnate</span>
-            </div>
-          </div>
+            }
+          />
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Consegnate</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {stats.total_delivered}
-                </p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-blue-400" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-sm">
-              <span className="text-gray-500">
+          <StatCard
+            title="Consegnate"
+            value={stats.total_delivered}
+            icon={<CheckCircle className="h-8 w-8 text-emerald-300" />}
+            color="green"
+            footer={
+              <span className="text-sm text-gray-400">
                 {stats.total_failed} fallite
               </span>
-            </div>
-          </div>
+            }
+          />
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Aperte</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {stats.total_opened}
-                </p>
+          <StatCard
+            title="Aperte"
+            value={stats.total_opened}
+            icon={<Eye className="h-8 w-8 text-purple-300" />}
+            color="purple"
+            footer={
+              <div className="flex items-center gap-1 text-sm">
+                <span className="text-purple-400 font-semibold">{stats.open_rate}%</span>
+                <span className="text-gray-400">tasso apertura</span>
               </div>
-              <div className="bg-cyan-100 p-3 rounded-lg">
-                <Eye className="w-6 h-6 text-cyan-400" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-sm">
-              <span className="text-purple-500 font-semibold">{stats.open_rate}%</span>
-              <span className="text-gray-500">tasso apertura</span>
-            </div>
-          </div>
+            }
+          />
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Click</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {stats.total_clicked}
-                </p>
+          <StatCard
+            title="Click"
+            value={stats.total_clicked}
+            icon={<MousePointer className="h-8 w-8 text-red-300" />}
+            color="red"
+            footer={
+              <div className="flex items-center gap-1 text-sm">
+                <span className="text-red-400 font-semibold">{stats.click_rate}%</span>
+                <span className="text-gray-400">tasso click</span>
               </div>
-              <div className="bg-pink-100 p-3 rounded-lg">
-                <MousePointer className="w-6 h-6 text-pink-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-sm">
-              <span className="text-pink-500 font-semibold">{stats.click_rate}%</span>
-              <span className="text-gray-500">tasso click</span>
-            </div>
-          </div>
+            }
+          />
         </div>
       )}
 

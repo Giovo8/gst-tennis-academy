@@ -97,77 +97,57 @@ export default function AthleteStatsView() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Matches */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Partite Totali</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total_matches}
-              </p>
-              <p className="text-sm text-blue-400 mt-1">
-                {stats.matches_won}V - {stats.matches_lost}S
-              </p>
-            </div>
-            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
-              <Trophy className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Partite Totali"
+          value={stats.total_matches}
+          icon={<Trophy className="h-8 w-8 text-blue-300" />}
+          color="blue"
+          footer={
+            <p className="text-sm text-gray-400">
+              {stats.matches_won}V - {stats.matches_lost}S
+            </p>
+          }
+        />
 
         {/* Win Rate */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Percentuale Vittorie</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.win_rate?.toFixed(1) || "0.0"}%
+        <StatCard
+          title="Percentuale Vittorie"
+          value={`${stats.win_rate?.toFixed(1) || "0.0"}%`}
+          icon={<Target className="h-8 w-8 text-emerald-300" />}
+          color="green"
+          footer={
+            <div className="flex items-center gap-1">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <p className="text-sm text-gray-400">
+                {stats.current_win_streak > 0 ? `${stats.current_win_streak} consecutive` : "In crescita"}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-4 h-4 text-blue-400" />
-                <p className="text-sm text-blue-400">
-                  {stats.current_win_streak > 0 ? `${stats.current_win_streak} consecutive` : "In crescita"}
-                </p>
-              </div>
             </div>
-            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
-              <Target className="w-8 h-8 text-blue-400 dark:text-blue-300" />
-            </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Sets Record */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Set</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total_sets}
-              </p>
-              <p className={`text-sm mt-1 ${setDifferential >= 0 ? "text-blue-400" : "text-cyan-400"}`}>
-                {setDifferential >= 0 ? "+" : ""}{setDifferential} Set Diff
-              </p>
-            </div>
-            <div className="bg-cyan-100 dark:bg-cyan-900 p-3 rounded-lg">
-              <Activity className="w-8 h-8 text-cyan-400 dark:text-cyan-300" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Set"
+          value={stats.total_sets}
+          icon={<Activity className="h-8 w-8 text-teal-300" />}
+          color="teal"
+          footer={
+            <p className="text-sm text-gray-400">
+              {setDifferential >= 0 ? "+" : ""}{setDifferential} Set Diff
+            </p>
+          }
+        />
 
         {/* Longest Streak */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Striscia Record</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.longest_win_streak}
-              </p>
-              <p className="text-sm text-blue-400 mt-1">vittorie consecutive</p>
-            </div>
-            <div className="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-lg">
-              <Flame className="w-8 h-8 text-blue-400 dark:text-blue-300" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Striscia Record"
+          value={stats.longest_win_streak}
+          icon={<Flame className="h-8 w-8 text-orange-300" />}
+          color="orange"
+          footer={
+            <p className="text-sm text-gray-400">vittorie consecutive</p>
+          }
+        />
       </div>
 
       {/* Performance Breakdown */}

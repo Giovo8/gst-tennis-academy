@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Trophy, Users, Target, TrendingUp, Calendar, Award } from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
 
 interface TournamentStats {
   total: number;
@@ -55,167 +56,110 @@ export default function TournamentStats() {
 
   if (!stats) return null;
 
-  const statCards = [
-    {
-      title: 'Tornei Totali',
-      value: stats.total,
-      icon: Trophy,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/30'
-    },
-    {
-      title: 'In Corso',
-      value: stats.active,
-      icon: TrendingUp,
-      color: 'from-green-500 to-emerald-500',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/30'
-    },
-    {
-      title: 'Completati',
-      value: stats.completed,
-      icon: Award,
-      color: 'from-yellow-500 to-orange-500',
-      bgColor: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-500/30'
-    },
-    {
-      title: 'In Arrivo',
-      value: stats.upcoming,
-      icon: Calendar,
-      color: 'from-purple-500 to-pink-500',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/30'
-    },
-    {
-      title: 'Partecipanti',
-      value: stats.totalParticipants,
-      icon: Users,
-      color: 'from-cyan-500 to-blue-500',
-      bgColor: 'bg-cyan-500/10',
-      borderColor: 'border-cyan-500/30'
-    },
-    {
-      title: 'Match Totali',
-      value: stats.totalMatches,
-      icon: Target,
-      color: 'from-orange-500 to-red-500',
-      bgColor: 'bg-orange-500/10',
-      borderColor: 'border-orange-500/30'
-    },
-    {
-      title: 'Match Completati',
-      value: stats.completedMatches,
-      icon: Trophy,
-      color: 'from-teal-500 to-green-500',
-      bgColor: 'bg-teal-500/10',
-      borderColor: 'border-teal-500/30'
-    },
-    {
-      title: 'Eliminazione Diretta',
-      value: stats.byType.eliminazione_diretta,
-      icon: Trophy,
-      color: 'from-red-500 to-pink-500',
-      bgColor: 'bg-red-500/10',
-      borderColor: 'border-red-500/30'
-    }
-  ];
-
   return (
     <div className="space-y-6">
       {/* Main Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.slice(0, 4).map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className={`group relative overflow-hidden rounded-2xl border ${stat.borderColor} ${stat.bgColor} backdrop-blur-xl p-6 transition-all hover:scale-105 hover:shadow-lg`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="relative space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-                    {stat.title}
-                  </p>
-                  <Icon className="h-5 w-5 text-accent opacity-60" />
-                </div>
-                
-                <p className={`text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
-                  {stat.value}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+        <StatCard
+          title="Tornei Totali"
+          value={stats.total}
+          icon={<Trophy className="h-8 w-8 text-blue-300" />}
+          color="blue"
+        />
+        <StatCard
+          title="In Corso"
+          value={stats.active}
+          icon={<TrendingUp className="h-8 w-8 text-emerald-300" />}
+          color="green"
+        />
+        <StatCard
+          title="Completati"
+          value={stats.completed}
+          icon={<Award className="h-8 w-8 text-amber-300" />}
+          color="yellow"
+        />
+        <StatCard
+          title="In Arrivo"
+          value={stats.upcoming}
+          icon={<Calendar className="h-8 w-8 text-violet-300" />}
+          color="violet"
+        />
       </div>
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.slice(4).map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className={`rounded-xl border ${stat.borderColor} ${stat.bgColor} p-4 transition-all hover:scale-105`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`rounded-lg ${stat.bgColor} p-2`}>
-                  <Icon className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted">{stat.title}</p>
-                  <p className="text-lg font-bold text-white">{stat.value}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <StatCard
+          title="Partecipanti"
+          value={stats.totalParticipants}
+          icon={<Users className="h-8 w-8 text-teal-300" />}
+          color="teal"
+          size="sm"
+        />
+        <StatCard
+          title="Match Totali"
+          value={stats.totalMatches}
+          icon={<Target className="h-8 w-8 text-orange-300" />}
+          color="orange"
+          size="sm"
+        />
+        <StatCard
+          title="Match Completati"
+          value={stats.completedMatches}
+          icon={<Trophy className="h-8 w-8 text-lime-300" />}
+          color="lime"
+          size="sm"
+        />
+        <StatCard
+          title="Eliminazione Diretta"
+          value={stats.byType.eliminazione_diretta}
+          icon={<Trophy className="h-8 w-8 text-red-300" />}
+          color="red"
+          size="sm"
+        />
       </div>
 
       {/* Tournament Types Breakdown */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-4">
+      <div className="rounded-2xl border-2 border-blue-400/50 bg-gradient-to-br from-blue-500/25 via-blue-600/20 to-blue-700/15 backdrop-blur-sm p-6 hover:border-blue-400/70 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-300 mb-4 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-blue-400" />
           Distribuzione per Tipo
         </h3>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-white">Eliminazione Diretta</span>
-              <span className="text-sm font-bold text-accent">{stats.byType.eliminazione_diretta}</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-white font-medium">Eliminazione Diretta</span>
+              <span className="text-sm font-bold bg-gradient-to-r from-red-300 to-red-400 bg-clip-text text-transparent">{stats.byType.eliminazione_diretta}</span>
             </div>
-            <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-red-500 to-pink-500 rounded-full transition-all"
-                style={{ width: `${(stats.byType.eliminazione_diretta / stats.total) * 100}%` }}
+                className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-500"
+                style={{ width: `${stats.total > 0 ? (stats.byType.eliminazione_diretta / stats.total) * 100 : 0}%` }}
               />
             </div>
           </div>
           
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-white">Girone + Eliminazione</span>
-              <span className="text-sm font-bold text-accent">{stats.byType.girone_eliminazione}</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-white font-medium">Girone + Eliminazione</span>
+              <span className="text-sm font-bold bg-gradient-to-r from-blue-300 to-cyan-400 bg-clip-text text-transparent">{stats.byType.girone_eliminazione}</span>
             </div>
-            <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all"
-                style={{ width: `${(stats.byType.girone_eliminazione / stats.total) * 100}%` }}
+                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
+                style={{ width: `${stats.total > 0 ? (stats.byType.girone_eliminazione / stats.total) * 100 : 0}%` }}
               />
             </div>
           </div>
           
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-white">Campionato</span>
-              <span className="text-sm font-bold text-accent">{stats.byType.campionato}</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-white font-medium">Campionato</span>
+              <span className="text-sm font-bold bg-gradient-to-r from-emerald-300 to-green-400 bg-clip-text text-transparent">{stats.byType.campionato}</span>
             </div>
-            <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all"
-                style={{ width: `${(stats.byType.campionato / stats.total) * 100}%` }}
+                className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-500"
+                style={{ width: `${stats.total > 0 ? (stats.byType.campionato / stats.total) * 100 : 0}%` }}
               />
             </div>
           </div>

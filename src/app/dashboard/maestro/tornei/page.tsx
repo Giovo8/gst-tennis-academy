@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Trophy, Calendar, Users, Award, Eye } from 'lucide-react';
+import StatCard from "@/components/dashboard/StatCard";
 
 interface Tournament {
   id: string;
@@ -111,59 +112,33 @@ export default function MaestroTorneiPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-500/10 p-2">
-              <Trophy className="h-5 w-5 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted">Tornei Totali</p>
-              <p className="text-2xl font-bold text-white">{tournaments.length}</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Tornei Totali"
+          value={tournaments.length}
+          icon={<Trophy className="h-8 w-8 text-blue-300" />}
+          color="blue"
+        />
 
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-500/10 p-2">
-              <Calendar className="h-5 w-5 text-green-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted">Aperti</p>
-              <p className="text-2xl font-bold text-white">
-                {tournaments.filter(t => t.status === 'Aperto').length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Aperti"
+          value={tournaments.filter(t => t.status === 'Aperto').length}
+          icon={<Calendar className="h-8 w-8 text-emerald-300" />}
+          color="green"
+        />
 
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-yellow-500/10 p-2">
-              <Trophy className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted">In Corso</p>
-              <p className="text-2xl font-bold text-white">
-                {tournaments.filter(t => t.status === 'In Corso' || t.status === 'In corso').length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="In Corso"
+          value={tournaments.filter(t => t.status === 'In Corso' || t.status === 'In corso').length}
+          icon={<Trophy className="h-8 w-8 text-amber-300" />}
+          color="yellow"
+        />
 
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-gray-500/10 p-2">
-              <Award className="h-5 w-5 text-gray-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted">Completati</p>
-              <p className="text-2xl font-bold text-white">
-                {tournaments.filter(t => t.status === 'Completato' || t.status === 'Concluso').length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Completati"
+          value={tournaments.filter(t => t.status === 'Completato' || t.status === 'Concluso').length}
+          icon={<Award className="h-8 w-8 text-slate-300" />}
+          color="neutral"
+        />
       </div>
 
       {/* Filters */}
