@@ -1,24 +1,41 @@
-# Database Guide - GST Tennis Academy
+# Database Documentation - GST Tennis Academy
+
+**Ultima revisione**: 30 Dicembre 2025  
+**Database**: PostgreSQL via Supabase  
+**Versione Schema**: 2.0
 
 ## Panoramica
 
-Il database utilizza **PostgreSQL** tramite **Supabase** con Row Level Security (RLS) abilitato per la sicurezza dei dati.
+Il database utilizza PostgreSQL tramite Supabase con Row Level Security (RLS) abilitato per la sicurezza. L'architettura supporta:
 
-## Schema Principale
+- Sistema multi-ruolo (atleta, maestro, gestore, admin)
+- Gestione tornei con 3 modalità (eliminazione diretta, girone + eliminazione, campionato)
+- Sistema di messaggistica in tempo reale
+- Sistema email con template e tracking
+- Prenotazioni campi e lezioni
+- Gestione corsi e iscrizioni
+- News e annunci
+- Pagamenti e ordini
 
-### 1. Tabella `profiles`
+---
 
-Profili utenti con sistema ruoli.
+## Schema Tabelle Principali
+
+### 1. Profiles (Utenti)
+
+Gestione profili utenti con sistema ruoli gerarchico.
 
 ```sql
+CREATE TYPE user_role AS ENUM ('atleta', 'maestro', 'gestore', 'admin');
+
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   email TEXT NOT NULL UNIQUE,
   full_name TEXT,
-  role user_role NOT NULL DEFAULT 'atleta', -- 'atleta', 'maestro', 'gestore', 'admin'
+  role user_role NOT NULL DEFAULT 'atleta',
   subscription_type TEXT,
   
-  -- Campi aggiuntivi scheda anagrafica
+  -- Campi anagrafica
   phone TEXT,
   date_of_birth DATE,
   address TEXT,
@@ -29,57 +46,99 @@ CREATE TABLE profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX profiles_role_idx ON profiles(role);
+CREATE INDEX profiles_email_idx ON profiles(email);
 ```
 
-**Esempi Query:**
+**RLS Policies**:
+- Utenti vedono solo il proprio profilo
+- Admin/Gestore vedono tutti i profili
+- Admin/Gestore possono creare/modificare profili
 
-```sql
--- Ottenere tutti gli admin e gestori
-SELECT * FROM profiles WHERE role IN ('admin', 'gestore');
-
--- Aggiornare il ruolo di un utente
-UPDATE profiles SET role = 'maestro' WHERE id = 'user-uuid';
-
--- Contare utenti per ruolo
-SELECT role, COUNT(*) FROM profiles GROUP BY role;
-```
+**Ruoli**:
+- `atleta`: Accesso base, dashboard atleta, prenotazioni
+- `maestro`: Dashboard coach, visualizza tutte le prenotazioni, gestione lezioni
+- `gestore`: Dashboard admin, gestione utenti (no admin), creazione account
+- `admin`: Accesso completo, può creare altri admin
 
 ---
 
-### 2. Sistema Tornei
+### 2. Sistema Prenotazioni
 
-#### Tabella `tournaments`
+#### Bookings
 
-Gestione tornei e campionati con 3 tipi di competizione.
+```sql
+CREATE TYPE booking_type AS ENUM ('campo', 'lezione_privata', 'lezione_gruppo');
+
+CREATE TABLE bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
+  coach_id UUID REFERENCES auth.users ON DELETE SET NULL,
+  court TEXT NOT NULL,
+  type booking_type NOT NULL DEFAULT 'campo',
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  CONSTRAINT bookings_time_check CHECK (end_time > start_time),
+  CONSTRAINT bookings_no_overlap EXCLUDE USING gist (
+    court WITH =,
+    tstzrange(start_time, end_time) WITH &&
+  )
+);
+
+CREATE INDEX bookings_user_idx ON bookings(user_id);
+CREATE INDEX bookings_court_idx ON bookings(court, start_time);
+CREATE INDEX bookings_type_idx ON bookings(type);
+```
+
+**Features**:
+- Prevenzione sovrapposizioni automatica con exclusion constraint
+- Supporto campo, lezioni private, lezioni gruppo
+- Assegnazione opzionale coach
+
+**RLS Policies**:
+- Utenti vedono solo le proprie prenotazioni
+- Maestri vedono tutte le prenotazioni
+- Admin/Gestore gestione completa
+
+---
+
+### 3. Sistema Tornei (Versione Semplificata v2.0)
+
+#### Tournaments
 
 ```sql
 CREATE TABLE tournaments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
-  start_date TIMESTAMPTZ, -- Nota: ora opzionale (può essere NULL)
-  end_date TIMESTAMPTZ,
+  start_date TIMESTAMPTZ,  -- Opzionale
+  end_date TIMESTAMPTZ,     -- Opzionale
   category TEXT,
   level TEXT,
   max_participants INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'Aperto', -- 'Aperto', 'In Corso', 'Concluso', 'Annullato'
+  status TEXT NOT NULL DEFAULT 'Aperto',  -- 'Aperto', 'In Corso', 'Concluso', 'Annullato'
   
-  -- Tipo competizione (sistema semplificato)
-  tournament_type VARCHAR(50) DEFAULT 'eliminazione_diretta', -- 'eliminazione_diretta', 'girone_eliminazione', 'campionato'
-  best_of INTEGER DEFAULT 3 CHECK (best_of IN (3, 5)), -- Best of 3 o 5 set
+  -- Tipo competizione
+  tournament_type VARCHAR(50) DEFAULT 'eliminazione_diretta',
+    -- 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'
+  best_of INTEGER DEFAULT 3 CHECK (best_of IN (3, 5)),
   
   -- Tennis specifico
-  match_format TEXT DEFAULT 'best_of_3', -- 'best_of_1', 'best_of_3', 'best_of_5'
-  surface_type TEXT DEFAULT 'terra', -- 'terra', 'erba', 'cemento', 'sintetico', 'indoor', 'carpet'
+  match_format TEXT DEFAULT 'best_of_3',  -- 'best_of_1', 'best_of_3', 'best_of_5'
+  surface_type TEXT DEFAULT 'terra',      -- 'terra', 'erba', 'cemento', 'sintetico', 'indoor'
   
-  -- Sistema gironi
+  -- Sistema gironi (per girone_eliminazione)
   num_groups INT DEFAULT 0,
   teams_per_group INT DEFAULT 4,
-  teams_advancing INT DEFAULT 2,
-  current_phase VARCHAR(50) DEFAULT 'iscrizioni', -- 'iscrizioni', 'gironi', 'eliminazione', 'completato', 'annullato'
+  teams_advancing INT DEFAULT 2,  -- Quanti avanzano per girone
+  current_phase VARCHAR(50) DEFAULT 'iscrizioni',
+    -- 'iscrizioni' | 'gironi' | 'eliminazione' | 'completato' | 'annullato'
   bracket_config JSONB DEFAULT '{}'::jsonb,
   
-  -- Dati strutturali (legacy)
+  -- Dati strutturali (legacy/cache)
   rounds_data JSONB DEFAULT '[]'::jsonb,
   groups_data JSONB DEFAULT '[]'::jsonb,
   standings JSONB DEFAULT '[]'::jsonb,
@@ -89,276 +148,153 @@ CREATE TABLE tournaments (
   prize_money DECIMAL(10,2),
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  CONSTRAINT tournaments_type_check CHECK (
+    tournament_type IN ('eliminazione_diretta', 'girone_eliminazione', 'campionato')
+  ),
+  CONSTRAINT tournaments_phase_check CHECK (
+    current_phase IN ('iscrizioni', 'gironi', 'eliminazione', 'completato', 'annullato')
+  )
 );
+
+CREATE INDEX tournaments_status_idx ON tournaments(status);
+CREATE INDEX tournaments_type_idx ON tournaments(tournament_type);
+CREATE INDEX tournaments_dates_idx ON tournaments(start_date, end_date);
 ```
 
-**Tipi di Competizione:**
+**Tipi di Torneo**:
 
-1. **Torneo Eliminazione Diretta** (`tournament_type='eliminazione_diretta'`)
-   - Bracket ad eliminazione diretta
+1. **Eliminazione Diretta** (`eliminazione_diretta`)
+   - Bracket classico ad eliminazione
    - max_participants: 2, 4, 8, 16, 32, 64, 128
-   - best_of: 3 o 5 (best of 3 o 5 set)
+   - Fase unica: `current_phase = 'eliminazione'`
 
-2. **Torneo Gironi + Eliminazione** (`tournament_type='girone_eliminazione'`)
+2. **Girone + Eliminazione** (`girone_eliminazione`)
    - Fase a gironi seguita da eliminazione diretta
-   - I migliori di ogni girone avanzano al knockout
-   - Configurabile: num_groups, teams_per_group, teams_advancing
+   - `num_groups`: numero gironi (2-8)
+   - `teams_per_group`: partecipanti per girone (3-8)
+   - `teams_advancing`: quanti qualificati per girone (1-4)
+   - Fasi: `iscrizioni` → `gironi` → `eliminazione` → `completato`
 
-3. **Campionato Round-Robin** (`tournament_type='campionato'`)
-   - Tutti giocano contro tutti
-   - Classifica finale basata su punti/set/game
+3. **Campionato** (`campionato`)
+   - Round-robin, tutti contro tutti
+   - Calcolo punti: 2 vittoria, 0 sconfitta
+   - Classifica unica
+   - Fasi: `iscrizioni` → `gironi` → `completato`
 
-**Esempi Query:**
+#### Tournament Groups
 
 ```sql
--- Tornei attivi
-SELECT * FROM tournaments WHERE status = 'Aperto' AND start_date > NOW() ORDER BY start_date;
-
--- Tornei di eliminazione diretta
-SELECT * FROM tournaments WHERE tournament_type = 'eliminazione_diretta';
-
--- Tornei con gironi
-SELECT * FROM tournaments WHERE tournament_type = 'girone_eliminazione' AND status = 'Aperto';
-
--- Tornei su terra battuta best of 5
-SELECT * FROM tournaments WHERE surface_type = 'terra' AND best_of = 5;
-
--- Creare nuovo torneo
-INSERT INTO tournaments (title, description, start_date, end_date, max_participants, tournament_type, best_of, surface_type, category)
-VALUES (
-  'Open Estate 2026',
-  'Torneo su terra battuta per tutti i livelli',
-  '2026-07-01 09:00:00+00',
-  '2026-07-07 18:00:00+00',
-  16,
-  'eliminazione_diretta',
-  3,
-  'terra',
-  'Open'
+CREATE TABLE tournament_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  group_name VARCHAR(50) NOT NULL,  -- "Girone A", "Girone B", ...
+  group_order INT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(tournament_id, group_name)
 );
+
+CREATE INDEX idx_tournament_groups_tournament_id ON tournament_groups(tournament_id);
 ```
 
----
-
-#### Tabella `tournament_participants`
-
-Partecipanti ai tornei con statistiche.
+#### Tournament Participants
 
 ```sql
 CREATE TABLE tournament_participants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT,
-  
-  -- Gruppo (per tornei con gironi)
+  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
   group_id UUID REFERENCES tournament_groups(id) ON DELETE SET NULL,
-  seeding INT,
-  group_position INT,
-  
-  -- Statistiche
-  matches_played INT DEFAULT 0,
-  matches_won INT DEFAULT 0,
-  matches_lost INT DEFAULT 0,
-  sets_won INT DEFAULT 0,
-  sets_lost INT DEFAULT 0,
-  games_won INT DEFAULT 0,
-  games_lost INT DEFAULT 0,
-  points INT DEFAULT 0, -- Punti classifica
-  
+  seed INT,               -- Posizione seeding
+  group_position INT,     -- Posizione finale nel girone
+  stats JSONB DEFAULT '{
+    "matches_played": 0,
+    "matches_won": 0,
+    "matches_lost": 0,
+    "sets_won": 0,
+    "sets_lost": 0,
+    "games_won": 0,
+    "games_lost": 0,
+    "points": 0
+  }'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (tournament_id, user_id)
+  
+  UNIQUE(tournament_id, user_id)
 );
+
+CREATE INDEX tournament_participants_tournament_idx ON tournament_participants(tournament_id);
+CREATE INDEX tournament_participants_user_idx ON tournament_participants(user_id);
+CREATE INDEX tournament_participants_group_idx ON tournament_participants(group_id);
 ```
 
-**Esempi Query:**
-
-```sql
--- Classifica torneo
-SELECT 
-  tp.*,
-  p.full_name,
-  (tp.sets_won - tp.sets_lost) AS set_diff,
-  (tp.games_won - tp.games_lost) AS game_diff
-FROM tournament_participants tp
-JOIN profiles p ON tp.user_id = p.id
-WHERE tp.tournament_id = 'tournament-uuid'
-ORDER BY tp.points DESC, set_diff DESC, game_diff DESC;
-
--- Iscrivere un partecipante
-INSERT INTO tournament_participants (tournament_id, user_id)
-VALUES ('tournament-uuid', 'user-uuid');
-```
-
----
-
-#### Tabella `tournament_groups`
-
-Gironi per fase a gruppi.
-
-```sql
-CREATE TABLE tournament_groups (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  group_name VARCHAR(50) NOT NULL, -- "Gruppo A", "Gruppo B"
-  group_order INT NOT NULL,
-  max_participants INT DEFAULT 4,
-  advancement_count INT DEFAULT 2, -- Quanti avanzano
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(tournament_id, group_name)
-);
-```
-
----
-
-#### Tabella `tournament_matches`
-
-Incontri con scoring tennis (set, game, tiebreak).
+#### Tournament Matches
 
 ```sql
 CREATE TABLE tournament_matches (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  round_name VARCHAR(100), -- "Ottavi", "Quarti", "Gruppo A - Giornata 1"
-  round_order INT,
-  stage VARCHAR(50) NOT NULL, -- 'groups' o 'knockout'
   
-  -- Giocatori
+  -- Fase e round
+  phase VARCHAR(50) NOT NULL,  -- 'gironi' | 'eliminazione'
+  round_name VARCHAR(100),     -- "Girone A - Giornata 1", "Quarti", "Finale"
+  round_number INT,
+  match_number INT,
+  
+  -- Partecipanti
   player1_id UUID REFERENCES tournament_participants(id) ON DELETE CASCADE,
   player2_id UUID REFERENCES tournament_participants(id) ON DELETE CASCADE,
   
-  -- Score tennis
-  player1_sets INT DEFAULT 0,
-  player2_sets INT DEFAULT 0,
-  sets JSONB DEFAULT '[]'::jsonb, -- Array di set: [{"player1_score": 6, "player2_score": 3}, ...]
-  score_detail JSONB DEFAULT '{"sets": []}'::jsonb, -- Dettaglio completo con tiebreak
-  -- Es: {"sets": [{"set": 1, "p1_games": 6, "p2_games": 4, "tiebreak": null}, {"set": 2, "p1_games": 7, "p2_games": 6, "tiebreak": {"p1_points": 7, "p2_points": 3}}]}
-  
   -- Risultato
+  player1_score INT DEFAULT 0,  -- Set vinti
+  player2_score INT DEFAULT 0,  -- Set vinti
+  score_details JSONB DEFAULT '{"sets": []}'::jsonb,
+    -- Esempio: {"sets": [{"p1": 6, "p2": 4}, {"p1": 7, "p2": 5}]}
   winner_id UUID REFERENCES tournament_participants(id),
-  match_status VARCHAR(50) DEFAULT 'scheduled', -- 'scheduled', 'in_progress', 'completed', 'walkover', 'retired'
   
-  -- Info match
-  scheduled_time TIMESTAMPTZ,
-  start_time TIMESTAMPTZ,
-  end_time TIMESTAMPTZ,
-  court_number VARCHAR(20),
-  surface_type VARCHAR(50),
-  duration_minutes INT,
+  -- Stato
+  status VARCHAR(50) DEFAULT 'programmata',
+    -- 'programmata' | 'in_corso' | 'completata' | 'annullata' | 'walkover'
+  scheduled_at TIMESTAMPTZ,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
   
-  -- Statistiche opzionali
-  stats JSONB DEFAULT '{}'::jsonb, -- aces, double faults, winners, unforced errors
+  -- Metadati
+  court VARCHAR(50),
+  notes TEXT,
   
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT tournament_matches_phase_check CHECK (phase IN ('gironi', 'eliminazione')),
+  CONSTRAINT tournament_matches_status_check CHECK (
+    status IN ('programmata', 'in_corso', 'completata', 'annullata', 'walkover')
+  )
 );
+
+CREATE INDEX idx_tournament_matches_tournament_id ON tournament_matches(tournament_id);
+CREATE INDEX idx_tournament_matches_phase ON tournament_matches(phase);
+CREATE INDEX idx_tournament_matches_players ON tournament_matches(player1_id, player2_id);
 ```
 
-**Esempi Query:**
-
-```sql
--- Incontri di un torneo
-SELECT * FROM tournament_matches WHERE tournament_id = 'tournament-uuid' ORDER BY round_order, scheduled_time;
-
--- Creare un incontro
-INSERT INTO tournament_matches (tournament_id, round_name, stage, player1_id, player2_id, scheduled_time, court_number)
-VALUES ('tournament-uuid', 'Finale', 'knockout', 'participant-uuid-1', 'participant-uuid-2', '2026-07-07 15:00:00+00', 'Centrale');
-
--- Aggiornare punteggio
-UPDATE tournament_matches
-SET 
-  player1_sets = 2,
-  player2_sets = 1,
-  score_detail = '{"sets": [{"set": 1, "p1_games": 6, "p2_games": 4}, {"set": 2, "p1_games": 4, "p2_games": 6}, {"set": 3, "p1_games": 6, "p2_games": 3}]}'::jsonb,
-  winner_id = 'participant-uuid-1',
-  match_status = 'completed',
-  end_time = NOW()
-WHERE id = 'match-uuid';
-```
-
----
-
-### 3. Sistema Annunci
-
-#### Tabella `announcements`
-
-Sistema bacheca per annunci, eventi, comunicazioni.
-
-```sql
-CREATE TABLE announcements (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  announcement_type VARCHAR(50) NOT NULL DEFAULT 'announcement', -- 'announcement', 'partner', 'event', 'news', 'tournament', 'lesson', 'promotion'
-  author_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  priority VARCHAR(20) DEFAULT 'medium', -- 'low', 'medium', 'high', 'urgent'
-  expiry_date TIMESTAMPTZ,
-  visibility VARCHAR(50) DEFAULT 'all', -- 'all', 'atleti', 'maestri', 'admin', 'gestore', 'public'
-  is_published BOOLEAN DEFAULT true,
-  is_pinned BOOLEAN DEFAULT false,
-  view_count INT DEFAULT 0,
-  image_url TEXT,
-  link_url TEXT,
-  link_text VARCHAR(100),
-  metadata JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-#### Tabella `announcement_views`
-
-Tracciamento visualizzazioni annunci.
-
-```sql
-CREATE TABLE announcement_views (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  announcement_id UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  viewed_at TIMESTAMPTZ DEFAULT NOW(),
-  ip_address VARCHAR(45),
-  user_agent TEXT,
-  UNIQUE(announcement_id, user_id)
-);
-```
-
-**Esempi Query:**
-
-```sql
--- Annunci attivi e pubblicati
-SELECT * FROM announcements 
-WHERE is_published = true 
-  AND (expiry_date IS NULL OR expiry_date > NOW())
-ORDER BY is_pinned DESC, created_at DESC;
-
--- Annunci urgenti
-SELECT * FROM announcements WHERE priority = 'urgent' AND is_published = true;
-
--- Creare annuncio
-INSERT INTO announcements (title, content, announcement_type, priority, visibility)
-VALUES (
-  'Manutenzione Campo 1',
-  'Il campo 1 sarà chiuso per manutenzione dal 15 al 20 gennaio',
-  'announcement',
-  'high',
-  'all'
-);
-```
+**RLS Policies Tornei**:
+- Tutti possono visualizzare tornei e partecipanti
+- Solo Admin/Gestore possono creare/modificare tornei
+- Utenti possono iscriversi autonomamente
+- Admin/Gestore/Maestro possono inserire risultati
 
 ---
 
 ### 4. Sistema Chat/Messaggistica
 
-#### Tabella `conversations`
-
-Conversazioni tra utenti.
+#### Conversations
 
 ```sql
 CREATE TABLE conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title VARCHAR(255),
+  title VARCHAR(255),           -- Opzionale per conversazioni gruppo
   is_group BOOLEAN DEFAULT false,
   created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -367,11 +303,11 @@ CREATE TABLE conversations (
   last_message_preview TEXT,
   metadata JSONB DEFAULT '{}'::jsonb
 );
+
+CREATE INDEX idx_conversations_last_message ON conversations(last_message_at DESC);
 ```
 
-#### Tabella `conversation_participants`
-
-Partecipanti alle conversazioni.
+#### Conversation Participants
 
 ```sql
 CREATE TABLE conversation_participants (
@@ -385,13 +321,16 @@ CREATE TABLE conversation_participants (
   is_muted BOOLEAN DEFAULT false,
   is_archived BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  
   UNIQUE(conversation_id, user_id)
 );
+
+CREATE INDEX idx_conversation_participants_user ON conversation_participants(user_id);
+CREATE INDEX idx_conversation_participants_unread ON conversation_participants(user_id, unread_count)
+  WHERE unread_count > 0;
 ```
 
-#### Tabella `messages`
-
-Messaggi all'interno delle conversazioni.
+#### Messages
 
 ```sql
 CREATE TABLE messages (
@@ -399,7 +338,8 @@ CREATE TABLE messages (
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
-  message_type VARCHAR(50) DEFAULT 'text', -- 'text', 'image', 'file', 'system', 'booking', 'lesson'
+  message_type VARCHAR(50) DEFAULT 'text',
+    -- 'text' | 'image' | 'file' | 'system' | 'booking' | 'lesson'
   attachment_url TEXT,
   attachment_metadata JSONB,
   is_edited BOOLEAN DEFAULT false,
@@ -408,35 +348,43 @@ CREATE TABLE messages (
   deleted_at TIMESTAMPTZ,
   reply_to_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT messages_type_check CHECK (
+    message_type IN ('text', 'image', 'file', 'system', 'booking', 'lesson')
+  )
 );
+
+CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at DESC);
+CREATE INDEX idx_messages_sender ON messages(sender_id);
 ```
 
-**Esempi Query:**
+#### Message Reads
 
 ```sql
--- Conversazioni di un utente con messaggi non letti
-SELECT c.*, cp.unread_count
-FROM conversations c
-JOIN conversation_participants cp ON c.id = cp.conversation_id
-WHERE cp.user_id = 'user-uuid' AND cp.unread_count > 0
-ORDER BY c.last_message_at DESC;
+CREATE TABLE message_reads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  read_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(message_id, user_id)
+);
 
--- Messaggi di una conversazione
-SELECT m.*, p.full_name AS sender_name
-FROM messages m
-JOIN profiles p ON m.sender_id = p.id
-WHERE m.conversation_id = 'conversation-uuid'
-ORDER BY m.created_at;
+CREATE INDEX idx_message_reads_message ON message_reads(message_id);
+CREATE INDEX idx_message_reads_user ON message_reads(user_id);
 ```
+
+**RLS Policies Chat**:
+- Utenti vedono solo conversazioni a cui partecipano
+- Admin/Gestore vedono tutte le conversazioni
+- Participants possono inviare messaggi nelle loro conversazioni
 
 ---
 
 ### 5. Sistema Email
 
-#### Tabella `email_logs`
-
-Log di tutte le email inviate.
+#### Email Logs
 
 ```sql
 CREATE TABLE email_logs (
@@ -444,27 +392,35 @@ CREATE TABLE email_logs (
   recipient_email VARCHAR(255) NOT NULL,
   recipient_name VARCHAR(255),
   recipient_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  
   subject VARCHAR(500) NOT NULL,
   template_name VARCHAR(100) NOT NULL,
   template_data JSONB DEFAULT '{}'::jsonb,
-  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'queued', 'sent', 'delivered', 'failed', 'bounced', 'opened', 'clicked'
+  
+  status VARCHAR(50) DEFAULT 'pending',
+    -- 'pending' | 'queued' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'opened' | 'clicked'
   provider VARCHAR(50) DEFAULT 'resend',
   provider_message_id VARCHAR(255),
+  
   sent_at TIMESTAMPTZ,
   delivered_at TIMESTAMPTZ,
   opened_at TIMESTAMPTZ,
   clicked_at TIMESTAMPTZ,
+  
   error_message TEXT,
   retry_count INT DEFAULT 0,
   metadata JSONB DEFAULT '{}'::jsonb,
+  
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_email_logs_recipient ON email_logs(recipient_email);
+CREATE INDEX idx_email_logs_status ON email_logs(status);
+CREATE INDEX idx_email_logs_template ON email_logs(template_name);
 ```
 
-#### Tabella `email_templates`
-
-Template per le email.
+#### Email Templates
 
 ```sql
 CREATE TABLE email_templates (
@@ -472,438 +428,463 @@ CREATE TABLE email_templates (
   name VARCHAR(100) UNIQUE NOT NULL,
   display_name VARCHAR(255) NOT NULL,
   description TEXT,
-  subject_template VARCHAR(500) NOT NULL,
+  
+  subject_template VARCHAR(500) NOT NULL,  -- Con placeholder: "Conferma - {{court_name}}"
   html_template TEXT NOT NULL,
   text_template TEXT,
-  category VARCHAR(50), -- 'transactional', 'marketing', 'notification', 'system'
+  
+  category VARCHAR(50),  -- 'transactional' | 'marketing' | 'notification' | 'system'
   is_active BOOLEAN DEFAULT true,
   variables JSONB DEFAULT '[]'::jsonb,
+  
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_email_templates_name ON email_templates(name);
 ```
 
-#### Tabella `email_unsubscribes`
-
-Disiscrizioni da email.
+#### Email Unsubscribes
 
 ```sql
 CREATE TABLE email_unsubscribes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   email VARCHAR(255) NOT NULL,
-  unsubscribe_from VARCHAR(50) DEFAULT 'all', -- 'all', 'marketing', 'notifications'
+  unsubscribe_from VARCHAR(50) DEFAULT 'all',  -- 'all' | 'marketing' | 'notifications'
   reason TEXT,
   unsubscribed_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, unsubscribe_from)
+  
+  UNIQUE(user_id, unsubscribe_from),
+  UNIQUE(email, unsubscribe_from)
 );
 ```
 
-**Esempi Query:**
-
-```sql
--- Email inviate oggi
-SELECT * FROM email_logs 
-WHERE DATE(created_at) = CURRENT_DATE
-ORDER BY created_at DESC;
-
--- Tasso di apertura per template
-SELECT 
-  template_name,
-  COUNT(*) AS total_sent,
-  COUNT(*) FILTER (WHERE opened_at IS NOT NULL) AS opened,
-  ROUND(100.0 * COUNT(*) FILTER (WHERE opened_at IS NOT NULL) / COUNT(*), 2) AS open_rate
-FROM email_logs
-WHERE status = 'sent'
-GROUP BY template_name;
-```
+**RLS Policies Email**:
+- Solo Admin/Gestore vedono email logs e template
+- Sistema può creare email logs
+- Utenti possono gestire le proprie unsubscribe
 
 ---
 
-### 6. Gestione Homepage
+### 6. Corsi e Iscrizioni
 
-#### Tabella `hero_content`
-
-Contenuti della sezione hero (testi, badge, statistiche).
+#### Courses
 
 ```sql
-CREATE TABLE hero_content (
+CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  badge_text TEXT NOT NULL DEFAULT 'Cresci nel tuo tennis',
   title TEXT NOT NULL,
-  title_highlight TEXT NOT NULL,
-  subtitle TEXT NOT NULL,
-  primary_button_text TEXT NOT NULL DEFAULT 'Prenota una prova',
-  primary_button_link TEXT NOT NULL DEFAULT '/bookings',
-  secondary_button_text TEXT NOT NULL DEFAULT 'Scopri i programmi',
-  secondary_button_link TEXT NOT NULL DEFAULT '#programmi',
-  stat1_value TEXT NOT NULL DEFAULT '250+',
-  stat1_label TEXT NOT NULL DEFAULT 'Atleti attivi',
-  stat2_value TEXT NOT NULL DEFAULT '180',
-  stat2_label TEXT NOT NULL DEFAULT 'Tornei vinti',
-  stat3_value TEXT NOT NULL DEFAULT '8',
-  stat3_label TEXT NOT NULL DEFAULT 'Campi disponibili',
-  active BOOLEAN NOT NULL DEFAULT true,
+  description TEXT,
+  coach_id UUID REFERENCES auth.users ON DELETE SET NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  schedule TEXT,  -- JSON o testo descrittivo orari
+  max_participants INT NOT NULL DEFAULT 10,
+  current_participants INT NOT NULL DEFAULT 0,
+  price DECIMAL(10,2) NOT NULL,
+  level TEXT,      -- 'principiante', 'intermedio', 'avanzato'
+  age_group TEXT,  -- 'bambini', 'junior', 'adulti', 'senior'
+  image_url TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX courses_coach_idx ON courses(coach_id);
+CREATE INDEX courses_dates_idx ON courses(start_date, end_date);
+CREATE INDEX courses_active_idx ON courses(is_active);
 ```
 
-#### Tabella `hero_images`
-
-Immagini carousel della hero section.
+#### Enrollments
 
 ```sql
-CREATE TABLE hero_images (
+CREATE TABLE enrollments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  image_url TEXT NOT NULL,
-  alt_text TEXT NOT NULL,
-  order_index INTEGER NOT NULL DEFAULT 0,
-  active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
+  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',          -- 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  payment_status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'paid' | 'refunded'
+  enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  UNIQUE(user_id, course_id)
 );
+
+CREATE INDEX enrollments_user_idx ON enrollments(user_id);
+CREATE INDEX enrollments_course_idx ON enrollments(course_id);
+CREATE INDEX enrollments_status_idx ON enrollments(status);
 ```
 
-#### Tabella `homepage_sections`
-
-Sezioni attive/disattivabili della homepage.
-
-```sql
-CREATE TABLE homepage_sections (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  section_key TEXT UNIQUE NOT NULL, -- 'hero', 'subscriptions', 'programs', 'staff', 'news', 'tornei', 'social', 'cta'
-  section_name TEXT NOT NULL,
-  order_index INTEGER NOT NULL DEFAULT 0,
-  active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
-
-**Esempi Query:**
-
-```sql
--- Sezioni homepage attive in ordine
-SELECT * FROM homepage_sections 
-WHERE active = true 
-ORDER BY order_index;
-
--- Immagini hero attive
-SELECT * FROM hero_images 
-WHERE active = true 
-ORDER BY order_index;
-
--- Contenuto hero attivo
-SELECT * FROM hero_content WHERE active = true LIMIT 1;
-```
+**RLS Policies**:
+- Tutti vedono corsi attivi
+- Admin/Gestore/Maestro gestiscono corsi
+- Utenti vedono le proprie iscrizioni
+- Utenti possono iscriversi autonomamente
 
 ---
 
-### 7. Tabella `news`
+### 7. News e Annunci
 
-Notizie e comunicazioni del circolo.
+#### News
 
 ```sql
 CREATE TABLE news (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
-  date DATE NOT NULL,
-  category TEXT, -- 'Tornei', 'Eventi', 'Struttura', 'Comunicazioni'
-  summary TEXT,
-  content TEXT,
-  published BOOLEAN DEFAULT false,
+  category TEXT NOT NULL,
+  summary TEXT NOT NULL,
   image_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  published BOOLEAN NOT NULL DEFAULT true,
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX news_published_date_idx ON news(published, date DESC);
+CREATE INDEX news_created_by_idx ON news(created_by);
 ```
 
-**Esempi Query:**
-
-```sql
--- News pubblicate recenti
-SELECT * FROM news WHERE published = true ORDER BY date DESC LIMIT 10;
-
--- News per categoria
-SELECT * FROM news WHERE category = 'Tornei' AND published = true;
-
--- Creare news
-INSERT INTO news (title, date, category, summary, content, published)
-VALUES (
-  'Nuovo Campo Inaugurato',
-  '2026-01-15',
-  'Struttura',
-  'Inaugurato il nuovo campo coperto',
-  'Contenuto completo della news...',
-  true
-);
-```
+**RLS Policies News**:
+- Tutti vedono news pubblicate
+- Admin/Gestore vedono tutte le news
+- Solo Admin/Gestore possono creare/modificare/eliminare
 
 ---
 
-### 4. Tabella `staff`
+### 8. Payments e Orders
 
-Membri dello staff con ruoli.
-
-```sql
-CREATE TABLE staff (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  full_name TEXT NOT NULL,
-  role TEXT NOT NULL, -- 'Head Coach', 'Preparatore Atletico', 'Mental Coach'
-  bio TEXT,
-  active BOOLEAN DEFAULT true,
-  order_index INT,
-  image_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-**Esempi Query:**
+#### Payments
 
 ```sql
--- Staff attivo ordinato
-SELECT * FROM staff WHERE active = true ORDER BY order_index;
-
--- Aggiungere membro staff
-INSERT INTO staff (full_name, role, bio, order_index)
-VALUES ('Mario Rossi', 'Maestro FITP 3° grado', 'Specialista in tecnica e tattica', 1);
-```
-
----
-
-### 5. Tabella `programs`
-
-Programmi di allenamento.
-
-```sql
-CREATE TABLE programs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  focus TEXT,
-  points JSONB, -- Array di stringhe con i punti chiave
-  active BOOLEAN DEFAULT true,
-  order_index INT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-**Esempi Query:**
-
-```sql
--- Programmi attivi
-SELECT * FROM programs WHERE active = true ORDER BY order_index;
-
--- Creare programma
-INSERT INTO programs (title, focus, points, order_index)
-VALUES (
-  'Junior Academy',
-  'U10 - U16 | Tecnica & coordinazione',
-  '["Gruppi per età", "Match play", "Video analysis"]'::jsonb,
-  1
-);
-```
-
----
-
-### 6. Tabella `bookings`
-
-Prenotazioni campi e lezioni.
-
-```sql
-CREATE TABLE bookings (
+CREATE TABLE payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
-  coach_id UUID REFERENCES auth.users ON DELETE SET NULL,
-  court TEXT NOT NULL,
-  type booking_type NOT NULL DEFAULT 'campo', -- 'campo', 'lezione_privata', 'lezione_gruppo'
-  start_time TIMESTAMPTZ NOT NULL,
-  end_time TIMESTAMPTZ NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'EUR',
+  payment_type TEXT NOT NULL,  -- 'subscription' | 'booking' | 'course' | 'event' | 'product'
+  reference_id UUID,           -- ID booking/course/event/product correlato
+  payment_method TEXT,         -- 'stripe' | 'cash' | 'bank_transfer'
+  status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'completed' | 'failed' | 'refunded'
+  stripe_payment_id TEXT,
+  metadata JSONB,
+  paid_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT bookings_no_overlap EXCLUDE USING gist (court WITH =, tstzrange(start_time, end_time) WITH &&)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX payments_user_idx ON payments(user_id);
+CREATE INDEX payments_status_idx ON payments(status);
+CREATE INDEX payments_type_idx ON payments(payment_type);
 ```
 
-**Esempi Query:**
+#### Orders
 
 ```sql
--- Prenotazioni future
-SELECT * FROM bookings WHERE start_time > NOW() ORDER BY start_time;
-
--- Prenotazioni di un utente
-SELECT * FROM bookings WHERE user_id = 'user-uuid' ORDER BY start_time DESC;
-
--- Disponibilità campo
-SELECT * FROM bookings 
-WHERE court = 'Campo 1' 
-AND start_time::date = '2026-01-15'
-ORDER BY start_time;
+CREATE TABLE orders (
+  id TEXT PRIMARY KEY,
+  customer_email TEXT,
+  amount_total BIGINT,
+  currency TEXT,
+  payment_status TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
 ---
 
-## Funzioni Utili
+### 9. Subscription Credits
 
-### Calcolare classifica gironi
+Sistema crediti settimanali per abbonamenti.
 
 ```sql
-SELECT * FROM calculate_group_standings('group-uuid');
-```
-
-### Aggiornare statistiche dopo match
-
-Le statistiche vengono aggiornate automaticamente tramite trigger quando un match viene completato.
-
----
-
-## RLS (Row Level Security)
-
-Tutte le tabelle hanno RLS abilitato con policy specifiche:
-
-- **Public read**: Tornei, news, staff, programs, announcements pubblici sono visibili a tutti
-- **Authenticated write**: Solo utenti autenticati possono prenotare, iscriversi, inviare messaggi
-- **Admin/Gestore write**: Solo admin e gestori possono creare/modificare tornei, annunci, news
-- **Own data**: Gli utenti possono modificare solo i propri dati (profilo, prenotazioni)
-
-### Service Role per Operazioni Admin
-
-Per operazioni amministrative che bypassano RLS (es: creazione tornei, invio email, gestione partite), le API utilizzano il **service role** di Supabase:
-
-```typescript
-// API route con service role per operazioni admin
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Service role bypassa RLS
-  { auth: { persistSession: false } }
+CREATE TABLE subscription_credits (
+  user_id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+  plan TEXT NOT NULL DEFAULT 'Monosettimanale',
+  weekly_credits INT NOT NULL DEFAULT 1,
+  credits_available INT NOT NULL DEFAULT 1,
+  last_reset TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-// Esempio: avviare torneo (solo admin via API)
-export async function POST(request: Request) {
-  // Verifica che l'utente sia admin
-  const session = await getSession();
-  if (!session || !['admin', 'gestore'].includes(session.user.role)) {
-    return new Response('Unauthorized', { status: 403 });
-  }
+CREATE INDEX subscription_credits_user_idx ON subscription_credits(user_id);
+```
+
+**Funzioni Helper**:
+
+```sql
+-- Reset crediti settimanali (eseguire ogni lunedì)
+CREATE OR REPLACE FUNCTION reset_weekly_credits()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE subscription_credits
+  SET credits_available = weekly_credits,
+      last_reset = NOW(),
+      updated_at = NOW()
+  WHERE date_part('isodow', NOW()) = 1; -- Lunedì
+END;
+$$;
+
+-- Consuma un credito gruppo
+CREATE OR REPLACE FUNCTION consume_group_credit(p_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  ok BOOLEAN := false;
+BEGIN
+  UPDATE subscription_credits
+  SET credits_available = credits_available - 1,
+      updated_at = NOW()
+  WHERE user_id = p_user_id AND credits_available > 0
+  RETURNING true INTO ok;
   
-  // Usa service role per operazioni che richiedono privilegi elevati
-  const { data, error } = await supabaseAdmin
-    .from('tournaments')
-    .update({ status: 'In Corso', current_phase: 'gironi' })
-    .eq('id', tournamentId);
-}
-```
-
-**Vantaggi:**
-- Le policy RLS proteggono l'accesso diretto al database
-- Le API routes verificano i permessi dell'utente
-- Il service role permette operazioni complesse senza limitazioni RLS
-- Audit trail attraverso i log delle API
-
----
-
-## Migration Flow
-
-1. **Base schema** - `schema.sql` - Schema base con profiles, bookings, services, products, courses, enrollments, tournaments
-2. `001_create_tournaments_and_participants.sql` - Tabelle base tornei
-3. `002_rls_policies_tournaments.sql` - Policy RLS
-4. `003_add_competition_types.sql` - Tipi competizione e formati
-5. `004_tennis_tournament_system.sql` - Sistema completo tennis con gruppi e match
-6. `005_chat_messaging_system.sql` - Sistema messaggistica (conversations, messages, participants)
-7. `006_announcements_system.sql` - Sistema annunci (announcements, announcement_views)
-8. `007_email_system.sql` - Sistema email (email_logs, email_templates, email_unsubscribes)
-9. `008_profile_enhancements.sql` - Miglioramenti profili
-10. `010_simplified_tournament_system.sql` - Sistema tornei semplificato (tournament_type, start_date/end_date)
-11. `011_make_dates_optional.sql` - Date tornei opzionali
-12. `012_tournament_matches_bracket_columns.sql` - Colonne bracket per match
-13. `013_tennis_scoring_system.sql` - Sistema scoring con sets array e best_of
-14. `add_profile_fields.sql` - Campi aggiuntivi profiles (phone, date_of_birth, address, city, postal_code, notes)
-15. `add_hero_content.sql` - Contenuti hero section
-16. `add_hero_images.sql` - Immagini carousel hero
-17. `add_news_table.sql` - Tabella news
-18. `add_tornei_to_homepage_sections.sql` - Sezione tornei in homepage
-19. `create_courses_table.sql` - Tabella corsi
-20. `complete_migration.sql` - Migration completa finale
-
----
-
-## Backup e Restore
-
-```sql
--- Backup completo
-pg_dump -U postgres -d tennis_academy > backup.sql
-
--- Restore
-psql -U postgres -d tennis_academy < backup.sql
+  RETURN ok;
+END;
+$$;
 ```
 
 ---
 
-## Performance Tips
+## Funzioni Helper Tornei
 
-1. Usa indici su colonne frequentemente interrogate (`starts_at`, `status`, `competition_type`)
-2. Per query complesse sui tornei, considera materialized views
-3. Usa `EXPLAIN ANALYZE` per ottimizzare query lente
-4. Limita le query con `LIMIT` quando possibile
+### Creazione Gironi
+
+```sql
+CREATE OR REPLACE FUNCTION create_tournament_groups(
+  p_tournament_id UUID,
+  p_num_groups INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_group_name VARCHAR(50);
+  v_i INT;
+BEGIN
+  FOR v_i IN 1..p_num_groups LOOP
+    v_group_name := 'Girone ' || CHR(64 + v_i);
+    
+    INSERT INTO tournament_groups (tournament_id, group_name, group_order)
+    VALUES (p_tournament_id, v_group_name, v_i)
+    ON CONFLICT (tournament_id, group_name) DO NOTHING;
+  END LOOP;
+END;
+$$;
+```
+
+### Assegnazione Partecipanti ai Gironi
+
+```sql
+CREATE OR REPLACE FUNCTION assign_participants_to_groups(
+  p_tournament_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_participant RECORD;
+  v_groups UUID[];
+  v_group_index INT := 0;
+  v_seed INT := 1;
+BEGIN
+  SELECT ARRAY_AGG(id ORDER BY group_order) INTO v_groups
+  FROM tournament_groups
+  WHERE tournament_id = p_tournament_id;
+  
+  IF v_groups IS NULL OR array_length(v_groups, 1) = 0 THEN
+    RAISE EXCEPTION 'Nessun girone trovato per il torneo %', p_tournament_id;
+  END IF;
+  
+  FOR v_participant IN 
+    SELECT id FROM tournament_participants 
+    WHERE tournament_id = p_tournament_id AND group_id IS NULL
+    ORDER BY created_at
+  LOOP
+    UPDATE tournament_participants
+    SET 
+      group_id = v_groups[(v_group_index % array_length(v_groups, 1)) + 1],
+      seed = v_seed
+    WHERE id = v_participant.id;
+    
+    v_group_index := v_group_index + 1;
+    v_seed := v_seed + 1;
+  END LOOP;
+END;
+$$;
+```
+
+### Calcolo Classifica Girone
+
+```sql
+CREATE OR REPLACE FUNCTION calculate_group_standings(
+  p_group_id UUID
+)
+RETURNS TABLE (
+  participant_id UUID,
+  points INT,
+  matches_played INT,
+  matches_won INT,
+  matches_lost INT,
+  sets_won INT,
+  sets_lost INT,
+  games_won INT,
+  games_lost INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    tp.id,
+    (tp.stats->>'points')::INT,
+    (tp.stats->>'matches_played')::INT,
+    (tp.stats->>'matches_won')::INT,
+    (tp.stats->>'matches_lost')::INT,
+    (tp.stats->>'sets_won')::INT,
+    (tp.stats->>'sets_lost')::INT,
+    (tp.stats->>'games_won')::INT,
+    (tp.stats->>'games_lost')::INT
+  FROM tournament_participants tp
+  WHERE tp.group_id = p_group_id
+  ORDER BY 
+    (tp.stats->>'points')::INT DESC,
+    (tp.stats->>'sets_won')::INT - (tp.stats->>'sets_lost')::INT DESC,
+    (tp.stats->>'games_won')::INT - (tp.stats->>'games_lost')::INT DESC;
+END;
+$$;
+```
 
 ---
 
-## Esempi Query Avanzate
+## Migrazioni
 
-### Dashboard Admin - Statistiche Tornei
+### Lista Migrazioni Applicate
+
+| # | File | Descrizione |
+|---|------|-------------|
+| 001 | `001_create_tournaments_and_participants.sql` | Tabelle base tornei |
+| 002 | `002_rls_policies_tournaments.sql` | RLS policies tornei |
+| 003 | `003_add_competition_types.sql` | Tipi competizione |
+| 004 | `004_tennis_tournament_system.sql` | Sistema tennis completo |
+| 005 | `005_chat_messaging_system.sql` | Sistema messaggistica |
+| 006 | `006_announcements_system.sql` | Sistema annunci |
+| 007 | `007_email_system.sql` | Sistema email |
+| 008 | `008_profile_enhancements.sql` | Miglioramenti profili |
+| 010 | `010_simplified_tournament_system.sql` | **Sistema tornei v2 semplificato** |
+| 011 | `011_make_dates_optional.sql` | Date tornei opzionali |
+| 012 | `012_tournament_matches_bracket_columns.sql` | Colonne bracket matches |
+| 013 | `013_tennis_scoring_system.sql` | Sistema punteggio tennis |
+| - | `improve_roles_system.sql` | Miglioramenti sistema ruoli |
+| - | `create_courses_table.sql` | Tabella corsi |
+| - | `add_news_table.sql` | Tabella news |
+| - | `complete_migration.sql` | Staff, hero images, subscriptions |
+
+### File SQL Utility
+
+| File | Scopo |
+|------|-------|
+| `RESET_DATABASE.sql` | Reset completo database |
+| `FIX_TOURNAMENTS_SCHEMA.sql` | Fix schema tornei |
+| `APPLY_ALL_BRACKET_FIXES.sql` | Fix bracket system |
+| `FIX_STAFF_RLS.sql` | Fix RLS policies staff |
+| `FIX_COURSES_POLICY.sql` | Fix RLS policies corsi |
+
+---
+
+## Query Utili
+
+### Gestione Ruoli
 
 ```sql
-SELECT 
-  COUNT(*) FILTER (WHERE status = 'Aperto') AS tornei_attivi,
-  COUNT(*) FILTER (WHERE status = 'Concluso') AS tornei_conclusi,
-  COUNT(DISTINCT tp.user_id) AS partecipanti_totali,
-  SUM(tp.matches_played) AS match_totali
+-- Ottenere tutti gli admin
+SELECT * FROM profiles WHERE role IN ('admin', 'gestore');
+
+-- Promuovere utente ad admin
+UPDATE profiles SET role = 'admin' WHERE id = 'user-uuid';
+
+-- Contare utenti per ruolo
+SELECT role, COUNT(*) FROM profiles GROUP BY role;
+```
+
+### Tornei
+
+```sql
+-- Tornei aperti con posti disponibili
+SELECT t.*, 
+  COUNT(tp.id) as iscritti,
+  t.max_participants - COUNT(tp.id) as posti_disponibili
 FROM tournaments t
 LEFT JOIN tournament_participants tp ON t.id = tp.tournament_id
-WHERE t.created_at >= NOW() - INTERVAL '1 year';
-```
+WHERE t.status = 'Aperto'
+GROUP BY t.id
+HAVING COUNT(tp.id) < t.max_participants;
 
-### Ranking Giocatori (ultimi 6 mesi)
-
-```sql
+-- Classifica girone
 SELECT 
+  tp.id,
   p.full_name,
-  COUNT(DISTINCT tp.tournament_id) AS tornei_giocati,
-  SUM(tp.matches_won) AS vittorie,
-  SUM(tp.matches_played) AS partite,
-  ROUND(100.0 * SUM(tp.matches_won) / NULLIF(SUM(tp.matches_played), 0), 1) AS win_rate
+  tp.stats->>'points' as punti,
+  tp.stats->>'matches_won' as vittorie,
+  tp.stats->>'sets_won' - tp.stats->>'sets_lost' as diff_set
 FROM tournament_participants tp
 JOIN profiles p ON tp.user_id = p.id
-JOIN tournaments t ON tp.tournament_id = t.id
-WHERE t.start_date >= NOW() - INTERVAL '6 months'
-GROUP BY p.id, p.full_name
-ORDER BY win_rate DESC, tornei_giocati DESC
-LIMIT 20;
+WHERE tp.group_id = 'group-uuid'
+ORDER BY 
+  (tp.stats->>'points')::INT DESC,
+  ((tp.stats->>'sets_won')::INT - (tp.stats->>'sets_lost')::INT) DESC;
 ```
 
-### Prossimi Match di un Torneo
+### Prenotazioni
 
 ```sql
-SELECT 
-  tm.round_name,
-  tm.scheduled_time,
-  tm.court_number,
-  p1.full_name AS player1,
-  p2.full_name AS player2,
-  tm.match_status
-FROM tournament_matches tm
-JOIN tournament_participants tp1 ON tm.player1_id = tp1.id
-JOIN tournament_participants tp2 ON tm.player2_id = tp2.id
-JOIN profiles p1 ON tp1.user_id = p1.id
-JOIN profiles p2 ON tp2.user_id = p2.id
-WHERE tm.tournament_id = 'tournament-uuid'
-AND tm.match_status IN ('scheduled', 'in_progress')
-ORDER BY tm.scheduled_time;
+-- Prenotazioni di oggi
+SELECT b.*, p.full_name
+FROM bookings b
+JOIN profiles p ON b.user_id = p.id
+WHERE DATE(b.start_time) = CURRENT_DATE
+ORDER BY b.start_time;
+
+-- Campi liberi in un orario
+SELECT DISTINCT court
+FROM unnest(ARRAY['Campo 1', 'Campo 2', 'Campo 3']) AS court
+WHERE court NOT IN (
+  SELECT court FROM bookings
+  WHERE start_time < '2025-12-30 15:00:00'
+  AND end_time > '2025-12-30 14:00:00'
+);
 ```
 
 ---
 
-## Contatti e Supporto
+## Backup e Manutenzione
 
-Per domande sul database, contatta l'amministratore di sistema o consulta la documentazione Supabase: https://supabase.com/docs
+### Backup Database
+
+```bash
+# Via Supabase CLI
+supabase db dump -f backup.sql
+
+# Restore
+supabase db reset
+psql -h db.xxx.supabase.co -U postgres -d postgres -f backup.sql
+```
+
+### Pulizia Dati Vecchi
+
+```sql
+-- Elimina prenotazioni passate oltre 6 mesi
+DELETE FROM bookings WHERE end_time < NOW() - INTERVAL '6 months';
+
+-- Elimina email logs oltre 3 mesi
+DELETE FROM email_logs WHERE created_at < NOW() - INTERVAL '3 months';
+```
+
+---
+
+**Fine Documentazione Database**

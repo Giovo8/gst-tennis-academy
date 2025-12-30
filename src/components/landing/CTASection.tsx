@@ -38,13 +38,13 @@ export default function CTASection() {
 
         <div className="grid gap-5 md:grid-cols-3">
           {/* Location */}
-          <article className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
+          <article className="group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-accent-20 p-3 group-hover:scale-110 transition-transform">
-                <MapPin className="h-6 w-6 text-accent" />
+              <div className="rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 p-3 group-hover:scale-110 transition-transform">
+                <MapPin className="h-6 w-6 text-cyan-300" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-accent mb-2 font-bold">
+                <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-2 font-bold">
                   Location
                 </p>
                 <p className="text-white font-bold mb-1">VIA CASSIA KM 24300 snc</p>
@@ -54,25 +54,25 @@ export default function CTASection() {
           </article>
 
           {/* Contatti */}
-          <article className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
+          <article className="group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-accent-20 p-3 group-hover:scale-110 transition-transform">
-                <Phone className="h-6 w-6 text-accent" />
+              <div className="rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 p-3 group-hover:scale-110 transition-transform">
+                <Phone className="h-6 w-6 text-cyan-300" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-accent mb-2 font-bold">
+                <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-2 font-bold">
                   Contatti
                 </p>
                 <a 
                   href="tel:+393762351777" 
-                  className="flex items-center gap-2 text-white font-bold mb-2 hover:text-accent transition-colors"
+                  className="flex items-center gap-2 text-white font-bold mb-2 hover:text-cyan-300 transition-colors"
                 >
                   <Phone className="h-4 w-4" />
                   376 235 1777
                 </a>
                 <a 
                   href="mailto:segreteriatennis.gst@gmail.com" 
-                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-accent transition-colors"
+                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-cyan-300 transition-colors"
                 >
                   <Mail className="h-4 w-4" />
                   segreteriatennis.gst@gmail.com
@@ -82,13 +82,13 @@ export default function CTASection() {
           </article>
 
           {/* Orari */}
-          <article className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-6 hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
+          <article className="group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-accent-20 p-3 group-hover:scale-110 transition-transform">
-                <Clock className="h-6 w-6 text-accent" />
+              <div className="rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 p-3 group-hover:scale-110 transition-transform">
+                <Clock className="h-6 w-6 text-cyan-300" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-accent mb-2 font-bold">
+                <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-2 font-bold">
                   Orari
                 </p>
                 <p className="text-white font-bold mb-1">Lun - Sab</p>

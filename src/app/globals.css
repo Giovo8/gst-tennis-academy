@@ -98,11 +98,15 @@ body {
   padding-right: var(--space-4);
 }
 
-/* Section spacing for consistent layout */
+/* Section spacing - Standardized for all main sections */
 .section {
-  padding-top: var(--space-1); /* 4px vertical spacing */
-  padding-bottom: var(--space-1);
-  margin-bottom: 0; /* No additional spacing between sections */
+  padding-top: 5rem;    /* 80px - consistent with py-20 */
+  padding-bottom: 5rem; /* 80px - consistent with py-20 */
+}
+
+.section-compact {
+  padding-top: 2.5rem;  /* 40px - consistent with py-10 */
+  padding-bottom: 2.5rem;
 }
 
 /* Section header standardization */
@@ -209,41 +213,14 @@ p {
   line-height: 1.6; /* Improved readability */
 }
 
-/* Utility spacing classes (minimal, chosen to reduce inline px usage) */
-.mt-sm { margin-top: var(--space-2); }
-.mt { margin-top: var(--space-4); }
-.mt-lg { margin-top: var(--space-6); }
-.mb { margin-bottom: var(--space-4); }
-.mb-sm { margin-bottom: var(--space-2); }
-.mb-lg { margin-bottom: var(--space-6); }
-.py-sm { padding-top: var(--space-2); padding-bottom: var(--space-2); }
-.py { padding-top: var(--space-4); padding-bottom: var(--space-4); }
-.py-lg { padding-top: var(--space-6); padding-bottom: var(--space-6); }
-.px { padding-left: var(--space-4); padding-right: var(--space-4); }
-.px-sm { padding-left: var(--space-2); padding-right: var(--space-2); }
-.px-lg { padding-left: var(--space-6); padding-right: var(--space-6); }
-
-/* Gap utilities for flex/grid layouts */
-.gap-sm { gap: var(--space-2); }
-.gap { gap: var(--space-4); }
-.gap-lg { gap: var(--space-6); }
-.gap-xl { gap: var(--space-8); }
-
-/* Section spacing variants */
-.section-sm {
-  padding-top: var(--space-2);
-  padding-bottom: var(--space-2);
-}
-
-.section-lg {
-  padding-top: var(--space-6);
-  padding-bottom: var(--space-6);
-}
-
-.section-xl {
-  padding-top: var(--space-8);
-  padding-bottom: var(--space-8);
-}
+/* Note: This project primarily uses Tailwind CSS utilities for spacing.
+   The design tokens above are available but Tailwind classes are preferred:
+   - py-20 (80px) for main sections
+   - py-10 (40px) for compact sections
+   - space-y-{n} for vertical spacing between elements
+   - gap-{n} for flex/grid gaps
+   - p-{n}, px-{n}, py-{n} for padding
+*/
 
 @media (min-width: 768px) {
   .container { padding-left: var(--space-5); padding-right: var(--space-5); }

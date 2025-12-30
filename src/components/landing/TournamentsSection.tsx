@@ -89,7 +89,7 @@ export default function TournamentsSection() {
             className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'all'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
+                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
             Tutti ({items.length})
@@ -99,7 +99,7 @@ export default function TournamentsSection() {
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'eliminazione_diretta'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
+                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
             <Trophy className="w-4 h-4" />
@@ -110,7 +110,7 @@ export default function TournamentsSection() {
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'girone_eliminazione'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
+                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
             <Target className="w-4 h-4" />
@@ -121,7 +121,7 @@ export default function TournamentsSection() {
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
               filter === 'campionato'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-accent-12 text-gray-400 border border-[var(--glass-border)] hover:border-[var(--glass-border)] hover:border-opacity-70 hover:bg-accent-15'
+                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
             <Award className="w-4 h-4" />
@@ -151,16 +151,16 @@ export default function TournamentsSection() {
             return (
               <article 
                 key={t.id} 
-                className="group flex h-full flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300"
+                className="group flex h-full flex-col rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
                   {/* Header with icon and type badge */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-accent-20 text-accent group-hover:scale-110 transition-transform border border-[var(--glass-border)]">
+                      <div className="p-2 rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 text-cyan-300 group-hover:scale-110 transition-transform">
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-accent border border-[var(--glass-border)]">
+                      <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">
                         {typeLabel}
                       </span>
                     </div>

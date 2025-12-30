@@ -72,10 +72,10 @@ export default function CoursesSection() {
         if (section.layout_type === "single_box") {
           const item = section.items[0];
           return (
-            <div key={section.id} className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-8 hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1">
+            <div key={section.id} className="group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-8 hover:border-white/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1">
               <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-accent transition-colors">{section.section_title}</h3>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">{section.section_title}</h3>
                   {section.section_description && (
                     <p className="text-base text-gray-400">{section.section_description}</p>
                   )}
@@ -83,7 +83,7 @@ export default function CoursesSection() {
                     <div className="mt-4 space-y-2 text-sm text-gray-400">
                       {item.details.map((detail: string, i: number) => (
                         <p key={i} className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-accent-strong rounded-full"></span>
+                          <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
                           {detail}
                         </p>
                       ))}
@@ -102,7 +102,7 @@ export default function CoursesSection() {
         // Layout: Frequency Grid (Base, Avanzato)
         if (section.layout_type === "frequency_grid") {
           return (
-            <div key={section.id} className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl p-8">
+            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-8 hover:border-white/30 transition-all">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-white mb-2">{section.section_title}</h3>
                 {section.section_description && (
@@ -112,7 +112,7 @@ export default function CoursesSection() {
               
               <div className="grid gap-4 md:grid-cols-3">
                 {section.items.map((item, idx) => (
-                  <div key={idx} className="group rounded-xl border border-[var(--glass-border)] bg-accent-12 p-6 hover:bg-accent-15 hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[var(--shadow-glow)]">
+                  <div key={idx} className="group rounded-xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:bg-white/10 hover:border-white/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/20">
                     <p className="text-xs uppercase tracking-wider text-accent mb-3 font-bold">{item.frequency}</p>
                     <div className="space-y-2">
                       {item.price_monthly && (
@@ -136,7 +136,7 @@ export default function CoursesSection() {
         // Layout: List with Price (Extra)
         if (section.layout_type === "list_with_price") {
           return (
-            <div key={section.id} className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6">
+            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/30 transition-all">
               <h3 className="text-lg font-semibold text-white mb-4">{section.section_title}</h3>
               <div className="space-y-3">
                 {section.items.map((item, idx) => (
@@ -153,7 +153,7 @@ export default function CoursesSection() {
         // Layout: List without Price (Sconti)
         if (section.layout_type === "list_no_price") {
           return (
-            <div key={section.id} className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6">
+            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/30 transition-all">
               <h3 className="text-lg font-semibold text-white mb-4">{section.section_title}</h3>
               <div className="space-y-3">
                 {section.items.map((item, idx) => (
@@ -175,7 +175,7 @@ export default function CoursesSection() {
         // Layout: Info Card (Note, avvisi)
         if (section.layout_type === "info_card") {
           return (
-            <div key={section.id} className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6">
+            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/30 transition-all">
               <h3 className="text-lg font-semibold text-white mb-4">{section.section_title}</h3>
               <div className="space-y-3 text-xs text-muted">
                 {section.items.map((item, idx) => (

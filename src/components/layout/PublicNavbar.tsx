@@ -72,7 +72,7 @@ export default function PublicNavbar() {
 
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py">
+      <div className="container py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-3">

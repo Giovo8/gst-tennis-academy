@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { Calendar, Check, X, Clock, User, AlertCircle, CheckCircle2, XCircle, Award, Users, Trophy, ClipboardList } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import AnnouncementsWidget from "@/components/dashboard/AnnouncementsWidget";
 import { supabase } from "@/lib/supabase/client";
 import { format, formatDistanceToNow, isFuture, isPast } from "date-fns";
 import { it } from "date-fns/locale";
@@ -236,6 +237,9 @@ export default function MaestroDashboardPage() {
           <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-lime-300" />} color="lime" />
           <StatCard title="Totali" value={allLessons.length} icon={<Calendar className="h-8 w-8 text-teal-300" />} color="teal" />
         </div>
+
+        {/* Announcements Widget */}
+        <AnnouncementsWidget />
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">

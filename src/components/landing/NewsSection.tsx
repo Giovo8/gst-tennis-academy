@@ -119,7 +119,7 @@ export default function NewsSection() {
             <article 
               key={item.id} 
               onClick={() => setSelectedNews(item)}
-              className="group flex h-full flex-col rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden cursor-pointer hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300"
+              className="group flex h-full flex-col rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden cursor-pointer hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
             >
               {item.image_url && (
                 <div className="w-full aspect-[16/9] overflow-hidden">
@@ -132,7 +132,7 @@ export default function NewsSection() {
               )}
               <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-accent border border-[var(--glass-border)]">
+                  <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">
                     {item.category}
                   </span>
                   <p className="text-xs text-gray-400">

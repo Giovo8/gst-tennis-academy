@@ -69,11 +69,11 @@ export async function PUT(
     // Check if user is admin/gestore
     const { data: profile } = await supabase
       .from("profiles")
-      .select("user_role")
+      .select("role")
       .eq("id", user.id)
       .single();
 
-    if (!profile || !["admin", "gestore"].includes(profile.user_role)) {
+    if (!profile || !["admin", "gestore"].includes(profile.role)) {
       return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
     }
 
@@ -144,11 +144,11 @@ export async function DELETE(
     // Check if user is admin/gestore
     const { data: profile } = await supabase
       .from("profiles")
-      .select("user_role")
+      .select("role")
       .eq("id", user.id)
       .single();
 
-    if (!profile || !["admin", "gestore"].includes(profile.user_role)) {
+    if (!profile || !["admin", "gestore"].includes(profile.role)) {
       return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
     }
 
@@ -166,6 +166,102 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Error in DELETE /api/announcements/[id]:", error);
+    return NextResponse.json({ error: "Errore interno del server" }, { status: 500 });
+  }
+}
+
+// PATCH /api/announcements/[id] - Partial update (for quick actions like publish/unpublish)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = supabaseServer;
+    
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+    }
+
+    // Check if user is admin/gestore
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "gestore"].includes(profile.role)) {
+      return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
+    }
+
+    const body = await req.json();
+
+    // Update announcement
+    const { data: announcement, error: updateError } = await supabase
+      .from("announcements")
+      .update(body)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating announcement:", updateError);
+      return NextResponse.json({ error: "Errore nell'aggiornamento" }, { status: 500 });
+    }
+
+    return NextResponse.json({ announcement });
+  } catch (error: any) {
+    console.error("Error in PATCH /api/announcements/[id]:", error);
+    return NextResponse.json({ error: "Errore interno del server" }, { status: 500 });
+  }
+}
+
+// PATCH /api/announcements/[id] - Partial update (for quick actions like publish/unpublish)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = supabaseServer;
+    
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+    }
+
+    // Check if user is admin/gestore
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "gestore"].includes(profile.role)) {
+      return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
+    }
+
+    const body = await req.json();
+
+    // Update announcement
+    const { data: announcement, error: updateError } = await supabase
+      .from("announcements")
+      .update(body)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating announcement:", updateError);
+      return NextResponse.json({ error: "Errore nell'aggiornamento" }, { status: 500 });
+    }
+
+    return NextResponse.json({ announcement });
+  } catch (error: any) {
+    console.error("Error in PATCH /api/announcements/[id]:", error);
     return NextResponse.json({ error: "Errore interno del server" }, { status: 500 });
   }
 }

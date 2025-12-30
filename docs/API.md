@@ -1,20 +1,25 @@
-# GST Tennis Academy - API Documentation
+# API Documentation - GST Tennis Academy
+
+**Ultima revisione**: 30 Dicembre 2025  
+**Versione API**: 2.0
 
 ## Base URL
+
 ```
 Development: http://localhost:3000/api
 Production: https://your-domain.com/api
 ```
 
-## Authentication
+## Autenticazione
 
-All protected endpoints require Supabase JWT token in Authorization header:
+Tutti gli endpoint protetti richiedono un token JWT Supabase nell'header Authorization:
 
 ```bash
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-Get token via Supabase Auth:
+Ottenere il token tramite Supabase Auth:
+
 ```typescript
 const { data: { session } } = await supabase.auth.getSession()
 const token = session?.access_token
@@ -22,43 +27,48 @@ const token = session?.access_token
 
 ### Service Role Pattern (Admin APIs)
 
-Admin endpoints use Supabase Service Role Key for bypassing RLS:
-- `/api/admin/*` - Require service role authentication
-- User must have `admin` or `gestore` role verified via profile table
-- Service role key stored in `SUPABASE_SERVICE_ROLE_KEY` env variable
+Endpoint admin usano la Service Role Key di Supabase per bypassare RLS:
+- `/api/admin/*` - Richiedono autenticazione service role
+- L'utente deve avere ruolo `admin` o `gestore` verificato tramite tabella profiles
+- Service role key salvata in variabile ambiente `SUPABASE_SERVICE_ROLE_KEY`
 
-## Error Responses
+## Formato Errori
 
-Standard error format:
+Formato standard degli errori:
+
 ```json
 {
-  "error": "Error message description",
+  "error": "Descrizione errore",
   "code": "ERROR_CODE",
   "details": {}
 }
 ```
 
-HTTP Status Codes:
+**HTTP Status Codes**:
 - `200`: Success
 - `201`: Created
-- `400`: Bad Request (validation error)
-- `401`: Unauthorized (missing/invalid token)
-- `403`: Forbidden (insufficient permissions)
+- `400`: Bad Request (errore validazione)
+- `401`: Unauthorized (token mancante/invalido)
+- `403`: Forbidden (permessi insufficienti)
 - `404`: Not Found
-- `409`: Conflict (duplicate/capacity exceeded)
+- `409`: Conflict (duplicato/capacità superata)
 - `500`: Internal Server Error
 
 ---
 
 ## Endpoints
 
-### Users
+## Utenti
 
-#### `GET /api/users`
-Get list of users for booking/tournament enrollment. Used in BookingCalendar.
+### `GET /api/users`
 
-**Auth**: Required  
-**Roles**: admin, gestore, maestro
+Ottiene lista utenti per prenotazioni/iscrizioni tornei.
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore, maestro
+
+**Query Parameters**:
+- `role` (opzionale): Filtra per ruolo
 
 **Response**:
 ```json
@@ -74,23 +84,24 @@ Get list of users for booking/tournament enrollment. Used in BookingCalendar.
 }
 ```
 
-**Notes**:
-- Filters users to only include: atleta, coach, maestro, admin, gestore
-- Case-insensitive role matching
+**Note**:
+- Filtra utenti solo: atleta, coach, maestro, admin, gestore
+- Ricerca case-insensitive
 
 ---
 
-### Admin
+## Admin
 
-#### `GET /api/admin/users`
-List all users with full profile data. Uses Service Role for RLS bypass.
+### `GET /api/admin/users`
 
-**Auth**: Required (Service Role)  
-**Roles**: admin, gestore
+Lista tutti gli utenti con dati completi. Usa Service Role per bypass RLS.
+
+**Auth**: Richiesta (Service Role)  
+**Ruoli**: admin, gestore
 
 **Query Parameters**:
-- `role` (optional): Filter by role
-- `search` (optional): Search by name/email
+- `role` (opzionale): Filtra per ruolo
+- `search` (opzionale): Ricerca per nome/email
 
 **Response**:
 ```json
@@ -98,729 +109,214 @@ List all users with full profile data. Uses Service Role for RLS bypass.
   "users": [
     {
       "id": "uuid",
-      "email": "atleta@example.com",
+      "email": "user@example.com",
       "full_name": "Mario Rossi",
       "role": "atleta",
-      "avatar_url": "https://...",
-      "phone": "+39 123 456 7890",
-      "created_at": "2024-01-15T10:00:00Z",
-      "last_sign_in_at": "2024-12-28T09:00:00Z"
+      "phone": "+39 123456789",
+      "created_at": "2025-01-01T00:00:00Z"
     }
   ]
 }
 ```
 
-**Errors**:
-- `401`: Not authenticated
-- `403`: Insufficient permissions (not admin/gestore)
+### `POST /api/admin/users`
 
-#### `POST /api/admin/users`
-Create new user account with Supabase Admin API.
+Crea nuovo utente.
 
-**Auth**: Required (Service Role)  
-**Roles**: admin, gestore
+**Auth**: Richiesta (Service Role)  
+**Ruoli**: admin, gestore
 
 **Body**:
 ```json
 {
-  "email": "nuovo@example.com",
+  "email": "newuser@example.com",
   "password": "password123",
   "full_name": "Nuovo Utente",
   "role": "atleta"
 }
 ```
 
-**Validations**:
-- Email format must be valid
-- Password minimum 6 characters
-- Valid roles: `atleta`, `maestro`, `gestore`, `admin`
-- Gestore cannot create admin users
-- Email must be unique
-
-**Response** (201):
+**Response**:
 ```json
 {
   "user": {
     "id": "uuid",
-    "email": "nuovo@example.com",
+    "email": "newuser@example.com",
+    "full_name": "Nuovo Utente",
     "role": "atleta"
   }
 }
 ```
 
-**Errors**:
-- `400`: Validation error or email already exists
-- `403`: Gestore trying to create admin
+### `PATCH /api/admin/users/:id`
 
-#### `PATCH /api/admin/users`
-Update user role or profile.
+Aggiorna utente esistente.
 
-**Auth**: Required (Service Role)  
-**Roles**: admin, gestore
+**Auth**: Richiesta (Service Role)  
+**Ruoli**: admin, gestore
 
 **Body**:
 ```json
 {
-  "userId": "uuid",
-  "role": "coach",
-  "full_name": "Mario Rossi Updated"
+  "full_name": "Nome Aggiornato",
+  "role": "maestro",
+  "phone": "+39 987654321"
 }
 ```
+
+### `DELETE /api/admin/users/:id`
+
+Elimina utente.
+
+**Auth**: Richiesta (Service Role)  
+**Ruoli**: admin, gestore
 
 **Response**:
 ```json
 {
-  "user": {
-    "id": "uuid",
-    "role": "coach",
-    "updated_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
-#### `DELETE /api/admin/users`
-Delete user account.
-
-**Auth**: Required (Service Role)  
-**Roles**: admin
-
-**Body**:
-```json
-{
-  "userId": "uuid"
-}
-```
-
-**Response**:
-```json
-{
-  "message": "Utente eliminato con successo"
-}
-```
-
-#### `GET /api/admin/stats`
-Get dashboard statistics for admin panel.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**Response**:
-```json
-{
-  "totalUsers": 150,
-  "totalBookings": 1250,
-  "todayBookings": 8,
-  "totalTournaments": 12,
-  "activeTournaments": 2
+  "success": true
 }
 ```
 
 ---
 
-### Bookings
+## Tornei
 
-#### `GET /api/bookings`
-Retrieve all bookings (filtered by user role).
+### `GET /api/tournaments`
 
-**Auth**: Required  
-**Roles**: All
+Ottiene lista tornei.
+
+**Auth**: Non richiesta  
 
 **Query Parameters**:
-- `date` (optional): Filter by date (YYYY-MM-DD)
-- `status` (optional): Filter by status (`pending`, `confirmed`, `cancelled`)
-- `athlete_id` (optional, admin/gestore): Filter by athlete
+- `status` (opzionale): Filtra per status ('Aperto', 'In Corso', 'Concluso', 'Annullato')
+- `type` (opzionale): Filtra per tournament_type
+- `limit` (opzionale): Limita risultati (default: tutti)
 
 **Response**:
-```json
-{
-  "bookings": [
-    {
-      "id": "uuid",
-      "athlete_id": "uuid",
-      "athlete_name": "Mario Rossi",
-      "date": "2024-12-30",
-      "time": "10:00",
-      "court": "Campo 1",
-      "type": "lezione_privata",
-      "status": "confirmed",
-      "coach_id": "uuid",
-      "coach_name": "Luigi Bianchi",
-      "coach_confirmed": true,
-      "manager_confirmed": true,
-      "created_at": "2024-12-28T10:00:00Z"
-    }
-  ]
-}
-```
-
-#### `POST /api/bookings`
-Create new booking.
-
-**Auth**: Required  
-**Roles**: atleta, coach, maestro, gestore, admin
-
-**Body**:
-```json
-{
-  "date": "2024-12-30",
-  "time": "10:00",
-  "court": "Campo 1",
-  "type": "lezione_privata",
-  "coach_id": "uuid",
-  "notes": "Preferenza per allenamento servizio"
-}
-```
-
-**Response** (201):
-```json
-{
-  "booking": {
-    "id": "uuid",
-    "status": "pending",
-    "created_at": "2024-12-28T10:00:00Z"
-  },
-  "message": "Prenotazione creata. In attesa di conferma."
-}
-```
-
-#### `PUT /api/bookings/:id`
-Update booking status (confirm/cancel).
-
-**Auth**: Required  
-**Roles**: coach (own bookings), gestore, admin
-
-**Body**:
-```json
-{
-  "action": "confirm",
-  "role": "coach"
-}
-```
-
-**Actions**:
-- `confirm`: Confirm booking (coach or manager)
-- `cancel`: Cancel booking
-
-**Response**:
-```json
-{
-  "booking": {
-    "id": "uuid",
-    "status": "confirmed",
-    "coach_confirmed": true,
-    "manager_confirmed": true
-  },
-  "message": "Prenotazione confermata"
-}
-```
-
----
-
----
-
-### Tournaments
-
-#### `GET /api/tournaments`
-List all tournaments with filters.
-
-**Auth**: Optional (public endpoint)
-
-**Query Parameters**:
-- `id` (optional): Get specific tournament by ID
-- `upcoming` (optional): `true` to get only upcoming tournaments
-- `type` (optional): Filter by competition type (`torneo` or `campionato`)
-
-**Response** (list):
 ```json
 {
   "tournaments": [
     {
       "id": "uuid",
-      "title": "Torneo Estivo 2024",
-      "start_date": "2024-07-01T00:00:00Z",
-      "end_date": "2024-07-07T00:00:00Z",
-      "competition_type": "torneo",
-      "format": "eliminazione_diretta",
-      "status": "Aperto",
-      "current_phase": "iscrizioni",
+      "title": "Torneo Open Gennaio 2025",
+      "description": "Torneo ad eliminazione diretta",
+      "tournament_type": "eliminazione_diretta",
       "max_participants": 16,
-      "created_at": "2024-06-01T10:00:00Z"
+      "current_participants": 8,
+      "status": "Aperto",
+      "start_date": "2025-01-15T09:00:00Z",
+      "end_date": "2025-01-20T18:00:00Z",
+      "category": "Open",
+      "level": "Intermedio",
+      "surface_type": "terra",
+      "entry_fee": 25.00,
+      "created_at": "2025-01-01T00:00:00Z"
     }
   ]
 }
 ```
 
-**Response** (single with id):
-```json
-{
-  "tournament": {
-    "id": "uuid",
-    "title": "Torneo Estivo 2024",
-    "format": "eliminazione_diretta",
-    "status": "In Corso"
-  },
-  "current_participants": 12
-}
-```
+### `POST /api/tournaments`
 
-**Tournament Formats**:
-- `eliminazione_diretta`: Single elimination bracket
-- `round_robin`: Round-robin (everyone plays everyone)
-- `girone_eliminazione`: Groups + knockout
+Crea nuovo torneo.
 
-**Competition Types**:
-- `torneo`: Tournament (single event)
-- `campionato`: Championship (league play)
-
-#### `POST /api/tournaments`
-Create new tournament.
-
-**Auth**: Required  
-**Roles**: admin, gestore
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
 **Body**:
 ```json
 {
-  "title": "Torneo Autunnale 2024",
-  "start_date": "2024-09-15",
-  "end_date": "2024-09-22",
-  "competition_type": "torneo",
-  "format": "eliminazione_diretta",
+  "title": "Nuovo Torneo",
+  "description": "Descrizione torneo",
+  "tournament_type": "eliminazione_diretta",
   "max_participants": 16,
-  "status": "Aperto"
+  "start_date": "2025-02-01T09:00:00Z",
+  "end_date": "2025-02-05T18:00:00Z",
+  "category": "Open",
+  "level": "Avanzato",
+  "surface_type": "terra",
+  "match_format": "best_of_3",
+  "entry_fee": 30.00,
+  "prize_money": 500.00
 }
 ```
 
-**Validations**:
-- `max_participants` for `eliminazione_diretta` must be power of 2 (2, 4, 8, 16, 32, 64, 128)
-- `max_participants` for `round_robin` or `girone_eliminazione` must be >= 3
-- `competition_type` must be `torneo` or `campionato`
-- `format` must be valid format
+**Per torneo con gironi**:
+```json
+{
+  "title": "Torneo con Gironi",
+  "tournament_type": "girone_eliminazione",
+  "max_participants": 16,
+  "num_groups": 4,
+  "teams_per_group": 4,
+  "teams_advancing": 2
+}
+```
 
-**Response** (201):
+**Response**:
 ```json
 {
   "tournament": {
     "id": "uuid",
-    "title": "Torneo Autunnale 2024",
+    "title": "Nuovo Torneo",
     "status": "Aperto",
-    "created_at": "2024-08-01T10:00:00Z"
+    "current_phase": "iscrizioni"
   }
 }
 ```
 
-**Errors**:
-- `400`: Invalid format or max_participants
-- `403`: Insufficient permissions
+### `PUT /api/tournaments/:id`
 
-#### `PUT /api/tournaments`
-Update tournament details.
+Aggiorna torneo esistente.
 
-**Auth**: Required  
-**Roles**: admin, gestore
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
-**Query Parameters**:
-- `id` (required): Tournament ID
+**Body**: Stessi campi di POST
 
-**Body**:
-```json
-{
-  "title": "Torneo Autunnale 2024 - Updated",
-  "status": "Chiuso",
-  "end_date": "2024-09-23"
-}
-```
+### `DELETE /api/tournaments/:id`
+
+Elimina torneo.
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
 **Response**:
 ```json
 {
-  "tournament": {
-    "id": "uuid",
-    "title": "Torneo Autunnale 2024 - Updated",
-    "updated_at": "2024-12-29T10:00:00Z"
-  }
+  "success": true
 }
 ```
 
-#### `DELETE /api/tournaments`
-Delete tournament.
+### `GET /api/tournaments/stats`
 
-**Auth**: Required  
-**Roles**: admin, gestore
+Ottiene statistiche generali tornei.
 
-**Query Parameters**:
-- `id` (required): Tournament ID
+**Auth**: Non richiesta
 
 **Response**:
 ```json
 {
-  "message": "Torneo eliminato con successo"
-}
-```
-
-#### `POST /api/tournaments/create`
-Alias for POST /api/tournaments. Creates new tournament.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-(Same as POST /api/tournaments)
-
-#### `POST /api/tournaments/[id]/start`
-Start tournament and initialize based on format.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/start`
-
-**Behavior**:
-- `eliminazione_diretta`: Creates bracket
-- `girone_eliminazione`: Assigns participants to groups
-- `campionato`: Initializes standings
-
-**Validations**:
-- Tournament must be in `iscrizioni` phase
-- Minimum participants: 2 for eliminazione_diretta, 3 for others
-- Cannot start already started tournament
-
-**Response**:
-```json
-{
-  "message": "Torneo avviato con successo",
-  "tournament": {
-    "id": "uuid",
-    "current_phase": "eliminazione",
-    "status": "In Corso"
-  }
-}
-```
-
-**Errors**:
-- `400`: Not enough participants or wrong phase
-- `403`: Insufficient permissions
-- `404`: Tournament not found
-
-#### `POST /api/tournaments/[id]/generate-groups`
-Generate groups for girone_eliminazione format.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/generate-groups`
-
-**Requirements**:
-- Tournament type must be `girone_eliminazione`
-- Tournament must be in `gironi` phase
-- Minimum 4 participants
-- Groups not already generated
-
-**Algorithm**:
-- Snake draft distribution for fairness
-- Groups named A, B, C, D, etc.
-- Creates round-robin matches within each group
-
-**Response**:
-```json
-{
-  "message": "Gironi generati con successo",
-  "groups": [
-    {
-      "id": "uuid",
-      "group_name": "Girone A",
-      "group_order": 1
-    }
-  ],
-  "matches_created": 24
-}
-```
-
-**Errors**:
-- `400`: Wrong tournament type, phase, or not enough participants
-- `404`: Tournament not found
-
-#### `POST /api/tournaments/[id]/generate-championship`
-Generate championship calendar (round-robin for all participants).
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/generate-championship`
-
-**Requirements**:
-- Tournament type must be `campionato`
-- Tournament in `registration` or `not_started` phase
-- Minimum 2 participants
-- Matches not already generated
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Calendario generato con successo",
-  "tournament": {
-    "id": "uuid",
-    "phase": "in_progress"
-  },
-  "matches_created": 45
-}
-```
-
-**Errors**:
-- `400`: Wrong type, phase, or not enough participants
-- `403`: Insufficient permissions
-
-#### `POST /api/tournaments/[id]/knockout`
-Advance tournament to knockout phase (after groups).
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/knockout`
-
-**Requirements**:
-- Tournament must be in group phase
-- All group matches must be completed
-- Extracts top 2 from each group
-
-**Response**:
-```json
-{
-  "message": "Fase eliminazione avviata",
-  "qualified_participants": 8,
-  "bracket_created": true
-}
-```
-
-#### `GET /api/tournaments/[id]/group-matches`
-Get all matches for tournament or specific group.
-
-**Auth**: Optional
-
-**URL**: `/api/tournaments/{tournamentId}/group-matches`
-
-**Query Parameters**:
-- `group_id` (optional): Filter by group
-- `phase` (optional): Filter by phase (`gironi` or `eliminazione`)
-
-**Response**:
-```json
-{
-  "matches": [
-    {
-      "id": "uuid",
-      "tournament_id": "uuid",
-      "phase": "gironi",
-      "round_number": 1,
-      "match_number": 1,
-      "player1_id": "uuid",
-      "player2_id": "uuid",
-      "player1_score": [6, 6],
-      "player2_score": [4, 3],
-      "winner_id": "uuid",
-      "status": "completed",
-      "scheduled_date": "2024-07-01"
-    }
-  ]
-}
-```
-
-#### `POST /api/tournaments/[id]/group-matches`
-Create group matches (usually called automatically).
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/group-matches`
-
-**Body**:
-```json
-{
-  "group_id": "uuid",
-  "round_robin": true
-}
-```
-
-**Response**:
-```json
-{
-  "matches_created": 6,
-  "message": "Partite create con successo"
-}
-```
-
-#### `GET /api/tournaments/[id]/matches/[matchId]`
-Get single match details with full tennis scoring.
-
-**Auth**: Optional
-
-**URL**: `/api/tournaments/{tournamentId}/matches/{matchId}`
-
-**Response**:
-```json
-{
-  "success": true,
-  "match": {
-    "id": "uuid",
-    "tournament": {
-      "title": "Torneo Estivo",
-      "match_format": "best_of_3",
-      "surface_type": "terra"
-    },
-    "player1": {
-      "id": "uuid",
-      "profiles": {
-        "full_name": "Mario Rossi",
-        "avatar_url": "https://..."
-      }
-    },
-    "player2": {
-      "id": "uuid",
-      "profiles": {
-        "full_name": "Luigi Bianchi"
-      }
-    },
-    "sets": [
-      {
-        "player1_score": 6,
-        "player2_score": 4,
-        "player1_tiebreak": null,
-        "player2_tiebreak": null
-      }
-    ],
-    "winner_id": "uuid",
-    "status": "completed"
-  }
-}
-```
-
-#### `PUT /api/tournaments/[id]/matches/[matchId]`
-Update match score with tennis scoring validation.
-
-**Auth**: Required  
-**Roles**: admin, gestore, or match participants
-
-**URL**: `/api/tournaments/{tournamentId}/matches/{matchId}`
-
-**Body**:
-```json
-{
-  "sets": [
-    {
-      "player1_score": 6,
-      "player2_score": 4
-    },
-    {
-      "player1_score": 7,
-      "player2_score": 6,
-      "player1_tiebreak": 7,
-      "player2_tiebreak": 4
-    }
-  ]
-}
-```
-
-**Tennis Scoring Validation**:
-- Must win by 2 games (except 7-6 tiebreak)
-- Minimum 6 games to win a set
-- Determines winner based on `best_of` format (2 sets for best of 3, 3 sets for best of 5)
-
-**Response**:
-```json
-{
-  "success": true,
-  "match": {
-    "id": "uuid",
-    "winner_id": "uuid",
-    "status": "completed",
-    "score_summary": "6-4, 7-6(7-4)"
-  }
-}
-```
-
-**Errors**:
-- `400`: Invalid tennis scoring
-- `403`: Not authorized to update this match
-
-#### `PATCH /api/tournaments/[id]/matches/[matchId]`
-Partial update of match (status, schedule).
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/matches/{matchId}`
-
-**Body**:
-```json
-{
-  "status": "in_progress",
-  "scheduled_date": "2024-07-05"
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "match": {
-    "id": "uuid",
-    "status": "in_progress"
-  }
-}
-```
-
-#### `DELETE /api/tournaments/[id]/matches/[matchId]`
-Delete match.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/tournaments/{tournamentId}/matches/{matchId}`
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Match eliminato"
-}
-```
-
-#### `GET /api/tournaments/stats`
-Get tournament statistics summary.
-
-**Auth**: Optional
-
-**Response**:
-```json
-{
-  "total": 15,
-  "active": 2,
-  "completed": 10,
-  "upcoming": 3,
-  "totalParticipants": 180,
-  "totalMatches": 456,
-  "completedMatches": 420,
-  "byType": {
-    "torneo": 12,
-    "campionato": 3
-  }
+  "total": 45,
+  "active": 5,
+  "completed": 38,
+  "upcoming": 2
 }
 ```
 
 ---
 
----
+## Partecipanti Tornei
 
-### Tournament Participants
+### `GET /api/tournament_participants`
 
-#### `GET /api/tournament_participants`
-Get tournament participants with filters.
+Ottiene partecipanti di un torneo.
 
-**Auth**: Optional
+**Auth**: Non richiesta
 
 **Query Parameters**:
-- `user_id` (optional): Filter by user
-- `tournament_id` (optional): Filter by tournament
+- `tournament_id` (richiesto): ID del torneo
 
 **Response**:
 ```json
@@ -830,240 +326,131 @@ Get tournament participants with filters.
       "id": "uuid",
       "tournament_id": "uuid",
       "user_id": "uuid",
-      "seed": 1,
-      "status": "accepted",
-      "group_position": null,
-      "stats": {},
-      "created_at": "2024-06-15T10:00:00Z",
-      "profiles": {
-        "id": "uuid",
+      "user": {
         "full_name": "Mario Rossi",
         "email": "mario@example.com"
-      }
+      },
+      "group_id": "uuid",
+      "group": {
+        "group_name": "Girone A"
+      },
+      "seed": 1,
+      "stats": {
+        "matches_played": 3,
+        "matches_won": 2,
+        "matches_lost": 1,
+        "sets_won": 5,
+        "sets_lost": 3,
+        "points": 4
+      },
+      "created_at": "2025-01-01T00:00:00Z"
     }
   ]
 }
 ```
 
-#### `POST /api/tournament_participants`
-Register user for tournament.
+### `POST /api/tournament_participants`
 
-**Auth**: Required  
-**Roles**: Any authenticated user (for self), gestore/admin (for others), maestro (for athletes only)
+Iscrivi utente a torneo (manuale da admin o auto-iscrizione).
+
+**Auth**: Richiesta
 
 **Body**:
 ```json
 {
-  "user_id": "uuid",
-  "tournament_id": "uuid"
+  "tournament_id": "uuid",
+  "user_id": "uuid"
 }
 ```
 
-**Permissions**:
-- Users can register themselves
-- `gestore` and `admin` can register anyone
-- `maestro` can only register users with `atleta` role
+**Note**:
+- Utenti possono iscriversi autonomamente (user_id = auth.uid())
+- Admin/Gestore possono iscrivere qualsiasi utente
+- Controlla capacità massima torneo
+- Verifica che torneo sia nello stato 'Aperto'
 
-**Validations**:
-- Tournament must have available capacity
-- User not already registered
-
-**Response** (201):
+**Response**:
 ```json
 {
   "participant": {
     "id": "uuid",
-    "user_id": "uuid",
     "tournament_id": "uuid",
-    "status": "accepted"
+    "user_id": "uuid"
   }
 }
 ```
 
-**Errors**:
-- `403`: Insufficient permissions
-- `404`: Tournament or user not found
-- `409`: Tournament is full
+**Errori**:
+- `409`: Torneo pieno
+- `409`: Utente già iscritto
+- `400`: Torneo non aperto alle iscrizioni
 
-#### `DELETE /api/tournament_participants`
-Remove participant from tournament.
+### `DELETE /api/tournament_participants`
 
-**Auth**: Required  
-**Roles**: admin, gestore, or self (before tournament starts)
+Rimuovi partecipante da torneo.
 
-**Query Parameters** or **Body**:
-```json
-{
-  "id": "uuid"
-}
-```
-
-**Response**:
-```json
-{
-  "message": "Partecipante rimosso con successo"
-}
-```
-
----
-
-### Announcements
-
-#### `GET /api/announcements`
-Get published announcements with filters.
-
-**Auth**: Optional (visibility-based filtering)
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore (o utente stesso se torneo in fase iscrizioni)
 
 **Query Parameters**:
-- `type` (optional): Filter by announcement_type
-- `visibility` (optional): Filter by visibility
-- `priority` (optional): Filter by priority
-- `limit` (optional): Max results (default: 50)
-- `include_expired` (optional): Include expired announcements (default: false)
+- `tournament_id` (richiesto): ID torneo
+- `user_id` (richiesto): ID utente
 
 **Response**:
 ```json
 {
-  "announcements": [
-    {
-      "id": "uuid",
-      "title": "Torneo Estivo Aperto",
-      "content": "Iscrizioni aperte fino al 20 giugno...",
-      "announcement_type": "tournament",
-      "priority": "high",
-      "expiry_date": "2024-06-20T23:59:59Z",
-      "visibility": "public",
-      "is_published": true,
-      "is_pinned": true,
-      "view_count": 145,
-      "image_url": "https://...",
-      "link_url": "/tornei/123",
-      "link_text": "Iscriviti ora",
-      "created_at": "2024-06-01T10:00:00Z",
-      "profiles": {
-        "id": "uuid",
-        "full_name": "Admin GST",
-        "avatar_url": "https://..."
-      }
-    }
-  ]
-}
-```
-
-**Announcement Types**:
-- `general`: General announcements
-- `tournament`: Tournament-related
-- `event`: Events
-- `maintenance`: System maintenance
-- `news`: News updates
-
-**Visibility Levels**:
-- `public`: Everyone can see
-- `members`: Only authenticated users
-- `staff`: Only staff (coach, maestro, gestore, admin)
-- `admin`: Only admin/gestore
-
-**Priority**:
-- `low`, `normal`, `high`, `urgent`
-
-#### `POST /api/announcements`
-Create new announcement.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**Body**:
-```json
-{
-  "title": "Nuovo Annuncio",
-  "content": "Contenuto dell'annuncio...",
-  "announcement_type": "general",
-  "priority": "normal",
-  "visibility": "public",
-  "is_published": true,
-  "is_pinned": false,
-  "expiry_date": "2024-12-31T23:59:59Z",
-  "image_url": "https://...",
-  "link_url": "/path",
-  "link_text": "Leggi di più"
-}
-```
-
-**Response** (201):
-```json
-{
-  "announcement": {
-    "id": "uuid",
-    "title": "Nuovo Annuncio",
-    "created_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
-#### `PUT /api/announcements/[id]`
-Update announcement.
-
-**Auth**: Required  
-**Roles**: admin, gestore, or author
-
-**URL**: `/api/announcements/{id}`
-
-**Body**: Same as POST
-
-**Response**:
-```json
-{
-  "announcement": {
-    "id": "uuid",
-    "updated_at": "2024-12-29T10:05:00Z"
-  }
-}
-```
-
-#### `DELETE /api/announcements/[id]`
-Delete announcement.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/announcements/{id}`
-
-**Response**:
-```json
-{
-  "message": "Annuncio eliminato"
+  "success": true
 }
 ```
 
 ---
 
-### Messages & Conversations
+## Gestione Tornei - Operazioni Avanzate
 
-#### `GET /api/conversations`
-Get all conversations for current user.
+### `POST /api/tournaments/:id/start`
 
-**Auth**: Required  
-**Roles**: All
+Avvia torneo (cambia status da 'Aperto' a 'In Corso').
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
 **Response**:
 ```json
 {
-  "conversations": [
+  "tournament": {
+    "id": "uuid",
+    "status": "In Corso",
+    "current_phase": "gironi"
+  }
+}
+```
+
+### `POST /api/tournaments/:id/generate-groups`
+
+Genera gironi per torneo tipo 'girone_eliminazione'.
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
+
+**Note**:
+- Crea `num_groups` gironi (Girone A, B, C, ...)
+- Assegna partecipanti in modo bilanciato
+- Imposta seed
+
+**Response**:
+```json
+{
+  "groups": [
     {
       "id": "uuid",
-      "title": "Chat con Coach Luigi",
-      "is_group": false,
-      "created_by": "uuid",
-      "created_at": "2024-12-01T10:00:00Z",
-      "last_message_at": "2024-12-28T15:30:00Z",
-      "last_message_preview": "Ci vediamo domani alle 10",
-      "unread_count": 2,
+      "group_name": "Girone A",
       "participants": [
         {
-          "user_id": "uuid",
-          "full_name": "Luigi Bianchi",
-          "avatar_url": "https://...",
-          "role": "coach"
+          "id": "uuid",
+          "user": {
+            "full_name": "Mario Rossi"
+          },
+          "seed": 1
         }
       ]
     }
@@ -1071,607 +458,234 @@ Get all conversations for current user.
 }
 ```
 
-#### `POST /api/conversations`
-Create new conversation (1-on-1 or group).
+### `POST /api/tournaments/:id/group-matches`
 
-**Auth**: Required  
-**Roles**: All
+Genera partite per fase a gironi.
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
 **Body**:
 ```json
 {
-  "participant_ids": ["uuid1", "uuid2"],
-  "title": "Chat Gruppo Torneo",
-  "is_group": false
+  "matchesPerPlayer": 2
 }
 ```
 
-**Response** (201):
-```json
-{
-  "conversation": {
-    "id": "uuid",
-    "title": "Chat Gruppo Torneo",
-    "created_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
-#### `GET /api/messages`
-Get messages for a conversation.
-
-**Auth**: Required  
-**Roles**: Conversation participants only
-
-**Query Parameters**:
-- `conversation_id` (required): Conversation ID
-- `limit` (optional): Messages per page (default: 50)
-- `before` (optional): Get messages before this timestamp
+**Note**:
+- Crea partite all-vs-all all'interno di ogni girone
+- Round-robin se `matchesPerPlayer` non specificato (tutti contro tutti)
 
 **Response**:
 ```json
 {
-  "messages": [
+  "matches": [
     {
       "id": "uuid",
-      "conversation_id": "uuid",
-      "sender_id": "uuid",
-      "sender_name": "Mario Rossi",
-      "sender_avatar": "https://...",
-      "content": "Buongiorno, è disponibile per una lezione?",
-      "message_type": "text",
-      "created_at": "2024-12-28T10:00:00Z",
-      "read_at": null,
-      "edited_at": null
+      "phase": "gironi",
+      "round_name": "Girone A - Giornata 1",
+      "player1": { "full_name": "Mario Rossi" },
+      "player2": { "full_name": "Luigi Bianchi" },
+      "status": "programmata"
     }
   ]
 }
 ```
 
-#### `POST /api/messages`
-Send new message.
+### `POST /api/tournaments/:id/generate-bracket`
 
-**Auth**: Required  
-**Roles**: Conversation participants only
+Genera tabellone eliminazione diretta.
 
-**Body**:
-```json
-{
-  "conversation_id": "uuid",
-  "content": "Grazie, ci vediamo domani!",
-  "message_type": "text",
-  "attachment_url": null,
-  "reply_to_message_id": null
-}
-```
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
-**Message Types**:
-- `text`: Plain text message
-- `image`: Image attachment
-- `file`: File attachment
-- `system`: System-generated message
-
-**Response** (201):
-```json
-{
-  "message": {
-    "id": "uuid",
-    "conversation_id": "uuid",
-    "created_at": "2024-12-28T10:05:00Z"
-  }
-}
-```
-
-**Errors**:
-- `403`: Not a participant of the conversation
-
-#### `PATCH /api/messages/[id]`
-Mark message as read or edit content.
-
-**Auth**: Required  
-**Roles**: Recipient (mark read), Sender (edit)
-
-**URL**: `/api/messages/{messageId}`
-
-**Body**:
-```json
-{
-  "read": true
-}
-```
-or
-```json
-{
-  "content": "Updated message content"
-}
-```
+**Note**:
+- Per torneo tipo 'eliminazione_diretta'
+- Crea bracket completo (ottavi, quarti, semifinali, finale)
+- Seeding automatico se disponibile
 
 **Response**:
 ```json
 {
-  "message": {
-    "id": "uuid",
-    "read_at": "2024-12-29T10:00:00Z"
+  "bracket": {
+    "rounds": [
+      {
+        "round_name": "Ottavi di Finale",
+        "matches": [...]
+      },
+      {
+        "round_name": "Quarti di Finale",
+        "matches": [...]
+      }
+    ]
   }
 }
 ```
 
----
+### `POST /api/tournaments/:id/advance-from-groups`
 
-### News & CMS
+Avanza migliori partecipanti dai gironi alla fase eliminazione.
 
-#### `GET /api/news`
-Get published news articles.
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
 
-**Auth**: Optional
-
-**Query Parameters**:
-- `all` (optional): `true` to include unpublished (admin only)
-
-**Response**:
-```json
-[
-  {
-    "id": "uuid",
-    "title": "Vittoria nel Torneo Regionale",
-    "category": "risultati",
-    "summary": "I nostri atleti conquistano il podio...",
-    "content": "Full article content...",
-    "image_url": "https://...",
-    "date": "2024-12-15T00:00:00Z",
-    "published": true,
-    "created_at": "2024-12-15T10:00:00Z"
-  }
-]
-```
-
-#### `POST /api/news`
-Create news article.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**Body**:
-```json
-{
-  "title": "Nuova Stagione 2025",
-  "category": "annunci",
-  "summary": "Inizia la nuova stagione...",
-  "content": "Full content here...",
-  "image_url": "https://...",
-  "published": true
-}
-```
-
-**Response** (201):
-```json
-{
-  "news": {
-    "id": "uuid",
-    "title": "Nuova Stagione 2025",
-    "created_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
-#### `PUT /api/news/[id]`
-Update news article.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/news/{id}`
-
-**Body**: Same as POST
+**Note**:
+- Seleziona top `teams_advancing` per girone
+- Cambia `current_phase` da 'gironi' a 'eliminazione'
+- Pronto per generare bracket eliminazione
 
 **Response**:
 ```json
 {
-  "news": {
-    "id": "uuid",
-    "updated_at": "2024-12-29T10:05:00Z"
-  }
-}
-```
-
-#### `DELETE /api/news/[id]`
-Delete news article.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**URL**: `/api/news/{id}`
-
-**Response**:
-```json
-{
-  "message": "Articolo eliminato"
-}
-```
-
-#### `GET /api/hero-content`
-Get hero section content for homepage.
-
-**Auth**: Optional
-
-**Response**:
-```json
-{
-  "hero_content": {
-    "id": "uuid",
-    "title": "Benvenuti alla GST Tennis Academy",
-    "subtitle": "Eccellenza nel tennis dal 1995",
-    "cta_text": "Scopri di più",
-    "cta_link": "/about"
-  }
-}
-```
-
-#### `PUT /api/hero-content`
-Update hero section content.
-
-**Auth**: Required  
-**Roles**: admin, gestore
-
-**Body**:
-```json
-{
-  "title": "Updated Title",
-  "subtitle": "Updated Subtitle",
-  "cta_text": "Nuova CTA",
-  "cta_link": "/new-link"
-}
-```
-
-**Response**:
-```json
-{
-  "hero_content": {
-    "id": "uuid",
-    "updated_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
-#### `GET /api/homepage-sections`
-Get all homepage sections configuration.
-
-**Auth**: Optional
-
-**Response**:
-```json
-{
-  "sections": [
+  "advanced": [
     {
       "id": "uuid",
-      "section_name": "tornei",
-      "title": "Tornei e Competizioni",
-      "description": "Partecipa ai nostri tornei",
-      "is_visible": true,
-      "display_order": 1
+      "user": { "full_name": "Mario Rossi" },
+      "group": { "group_name": "Girone A" },
+      "group_position": 1
     }
   ]
 }
 ```
 
-#### `PUT /api/homepage-sections/[id]`
-Update homepage section.
+### `GET /api/tournaments/:id/matches`
 
-**Auth**: Required  
-**Roles**: admin, gestore
+Ottiene tutte le partite di un torneo.
 
-**URL**: `/api/homepage-sections/{id}`
-
-**Body**:
-```json
-{
-  "title": "Updated Section Title",
-  "is_visible": false,
-  "display_order": 2
-}
-```
-
-**Response**:
-```json
-{
-  "section": {
-    "id": "uuid",
-    "updated_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
----
-Get email delivery logs.
-
-**Auth**: Required  
-**Roles**: admin
+**Auth**: Non richiesta
 
 **Query Parameters**:
-- `limit` (optional): Number of records (default: 50, max: 200)
-- `status` (optional): Filter by status (`sent`, `delivered`, `opened`, `clicked`, `bounced`, `failed`)
-- `category` (optional): Filter by category (`transactional`, `notifications`, `marketing`, `system`)
+- `phase` (opzionale): 'gironi' o 'eliminazione'
+- `status` (opzionale): filtra per status partita
 
 **Response**:
 ```json
 {
-  "logs": [
+  "matches": [
     {
       "id": "uuid",
-      "recipient": "atleta@example.com",
-      "subject": "Conferma Prenotazione Campo 1",
-      "template_name": "booking-confirmation",
-      "category": "transactional",
-      "status": "delivered",
-      "sent_at": "2024-12-28T10:00:00Z",
-      "delivered_at": "2024-12-28T10:00:05Z",
-      "opened_at": "2024-12-28T11:30:00Z",
-      "clicked_at": null,
-      "error_message": null
-    }
-  ],
-  "stats": {
-    "total": 150,
-    "delivered": 145,
-    "opened": 89,
-    "clicked": 34,
-    "bounced": 2,
-    "failed": 3
-  }
-}
-```
-
-#### `POST /api/email/scheduler`
-Trigger email scheduler (cron job).
-
-**Auth**: Required (CRON_SECRET header)  
-**Roles**: System
-
-**Headers**:
-```
-Authorization: Bearer YOUR_CRON_SECRET
-```
-
-**Response**:
-```json
-{
-  "message": "Scheduler executed successfully",
-  "emails_sent": 12,
-  "details": {
-    "booking_reminders": 8,
-    "tournament_notifications": 4
-  }
-}
-```
-
-#### `POST /api/webhooks/email`
-Resend webhook endpoint (handles email events).
-
-**Auth**: Required (Resend webhook signature)  
-**Roles**: System
-
-**Headers**:
-```
-svix-id: msg_xxxxx
-svix-timestamp: 1234567890
-svix-signature: v1,xxxxx
-```
-
-**Body** (example):
-```json
-{
-  "type": "email.delivered",
-  "created_at": "2024-12-28T10:00:00Z",
-  "data": {
-    "email_id": "xxxxx",
-    "to": "atleta@example.com",
-    "subject": "Conferma Prenotazione"
-  }
-}
-```
-
-**Response**:
-```json
-{
-  "received": true
-}
-```
-
----
-
-### Courses
-
-#### `GET /api/courses`
-List all courses.
-
-**Auth**: Optional
-
-**Response**:
-```json
-{
-  "courses": [
-    {
-      "id": "uuid",
-      "title": "Corso Principianti",
-      "description": "Corso base per chi inizia",
-      "level": "principiante",
-      "duration": "8 settimane",
-      "price": 200.00,
-      "max_students": 8,
-      "current_students": 5,
-      "schedule": "Martedì e Giovedì 18:00-19:00",
-      "start_date": "2024-10-01"
+      "phase": "eliminazione",
+      "round_name": "Finale",
+      "round_number": 4,
+      "match_number": 1,
+      "player1": {
+        "id": "uuid",
+        "user": { "full_name": "Mario Rossi" }
+      },
+      "player2": {
+        "id": "uuid",
+        "user": { "full_name": "Luigi Bianchi" }
+      },
+      "player1_score": 2,
+      "player2_score": 1,
+      "score_details": {
+        "sets": [
+          { "p1": 6, "p2": 4 },
+          { "p1": 3, "p2": 6 },
+          { "p1": 6, "p2": 3 }
+        ]
+      },
+      "winner_id": "uuid",
+      "status": "completata",
+      "court": "Campo 1",
+      "scheduled_at": "2025-01-20T15:00:00Z"
     }
   ]
 }
 ```
 
-#### `POST /api/enrollments`
-Enroll in course.
+### `PATCH /api/tournaments/:id/matches/:matchId`
 
-**Auth**: Required  
-**Roles**: atleta
+Aggiorna risultato partita.
 
-**Body**:
-```json
-{
-  "course_id": "uuid",
-  "notes": "Nessuna esperienza precedente"
-}
-```
-
-**Response** (201):
-```json
-{
-  "enrollment": {
-    "id": "uuid",
-    "status": "pending",
-    "message": "Iscrizione inviata. Ti contatteremo presto."
-  }
-}
-```
-
----
-
-### Messages (Chat)
-
-#### `GET /api/messages`
-Get conversations and messages.
-
-**Auth**: Required  
-**Roles**: All
-
-**Query Parameters**:
-- `conversation_id` (optional): Specific conversation
-- `limit` (optional): Messages per page (default: 50)
-
-**Response**:
-```json
-{
-  "conversations": [
-    {
-      "id": "uuid",
-      "participant_ids": ["uuid1", "uuid2"],
-      "participant_names": ["Mario Rossi", "Coach Luigi"],
-      "last_message": "Ci vediamo domani alle 10",
-      "last_message_at": "2024-12-28T15:30:00Z",
-      "unread_count": 2
-    }
-  ],
-  "messages": [
-    {
-      "id": "uuid",
-      "conversation_id": "uuid",
-      "sender_id": "uuid",
-      "sender_name": "Mario Rossi",
-      "content": "Buongiorno, è disponibile per una lezione?",
-      "created_at": "2024-12-28T10:00:00Z",
-      "read": false
-    }
-  ]
-}
-```
-
-#### `POST /api/messages`
-Send new message.
-
-**Auth**: Required  
-**Roles**: All
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore, maestro
 
 **Body**:
 ```json
 {
-  "recipient_id": "uuid",
-  "content": "Grazie, ci vediamo domani!"
+  "player1_score": 2,
+  "player2_score": 1,
+  "score_details": {
+    "sets": [
+      { "p1": 6, "p2": 4 },
+      { "p1": 3, "p6": 6 },
+      { "p1": 6, "p2": 3 }
+    ]
+  },
+  "winner_id": "uuid",
+  "status": "completata"
 }
 ```
 
-**Response** (201):
-```json
-{
-  "message": {
-    "id": "uuid",
-    "conversation_id": "uuid",
-    "created_at": "2024-12-28T10:05:00Z"
-  }
-}
-```
-
----
-
-### Admin
-
-#### `GET /api/admin/users`
-List all users with roles.
-
-**Auth**: Required  
-**Roles**: admin
-
-**Query Parameters**:
-- `role` (optional): Filter by role
-- `search` (optional): Search by name/email
+**Note**:
+- Trigger automatico aggiorna statistiche partecipanti
+- Calcola punti in classifica gironi
+- Aggiorna bracket eliminazione automaticamente
 
 **Response**:
 ```json
 {
-  "users": [
+  "match": {
+    "id": "uuid",
+    "player1_score": 2,
+    "player2_score": 1,
+    "status": "completata",
+    "winner_id": "uuid"
+  }
+}
+```
+
+### `GET /api/tournaments/:id/groups`
+
+Ottiene classifiche dei gironi.
+
+**Auth**: Non richiesta
+
+**Response**:
+```json
+{
+  "groups": [
     {
       "id": "uuid",
-      "email": "atleta@example.com",
-      "full_name": "Mario Rossi",
-      "role": "atleta",
-      "created_at": "2024-01-15T10:00:00Z",
-      "last_sign_in": "2024-12-28T09:00:00Z",
-      "profile_completion": 85
+      "group_name": "Girone A",
+      "standings": [
+        {
+          "position": 1,
+          "participant": {
+            "id": "uuid",
+            "user": { "full_name": "Mario Rossi" }
+          },
+          "stats": {
+            "points": 6,
+            "matches_played": 3,
+            "matches_won": 3,
+            "matches_lost": 0,
+            "sets_won": 6,
+            "sets_lost": 1,
+            "set_difference": 5
+          }
+        }
+      ]
     }
   ]
 }
 ```
 
-#### `PUT /api/admin/users/:id`
-Update user role.
-
-**Auth**: Required  
-**Roles**: admin
-
-**Body**:
-```json
-{
-  "role": "coach"
-}
-```
-
-**Roles**:
-- `atleta`
-- `coach`
-- `maestro`
-- `gestore`
-- `admin`
-
-**Response**:
-```json
-{
-  "section": {
-    "id": "uuid",
-    "updated_at": "2024-12-29T10:00:00Z"
-  }
-}
-```
-
 ---
 
-### Bookings
+## Prenotazioni
 
-#### `GET /api/bookings`
-Retrieve all bookings (filtered by user role).
+### `GET /api/bookings`
 
-**Auth**: Required  
-**Roles**: All
+Ottiene prenotazioni utente o di un periodo.
+
+**Auth**: Richiesta
 
 **Query Parameters**:
-- `date` (optional): Filter by date (YYYY-MM-DD)
-- `status` (optional): Filter by status (`pending`, `confirmed`, `cancelled`)
-- `athlete_id` (optional, admin/gestore): Filter by athlete
+- `start_date` (opzionale): Data inizio (ISO 8601)
+- `end_date` (opzionale): Data fine (ISO 8601)
+- `court` (opzionale): Filtra per campo
 
 **Response**:
 ```json
@@ -1679,94 +693,84 @@ Retrieve all bookings (filtered by user role).
   "bookings": [
     {
       "id": "uuid",
-      "athlete_id": "uuid",
-      "athlete_name": "Mario Rossi",
-      "date": "2024-12-30",
-      "time": "10:00",
+      "user_id": "uuid",
       "court": "Campo 1",
-      "type": "lezione_privata",
-      "status": "confirmed",
-      "coach_id": "uuid",
-      "coach_name": "Luigi Bianchi",
-      "coach_confirmed": true,
-      "manager_confirmed": true,
-      "created_at": "2024-12-28T10:00:00Z"
+      "type": "campo",
+      "start_time": "2025-01-15T14:00:00Z",
+      "end_time": "2025-01-15T15:00:00Z",
+      "user": {
+        "full_name": "Mario Rossi"
+      },
+      "coach": {
+        "full_name": "Paolo Verdi"
+      }
     }
   ]
 }
 ```
 
-#### `POST /api/bookings`
-Create new booking.
+### `POST /api/bookings`
 
-**Auth**: Required  
-**Roles**: atleta, coach, maestro, gestore, admin
+Crea nuova prenotazione.
+
+**Auth**: Richiesta
 
 **Body**:
 ```json
 {
-  "date": "2024-12-30",
-  "time": "10:00",
   "court": "Campo 1",
-  "type": "lezione_privata",
-  "coach_id": "uuid",
-  "notes": "Preferenza per allenamento servizio"
+  "type": "campo",
+  "start_time": "2025-01-15T14:00:00Z",
+  "end_time": "2025-01-15T15:00:00Z",
+  "coach_id": "uuid"
 }
 ```
 
-**Response** (201):
-```json
-{
-  "booking": {
-    "id": "uuid",
-    "status": "pending",
-    "created_at": "2024-12-28T10:00:00Z"
-  },
-  "message": "Prenotazione creata. In attesa di conferma."
-}
-```
-
-#### `PUT /api/bookings/[id]`
-Update booking status (confirm/cancel).
-
-**Auth**: Required  
-**Roles**: coach (own bookings), gestore, admin
-
-**URL**: `/api/bookings/{id}`
-
-**Body**:
-```json
-{
-  "action": "confirm",
-  "role": "coach"
-}
-```
-
-**Actions**:
-- `confirm`: Confirm booking (coach or manager)
-- `cancel`: Cancel booking
+**Validation**:
+- end_time > start_time
+- Nessuna sovrapposizione su stesso campo (gestito da DB constraint)
+- Durata minima/massima
 
 **Response**:
 ```json
 {
   "booking": {
     "id": "uuid",
-    "status": "confirmed",
-    "coach_confirmed": true,
-    "manager_confirmed": true
-  },
-  "message": "Prenotazione confermata"
+    "court": "Campo 1",
+    "start_time": "2025-01-15T14:00:00Z",
+    "end_time": "2025-01-15T15:00:00Z"
+  }
+}
+```
+
+### `DELETE /api/bookings/:id`
+
+Elimina prenotazione.
+
+**Auth**: Richiesta  
+**Permissions**: Proprietario o Admin/Gestore
+
+**Response**:
+```json
+{
+  "success": true
 }
 ```
 
 ---
 
-### Courses & Enrollments
+## Corsi
 
-#### `GET /api/courses`
-List all courses.
+### `GET /api/courses`
 
-**Auth**: Optional
+Ottiene lista corsi attivi.
+
+**Auth**: Non richiesta
+
+**Query Parameters**:
+- `active` (opzionale): true/false (default: true)
+- `level` (opzionale): 'principiante', 'intermedio', 'avanzato'
+- `age_group` (opzionale): 'bambini', 'junior', 'adulti', 'senior'
 
 **Response**:
 ```json
@@ -1774,346 +778,376 @@ List all courses.
   "courses": [
     {
       "id": "uuid",
-      "title": "Corso Principianti",
-      "description": "Corso base per chi inizia",
+      "title": "Corso Base Tennis",
+      "description": "Corso per principianti",
+      "coach": {
+        "full_name": "Paolo Verdi"
+      },
+      "start_date": "2025-02-01",
+      "end_date": "2025-04-30",
+      "schedule": "Lunedì e Mercoledì 18:00-19:00",
+      "max_participants": 10,
+      "current_participants": 7,
+      "price": 150.00,
       "level": "principiante",
-      "duration": "8 settimane",
-      "price": 200.00,
-      "max_students": 8,
-      "current_students": 5,
-      "schedule": "Martedì e Giovedì 18:00-19:00",
-      "start_date": "2024-10-01"
+      "age_group": "adulti",
+      "is_active": true
     }
   ]
 }
 ```
 
-#### `POST /api/enrollments`
-Enroll in course.
+### `POST /api/courses`
 
-**Auth**: Required  
-**Roles**: atleta
+Crea nuovo corso.
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore, maestro
 
 **Body**:
 ```json
 {
-  "course_id": "uuid",
-  "notes": "Nessuna esperienza precedente"
+  "title": "Nuovo Corso",
+  "description": "Descrizione corso",
+  "coach_id": "uuid",
+  "start_date": "2025-02-01",
+  "end_date": "2025-04-30",
+  "schedule": "Lun/Mer 18:00-19:00",
+  "max_participants": 10,
+  "price": 150.00,
+  "level": "principiante",
+  "age_group": "adulti"
 }
 ```
 
-**Response** (201):
+---
+
+## Iscrizioni Corsi
+
+### `POST /api/enrollments`
+
+Iscrive utente a un corso.
+
+**Auth**: Richiesta
+
+**Body**:
+```json
+{
+  "course_id": "uuid"
+}
+```
+
+**Validation**:
+- Corso non pieno
+- Utente non già iscritto
+- Corso attivo
+
+**Response**:
 ```json
 {
   "enrollment": {
     "id": "uuid",
+    "course_id": "uuid",
+    "user_id": "uuid",
     "status": "pending",
-    "message": "Iscrizione inviata. Ti contatteremo presto."
+    "payment_status": "pending"
   }
 }
 ```
 
----
+### `GET /api/enrollments`
 
-### Email System
+Ottiene iscrizioni utente.
 
-#### `GET /api/email/logs`
-Get email delivery logs (admin only).
-
-**Auth**: Required  
-**Roles**: admin
-
-**Query Parameters**:
-- `limit` (optional): Number of records (default: 50, max: 200)
-- `status` (optional): Filter by status (`sent`, `delivered`, `opened`, `clicked`, `bounced`, `failed`)
-- `category` (optional): Filter by category (`transactional`, `notifications`, `marketing`, `system`)
+**Auth**: Richiesta
 
 **Response**:
 ```json
 {
-  "logs": [
+  "enrollments": [
     {
       "id": "uuid",
-      "recipient": "atleta@example.com",
-      "subject": "Conferma Prenotazione Campo 1",
-      "template_name": "booking-confirmation",
-      "category": "transactional",
-      "status": "delivered",
-      "sent_at": "2024-12-28T10:00:00Z",
-      "delivered_at": "2024-12-28T10:00:05Z",
-      "opened_at": "2024-12-28T11:30:00Z",
-      "clicked_at": null,
-      "error_message": null
+      "course": {
+        "title": "Corso Base Tennis",
+        "start_date": "2025-02-01"
+      },
+      "status": "confirmed",
+      "payment_status": "paid",
+      "enrolled_at": "2025-01-10T00:00:00Z"
     }
-  ],
-  "stats": {
-    "total": 150,
-    "delivered": 145,
-    "opened": 89,
-    "clicked": 34,
-    "bounced": 2,
-    "failed": 3
-  }
+  ]
 }
 ```
 
-#### `POST /api/email/scheduler`
-Trigger email scheduler (cron job).
+---
 
-**Auth**: Required (CRON_SECRET header)  
-**Roles**: System
+## News
 
-**Headers**:
+### `GET /api/news`
+
+Ottiene news pubblicate.
+
+**Auth**: Non richiesta
+
+**Query Parameters**:
+- `category` (opzionale): Filtra per categoria
+- `limit` (opzionale): Limita risultati (default: 10)
+
+**Response**:
+```json
+{
+  "news": [
+    {
+      "id": "uuid",
+      "title": "Nuovo Torneo Open",
+      "category": "Tornei",
+      "summary": "Iscrizioni aperte per il torneo...",
+      "image_url": "https://...",
+      "date": "2025-01-15T00:00:00Z",
+      "published": true
+    }
+  ]
+}
 ```
-Authorization: Bearer YOUR_CRON_SECRET
+
+### `POST /api/news`
+
+Crea nuova news.
+
+**Auth**: Richiesta  
+**Ruoli**: admin, gestore
+
+**Body**:
+```json
+{
+  "title": "Nuova News",
+  "category": "Generale",
+  "summary": "Testo della news...",
+  "image_url": "https://...",
+  "published": true
+}
+```
+
+---
+
+## Messaggistica
+
+### `GET /api/conversations`
+
+Ottiene conversazioni utente.
+
+**Auth**: Richiesta
+
+**Response**:
+```json
+{
+  "conversations": [
+    {
+      "id": "uuid",
+      "title": "Chat con Paolo",
+      "is_group": false,
+      "last_message_preview": "Ciao, come stai?",
+      "last_message_at": "2025-01-15T10:00:00Z",
+      "unread_count": 2,
+      "participants": [
+        {
+          "user": {
+            "full_name": "Paolo Verdi"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### `GET /api/conversations/:id/messages`
+
+Ottiene messaggi di una conversazione.
+
+**Auth**: Richiesta  
+**Permissions**: Deve essere partecipante
+
+**Query Parameters**:
+- `limit` (opzionale): Numero messaggi (default: 50)
+- `before` (opzionale): Messaggi prima di questo timestamp (pagination)
+
+**Response**:
+```json
+{
+  "messages": [
+    {
+      "id": "uuid",
+      "sender": {
+        "full_name": "Mario Rossi"
+      },
+      "content": "Ciao!",
+      "message_type": "text",
+      "created_at": "2025-01-15T10:00:00Z",
+      "is_edited": false,
+      "is_deleted": false
+    }
+  ]
+}
+```
+
+### `POST /api/conversations/:id/messages`
+
+Invia messaggio in conversazione.
+
+**Auth**: Richiesta  
+**Permissions**: Deve essere partecipante
+
+**Body**:
+```json
+{
+  "content": "Testo del messaggio",
+  "message_type": "text"
+}
 ```
 
 **Response**:
 ```json
 {
-  "message": "Scheduler executed successfully",
-  "emails_sent": 12,
-  "details": {
-    "booking_reminders": 8,
-    "tournament_notifications": 4
+  "message": {
+    "id": "uuid",
+    "content": "Testo del messaggio",
+    "created_at": "2025-01-15T10:05:00Z"
   }
 }
 ```
 
 ---
 
-## Rate Limiting
+## Email
 
-Current limits (may be adjusted):
-- Anonymous: 100 requests/hour
-- Authenticated: 1000 requests/hour
-- Admin: Unlimited
+### `POST /api/email/send`
 
-Exceeded limit returns `429 Too Many Requests`.
+Invia email usando template.
+
+**Auth**: Richiesta (Service Role)  
+**Ruoli**: admin, gestore
+
+**Body**:
+```json
+{
+  "to": "user@example.com",
+  "template_name": "booking_confirmation",
+  "data": {
+    "user_name": "Mario Rossi",
+    "court": "Campo 1",
+    "date": "15/01/2025",
+    "time": "14:00"
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "email_log_id": "uuid",
+  "status": "sent"
+}
+```
+
+---
+
+## Staff
+
+### `GET /api/staff`
+
+Ottiene lista staff academy.
+
+**Auth**: Non richiesta
+
+**Response**:
+```json
+{
+  "staff": [
+    {
+      "id": "uuid",
+      "full_name": "Paolo Verdi",
+      "role": "Maestro Principale",
+      "bio": "15 anni di esperienza...",
+      "image_url": "https://...",
+      "email": "paolo@academy.com",
+      "phone": "+39 123456789",
+      "is_active": true
+    }
+  ]
+}
+```
+
+---
+
+## Subscriptions (Homepage)
+
+### `GET /api/subscriptions`
+
+Ottiene piani abbonamento.
+
+**Auth**: Non richiesta
+
+**Response**:
+```json
+{
+  "subscriptions": [
+    {
+      "id": "uuid",
+      "title": "Monosettimanale",
+      "description": "1 ora di campo a settimana",
+      "price": 25.00,
+      "duration": "1 settimana",
+      "features": ["1h campo/settimana", "Accesso wifi", "Parcheggio"],
+      "is_active": true
+    }
+  ]
+}
+```
 
 ---
 
 ## Webhooks
 
-### Email Events (Resend)
-**URL**: `/api/webhooks/email`  
-**Method**: POST  
-**Auth**: Resend signature verification
+### `POST /api/webhooks/email`
 
-**Headers**:
-```
-svix-id: msg_xxxxx
-svix-timestamp: 1234567890
-svix-signature: v1,xxxxx
-```
+Webhook Resend per tracking eventi email.
 
-**Body** (example):
+**Auth**: Signature verification Resend
+
+**Body**:
 ```json
 {
   "type": "email.delivered",
-  "created_at": "2024-12-28T10:00:00Z",
   "data": {
-    "email_id": "xxxxx",
-    "to": "atleta@example.com",
-    "subject": "Conferma Prenotazione"
+    "email_id": "xxx",
+    "to": "user@example.com"
   }
 }
 ```
 
-**Events**:
-- `email.sent`: Email sent to provider
-- `email.delivered`: Email delivered to inbox
-- `email.opened`: Email opened by recipient
-- `email.clicked`: Link clicked in email
-- `email.bounced`: Email bounced
-- `email.complained`: Spam complaint
-
-**Response**:
-```json
-{
-  "received": true
-}
-```
+**Eventi supportati**:
+- `email.sent`
+- `email.delivered`
+- `email.opened`
+- `email.clicked`
+- `email.bounced`
+- `email.failed`
 
 ---
 
-## Common Patterns
+## Rate Limiting
 
-### Authentication Flow
-1. User logs in via Supabase Auth
-2. Get JWT token from session
-3. Pass token in Authorization header: `Bearer {token}`
-4. Backend verifies token and checks user profile/role
+Non implementato attualmente. Considerare per produzione:
+- Max 100 richieste/minuto per IP
+- Max 1000 richieste/ora per utente autenticato
 
-### Service Role Access (Admin APIs)
-```typescript
-// Server-side only
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+## CORS
 
-// Verify user has admin/gestore role
-const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-const { data: profile } = await supabaseAdmin
-  .from("profiles")
-  .select("role")
-  .eq("id", user.id)
-  .single();
-
-if (!profile || !["admin", "gestore"].includes(profile.role)) {
-  return error403;
-}
-```
-
-### Tournament Flow
-1. **Create Tournament**: `POST /api/tournaments`
-2. **Register Participants**: `POST /api/tournament_participants`
-3. **Start Tournament**: `POST /api/tournaments/{id}/start`
-   - For `girone_eliminazione`: Generates groups
-   - For `eliminazione_diretta`: Generates bracket
-   - For `campionato`: Initializes standings
-4. **Update Match Results**: `PUT /api/tournaments/{id}/matches/{matchId}`
-5. **Advance Phase**: `POST /api/tournaments/{id}/knockout` (if applicable)
-
-### Error Handling
-All endpoints return consistent error format:
-```typescript
-{
-  error: string;      // Human-readable message
-  code?: string;      // Machine-readable code (optional)
-  details?: object;   // Additional context (optional)
-}
-```
+Configurato per:
+- Development: `http://localhost:3000`
+- Production: Domain configurato in Vercel
 
 ---
 
-## Testing
-
-### Using cURL
-
-```bash
-# Get tournaments (public)
-curl https://your-domain.com/api/tournaments
-
-# Create tournament (authenticated)
-curl -X POST https://your-domain.com/api/tournaments \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Test Tournament",
-    "start_date": "2024-12-30",
-    "competition_type": "torneo",
-    "format": "eliminazione_diretta",
-    "max_participants": 8,
-    "status": "Aperto"
-  }'
-
-# Start tournament (admin)
-curl -X POST https://your-domain.com/api/tournaments/{id}/start \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
-
-# Update match score
-curl -X PUT https://your-domain.com/api/tournaments/{id}/matches/{matchId} \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sets": [
-      {"player1_score": 6, "player2_score": 4},
-      {"player1_score": 6, "player2_score": 3}
-    ]
-  }'
-
-# Admin: List users
-curl https://your-domain.com/api/admin/users \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
-
-# Get tournament stats
-curl https://your-domain.com/api/tournaments/stats
-```
-
-### Using Postman
-
-Import collection: `docs/postman_collection.json` (to be created)
-
-### Using JavaScript/TypeScript
-
-```typescript
-// Get tournaments
-const response = await fetch('/api/tournaments?upcoming=true');
-const { tournaments } = await response.json();
-
-// Create participant (authenticated)
-const session = await supabase.auth.getSession();
-const token = session.data.session?.access_token;
-
-const response = await fetch('/api/tournament_participants', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    user_id: 'user-uuid',
-    tournament_id: 'tournament-uuid'
-  })
-});
-
-const result = await response.json();
-```
-
----
-
-## Versioning
-
-Current Version: **v1**
-
-Future breaking changes will be versioned: `/api/v2/...`
-
-All endpoints currently use implicit v1 (no version prefix required).
-
----
-
-## Environment Variables
-
-Required environment variables for API functionality:
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Email (Resend)
-RESEND_API_KEY=your-resend-key
-RESEND_WEBHOOK_SECRET=your-webhook-secret
-
-# Cron Jobs
-CRON_SECRET=your-cron-secret
-
-# Optional
-NEXT_PUBLIC_APP_URL=https://your-domain.com
-```
-
----
-
-## Security Notes
-
-1. **Never expose Service Role Key** to client-side code
-2. **Always validate user roles** server-side before sensitive operations
-3. **Use RLS policies** in Supabase for data-level security
-4. **Validate input** on all POST/PUT/PATCH endpoints
-5. **Rate limit** public endpoints to prevent abuse
-6. **Log sensitive operations** (user creation, deletions, role changes)
-
----
-
-*Last Updated: 2024-12-29*  
-*GST Tennis Academy API Documentation v1.0*
-
+**Fine Documentazione API**

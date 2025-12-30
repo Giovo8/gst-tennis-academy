@@ -52,8 +52,8 @@ export default function MaestroNavbar({
   };
 
   return (
-    <nav className="border-b border-cyan-500/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py">
+    <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/dashboard/maestro" aria-label="Dashboard Coach" className="flex items-center gap-3">

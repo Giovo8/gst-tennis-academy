@@ -1,61 +1,108 @@
-# Production Deployment Checklist
+# Deployment Guide - GST Tennis Academy
 
-## Pre-Deployment Verification
+**Ultima revisione**: 30 Dicembre 2025  
+**Stack**: Next.js 14, Supabase, Vercel
 
-### 1. Environment Variables ✓
-Verifica che tutte le variabili siano configurate su Vercel/hosting:
+## Requisiti
+
+### Software
+
+- **Node.js**: >= 18.17.0
+- **npm**: >= 9.0.0
+- **Git**: Per deploy automatico
+
+### Servizi Esterni
+
+- **Supabase**: Database PostgreSQL + Auth + Storage
+- **Resend**: Email transazionali
+- **Vercel** (consigliato): Hosting e deploy
+- **Stripe** (opzionale): Pagamenti
+
+---
+
+## Setup Locale
+
+### 1. Clone Repository
 
 ```bash
+git clone https://github.com/your-org/gst-tennis-academy.git
+cd gst-tennis-academy
+```
+
+### 2. Installa Dipendenze
+
+```bash
+npm install
+```
+
+### 3. Configura Variabili Ambiente
+
+Crea file `.env.local` nella root del progetto:
+
+```env
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Resend
-RESEND_API_KEY=re_xxxxx
-EMAIL_FROM=noreply@your-domain.com
-EMAIL_REPLY_TO=info@your-domain.com
-RESEND_WEBHOOK_SECRET=whsec_xxxxx
+# Resend Email
+RESEND_API_KEY=re_your_api_key
 
-# Cron
-CRON_SECRET=your-secure-random-string
+# Site URL
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# App
-NEXT_PUBLIC_APP_URL=https://your-production-domain.com
+# Stripe (opzionale)
+STRIPE_SECRET_KEY=sk_test_your_key
+STRIPE_PUBLISHABLE_KEY=pk_test_your_key
+STRIPE_WEBHOOK_SECRET=whsec_your_secret
 ```
 
-**Test**: Verifica che ogni variabile sia presente senza typo.
+### 4. Setup Database Supabase
 
-### 2. Database Migrations ✓
-Esegui tutte le migration su Supabase production in ordine:
+#### 4.1 Crea Progetto Supabase
 
-```sql
--- 1. Tournaments foundation
+1. Vai su [supabase.com](https://supabase.com)
+2. Crea nuovo progetto
+3. Annota:
+   - Project URL
+   - Anon key
+   - Service role key (Settings > API)
+
+#### 4.2 Applica Schema Database
+
+Vai in **SQL Editor** e esegui in ordine:
+
+```bash
+# 1. Schema base
+supabase/schema.sql
+
+# 2. Migrazioni in ordine
 supabase/migrations/001_create_tournaments_and_participants.sql
-
--- 2. RLS policies for tournaments
 supabase/migrations/002_rls_policies_tournaments.sql
-
--- 3. Competition types
 supabase/migrations/003_add_competition_types.sql
-
--- 4. Tennis scoring (sets, games, tie-breaks)
-supabase/migrations/004_add_tennis_scoring.sql
-
--- 5. Chat system
-supabase/migrations/005_add_chat_system.sql
-
--- 6. Announcements
-supabase/migrations/006_add_announcements.sql
-
--- 7. Email system
+supabase/migrations/004_tennis_tournament_system.sql
+supabase/migrations/005_chat_messaging_system.sql
+supabase/migrations/006_announcements_system.sql
 supabase/migrations/007_email_system.sql
-
--- 8. Profile enhancements
 supabase/migrations/008_profile_enhancements.sql
+supabase/migrations/010_simplified_tournament_system.sql
+supabase/migrations/011_make_dates_optional.sql
+supabase/migrations/012_tournament_matches_bracket_columns.sql
+supabase/migrations/013_tennis_scoring_system.sql
+
+# 3. Migrazioni aggiuntive
+supabase/migrations/improve_roles_system.sql
+supabase/migrations/create_courses_table.sql
+supabase/migrations/add_news_table.sql
+supabase/migrations/complete_migration.sql
 ```
 
-**Verifica**: Controlla che tutte le tabelle siano create:
+**Nota**: Se ci sono errori di tabelle/colonne già esistenti, è normale. Le migrazioni sono idempotent.
+
+#### 4.3 Verifica Setup
+
+Controlla che tutte le tabelle siano create:
+
 ```sql
 SELECT table_name 
 FROM information_schema.tables 
@@ -63,313 +110,563 @@ WHERE table_schema = 'public'
 ORDER BY table_name;
 ```
 
-Expected: profiles, bookings, tournaments, tournament_participants, matches, courses, enrollments, events, gallery, hero_content, hero_images, homepage_sections, news, orders, products, programs, services, social_links, staff, subscriptions, messages, conversations, announcements, email_logs, email_templates, athlete_stats
+Dovresti vedere:
+- profiles
+- bookings
+- tournaments
+- tournament_participants
+- tournament_groups
+- tournament_matches
+- conversations
+- conversation_participants
+- messages
+- email_logs
+- email_templates
+- courses
+- enrollments
+- news
+- payments
+- (e altre...)
 
-### 3. Row Level Security (RLS) ✓
-Verifica che tutte le policy RLS siano attive:
+### 5. Setup Email Resend
+
+1. Vai su [resend.com](https://resend.com)
+2. Crea account
+3. Verifica dominio (o usa sandbox per test)
+4. Crea API Key
+5. Aggiungi a `.env.local`
+
+#### 5.1 Configura Webhook Email (Opzionale)
+
+Per tracking email (opened, clicked, etc):
+
+1. In Resend Dashboard > Webhooks
+2. Crea nuovo webhook:
+   - URL: `https://your-domain.com/api/webhooks/email`
+   - Eventi: tutti (email.sent, email.delivered, etc.)
+3. Annota signing secret
+
+### 6. Crea Primo Admin
+
+Dopo aver avviato l'app, registra un utente e poi promuovilo ad admin da SQL Editor:
 
 ```sql
--- Check RLS enabled
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
-WHERE schemaname = 'public' 
-AND rowsecurity = false;
+UPDATE profiles 
+SET role = 'admin' 
+WHERE email = 'your-admin@email.com';
 ```
 
-**Expected**: Nessuna tabella con rowsecurity=false (tutte devono essere true).
+### 7. Avvia Development Server
 
-**Test manuale**: 
-1. Login come atleta → verifica accesso solo ai propri dati
-2. Login come admin → verifica accesso completo
-3. Logout → verifica accesso pubblico limitato
+```bash
+npm run dev
+```
 
-### 4. Resend Configuration ✓
+Apri [http://localhost:3000](http://localhost:3000)
 
-#### A. Domain Verification
-1. Vai su Resend Dashboard → Domains
-2. Aggiungi dominio personalizzato (es. mail.your-domain.com)
-3. Configura DNS records:
-   - SPF: `v=spf1 include:resend.com ~all`
-   - DKIM: Copia record fornito da Resend
-   - DMARC: `v=DMARC1; p=none;`
-4. Verifica stato: "Verified" ✓
+---
 
-#### B. Webhook Setup
-1. Resend Dashboard → Webhooks → Add Webhook
-2. URL: `https://your-domain.com/api/webhooks/email`
-3. Eventi selezionati:
-   - ✓ email.sent
-   - ✓ email.delivered
-   - ✓ email.opened
-   - ✓ email.clicked
-   - ✓ email.bounced
-   - ✓ email.complained
-4. Secret: Salva in `RESEND_WEBHOOK_SECRET`
-5. Test: Invia email di test e verifica log su `/api/webhooks/email`
+## Deploy su Vercel
 
-### 5. Vercel Cron Jobs ✓
+### 1. Connetti Repository
 
-**File**: `vercel.json`
+1. Vai su [vercel.com](https://vercel.com)
+2. Import Git Repository
+3. Seleziona il repository GitHub
+
+### 2. Configura Progetto
+
+**Framework Preset**: Next.js
+
+**Build Command**: 
+```bash
+npm run build
+```
+
+**Output Directory**: 
+```
+.next
+```
+
+**Install Command**:
+```bash
+npm install
+```
+
+### 3. Variabili Ambiente
+
+Aggiungi tutte le variabili ambiente in **Settings > Environment Variables**:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Resend
+RESEND_API_KEY=re_your_api_key
+
+# Site URL (usa dominio Vercel)
+NEXT_PUBLIC_SITE_URL=https://your-app.vercel.app
+
+# Stripe (opzionale)
+STRIPE_SECRET_KEY=sk_live_your_key
+STRIPE_PUBLISHABLE_KEY=pk_live_your_key
+STRIPE_WEBHOOK_SECRET=whsec_your_secret
+```
+
+**Importante**: 
+- Usa chiavi **production** per Stripe
+- Usa dominio Supabase production
+- Imposta `NEXT_PUBLIC_SITE_URL` con dominio corretto
+
+### 4. Deploy
+
+Clicca **Deploy**. Vercel:
+- Installa dipendenze
+- Builda progetto
+- Deploya su CDN globale
+
+### 5. Configura Dominio Custom (Opzionale)
+
+1. Settings > Domains
+2. Aggiungi dominio
+3. Configura DNS:
+
+```
+Type: CNAME
+Name: @
+Value: cname.vercel-dns.com
+```
+
+### 6. Verifica Deploy
+
+Testa:
+- Homepage carica
+- Login funziona
+- Database connesso
+- Email inviate (controlla spam)
+
+---
+
+## Configurazione Produzione
+
+### Supabase Production Settings
+
+#### 1. Database
+
+**Connection Pooling**:
+- Settings > Database > Connection Pooling
+- Mode: Transaction
+- Pool Size: 15-20
+
+**Backup Automatici**:
+- Già attivi di default
+- Point-in-time recovery disponibile
+
+#### 2. Auth
+
+**Settings > Authentication**:
+
+- **Site URL**: `https://your-domain.com`
+- **Redirect URLs**: 
+  ```
+  https://your-domain.com/**
+  ```
+- **Email Templates**: Personalizza template
+- **Rate Limiting**: Abilita per sicurezza
+
+**Providers**:
+- Email/Password: Abilitato
+- Email Confirmation: Consigliato per produzione
+
+#### 3. Storage
+
+**Bucket per Upload**:
+
+```sql
+-- Crea bucket per immagini
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('images', 'images', true);
+
+-- Policy upload per utenti autenticati
+CREATE POLICY "Users can upload images"
+ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'images' 
+  AND auth.role() = 'authenticated'
+);
+
+-- Policy lettura pubblica
+CREATE POLICY "Anyone can view images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'images');
+```
+
+### Sicurezza
+
+#### 1. RLS Policies
+
+Verifica che RLS sia abilitato su TUTTE le tabelle:
+
+```sql
+-- Controlla tabelle senza RLS
+SELECT schemaname, tablename
+FROM pg_tables
+WHERE schemaname = 'public'
+AND tablename NOT IN (
+  SELECT tablename
+  FROM pg_tables t
+  WHERE t.schemaname = 'public'
+  AND rowsecurity = true
+);
+```
+
+#### 2. Service Role Key
+
+**IMPORTANTE**: 
+- Mai esporre in frontend
+- Usa solo in API routes server-side
+- Rotazione periodica consigliata
+
+#### 3. Rate Limiting
+
+Implementa rate limiting per API:
+
+```typescript
+// middleware.ts (esempio)
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  // Implementa rate limiting logic
+}
+```
+
+#### 4. CORS
+
+Già configurato per Next.js API routes. Per modifiche:
+
+```typescript
+// next.config.ts
+export default {
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: 'https://your-domain.com' },
+        ],
+      },
+    ]
+  },
+}
+```
+
+### Performance
+
+#### 1. Caching
+
+**Supabase Edge Caching**:
+```typescript
+const { data } = await supabase
+  .from('tournaments')
+  .select('*')
+  .eq('status', 'Aperto')
+  
+// Cache header (solo per dati pubblici)
+headers: { 'Cache-Control': 'public, max-age=60' }
+```
+
+#### 2. Database Indexes
+
+Verifica che tutti gli indici siano creati (già nello schema):
+
+```sql
+-- Lista tutti gli indici
+SELECT tablename, indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+```
+
+#### 3. Next.js Optimizations
+
+```typescript
+// next.config.ts
+export default {
+  images: {
+    domains: ['your-project.supabase.co'],
+    formats: ['image/avif', 'image/webp'],
+  },
+  swcMinify: true,
+  compress: true,
+}
+```
+
+---
+
+## Monitoring e Logs
+
+### Vercel
+
+**Analytics**:
+- Vercel Analytics (integrato)
+- Web Vitals
+- Traffic analytics
+
+**Logs**:
+- Runtime Logs: Vercel Dashboard > Deployments > Logs
+- Function Logs: Per ogni API route
+
+### Supabase
+
+**Dashboard > Logs**:
+- Postgres Logs
+- API Logs
+- Auth Logs
+
+**Metrics**:
+- Database size
+- API requests
+- Active connections
+
+### Email Resend
+
+**Dashboard**:
+- Email sent/delivered/opened
+- Bounce rate
+- Webhook events
+
+---
+
+## Backup e Disaster Recovery
+
+### Database Backup
+
+#### Automatico (Supabase)
+- Daily backups automatici
+- 7 giorni retention (Pro plan)
+- Point-in-time recovery
+
+#### Manuale
+
+```bash
+# Usando supabase CLI
+supabase db dump -f backup-$(date +%Y%m%d).sql
+
+# Restore
+supabase db reset
+psql -h db.your-project.supabase.co -U postgres -d postgres -f backup.sql
+```
+
+### Codice
+
+- Git repository (GitHub)
+- Vercel automaticamente mantiene deploy history
+
+### File/Immagini
+
+- Supabase Storage ha backup automatici
+- Download manuale se necessario
+
+---
+
+## Manutenzione
+
+### Database Cleanup
+
+```sql
+-- Elimina prenotazioni vecchie (oltre 6 mesi)
+DELETE FROM bookings 
+WHERE end_time < NOW() - INTERVAL '6 months';
+
+-- Elimina email logs vecchi (oltre 3 mesi)
+DELETE FROM email_logs 
+WHERE created_at < NOW() - INTERVAL '3 months';
+
+-- Archivia tornei conclusi vecchi
+UPDATE tournaments 
+SET status = 'Annullato' 
+WHERE status = 'Concluso' 
+AND end_date < NOW() - INTERVAL '1 year';
+```
+
+### Reset Crediti Settimanali
+
+**Cron Job** (da configurare in Supabase o Vercel Cron):
+
+```sql
+-- Ogni Lunedì alle 00:00
+SELECT reset_weekly_credits();
+```
+
+**Vercel Cron**:
+
+```typescript
+// app/api/cron/reset-credits/route.ts
+export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  // Reset crediti
+  const { error } = await supabaseAdmin.rpc('reset_weekly_credits')
+  
+  if (error) {
+    return Response.json({ error }, { status: 500 })
+  }
+
+  return Response.json({ success: true })
+}
+```
+
+`vercel.json`:
 ```json
 {
   "crons": [
     {
-      "path": "/api/email/scheduler",
-      "schedule": "0 9 * * *"
+      "path": "/api/cron/reset-credits",
+      "schedule": "0 0 * * 1"
     }
   ]
 }
 ```
 
-**Verifica**:
-1. Vercel Dashboard → Project → Settings → Cron Jobs
-2. Conferma che il cron sia listato: `/api/email/scheduler` @ `0 9 * * *`
-3. Test manuale: `curl -X POST https://your-domain.com/api/email/scheduler -H "Authorization: Bearer YOUR_CRON_SECRET"`
+---
 
-### 6. Build Test Locale ✓
+## Troubleshooting
 
-```bash
-# Clean install
-rm -rf node_modules .next
-npm install
+### Problemi Comuni
 
-# Type check
-npx tsc --noEmit
+#### 1. Errore "Invalid JWT"
 
-# Lint
-npm run lint
+**Causa**: Token scaduto o non valido
 
-# Build
-npm run build
-
-# Test build locally
-npm start
+**Soluzione**:
+```typescript
+// Refresh session
+const { data: { session } } = await supabase.auth.refreshSession()
 ```
 
-**Aspettato**: Build success senza errori TypeScript o lint.
+#### 2. RLS Policy Error
 
-## Deployment Steps
+**Causa**: Policy RLS blocca operazione
 
-### Step 1: GitHub Push
+**Soluzione**:
+- Usa Service Role per operazioni admin
+- Verifica policy con SQL query
+- Check ruolo utente
 
-```bash
-git add .
-git commit -m "chore: production deployment ready - Phase 35 complete"
-git push origin main
-```
+#### 3. Email non inviate
 
-### Step 2: Vercel Deploy
+**Causa**: 
+- API key non valida
+- Dominio non verificato (Resend)
+- Rate limit superato
 
-1. **Automatic**: Vercel auto-deploya su push a main
-2. **Manual**: Vercel Dashboard → Deployments → Deploy
+**Soluzione**:
+- Controlla Resend dashboard
+- Verifica variabili ambiente
+- Check email logs in database
 
-Monitor deployment:
-- Build logs: Verifica nessun errore
-- Preview URL: Testa deployment prima di promuovere
-- Production: Promuovi se tutto ok
+#### 4. Deploy Failed
 
-### Step 3: Post-Deploy Verification
+**Causa**: Build error
 
-#### A. Health Check Endpoints
-```bash
-# Homepage
-curl https://your-domain.com/
+**Soluzione**:
+- Check logs Vercel
+- Verifica dipendenze
+- Test build locale: `npm run build`
 
-# API routes
-curl https://your-domain.com/api/health
+#### 5. Database Connection Error
 
-# Protected routes (should redirect to login)
-curl -I https://your-domain.com/dashboard
-```
+**Causa**: Connection pooling esaurito
 
-#### B. Database Connectivity
-1. Login come admin
-2. Vai su `/dashboard/admin`
-3. Verifica caricamento dati utenti
-4. Crea torneo test → Conferma scrittura DB
-
-#### C. Email System Test
-1. Registra nuovo utente con email reale
-2. Verifica ricezione email conferma registrazione
-3. Crea prenotazione → Verifica email conferma booking
-4. Dashboard admin → Email Logs → Verifica log presente
-
-#### D. Real-time Chat Test
-1. Apri 2 browser/tabs con utenti diversi
-2. Invia messaggio da user A
-3. Verifica ricezione istantanea su user B
-4. Controlla notifiche unread count
-
-## Monitoring Setup
-
-### 1. Error Tracking - Sentry (Optional)
-
-```bash
-npm install --save @sentry/nextjs
-npx @sentry/wizard -i nextjs
-```
-
-**Config**: `.env.production`
-```env
-NEXT_PUBLIC_SENTRY_DSN=https://xxxxx@xxxxx.ingest.sentry.io/xxxxx
-SENTRY_AUTH_TOKEN=your-sentry-auth-token
-```
-
-**Test**: Trigger error e verifica su Sentry Dashboard.
-
-### 2. Analytics - Vercel Analytics
-
-1. Vercel Dashboard → Project → Analytics → Enable
-2. Aggiungi in `src/app/layout.tsx`:
-
-```tsx
-import { Analytics } from '@vercel/analytics/react'
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="it">
-      <body>
-        {children}
-        <Analytics />
-      </body>
-    </html>
-  )
-}
-```
-
-**Monitor**: Pageviews, unique visitors, top pages, performance metrics.
-
-### 3. Performance Monitoring
-
-```bash
-# Lighthouse CI
-npm install -g @lhci/cli
-
-lhci autorun --collect.url=https://your-domain.com
-```
-
-**Target Scores**:
-- Performance: >90
-- Accessibility: >90
-- Best Practices: >90
-- SEO: >90
-
-## Critical User Flow Testing
-
-### Flow 1: User Registration → First Booking
-1. ✓ Registrazione con email valida
-2. ✓ Conferma email ricevuta
-3. ✓ Login con credenziali
-4. ✓ Navigazione a `/bookings`
-5. ✓ Selezione data, campo, orario
-6. ✓ Submit prenotazione
-7. ✓ Email conferma booking ricevuta
-8. ✓ Prenotazione visibile in `/dashboard/atleta`
-
-### Flow 2: Admin Tournament Creation
-1. ✓ Login come admin
-2. ✓ `/dashboard/admin/tornei` → Nuovo Torneo
-3. ✓ Compilazione form (nome, date, tipo)
-4. ✓ Submit → Torneo creato
-5. ✓ Atleta si iscrive da `/tornei/[id]`
-6. ✓ Admin conferma iscrizione
-7. ✓ Sistema genera gironi
-8. ✓ Inserimento risultati match
-9. ✓ Classifiche aggiornate in tempo reale
-
-### Flow 3: Coach Lesson Confirmation
-1. ✓ Atleta prenota lezione privata
-2. ✓ Coach riceve notifica email
-3. ✓ Coach login → `/dashboard/coach`
-4. ✓ Conferma/Rifiuta lezione
-5. ✓ Se confermata → Gestore approva
-6. ✓ Email finale conferma ad atleta
-7. ✓ Lezione compare in calendario `/bookings`
-
-### Flow 4: Profile Enhancement & Stats
-1. ✓ Atleta completa profilo `/profile`
-2. ✓ Completion percentage aumenta
-3. ✓ Partecipa a torneo
-4. ✓ Risultati inseriti (vittoria/sconfitta)
-5. ✓ Stats auto-sincronizzate
-6. ✓ Dashboard stats aggiornate `/profile`
-7. ✓ Metriche corrette (win rate, aces, etc.)
-
-## Rollback Plan
-
-### Immediate Rollback (Vercel)
-1. Vercel Dashboard → Deployments
-2. Trova ultimo deployment stabile
-3. Ellipsis menu → "Promote to Production"
-4. Conferma → Rollback istantaneo
-
-### Database Rollback (se necessario)
-```sql
--- Backup current state
-pg_dump -h db.xxxxx.supabase.co -U postgres -d postgres > backup_$(date +%Y%m%d).sql
-
--- Drop problematic migration
-DROP TABLE IF EXISTS table_name CASCADE;
-
--- Revert changes manually o restore backup
-psql -h db.xxxxx.supabase.co -U postgres -d postgres < backup_previous.sql
-```
-
-## Post-Deployment Tasks
-
-### Week 1: Monitoring
-- [ ] Check Sentry errors daily
-- [ ] Monitor Vercel Analytics traffic
-- [ ] Review email delivery rates (Resend Dashboard)
-- [ ] Check database performance (Supabase Dashboard)
-- [ ] Review user feedback/support requests
-
-### Week 2: Performance
-- [ ] Run Lighthouse audits
-- [ ] Check Core Web Vitals (Vercel Speed Insights)
-- [ ] Optimize slow API routes (check Vercel Functions logs)
-- [ ] Review database query performance (pg_stat_statements)
-
-### Month 1: Optimization
-- [ ] A/B test landing page CTAs
-- [ ] Review email open rates → optimize subject lines
-- [ ] Analyze bounce rates → improve UX
-- [ ] Scale Supabase plan if needed (check usage)
-- [ ] Implement caching strategy for static content
-
-## Emergency Contacts
-
-- **Supabase Support**: support@supabase.com (Dashboard Support tab)
-- **Resend Support**: support@resend.com
-- **Vercel Support**: https://vercel.com/support
-- **Database Admin**: [Your DBA contact]
-- **Technical Lead**: [Your tech lead contact]
-
-## Final Checklist
-
-- [ ] All environment variables configured
-- [ ] Database migrations executed and verified
-- [ ] RLS policies active on all tables
-- [ ] Resend domain verified and webhook configured
-- [ ] Vercel cron jobs active
-- [ ] Build passes with no TypeScript/lint errors
-- [ ] All 19 tests passing
-- [ ] Health check endpoints responsive
-- [ ] Email delivery working (test email sent/received)
-- [ ] Real-time chat functional
-- [ ] Critical user flows tested end-to-end
-- [ ] Monitoring tools configured (Sentry/Analytics)
-- [ ] Rollback plan documented and tested
-- [ ] Team notified of deployment
+**Soluzione**:
+- Aumenta pool size in Supabase
+- Ottimizza query
+- Chiudi connessioni non usate
 
 ---
 
-**Deployment Completed**: _____________ (Date/Time)  
-**Deployed By**: _____________  
-**Production URL**: https://your-domain.com  
-**Status**: ✅ Live
+## Scaling
+
+### Database
+
+**Supabase Pro** (consigliato per produzione):
+- Database dedicato
+- 8GB RAM
+- 100GB storage
+- Connection pooling avanzato
+- Daily backups con 30 giorni retention
+
+**Ottimizzazioni**:
+- Indici ottimizzati (già presenti)
+- Query optimization
+- Partitioning tabelle grandi (se necessario)
+
+### API
+
+**Vercel**:
+- Scale automatico
+- Edge Functions per bassa latenza
+- Rate limiting per protezione
+
+### Storage
+
+**Supabase Storage**:
+- CDN globale incluso
+- Resize immagini on-the-fly
+- 100GB inclusi (Pro plan)
 
 ---
 
-*Last Updated: 2024-12-28*  
-*GST Tennis Academy - Phase 35 Complete*
+## Checklist Pre-Launch
+
+### Sicurezza
+- [ ] RLS abilitato su tutte le tabelle
+- [ ] Service role key configurata e sicura
+- [ ] Auth email verification abilitata
+- [ ] Rate limiting implementato
+- [ ] HTTPS forzato
+
+### Performance
+- [ ] Tutti gli indici database creati
+- [ ] Caching configurato
+- [ ] Immagini ottimizzate
+- [ ] Build production testato
+
+### Funzionalità
+- [ ] Login/registrazione funzionante
+- [ ] Prenotazioni testate
+- [ ] Tornei creazione/gestione testati
+- [ ] Email inviate correttamente
+- [ ] Pagamenti (se implementati) testati
+
+### Monitoring
+- [ ] Vercel Analytics abilitato
+- [ ] Supabase logs configurati
+- [ ] Error tracking (Sentry opzionale)
+- [ ] Backup automatici verificati
+
+### Contenuto
+- [ ] Primo admin creato
+- [ ] Campi/servizi configurati
+- [ ] Email templates personalizzati
+- [ ] Homepage sections configurate
+- [ ] Privacy policy e termini servizio
+
+---
+
+## Contatti e Supporto
+
+- **Supabase Support**: [supabase.com/docs](https://supabase.com/docs)
+- **Vercel Support**: [vercel.com/support](https://vercel.com/support)
+- **Resend Support**: [resend.com/docs](https://resend.com/docs)
+- **Next.js Docs**: [nextjs.org/docs](https://nextjs.org/docs)
+
+---
+
+**Fine Guida Deployment**

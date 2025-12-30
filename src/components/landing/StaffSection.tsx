@@ -90,7 +90,7 @@ export default function StaffSection() {
 
         <div className="grid gap-5 md:grid-cols-3">
         {staff.map((member) => (
-          <article key={member.id} className="group rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl overflow-hidden hover:border-[var(--glass-border)] hover:border-opacity-70 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all duration-300">
+          <article key={member.id} className="group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300">
             {member.image_url ? (
               <img
                 src={member.image_url}
@@ -98,14 +98,14 @@ export default function StaffSection() {
                 className="w-full h-64 object-cover"
               />
             ) : (
-              <div className="w-full h-64 bg-gradient-to-br from-accent-dark/30 to-gray-900/50 flex items-center justify-center group-hover:from-accent-dark/40 transition-all">
-                <User className="h-20 w-20 text-accent/60 group-hover:text-accent transition-colors" />
+              <div className="w-full h-64 bg-gradient-to-br from-cyan-900/30 to-blue-900/50 flex items-center justify-center group-hover:from-cyan-900/40 transition-all">
+                <User className="h-20 w-20 text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
               </div>
             )}
             <div className="p-6 space-y-3">
               <div>
                 <h3 className="text-xl font-bold gradient-text">{member.full_name}</h3>
-                <span className="inline-block mt-2 rounded-full bg-accent-20 px-3 py-1 text-xs font-bold text-accent border border-[var(--glass-border)]">
+                <span className="inline-block mt-2 rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 text-xs font-bold text-cyan-300">
                   {member.role}
                 </span>
               </div>

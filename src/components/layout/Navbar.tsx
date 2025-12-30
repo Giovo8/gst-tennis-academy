@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, X, Shield, Instagram, Facebook, Youtube } from "lucide-react";
@@ -49,16 +50,19 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="border-b border-blue-400/20 bg-[#021627]/80 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-black/20">
-      <div className="container py-sm">
-        <div className="flex items-center justify-between gap-4 py-sm">
+    <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container py-4">
+        <div className="flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <img src="/images/logo-tennis.png" alt="GST Academy Logo" className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
-              <div className="absolute inset-0 bg-blue-400/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">GST Academy</span>
+          <Link href="/" className="flex items-center gap-3">
+            <Image 
+              src="/images/logo-tennis.png" 
+              alt="GST Tennis Academy" 
+              width={36} 
+              height={36}
+              className="h-9 w-9"
+            />
+            <span className="text-lg font-bold text-white">GST Academy</span>
           </Link>
 
           {/* Desktop Menu */}

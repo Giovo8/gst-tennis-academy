@@ -1,643 +1,141 @@
 # GST Tennis Academy
 
-🎾 Piattaforma completa per la gestione di un'accademia di tennis con sistema di prenotazioni, tornei, corsi e comunicazione integrata.
-
-## 📋 Indice
-
-- [Caratteristiche](#caratteristiche)
-- [Tecnologie](#tecnologie)
-- [Prerequisiti](#prerequisiti)
-- [Installazione](#installazione)
-- [Configurazione](#configurazione)
-- [Utilizzo](#utilizzo)
-- [Struttura del Progetto](#struttura-del-progetto)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contribuire](#contribuire)
-- [Licenza](#licenza)
-
-## ✨ Caratteristiche
-
-### Sistema di Prenotazioni
-- 📅 Calendario interattivo per prenotazione campi
-- ⏰ Slot orari personalizzabili (08:00-22:00)
-- 👥 Prenotazioni per lezioni singole o di gruppo
-- ✅ Sistema di conferme a 3 livelli (utente, coach, gestore)
-- 💳 Gestione pagamenti e storico prenotazioni
-
-### Sistema Tornei Completo 🎾 ⭐ NUOVO
-- 🏆 **3 Tipi di Torneo Professionali**:
-  - **Eliminazione Diretta**: Tabellone classico a eliminazione
-  - **Girone + Eliminazione**: Fase a gironi + tabellone knockout
-  - **Campionato**: Round-robin (tutti contro tutti)
-- ✨ **Wizard Creazione Intuitivo** in 3 step
-- 🎯 **Gestione Completa Match**:
-  - Punteggi tennis autentici (set, game, tie-break)
-  - Best-of-3 o Best-of-5
-  - Inserimento risultati real-time
-  - Avanzamento automatico vincitori
-- 📊 **Classifiche e Statistiche Avanzate**:
-  - Classifica generale giocatori
-  - Win rate e performance
-  - Statistiche set/game vinti/persi
-  - Tornei giocati e vinti
-  - Top performers (più tornei vinti, miglior win rate, più attivi)
-- 👥 **Dashboard per Tutti i Ruoli**:
-  - **Admin/Gestore**: Creazione, gestione, statistiche, eliminazione tornei
-  - **Maestro**: Visualizzazione read-only con statistiche
-  - **Atleta**: Iscrizioni, visualizzazione match personali
-- 🥇 **Pagina Classifiche Pubblica**:
-  - Podio visivo con top 3 giocatori
-
-### Gestione Utenti & Admin
-- 👥 Sistema ruoli avanzato (Admin, Gestore, Maestro, Atleta)
-- 📝 Gestione completa profili utente via API con service role
-- 🔐 Autenticazione sicura con JWT Bearer token
-- 📊 Dashboard admin con statistiche real-time
-- 🎨 UI ottimizzata per mobile e desktop
-- 🔒 Row Level Security (RLS) con bypass controllato via API
-  - Classifica completa con tutti i dettagli
-  - Statistiche aggregate in tempo reale
-- 🔄 **Algoritmi Avanzati**:
-  - Snake draft per distribuzione gironi bilanciata
-  - Seeding intelligente per knockout
-  - Round-robin con bye per numeri dispari
-  - Calcolo tiebreaker (punti → set diff → game diff)
-
-### Profili Atleti Avanzati
-- 📈 Statistiche tennis complete (aces, doppi falli, break point)
-- 🎯 Tracking progressi con grafici
-- 💯 Percentuale completamento profilo
-- 🏅 Livelli skill (principiante → professionista)
-- 📱 Informazioni emergenza e preferenze orarie
-
-### Sistema Email Integrato
-- 📨 11 template email HTML con branding GST
-- 🔄 Automazione trigger per eventi (prenotazioni, tornei, lezioni)
-- 📊 Dashboard analytics con metriche delivery/open/click
-- ⏱️ Scheduler cron per reminder automatici
-- 🚫 Gestione unsubscribe e preferenze utente
-
-### Chat e Comunicazione
-- 💬 Chat real-time con Supabase Realtime
-- 🔔 Notifiche messaggi non letti
-- 👥 Conversazioni tra utenti e staff
-- 📎 Supporto allegati e emoji
-
-### Bacheca Annunci
-- 📢 Annunci prioritari per amministrazione
-- 🤝 Bacheca partner per sponsor e collaborazioni
-- 🔒 Visibilità controllata per ruolo utente
-- 📅 Scadenza automatica annunci
-
-### Sistema di Ruoli
-- 👨‍💼 **Admin**: Controllo completo sistema
-- 🏢 **Gestore**: Gestione operativa e prenotazioni
-- 🎓 **Maestro**: Gestione corsi e lezioni
-- 🎾 **Coach**: Conferma lezioni e disponibilità
-- 👤 **Atleta**: Prenotazioni e partecipazione tornei
-
-## 🛠 Tecnologie
-
-### Frontend
-- **Next.js 16.1.1** - React framework con App Router
-- **React 19.2.3** - UI library
-- **TypeScript 5.9.3** - Type safety
-- **Tailwind CSS 4** - Utility-first styling
-- **Lucide React** - Icon library
-
-### Backend
-- **Supabase** - PostgreSQL database con RLS
-- **Supabase Realtime** - WebSocket per chat
-- **Resend 6.6.0** - Email service provider
-
-### Testing
-- **Jest 30.2.0** - Testing framework
-- **React Testing Library 15.0.7** - Component testing
-- **@testing-library/jest-dom** - DOM matchers
-
-### DevOps
-- **Vercel** - Hosting e deployment
-- **Vercel Cron** - Scheduled jobs
-- **GitHub Actions** - CI/CD (optional)
-- **ESLint + Prettier** - Code quality
-
-## 📦 Prerequisiti
-
-- **Node.js** 20.x o superiore
-- **npm** 10.x o superiore
-- **Account Supabase** (free tier disponibile)
-- **Account Resend** per email (free tier: 100 email/giorno)
-- **Git** per version control
-
-## 🚀 Installazione
-
-### 1. Clona il repository
-
-```bash
-git clone https://github.com/your-username/gst-tennis-academy.git
-cd gst-tennis-academy
-```
-
-### 2. Installa le dipendenze
-
-```bash
-npm install
-```
-
-### 3. Configura Supabase
-
-1. Crea un nuovo progetto su [supabase.com](https://supabase.com)
-2. Vai su SQL Editor e esegui i migration files in ordine:
-
-```bash
-supabase/migrations/001_create_tournaments_and_participants.sql
-supabase/migrations/002_rls_policies_tournaments.sql
-supabase/migrations/003_add_competition_types.sql
-supabase/migrations/004_add_tennis_scoring.sql
-supabase/migrations/005_add_chat_system.sql
-supabase/migrations/006_add_announcements.sql
-supabase/migrations/007_email_system.sql
-supabase/migrations/008_profile_enhancements.sql
-```
-
-3. Copia le chiavi API da Settings > API
-
-### 4. Configura variabili ambiente
-
-Crea file `.env.local`:
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Resend Email
-RESEND_API_KEY=your-resend-api-key
-EMAIL_FROM=noreply@your-domain.com
-EMAIL_REPLY_TO=info@your-domain.com
-RESEND_WEBHOOK_SECRET=your-webhook-secret
-
-# Vercel Cron
-CRON_SECRET=your-random-secret-key
-
-# App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### 5. Avvia il server di sviluppo
-
-```bash
-npm run dev
-```
-
-Apri [http://localhost:3000](http://localhost:3000) nel browser.
-
-## ⚙️ Configurazione
-
-### Email Templates
-
-I template email sono in `src/lib/email/templates/`. Personalizza:
-- Colori branding (blu GST: #2f7de1)
-- Logo e immagini
-- Testi e messaggi
-
-### Vercel Cron Jobs
-
-Il file `vercel.json` configura i job schedulati:
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/email/scheduler",
-      "schedule": "0 9 * * *"
-    }
-  ]
-}
-```
-
-Schedule: Giornaliero alle 9:00 UTC (10:00 ora italiana).
-
-### Webhook Resend
-
-Configura webhook su Resend Dashboard:
-- URL: `https://your-domain.com/api/webhooks/email`
-- Eventi: email.sent, email.delivered, email.opened, email.clicked, email.bounced
-
-## 📖 Utilizzo
-
-### Creazione Primo Admin
-
-```bash
-npm run seed:test
-```
-
-Crea utenti test:
-- admin@test.com (Admin)
-- gestore@test.com (Gestore)
-- maestro@test.com (Maestro)
-- coach@test.com (Coach)
-- atleta@test.com (Atleta)
-
-Password: `password123`
-
-### Dashboard Amministrazione
-
-Accedi come admin e vai su `/dashboard/admin` per:
-- Gestire utenti e ruoli
-- Creare tornei e corsi
-- Visualizzare statistiche prenotazioni
-- Configurare hero content e sezioni homepage
-- Monitorare email dashboard
-
-### Gestione Tornei Completa
-
-#### Creazione Torneo (Admin/Gestore)
-1. Vai su `/dashboard/admin/tornei` (o `/dashboard/gestore/tornei`)
-2. Click "Nuovo Torneo"
-3. Wizard in 3 step:
-   - **Step 1**: Informazioni base (titolo, descrizione, date)
-   - **Step 2**: Configurazione (tipo torneo, partecipanti, best-of)
-   - **Step 3**: Dettagli extra (categoria, superficie, quota)
-4. Torneo creato con stato "Aperto"
-
-#### Iscrizione Atleti
-**Metodo 1 - Atleti si iscrivono autonomamente:**
-1. Atleta va su `/tornei` o `/dashboard/atleta/tornei`
-2. Visualizza tornei disponibili
-3. Click "Iscriviti" su torneo aperto
-4. Iscrizione confermata automaticamente
-
-#### Avvio Torneo
-**Eliminazione Diretta:**
-1. Admin clicca "Gestisci" sul torneo
-2. Click "Genera Tabellone"
-3. Sistema crea bracket con seeding automatico
-4. Torneo passa a "In Corso"
-
-**Girone + Eliminazione:**
-1. Admin clicca "Gestisci"
-2. Click "Genera Gironi" → seleziona numero gironi (2, 4, 8)
-3. Sistema distribuisce partecipanti con snake draft
-4. Gioca tutti i match dei gironi
-5. Click "Avanza alla Fase a Eliminazione"
-6. Top 2 di ogni girone avanzano al knockout
-
-**Campionato:**
-1. Admin clicka "Gestisci"
-2. Click "Genera Calendario"
-3. Sistema crea calendario round-robin con giornate
-4. Filtra match per giornata e inserisci risultati
-5. Classifica si aggiorna automaticamente
-
-#### Inserimento Risultati
-1. Vai alla scheda match del torneo
-2. Click "Inserisci Punteggio" su un match
-3. Inserisci punteggi set per set:
-   - Best-of-3: Massimo 3 set
-   - Best-of-5: Massimo 5 set
-   - Supporto tie-break (7-6)
-4. Salva → vincitore avanza automaticamente
-
-#### Statistiche e Report
-**Dashboard Admin/Gestore:**
-- Visualizza statistiche aggregate (tornei, match, giocatori)
-- Espandi "Statistiche e Report Avanzati"
-- 3 Tab disponibili:
-  - **Panoramica**: Overview + top performers
-  - **Classifiche**: Top 50 giocatori con statistiche complete
-  - **Tornei**: Dettagli tutti i tornei con completion rate
-
-**Pagina Pubblica Classifiche:**
-- Vai su `/classifiche`
-- Visualizza podio con top 3 giocatori
-- Consulta classifica completa
-- Vedi statistiche: win rate, tornei vinti, match giocati
-3. Gestore conferma iscrizioni
-4. Sistema genera gironi automaticamente
-5. Coach/Admin inseriscono risultati match
-6. Sistema calcola classifiche e avanza fasi
-
-### Prenotazione Campi
-
-1. Atleta va su `/bookings`
-2. Seleziona data, campo e orario
-3. Sceglie tipo: campo libero, lezione singola o gruppo
-4. Sistema invia richiesta a coach (se lezione)
-5. Coach conferma disponibilità
-6. Gestore approva definitivamente
-7. Email di conferma automatica
-
-## 📁 Struttura del Progetto
-
-```
-gst-tennis-academy/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/               # API Routes
-│   │   │   ├── bookings/      # Prenotazioni endpoints
-│   │   │   ├── tournaments/   # Tornei + matches
-│   │   │   ├── email/         # Email scheduler
-│   │   │   └── webhooks/      # Resend webhooks
-│   │   ├── dashboard/         # Dashboard per ruolo
-│   │   │   ├── admin/        # Admin pages
-│   │   │   ├── atleta/       # Athlete pages
-│   │   │   ├── coach/        # Coach pages
-│   │   │   ├── gestore/      # Manager pages
-│   │   │   ├── maestro/      # Teacher pages (read-only tornei)
-│   │   │   └── atleta/       # Athlete pages (enrollment + match viewing)
-│   │   ├── bookings/         # Prenotazioni page
-│   │   ├── tornei/           # Tornei pubblici
-│   │   ├── classifiche/      # Classifiche pubbliche (NEW)
-│   │   └── profile/          # Profilo utente
-│   ├── components/            # React components
-│   │   ├── bookings/         # Booking calendar
-│   │   ├── tournaments/      # Tournament system (UPDATED)
-│   │   │   ├── BracketView.tsx              # Elimination bracket
-│   │   │   ├── GroupStageView.tsx           # Group stage with standings
-│   │   │   ├── ChampionshipStandingsView.tsx # Round-robin standings
-│   │   │   ├── BracketMatchCard.tsx         # Match card with scoring
-│   │   │   ├── TennisScoreInput.tsx         # Set-by-set input
-│   │   │   ├── SimpleTournamentCreator.tsx  # 3-step wizard
-│   │   │   ├── TournamentManagerWrapper.tsx # Management panel
-│   │   │   ├── TournamentStats.tsx          # Statistics dashboard
-│   │   │   └── TournamentReports.tsx        # Advanced reports (NEW)
-│   │   ├── profile/          # ProfileEditor, AthleteStatsView
-│   │   ├── email/            # EmailDashboard
-│   │   ├── chat/             # ChatPanel, notifications
-│   │   ├── announcements/    # Announcement boards
-│   │   ├── layout/           # Navbar, Footer
-│   │   └── landing/          # Homepage sections
-│   ├── __tests__/            # Test files
-│   │   ├── tournaments.test.ts              # Original tests
-│   │   └── tournament-flows.test.ts         # Complete E2E tests (NEW)
-│   └── lib/
-│       ├── email/            # Email service + templates
-│       ├── seo/              # Metadata + JSON-LD
-│       ├── supabase/         # Supabase clients
-│       └── roles.ts          # Role checking utils
-├── scripts/
-│   └── test-tournaments.js   # Quick test script (NEW)
-├── docs/
-│   ├── TESTING.md            # Testing documentation (NEW)
-│   ├── TESTING_GUIDE.md      # Manual testing guide (NEW)
-│   ├── TOURNAMENT_SYSTEM.md  # Tournament system docs
-│   └── ROLES_SYSTEM.md       # Role permissions
-├── supabase/
-│   └── migrations/           # SQL migrations
-│       ├── 010_simplified_tournament_system.sql
-│       ├── 013_tennis_scoring_system.sql (apply this!)
-│       └── ... (other migrations)
-├── public/
-│   ├── images/              # Logo, OG images
-│   ├── robots.txt           # SEO robots
-│   └── sitemap.xml          # SEO sitemap
-├── jest.config.js           # Jest configuration
-├── jest.setup.js            # Test globals + mocks
-├── tailwind.config.ts       # Tailwind theming
-├── tsconfig.json            # TypeScript config
-├── vercel.json              # Vercel cron config
-└── package.json             # Dependencies + scripts
-```
-
-## 🧪 Testing
-
-Il sistema di testing è completo con test automatici e manuali. Consulta la documentazione completa in [docs/TESTING.md](docs/TESTING.md).
-
-### Quick Test (Connettività e API)
-
-```bash
-node scripts/test-tournaments.js
-```
-
-Testa:
-- ✅ Connettività server
-- ✅ Endpoint API disponibili
-- ✅ Database accessibile
-- ✅ Pagine pubbliche funzionanti
-- ✅ Generazione report
-
-### Test Automatici (Jest)
-
-```bash
-# Esegui tutti i test
-npm test
-
-# Watch mode (sviluppo)
-npm run test:watch
-
-# Test specifici per tornei
-npm test tournament-flows.test.ts
-```
-
-I test automatici coprono:
-- ✅ Flusso completo Eliminazione Diretta
-- ✅ Flusso completo Girone + Eliminazione
-- ✅ Flusso completo Campionato
-- ✅ Generazione statistiche e report
-- ✅ Controllo accessi basato su ruoli
-- ✅ Validazione punteggi tennis
-- ✅ Gestione errori
-
-### Test Manuali
-
-Segui la guida completa in [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) per:
-- 📋 8 scenari di test dettagliati
-- ✅ Checklist per ogni tipo di torneo
-- 👥 Test per tutti i ruoli (admin, gestore, maestro, atleta)
-- 🎯 Test statistiche e report
-- 🎾 Test validazione punteggi tennis
-- 🐛 Template per bug report
-
-### Test Coverage
-
-**Componenti Testati:**
-- ✅ API Endpoints: 100% dei tornei
-- ✅ Tipi Torneo: Tutti e 3 i tipi
-- ✅ Ruoli Utente: Tutti e 4 i ruoli
-- ✅ Sistema Scoring: Regole tennis complete
-- ✅ Statistiche: Generazione report
-
-### Coverage report
-
-```bash
-npm run test:coverage
-```
-
-### Test Coverage (Baseline)
-- **Branches**: 10%
-- **Functions**: 10%
-- **Lines**: 10%
-- **Statements**: 10%
-
-Test suite:
-- 19 test passanti
-- 4 component test files
-- Mock completi per Supabase e Next.js
-
-## 🚀 Deployment
-
-### Vercel (Raccomandato)
-
-1. **Push su GitHub**
-   ```bash
-   git add .
-   git commit -m "feat: ready for deployment"
-   git push origin main
-   ```
-
-2. **Connetti Vercel**
-   - Vai su [vercel.com](https://vercel.com)
-   - Importa progetto da GitHub
-   - Configura variabili ambiente (copia da `.env.local`)
-
-3. **Configura Environment Variables**
-   ```
-   NEXT_PUBLIC_SUPABASE_URL
-   NEXT_PUBLIC_SUPABASE_ANON_KEY
-   SUPABASE_SERVICE_ROLE_KEY
-   RESEND_API_KEY
-   EMAIL_FROM
-   EMAIL_REPLY_TO
-   RESEND_WEBHOOK_SECRET
-   CRON_SECRET
-   NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
-   ```
-
-4. **Deploy**
-   - Vercel auto-deploya su ogni push
-   - Cron jobs attivi automaticamente
-   - SSL certificate generato
-
-### Build Locale
-
-```bash
-npm run build
-npm start
-```
-
-Build output: `.next/`
-
-## 🔒 Sicurezza
-
-### Row Level Security (RLS)
-Tutte le tabelle Supabase hanno policy RLS attive:
-- Gli utenti vedono solo i propri dati
-- Admin/gestore hanno accesso esteso
-- Policy verificano `auth.uid()` e `role` da profiles
-
-### API Routes
-- Validazione input con Zod (da implementare)
-- Rate limiting su endpoints sensibili
-- CRON_SECRET per proteggere scheduler
-
-### Autenticazione
-- Supabase Auth con JWT
-- Password hashing bcrypt
-- Email verification (opzionale)
-
-## 📊 Metriche Sistema
-
-### Database
-- 8 migration SQL
-- 15+ tabelle con RLS
-- 3 stored functions per calcoli
-- 5+ trigger per auto-sync
-
-### Email System
-- 11 template HTML
-- 4 categorie email (transactional, notifications, marketing, system)
-- Tracking aperture/click
-- Retry automatico (max 3 tentativi)
-
-### Statistiche Tennis
-- 30+ metriche per atleta
-- Auto-sync da risultati tornei
-- Calcoli automatici (win rate, differenziali)
-- Storico completo partite
-
-## 🤝 Contribuire
-
-1. Fork il progetto
-2. Crea feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit modifiche (`git commit -m 'feat: add amazing feature'`)
-4. Push su branch (`git push origin feature/amazing-feature`)
-5. Apri Pull Request
-
-### Commit Convention
-Usa [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` Nuove funzionalità
-- `fix:` Bug fix
-- `docs:` Documentazione
-- `style:` Formattazione
-- `refactor:` Refactoring codice
-- `test:` Test
-- `chore:` Manutenzione
-
-## 📄 Licenza
-
-Questo progetto è sotto licenza MIT. Vedi file `LICENSE` per dettagli.
-
-## 🙏 Ringraziamenti
-
-- [Next.js](https://nextjs.org/) - Framework React
-- [Supabase](https://supabase.com/) - Backend as a Service
-- [Resend](https://resend.com/) - Email infrastructure
-- [Vercel](https://vercel.com/) - Hosting e deployment
-- [Tailwind CSS](https://tailwindcss.com/) - Styling framework
-- [Lucide](https://lucide.dev/) - Icon library
-
-## 📞 Supporto
-
-Per domande o supporto:
-- 📧 Email: info@gst-tennis-academy.com
-- 🐛 Issues: [GitHub Issues](https://github.com/your-username/gst-tennis-academy/issues)
-- 📖 Docs: [Wiki](https://github.com/your-username/gst-tennis-academy/wiki)
+🎾 **Piattaforma completa per la gestione di un'accademia di tennis** con sistema di prenotazioni, tornei professionali, corsi, messaggistica e molto altro.
+
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
 
 ---
 
-**Made with ❤️ and 🎾 by GST Tennis Academy**
+## 📋 Indice
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Backend**: Supabase (PostgreSQL + Auth)
-- **Styling**: Tailwind CSS 4
-- **Icons**: Lucide React
-- **Database**: PostgreSQL con Row Level Security
+- [Caratteristiche Principali](#-caratteristiche-principali)
+- [Documentazione](#-documentazione)
+- [Quick Start](#-quick-start)
+- [Tecnologie](#-tecnologie)
+- [Struttura Progetto](#-struttura-progetto)
+- [Testing](#-testing)
+- [Deploy](#-deploy)
+- [Contribuire](#-contribuire)
+- [Licenza](#-licenza)
 
-## 📦 Installazione
+---
+
+## ✨ Caratteristiche Principali
+
+### 🎾 Sistema Tornei Professionale (v2.0)
+
+**3 Tipi di Torneo**:
+- **Eliminazione Diretta**: Bracket classico ad eliminazione
+- **Girone + Eliminazione**: Fase a gironi seguita da knockout
+- **Campionato**: Round-robin (tutti contro tutti)
+
+**Features**:
+- Wizard creazione intuitivo in 3 step
+- Gestione partite con punteggi tennis autentici (set, game, tie-break)
+- Classifiche e statistiche avanzate
+- Dashboard specifiche per ogni ruolo
+- Pagina classifiche pubblica con podio
+
+### 📅 Sistema Prenotazioni
+
+- Calendario interattivo per prenotazione campi
+- Lezioni private e di gruppo
+- Sistema conferme multi-livello
+- Gestione crediti settimanali per abbonamenti
+- Storico prenotazioni e statistiche
+
+### 👥 Sistema Multi-Ruolo
+
+- **Admin**: Controllo completo sistema
+- **Gestore**: Gestione operativa
+- **Maestro**: Gestione corsi e lezioni
+- **Atleta**: Prenotazioni e iscrizione tornei
+
+### 💬 Chat e Comunicazione
+
+- Messaggistica in tempo reale
+- Conversazioni 1-to-1 e di gruppo
+- Notifiche messaggi non letti
+- Supporto allegati
+
+### 📧 Sistema Email
+
+- 11 template email HTML con branding
+- Automazione trigger per eventi
+- Dashboard analytics con metriche
+- Webhook tracking (aperture, click, bounce)
+
+### 📚 Gestione Corsi
+
+- Creazione e gestione corsi
+- Sistema iscrizioni online
+- Gestione capienza e liste d'attesa
+- Conferme email automatiche
+
+### 📰 News e Annunci
+
+- Sistema news con categorie
+- Annunci homepage
+- Editor rich text
+- Gestione pubblicazione/bozze
+
+---
+
+## 📖 Documentazione
+
+La documentazione completa è disponibile nella cartella `docs/`:
+
+| Documento | Descrizione |
+|-----------|-------------|
+| **[DATABASE.md](docs/DATABASE.md)** | Schema completo database, tabelle, RLS policies, migrazioni, funzioni helper |
+| **[API.md](docs/API.md)** | Documentazione completa API endpoints con esempi |
+| **[FEATURES.md](docs/FEATURES.md)** | Guida completa a tutte le funzionalità del sistema |
+| **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Guida setup, deployment, variabili ambiente, configurazione |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clona Repository
 
 ```bash
-# Installa dipendenze
-npm install
-
-# Copia file environment
-cp .env.example .env.local
+git clone https://github.com/your-org/gst-tennis-academy.git
+cd gst-tennis-academy
 ```
 
-Configura `.env.local` con le tue credenziali Supabase:
+### 2. Installa Dipendenze
+
+```bash
+npm install
+```
+
+### 3. Configura Environment
+
+Crea `.env.local`:
+
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Resend Email
+RESEND_API_KEY=re_your_api_key
+
+# Site URL
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-## 🗄️ Setup Database
+### 4. Setup Database
 
-1. Vai su Supabase → SQL Editor
-2. Esegui in ordine:
-   - `supabase/schema.sql` (crea schema base con profili, prenotazioni, servizi, prodotti, corsi, eventi)
-   - `supabase/FIX_COMPLETO_RLS.sql` (configura Row Level Security policies)
-   - `supabase/migrations/complete_migration.sql` (aggiunge tabelle staff, hero_images, hero_content, subscriptions, programs, homepage_sections)
+1. Vai su [Supabase Dashboard](https://app.supabase.com)
+2. Crea nuovo progetto
+3. Esegui migrazioni in **SQL Editor** (vedi [DATABASE.md](docs/DATABASE.md))
 
-3. Crea utenti test da Authentication → Users:
-   - admin@gst.it (password: Password123!)
-   - maestro@test.it (password: Password123!)
-   - atleta@test.it (password: Password123!)
-
-## 🚀 Avvio Applicazione
+### 5. Avvia Development Server
 
 ```bash
 npm run dev
@@ -645,214 +143,197 @@ npm run dev
 
 Apri [http://localhost:3000](http://localhost:3000)
 
-## 📋 Struttura Database
+### 6. Crea Primo Admin
 
-### Tabelle Principali
-- `profiles`: Utenti con ruoli (atleta, maestro, gestore, admin)
-- `bookings`: Prenotazioni campi e lezioni con sistema doppia conferma
-- `subscription_credits`: Sistema crediti settimanali per abbonamenti
-- `services`: Servizi offerti dall'accademia
-- `products`: Catalogo prodotti shop
-- `orders`: Ordini e-commerce
-- `courses`: Corsi e sezioni homepage dinamiche
-- `enrollments`: Iscrizioni ai corsi
-- `events`: Eventi e tornei
-- `event_registrations`: Iscrizioni agli eventi
-- `news`: Sistema notizie e blog
-- `staff`: Membri dello staff visualizzati in homepage
-- `hero_images`: Carousel immagini sezione hero
-- `hero_content`: Contenuti testuali sezione hero (titoli, statistiche, CTA)
-- `subscriptions`: Piani abbonamento disponibili
-- `programs`: Programmi di allenamento
-- `homepage_sections`: Ordine e visibilità delle sezioni homepage
-- `recruitment_applications`: Candidature lavoro
-- `notifications`: Sistema notifiche utenti
-- `messages`: Messaggistica interna
-- `payments`: Storico pagamenti
+```sql
+-- In Supabase SQL Editor
+UPDATE profiles 
+SET role = 'admin' 
+WHERE email = 'your-email@example.com';
+```
 
-## 🔐 Flusso Prenotazioni
+---
 
-1. **Atleta** crea prenotazione:
-   - Campo → Conferma automatica
-   - Lezione privata → Status "pending"
+## 🛠 Tecnologie
 
-2. **Maestro** (solo lezioni private):
-   - Riceve notifica
-   - Conferma o rifiuta
-   - Status → "confirmed_by_coach"
+### Frontend
+- **Next.js 14** - React framework con App Router
+- **React 19** - UI library
+- **TypeScript 5** - Type safety
+- **Tailwind CSS 4** - Utility-first styling
+- **Lucide React** - Icon library
 
-3. **Gestore**:
-   - Vede tutte le prenotazioni
-   - Approva dopo conferma maestro
-   - Status → "confirmed"
+### Backend
+- **Supabase** - PostgreSQL database + Auth + Storage
+- **PostgreSQL 14+** - Database relazionale
+- **Row Level Security** - Sicurezza a livello database
 
-## 🎯 Prossimi Sviluppi
+### Integrations
+- **Resend** - Email transazionali
+- **Vercel** - Hosting e deployment
+- **Vercel Cron** - Scheduled jobs
+- **Stripe** - Pagamenti (opzionale)
 
-- [ ] Sistema notifiche email
-- [ ] Export report PDF
-- [ ] Dashboard con grafici statistici
-- [ ] App mobile (React Native)
-- [ ] Integrazione pagamenti Stripe
-- [ ] Sistema messaggistica interna
+### Dev Tools
+- **Jest** - Testing framework
+- **ESLint + Prettier** - Code quality
+- **TypeScript** - Type checking
 
-## 💳 Modalità Mock Stripe
+---
 
-Quando `STRIPE_MOCK=1` l'endpoint `POST /api/stripe/checkout` restituirà un URL mock che punta a `/shop/success?session_id=MOCK_<timestamp>` per testare il flusso di checkout. Puoi simulare eventi webhook con una POST a `/api/stripe/simulate`:
+## 📁 Struttura Progetto
+
+```
+gst-tennis-academy/
+├── docs/                           # 📖 Documentazione
+│   ├── DATABASE.md                # Schema database completo
+│   ├── API.md                     # API endpoints
+│   ├── FEATURES.md                # Guida funzionalità
+│   └── DEPLOYMENT.md              # Guida deploy
+├── src/
+│   ├── app/                       # Next.js App Router
+│   │   ├── api/                  # API Routes
+│   │   │   ├── admin/           # Admin endpoints
+│   │   │   ├── tournaments/     # Tornei endpoints
+│   │   │   ├── bookings/        # Prenotazioni
+│   │   │   ├── courses/         # Corsi
+│   │   │   ├── email/           # Email system
+│   │   │   └── webhooks/        # Webhooks esterni
+│   │   ├── dashboard/           # Dashboard per ruolo
+│   │   │   ├── admin/
+│   │   │   ├── gestore/
+│   │   │   ├── maestro/
+│   │   │   └── atleta/
+│   │   ├── tornei/              # Tornei pubblici
+│   │   ├── classifiche/         # Classifiche pubbliche
+│   │   ├── bookings/            # Prenotazioni
+│   │   ├── courses/             # Corsi
+│   │   ├── news/                # News
+│   │   └── profile/             # Profilo utente
+│   ├── components/              # React components
+│   │   ├── tournaments/         # Sistema tornei
+│   │   ├── bookings/            # Sistema prenotazioni
+│   │   ├── chat/                # Sistema chat
+│   │   ├── email/               # Email dashboard
+│   │   ├── profile/             # Profilo e stats
+│   │   ├── auth/                # Autenticazione
+│   │   └── layout/              # Layout components
+│   ├── lib/                     # Utilities
+│   │   ├── supabase/           # Supabase clients
+│   │   ├── email/              # Email service
+│   │   ├── seo/                # SEO utils
+│   │   └── roles.ts            # Role checking
+│   └── __tests__/              # Test files
+├── supabase/                    # Database
+│   ├── schema.sql              # Schema base
+│   └── migrations/             # Migrazioni SQL
+├── scripts/                     # Utility scripts
+├── public/                      # Assets statici
+└── vercel.json                 # Vercel config
+```
+
+---
+
+## 🧪 Testing
+
+### Test Automatici
 
 ```bash
-curl -X POST http://localhost:3000/api/stripe/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"type":"checkout.session.completed","session":{"id":"MOCK_123","amount_total":9900,"currency":"eur","customer_details":{"email":"test@example.com"},"metadata":{}}}'
+# Esegui tutti i test
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Con coverage
+npm run test:coverage
 ```
 
-## 📱 Instagram oEmbed (opzionale)
+**Test Coverage**:
+- ✅ Flussi completi tornei (3 tipi)
+- ✅ API endpoints
+- ✅ Sistema scoring tennis
+- ✅ Statistiche e report
+- ✅ Controllo accessi ruoli
 
-Il progetto può recuperare embed di post Instagram lato server tramite l'endpoint `instagram_oembed` della Facebook Graph API. Per abilitarlo:
+### Test Manuali
 
-1. Crea una Facebook App su https://developers.facebook.com/apps e aggiungi il prodotto **Instagram oEmbed**
-2. Ottieni un App Access Token combinando `APP_ID|APP_SECRET` o usando Graph API Explorer
-3. Imposta `INSTAGRAM_OEMBED_TOKEN` nel tuo `.env.local`
-4. Aggiungi i post che vuoi mostrare in `INSTAGRAM_POST_URLS`:
+Consulta [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) per scenari di test dettagliati.
 
-```env
-INSTAGRAM_POST_URLS=https://www.instagram.com/p/CXabc123/,https://www.instagram.com/p/CYdef456/
-```
+---
 
-**Note:**
-- L'endpoint server `GET /api/social/instagram` chiamerà l'endpoint oEmbed per ogni URL e restituirà lo snippet HTML
-- Per richiedere un singolo post dal client, chiama `/api/social/instagram?url=<POST_URL>`
-- Se `INSTAGRAM_OEMBED_TOKEN` non è impostato, il feed mostrerà un link al profilo e placeholder
+## 🚀 Deploy
 
-## 🧪 Test e Seed
+### Vercel (Raccomandato)
 
-### Seed account di test
+1. **Push su GitHub**
+   ```bash
+   git push origin main
+   ```
 
-Puoi creare account di test (atleti, maestri, admin) usando la Supabase Service Role Key. Imposta queste variabili in `.env.local`:
+2. **Connetti Vercel**
+   - Vai su [vercel.com](https://vercel.com)
+   - Importa repository
+   - Configura variabili ambiente
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-```
+3. **Deploy Automatico**
+   - Deploy automatico su ogni push
+   - Preview deployments per PR
+   - SSL automatico
 
-Quindi esegui:
+Guida completa: [DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
-```bash
-npm run seed:test
-```
+---
 
-Verranno creati account di esempio (email come `athlete1@gst.example`) con righe corrispondenti nella tabella `profiles`. Usa solo per testing locale/dev.
+## 🤝 Contribuire
 
-### Script seed generico (prodotti, corsi, eventi, utenti demo)
+Contributi benvenuti! Per iniziare:
 
-Per popolare il database con dati demo:
+1. Fork il progetto
+2. Crea feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit modifiche (`git commit -m 'feat: add amazing feature'`)
+4. Push branch (`git push origin feature/amazing-feature`)
+5. Apri Pull Request
 
-```bash
-npx tsx scripts/seed_demo.ts
-```
+### Commit Convention
 
-Richiede la Supabase Service Role Key.
+Usa [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` Nuove funzionalità
+- `fix:` Bug fix
+- `docs:` Documentazione
+- `style:` Formattazione
+- `refactor:` Refactoring
+- `test:` Test
+- `chore:` Manutenzione
 
-### Eseguire test API e dashboard
+---
 
-Per eseguire i test (Vitest):
+## 📄 Licenza
 
-```bash
-npm run test
-```
+Questo progetto è sotto licenza MIT. Vedi file [LICENSE](LICENSE) per dettagli.
 
-Puoi impostare `TEST_BASE_URL` (default: http://localhost:3000) e, per i test dashboard admin, `TEST_ADMIN_COOKIE` (cookie di sessione valido per un utente admin).
+---
 
-## 🔌 Dipendenze opzionali
+## 🙏 Ringraziamenti
 
-Per abilitare Stripe e Sentry, installa i pacchetti opzionali:
+- [Next.js](https://nextjs.org/) - React framework
+- [Supabase](https://supabase.com/) - Backend as a Service
+- [Resend](https://resend.com/) - Email infrastructure
+- [Vercel](https://vercel.com/) - Hosting platform
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- [Lucide](https://lucide.dev/) - Icon library
 
-```bash
-npm install stripe @sentry/nextjs
-```
+---
 
-Dopo l'installazione di Stripe, la route `POST /api/stripe/checkout` creerà sessioni di checkout reali.
+## 📞 Supporto
 
-### Webhook Stripe
+Per domande o supporto:
 
-Per ricevere notifiche di pagamento (es. `checkout.session.completed`) configura `STRIPE_WEBHOOK_SECRET` e aggiungi un endpoint (es. `/api/stripe/webhook`). La route verifica la firma e processa la conferma del pagamento.
+- 📧 Email: info@gst-tennis-academy.com
+- 🐛 Issues: [GitHub Issues](https://github.com/your-org/gst-tennis-academy/issues)
+- 📖 Docs: [docs/](docs/)
 
-## 🛠️ Comandi utili
+---
 
-```bash
-npm run dev      # Avvia server di sviluppo
-npm run build    # Build di produzione
-npm run start    # Avvia build di produzione
-npm run lint     # Esegui ESLint
-npm run format   # Formatta codice con Prettier
-npm run test     # Esegui test con Vitest
-```
+**Made with ❤️ and 🎾 by GST Tennis Academy Team**
 
-## 📚 API Endpoints (panoramica)
-
-- `GET/POST/PUT/DELETE /api/bookings` — Gestione prenotazioni
-- `GET/POST/PUT/DELETE /api/courses` — Gestione corsi
-- `GET/POST/PUT/DELETE /api/enrollments` — Iscrizioni ai corsi
-- `GET/POST/PUT/DELETE /api/events` — Eventi
-- `GET/POST/PUT/DELETE /api/services` — Servizi
-- `GET/POST/PUT/DELETE /api/programs` — Programmi
-- `GET/POST/PUT/DELETE /api/subscriptions` — Abbonamenti
-- `GET/POST/PUT/DELETE /api/staff` — Staff
-- `GET/POST/PATCH /api/hero-content` — Contenuti sezione hero
-- `GET/POST/PUT/DELETE /api/hero-images` — Immagini hero carousel
-- `GET/POST/PUT/DELETE /api/homepage-sections` — Ordine sezioni homepage
-- `GET/POST/PUT/DELETE /api/news` — News e blog
-- `GET/POST /api/products` — Prodotti
-- `POST /api/stripe/checkout` — Crea Stripe checkout session (o mock se `STRIPE_MOCK=1`)
-- `POST /api/stripe/webhook` — Receiver webhook Stripe (verifica firma)
-- `POST /api/stripe/simulate` — Simula eventi webhook Stripe (testing locale)
-- `GET /api/social/instagram` — Recupera embed Instagram
-
-## 🔐 Autenticazione
-
-- L'autenticazione è implementata con Supabase Auth
-- Client Supabase: `src/lib/supabase/client.ts`
-- Server Client: `src/lib/supabase/serverClient.ts` (usa `SUPABASE_SERVICE_ROLE_KEY`)
-- Le pagine di registrazione e profilo sono in `src/app/register` e `src/app/profile`
-- Le pagine dashboard protette usano il componente `AuthGuard`: `src/components/auth/AuthGuard.tsx`
-
-## 🎨 Formattazione & Lint
-
-Il progetto include configurazioni base per `prettier` ed `eslint`. Esegui `npm run lint` per verificare il codice.
-
-## 📖 Learn More
-
-Questo è un progetto [Next.js](https://nextjs.org) creato con [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-Per saperne di più su Next.js:
-
-- [Next.js Documentation](https://nextjs.org/docs) - Caratteristiche e API di Next.js
-- [Learn Next.js](https://nextjs.org/learn) - Tutorial interattivo Next.js
-
-Dai un'occhiata al [repository GitHub di Next.js](https://github.com/vercel/next.js) - feedback e contributi sono benvenuti!
-
-## 🚀 Deploy su Vercel
-
-Il modo più semplice per fare il deploy della tua app Next.js è usare la [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) dai creatori di Next.js.
-
-Consulta la [documentazione sul deployment di Next.js](https://nextjs.org/docs/app/building-your-application/deploying) per maggiori dettagli.
-
-## ⚙️ Environment & Setup
-
-Copia `.env.example` in `.env.local` e compila i valori richiesti prima di eseguire localmente.
-
-**Chiavi richieste (minimo):**
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_SITE_URL` (es. `http://localhost:3000`)
-
-**Chiavi opzionali (per integrazioni):**
-
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_MOCK` (imposta a `1` per modalità mock)
-- `NEXT_PUBLIC_SENTRY_DSN`
-- `INSTAGRAM_OEMBED_TOKEN`
-- `INSTAGRAM_POST_URLS` (lista separata da virgole di URL post Instagram)

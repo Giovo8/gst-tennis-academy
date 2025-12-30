@@ -70,10 +70,13 @@ export async function GET(req: Request) {
       .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
-      // Include tornei che iniziano oggi o in futuro (considera solo la data, non l'ora)
+      // Include tornei "In Corso", "Aperte le Iscrizioni" e futuri
+      // Mostra tornei con status attivi o che iniziano in futuro
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      query = query.gte("start_date", today.toISOString());
+      
+      // Mostra tornei in corso/aperti o futuri
+      query = query.or(`status.eq.In Corso,status.eq.Aperte le Iscrizioni,start_date.gte.${today.toISOString()}`);
     }
 
     // Filter by competition type if column exists

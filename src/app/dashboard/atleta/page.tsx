@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target, Trophy, UserCircle, CreditCard } from "lucide-react";
 import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
 import StatCard from "@/components/dashboard/StatCard";
+import AnnouncementsWidget from "@/components/dashboard/AnnouncementsWidget";
 import { supabase } from "@/lib/supabase/client";
 
 type Booking = {
@@ -415,6 +416,9 @@ export default function AthleteDashboardPage() {
 
           <DashboardLinkCard href="/profile" icon={<User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Profilo" description="Dati personali" footer={<span className="text-xs text-muted">Gestisci i tuoi dati</span>} />
         </div>
+
+        {/* Announcements Widget */}
+        <AnnouncementsWidget />
 
         {/* Upcoming Bookings */}
         <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">

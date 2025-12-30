@@ -14,9 +14,17 @@ export async function GET(req: NextRequest) {
     const priority = searchParams.get("priority");
     const limit = parseInt(searchParams.get("limit") || "50");
     const includeExpired = searchParams.get("include_expired") === "true";
+    const includeUnpublished = searchParams.get("include_unpublished") === "true";
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get token for authentication (optional for public announcements)
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    
+    let user = null;
+    if (token) {
+      const { data: { user: authUser } } = await supabase.auth.getUser(token);
+      user = authUser;
+    }
     
     // Build query
     let query = supabase
@@ -37,13 +45,13 @@ export async function GET(req: NextRequest) {
         link_text,
         created_at,
         updated_at,
-        profiles:author_id (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
-      .eq("is_published", true);
+        author_id
+      `);
+
+    // Filter published unless admin explicitly includes unpublished
+    if (!includeUnpublished) {
+      query = query.eq("is_published", true);
+    }
 
     // Apply filters
     if (type) {
@@ -71,8 +79,14 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error("Error fetching announcements:", error);
-      return NextResponse.json({ error: "Errore nel recupero degli annunci" }, { status: 500 });
+      return NextResponse.json({ 
+        error: "Errore nel recupero degli annunci",
+        details: error.message,
+        code: error.code 
+      }, { status: 500 });
     }
+
+    console.log(`Found ${announcements?.length || 0} announcements`);
 
     // Add view status for authenticated users
     const announcementsWithViews = await Promise.all(
@@ -115,21 +129,18 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = supabaseServer;
     
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+    // Get token from Authorization header
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
+    if (!token) {
+      return NextResponse.json({ error: "Non autorizzato - Token mancante" }, { status: 401 });
     }
 
-    // Check if user is admin/gestore
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "gestore"].includes(profile.user_role)) {
-      return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
+    // Verify token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
 
     const body = await req.json();
@@ -152,7 +163,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "title e content sono richiesti" }, { status: 400 });
     }
 
-    // Insert announcement
+    // Insert announcement - RLS will handle authorization
     const { data: announcement, error: insertError } = await supabase
       .from("announcements")
       .insert({
@@ -174,7 +185,7 @@ export async function POST(req: NextRequest) {
 
     if (insertError) {
       console.error("Error creating announcement:", insertError);
-      return NextResponse.json({ error: "Errore nella creazione dell'annuncio" }, { status: 500 });
+      return NextResponse.json({ error: insertError.message || "Errore nella creazione dell'annuncio" }, { status: 500 });
     }
 
     return NextResponse.json({ announcement }, { status: 201 });
