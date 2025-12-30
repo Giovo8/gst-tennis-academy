@@ -120,6 +120,7 @@ export default function AnnouncementsPage() {
     low: "●",
     medium: "●●",
     high: "●●●",
+    urgent: "●●●●",
   };
 
   return (
