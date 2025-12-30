@@ -222,8 +222,53 @@ p {
    - p-{n}, px-{n}, py-{n} for padding
 */
 
+/* Mobile-first responsive utilities */
+@media (max-width: 640px) {
+  .container { 
+    padding-left: var(--space-3); 
+    padding-right: var(--space-3); 
+  }
+  
+  .section {
+    padding-top: 3rem;    /* 48px on mobile */
+    padding-bottom: 3rem;
+  }
+  
+  .section-compact {
+    padding-top: 1.5rem;  /* 24px on mobile */
+    padding-bottom: 1.5rem;
+  }
+
+  /* Smaller text on mobile for better fit */
+  h1 { font-size: 2rem; line-height: 1.2; }
+  h2 { font-size: 1.75rem; line-height: 1.25; }
+  h3 { font-size: 1.25rem; line-height: 1.3; }
+  
+  /* Reduce card padding on mobile */
+  .card { padding: var(--space-3); }
+  .card-content { padding: var(--space-4); }
+  .glass-card { border-radius: 16px; }
+}
+
 @media (min-width: 768px) {
   .container { padding-left: var(--space-5); padding-right: var(--space-5); }
+}
+
+/* Touch-friendly targets on mobile */
+@media (hover: none) and (pointer: coarse) {
+  button, a {
+    min-height: 44px; /* iOS recommended touch target */
+  }
+}
+
+/* Hide scrollbar for horizontal scroll on mobile */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 ::selection {

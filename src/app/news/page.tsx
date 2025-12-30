@@ -6,11 +6,11 @@ export const metadata = {
 
 export default function NewsPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10">
-      <div className="space-y-2">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10">
+      <div className="space-y-1.5 sm:space-y-2">
         <p className="text-xs uppercase tracking-[0.2em] text-[#9fb6a6]">News</p>
-        <h1 className="text-3xl font-semibold text-white">Aggiornamenti dall&apos;Academy</h1>
-        <p className="text-sm text-[#c6d8c9]">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-white">Aggiornamenti dall&apos;Academy</h1>
+        <p className="text-xs sm:text-sm text-[#c6d8c9]">
           Pubblica e gestisci i post. Integrazione con backend/DB arriverà in seguito.
         </p>
       </div>

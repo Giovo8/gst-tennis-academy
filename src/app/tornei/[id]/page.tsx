@@ -245,67 +245,67 @@ export default function TournamentDetail() {
     <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d1f35] to-[#0a1929]">
       <PublicNavbar />
       
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-7xl">
         {/* Back Button */}
         <button
           onClick={() => router.push('/tornei')}
-          className="mb-6 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+          className="mb-4 sm:mb-6 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors group min-h-[44px]"
         >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-sm font-medium">Torna ai Tornei</span>
+          <span className="text-xs sm:text-sm font-medium">Torna ai Tornei</span>
         </button>
 
         {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35] to-[#0a1929] p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35] to-[#0a1929] p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8">
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#7de3ff]/5 via-transparent to-[#4fb3ff]/5"></div>
           
           <div className="relative z-10">
             {/* Tournament Type Badge */}
-            <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-[#7de3ff]/10 border border-[#7de3ff]/30">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#7de3ff]/10 border border-[#7de3ff]/30">
               {isCampionato ? (
                 <>
-                  <Award className="h-4 w-4 text-[#7de3ff]" />
-                  <span className="text-sm font-bold text-[#7de3ff] uppercase tracking-wider">Campionato</span>
+                  <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#7de3ff]" />
+                  <span className="text-xs sm:text-sm font-bold text-[#7de3ff] uppercase tracking-wider">Campionato</span>
                 </>
               ) : (
                 <>
-                  <Trophy className="h-4 w-4 text-[#7de3ff]" />
-                  <span className="text-sm font-bold text-[#7de3ff] uppercase tracking-wider">Torneo</span>
+                  <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#7de3ff]" />
+                  <span className="text-xs sm:text-sm font-bold text-[#7de3ff] uppercase tracking-wider">Torneo</span>
                 </>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent leading-tight">
               {tournament.title}
             </h1>
 
             {/* Tags */}
-            <div className="flex flex-wrap items-center gap-2 mb-6">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
               {tournament.status && (
-                <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${getStatusColor(tournament.status)}`}>
+                <span className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold border ${getStatusColor(tournament.status)}`}>
                   {tournament.status}
                 </span>
               )}
               {tournament.category && (
-                <span className="px-3 py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
+                <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
                   {tournament.category}
                 </span>
               )}
               {tournament.level && (
-                <span className="px-3 py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
+                <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
                   {tournament.level}
                 </span>
               )}
-              <span className="px-3 py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
+              <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
                 {getTournamentTypeLabel()}
               </span>
             </div>
 
             {/* Description */}
             {tournament.description && (
-              <p className="text-gray-300 text-lg leading-relaxed max-w-3xl">
+              <p className="text-gray-300 text-sm sm:text-base lg:text-lg leading-relaxed max-w-3xl">
                 {tournament.description}
               </p>
             )}
@@ -313,24 +313,24 @@ export default function TournamentDetail() {
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
           {/* Date Card */}
           {tournament.start_date && (
-            <div className="rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-6">
-              <div className="flex items-start gap-4">
-                <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-3 ring-1 ring-[#7de3ff]/30">
-                  <Calendar className="h-6 w-6 text-[#7de3ff]" />
+            <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Inizio</p>
-                  <p className="text-white font-semibold">
+                  <p className="text-white text-sm sm:text-base font-semibold">
                     {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
                       day: 'numeric', 
                       month: 'long', 
                       year: 'numeric'
                     })}
                   </p>
-                  <p className="text-sm text-gray-400 mt-0.5">
+                  <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
                     {new Date(tournament.start_date).toLocaleTimeString('it-IT', { 
                       hour: '2-digit',
                       minute: '2-digit'
@@ -342,20 +342,20 @@ export default function TournamentDetail() {
           )}
 
           {/* Participants Card */}
-          <div className="rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-3 ring-1 ring-[#7de3ff]/30">
-                <Users className="h-6 w-6 text-[#7de3ff]" />
+          <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
               </div>
               <div className="flex-1">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Partecipanti</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-xl sm:text-2xl font-bold text-white">
                   {currentParticipants}<span className="text-gray-400">/{tournament.max_participants}</span>
                 </p>
                 {spotsLeft > 0 ? (
-                  <p className="text-sm text-emerald-400 mt-1">{spotsLeft} posti disponibili</p>
+                  <p className="text-xs sm:text-sm text-emerald-400 mt-1">{spotsLeft} posti disponibili</p>
                 ) : (
-                  <p className="text-sm text-red-400 mt-1">Tutto esaurito</p>
+                  <p className="text-xs sm:text-sm text-red-400 mt-1">Tutto esaurito</p>
                 )}
               </div>
             </div>
@@ -363,17 +363,17 @@ export default function TournamentDetail() {
 
           {/* Format Card */}
           {tournament.best_of && (
-            <div className="rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-6">
-              <div className="flex items-start gap-4">
-                <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-3 ring-1 ring-[#7de3ff]/30">
-                  <Zap className="h-6 w-6 text-[#7de3ff]" />
+            <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
+                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Formato Match</p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-xl sm:text-2xl font-bold text-white">
                     Best of {tournament.best_of}
                   </p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-400 mt-1">
                     {tournament.best_of === 3 ? 'Al meglio di 3 set' : tournament.best_of === 5 ? 'Al meglio di 5 set' : 'Set personalizzati'}
                   </p>
                 </div>
@@ -383,13 +383,13 @@ export default function TournamentDetail() {
         </div>
 
         {/* Action Section */}
-        <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6 mb-4 sm:mb-6 lg:mb-8">
           {isManager ? (
             <div>
-              <h3 className="text-lg font-bold text-white mb-4">Gestione Competizione</h3>
+              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Gestione Competizione</h3>
               <button 
                 onClick={() => router.push(profile?.role === 'admin' ? '/dashboard/admin/tornei' : '/dashboard/gestore/tornei')} 
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3.5 text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 min-h-[44px] w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 min-h-[44px] w-full sm:w-auto"
               >
                 <Target className="h-4 w-4" />
                 Gestisci Competizione
@@ -397,7 +397,7 @@ export default function TournamentDetail() {
             </div>
           ) : (
             <div>
-              <h3 className="text-lg font-bold text-white mb-4">Iscrizione</h3>
+              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Iscrizione</h3>
               {joined ? (
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
@@ -427,7 +427,7 @@ export default function TournamentDetail() {
                   <button 
                     onClick={handleJoin} 
                     disabled={actionLoading} 
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-8 py-3.5 text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 sm:px-8 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
                   >
                     {actionLoading ? (
                       <>
@@ -443,8 +443,8 @@ export default function TournamentDetail() {
                   </button>
                   
                   {profile?.role === 'maestro' && (
-                    <div className="mt-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
-                      <p className="text-sm text-gray-300">
+                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+                      <p className="text-xs sm:text-sm text-gray-300">
                         <span className="font-semibold text-blue-400">Sei un maestro?</span> Puoi iscrivere i tuoi atleti dalla{' '}
                         <button 
                           onClick={() => router.push('/dashboard/maestro')} 
@@ -461,13 +461,13 @@ export default function TournamentDetail() {
           )}
 
           {error && (
-            <div className="mt-4 flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mt-3 sm:mt-4 flex items-start gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-red-400 font-semibold">Errore</p>
-                <p className="text-sm text-gray-300 mt-0.5">{error}</p>
+                <p className="text-red-400 text-sm sm:text-base font-semibold">Errore</p>
+                <p className="text-xs sm:text-sm text-gray-300 mt-0.5">{error}</p>
               </div>
             </div>
           )}

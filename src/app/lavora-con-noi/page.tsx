@@ -46,25 +46,25 @@ export default function WorkWithUsPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-10 px-6 py-16 bg-[#021627]">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 sm:gap-8 md:gap-10 px-4 sm:px-6 py-10 sm:py-12 md:py-16 bg-[#021627]">
       {/* Header Section */}
-      <div className="space-y-4 text-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-accent">Entra nel Team</p>
-        <h1 className="text-4xl font-bold text-white">Lavora con noi</h1>
-        <p className="text-lg text-muted max-w-2xl mx-auto">
+      <div className="space-y-3 sm:space-y-4 text-center">
+        <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-accent">Entra nel Team</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Lavora con noi</h1>
+        <p className="text-sm sm:text-base md:text-lg text-muted max-w-2xl mx-auto">
           Unisciti al team GST Tennis Academy! Cerchiamo professionisti appassionati 
           per far crescere la nostra community sportiva.
         </p>
       </div>
 
       {/* Posizioni Aperte */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-6">
-          <div className="mb-4 inline-flex rounded-full bg-blue-500/20 p-3">
-            <Briefcase className="h-6 w-6 text-blue-400" />
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
+        <div className="rounded-xl sm:rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-4 sm:p-6">
+          <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-blue-500/20 p-2 sm:p-3">
+            <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Maestri di Tennis</h3>
-          <p className="text-sm text-muted mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Maestri di Tennis</h3>
+          <p className="text-xs sm:text-sm text-muted mb-3 sm:mb-4">
             Istruttori certificati FIT con esperienza nell'insegnamento a tutte le età.
             Passione per il tennis e ottime capacità comunicative.
           </p>
@@ -84,12 +84,12 @@ export default function WorkWithUsPage() {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/5 p-6">
-          <div className="mb-4 inline-flex rounded-full bg-cyan-500/20 p-3">
-            <Users className="h-6 w-6 text-cyan-300" />
+        <div className="rounded-xl sm:rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/5 p-4 sm:p-6">
+          <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-cyan-500/20 p-2 sm:p-3">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-300" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Personale di Campo</h3>
-          <p className="text-sm text-muted mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Personale di Campo</h3>
+          <p className="text-xs sm:text-sm text-muted mb-3 sm:mb-4">
             Addetti all'accoglienza, gestione campi e supporto operativo. 
             Attitudine al lavoro in team e orientamento al cliente.
           </p>

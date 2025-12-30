@@ -214,20 +214,20 @@ export default function BookingsPage() {
 
   return (
     <AuthGuard>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10 bg-[#021627] text-white">
-        <div className="space-y-2">
+      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10 bg-[#021627] text-white">
+        <div className="space-y-1.5 sm:space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Sistema di Prenotazione
           </p>
-          <h1 className="text-4xl font-bold text-white">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
             {isAdminView
               ? "Gestione Prenotazioni"
               : isMaestroView
               ? "Le Mie Lezioni"
               : "Prenota Campo o Lezione"}
           </h1>
-          <p className="text-sm text-muted">
+          <p className="text-xs sm:text-sm text-muted">
             {isAdminView
               ? "Vista completa delle prenotazioni con gestione e statistiche"
               : isMaestroView
@@ -239,7 +239,7 @@ export default function BookingsPage() {
         {(isAdminView || isMaestroView) && (
           <>
             {/* Statistiche rapide */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               <StatCard title="Totale" value={stats.total} icon={<Calendar className="h-8 w-8 text-indigo-300" />} color="indigo" />
               <StatCard title="In Attesa" value={stats.pending} icon={<Clock className="h-8 w-8 text-yellow-300" />} color="yellow" />
               <StatCard title="Confermate" value={stats.confirmed} icon={<CheckCircle className="h-8 w-8 text-lime-300" />} color="lime" />
@@ -248,11 +248,11 @@ export default function BookingsPage() {
             </div>
 
             {/* Filtri */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Filter className="h-5 w-5 text-muted-2" />
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-muted-2" />
               <button
                 onClick={() => setFilter("today")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
                   filter === "today"
                     ? "bg-accent text-white"
                     : "border border-white/15 text-white hover:bg-white/5"
@@ -262,7 +262,7 @@ export default function BookingsPage() {
               </button>
               <button
                 onClick={() => setFilter("pending")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
                   filter === "pending"
                     ? "bg-accent text-white"
                     : "border border-white/15 text-white hover:bg-white/5"
@@ -272,7 +272,7 @@ export default function BookingsPage() {
               </button>
               <button
                 onClick={() => setFilter("confirmed")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
                   filter === "confirmed"
                     ? "bg-accent text-white"
                     : "border border-white/15 text-white hover:bg-white/5"
@@ -282,7 +282,7 @@ export default function BookingsPage() {
               </button>
               <button
                 onClick={() => setFilter("cancelled")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
                   filter === "cancelled"
                     ? "bg-accent text-white"
                     : "border border-white/15 text-white hover:bg-white/5"
@@ -292,7 +292,7 @@ export default function BookingsPage() {
               </button>
               <button
                 onClick={() => setFilter("all")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
                   filter === "all"
                     ? "bg-accent text-white"
                     : "border border-white/15 text-white hover:bg-white/5"
@@ -303,12 +303,12 @@ export default function BookingsPage() {
             </div>
 
             {/* Lista prenotazioni */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+            <div className="space-y-2.5 sm:space-y-3">
+              <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                 Elenco Prenotazioni
                 {filter !== "all" && (
-                  <span className="text-sm font-normal text-muted">
+                  <span className="text-xs sm:text-sm font-normal text-muted">
                     ({filter === "today" ? "Oggi" : filter === "pending" ? "In Attesa" : filter === "confirmed" ? "Confermate" : "Annullate"})
                   </span>
                 )}
@@ -324,16 +324,16 @@ export default function BookingsPage() {
                   <p className="text-muted">Nessuna prenotazione trovata</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {bookings.map((booking) => (
                     <div
                       key={booking.id}
-                      className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-5 transition hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80"
+                      className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 sm:p-5 transition hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="flex-1 min-w-[250px]">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="text-lg font-semibold text-white">
+                      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-[200px] sm:min-w-[250px]">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
+                            <span className="text-base sm:text-lg font-semibold text-white">
                               {format(new Date(booking.start_time), "dd MMM yyyy", { locale: it })}
                             </span>
                             <span
@@ -361,9 +361,9 @@ export default function BookingsPage() {
                                 : "Lezione di Gruppo"}
                             </span>
                           </div>
-                          <div className="space-y-1.5 text-sm">
+                          <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm">
                             <p className="text-white">
-                              <Clock className="inline h-4 w-4 mr-1.5 text-accent" />
+                              <Clock className="inline h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-accent" />
                               <strong>Orario:</strong>{" "}
                               {format(new Date(booking.start_time), "HH:mm")} -{" "}
                               {format(new Date(booking.end_time), "HH:mm")}
@@ -409,33 +409,33 @@ export default function BookingsPage() {
                         </div>
 
                         {isAdminView && (
-                          <div className="flex gap-2 flex-wrap">
+                          <div className="flex gap-2 flex-wrap w-full sm:w-auto">
                             {!booking.manager_confirmed && booking.status !== "cancelled" && !booking.status.includes("rejected") && (
                               <>
                                 <button
                                   onClick={() => handleApprove(booking.id)}
-                                  className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 flex items-center gap-2"
+                                  className="rounded-lg bg-blue-500 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-blue-600 flex items-center gap-1.5 sm:gap-2 min-h-[40px] flex-1 sm:flex-initial justify-center"
                                   title="Approva prenotazione"
                                 >
-                                  <CheckCircle className="h-4 w-4" />
+                                  <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   Approva
                                 </button>
                                 <button
                                   onClick={() => handleReject(booking.id)}
-                                  className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 flex items-center gap-2"
+                                  className="rounded-lg bg-cyan-500 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-red-600 flex items-center gap-1.5 sm:gap-2 min-h-[40px] flex-1 sm:flex-initial justify-center"
                                   title="Rifiuta prenotazione"
                                 >
-                                  <XCircle className="h-4 w-4" />
+                                  <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   Rifiuta
                                 </button>
                               </>
                             )}
                             <button
                               onClick={() => handleDelete(booking.id)}
-                              className="rounded-lg bg-cyan-900/50 border border-cyan-500/50 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-cyan-900/80 flex items-center gap-2"
+                              className="rounded-lg bg-cyan-900/50 border border-cyan-500/50 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-red-300 transition hover:bg-cyan-900/80 flex items-center gap-1.5 sm:gap-2 min-h-[40px] flex-1 sm:flex-initial justify-center"
                               title="Elimina prenotazione"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               Elimina
                             </button>
                           </div>
@@ -449,9 +449,9 @@ export default function BookingsPage() {
           </>
         )}
 
-        <div className="space-y-3">
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+        <div className="space-y-2.5 sm:space-y-3">
+          <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
             {isAdminView ? "Crea Nuova Prenotazione" : "Calendario Prenotazioni"}
           </h2>
           <BookingCalendar />

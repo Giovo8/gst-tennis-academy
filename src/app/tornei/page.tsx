@@ -48,14 +48,14 @@ export default function TorneiPage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10 min-h-screen">
-      <div className="space-y-1 mb-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-[#9fb6a6]">Tornei</p>
-        <h1 className="text-3xl font-semibold text-white">Tornei in arrivo</h1>
-        <p className="text-sm text-[#c6d8c9]">Iscriviti ai tornei organizzati dall'Academy.</p>
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 min-h-screen">
+      <div className="space-y-1 mb-4 sm:mb-5">
+        <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#9fb6a6]">Tornei</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-white">Tornei in arrivo</h1>
+        <p className="text-xs sm:text-sm text-[#c6d8c9]">Iscriviti ai tornei organizzati dall'Academy.</p>
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-5 sm:mt-6 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="text-sm text-[#c6d8c9]">Caricamento...</div>
         ) : error ? (
@@ -68,15 +68,15 @@ export default function TorneiPage() {
               key={t.id}
               href={`/tornei/${t.id}`}
               aria-label={`Apri dettaglio torneo ${t.title}`}
-              className="group block card rounded-xl hover:scale-[1.01] transition-transform p-4 min-h-[140px] flex flex-col justify-between"
+              className="group block card rounded-lg sm:rounded-xl hover:scale-[1.01] transition-transform p-3 sm:p-4 min-h-[120px] sm:min-h-[140px] flex flex-col justify-between"
             >
               <div>
-                <h3 className="font-semibold text-white text-lg">{t.title}</h3>
-                <p className="mt-2 text-sm text-muted overflow-hidden">{t.description}</p>
+                <h3 className="font-semibold text-white text-base sm:text-lg">{t.title}</h3>
+                <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted overflow-hidden line-clamp-2">{t.description}</p>
               </div>
-              <div className="mt-2 text-sm flex items-center justify-between">
-                <div className="text-sm text-muted-2">{t.start_date ? new Date(t.start_date).toLocaleDateString() : ''}</div>
-                <div className="text-sm text-muted">{t.category ?? ''} {t.level ? `· ${t.level}` : ''}</div>
+              <div className="mt-2 text-xs sm:text-sm flex items-center justify-between gap-2 flex-wrap">
+                <div className="text-xs sm:text-sm text-muted-2">{t.start_date ? new Date(t.start_date).toLocaleDateString() : ''}</div>
+                <div className="text-xs sm:text-sm text-muted">{t.category ?? ''} {t.level ? `· ${t.level}` : ''}</div>
               </div>
             </Link>
           ))

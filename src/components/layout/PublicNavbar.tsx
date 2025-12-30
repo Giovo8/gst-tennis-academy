@@ -72,22 +72,22 @@ export default function PublicNavbar() {
 
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py-4">
+      <div className="container py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-3">
+          <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-2 md:gap-3">
             <Image 
               src="/images/logo-tennis.png" 
               alt="GST Tennis Academy" 
               width={36} 
               height={36}
-              className="h-9 w-9"
+              className="h-8 w-8 md:h-9 md:w-9"
             />
-            <span className="text-lg font-bold text-white">GST Academy</span>
+            <span className="text-base md:text-lg font-bold text-white">GST Academy</span>
           </Link>
 
           {/* CTA Buttons & Social - Desktop */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
             {/* Social Icons */}
             <a
               href="https://instagram.com"
@@ -176,11 +176,11 @@ export default function PublicNavbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-white/10 pt-4 mt-4 space-y-2 pb-4">
+          <div className="lg:hidden border-t border-white/10 pt-3 mt-3 space-y-2 pb-3">
             {/* Mobile Social & CTA */}
-            <div className="pt-4 space-y-3 border-t border-white/10">
+            <div className="pt-3 space-y-2.5 border-t border-white/10">
               {/* Social Icons */}
-              <div className="flex items-center justify-center gap-3 pb-2">
+              <div className="flex items-center justify-center gap-2 pb-1.5">
                 <a
                   href="https://instagram.com"
                   target="_blank"
@@ -223,10 +223,10 @@ export default function PublicNavbar() {
 
               {/* User Status (shown when logged in) */}
               {user && userRole && (
-                <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl text-center">
-                  <span className="text-sm text-white font-medium">{userFullName || user.email}</span>
-                  <span className="mx-2 text-muted-2">•</span>
-                  <span className="text-sm text-blue-300 font-semibold">
+                <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl text-center">
+                  <span className="text-xs text-white font-medium truncate max-w-[200px] inline-block">{userFullName || user.email}</span>
+                  <span className="mx-1.5 text-muted-2">•</span>
+                  <span className="text-xs text-blue-300 font-semibold">
                     {userRole.toUpperCase()}
                   </span>
                 </div>
@@ -236,7 +236,7 @@ export default function PublicNavbar() {
               <Link
                 href={getDashboardLink()}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300"
+                className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300"
               >
                 <Shield className="h-4 w-4 text-white" />
                 <span className="text-white">Area GST</span>
@@ -249,7 +249,7 @@ export default function PublicNavbar() {
                     setIsOpen(false);
                     handleLogout();
                   }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 transition-all duration-300"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 transition-all duration-300"
                 >
                   <LogOut className="h-4 w-4 text-white" />
                   <span className="text-white">Esci</span>

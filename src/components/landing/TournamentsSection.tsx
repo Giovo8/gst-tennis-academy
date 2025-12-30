@@ -70,23 +70,23 @@ export default function TournamentsSection() {
   };
 
   return (
-    <section id="tornei" className="max-w-7xl mx-auto px-6 py-20">
-      <div className="space-y-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3">Competizioni</p>
-          <h2 className="text-5xl font-bold gradient-text mb-4">
+    <section id="tornei" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
+      <div className="space-y-8 sm:space-y-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2 sm:mb-3">Competizioni</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
             Tornei e Campionati
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
             Partecipa alle nostre competizioni e metti alla prova le tue abilità
           </p>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex justify-center gap-3 mb-8 overflow-x-auto pb-2">
+        <div className="flex justify-start sm:justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             onClick={() => setFilter('all')}
-            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'all'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
                 : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
@@ -96,41 +96,41 @@ export default function TournamentsSection() {
           </button>
           <button
             onClick={() => setFilter('eliminazione_diretta')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'eliminazione_diretta'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
                 : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
-            <Trophy className="w-4 h-4" />
+            <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
             Eliminazione ({eliminazioneCount})
           </button>
           <button
             onClick={() => setFilter('girone_eliminazione')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'girone_eliminazione'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
                 : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
-            <Target className="w-4 h-4" />
+            <Target className="w-3 h-3 sm:w-4 sm:h-4" />
             Gironi ({gironeCount})
           </button>
           <button
             onClick={() => setFilter('campionato')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'campionato'
                 ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
                 : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
             }`}
           >
-            <Award className="w-4 h-4" />
+            <Award className="w-3 h-3 sm:w-4 sm:h-4" />
             Campionati ({campionatoCount})
           </button>
         </div>
 
         {/* Content Grid */}
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="col-span-3 flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-accent" />
@@ -151,21 +151,21 @@ export default function TournamentsSection() {
             return (
               <article 
                 key={t.id} 
-                className="group flex h-full flex-col rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
+                className="group flex h-full flex-col rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
+                <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2.5 sm:gap-3 flex-1">
                   {/* Header with icon and type badge */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 text-cyan-300 group-hover:scale-110 transition-transform">
-                        <Icon className="w-5 h-5" />
+                  <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 text-cyan-300 group-hover:scale-110 transition-transform">
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">
+                      <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
                         {typeLabel}
                       </span>
                     </div>
                     {t.status && (
-                      <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold ${
                         t.status === 'Aperto' 
                           ? 'bg-green-500/20 text-green-400 border border-green-500/40'
                           : t.status === 'In Corso'
@@ -178,13 +178,13 @@ export default function TournamentsSection() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-lg font-bold gradient-text">{t.title}</h3>
+                  <h3 className="text-base sm:text-lg font-bold gradient-text">{t.title}</h3>
 
                   {/* Info */}
-                  <div className="space-y-2.5 text-sm">
+                  <div className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
                     {t.start_date && (
-                      <div className="flex items-center gap-3 text-gray-300">
-                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-2 sm:gap-3 text-gray-300">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <span>{new Date(t.start_date).toLocaleDateString('it-IT', { 
@@ -195,8 +195,8 @@ export default function TournamentsSection() {
                       </div>
                     )}
                     {t.max_participants && (
-                      <div className="flex items-center gap-3 text-gray-300">
-                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-2 sm:gap-3 text-gray-300">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                         <span>{t.max_participants} partecipanti</span>
@@ -205,10 +205,10 @@ export default function TournamentsSection() {
                   </div>
 
                   {/* CTA Button */}
-                  <div className="pt-2 mt-auto">
+                  <div className="pt-1.5 sm:pt-2 mt-auto">
                     <Link 
                       href={`/tornei/${t.id}`} 
-                      className="block w-full text-center rounded-xl accent-gradient px-6 py-3 text-sm font-bold text-text-dark hover:shadow-lg hover:shadow-accent-strong/30 transition-all duration-300 group-hover:scale-105"
+                      className="block w-full text-center rounded-lg sm:rounded-xl accent-gradient px-4 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold text-text-dark hover:shadow-lg hover:shadow-accent-strong/30 transition-all duration-300 group-hover:scale-105"
                     >
                       Vedi Dettagli
                     </Link>
@@ -222,13 +222,13 @@ export default function TournamentsSection() {
 
         {/* View All Link */}
         {!loading && filteredItems.length > 6 && (
-          <div className="mt-8 text-center">
+          <div className="mt-6 sm:mt-8 text-center">
             <Link 
               href="/tornei" 
-              className="inline-flex items-center gap-2 text-[#7de3ff] hover:text-[#4fb3ff] font-semibold transition-colors"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm text-[#7de3ff] hover:text-[#4fb3ff] font-semibold transition-colors"
             >
               Vedi tutte le competizioni
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>

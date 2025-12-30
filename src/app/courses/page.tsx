@@ -72,13 +72,13 @@ export default function CoursesPage() {
   };
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10 min-h-screen">
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-white">Corsi</h1>
-        <p className="text-sm text-[#c6d8c9]">Iscriviti ai nostri corsi disponibili.</p>
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 min-h-screen">
+      <div className="space-y-4 sm:space-y-6">
+        <h1 className="text-xl sm:text-2xl font-semibold text-white">Corsi</h1>
+        <p className="text-xs sm:text-sm text-[#c6d8c9]">Iscriviti ai nostri corsi disponibili.</p>
       </div>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="text-sm text-[#c6d8c9]">Caricamento...</div>
         ) : error ? (
@@ -87,15 +87,15 @@ export default function CoursesPage() {
           <div className="text-sm text-[#c6d8c9]">Nessun corso disponibile.</div>
         ) : (
           courses.map((c) => (
-            <div key={c.id} className="rounded-xl border border-[#2f7de1]/30 p-4 bg-[#1a3d5c]/60">
-              <h3 className="font-semibold text-white">{c.title}</h3>
-              <p className="mt-2 text-sm text-[#c6d8c9]">{c.description}</p>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="text-sm text-[#9fb6a6]">{c.price ? `€${Number(c.price).toFixed(2)}` : 'Gratis'}</div>
+            <div key={c.id} className="rounded-lg sm:rounded-xl border border-[#2f7de1]/30 p-3 sm:p-4 bg-[#1a3d5c]/60">
+              <h3 className="font-semibold text-white text-base sm:text-lg">{c.title}</h3>
+              <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-[#c6d8c9] line-clamp-2">{c.description}</p>
+              <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2">
+                <div className="text-xs sm:text-sm text-[#9fb6a6]">{c.price ? `€${Number(c.price).toFixed(2)}` : 'Gratis'}</div>
                 <button
                   onClick={() => handleEnroll(c.id)}
                   disabled={!!enrolling}
-                  className="rounded-full bg-[#7de3ff] px-3 py-2 text-sm font-semibold text-[#06101f]"
+                  className="rounded-full bg-[#7de3ff] px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#06101f]"
                 >
                   {enrolling === c.id ? 'Iscrizione...' : 'Iscriviti'}
                 </button>

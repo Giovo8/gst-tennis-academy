@@ -47,21 +47,21 @@ export default function AdminDashboardPage() {
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="min-h-screen bg-gradient-to-br from-[#021627] via-[#031a35] to-[#021627] text-white">
-        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10">
+        <main className="mx-auto flex max-w-7xl flex-col gap-4 sm:gap-6 px-4 sm:px-6 py-6 sm:py-10">
           {/* Header */}
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center gap-2 text-blue-400">
-              <Settings className="h-5 w-5" />
-              <p className="text-sm uppercase tracking-[0.2em] font-semibold">Area Amministrazione</p>
+              <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+              <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold">Area Amministrazione</p>
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-200 via-blue-300 to-cyan-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-200 via-blue-300 to-cyan-300 bg-clip-text text-transparent">
               Dashboard Admin
             </h1>
-            <p className="text-lg text-gray-400">Gestisci utenti, prenotazioni e servizi</p>
+            <p className="text-sm sm:text-base lg:text-lg text-gray-400">Gestisci utenti, prenotazioni e servizi</p>
           </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard
             title="Utenti"
             value={loading ? "..." : stats.totalUsers}
@@ -99,7 +99,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Management Sections */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 lg:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <DashboardLinkCard href="/dashboard/admin/users" icon={<Users className="h-10 w-10" />} title="Gestione Utenti" description="Crea, modifica ed elimina utenti. Gestisci ruoli e permessi." footer={<span className="text-xs text-gray-400">Vai alla gestione utenti</span>} />
 
           <DashboardLinkCard href="/bookings" icon={<Calendar className="h-10 w-10" />} title="Gestione Prenotazioni" description="Visualizza, gestisci e crea prenotazioni per campi e lezioni." footer={<span className="text-xs text-gray-400">Apri calendario prenotazioni</span>} />
@@ -148,24 +148,24 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-6">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-            <div className="w-1.5 h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full"></div>
+        <div className="rounded-xl sm:rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2.5 sm:gap-3">
+            <div className="w-1 sm:w-1.5 h-6 sm:h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full"></div>
             Azioni Rapide
           </h2>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-3 sm:gap-4">
             <Link 
               href="/dashboard/admin/users?action=create"
-              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-white hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5"
+              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 min-h-[44px]"
             >
-              <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
               Nuovo Utente
             </Link>
             <Link 
               href="/bookings"
-              className="group inline-flex items-center gap-2 rounded-xl border-2 border-blue-400/30 bg-blue-500/10 px-6 py-3 text-sm font-semibold text-blue-300 hover:bg-blue-500/20 hover:border-blue-400/50 transition-all duration-300 hover:-translate-y-0.5"
+              className="group inline-flex items-center gap-2 rounded-xl border-2 border-blue-400/30 bg-blue-500/10 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-blue-300 hover:bg-blue-500/20 hover:border-blue-400/50 transition-all duration-300 hover:-translate-y-0.5 min-h-[44px]"
             >
-              <Calendar className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
               Nuova Prenotazione
             </Link>
           </div>

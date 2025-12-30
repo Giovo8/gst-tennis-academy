@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Link from "next/link";
-import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target, Trophy, UserCircle, CreditCard } from "lucide-react";
+import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target, Trophy, UserCircle, CreditCard, MessageSquare, Users, Newspaper, ListOrdered } from "lucide-react";
 import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
 import StatCard from "@/components/dashboard/StatCard";
 import AnnouncementsWidget from "@/components/dashboard/AnnouncementsWidget";
@@ -368,66 +368,37 @@ export default function AthleteDashboardPage() {
   return (
     <AuthGuard allowedRoles={["atleta"]}>
       <div className="min-h-screen bg-[#021627] text-white">
-        <main className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-10">
+        <main className="mx-auto flex max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10">
           {/* Header */}
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Dashboard Atleta</p>
-            <h1 className="text-4xl font-bold text-white">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
               Benvenuto, {userName || "Atleta"}!
             </h1>
-            <p className="text-sm text-muted">Gestisci le tue prenotazioni e monitora i tuoi allenamenti</p>
+            <p className="text-xs sm:text-sm text-muted">Gestisci le tue prenotazioni e monitora i tuoi allenamenti</p>
           </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard title="Prossime" value={stats.upcomingBookings} icon={<Calendar className="h-8 w-8 text-sky-300" />} color="sky" />
           <StatCard title="In attesa" value={stats.pendingLessons} icon={<Clock className="h-8 w-8 text-orange-300" />} color="orange" />
           <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-lime-300" />} color="lime" />
           <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-violet-300" />} color="violet" />
         </div>
 
-        {/* Subscription Card */}
-        {subscriptionType && (
-          <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/10 to-accent/5 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-accent/20 p-4">
-                  <Award className="h-8 w-8 text-accent" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white">Abbonamento {subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1)}</h3>
-                  <p className="text-sm text-muted">Accesso illimitato ai campi</p>
-                </div>
-              </div>
-              <Link href="/profile" className="rounded-full bg-accent/20 border border-accent/30 px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/30 transition">
-                Gestisci
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DashboardLinkCard href="/bookings" icon={<Calendar className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Prenota Campo" description="Match o allenamento libero" footer={<span className="text-xs text-muted">Apri il calendario</span>} />
-
-          <DashboardLinkCard href="/bookings" icon={<User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Lezione Privata" description="Prenota con un maestro" footer={<span className="text-xs text-muted">Seleziona maestro e orario</span>} />
-
-          <DashboardLinkCard href="/dashboard/atleta/bookings" icon={<TrendingUp className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Storico" description="Tutte le prenotazioni" footer={<span className="text-xs text-muted">Visualizza lo storico</span>} />
-
-          <DashboardLinkCard href="/profile" icon={<User className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Profilo" description="Dati personali" footer={<span className="text-xs text-muted">Gestisci i tuoi dati</span>} />
-        </div>
-
         {/* Announcements Widget */}
         <AnnouncementsWidget />
 
-        {/* Upcoming Bookings */}
-        <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-accent" />
+        {/* Prossime Prenotazioni e Tornei - Affiancati */}
+        <div className="grid gap-4 lg:gap-4 lg:grid-cols-2">
+          {/* Upcoming Bookings */}
+          <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
               Prossime Prenotazioni
             </h2>
-            <Link href="/dashboard/atleta/bookings" className="text-sm text-accent hover:underline">
+            <Link href="/dashboard/atleta/bookings" className="text-xs sm:text-sm text-accent hover:underline">
               Vedi tutte →
             </Link>
           </div>
@@ -435,13 +406,13 @@ export default function AthleteDashboardPage() {
           {loading ? (
             <p className="text-sm text-muted text-center py-8">Caricamento...</p>
           ) : bookings.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5 sm:space-y-3">
               {bookings.map((booking) => (
-                <div key={booking.id} className="rounded-lg border border-[#2f7de1]/20 bg-[#0d1f35]/60 p-5 hover:bg-[#0d1f35]/80 transition">
-                  <div className="flex justify-between items-start gap-4">
+                <div key={booking.id} className="rounded-lg border border-[#2f7de1]/20 bg-[#0d1f35]/60 p-4 sm:p-5 hover:bg-[#0d1f35]/80 transition">
+                  <div className="flex justify-between items-start gap-3 sm:gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
+                        <span className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold ${
                           booking.type === "lezione_privata" 
                             ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
                             : booking.type === "lezione_gruppo"
@@ -456,8 +427,8 @@ export default function AthleteDashboardPage() {
                           </span>
                         )}
                       </div>
-                      <p className="font-semibold text-white text-lg">{booking.court}</p>
-                      <p className="text-sm text-muted mt-1 flex items-center gap-1">
+                      <p className="font-semibold text-white text-base sm:text-lg">{booking.court}</p>
+                      <p className="text-xs sm:text-sm text-muted mt-1 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {formatDateTime(booking.start_time)}
                       </p>
@@ -477,54 +448,16 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
           )}
-
-          {/* Quick Links - Funzionalità dalle navbar */}
-          <div className="rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl p-8 mt-8">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full"></div>
-              Accesso Rapido
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Link 
-                href="/bookings"
-                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
-              >
-                <Calendar className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-semibold text-white">Prenota Campo</span>
-              </Link>
-              <Link 
-                href="/profile"
-                className="group flex flex-col items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-cyan-400/40 transition-all duration-300 hover:-translate-y-1"
-              >
-                <UserCircle className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-semibold text-white">Il Mio Profilo</span>
-              </Link>
-              <Link 
-                href="/tornei"
-                className="group flex flex-col items-center gap-3 rounded-xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 hover:border-blue-400/40 transition-all duration-300 hover:-translate-y-1"
-              >
-                <Trophy className="h-8 w-8 text-blue-400 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-semibold text-white">Tornei</span>
-              </Link>
-              <Link 
-                href="/courses"
-                className="group flex flex-col items-center gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-6 hover:bg-cyan-500/10 hover:border-cyan-400/40 transition-all duration-300 hover:-translate-y-1"
-              >
-                <CreditCard className="h-8 w-8 text-cyan-400 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-semibold text-white">Abbonamenti</span>
-              </Link>
-            </div>
           </div>
-        </div>
 
-        {/* Tournaments Section */}
-        <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-[#7de3ff]" />
+          {/* Tournaments Section */}
+          <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white flex items-center gap-2">
+              <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
               I Miei Tornei
             </h2>
-            <Link href="/tornei" className="text-sm text-[#7de3ff] hover:underline">
+            <Link href="/tornei" className="text-xs sm:text-sm text-[#7de3ff] hover:underline">
               Esplora tutti i tornei →
             </Link>
           </div>
@@ -532,15 +465,15 @@ export default function AthleteDashboardPage() {
           {loadingTournaments ? (
             <p className="text-sm text-muted text-center py-8">Caricamento tornei...</p>
           ) : tournaments.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               {/* Tornei a cui è iscritto */}
               {tournaments.filter(t => t.is_enrolled).length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2.5 sm:mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                     Iscrizioni Attive ({tournaments.filter(t => t.is_enrolled).length})
                   </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2">
                     {tournaments.filter(t => t.is_enrolled).map((tournament) => {
                       const Icon = getTournamentTypeIcon(tournament.tournament_type);
                       return (
@@ -610,11 +543,11 @@ export default function AthleteDashboardPage() {
               {/* Tornei disponibili per iscrizione */}
               {tournaments.filter(t => !t.is_enrolled && t.current_phase === 'iscrizioni').length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-[#7de3ff]" />
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2.5 sm:mb-3 flex items-center gap-2">
+                    <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-[#7de3ff]" />
                     Tornei Disponibili ({tournaments.filter(t => !t.is_enrolled && t.current_phase === 'iscrizioni').length})
                   </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2">
                     {tournaments.filter(t => !t.is_enrolled && t.current_phase === 'iscrizioni').map((tournament) => {
                       const Icon = getTournamentTypeIcon(tournament.tournament_type);
                       const isFull = tournament.participant_count! >= tournament.max_participants!;
@@ -685,10 +618,76 @@ export default function AthleteDashboardPage() {
             </div>
           )}
         </div>
+        </div>
+
+        {/* Subscription Card */}
+        {subscriptionType && (
+          <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/10 to-accent/5 p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="rounded-full bg-accent/20 p-3 sm:p-4">
+                  <Award className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white">Abbonamento {subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1)}</h3>
+                  <p className="text-xs sm:text-sm text-muted">Accesso illimitato ai campi</p>
+                </div>
+              </div>
+              <Link href="/profile" className="rounded-full bg-accent/20 border border-accent/30 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-accent hover:bg-accent/30 transition min-h-[36px]">
+                Gestisci
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions - Prenotazioni */}
+        <div className="rounded-xl sm:rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/10 to-transparent backdrop-blur-xl p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center gap-2.5 sm:gap-3">
+            <div className="w-1 sm:w-1.5 h-5 sm:h-6 bg-gradient-to-b from-accent to-cyan-400 rounded-full"></div>
+            Prenotazioni
+          </h2>
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <DashboardLinkCard href="/bookings" icon={<Calendar className="h-10 w-10 text-accent mb-4 group-hover:scale-110 transition-transform" />} title="Prenota Campo" description="Match o allenamento libero" footer={<span className="text-xs text-muted">Apri il calendario</span>} />
+
+            <DashboardLinkCard href="/bookings" icon={<User className="h-10 w-10 text-cyan-400 mb-4 group-hover:scale-110 transition-transform" />} title="Lezione Privata" description="Prenota con un maestro" footer={<span className="text-xs text-muted">Seleziona maestro e orario</span>} />
+
+            <DashboardLinkCard href="/dashboard/atleta/bookings" icon={<TrendingUp className="h-10 w-10 text-blue-400 mb-4 group-hover:scale-110 transition-transform" />} title="Storico" description="Tutte le prenotazioni" footer={<span className="text-xs text-muted">Visualizza lo storico</span>} />
+          </div>
+        </div>
+
+        {/* Community & Info */}
+        <div className="rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-xl p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
+            <div className="w-1.5 h-6 bg-gradient-to-b from-cyan-400 to-blue-400 rounded-full"></div>
+            Community & Informazioni
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <DashboardLinkCard href="/chat" icon={<MessageSquare className="h-10 w-10 text-cyan-400 mb-4 group-hover:scale-110 transition-transform" />} title="Chat" description="Messaggi e conversazioni" footer={<span className="text-xs text-muted">Chatta con i maestri</span>} />
+
+            <DashboardLinkCard href="/annunci" icon={<Users className="h-10 w-10 text-blue-400 mb-4 group-hover:scale-110 transition-transform" />} title="Cerco Socio" description="Trova partner di gioco" footer={<span className="text-xs text-muted">Pubblica annunci</span>} />
+
+            <DashboardLinkCard href="/news" icon={<Newspaper className="h-10 w-10 text-sky-400 mb-4 group-hover:scale-110 transition-transform" />} title="News" description="Aggiornamenti academy" footer={<span className="text-xs text-muted">Leggi le news</span>} />
+
+            <DashboardLinkCard href="/classifiche" icon={<ListOrdered className="h-10 w-10 text-violet-400 mb-4 group-hover:scale-110 transition-transform" />} title="Classifiche" description="Ranking e statistiche" footer={<span className="text-xs text-muted">Visualizza classifiche</span>} />
+          </div>
+        </div>
+
+        {/* Account & Services */}
+        <div className="rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/10 to-transparent backdrop-blur-xl p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
+            <div className="w-1.5 h-6 bg-gradient-to-b from-violet-400 to-purple-400 rounded-full"></div>
+            Account & Servizi
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <DashboardLinkCard href="/profile" icon={<UserCircle className="h-10 w-10 text-violet-400 mb-4 group-hover:scale-110 transition-transform" />} title="Il Mio Profilo" description="Dati personali e impostazioni" footer={<span className="text-xs text-muted">Gestisci account</span>} />
+
+            <DashboardLinkCard href="/courses" icon={<CreditCard className="h-10 w-10 text-purple-400 mb-4 group-hover:scale-110 transition-transform" />} title="Abbonamenti" description="Corsi e tessere" footer={<span className="text-xs text-muted">Gestisci abbonamenti</span>} />
+
+            <DashboardLinkCard href="/tornei" icon={<Trophy className="h-10 w-10 text-pink-400 mb-4 group-hover:scale-110 transition-transform" />} title="Tornei" description="Competizioni e iscrizioni" footer={<span className="text-xs text-muted">Esplora tornei</span>} />
+          </div>
+        </div>
         </main>
       </div>
     </AuthGuard>
   );
 }
-
-

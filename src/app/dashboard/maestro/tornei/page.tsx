@@ -218,18 +218,21 @@ export default function MaestroTorneiPage() {
                       {tournament.description && (
                         <p className="text-xs text-muted mb-2 line-clamp-1">{tournament.description}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                      <div className="flex items-center gap-3 text-xs overflow-x-auto">
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/15 text-accent font-semibold border border-accent/30 whitespace-nowrap">
+                          <Icon className="h-4 w-4" />
                           {getTournamentTypeLabel(tournament.tournament_type)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full border ${getStatusColor(tournament.status)}`}>
+                        <span className={`px-3 py-1.5 rounded-full font-semibold border whitespace-nowrap ${getStatusColor(tournament.status)}`}>
                           {tournament.status}
                         </span>
-                        <span className="text-muted">
-                          📅 {new Date(tournament.start_date).toLocaleDateString('it-IT')}
+                        <span className="text-muted flex items-center gap-1.5 whitespace-nowrap">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {new Date(tournament.start_date).toLocaleDateString('it-IT')}
                         </span>
-                        <span className="text-muted">
-                          👥 {tournament.participant_count || 0}/{tournament.max_participants}
+                        <span className="text-muted flex items-center gap-1.5 whitespace-nowrap">
+                          <Users className="h-3.5 w-3.5" />
+                          {tournament.participant_count || 0}/{tournament.max_participants}
                         </span>
                       </div>
                     </div>

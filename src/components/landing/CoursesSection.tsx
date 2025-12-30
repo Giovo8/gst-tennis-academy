@@ -52,38 +52,38 @@ export default function CoursesSection() {
   }
 
   return (
-    <section id="programmi" className="max-w-7xl mx-auto px-6 py-20">
-      <div className="space-y-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3">
+    <section id="programmi" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
+      <div className="space-y-8 sm:space-y-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2 sm:mb-3">
             Corsi e Abbonamenti
           </p>
-          <h2 className="text-5xl font-bold gradient-text mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
           Scegli il tuo percorso tennis
         </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
             Scopri i nostri programmi di allenamento personalizzati per tutti i livelli
           </p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 sm:gap-6">
           {sections.map((section) => {
         // Layout: Single Box (Quota Iscrizione, Agonistico)
         if (section.layout_type === "single_box") {
           const item = section.items[0];
           return (
-            <div key={section.id} className="group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-8 hover:border-white/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1">
-              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div key={section.id} className="group rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-5 sm:p-6 md:p-8 hover:border-white/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1">
+              <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">{section.section_title}</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">{section.section_title}</h3>
                   {section.section_description && (
                     <p className="text-base text-gray-400">{section.section_description}</p>
                   )}
                   {item.details && item.details.length > 0 && (
-                    <div className="mt-4 space-y-2 text-sm text-gray-400">
+                    <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-400">
                       {item.details.map((detail: string, i: number) => (
                         <p key={i} className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
+                          <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-cyan-400 rounded-full"></span>
                           {detail}
                         </p>
                       ))}
@@ -91,8 +91,8 @@ export default function CoursesSection() {
                   )}
                 </div>
                 <div className="text-left md:text-right shrink-0">
-                  <span className="text-4xl font-bold gradient-text">{item.price}€</span>
-                  {item.details && <span className="text-sm text-gray-400 block mt-1">/anno</span>}
+                  <span className="text-3xl sm:text-4xl font-bold gradient-text">{item.price}€</span>
+                  {item.details && <span className="text-xs sm:text-sm text-gray-400 block mt-1">/anno</span>}
                 </div>
               </div>
             </div>
@@ -102,27 +102,27 @@ export default function CoursesSection() {
         // Layout: Frequency Grid (Base, Avanzato)
         if (section.layout_type === "frequency_grid") {
           return (
-            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-8 hover:border-white/30 transition-all">
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">{section.section_title}</h3>
+            <div key={section.id} className="rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-5 sm:p-6 md:p-8 hover:border-white/30 transition-all">
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{section.section_title}</h3>
                 {section.section_description && (
                   <p className="text-base text-gray-400">{section.section_description}</p>
                 )}
               </div>
               
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                 {section.items.map((item, idx) => (
-                  <div key={idx} className="group rounded-xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:bg-white/10 hover:border-white/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/20">
-                    <p className="text-xs uppercase tracking-wider text-accent mb-3 font-bold">{item.frequency}</p>
-                    <div className="space-y-2">
+                  <div key={idx} className="group rounded-lg sm:rounded-xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-4 sm:p-6 hover:bg-white/10 hover:border-white/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/20">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-wider text-accent mb-2 sm:mb-3 font-bold">{item.frequency}</p>
+                    <div className="space-y-1.5 sm:space-y-2">
                       {item.price_monthly && (
-                        <p className="text-2xl font-bold gradient-text">
-                          {item.price_monthly}€<span className="text-sm font-normal text-gray-400"> /mese</span>
+                        <p className="text-xl sm:text-2xl font-bold gradient-text">
+                          {item.price_monthly}€<span className="text-xs sm:text-sm font-normal text-gray-400"> /mese</span>
                         </p>
                       )}
                       {item.price_yearly && (
-                        <p className="text-2xl font-bold gradient-text">
-                          {item.price_yearly}€<span className="text-sm font-normal text-gray-400"> /anno</span>
+                        <p className="text-xl sm:text-2xl font-bold gradient-text">
+                          {item.price_yearly}€<span className="text-xs sm:text-sm font-normal text-gray-400"> /anno</span>
                         </p>
                       )}
                     </div>
@@ -136,13 +136,13 @@ export default function CoursesSection() {
         // Layout: List with Price (Extra)
         if (section.layout_type === "list_with_price") {
           return (
-            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/30 transition-all">
-              <h3 className="text-lg font-semibold text-white mb-4">{section.section_title}</h3>
-              <div className="space-y-3">
+            <div key={section.id} className="rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-4 sm:p-6 hover:border-white/30 transition-all">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">{section.section_title}</h3>
+              <div className="space-y-2 sm:space-y-3">
                 {section.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center">
-                    <span className="text-sm text-muted">{item.label}</span>
-                    <span className="text-lg font-bold text-white">{item.price}€</span>
+                  <div key={idx} className="flex justify-between items-center gap-3">
+                    <span className="text-xs sm:text-sm text-muted">{item.label}</span>
+                    <span className="text-base sm:text-lg font-bold text-white">{item.price}€</span>
                   </div>
                 ))}
               </div>
@@ -153,16 +153,16 @@ export default function CoursesSection() {
         // Layout: List without Price (Sconti)
         if (section.layout_type === "list_no_price") {
           return (
-            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/30 transition-all">
-              <h3 className="text-lg font-semibold text-white mb-4">{section.section_title}</h3>
-              <div className="space-y-3">
+            <div key={section.id} className="rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-4 sm:p-6 hover:border-white/30 transition-all">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">{section.section_title}</h3>
+              <div className="space-y-2 sm:space-y-3">
                 {section.items.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-2">
-                    <span className="mt-[0.4rem] h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
+                    <span className="mt-[0.3rem] sm:mt-[0.4rem] h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-accent flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-white font-semibold">{item.label}</p>
+                      <p className="text-xs sm:text-sm text-white font-semibold">{item.label}</p>
                       {item.description && (
-                        <p className="text-xs text-muted">{item.description}</p>
+                        <p className="text-[10px] sm:text-xs text-muted">{item.description}</p>
                       )}
                     </div>
                   </div>
@@ -175,9 +175,9 @@ export default function CoursesSection() {
         // Layout: Info Card (Note, avvisi)
         if (section.layout_type === "info_card") {
           return (
-            <div key={section.id} className="rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/30 transition-all">
-              <h3 className="text-lg font-semibold text-white mb-4">{section.section_title}</h3>
-              <div className="space-y-3 text-xs text-muted">
+            <div key={section.id} className="rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-4 sm:p-6 hover:border-white/30 transition-all">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">{section.section_title}</h3>
+              <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-xs text-muted">
                 {section.items.map((item, idx) => (
                   <p key={idx} className="leading-relaxed">
                     {item.text}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, X, Newspaper } from "lucide-react";
+import { Loader2, X, Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
 
 type NewsItem = {
   id: string;
@@ -100,26 +100,26 @@ export default function NewsSection() {
 
   return (
     <>
-      <section id="news" className="max-w-7xl mx-auto px-6 py-20">
-        <div className="space-y-12">
-          <div className="text-center mb-12">
-            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-3 text-center">
+      <section id="news" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
+        <div className="space-y-8 sm:space-y-12">
+          <div className="text-center mb-8 sm:mb-12">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2 sm:mb-3 text-center">
               Ultime News
             </p>
-            <h2 className="text-5xl font-bold gradient-text mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
               Novità e Aggiornamenti
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
               Resta aggiornato su tutte le novità e gli eventi della nostra accademia
             </p>
           </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {news.map((item) => (
             <article 
               key={item.id} 
               onClick={() => setSelectedNews(item)}
-              className="group flex h-full flex-col rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden cursor-pointer hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
+              className="group flex h-full flex-col rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden cursor-pointer hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
             >
               {item.image_url && (
                 <div className="w-full aspect-[16/9] overflow-hidden">
@@ -130,12 +130,12 @@ export default function NewsSection() {
                   />
                 </div>
               )}
-              <div className="px-6 pb-6 pt-4 flex flex-col gap-3 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">
+              <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2 sm:gap-3 flex-1">
+                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+                  <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
                     {item.category}
                   </span>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-[10px] sm:text-xs text-gray-400">
                   {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                     day: "numeric",
                     month: "long",
@@ -143,8 +143,8 @@ export default function NewsSection() {
                   })}
                 </p>
               </div>
-              <h3 className="text-lg font-bold gradient-text">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-gray-300">
+              <h3 className="text-base sm:text-lg font-bold gradient-text">{item.title}</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-300">
                 {item.excerpt || item.content.substring(0, 150) + '...'}
               </p>
             </div>
@@ -160,19 +160,52 @@ export default function NewsSection() {
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
         onClick={() => setSelectedNews(null)}
       >
+        {/* Close Button - Outside */}
+        <button
+          onClick={() => setSelectedNews(null)}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-8 md:right-8 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-red-500 hover:scale-110 backdrop-blur-sm border border-white/20 z-10"
+        >
+          <X className="h-5 w-5 sm:h-6 sm:w-6" />
+        </button>
+
+        {/* Navigation Buttons - Outside Card */}
+        {news.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const currentIndex = news.findIndex(n => n.id === selectedNews.id);
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : news.length - 1;
+                setSelectedNews(news[prevIndex]);
+              }}
+              className="absolute left-1 sm:left-2 md:left-4 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-accent hover:scale-110 backdrop-blur-sm border border-white/20"
+              aria-label="News precedente"
+            >
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const currentIndex = news.findIndex(n => n.id === selectedNews.id);
+                const nextIndex = currentIndex < news.length - 1 ? currentIndex + 1 : 0;
+                setSelectedNews(news[nextIndex]);
+              }}
+              className="absolute right-1 sm:right-2 md:right-4 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-accent hover:scale-110 backdrop-blur-sm border border-white/20"
+              aria-label="News successiva"
+            >
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          </>
+        )}
+
         <div 
-          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-gray-900/95 to-accent-dark/30 backdrop-blur-xl p-8 shadow-2xl shadow-[var(--shadow-glow-strong)]"
+          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-gray-900/95 to-accent-dark/30 backdrop-blur-xl p-5 sm:p-6 md:p-8 shadow-2xl shadow-[var(--shadow-glow-strong)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            onClick={() => setSelectedNews(null)}
-            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-accent-20 hover:scale-110"
-          >
-            <X className="h-5 w-5" />
-          </button>
 
           {selectedNews.image_url && (
-            <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl mb-6">
+            <div className="w-full aspect-[16/9] overflow-hidden rounded-xl sm:rounded-2xl mb-4 sm:mb-6">
               <img
                 src={selectedNews.image_url}
                 alt={selectedNews.title}
@@ -181,11 +214,11 @@ export default function NewsSection() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 mb-4">
-            <span className="rounded-full bg-accent-20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-accent border border-[var(--glass-border)]">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
+            <span className="rounded-full bg-accent-20 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-accent border border-[var(--glass-border)]">
               {selectedNews.category}
             </span>
-            <p className="text-xs text-gray-400">
+            <p className="text-[10px] sm:text-xs text-gray-400">
               {new Date(selectedNews.published_at || selectedNews.created_at).toLocaleDateString("it-IT", {
                 day: "numeric",
                 month: "long",
@@ -194,18 +227,18 @@ export default function NewsSection() {
             </p>
           </div>
 
-          <h2 className="text-3xl font-bold gradient-text mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold gradient-text mb-4 sm:mb-6">
             {selectedNews.title}
           </h2>
 
           {selectedNews.excerpt && (
-            <p className="text-lg leading-relaxed text-white mb-6 font-medium">
+            <p className="text-base sm:text-lg leading-relaxed text-white mb-4 sm:mb-6 font-medium">
               {selectedNews.excerpt}
             </p>
           )}
 
           <div className="prose prose-invert max-w-none">
-            <p className="text-base leading-relaxed text-gray-300 whitespace-pre-wrap">
+            <p className="text-sm sm:text-base leading-relaxed text-gray-300 whitespace-pre-wrap">
               {selectedNews.content}
             </p>
           </div>

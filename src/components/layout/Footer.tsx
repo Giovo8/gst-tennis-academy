@@ -6,22 +6,22 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#050a14] border-t border-white/5">
-      <div className="container py-lg">
+      <div className="container py-8 sm:py-10 md:py-12 px-4 sm:px-6">
         {/* Main Footer Content */}
-        <div className="flex flex-col items-center text-center space-y-6">
+        <div className="flex flex-col items-center text-center space-y-5 sm:space-y-6 md:space-y-8">
           {/* Brand */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <img src="/images/logo-tennis.png" alt="GST Academy" className="h-10 w-10" />
-              <span className="text-lg font-bold text-white">GST Tennis Academy</span>
+          <div className="space-y-3 sm:space-y-4 pt-2 sm:pt-4">
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              <img src="/images/logo-tennis.png" alt="GST Academy" className="h-10 w-10 sm:h-12 sm:w-12" />
+              <span className="text-lg sm:text-xl font-bold text-white">GST Tennis Academy</span>
             </div>
-            <p className="text-sm text-muted-2 leading-relaxed max-w-md">
+            <p className="text-xs sm:text-sm text-muted-2 leading-relaxed max-w-md px-4">
               Cresci nel tuo tennis con metodo, dati e community.
             </p>
           </div>
 
           {/* Social Icons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
             <a
               href="https://instagram.com"
               target="_blank"
@@ -70,8 +70,8 @@ export default function Footer() {
           </div>
 
           {/* Bottom Copyright */}
-          <div className="border-t border-white/5 pt-6 w-full">
-            <p className="text-xs text-muted-2 text-center">
+          <div className="border-t border-white/5 pt-6 sm:pt-8 pb-1 sm:pb-2 w-full max-w-4xl">
+            <p className="text-[10px] sm:text-xs text-muted-2 text-center">
               © {currentYear} GST Tennis Academy. Tutti i diritti riservati.
             </p>
           </div>
