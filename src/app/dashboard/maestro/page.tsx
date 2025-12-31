@@ -392,10 +392,10 @@ export default function MaestroDashboardPage() {
                       )}
 
                       {/* Note */}
-                      {lesson.note && (
+                      {lesson.notes && (
                         <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                           <p className="text-xs uppercase tracking-wider text-muted-2 mb-1">Note</p>
-                          <p className="text-sm text-white">{lesson.note}</p>
+                          <p className="text-sm text-white">{lesson.notes}</p>
                         </div>
                       )}
 
