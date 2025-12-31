@@ -16,6 +16,16 @@ create table public.profiles (
 alter table public.profiles
   enable row level security;
 
+-- Helper function to get current user role (bypasses RLS to avoid recursion)
+create or replace function public.get_my_role()
+returns text
+language sql
+security definer
+stable
+as $$
+  select role from public.profiles where id = auth.uid();
+$$;
+
 create policy "Users can view their profile"
   on public.profiles
   for select
@@ -29,32 +39,17 @@ create policy "Users can update their profile"
 create policy "Admins can view all profiles"
   on public.profiles
   for select
-  using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('admin', 'gestore')
-    )
-  );
+  using (public.get_my_role() in ('admin', 'gestore'));
 
 create policy "Admins can update all profiles"
   on public.profiles
   for update
-  using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('admin', 'gestore')
-    )
-  );
+  using (public.get_my_role() in ('admin', 'gestore'));
 
 create policy "Admins can insert profiles"
   on public.profiles
   for insert
-  with check (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('admin', 'gestore')
-    )
-  );
+  with check (public.get_my_role() in ('admin', 'gestore'));
 
 create policy "Users can view coach profiles"
   on public.profiles
@@ -69,11 +64,7 @@ create policy "Coaches can view athlete profiles"
   for select
   using (
     auth.uid() is not null 
-    and exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() 
-      and p.role in ('maestro', 'admin', 'gestore')
-    )
+    and public.get_my_role() in ('maestro', 'admin', 'gestore')
     and role = 'atleta'
   );
 
