@@ -25,9 +25,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin, gestore, or maestro
     const roleLower = String(profile.role).toLowerCase();
-    if (!['admin', 'gestore', 'maestro'].includes(roleLower)) {
+    
+    // Athletes can see coaches for booking, maestros/admin/gestore can see everyone
+    if (!['admin', 'gestore', 'maestro', 'atleta'].includes(roleLower)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -43,11 +44,22 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Filter to only include relevant roles (case-insensitive)
-    const filteredUsers = (users || []).filter(user => {
-      const role = String(user.role || '').toLowerCase();
-      return ['atleta', 'coach', 'maestro', 'admin', 'gestore'].includes(role);
-    });
+    // Filter based on role
+    let filteredUsers = users || [];
+    
+    if (roleLower === 'atleta') {
+      // Athletes can only see maestro profiles (for booking purposes)
+      filteredUsers = filteredUsers.filter(user => {
+        const role = String(user.role || '').toLowerCase();
+        return role === 'maestro';
+      });
+    } else {
+      // Maestros, admin, and gestore can see all relevant roles
+      filteredUsers = filteredUsers.filter(user => {
+        const role = String(user.role || '').toLowerCase();
+        return ['atleta', 'maestro', 'admin', 'gestore'].includes(role);
+      });
+    }
 
     return NextResponse.json({ users: filteredUsers });
   } catch (error: any) {
