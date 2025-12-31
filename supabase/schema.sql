@@ -127,6 +127,16 @@ create policy "Users can delete their bookings"
   for delete
   using (auth.uid() = user_id);
 
+create policy "Admins can view all bookings"
+  on public.bookings
+  for select
+  using (public.get_my_role() in ('admin', 'gestore', 'maestro'));
+
+create policy "Admins can update all bookings"
+  on public.bookings
+  for update
+  using (public.get_my_role() in ('admin', 'gestore'));
+
 create index bookings_user_idx on public.bookings (user_id);
 create index bookings_court_idx on public.bookings (court, start_time);
 create index bookings_type_idx on public.bookings (type);
@@ -210,14 +220,7 @@ alter table public.recruitment_applications enable row level security;
 create policy "Gestore/Admin can view applications"
   on public.recruitment_applications
   for select
-  using (
-    exists (
-      select 1
-      from public.profiles p
-      where p.id = auth.uid()
-        and p.role in ('gestore', 'admin')
-    )
-  );
+  using (public.get_my_role() in ('gestore', 'admin'));
 
 create policy "Users can insert application"
   on public.recruitment_applications
@@ -264,18 +267,12 @@ alter table public.services enable row level security;
 create policy "Anyone can view active services"
   on public.services
   for select
-  using (is_active = true or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (is_active = true or public.get_my_role() in ('gestore', 'admin'));
 
 create policy "Admin can manage services"
   on public.services
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('gestore', 'admin'));
 
 create index services_type_idx on public.services (type);
 create index services_active_idx on public.services (is_active);
@@ -299,18 +296,12 @@ alter table public.products enable row level security;
 create policy "Anyone can view active products"
   on public.products
   for select
-  using (is_active = true or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (is_active = true or public.get_my_role() in ('gestore', 'admin'));
 
 create policy "Admin can manage products"
   on public.products
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('gestore', 'admin'));
 
 create index products_category_idx on public.products (category);
 create index products_active_idx on public.products (is_active);
@@ -340,18 +331,12 @@ alter table public.courses enable row level security;
 create policy "Anyone can view active courses"
   on public.courses
   for select
-  using (is_active = true or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin', 'maestro')
-  ));
+  using (is_active = true or public.get_my_role() in ('admin', 'gestore', 'maestro'));
 
 create policy "Admin and coaches can manage courses"
   on public.courses
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and (p.role in ('gestore', 'admin') or (p.role = 'maestro' and p.id = coach_id))
-  ));
+  using (public.get_my_role() in ('admin', 'gestore', 'maestro'));
 
 create index courses_coach_idx on public.courses (coach_id);
 create index courses_dates_idx on public.courses (start_date, end_date);
@@ -374,10 +359,7 @@ alter table public.enrollments enable row level security;
 create policy "Users can view their enrollments"
   on public.enrollments
   for select
-  using (auth.uid() = user_id or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin', 'maestro')
-  ));
+  using (auth.uid() = user_id or public.get_my_role() in ('gestore', 'admin', 'maestro'));
 
 create policy "Users can create their enrollments"
   on public.enrollments
@@ -387,10 +369,7 @@ create policy "Users can create their enrollments"
 create policy "Users can update their enrollments"
   on public.enrollments
   for update
-  using (auth.uid() = user_id or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (auth.uid() = user_id or public.get_my_role() in ('gestore', 'admin'));
 
 create index enrollments_user_idx on public.enrollments (user_id);
 create index enrollments_course_idx on public.enrollments (course_id);
@@ -420,18 +399,12 @@ alter table public.events enable row level security;
 create policy "Anyone can view active events"
   on public.events
   for select
-  using (is_active = true or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (is_active = true or public.get_my_role() in ('admin', 'gestore'));
 
 create policy "Admin can manage events"
   on public.events
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('admin', 'gestore'));
 
 create index events_type_idx on public.events (event_type);
 create index events_dates_idx on public.events (start_date, end_date);
@@ -454,10 +427,7 @@ alter table public.event_registrations enable row level security;
 create policy "Users can view their registrations"
   on public.event_registrations
   for select
-  using (auth.uid() = user_id or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (auth.uid() = user_id or public.get_my_role() in ('admin', 'gestore'));
 
 create policy "Users can create their registrations"
   on public.event_registrations
@@ -487,18 +457,12 @@ alter table public.news enable row level security;
 create policy "Anyone can view published news"
   on public.news
   for select
-  using (is_published = true or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (is_published = true or public.get_my_role() in ('admin', 'gestore'));
 
 create policy "Admin can manage news"
   on public.news
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('admin', 'gestore'));
 
 create index news_published_idx on public.news (is_published, published_at);
 create index news_category_idx on public.news (category);
@@ -624,10 +588,7 @@ create policy "Anyone can view active tournaments"
 create policy "Admin and gestore can manage tournaments"
   on public.tournaments
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('admin', 'gestore', 'maestro'));
 
 create index tournaments_starts_at_idx on public.tournaments (starts_at);
 create index tournaments_status_idx on public.tournaments (status);
@@ -661,10 +622,7 @@ create policy "Users can register themselves"
 create policy "Admin can manage participants"
   on public.tournament_participants
   for all
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('admin', 'gestore', 'maestro'));
 
 create index tournament_participants_tournament_idx on public.tournament_participants (tournament_id);
 create index tournament_participants_user_idx on public.tournament_participants (user_id);
@@ -696,10 +654,7 @@ alter table public.payments enable row level security;
 create policy "Users can view their payments"
   on public.payments
   for select
-  using (auth.uid() = user_id or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (auth.uid() = user_id or public.get_my_role() in ('admin', 'gestore'));
 
 create policy "System can create payments"
   on public.payments
@@ -709,10 +664,7 @@ create policy "System can create payments"
 create policy "System can update payments"
   on public.payments
   for update
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('gestore', 'admin')
-  ));
+  using (public.get_my_role() in ('gestore', 'admin'));
 
 create index payments_user_idx on public.payments (user_id);
 create index payments_status_idx on public.payments (status);
