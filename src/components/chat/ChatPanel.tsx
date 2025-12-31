@@ -12,9 +12,11 @@ import {
   Clock,
   X,
   Image as ImageIcon,
-  Paperclip
+  Paperclip,
+  Plus
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import NewConversationModal from "./NewConversationModal";
 
 interface Profile {
   id: string;
@@ -55,8 +57,11 @@ export default function ChatPanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load current user
   useEffect(() => {
@@ -298,6 +303,82 @@ export default function ChatPanel() {
     }
   }
 
+  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !selectedConversation || uploading) return;
+
+    try {
+      setUploading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conversation_id", selectedConversation);
+
+      const response = await fetch("/api/messages/upload", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const { url, metadata } = await response.json();
+        
+        // Send message with attachment
+        const messageResponse = await fetch("/api/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            conversation_id: selectedConversation,
+            content: metadata.name,
+            message_type: file.type.startsWith("image/") ? "image" : "file",
+            attachment_url: url,
+            attachment_metadata: metadata,
+          }),
+        });
+
+        if (messageResponse.ok) {
+          const data = await messageResponse.json();
+          setMessages((prev) => [...prev, data.message]);
+          
+          // Update conversation preview
+          setConversations((prev) =>
+            prev.map((conv) =>
+              conv.id === selectedConversation
+                ? {
+                    ...conv,
+                    last_message_preview: `📎 ${metadata.name}`,
+                    last_message_at: new Date().toISOString(),
+                  }
+                : conv
+            )
+          );
+        }
+      } else {
+        alert("Errore durante l'upload del file");
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Errore durante l'upload del file");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  function handleConversationCreated(conversationId: string) {
+    setSelectedConversation(conversationId);
+    loadConversations();
+  }
+
   async function markAsRead(conversationId: string) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -402,11 +483,20 @@ export default function ChatPanel() {
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Messaggi</h2>
-            {totalUnread > 0 && (
-              <span className="bg-cyan-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                {totalUnread}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {totalUnread > 0 && (
+                <span className="bg-cyan-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {totalUnread}
+                </span>
+              )}
+              <button
+                onClick={() => setShowNewConversationModal(true)}
+                className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-colors"
+                title="Nuova conversazione"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Search */}
@@ -558,6 +648,25 @@ export default function ChatPanel() {
                     >
                       {message.is_deleted ? (
                         <p className="italic opacity-70">{message.content}</p>
+                      ) : message.message_type === "image" && message.attachment_url ? (
+                        <div className="space-y-2">
+                          <img
+                            src={message.attachment_url}
+                            alt={message.content}
+                            className="max-w-xs rounded-lg"
+                          />
+                          <p className="text-sm">{message.content}</p>
+                        </div>
+                      ) : message.message_type === "file" && message.attachment_url ? (
+                        <a
+                          href={message.attachment_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 hover:underline"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                          <span>{message.content}</span>
+                        </a>
                       ) : (
                         <p className="whitespace-pre-wrap break-words">{message.content}</p>
                       )}
@@ -588,8 +697,24 @@ export default function ChatPanel() {
           {/* Input */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-end gap-2">
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400">
-                <Paperclip className="w-5 h-5" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+                accept="image/*,.pdf,.doc,.docx,.txt"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Allega file"
+              >
+                {uploading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
+                ) : (
+                  <Paperclip className="w-5 h-5" />
+                )}
               </button>
               
               <div className="flex-1 relative">
@@ -630,6 +755,13 @@ export default function ChatPanel() {
           </div>
         </div>
       )}
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        isOpen={showNewConversationModal}
+        onClose={() => setShowNewConversationModal(false)}
+        onConversationCreated={handleConversationCreated}
+      />
     </div>
   );
 }
