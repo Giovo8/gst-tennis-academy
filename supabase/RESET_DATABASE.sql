@@ -502,6 +502,25 @@ CREATE POLICY "Admins can update all profiles"
     )
   );
 
+CREATE POLICY "Users can view coach profiles"
+  ON public.profiles FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL 
+    AND role = 'maestro'
+  );
+
+CREATE POLICY "Coaches can view athlete profiles"
+  ON public.profiles FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL 
+    AND EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid() 
+      AND p.role IN ('maestro', 'admin', 'gestore')
+    )
+    AND role = 'atleta'
+  );
+
 -- BOOKINGS POLICIES
 CREATE POLICY "Users can view their bookings"
   ON public.bookings FOR SELECT

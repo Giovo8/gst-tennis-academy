@@ -152,7 +152,9 @@ export default function BookingCalendar() {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
         
-        if (token && (userRole === 'admin' || userRole === 'gestore')) {
+        if (token) {
+          // Tutti gli utenti autenticati possono vedere i maestri (per prenotare lezioni)
+          // Solo admin/gestore vedono anche gli atleti (per prenotare per conto loro)
           
           const response = await fetch('/api/users', {
             method: 'GET',
@@ -179,7 +181,10 @@ export default function BookingCalendar() {
             });
             
             setCoaches(coachData);
-            setAthletes(athleteData);
+            // Solo admin/gestore vedono gli atleti
+            if (userRole === 'admin' || userRole === 'gestore') {
+              setAthletes(athleteData);
+            }
           } else {
             const errorText = await response.text().catch(() => 'Unknown error');
             setError(`Errore caricamento utenti: ${response.status}`);

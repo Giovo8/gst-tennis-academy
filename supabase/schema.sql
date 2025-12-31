@@ -56,6 +56,27 @@ create policy "Admins can insert profiles"
     )
   );
 
+create policy "Users can view coach profiles"
+  on public.profiles
+  for select
+  using (
+    auth.uid() is not null 
+    and role = 'maestro'
+  );
+
+create policy "Coaches can view athlete profiles"
+  on public.profiles
+  for select
+  using (
+    auth.uid() is not null 
+    and exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() 
+      and p.role in ('maestro', 'admin', 'gestore')
+    )
+    and role = 'atleta'
+  );
+
 create trigger update_profiles_updated_at
   before update on public.profiles
   for each row

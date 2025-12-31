@@ -17,7 +17,7 @@ type Lesson = {
   status: string;
   coach_confirmed: boolean;
   manager_confirmed: boolean;
-  note: string | null;
+  notes: string | null;
   user: {
     full_name: string;
     email: string;
@@ -109,7 +109,7 @@ export default function MaestroDashboardPage() {
         status: item.status,
         coach_confirmed: item.coach_confirmed,
         manager_confirmed: item.manager_confirmed,
-        note: item.note,
+        notes: item.notes,
         user: {
           full_name: userProfile?.full_name || "Atleta",
           email: userProfile?.email || "",
@@ -129,7 +129,7 @@ export default function MaestroDashboardPage() {
         status: item.status,
         coach_confirmed: item.coach_confirmed,
         manager_confirmed: item.manager_confirmed,
-        note: item.note,
+        notes: item.notes,
         user: {
           full_name: userProfile?.full_name || "Atleta",
           email: userProfile?.email || "",
@@ -147,8 +147,28 @@ export default function MaestroDashboardPage() {
       try {
         const { data: tData } = await supabase.from('tournaments').select('id, title, start_date').gte('start_date', new Date().toISOString()).order('start_date');
         setTournaments((tData as any) ?? []);
-        const { data: aData } = await supabase.from('profiles').select('id, full_name').eq('role', 'atleta').order('full_name');
-        setAthletes((aData as any) ?? []);
+        
+        // Use API to get athletes (bypasses RLS)
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        
+        if (token) {
+          const response = await fetch('/api/users', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const athleteData = (data.users || []).filter((u: any) => 
+              String(u.role || '').toLowerCase() === 'atleta'
+            );
+            setAthletes(athleteData);
+          }
+        }
       } catch (err) {
         // ignore
       }
