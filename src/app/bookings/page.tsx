@@ -18,7 +18,7 @@ type BookingWithDetails = {
   status: string;
   coach_confirmed: boolean;
   manager_confirmed: boolean;
-  note: string | null;
+  notes: string | null;
   created_at: string;
   user: {
     id: string;
@@ -132,7 +132,7 @@ export default function BookingsPage() {
         status: item.status,
         coach_confirmed: item.coach_confirmed,
         manager_confirmed: item.manager_confirmed,
-        note: item.note,
+        notes: item.notes,
         created_at: item.created_at,
         user: {
           id: userProfile?.id || "",
@@ -397,9 +397,9 @@ export default function BookingsPage() {
                                 )}
                               </p>
                             )}
-                            {booking.note && (
+                            {booking.notes && (
                               <p className="text-muted text-xs mt-2 italic">
-                                <strong>Note:</strong> {booking.note}
+                                <strong>Note:</strong> {booking.notes}
                               </p>
                             )}
                             <p className="text-muted-2 text-xs mt-2">

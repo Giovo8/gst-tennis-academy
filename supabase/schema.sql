@@ -75,6 +75,10 @@ create table public.bookings (
   type booking_type not null default 'campo',
   start_time timestamptz not null,
   end_time timestamptz not null,
+  status text not null default 'pending',
+  coach_confirmed boolean not null default false,
+  manager_confirmed boolean not null default false,
+  notes text,
   created_at timestamptz not null default now(),
   constraint bookings_time_check check (end_time > start_time)
 );
@@ -114,6 +118,8 @@ create policy "Users can delete their bookings"
 create index bookings_user_idx on public.bookings (user_id);
 create index bookings_court_idx on public.bookings (court, start_time);
 create index bookings_type_idx on public.bookings (type);
+create index bookings_coach_confirmed_idx on public.bookings (coach_confirmed);
+create index bookings_manager_confirmed_idx on public.bookings (manager_confirmed);
 
 -- Subscription credits (weekly)
 create table public.subscription_credits (

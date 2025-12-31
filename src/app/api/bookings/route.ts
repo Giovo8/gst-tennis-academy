@@ -72,6 +72,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Time slot not available" }, { status: 409 });
     }
 
+    // Determine status and confirmation flags based on booking type and user making the booking
+    const bookingStatus = body.status || "pending";
+    const coachConfirmed = body.coach_confirmed ?? false;
+    const managerConfirmed = body.manager_confirmed ?? false;
+
     const { data, error } = await supabaseServer
       .from("bookings")
       .insert([
@@ -82,6 +87,10 @@ export async function POST(req: Request) {
           type: type || "campo",
           start_time,
           end_time,
+          status: bookingStatus,
+          coach_confirmed: coachConfirmed,
+          manager_confirmed: managerConfirmed,
+          notes: body.notes || null,
         },
       ])
       .select();

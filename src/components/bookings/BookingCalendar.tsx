@@ -26,7 +26,7 @@ type BookingRecord = {
   status?: string;
   coach_confirmed?: boolean;
   manager_confirmed?: boolean;
-  note?: string;
+  notes?: string;
 };
 
 type Coach = {
@@ -312,7 +312,7 @@ export default function BookingCalendar() {
       status: bookingType === "lezione_privata" && !isAdminOrGestore ? "pending" : "confirmed",
       coach_confirmed: bookingType !== "lezione_privata" || isAdminOrGestore, // Admin/Gestore bypassano conferma coach
       manager_confirmed: isAdminOrGestore, // Admin/Gestore auto-approvano
-      note: null,
+      notes: null,
     };
 
     const resp = await fetch('/api/bookings', {

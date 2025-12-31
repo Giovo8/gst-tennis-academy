@@ -150,12 +150,14 @@ CREATE TABLE public.bookings (
   type booking_type NOT NULL DEFAULT 'campo',
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ NOT NULL,
-  status TEXT NOT NULL DEFAULT 'confirmed',
+  status TEXT NOT NULL DEFAULT 'pending',
+  coach_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+  manager_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT bookings_time_check CHECK (end_time > start_time),
-  CONSTRAINT bookings_status_check CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed'))
+  CONSTRAINT bookings_status_check CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed', 'rejected_by_coach', 'rejected_by_manager', 'confirmed_by_coach'))
 );
 
 -- Previeni sovrapposizioni
@@ -172,6 +174,8 @@ CREATE INDEX bookings_coach_idx ON public.bookings (coach_id);
 CREATE INDEX bookings_court_idx ON public.bookings (court, start_time);
 CREATE INDEX bookings_type_idx ON public.bookings (type);
 CREATE INDEX bookings_status_idx ON public.bookings (status);
+CREATE INDEX bookings_coach_confirmed_idx ON public.bookings (coach_confirmed);
+CREATE INDEX bookings_manager_confirmed_idx ON public.bookings (manager_confirmed);
 
 CREATE TRIGGER update_bookings_updated_at
   BEFORE UPDATE ON public.bookings
