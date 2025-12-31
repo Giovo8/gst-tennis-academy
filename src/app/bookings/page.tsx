@@ -36,7 +36,8 @@ export default function BookingsPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
-  const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "today" | "cancelled">("today");
+  const [allBookings, setAllBookings] = useState<BookingWithDetails[]>([]); // Keep all bookings for stats
+  const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "today" | "cancelled">("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,50 +63,7 @@ export default function BookingsPage() {
     }
   }
 
-  async function loadBookings() {
-    setLoading(true);
-
-    const isAdminOrGestore = userRole === "admin" || userRole === "gestore";
-    const isMaestro = userRole === "maestro";
-
-    let query = supabase
-      .from("bookings")
-      .select("*")
-      .order("start_time", { ascending: false })
-      .limit(100);
-
-    // Filtri basati sul ruolo
-    if (!isAdminOrGestore && !isMaestro && currentUserId) {
-      // Atleti vedono solo le loro prenotazioni
-      query = query.eq("user_id", currentUserId);
-    } else if (isMaestro && currentUserId) {
-      // Maestri vedono le loro lezioni
-      query = query.eq("coach_id", currentUserId);
-    }
-
-    // Filtri aggiuntivi
-    if (filter === "today") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      query = query.gte("start_time", today.toISOString()).lt("start_time", tomorrow.toISOString());
-    } else if (filter === "pending") {
-      query = query.eq("manager_confirmed", false).neq("status", "cancelled");
-    } else if (filter === "confirmed") {
-      query = query.eq("manager_confirmed", true).eq("status", "confirmed");
-    } else if (filter === "cancelled") {
-      query = query.or("status.eq.cancelled,status.eq.rejected_by_coach,status.eq.rejected_by_manager");
-    }
-
-    const { data: bookingsData, error: bookingsError } = await query;
-
-    if (bookingsError || !bookingsData || bookingsData.length === 0) {
-      setBookings([]);
-      setLoading(false);
-      return;
-    }
-
+  async function processBookingsData(bookingsData: any[]): Promise<BookingWithDetails[]> {
     // Carica i profili degli utenti coinvolti
     const userIds = [...new Set([
       ...bookingsData.map((b: any) => b.user_id),
@@ -119,7 +77,7 @@ export default function BookingsPage() {
 
     const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-    const mapped: BookingWithDetails[] = bookingsData.map((item: any) => {
+    return bookingsData.map((item: any) => {
       const userProfile = profilesMap.get(item.user_id);
       const coachProfile = item.coach_id ? profilesMap.get(item.coach_id) : null;
 
@@ -148,8 +106,82 @@ export default function BookingsPage() {
           : null,
       };
     });
+  }
 
+  async function loadBookings() {
+    setLoading(true);
+
+    const isAdminOrGestore = userRole === "admin" || userRole === "gestore";
+    const isMaestro = userRole === "maestro";
+
+    // First, load ALL bookings for stats (without filter)
+    let allQuery = supabase
+      .from("bookings")
+      .select("*")
+      .order("start_time", { ascending: false })
+      .limit(100);
+
+    // Filtri basati sul ruolo per stats
+    if (!isAdminOrGestore && !isMaestro && currentUserId) {
+      allQuery = allQuery.eq("user_id", currentUserId);
+    } else if (isMaestro && currentUserId) {
+      allQuery = allQuery.eq("coach_id", currentUserId);
+    }
+
+    const { data: allBookingsData } = await allQuery;
+
+    // Then, load filtered bookings for display
+    let query = supabase
+      .from("bookings")
+      .select("*")
+      .order("start_time", { ascending: false })
+      .limit(100);
+
+    // Filtri basati sul ruolo
+    if (!isAdminOrGestore && !isMaestro && currentUserId) {
+      query = query.eq("user_id", currentUserId);
+    } else if (isMaestro && currentUserId) {
+      query = query.eq("coach_id", currentUserId);
+    }
+
+    // Filtri aggiuntivi per display
+    if (filter === "today") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      query = query.gte("start_time", today.toISOString()).lt("start_time", tomorrow.toISOString());
+    } else if (filter === "pending") {
+      query = query.eq("manager_confirmed", false).neq("status", "cancelled");
+    } else if (filter === "confirmed") {
+      query = query.eq("manager_confirmed", true).eq("status", "confirmed");
+    } else if (filter === "cancelled") {
+      query = query.or("status.eq.cancelled,status.eq.rejected_by_coach,status.eq.rejected_by_manager");
+    }
+
+    const { data: bookingsData, error: bookingsError } = await query;
+
+    if (bookingsError || !bookingsData || bookingsData.length === 0) {
+      setBookings([]);
+      // Still process allBookingsData for stats
+      if (allBookingsData) {
+        const processedAll = await processBookingsData(allBookingsData);
+        setAllBookings(processedAll);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Carica i profili degli utenti coinvolti per filtered bookings
+    const mapped = await processBookingsData(bookingsData);
     setBookings(mapped);
+
+    // Process all bookings for stats
+    if (allBookingsData) {
+      const processedAll = await processBookingsData(allBookingsData);
+      setAllBookings(processedAll);
+    }
+
     setLoading(false);
   }
 
@@ -203,13 +235,13 @@ export default function BookingsPage() {
   const isAdminView = userRole === "admin" || userRole === "gestore";
   const isMaestroView = userRole === "maestro";
 
-  // Calcola statistiche
+  // Calcola statistiche usando TUTTI i bookings (non filtrati)
   const stats = {
-    total: bookings.length,
-    pending: bookings.filter((b) => !b.manager_confirmed && b.status !== "cancelled" && !b.status.includes("rejected")).length,
-    confirmed: bookings.filter((b) => b.manager_confirmed && b.status === "confirmed").length,
-    private: bookings.filter((b) => b.type === "lezione_privata").length,
-    cancelled: bookings.filter((b) => b.status === "cancelled" || b.status.includes("rejected")).length,
+    total: allBookings.length,
+    pending: allBookings.filter((b) => !b.manager_confirmed && b.status !== "cancelled" && !b.status.includes("rejected")).length,
+    confirmed: allBookings.filter((b) => b.manager_confirmed && b.status === "confirmed").length,
+    private: allBookings.filter((b) => b.type === "lezione_privata").length,
+    cancelled: allBookings.filter((b) => b.status === "cancelled" || b.status.includes("rejected")).length,
   };
 
   return (
@@ -249,56 +281,46 @@ export default function BookingsPage() {
 
             {/* Filtri */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-muted-2" />
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-white/70" />
               <button
-                onClick={() => setFilter("today")}
-                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
-                  filter === "today"
-                    ? "bg-accent text-white"
-                    : "border border-white/15 text-white hover:bg-white/5"
+                onClick={() => setFilter("all")}
+                className={`rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-semibold transition min-h-[40px] shadow-lg ${
+                  filter === "all"
+                    ? "bg-gradient-to-r from-[#2f7de1] to-[#1e5bb8] text-white ring-2 ring-white/30"
+                    : "border-2 border-white/30 text-white bg-white/5 hover:bg-white/10 hover:border-white/50"
                 }`}
               >
-                Oggi
+                Tutte
               </button>
               <button
                 onClick={() => setFilter("pending")}
-                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
+                className={`rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-semibold transition min-h-[40px] shadow-lg ${
                   filter === "pending"
-                    ? "bg-accent text-white"
-                    : "border border-white/15 text-white hover:bg-white/5"
+                    ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white ring-2 ring-white/30"
+                    : "border-2 border-white/30 text-white bg-white/5 hover:bg-white/10 hover:border-white/50"
                 }`}
               >
                 In Attesa ({stats.pending})
               </button>
               <button
                 onClick={() => setFilter("confirmed")}
-                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
+                className={`rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-semibold transition min-h-[40px] shadow-lg ${
                   filter === "confirmed"
-                    ? "bg-accent text-white"
-                    : "border border-white/15 text-white hover:bg-white/5"
+                    ? "bg-gradient-to-r from-green-500 to-green-600 text-white ring-2 ring-white/30"
+                    : "border-2 border-white/30 text-white bg-white/5 hover:bg-white/10 hover:border-white/50"
                 }`}
               >
                 Confermate
               </button>
               <button
                 onClick={() => setFilter("cancelled")}
-                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
+                className={`rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-semibold transition min-h-[40px] shadow-lg ${
                   filter === "cancelled"
-                    ? "bg-accent text-white"
-                    : "border border-white/15 text-white hover:bg-white/5"
+                    ? "bg-gradient-to-r from-red-500 to-red-600 text-white ring-2 ring-white/30"
+                    : "border-2 border-white/30 text-white bg-white/5 hover:bg-white/10 hover:border-white/50"
                 }`}
               >
                 Annullate
-              </button>
-              <button
-                onClick={() => setFilter("all")}
-                className={`rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition min-h-[36px] ${
-                  filter === "all"
-                    ? "bg-accent text-white"
-                    : "border border-white/15 text-white hover:bg-white/5"
-                }`}
-              >
-                Tutte
               </button>
             </div>
 
