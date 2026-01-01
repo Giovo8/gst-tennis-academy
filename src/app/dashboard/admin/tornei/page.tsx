@@ -496,7 +496,7 @@ function AdminTorneiPageInner() {
 
       {/* Error notification with better design */}
       {error && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300 pb-safe">
           <div className="relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-xl p-4 shadow-2xl shadow-red-500/20 max-w-md">
             <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent" />
             <div className="relative flex items-start gap-3">

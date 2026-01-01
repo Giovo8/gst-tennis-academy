@@ -14,6 +14,9 @@ type Stats = {
   todayBookings: number;
   totalTournaments: number;
   activeTournaments: number;
+  activeCourses: number;
+  pendingBookings: number;
+  monthlyRevenue: number;
 };
 
 export default function AdminDashboardPage() {
@@ -23,17 +26,29 @@ export default function AdminDashboardPage() {
     todayBookings: 0,
     totalTournaments: 0,
     activeTournaments: 0,
+    activeCourses: 0,
+    pendingBookings: 0,
+    monthlyRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
       try {
-        const response = await fetch("/api/admin/stats");
+        const response = await fetch("/api/stats/admin");
         if (!response.ok) throw new Error("Errore caricamento statistiche");
         
         const data = await response.json();
-        setStats(data);
+        setStats({
+          totalUsers: data.totalUsers || 0,
+          totalBookings: data.totalBookings || 0,
+          todayBookings: data.bookingsToday || 0,
+          totalTournaments: data.totalTournaments || 0,
+          activeTournaments: data.activeTournaments || 0,
+          activeCourses: data.activeCourses || 0,
+          pendingBookings: data.pendingBookings || 0,
+          monthlyRevenue: data.monthlyRevenue || 0,
+        });
       } catch (error) {
         console.error("Errore caricamento statistiche:", error);
       } finally {
@@ -49,7 +64,7 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen bg-gradient-to-br from-[#021627] via-[#031a35] to-[#021627] text-white">
         <main className="mx-auto flex max-w-7xl flex-col gap-4 sm:gap-6 px-4 sm:px-6 py-6 sm:py-10">
           {/* Header */}
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center gap-2 text-blue-400">
               <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
               <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold">Area Amministrazione</p>
@@ -61,7 +76,7 @@ export default function AdminDashboardPage() {
           </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard
             title="Utenti"
             value={loading ? "..." : stats.totalUsers}
@@ -70,31 +85,38 @@ export default function AdminDashboardPage() {
           />
 
           <StatCard
-            title="Prenotazioni"
-            value={loading ? "..." : stats.totalBookings}
-            icon={<Calendar className="h-8 w-8 text-lime-300" />}
-            color="lime"
-          />
-
-          <StatCard
-            title="Oggi"
+            title="Prenotazioni Oggi"
             value={loading ? "..." : stats.todayBookings}
             icon={<TrendingUp className="h-7 w-7 text-indigo-300" />}
             color="indigo"
           />
 
           <StatCard
-            title="Tornei"
-            value={loading ? "..." : stats.totalTournaments}
-            icon={<Trophy className="h-8 w-8 text-orange-300" />}
-            color="orange"
+            title="In Attesa"
+            value={loading ? "..." : stats.pendingBookings}
+            icon={<Calendar className="h-8 w-8 text-yellow-300" />}
+            color="yellow"
           />
 
           <StatCard
             title="Tornei Attivi"
             value={loading ? "..." : stats.activeTournaments}
-            icon={<Trophy className="h-8 w-8 text-violet-300" />}
-            color="violet"
+            icon={<Trophy className="h-8 w-8 text-orange-300" />}
+            color="orange"
+          />
+
+          <StatCard
+            title="Corsi Attivi"
+            value={loading ? "..." : stats.activeCourses}
+            icon={<Users className="h-8 w-8 text-green-300" />}
+            color="green"
+          />
+
+          <StatCard
+            title="Revenue €"
+            value={loading ? "..." : Math.round(stats.monthlyRevenue)}
+            icon={<TrendingUp className="h-8 w-8 text-emerald-300" />}
+            color="green"
           />
         </div>
 
@@ -144,6 +166,13 @@ export default function AdminDashboardPage() {
             icon={<Sparkles className="h-10 w-10" />}
             title="Galleria Immagini"
             description="Gestisci la galleria fotografica dell'academy."
+          />
+
+          <DashboardLinkCard
+            href="/dashboard/admin/promo-banner"
+            icon={<Target className="h-10 w-10" />}
+            title="Banner Promozionale"
+            description="Gestisci il banner visualizzato nella homepage."
           />
         </div>
 

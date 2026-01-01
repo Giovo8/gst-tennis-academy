@@ -54,7 +54,7 @@ export default function InfoSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">Orari di apertura</h3>
-                <div className="space-y-1 text-sm text-gray-300">
+                <div className="space-y-2 text-sm text-gray-300">
                   <p><span className="font-bold text-white">Lun - Ven:</span> 07:00 - 23:00</p>
                   <p><span className="font-bold text-white">Sabato:</span> 08:00 - 22:00</p>
                   <p><span className="font-bold text-white">Domenica:</span> 08:00 - 20:00</p>

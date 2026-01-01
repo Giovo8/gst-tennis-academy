@@ -55,13 +55,13 @@ export default function GestoreDashboardPage() {
     <AuthGuard allowedRoles={["gestore", "admin"]}>
       <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10 bg-[#021627] text-white">
         {/* Header */}
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
+        <div className="space-y-2 sm:space-y-3">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Area Gestione
           </p>
           <h1 className="text-4xl font-bold text-white">Dashboard Gestore</h1>
-          <p className="text-sm text-muted">Gestisci utenti, prenotazioni e servizi</p>
+          <p className="text-sm sm:text-base text-muted">Gestisci utenti, prenotazioni e servizi</p>
         </div>
 
         {/* Stats Grid */}

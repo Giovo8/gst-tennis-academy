@@ -68,7 +68,7 @@ export default function DashboardSidebar({ items, role, userName }: DashboardSid
 
       {/* Navigation */}
       <nav className="flex-1 p-4">
-        <div className="space-y-1">
+        <div className="space-y-2">
           {items.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (

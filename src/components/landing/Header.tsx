@@ -70,7 +70,7 @@ export default function Header() {
         Salta al contenuto
       </a>
       <div className="container">
-        <div className="flex items-center justify-between py">
+        <div className="flex items-center justify-between py-3">
           {/* Logo */}
           <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-3">
             <Image 
@@ -92,7 +92,7 @@ export default function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="rounded-full border border-white/15 p-2 transition hover:border-white/30 hover:bg-white/5"
+                className="rounded-full border border-white/15 p-2 transition hover:border-white/30 hover:bg-white/5 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <Instagram className="h-4 w-4" />
               </a>

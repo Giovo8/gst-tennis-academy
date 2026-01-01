@@ -28,7 +28,6 @@ export default function TournamentsSection() {
         const json = await res.json();
         if (res.ok) {
           if (mounted) {
-            console.log('Tornei caricati:', json.tournaments);
             setItems(json.tournaments ?? []);
           }
         }
@@ -70,10 +69,10 @@ export default function TournamentsSection() {
   };
 
   return (
-    <section id="tornei" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
-      <div className="space-y-8 sm:space-y-12">
-        <div className="text-center mb-8 sm:mb-12">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2 sm:mb-3">Competizioni</p>
+    <section id="tornei" className="max-w-7xl mx-auto px-6 sm:px-8 py-12 sm:py-16 md:py-20">
+      <div className="space-y-10 sm:space-y-12">
+        <div className="text-center mb-10 sm:mb-12">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-4">Competizioni</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
             Tornei e Campionati
           </h2>
@@ -160,12 +159,12 @@ export default function TournamentsSection() {
                       <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 text-cyan-300 group-hover:scale-110 transition-transform">
                         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
+                      <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
                         {typeLabel}
                       </span>
                     </div>
                     {t.status && (
-                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold ${
+                      <span className={`text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-1.5 rounded-full font-bold ${
                         t.status === 'Aperto' 
                           ? 'bg-green-500/20 text-green-400 border border-green-500/40'
                           : t.status === 'In Corso'

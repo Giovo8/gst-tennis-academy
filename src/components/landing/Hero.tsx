@@ -100,33 +100,33 @@ export default function Hero() {
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-4 py-6 sm:px-6 sm:py-10 lg:px-10 lg:py-12 shadow-2xl shadow-[var(--accent-strong)]/10">
+    <section className="max-w-7xl mx-auto px-6 sm:px-8 py-6 sm:py-10">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-[var(--accent-mid)]/5 via-transparent to-[var(--accent-strong)]/5 backdrop-blur-xl px-6 py-8 sm:px-8 sm:py-12 lg:px-12 lg:py-14 shadow-2xl shadow-[var(--accent-strong)]/10">
       {/* Animated background gradients */}
       <div className="pointer-events-none absolute left-16 top-10 h-40 w-40 rounded-full blur-3xl bg-[var(--accent-strong)]/20 animate-pulse" />
       <div className="pointer-events-none absolute right-12 bottom-10 h-32 w-32 rounded-full blur-3xl bg-[var(--accent-strong)]/15 animate-pulse" style={{animationDelay: '1s'}} />
       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full blur-3xl bg-[var(--accent-mid)]/10" />
 
-      <div className="relative grid gap-6 lg:gap-8 lg:grid-cols-2 lg:items-stretch">
-        <div className="flex flex-col space-y-4 sm:space-y-5">
-          <div className="inline-flex items-center gap-2 sm:gap-3 rounded-full border border-[var(--glass-border)] bg-accent-15 backdrop-blur-xl px-3 py-1.5 sm:px-5 sm:py-2.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-accent w-fit shadow-lg shadow-accent-strong/10 hover:shadow-accent-strong/20 transition-all duration-300">
+      <div className="relative grid gap-8 lg:gap-10 lg:grid-cols-2 lg:items-stretch">
+        <div className="flex flex-col space-y-6 sm:space-y-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-[var(--glass-border)] bg-accent-15 backdrop-blur-xl px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-accent w-fit shadow-lg shadow-accent-strong/10 hover:shadow-accent-strong/20 transition-all duration-300">
             <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-strong opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-mid"></span>
             </span>
             {content.badge_text}
           </div>
-          <div className="space-y-3 sm:space-y-4 flex-1">
+          <div className="space-y-4 sm:space-y-5 flex-1">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               <span className="text-white">{content.title.split(content.title_highlight)[0]}</span>
               <span className="gradient-text">{content.title_highlight}</span>
               <span className="text-white">{content.title.split(content.title_highlight)[1]}</span>
             </h1>
-            <p className="max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed text-gray-300">
+            <p className="max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed text-gray-300">
               {content.subtitle}
             </p>
           </div>
-          <div className="mt-auto grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="mt-auto grid grid-cols-3 gap-4 sm:gap-6">
             {[
               { value: content.stat1_value, label: content.stat1_label },
               { value: content.stat2_value, label: content.stat2_label },
@@ -134,12 +134,12 @@ export default function Hero() {
             ].map((stat, i) => (
               <div
                 key={stat.label}
-                className="group relative overflow-hidden rounded-xl sm:rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl px-2 py-3 sm:px-4 sm:py-4 text-center hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-xl sm:rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-mid/10 to-transparent backdrop-blur-xl px-3 py-4 sm:px-5 sm:py-5 text-center hover:border-[var(--glass-border)] hover:border-opacity-70 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--shadow-glow)] hover:-translate-y-1"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-accent-mid/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative">
-                  <div className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text">{stat.value}</div>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-400 mt-0.5 sm:mt-1">{stat.label}</p>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text leading-tight">{stat.value}</div>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-400 mt-1">{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -178,14 +178,14 @@ export default function Hero() {
               {/* Controlli carousel */}
               <button
                 onClick={prevImage}
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/60 backdrop-blur-sm p-2 sm:p-3 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100 hover:scale-110 border border-white/10"
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/60 backdrop-blur-sm p-2 sm:p-3 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100 hover:scale-110 border border-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Immagine precedente"
               >
                 <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/60 backdrop-blur-sm p-2 sm:p-3 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100 hover:scale-110 border border-white/10"
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/60 backdrop-blur-sm p-2 sm:p-3 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100 hover:scale-110 border border-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Immagine successiva"
               >
                 <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -197,7 +197,7 @@ export default function Hero() {
                   <button
                     key={idx}
                     onClick={() => setCurrentIndex(idx)}
-                    className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                    className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 py-4 ${
                       idx === currentIndex ? "w-6 sm:w-8 bg-gradient-to-r from-accent-mid to-accent-strong" : "w-1.5 sm:w-2 bg-white/40 hover:bg-white/60"
                     }`}
                     aria-label={`Vai all'immagine ${idx + 1}`}

@@ -50,18 +50,11 @@ export default function AnnouncementsPage() {
       const res = await fetch(`/api/announcements?${params}`, { headers });
       const data = await res.json();
       
-      console.log("API Response status:", res.status);
-      console.log("API Response data:", JSON.stringify(data, null, 2));
-      
       if (res.ok) {
         setAnnouncements(data.announcements || []);
-        console.log("Loaded announcements:", data.announcements?.length || 0);
-      } else {
-        console.error("Error response:", res.status, data);
-        console.error("Error details:", data.error, data.details, data.code);
       }
-    } catch (error) {
-      console.error("Error loading announcements:", error);
+    } catch {
+      // Errore nel caricamento annunci
     } finally {
       setLoading(false);
     }

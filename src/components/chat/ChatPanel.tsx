@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import NewConversationModal from "./NewConversationModal";
+import StatusDot from "./StatusDot";
+import TypingIndicator from "./TypingIndicator";
+import { useCurrentUserPresence, useTypingIndicator } from "@/lib/chat/presence";
 
 interface Profile {
   id: string;
@@ -62,6 +65,11 @@ export default function ChatPanel() {
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Presence and typing hooks
+  useCurrentUserPresence();
+  const { typingUsers, setTyping } = useTypingIndicator(selectedConversation);
 
   // Load current user
   useEffect(() => {
@@ -263,6 +271,13 @@ export default function ChatPanel() {
 
     try {
       setSending(true);
+      
+      // Stop typing indicator
+      setTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -300,6 +315,30 @@ export default function ChatPanel() {
       console.error("Error sending message:", error);
     } finally {
       setSending(false);
+    }
+  }
+
+  function handleInputChange(value: string) {
+    setMessageInput(value);
+    
+    // Set typing indicator
+    if (value.trim()) {
+      setTyping(true);
+      
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Stop typing after 3 seconds of no input
+      typingTimeoutRef.current = setTimeout(() => {
+        setTyping(false);
+      }, 3000);
+    } else {
+      setTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     }
   }
 
@@ -536,7 +575,14 @@ export default function ChatPanel() {
                     : ""
                 }`}
               >
-                {getConversationAvatar(conversation)}
+                <div className="relative">
+                  {getConversationAvatar(conversation)}
+                  {!conversation.is_group && conversation.participants[0] && (
+                    <div className="absolute -bottom-0.5 -right-0.5">
+                      <StatusDot userId={conversation.participants[0].id} size="sm" />
+                    </div>
+                  )}
+                </div>
                 
                 <div className="flex-1 min-w-0 text-left">
                   <div className="flex items-center justify-between mb-1">
@@ -580,15 +626,24 @@ export default function ChatPanel() {
               
               {currentConversation && (
                 <>
-                  {getConversationAvatar(currentConversation)}
+                  <div className="relative">
+                    {getConversationAvatar(currentConversation)}
+                    {!currentConversation.is_group && currentConversation.participants[0] && (
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <StatusDot userId={currentConversation.participants[0].id} size="sm" />
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">
                       {getConversationTitle(currentConversation)}
                     </h3>
-                    {!currentConversation.is_group && (
-                      <p className="text-xs text-gray-500">
-                        {currentConversation.participants[0]?.user_role || "Utente"}
-                      </p>
+                    {!currentConversation.is_group && currentConversation.participants[0] && (
+                      <StatusDot 
+                        userId={currentConversation.participants[0].id} 
+                        showLabel={true} 
+                        size="sm" 
+                      />
                     )}
                   </div>
                 </>
@@ -676,7 +731,7 @@ export default function ChatPanel() {
                       )}
                     </div>
 
-                    <div className={`flex items-center gap-1 mt-1 px-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex items-center gap-2 mt-2 px-2 ${isOwn ? "justify-end" : "justify-start"}`}>
                       <span className="text-xs text-gray-500">
                         {new Date(message.created_at).toLocaleTimeString("it-IT", {
                           hour: "2-digit",
@@ -691,6 +746,15 @@ export default function ChatPanel() {
                 </div>
               );
             })}
+            
+            {/* Typing Indicator */}
+            <TypingIndicator 
+              userNames={typingUsers
+                .filter(u => u.user_id !== currentUser?.id)
+                .map(u => u.full_name)
+              } 
+            />
+            
             <div ref={messagesEndRef} />
           </div>
 
@@ -720,7 +784,7 @@ export default function ChatPanel() {
               <div className="flex-1 relative">
                 <textarea
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();

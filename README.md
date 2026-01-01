@@ -1,11 +1,12 @@
 # GST Tennis Academy
 
-🎾 **Piattaforma completa per la gestione di un'accademia di tennis** con sistema di prenotazioni, tornei professionali, corsi, messaggistica e molto altro.
+🎾 **Piattaforma completa per la gestione di un'accademia di tennis** con sistema di prenotazioni, tornei professionali, corsi, video lezioni, messaggistica e molto altro.
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
+[![Tests](https://img.shields.io/badge/Tests-92%20passing-brightgreen)]()
 
 ---
 
@@ -82,6 +83,14 @@
 - Editor rich text
 - Gestione pubblicazione/bozze
 
+### 🎥 Video Lezioni
+
+- Assegnazione video personalizzati agli atleti
+- Supporto YouTube, Vimeo e video diretti
+- Tracciamento visualizzazioni
+- Dashboard admin per gestione video
+- Categorie: tecnica, tattica, match analysis
+
 ---
 
 ## 📖 Documentazione
@@ -117,23 +126,58 @@ npm install
 Crea `.env.local`:
 
 ```env
-# Supabase
+# ==========================================
+# SUPABASE (Obbligatorio)
+# ==========================================
+# URL del progetto Supabase (dalla dashboard)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+
+# Chiave anonima (pubblica, sicura da esporre)
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Chiave service role (PRIVATA - mai esporre!)
+# Usata solo server-side per operazioni admin
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Resend Email
+# ==========================================
+# RESEND EMAIL (Opzionale)
+# ==========================================
+# API Key per invio email transazionali
 RESEND_API_KEY=re_your_api_key
 
-# Site URL
+# Email mittente verificata su Resend
+EMAIL_FROM=noreply@yourdomain.com
+
+# ==========================================
+# SITE CONFIG
+# ==========================================
+# URL pubblico del sito
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Nome accademia (per email e SEO)
+NEXT_PUBLIC_ACADEMY_NAME=GST Tennis Academy
 ```
+
+> ⚠️ **IMPORTANTE**: Non usare mai `NEXT_PUBLIC_` per la service role key!
 
 ### 4. Setup Database
 
 1. Vai su [Supabase Dashboard](https://app.supabase.com)
 2. Crea nuovo progetto
-3. Esegui migrazioni in **SQL Editor** (vedi [DATABASE.md](docs/DATABASE.md))
+3. Vai su **SQL Editor**
+4. Esegui le migrazioni in ordine dalla cartella `supabase/migrations/`
+5. Verifica che le funzioni helper siano create (`get_my_role()`)
+
+```bash
+# Ordine consigliato migrazioni
+001_create_tournaments_and_participants.sql
+002_rls_policies_tournaments.sql
+... (tutte le migrazioni in ordine numerico)
+020_fix_rls_security.sql
+021_video_lessons.sql
+```
+
+Documentazione completa: [DATABASE.md](docs/DATABASE.md)
 
 ### 5. Avvia Development Server
 
@@ -157,7 +201,7 @@ WHERE email = 'your-email@example.com';
 ## 🛠 Tecnologie
 
 ### Frontend
-- **Next.js 14** - React framework con App Router
+- **Next.js 15** - React framework con App Router
 - **React 19** - UI library
 - **TypeScript 5** - Type safety
 - **Tailwind CSS 4** - Utility-first styling
@@ -247,18 +291,25 @@ npm run test:watch
 
 # Con coverage
 npm run test:coverage
+
+# Test specifici
+npx jest --testPathPatterns="auth|bookings|rls"
 ```
 
-**Test Coverage**:
-- ✅ Flussi completi tornei (3 tipi)
-- ✅ API endpoints
-- ✅ Sistema scoring tennis
-- ✅ Statistiche e report
-- ✅ Controllo accessi ruoli
+**Test Coverage** (92 test):
+- ✅ **Auth**: Verifica funzioni `isAdminOrGestore`, `canManageUsers`
+- ✅ **Bookings**: Validazione campi, regola 24h, overlap temporali, conflitti, batch
+- ✅ **RLS Policies**: Verifica permessi per tutti i ruoli (atleta, maestro, gestore, admin)
+- ✅ **Tornei**: Flussi completi (3 tipi di torneo)
+- ✅ **Scoring**: Sistema punteggi tennis autentici
 
 ### Test Manuali
 
-Consulta [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) per scenari di test dettagliati.
+Scenari critici da verificare:
+1. **Prenotazioni**: Nessun overlap su stesso campo
+2. **Tornei**: Bracket generation corretto
+3. **Ruoli**: Admin/Gestore possono tutto, Atleta limitato
+4. **Video**: Solo destinatari vedono propri video
 
 ---
 

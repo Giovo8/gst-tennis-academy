@@ -3,10 +3,15 @@
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Link from "next/link";
-import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target, Trophy, UserCircle, CreditCard, MessageSquare, Users, Newspaper, ListOrdered } from "lucide-react";
+import { Calendar, Clock, User, TrendingUp, AlertCircle, CheckCircle, XCircle, Award, Target, Trophy, UserCircle, CreditCard, MessageSquare, Users, Newspaper, ListOrdered, Plus, CalendarPlus } from "lucide-react";
 import DashboardLinkCard from "@/components/dashboard/DashboardLinkCard";
 import StatCard from "@/components/dashboard/StatCard";
 import AnnouncementsWidget from "@/components/dashboard/AnnouncementsWidget";
+import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import UpcomingEvents from "@/components/dashboard/UpcomingEvents";
+import QuickStats from "@/components/dashboard/QuickStats";
+import QuickActions from "@/components/dashboard/QuickActions";
+import ProgressTracker from "@/components/dashboard/ProgressTracker";
 import { supabase } from "@/lib/supabase/client";
 
 type Booking = {
@@ -28,6 +33,10 @@ type Stats = {
   upcomingBookings: number;
   pendingLessons: number;
   completedBookings: number;
+  creditsAvailable: number;
+  weeklyCredits: number;
+  tournamentsCount: number;
+  activeCourses: number;
 };
 
 type Tournament = {
@@ -50,6 +59,10 @@ export default function AthleteDashboardPage() {
     upcomingBookings: 0,
     pendingLessons: 0,
     completedBookings: 0,
+    creditsAvailable: 0,
+    weeklyCredits: 0,
+    tournamentsCount: 0,
+    activeCourses: 0,
   });
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>("");
@@ -60,8 +73,12 @@ export default function AthleteDashboardPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
 
       // Load profile
       const { data: profile } = await supabase
@@ -72,6 +89,26 @@ export default function AthleteDashboardPage() {
       
       if (profile?.full_name) setUserName(profile.full_name);
       if (profile?.subscription_type) setSubscriptionType(profile.subscription_type);
+
+      // Load stats from new API
+      try {
+        const statsResponse = await fetch(`/api/stats/athlete?user_id=${user.id}`);
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats({
+            totalBookings: statsData.totalBookings || 0,
+            upcomingBookings: statsData.upcomingBookings || 0,
+            pendingLessons: 0, // Can be calculated if needed
+            completedBookings: statsData.allTimeBookings || 0,
+            creditsAvailable: statsData.credits?.available || 0,
+            weeklyCredits: statsData.credits?.weekly || 0,
+            tournamentsCount: statsData.tournamentsCount || 0,
+            activeCourses: statsData.activeCourses || 0,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading stats:", error);
+      }
 
       const now = new Date().toISOString();
 
@@ -146,10 +183,18 @@ export default function AthleteDashboardPage() {
           upcomingBookings: upcoming,
           pendingLessons: pending,
           completedBookings: completed,
+          creditsAvailable: 0, // TODO: implement credits system
+          weeklyCredits: 0, // TODO: implement credits system
+          tournamentsCount: 0, // TODO: implement tournaments count
+          activeCourses: 0, // TODO: implement courses count
         });
       }
 
-      setLoading(false);
+      } catch (error) {
+        console.error("Error loading athlete dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadData();
@@ -178,11 +223,16 @@ export default function AthleteDashboardPage() {
       const participationMap = new Map(participations?.map(p => [p.tournament_id, p.id]) || []);
 
       // Carica tornei a cui è iscritto
-      const { data: enrolledTournaments } = await supabase
-        .from("tournaments")
-        .select("*")
-        .in("id", Array.from(participationMap.keys()))
-        .order("start_date", { ascending: true });
+      let enrolledTournaments: Tournament[] | null = [];
+      const participationIds = Array.from(participationMap.keys());
+      if (participationIds.length > 0) {
+        const { data } = await supabase
+          .from("tournaments")
+          .select("*")
+          .in("id", participationIds)
+          .order("start_date", { ascending: true });
+        enrolledTournaments = data as Tournament[] | null;
+      }
 
       // Conta i partecipanti per ogni torneo
       const allTournamentIds = [
@@ -242,7 +292,7 @@ export default function AthleteDashboardPage() {
   }
 
   function getStatusBadge(booking: Booking) {
-    if (booking.status === "cancelled" || booking.status.includes("rejected")) {
+    if (booking.status === "cancelled" || booking.status?.includes("rejected")) {
       return <span className="text-xs bg-cyan-500/15 text-cyan-300 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1">
         <XCircle className="h-3 w-3" />
         Annullata
@@ -370,21 +420,81 @@ export default function AthleteDashboardPage() {
       <div className="min-h-screen bg-[#021627] text-white">
         <main className="mx-auto flex max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10">
           {/* Header */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-2">Dashboard Atleta</p>
+          <div className="space-y-2 sm:space-y-3">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-muted-2">Dashboard Atleta</p>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
               Benvenuto, {userName || "Atleta"}!
             </h1>
-            <p className="text-xs sm:text-sm text-muted">Gestisci le tue prenotazioni e monitora i tuoi allenamenti</p>
+            <p className="text-sm sm:text-base text-muted">Gestisci le tue prenotazioni e monitora i tuoi allenamenti</p>
           </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Prossime" value={stats.upcomingBookings} icon={<Calendar className="h-8 w-8 text-sky-300" />} color="sky" />
-          <StatCard title="In attesa" value={stats.pendingLessons} icon={<Clock className="h-8 w-8 text-orange-300" />} color="orange" />
-          <StatCard title="Completate" value={stats.completedBookings} icon={<Award className="h-8 w-8 text-lime-300" />} color="lime" />
-          <StatCard title="Totali" value={stats.totalBookings} icon={<Target className="h-8 w-8 text-violet-300" />} color="violet" />
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-5">
+          <StatCard 
+            title="Crediti" 
+            value={`${stats.creditsAvailable}/${stats.weeklyCredits}`} 
+            icon={<CreditCard className="h-8 w-8 text-cyan-300" />} 
+            color="sky" 
+          />
+          <StatCard 
+            title="Prossime" 
+            value={stats.upcomingBookings} 
+            icon={<Calendar className="h-8 w-8 text-sky-300" />} 
+            color="sky" 
+          />
+          <StatCard 
+            title="Tornei" 
+            value={stats.tournamentsCount} 
+            icon={<Trophy className="h-8 w-8 text-orange-300" />} 
+            color="orange" 
+          />
+          <StatCard 
+            title="Corsi Attivi" 
+            value={stats.activeCourses} 
+            icon={<Users className="h-8 w-8 text-lime-300" />} 
+            color="lime" 
+          />
+          <StatCard 
+            title="Completate" 
+            value={stats.completedBookings} 
+            icon={<Award className="h-8 w-8 text-violet-300" />} 
+            color="violet" 
+          />
         </div>
+
+        {/* Quick Actions */}
+        <QuickActions
+          actions={[
+            {
+              label: "Nuova Prenotazione",
+              description: "Prenota un campo",
+              icon: <CalendarPlus className="h-5 w-5" />,
+              href: "/bookings",
+              color: "blue",
+            },
+            {
+              label: "Iscriviti a Torneo",
+              description: "Partecipa ai tornei",
+              icon: <Trophy className="h-5 w-5" />,
+              href: "/dashboard/atleta/tornei",
+              color: "yellow",
+            },
+            {
+              label: "Chat con Staff",
+              description: "Contatta i maestri",
+              icon: <MessageSquare className="h-5 w-5" />,
+              href: "/chat",
+              color: "green",
+            },
+            {
+              label: "I Miei Corsi",
+              description: "Visualizza corsi attivi",
+              icon: <Users className="h-5 w-5" />,
+              href: "/courses",
+              color: "purple",
+            },
+          ]}
+        />
 
         {/* Announcements Widget */}
         <AnnouncementsWidget />
@@ -428,7 +538,7 @@ export default function AthleteDashboardPage() {
                         )}
                       </div>
                       <p className="font-semibold text-white text-base sm:text-lg">{booking.court}</p>
-                      <p className="text-xs sm:text-sm text-muted mt-1 flex items-center gap-1">
+                      <p className="text-xs sm:text-sm text-muted mt-2 flex items-center gap-2">
                         <Clock className="h-3 w-3" />
                         {formatDateTime(booking.start_time)}
                       </p>

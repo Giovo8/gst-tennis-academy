@@ -345,7 +345,7 @@ export default function AdminSubscriptionsPage() {
                       <span className="text-2xl font-bold text-accent">€{subscription.price}</span>
                       <span className="text-sm text-muted">{subscription.billing}</span>
                     </div>
-                    <ul className="text-sm text-muted space-y-1">
+                    <ul className="text-sm text-muted space-y-2">
                       {subscription.benefits.map((benefit, index) => (
                         <li key={index} className="flex items-start gap-2">
                           <span className="text-accent">•</span>

@@ -1,19 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { getDestinationForRole, type UserRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabase/client";
 
 export default function LoginClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get redirect parameter from URL
+    const redirect = searchParams.get("redirect");
+    if (redirect) {
+      setRedirectPath(decodeURIComponent(redirect));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,8 +66,8 @@ export default function LoginClient() {
         throw new Error("Profilo non configurato. Contatta l'amministratore.");
       }
 
-      // 3. Reindirizza in base al ruolo
-      const destination = getDestinationForRole(profile.role as UserRole);
+      // 3. Reindirizza alla pagina richiesta o alla dashboard del ruolo
+      const destination = redirectPath || getDestinationForRole(profile.role as UserRole);
       router.push(destination);
       
     } catch (err) {
@@ -78,11 +88,11 @@ export default function LoginClient() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo and Title */}
         <div className="text-center mb-6 sm:mb-8">
-          <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center justify-center gap-2.5 mb-4 sm:mb-6">
             <img src="/images/logo-tennis.png" alt="GST Tennis Academy" className="h-12 w-12 sm:h-16 sm:w-16" />
-            <div className="text-left flex flex-col gap-0.5">
-              <h1 className="text-xl sm:text-2xl font-bold gradient-text leading-none m-0">GST Tennis Academy</h1>
-              <p className="text-xs sm:text-sm text-muted-2 leading-none m-0">Area Riservata</p>
+            <div className="text-left flex flex-col">
+              <h1 className="text-xl sm:text-2xl font-bold gradient-text leading-none mb-0.5">GST Tennis Academy</h1>
+              <p className="text-xs sm:text-sm text-muted-2 leading-none">Area Riservata</p>
             </div>
           </div>
         </div>
@@ -93,6 +103,15 @@ export default function LoginClient() {
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Benvenuto</h2>
             <p className="text-sm sm:text-base text-muted">Accedi al tuo account</p>
           </div>
+
+          {/* Redirect Info Message */}
+          {redirectPath && (
+            <div className="mb-4 sm:mb-6 rounded-lg sm:rounded-xl bg-cyan-500/10 border-2 border-cyan-500/30 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-cyan-300 font-medium">
+                🔒 Accedi per continuare alla pagina richiesta
+              </p>
+            </div>
+          )}
 
           <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
             {/* Email Field */}

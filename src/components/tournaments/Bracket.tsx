@@ -130,7 +130,7 @@ export default function Bracket({
               <div key={roundIndex} className="min-w-[160px] md:min-w-[200px]">
                 <div className="mb-3 md:mb-4 sticky top-0 bg-[#031226]/95 backdrop-blur py-2 z-10">
                   <h4 className="text-xs md:text-sm font-semibold text-white">{roundName}</h4>
-                  <p className="text-[10px] md:text-xs text-muted-2">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>
+                  <p className="text-xs md:text-sm text-muted-2">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>
                 </div>
                 
                 <div className="space-y-3 md:space-y-4">
@@ -170,7 +170,7 @@ export default function Bracket({
                           
                           {/* VS divider */}
                           <div className="text-center">
-                            <span className="text-[10px] md:text-xs text-muted-2 uppercase tracking-wider">vs</span>
+                            <span className="text-xs md:text-sm text-muted-2 uppercase tracking-wider">vs</span>
                           </div>
                           
                           {/* Player 2 */}

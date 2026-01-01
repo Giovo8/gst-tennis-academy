@@ -117,7 +117,7 @@ export default function AthleteStatsView() {
           icon={<Target className="h-8 w-8 text-emerald-300" />}
           color="green"
           footer={
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               <p className="text-sm text-gray-400">
                 {stats.current_win_streak > 0 ? `${stats.current_win_streak} consecutive` : "In crescita"}

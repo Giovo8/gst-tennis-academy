@@ -48,11 +48,11 @@ export default function TorneiPage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 min-h-screen">
-      <div className="space-y-1 mb-4 sm:mb-5">
-        <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#9fb6a6]">Tornei</p>
+    <main className="mx-auto max-w-7xl px-6 sm:px-8 py-6 sm:py-10 min-h-screen">
+      <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-6">
+        <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-[#9fb6a6]">Tornei</p>
         <h1 className="text-2xl sm:text-3xl font-semibold text-white">Tornei in arrivo</h1>
-        <p className="text-xs sm:text-sm text-[#c6d8c9]">Iscriviti ai tornei organizzati dall'Academy.</p>
+        <p className="text-sm sm:text-base text-[#c6d8c9]">Iscriviti ai tornei organizzati dall'Academy.</p>
       </div>
 
       <div className="mt-5 sm:mt-6 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

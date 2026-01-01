@@ -73,10 +73,10 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
-      <div className="space-y-8 sm:space-y-12">
-        <div className="text-center mb-8 sm:mb-12">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2 sm:mb-3 text-center">
+    <section id="staff" className="max-w-7xl mx-auto px-6 sm:px-8 py-12 sm:py-16 md:py-20">
+      <div className="space-y-10 sm:space-y-12">
+        <div className="text-center mb-10 sm:mb-12">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-4 text-center">
             Il nostro staff
           </p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
@@ -88,7 +88,7 @@ export default function StaffSection() {
 
         </div>
 
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {staff.map((member) => (
           <article key={member.id} className="group rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300">
             {member.image_url ? (
@@ -102,15 +102,15 @@ export default function StaffSection() {
                 <User className="h-16 w-16 sm:h-20 sm:w-20 text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
               </div>
             )}
-            <div className="p-4 sm:p-5 md:p-6 space-y-2 sm:space-y-3">
+            <div className="p-5 sm:p-6 md:p-7 space-y-3 sm:space-y-4">
               <div>
                 <h3 className="text-lg sm:text-xl font-bold gradient-text">{member.full_name}</h3>
-                <span className="inline-block mt-1.5 sm:mt-2 rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold text-cyan-300">
+                <span className="inline-block mt-2 sm:mt-2.5 rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold text-cyan-300">
                   {member.role}
                 </span>
               </div>
               {member.bio && (
-                <p className="text-xs sm:text-sm leading-relaxed text-gray-300">
+                <p className="text-sm sm:text-base leading-relaxed text-gray-300">
                   {member.bio}
                 </p>
               )}

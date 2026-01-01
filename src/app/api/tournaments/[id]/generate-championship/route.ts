@@ -91,14 +91,7 @@ export async function POST(
       .select('id, user_id, status')
       .eq('tournament_id', tournamentId);
 
-    console.log('Participants query result:', { 
-      participantsError, 
-      participantsCount: participants?.length,
-      participants: participants?.map(p => ({ id: p.id, user_id: p.user_id, status: (p as any).status }))
-    });
-
     if (participantsError) {
-      console.error('Error fetching participants:', participantsError);
       return NextResponse.json(
         { error: `Errore nel recuperare i partecipanti: ${participantsError.message}` },
         { status: 500 }

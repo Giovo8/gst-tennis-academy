@@ -103,7 +103,7 @@ export default function NewsSection() {
       <section id="news" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
         <div className="space-y-8 sm:space-y-12">
           <div className="text-center mb-8 sm:mb-12">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-accent mb-2 sm:mb-3 text-center">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-3 sm:mb-4 text-center">
               Ultime News
             </p>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
@@ -132,10 +132,10 @@ export default function NewsSection() {
               )}
               <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2 sm:gap-3 flex-1">
                 <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
-                  <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
+                  <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
                     {item.category}
                   </span>
-                  <p className="text-[10px] sm:text-xs text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-400">
                   {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                     day: "numeric",
                     month: "long",
@@ -144,7 +144,7 @@ export default function NewsSection() {
                 </p>
               </div>
               <h3 className="text-base sm:text-lg font-bold gradient-text">{item.title}</h3>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-300">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-300">
                 {item.excerpt || item.content.substring(0, 150) + '...'}
               </p>
             </div>
@@ -157,13 +157,14 @@ export default function NewsSection() {
     {/* News Modal */}
     {selectedNews && (
       <div 
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pt-safe pb-safe px-safe"
         onClick={() => setSelectedNews(null)}
       >
         {/* Close Button - Outside */}
         <button
           onClick={() => setSelectedNews(null)}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-8 md:right-8 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-red-500 hover:scale-110 backdrop-blur-sm border border-white/20 z-10"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-8 md:right-8 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-red-500 hover:scale-110 backdrop-blur-sm border border-white/20 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          aria-label="Chiudi"
         >
           <X className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
@@ -215,7 +216,7 @@ export default function NewsSection() {
           )}
 
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
-            <span className="rounded-full bg-accent-20 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-accent border border-[var(--glass-border)]">
+            <span className="rounded-full bg-accent-20 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-accent border border-[var(--glass-border)]">
               {selectedNews.category}
             </span>
             <p className="text-[10px] sm:text-xs text-gray-400">

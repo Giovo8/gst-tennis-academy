@@ -326,7 +326,7 @@ export default function UsersPage() {
                         <User className="h-6 w-6 text-accent" />
                       )}
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-1 min-w-0 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 text-sm">
                       <span className="font-semibold text-white truncate">{user.full_name || "N/A"}</span>
                       <span className="hidden sm:inline text-muted-2">|</span>
                       <span className="text-muted text-xs sm:text-sm truncate">{user.email}</span>
@@ -390,7 +390,7 @@ export default function UsersPage() {
 
         {/* View User Details Modal - Scheda Anagrafica */}
         {viewingUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto pt-safe pb-safe px-safe">
             <div className="w-full max-w-4xl rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-4 sm:p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
@@ -627,7 +627,7 @@ export default function UsersPage() {
 
         {/* Edit User Modal */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm pt-safe pb-safe px-safe">
             <div className="w-full max-w-lg rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-8 shadow-2xl">
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30">
@@ -717,7 +717,7 @@ export default function UsersPage() {
 
         {/* Create User Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm pt-safe pb-safe px-safe">
             <div className="w-full max-w-lg rounded-2xl border border-[#2f7de1]/30 bg-[#0d1f35]/98 p-8 shadow-2xl">
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 ring-2 ring-accent/30">

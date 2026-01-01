@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getDestinationForRole, type UserRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabase/client";
-import { User, CreditCard, LogOut, Shield } from "lucide-react";
+import { User, CreditCard, LogOut, Shield, Mail, Bell } from "lucide-react";
 
 type ProfileData = {
   full_name: string | null;
   email: string;
   role: UserRole;
   subscription_type: string | null;
+  email_notifications_enabled?: boolean;
 };
 
 export default function ProfilePage() {
@@ -19,6 +20,7 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [subscriptionType, setSubscriptionType] = useState("");
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function ProfilePage() {
 
       const { data, error: profileError } = await supabase
         .from("profiles")
-        .select("full_name, email, role, subscription_type")
+        .select("full_name, email, role, subscription_type, email_notifications_enabled")
         .eq("id", user.id)
         .single();
 
@@ -53,6 +55,7 @@ export default function ProfilePage() {
       setProfile(data as ProfileData);
       setFullName(data.full_name ?? "");
       setSubscriptionType(data.subscription_type ?? "");
+      setEmailNotificationsEnabled(data.email_notifications_enabled ?? true);
       setLoading(false);
     };
 
@@ -73,6 +76,7 @@ export default function ProfilePage() {
       .update({
         full_name: fullName,
         subscription_type: subscriptionType,
+        email_notifications_enabled: emailNotificationsEnabled,
       })
       .eq("id", userId ?? "");
 
@@ -152,6 +156,41 @@ export default function ProfilePage() {
                   placeholder="Es. Mensile, Annuale, Clinic Pack"
                 />
               </label>
+            </div>
+
+            {/* Notification Preferences */}
+            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-cyan-500/10 p-2">
+                  <Bell className="h-5 w-5 text-cyan-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-white mb-1">Preferenze Notifiche</h3>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Gestisci come vuoi ricevere le notifiche importanti
+                  </p>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={emailNotificationsEnabled}
+                        onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-cyan-400" />
+                        <span className="text-sm font-medium text-white">Notifiche Email</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Ricevi email per prenotazioni, tornei e messaggi importanti
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3">

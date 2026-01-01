@@ -249,8 +249,6 @@ export async function POST(
             { status: 500 }
           );
         }
-        
-        console.log(`Successfully inserted ${allMatches.length} matches`);
       }
       
       // PASSO 4: Aggiorna fase a gironi

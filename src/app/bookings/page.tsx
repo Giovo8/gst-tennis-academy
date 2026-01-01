@@ -247,7 +247,7 @@ export default function BookingsPage() {
   return (
     <AuthGuard>
       <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10 bg-[#021627] text-white">
-        <div className="space-y-1.5 sm:space-y-2">
+        <div className="space-y-2 sm:space-y-3">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Sistema di Prenotazione
@@ -383,7 +383,7 @@ export default function BookingsPage() {
                                 : "Lezione di Gruppo"}
                             </span>
                           </div>
-                          <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm">
+                          <div className="space-y-2 sm:space-y-2.5 text-sm sm:text-base">
                             <p className="text-white">
                               <Clock className="inline h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-accent" />
                               <strong>Orario:</strong>{" "}

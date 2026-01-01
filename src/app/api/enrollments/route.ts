@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 
 export async function GET(req: Request) {
   try {
@@ -24,18 +25,35 @@ export async function GET(req: Request) {
     const { data, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ enrollments: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Errore sconosciuto";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
+    // ✅ SECURITY FIX: Verifica autenticazione
+    const authResult = await verifyAuth(req);
+    if (!authResult.success) {
+      return authResult.response;
+    }
+
+    const { user, profile } = authResult.data;
     const body = await req.json();
     const { user_id, course_id } = body;
 
     if (!user_id || !course_id) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // ✅ SECURITY FIX: L'utente può iscrivere solo sé stesso, admin/gestore chiunque
+    const canEnrollOthers = isAdminOrGestore(profile?.role);
+    if (user_id !== user.id && !canEnrollOthers) {
+      return NextResponse.json(
+        { error: "Non autorizzato a iscrivere altri utenti" },
+        { status: 403 }
+      );
     }
 
     // Check if course has available spots
@@ -56,7 +74,7 @@ export async function POST(req: Request) {
     // Create enrollment
     const { data, error } = await supabaseServer
       .from("enrollments")
-      .insert([body])
+      .insert([{ user_id, course_id, status: body.status || "pending", payment_status: body.payment_status || "pending" }])
       .select();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -68,8 +86,9 @@ export async function POST(req: Request) {
       .eq("id", course_id);
 
     return NextResponse.json({ enrollment: data?.[0] }, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Errore sconosciuto";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -78,6 +97,30 @@ export async function PUT(req: Request) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    // ✅ SECURITY FIX: Verifica autenticazione
+    const authResult = await verifyAuth(req);
+    if (!authResult.success) {
+      return authResult.response;
+    }
+
+    const { user, profile } = authResult.data;
+
+    // Verifica che l'enrollment appartenga all'utente o sia admin
+    const { data: enrollment } = await supabaseServer
+      .from("enrollments")
+      .select("user_id")
+      .eq("id", id)
+      .single();
+
+    if (!enrollment) {
+      return NextResponse.json({ error: "Enrollment non trovato" }, { status: 404 });
+    }
+
+    const canEdit = enrollment.user_id === user.id || isAdminOrGestore(profile?.role);
+    if (!canEdit) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
+    }
 
     const body = await req.json();
     const { data, error } = await supabaseServer
@@ -88,8 +131,9 @@ export async function PUT(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ enrollment: data?.[0] });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Errore sconosciuto";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -99,14 +143,27 @@ export async function DELETE(req: Request) {
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    // Get enrollment to update course participants
+    // ✅ SECURITY FIX: Verifica autenticazione
+    const authResult = await verifyAuth(req);
+    if (!authResult.success) {
+      return authResult.response;
+    }
+
+    const { user, profile } = authResult.data;
+
+    // Get enrollment to verify ownership and update course participants
     const { data: enrollment, error: enrollError } = await supabaseServer
       .from("enrollments")
-      .select("course_id")
+      .select("course_id, user_id")
       .eq("id", id)
       .single();
 
     if (enrollError) return NextResponse.json({ error: enrollError.message }, { status: 404 });
+
+    const canDelete = enrollment.user_id === user.id || isAdminOrGestore(profile?.role);
+    if (!canDelete) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
+    }
 
     // Delete enrollment
     const { error } = await supabaseServer.from("enrollments").delete().eq("id", id);
@@ -127,7 +184,8 @@ export async function DELETE(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Errore sconosciuto";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

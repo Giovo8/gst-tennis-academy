@@ -352,13 +352,11 @@ async function advanceWinnerToNextRound(
       .maybeSingle();
     
     if (findError) {
-      console.error("Error finding next match:", findError);
       return;
     }
     
     if (!nextMatch) {
       // Non c'è un turno successivo (finale completata)
-      console.log("Tournament completed - no next round");
       return;
     }
     
@@ -367,7 +365,7 @@ async function advanceWinnerToNextRound(
     // Match pari del round corrente -> player2 del prossimo
     const isPlayer1 = currentMatchNumber % 2 === 1;
     
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (isPlayer1) {
       updateData.player1_id = winnerId;
     } else {
@@ -388,17 +386,11 @@ async function advanceWinnerToNextRound(
     }
     
     // Aggiorna il match successivo
-    const { error: updateError } = await supabase
+    await supabase
       .from("tournament_matches")
       .update(updateData)
       .eq("id", nextMatch.id);
-    
-    if (updateError) {
-      console.error("Error updating next match:", updateError);
-    } else {
-      console.log(`Winner ${winnerId} advanced to round ${nextRound}, match ${nextMatchNumber}`);
-    }
-  } catch (error) {
-    console.error("Error in advanceWinnerToNextRound:", error);
+  } catch {
+    // Errore silenzioso - non blocca il flusso principale
   }
 }

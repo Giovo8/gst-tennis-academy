@@ -137,10 +137,9 @@ async function retryFailedEmails() {
       }
     }
 
-    console.log(`Retry complete: ${successCount} successful, ${failCount} failed`);
     return { success: true, retried: successCount, failed: failCount };
-  } catch (error: any) {
-    console.error("Error in retryFailedEmails:", error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Errore sconosciuto";
+    return { success: false, error: message };
   }
 }

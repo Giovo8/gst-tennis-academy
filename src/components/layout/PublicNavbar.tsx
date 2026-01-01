@@ -70,9 +70,17 @@ export default function PublicNavbar() {
     return "/dashboard";
   };
 
+  // Handle protected links - redirect to login with return URL
+  const handleProtectedLink = (targetPath: string) => (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      window.location.href = `/login?redirect=${encodeURIComponent(targetPath)}`;
+    }
+  };
+
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py-3 md:py-4">
+      <div className="container py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-2 md:gap-3">
@@ -93,7 +101,7 @@ export default function PublicNavbar() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Instagram"
             >
               <Instagram className="h-4 w-4" />
@@ -102,7 +110,7 @@ export default function PublicNavbar() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Facebook"
             >
               <Facebook className="h-4 w-4" />
@@ -111,7 +119,7 @@ export default function PublicNavbar() {
               href="#youtube"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="YouTube"
             >
               <Youtube className="h-4 w-4" />
@@ -120,7 +128,7 @@ export default function PublicNavbar() {
               href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="WhatsApp"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -167,7 +175,7 @@ export default function PublicNavbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-white/15 p-2 text-white transition hover:bg-white/5"
+            className="lg:hidden rounded-lg border border-white/15 p-2 text-white transition hover:bg-white/5 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -176,16 +184,16 @@ export default function PublicNavbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-white/10 pt-3 mt-3 space-y-2 pb-3">
+          <div className="lg:hidden border-t border-white/10 pt-4 mt-4 space-y-3 pb-4 pb-safe-bottom">
             {/* Mobile Social & CTA */}
-            <div className="pt-3 space-y-2.5 border-t border-white/10">
+            <div className="pt-3 space-y-3 border-t border-white/10">
               {/* Social Icons */}
-              <div className="flex items-center justify-center gap-2 pb-1.5">
+              <div className="flex items-center justify-center gap-2 pb-2">
                 <a
                   href="https://instagram.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="Instagram"
                 >
                   <Instagram className="h-5 w-5" />
@@ -194,7 +202,7 @@ export default function PublicNavbar() {
                   href="https://facebook.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="Facebook"
                 >
                   <Facebook className="h-5 w-5" />
@@ -203,7 +211,7 @@ export default function PublicNavbar() {
                   href="#youtube"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="YouTube"
                 >
                   <Youtube className="h-5 w-5" />
@@ -212,7 +220,7 @@ export default function PublicNavbar() {
                   href="https://wa.me/393762351777"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                  className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="WhatsApp"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">

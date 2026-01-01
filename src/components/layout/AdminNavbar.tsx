@@ -14,7 +14,6 @@ import {
   MessageSquare, 
   Mail,
   ChevronDown,
-  Bell,
   LogOut,
   Shield,
   Image as ImageIcon,
@@ -26,22 +25,30 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 interface AdminNavbarProps {
   userName?: string;
   userAvatar?: string;
-  notificationsCount?: number;
 }
 
 export default function AdminNavbar({ 
   userName = "Admin", 
-  userAvatar,
-  notificationsCount = 0 
+  userAvatar
 }: AdminNavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function getUserId() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    }
+    getUserId();
+  }, []);
 
   const menuSections = [
     {
@@ -132,7 +139,7 @@ export default function AdminNavbar({
 
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py-4">
+      <div className="container py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/dashboard/admin" aria-label="Dashboard Admin" className="flex items-center gap-3">
@@ -207,18 +214,7 @@ export default function AdminNavbar({
             </div>
 
             {/* Notifications */}
-            <Link 
-              href="/dashboard/admin?tab=notifiche" 
-              className="relative rounded-lg border border-white/15 p-2 text-white transition hover:bg-white/5"
-              aria-label="Notifiche"
-            >
-              <Bell className="h-5 w-5" />
-              {notificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold text-[#031226]">
-                  {notificationsCount > 9 ? "9+" : notificationsCount}
-                </span>
-              )}
-            </Link>
+            {userId && <NotificationBell userId={userId} />}
 
             {/* User Avatar */}
             <Link 
@@ -254,7 +250,7 @@ export default function AdminNavbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-blue-500/30 p-2 text-white transition hover:bg-blue-500/10"
+            className="lg:hidden rounded-lg border border-blue-500/30 p-2 text-white transition hover:bg-blue-500/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -263,7 +259,7 @@ export default function AdminNavbar({
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-blue-500/10 pt-4 mt-4 space-y-2 pb-4">
+          <div className="lg:hidden border-t border-blue-500/10 pt-4 mt-4 space-y-2 pb-4 pb-safe-bottom">
             {/* User Info Mobile */}
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-500/5 border border-blue-500/20 mb-4">
               {userAvatar ? (
@@ -299,7 +295,7 @@ export default function AdminNavbar({
               
               if (section.items) {
                 return (
-                  <div key={section.id} className="space-y-1">
+                  <div key={section.id} className="space-y-2">
                     <div className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                       {section.label}
                     </div>

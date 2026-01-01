@@ -228,7 +228,7 @@ export default function AnnouncementsBoard() {
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span>{formatDate(announcement.created_at)}</span>
                         {announcement.days_until_expiry !== null && announcement.days_until_expiry <= 7 && (
-                          <span className="flex items-center gap-1 text-blue-400">
+                          <span className="flex items-center gap-2 text-blue-400">
                             <Clock className="w-3 h-3" />
                             {announcement.days_until_expiry === 0
                               ? "Scade oggi"

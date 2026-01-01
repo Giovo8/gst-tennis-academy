@@ -317,20 +317,20 @@ export default function TournamentDetail() {
           {/* Date Card */}
           {tournament.start_date && (
             <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
-              <div className="flex items-start gap-3 sm:gap-4">
+              <div className="flex items-start gap-3">
                 <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
                   <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Inizio</p>
-                  <p className="text-white text-sm sm:text-base font-semibold">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Inizio</p>
+                  <p className="text-white text-base sm:text-lg font-semibold leading-tight">
                     {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
                       day: 'numeric', 
                       month: 'long', 
                       year: 'numeric'
                     })}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {new Date(tournament.start_date).toLocaleTimeString('it-IT', { 
                       hour: '2-digit',
                       minute: '2-digit'
@@ -343,19 +343,19 @@ export default function TournamentDetail() {
 
           {/* Participants Card */}
           <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
-            <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex items-start gap-3">
               <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
                 <Users className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Partecipanti</p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Partecipanti</p>
+                <p className="text-lg sm:text-xl font-bold text-white leading-tight">
                   {currentParticipants}<span className="text-gray-400">/{tournament.max_participants}</span>
                 </p>
                 {spotsLeft > 0 ? (
-                  <p className="text-xs sm:text-sm text-emerald-400 mt-1">{spotsLeft} posti disponibili</p>
+                  <p className="text-xs text-emerald-400 mt-0.5">{spotsLeft} posti disponibili</p>
                 ) : (
-                  <p className="text-xs sm:text-sm text-red-400 mt-1">Tutto esaurito</p>
+                  <p className="text-xs text-red-400 mt-0.5">Tutto esaurito</p>
                 )}
               </div>
             </div>
@@ -364,16 +364,16 @@ export default function TournamentDetail() {
           {/* Format Card */}
           {tournament.best_of && (
             <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
-              <div className="flex items-start gap-3 sm:gap-4">
+              <div className="flex items-start gap-3">
                 <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
                   <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Formato Match</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Formato Match</p>
+                  <p className="text-lg sm:text-xl font-bold text-white leading-tight">
                     Best of {tournament.best_of}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {tournament.best_of === 3 ? 'Al meglio di 3 set' : tournament.best_of === 5 ? 'Al meglio di 5 set' : 'Set personalizzati'}
                   </p>
                 </div>

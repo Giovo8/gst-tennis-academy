@@ -51,7 +51,7 @@ export default function Navbar() {
 
   return (
     <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py-4">
+      <div className="container py-3">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
@@ -72,7 +72,7 @@ export default function Navbar() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Instagram"
             >
               <Instagram className="h-4 w-4" />
@@ -81,7 +81,7 @@ export default function Navbar() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Facebook"
             >
               <Facebook className="h-4 w-4" />
@@ -90,7 +90,7 @@ export default function Navbar() {
               href="#youtube"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="YouTube"
             >
               <Youtube className="h-4 w-4" />
@@ -99,7 +99,7 @@ export default function Navbar() {
               href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+              className="rounded-full border border-white/10 p-2 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="WhatsApp"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -149,14 +149,14 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden border-t border-blue-400/20 py-4 space-y-3 animate-in slide-in-from-top duration-300">
+          <div className="md:hidden border-t border-blue-400/20 py-4 space-y-3 pb-safe-bottom animate-in slide-in-from-top duration-300">
             {/* Social Icons */}
             <div className="flex items-center justify-center gap-3 pb-2">
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
@@ -165,7 +165,7 @@ export default function Navbar() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
@@ -174,7 +174,7 @@ export default function Navbar() {
                 href="#youtube"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="YouTube"
               >
                 <Youtube className="h-5 w-5" />
@@ -183,7 +183,7 @@ export default function Navbar() {
                 href="https://wa.me/393762351777"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent"
+                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="WhatsApp"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">

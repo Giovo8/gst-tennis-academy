@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Search, UserPlus, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import StatusDot from "./StatusDot";
 
 interface Profile {
   id: string;
@@ -134,7 +135,7 @@ export default function NewConversationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 pt-safe pb-safe px-safe">
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
@@ -233,22 +234,30 @@ export default function NewConversationModal({
                       : "hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent"
                   }`}
                 >
-                  {user.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={user.full_name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold">
-                      {user.full_name.charAt(0)}
+                  <div className="relative">
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold">
+                        {user.full_name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="absolute -bottom-0.5 -right-0.5">
+                      <StatusDot userId={user.id} size="sm" />
                     </div>
-                  )}
+                  </div>
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-gray-900 dark:text-white">
                       {user.full_name}
                     </p>
-                    <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                      <StatusDot userId={user.id} showLabel={true} size="sm" />
+                    </div>
                   </div>
                   {selectedUsers.includes(user.id) && (
                     <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">

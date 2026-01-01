@@ -1,7 +1,7 @@
 # API Documentation - GST Tennis Academy
 
-**Ultima revisione**: 30 Dicembre 2025  
-**Versione API**: 2.0
+**Ultima revisione**: 01 Gennaio 2026  
+**Versione API**: 2.1
 
 ## Base URL
 
@@ -1104,6 +1104,372 @@ Ottiene piani abbonamento.
   ]
 }
 ```
+
+---
+
+## Statistics APIs
+
+### `GET /api/stats/athlete`
+
+Recupera statistiche complete per un atleta.
+
+**Auth**: Required (JWT Token)
+
+**Query Parameters**:
+- `user_id` (string, required) - ID dell'atleta
+
+**Response** (200 OK):
+```json
+{
+  "creditsAvailable": 8,
+  "weeklyCredits": 2,
+  "nextBooking": {
+    "startTime": "2025-01-15T10:00:00Z",
+    "endTime": "2025-01-15T11:00:00Z",
+    "court": "Campo 1",
+    "type": "campo_singolo"
+  },
+  "totalBookings": 5,
+  "allTimeBookings": 127,
+  "tournamentsCount": 3,
+  "upcomingBookings": 2,
+  "activeCourses": 1,
+  "unreadNotifications": 4
+}
+```
+
+### `GET /api/stats/coach`
+
+Recupera statistiche per un maestro/coach.
+
+**Auth**: Required (JWT Token, role: maestro)
+
+**Query Parameters**:
+- `user_id` (string, required) - ID del coach
+
+**Response** (200 OK):
+```json
+{
+  "lessonsToday": 3,
+  "uniqueAthletes": 12,
+  "hoursThisMonth": 45.5,
+  "upcomingLessons": 8,
+  "pendingConfirmations": 2,
+  "coursesManaged": 2,
+  "totalLessons": 156
+}
+```
+
+### `GET /api/stats/admin`
+
+Recupera statistiche complete per amministratori.
+
+**Auth**: Required (JWT Token, role: admin or gestore)
+
+**Response** (200 OK):
+```json
+{
+  "totalUsers": 245,
+  "bookingsToday": 12,
+  "totalBookings": 156,
+  "activeTournaments": 3,
+  "totalTournaments": 15,
+  "upcomingBookings": 45,
+  "pendingBookings": 8,
+  "activeCourses": 5,
+  "usersByRole": {
+    "atleta": 198,
+    "maestro": 12,
+    "gestore": 3,
+    "admin": 2
+  },
+  "monthlyRevenue": 12450.50,
+  "newUsersThisMonth": 23,
+  "pendingEnrollments": 7
+}
+```
+
+---
+
+## Notifications System
+
+### `GET /api/notifications`
+
+Recupera le notifiche di un utente.
+
+**Auth**: Required (JWT Token)
+
+**Query Parameters**:
+- `user_id` (string, required) - ID utente
+- `unread_only` (boolean, optional) - Se true, solo notifiche non lette
+
+**Response** (200 OK):
+```json
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "title": "Prenotazione Confermata",
+      "message": "La tua prenotazione per Campo 1 è stata confermata",
+      "type": "booking_confirmed",
+      "read": false,
+      "created_at": "2025-01-10T14:30:00Z",
+      "link": "/bookings/uuid"
+    }
+  ]
+}
+```
+
+**Tipi di notifica**:
+- `booking_created` - Nuova prenotazione
+- `booking_confirmed` - Prenotazione confermata
+- `booking_rejected` - Prenotazione rifiutata
+- `tournament_enrollment` - Iscrizione torneo
+- `new_message` - Nuovo messaggio chat
+- `system` - Notifica di sistema
+
+### `POST /api/notifications`
+
+Crea una nuova notifica.
+
+**Auth**: Required (JWT Token)
+
+**Body**:
+```json
+{
+  "user_id": "uuid",
+  "title": "Titolo notifica",
+  "message": "Messaggio completo della notifica",
+  "type": "booking_confirmed",
+  "link": "/bookings/uuid"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "success": true,
+  "notification": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "title": "Titolo notifica",
+    "message": "Messaggio completo",
+    "type": "booking_confirmed",
+    "read": false,
+    "created_at": "2025-01-10T14:30:00Z",
+    "link": "/bookings/uuid"
+  }
+}
+```
+
+**Note**: Se l'utente ha attivato `email_notifications_enabled` in profile, riceverà anche una email.
+
+### `PATCH /api/notifications`
+
+Segna una notifica come letta.
+
+**Auth**: Required (JWT Token)
+
+**Query Parameters**:
+- `id` (string, required) - ID notifica
+- `mark_all` (boolean, optional) - Se true, segna tutte come lette
+
+**Body** (se mark_all=false):
+```json
+{
+  "id": "uuid"
+}
+```
+
+**Body** (se mark_all=true):
+```json
+{
+  "user_id": "uuid"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true
+}
+```
+
+### `DELETE /api/notifications`
+
+Elimina una notifica.
+
+**Auth**: Required (JWT Token)
+
+**Query Parameters**:
+- `id` (string, required) - ID notifica
+
+**Response** (200 OK):
+```json
+{
+  "success": true
+}
+```
+
+### `POST /api/notifications/notify-admins`
+
+Invia notifica a tutti gli amministratori.
+
+**Auth**: Required (JWT Token, role: admin or gestore)
+
+**Body**:
+```json
+{
+  "title": "Nuovo Utente Registrato",
+  "message": "Un nuovo atleta si è registrato: Mario Rossi",
+  "type": "system",
+  "link": "/admin/users"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "success": true,
+  "notified_count": 5
+}
+```
+
+### `POST /api/email/notification`
+
+Invia email di notifica (uso interno).
+
+**Auth**: Required (JWT Token)
+
+**Body**:
+```json
+{
+  "to": "user@example.com",
+  "userName": "Mario Rossi",
+  "title": "Prenotazione Confermata",
+  "message": "La tua prenotazione è stata confermata",
+  "actionUrl": "https://gst-academy.com/bookings/uuid",
+  "actionText": "Vedi Dettagli"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "emailId": "resend-email-id"
+}
+```
+
+---
+
+## User Presence System
+
+Il sistema di presenza traccia lo stato online/offline degli utenti in real-time utilizzando Supabase Realtime.
+
+### Database Tables
+
+**user_presence**:
+- `user_id` (UUID) - ID utente
+- `status` (VARCHAR) - online, offline, away, busy
+- `last_seen` (TIMESTAMPTZ) - Ultima attività
+- `updated_at` (TIMESTAMPTZ) - Ultimo aggiornamento
+
+**typing_indicators**:
+- `id` (UUID) - ID univoco
+- `conversation_id` (UUID) - ID conversazione
+- `user_id` (UUID) - ID utente
+- `is_typing` (BOOLEAN) - Se sta digitando
+- `updated_at` (TIMESTAMPTZ) - Ultimo aggiornamento
+
+### Hooks React
+
+**useUserPresence(userId)**: 
+Monitora lo stato di presenza di un utente specifico.
+
+```typescript
+const { status, lastSeen, isOnline } = useUserPresence(userId);
+// status: 'online' | 'offline' | 'away' | 'busy'
+// lastSeen: string | null
+// isOnline: boolean
+```
+
+**useCurrentUserPresence()**: 
+Aggiorna automaticamente la presenza dell'utente corrente. Si imposta online all'attivazione e gestisce:
+- Offline alla chiusura del tab/app
+- Away quando il tab perde focus
+- Online ogni 30 secondi (heartbeat)
+
+```typescript
+const { userId } = useCurrentUserPresence();
+```
+
+**useTypingIndicator(conversationId)**: 
+Gestisce gli indicatori di digitazione in una conversazione.
+
+```typescript
+const { typingUsers, setTyping } = useTypingIndicator(conversationId);
+// typingUsers: Array<{user_id: string, full_name: string}>
+// setTyping: (isTyping: boolean) => Promise<void>
+```
+
+### Componenti UI
+
+**StatusDot**: 
+Mostra un indicatore visivo dello stato utente.
+
+```tsx
+<StatusDot 
+  userId="user-uuid" 
+  showLabel={true} 
+  size="sm" // sm | md | lg
+/>
+```
+
+**TypingIndicator**: 
+Mostra chi sta digitando nella conversazione.
+
+```tsx
+<TypingIndicator 
+  userNames={['Mario', 'Luigi']} 
+/>
+```
+
+### Realtime Subscriptions
+
+Il sistema usa Supabase Realtime per aggiornamenti istantanei:
+
+```typescript
+// Presenza utente
+supabase
+  .channel(`presence:${userId}`)
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'user_presence',
+    filter: `user_id=eq.${userId}`
+  }, callback)
+  .subscribe()
+
+// Typing indicators
+supabase
+  .channel(`typing:${conversationId}`)
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'typing_indicators',
+    filter: `conversation_id=eq.${conversationId}`
+  }, callback)
+  .subscribe()
+```
+
+### Best Practices
+
+1. **Auto-cleanup**: I typing indicators vengono automaticamente rimossi dopo 10 secondi di inattività
+2. **Heartbeat**: La presenza viene aggiornata ogni 30 secondi per utenti attivi
+3. **Visibility API**: Lo stato cambia automaticamente in "away" quando il tab perde focus
+4. **Debouncing**: Il typing indicator ha un debounce di 3 secondi
 
 ---
 

@@ -24,6 +24,16 @@ type Lesson = {
   };
 };
 
+type Stats = {
+  lessonsToday: number;
+  uniqueAthletes: number;
+  hoursThisMonth: number;
+  upcomingLessons: number;
+  pendingConfirmations: number;
+  coursesManaged: number;
+  totalLessons: number;
+};
+
 export default function MaestroDashboardPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [allLessons, setAllLessons] = useState<Lesson[]>([]); // Per le statistiche
@@ -36,10 +46,61 @@ export default function MaestroDashboardPage() {
   const [selectedAthlete, setSelectedAthlete] = useState<string>("");
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [enrollMsg, setEnrollMsg] = useState<string | null>(null);
+  
+  // New stats state
+  const [stats, setStats] = useState<Stats>({
+    lessonsToday: 0,
+    uniqueAthletes: 0,
+    hoursThisMonth: 0,
+    upcomingLessons: 0,
+    pendingConfirmations: 0,
+    coursesManaged: 0,
+    totalLessons: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     loadData();
+    loadStats();
   }, [filter]);
+
+  async function loadStats() {
+    setStatsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (token) {
+        const response = await fetch('/api/stats/coach', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setStats({
+            lessonsToday: data.lessonsToday || 0,
+            uniqueAthletes: data.uniqueAthletes || 0,
+            hoursThisMonth: data.hoursThisMonth || 0,
+            upcomingLessons: data.upcomingLessons || 0,
+            pendingConfirmations: data.pendingConfirmations || 0,
+            coursesManaged: data.coursesManaged || 0,
+            totalLessons: data.totalLessons || 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -216,6 +277,7 @@ export default function MaestroDashboardPage() {
 
     if (!error) {
       await loadData();
+      await loadStats(); // Reload stats after confirmation
     }
   }
 
@@ -230,17 +292,18 @@ export default function MaestroDashboardPage() {
 
     if (!error) {
       await loadData();
+      await loadStats(); // Reload stats after rejection
     }
   }
 
-  const pendingCount = allLessons.filter(l => !l.coach_confirmed).length;
+  const pendingCount = stats.pendingConfirmations;
 
   return (
     <AuthGuard allowedRoles={["maestro"]}>
       <div className="min-h-screen bg-[#021627] text-white">
         <main className="mx-auto flex max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10">
           {/* Header */}
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="space-y-2 sm:space-y-3">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
               <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Dashboard Maestro
@@ -252,10 +315,37 @@ export default function MaestroDashboardPage() {
               Gestisci le tue lezioni private e conferma le richieste degli atleti
             </p>
           </div>
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-          <StatCard title="In Attesa" value={pendingCount} icon={<Clock className="h-8 w-8 text-orange-300" />} color="orange" />
-          <StatCard title="Confermate" value={allLessons.filter(l => l.coach_confirmed && l.manager_confirmed).length} icon={<CheckCircle2 className="h-8 w-8 text-lime-300" />} color="lime" />
-          <StatCard title="Totali" value={allLessons.length} icon={<Calendar className="h-8 w-8 text-teal-300" />} color="teal" />
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <StatCard 
+            title="Lezioni Oggi" 
+            value={statsLoading ? "..." : stats.lessonsToday} 
+            icon={<Calendar className="h-8 w-8 text-sky-300" />} 
+            color="sky" 
+          />
+          <StatCard 
+            title="Atleti" 
+            value={statsLoading ? "..." : stats.uniqueAthletes} 
+            icon={<Users className="h-8 w-8 text-lime-300" />} 
+            color="lime" 
+          />
+          <StatCard 
+            title="Ore Mese" 
+            value={statsLoading ? "..." : Math.round(stats.hoursThisMonth)} 
+            icon={<Clock className="h-8 w-8 text-indigo-300" />} 
+            color="indigo" 
+          />
+          <StatCard 
+            title="In Attesa" 
+            value={statsLoading ? "..." : stats.pendingConfirmations} 
+            icon={<AlertCircle className="h-8 w-8 text-orange-300" />} 
+            color="orange" 
+          />
+          <StatCard 
+            title="Prossime" 
+            value={statsLoading ? "..." : stats.upcomingLessons} 
+            icon={<CheckCircle2 className="h-8 w-8 text-teal-300" />} 
+            color="teal" 
+          />
         </div>
 
         {/* Announcements Widget */}

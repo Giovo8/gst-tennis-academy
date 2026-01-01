@@ -268,13 +268,13 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2 text-xs text-muted-2">
                             {match.court_number && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-2">
                                 <MapPin className="h-3 w-3" />
                                 Campo {match.court_number}
                               </div>
                             )}
                             {match.scheduled_time && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-2">
                                 <Clock className="h-3 w-3" />
                                 {new Date(match.scheduled_time).toLocaleString("it-IT", {
                                   day: "numeric",
@@ -376,7 +376,7 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
                                           min="0"
                                           value={set.tiebreak.p1_points}
                                           onChange={(e) => updateTiebreakScore(index, "p1", parseInt(e.target.value) || 0)}
-                                          className="w-12 rounded border border-white/15 bg-white/5 px-1 py-1 text-center text-xs text-white"
+                                          className="w-12 rounded border border-white/15 bg-white/5 px-2 py-2 text-center text-xs text-white"
                                         />
                                         <span className="text-muted text-xs">-</span>
                                         <input
@@ -384,7 +384,7 @@ export default function KnockoutBracket({ tournamentId, matchFormat, isAdmin = f
                                           min="0"
                                           value={set.tiebreak.p2_points}
                                           onChange={(e) => updateTiebreakScore(index, "p2", parseInt(e.target.value) || 0)}
-                                          className="w-12 rounded border border-white/15 bg-white/5 px-1 py-1 text-center text-xs text-white"
+                                          className="w-12 rounded border border-white/15 bg-white/5 px-2 py-2 text-center text-xs text-white"
                                         />
                                       </>
                                     )}

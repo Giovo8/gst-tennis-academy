@@ -48,8 +48,6 @@ export async function POST(request: NextRequest) {
 
     const payload: ResendWebhookEvent = await request.json();
 
-    console.log("Resend webhook received:", payload.type);
-
     // Map Resend events to our email statuses
     let status: string;
     let metadata: Record<string, any> = {};
@@ -85,7 +83,7 @@ export async function POST(request: NextRequest) {
         metadata = { clicked_at: payload.data.clicked_at };
         break;
       default:
-        console.log("Unknown webhook event type:", payload.type);
+        // Unknown event type, acknowledge receipt
         return NextResponse.json({ received: true });
     }
 

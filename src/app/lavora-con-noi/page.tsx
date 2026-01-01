@@ -46,12 +46,12 @@ export default function WorkWithUsPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 sm:gap-8 md:gap-10 px-4 sm:px-6 py-10 sm:py-12 md:py-16 bg-[#021627]">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 sm:gap-8 md:gap-10 px-6 sm:px-8 py-10 sm:py-12 md:py-16 bg-[#021627]">
       {/* Header Section */}
       <div className="space-y-3 sm:space-y-4 text-center">
-        <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-accent">Entra nel Team</p>
+        <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">Entra nel Team</p>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Lavora con noi</h1>
-        <p className="text-sm sm:text-base md:text-lg text-muted max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg md:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
           Unisciti al team GST Tennis Academy! Cerchiamo professionisti appassionati 
           per far crescere la nostra community sportiva.
         </p>

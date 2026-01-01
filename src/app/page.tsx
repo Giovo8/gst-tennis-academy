@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import CTASection from "@/components/landing/CTASection";
 import PublicNavbar from "@/components/layout/PublicNavbar";
+import PromoBanner from "@/components/layout/PromoBanner";
 import Hero from "@/components/landing/Hero";
 import NewsSection from "@/components/landing/NewsSection";
 import CoursesSection from "@/components/landing/CoursesSection";
@@ -86,6 +87,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#021627] text-white">
+        <PromoBanner />
         <PublicNavbar />
         <main className="flex flex-col gap-12 px-6 pb-16 pt-10">
           <p className="text-center text-muted">Caricamento...</p>
@@ -96,6 +98,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#021627] text-white">
+      <PromoBanner />
       <PublicNavbar />
       <main>
         {/* Accessibility skip link */}

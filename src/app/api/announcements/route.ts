@@ -78,15 +78,12 @@ export async function GET(req: NextRequest) {
     const { data: announcements, error } = await query;
 
     if (error) {
-      console.error("Error fetching announcements:", error);
       return NextResponse.json({ 
         error: "Errore nel recupero degli annunci",
         details: error.message,
         code: error.code 
       }, { status: 500 });
     }
-
-    console.log(`Found ${announcements?.length || 0} announcements`);
 
     // Add view status for authenticated users
     const announcementsWithViews = await Promise.all(

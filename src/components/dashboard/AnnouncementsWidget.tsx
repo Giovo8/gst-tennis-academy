@@ -126,13 +126,13 @@ export default function AnnouncementsWidget() {
 
                   <div className="flex items-start gap-3 mb-2">
                     {announcement.is_pinned && (
-                      <Pin className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <Pin className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-1" />
                     )}
                     <span className={`rounded-full border px-2 py-0.5 text-xs font-bold ${typeInfo.color}`}>
                       {typeInfo.label}
                     </span>
                     {announcement.expiry_date && (
-                      <span className="ml-auto text-xs text-gray-400 flex items-center gap-1">
+                      <span className="ml-auto text-xs text-gray-400 flex items-center gap-2">
                         <Calendar className="h-3 w-3" />
                         {new Date(announcement.expiry_date).toLocaleDateString("it-IT")}
                       </span>
@@ -160,7 +160,7 @@ export default function AnnouncementsWidget() {
       {/* Modal for full announcement */}
       {selectedAnnouncement && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 pt-safe pb-safe px-safe"
           onClick={() => setSelectedAnnouncement(null)}
         >
           <div

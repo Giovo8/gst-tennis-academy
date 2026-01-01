@@ -144,8 +144,6 @@ export default function AdminCoursesPage() {
         is_active: formData.active,
       };
 
-      console.log('Saving section data:', sectionData);
-
       let result;
       if (editingId) {
         result = await supabase.from("course_sections").update(sectionData).eq("id", editingId);
@@ -153,10 +151,7 @@ export default function AdminCoursesPage() {
         result = await supabase.from("course_sections").insert([sectionData]);
       }
 
-      console.log('Save result:', result);
-
       if (result.error) {
-        console.error('Database error:', result.error);
         throw result.error;
       }
 
