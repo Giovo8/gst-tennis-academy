@@ -39,13 +39,23 @@ export default function AdminNavbar({
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [notificationsCount, setNotificationsCount] = useState(0);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function getUserId() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserId(user.id);
+      if (user) {
+        setUserId(user.id);
+        // Fetch notifications count
+        const { count } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        setNotificationsCount(count || 0);
+      }
     }
     getUserId();
   }, []);

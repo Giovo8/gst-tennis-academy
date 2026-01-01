@@ -3,6 +3,27 @@
 -- Run this script in Supabase SQL Editor
 
 -- =============================================
+-- 0. PREREQUISITI - Assicurati che i tipi esistano
+-- =============================================
+
+-- Crea il tipo user_role se non esiste (dovrebbe già esistere dallo schema base)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+    CREATE TYPE public.user_role AS ENUM ('atleta', 'maestro', 'gestore', 'admin');
+  END IF;
+END $$;
+
+-- Assicurati che la funzione update_updated_at_column esista
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =============================================
 -- 1. INVITE CODES SYSTEM
 -- =============================================
 
@@ -10,7 +31,7 @@
 create table if not exists public.invite_codes (
   id uuid primary key default gen_random_uuid(),
   code text not null unique,
-  role user_role not null default 'atleta',
+  role text not null default 'atleta', -- Usando text invece di user_role per compatibilità
   max_uses int,
   uses_remaining int,
   expires_at timestamptz,
@@ -513,7 +534,7 @@ $$;
 create or replace function public.validate_invite_code(p_code text)
 returns table (
   valid boolean,
-  role user_role,
+  role text,
   error_message text
 )
 language plpgsql
@@ -526,17 +547,17 @@ begin
   where code = upper(p_code);
   
   if not found then
-    return query select false, null::user_role, 'Codice non valido';
+    return query select false, null::text, 'Codice non valido';
     return;
   end if;
   
   if v_invite.expires_at is not null and v_invite.expires_at < now() then
-    return query select false, null::user_role, 'Codice scaduto';
+    return query select false, null::text, 'Codice scaduto';
     return;
   end if;
   
   if v_invite.uses_remaining is not null and v_invite.uses_remaining <= 0 then
-    return query select false, null::user_role, 'Codice esaurito';
+    return query select false, null::text, 'Codice esaurito';
     return;
   end if;
   
@@ -564,11 +585,29 @@ $$;
 -- 8. REALTIME SUBSCRIPTIONS
 -- =============================================
 
--- Enable realtime for key tables
-alter publication supabase_realtime add table public.bookings;
-alter publication supabase_realtime add table public.notifications;
-alter publication supabase_realtime add table public.chat_messages;
-alter publication supabase_realtime add table public.court_blocks;
+-- Enable realtime for key tables (ignora errori se già aggiunte)
+DO $$ 
+BEGIN
+  BEGIN
+    alter publication supabase_realtime add table public.bookings;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  
+  BEGIN
+    alter publication supabase_realtime add table public.notifications;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  
+  BEGIN
+    alter publication supabase_realtime add table public.chat_messages;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  
+  BEGIN
+    alter publication supabase_realtime add table public.court_blocks;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+END $$;
 
 -- Done!
 -- Remember to:
