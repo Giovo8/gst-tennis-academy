@@ -63,15 +63,15 @@ export default function PromoBanner() {
     },
     green: {
       gradient: "from-green-600 via-emerald-500 to-green-600",
-      button: "bg-white text-green-600 hover:bg-green-50",
+      button: "bg-white text-primary hover:bg-blue-50",
     },
     purple: {
       gradient: "from-purple-600 via-violet-500 to-purple-600",
-      button: "bg-white text-purple-600 hover:bg-purple-50",
+      button: "bg-white text-primary hover:bg-blue-50",
     },
     red: {
       gradient: "from-red-600 via-rose-500 to-red-600",
-      button: "bg-white text-red-600 hover:bg-red-50",
+      button: "bg-white text-primary hover:bg-blue-50",
     },
   };
 

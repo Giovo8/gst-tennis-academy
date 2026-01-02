@@ -110,7 +110,7 @@ export default function MaestroNavbar({
                 <button
                   key={action.label}
                   onClick={action.action}
-                  className="flex items-center gap-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/30 hover:border-cyan-400"
+                  className="flex items-center gap-2 rounded-lg bg-primary/20 border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary-light transition hover:bg-primary/30 hover:border-primary"
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {action.label}
@@ -122,7 +122,7 @@ export default function MaestroNavbar({
             {pendingLessonsCount > 0 && (
               <Link
                 href="/dashboard/maestro/lezioni?filter=pending"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/30"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/30 text-xs font-semibold text-primary-light transition hover:bg-primary/30"
               >
                 <ClipboardList className="h-3.5 w-3.5" />
                 {pendingLessonsCount} {pendingLessonsCount === 1 ? "Richiesta" : "Richieste"}
@@ -135,7 +135,7 @@ export default function MaestroNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 transition hover:border-cyan-400 hover:bg-cyan-500/20"
+              className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 transition hover:border-primary hover:bg-primary/20"
             >
               {userAvatar ? (
                 <Image 
@@ -146,7 +146,7 @@ export default function MaestroNavbar({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-white">
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -167,7 +167,7 @@ export default function MaestroNavbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-cyan-500/30 p-2 text-white transition hover:bg-cyan-500/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="lg:hidden rounded-lg border border-primary/30 p-2 text-white transition hover:bg-primary/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -178,7 +178,7 @@ export default function MaestroNavbar({
         {isOpen && (
           <div className="lg:hidden border-t border-cyan-500/10 pt-4 mt-4 space-y-2 pb-4 pb-safe-bottom">
             {/* User Info Mobile */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 mb-4">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
               {userAvatar ? (
                 <Image 
                   src={userAvatar} 
@@ -188,7 +188,7 @@ export default function MaestroNavbar({
                   className="h-10 w-10 rounded-full"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-cyan-500 flex items-center justify-center text-lg font-bold text-white">
+                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-lg font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -198,12 +198,12 @@ export default function MaestroNavbar({
               </div>
               <div className="ml-auto flex flex-col gap-2">
                 {notificationsCount > 0 && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold text-white">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                     {notificationsCount > 9 ? "9+" : notificationsCount}
                   </div>
                 )}
                 {pendingLessonsCount > 0 && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-hover text-xs font-bold text-white">
                     {pendingLessonsCount}
                   </div>
                 )}
@@ -221,7 +221,7 @@ export default function MaestroNavbar({
                       setIsOpen(false);
                       action.action();
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-4 py-3 text-sm font-semibold text-purple-300 transition hover:bg-cyan-500/30"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary/20 border border-primary/30 px-4 py-3 text-sm font-semibold text-primary-light transition hover:bg-primary/30"
                   >
                     <Icon className="h-5 w-5" />
                     {action.label}
@@ -238,7 +238,7 @@ export default function MaestroNavbar({
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-cyan-500/10 hover:text-cyan-300 transition"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-primary/10 hover:text-primary-light transition"
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}

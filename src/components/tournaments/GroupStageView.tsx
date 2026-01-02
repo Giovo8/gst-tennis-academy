@@ -264,7 +264,7 @@ export default function GroupStageView({
           <button
             onClick={handleAdvanceToKnockout}
             disabled={advancing}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 inline-flex items-center gap-2"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50 inline-flex items-center gap-2"
           >
             <Trophy className={`h-4 w-4 ${advancing ? 'animate-pulse' : ''}`} />
             {advancing ? 'Avanzamento...' : 'Avanza alla Fase Eliminatoria'}
@@ -406,12 +406,12 @@ export default function GroupStageView({
                       key={participant.id}
                       className={`flex items-center gap-3 rounded-lg p-3 ${
                         isQualified
-                          ? 'bg-emerald-50 border border-emerald-200'
+                          ? 'bg-blue-50 border border-primary/30'
                           : 'bg-gray-50 border border-gray-200'
                       }`}
                     >
                       <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${
-                        isQualified ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
+                        isQualified ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'
                       }`}>
                         {index + 1}
                       </div>

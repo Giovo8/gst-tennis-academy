@@ -188,7 +188,7 @@ export default function GestoreNavbar({
           {/* Right Section - Desktop */}
           <div className="hidden lg:flex items-center gap-4">
             {/* Gestore Badge */}
-            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary-light border border-primary/30">
               <Briefcase className="inline h-3 w-3 mr-1" />
               Gestore
             </div>
@@ -199,7 +199,7 @@ export default function GestoreNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 transition hover:border-emerald-400 hover:bg-emerald-500/20"
+              className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 transition hover:border-primary hover:bg-primary/20"
             >
               {userAvatar ? (
                 <Image 
@@ -210,7 +210,7 @@ export default function GestoreNavbar({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-tournament-bg">
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -220,7 +220,7 @@ export default function GestoreNavbar({
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-emerald-500/10 hover:border-emerald-500/30"
+              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-primary/10 hover:border-primary/30"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -230,7 +230,7 @@ export default function GestoreNavbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg border border-emerald-500/30 p-2 text-white transition hover:bg-emerald-500/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="lg:hidden rounded-lg border border-primary/30 p-2 text-white transition hover:bg-primary/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Menu"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -241,7 +241,7 @@ export default function GestoreNavbar({
         {isOpen && (
           <div className="lg:hidden border-t border-emerald-500/10 pt-4 mt-4 space-y-2 pb-4 pb-safe-bottom">
             {/* User Info Mobile */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 mb-4">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
               {userAvatar ? (
                 <Image 
                   src={userAvatar} 
@@ -251,7 +251,7 @@ export default function GestoreNavbar({
                   className="h-10 w-10 rounded-full"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-lg font-bold text-tournament-bg">
+                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-lg font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -263,7 +263,7 @@ export default function GestoreNavbar({
                 </p>
               </div>
               {notificationsCount > 0 && (
-                <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-tournament-bg">
+                <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                   {notificationsCount > 9 ? "9+" : notificationsCount}
                 </div>
               )}
@@ -286,7 +286,7 @@ export default function GestoreNavbar({
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-2 hover:bg-emerald-500/10 hover:text-emerald-300 transition pl-8"
+                          className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-2 hover:bg-primary/10 hover:text-primary-light transition pl-8"
                         >
                           <ItemIcon className="h-4 w-4" />
                           {item.label}
@@ -302,7 +302,7 @@ export default function GestoreNavbar({
                   key={section.id}
                   href={section.href!}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-emerald-500/10 hover:text-emerald-300 transition"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-2 hover:bg-primary/10 hover:text-primary-light transition"
                 >
                   <Icon className="h-5 w-5" />
                   {section.label}
@@ -316,7 +316,7 @@ export default function GestoreNavbar({
                 setIsOpen(false);
                 handleLogout();
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 px-4 py-3 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/10 mt-4"
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-primary/30 px-4 py-3 text-sm font-semibold text-primary-light transition hover:bg-primary/10 mt-4"
             >
               <LogOut className="h-5 w-5" />
               Esci

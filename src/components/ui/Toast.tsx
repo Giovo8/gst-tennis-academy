@@ -69,7 +69,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
 
 const variantConfig = {
   success: {
-    bg: "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800",
+    bg: "bg-blue-50 dark:bg-blue-950 border-primary/30 dark:border-primary/80",
     icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
     title: "text-emerald-900 dark:text-emerald-100",
     text: "text-emerald-700 dark:text-emerald-300",
@@ -81,7 +81,7 @@ const variantConfig = {
     text: "text-red-700 dark:text-red-300",
   },
   warning: {
-    bg: "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800",
+    bg: "bg-blue-50 dark:bg-blue-950 border-primary/30 dark:border-primary/80",
     icon: <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
     title: "text-amber-900 dark:text-amber-100",
     text: "text-amber-700 dark:text-amber-300",

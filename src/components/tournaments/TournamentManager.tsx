@@ -192,7 +192,7 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
           icon: Users,
           name: 'Campionato',
           color: 'text-green-400',
-          bgColor: 'bg-green-500/10'
+          bgColor: 'bg-primary/10'
         };
     }
   };
@@ -221,8 +221,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-xl font-semibold text-gray-900">{tournament.title}</h3>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  tournament.status === 'Aperto' ? 'bg-emerald-100 text-emerald-700' :
-                  tournament.status === 'In Corso' ? 'bg-amber-100 text-amber-700' :
+                  tournament.status === 'Aperto' ? 'bg-blue-100 text-primary' :
+                  tournament.status === 'In Corso' ? 'bg-blue-100 text-primary-dark' :
                   tournament.status === 'Concluso' ? 'bg-gray-100 text-gray-700' :
                   'bg-gray-100 text-gray-600'
                 }`}>

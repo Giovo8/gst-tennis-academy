@@ -180,8 +180,8 @@ export default function SimpleTournamentCreator({ onSuccess }: SimpleTournamentC
 
   if (success) {
     return (
-      <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-6 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+      <div className="rounded-2xl border border-primary/20 bg-primary/10 p-6 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
           <Trophy className="h-8 w-8 text-green-500" />
         </div>
         <h3 className="mb-2 text-xl font-semibold text-white">Torneo Creato!</h3>

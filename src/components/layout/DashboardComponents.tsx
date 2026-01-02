@@ -68,9 +68,9 @@ interface StatsCardProps {
 
 const colorClasses = {
   blue: "bg-blue-100 text-primary dark:bg-blue-950 dark:text-blue-400",
-  emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-  amber: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-  red: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400",
+  emerald: "bg-blue-100 text-primary dark:bg-blue-950 dark:text-primary-light",
+  amber: "bg-blue-100 text-primary dark:bg-blue-950 dark:text-primary-light",
+  red: "bg-blue-100 text-primary dark:bg-blue-950 dark:text-primary-light",
 };
 
 export function StatsCard({ label, value, icon, trend, color = "blue" }: StatsCardProps) {

@@ -165,7 +165,7 @@ export default function TournamentReports() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-green-100 rounded-lg">
+                <div className="p-3 bg-blue-100 rounded-lg">
                   <Users className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
@@ -180,7 +180,7 @@ export default function TournamentReports() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-purple-100 rounded-lg">
+                <div className="p-3 bg-blue-100 rounded-lg">
                   <Target className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
@@ -195,7 +195,7 @@ export default function TournamentReports() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-orange-100 rounded-lg">
+                <div className="p-3 bg-blue-100 rounded-lg">
                   <BarChart3 className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
@@ -381,7 +381,7 @@ export default function TournamentReports() {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         tournament.status === 'Completato' || tournament.status === 'Concluso'
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-blue-100 text-primary'
                           : tournament.status === 'In Corso' || tournament.status === 'In corso'
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-gray-100 text-gray-800'

@@ -143,7 +143,7 @@ export default function Bracket({
                         key={matchIndex} 
                         className={`rounded-lg border p-3 md:p-4 transition-all ${
                           hasBye 
-                            ? 'border-cyan-200 bg-cyan-50'
+                            ? 'border-primary/30 bg-blue-50'
                             : isFinished
                             ? 'border-blue-200 bg-blue-50'
                             : 'border-gray-200 bg-white'
@@ -154,7 +154,7 @@ export default function Bracket({
                           <div 
                             className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                               match.player1 === 'BYE'
-                                ? 'bg-cyan-100 text-cyan-700'
+                                ? 'bg-blue-100 text-primary'
                                 : match.winner === match.player1
                                 ? 'bg-blue-100 text-blue-700 font-semibold'
                                 : match.player1 === 'TBD'
@@ -177,7 +177,7 @@ export default function Bracket({
                           <div 
                             className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                               match.player2 === 'BYE'
-                                ? 'bg-cyan-100 text-cyan-700'
+                                ? 'bg-blue-100 text-primary'
                                 : match.winner === match.player2
                                 ? 'bg-blue-100 text-blue-700 font-semibold'
                                 : match.player2 === 'TBD'
@@ -222,7 +222,7 @@ export default function Bracket({
           <span>Vincitore</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-cyan-100 border border-cyan-200"></div>
+          <div className="w-3 h-3 rounded bg-blue-100 border border-primary/30"></div>
           <span>BYE (Passaggio automatico)</span>
         </div>
         <div className="flex items-center gap-2">

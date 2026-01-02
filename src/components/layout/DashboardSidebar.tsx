@@ -97,7 +97,7 @@ export default function DashboardSidebar({ items, role, userName }: DashboardSid
       <div className="p-4 border-t border-gray-200">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors duration-200"
         >
           <LogOut className="h-5 w-5" />
           <span className="text-sm font-medium">Esci</span>

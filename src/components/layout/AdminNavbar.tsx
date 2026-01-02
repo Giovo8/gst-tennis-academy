@@ -229,7 +229,7 @@ export default function AdminNavbar({
             {/* User Avatar */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-blue-500/10 px-3 py-1.5 transition hover:border-cyan-400 hover:bg-cyan-500/20"
+              className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 transition hover:border-primary hover:bg-primary/20"
             >
               {userAvatar ? (
                 <Image 
@@ -240,7 +240,7 @@ export default function AdminNavbar({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-tournament-bg">
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -250,7 +250,7 @@ export default function AdminNavbar({
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-cyan-500/10 hover:border-cyan-500/30"
+              className="rounded-lg border border-white/15 p-2 text-white transition hover:bg-primary/10 hover:border-primary/30"
               aria-label="Logout"
             >
               <LogOut className="h-5 w-5" />

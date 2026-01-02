@@ -50,7 +50,7 @@ export default function Footer() {
                 href="#youtube"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white transition-all"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary text-gray-400 hover:text-white transition-all"
                 aria-label="YouTube"
               >
                 <Youtube className="h-5 w-5" />

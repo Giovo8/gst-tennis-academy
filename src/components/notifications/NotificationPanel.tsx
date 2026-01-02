@@ -47,10 +47,10 @@ const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = 
 
 const colorMap: { [key: string]: string } = {
   booking: "text-blue-400 bg-blue-500/10",
-  tournament: "text-orange-400 bg-orange-500/10",
-  message: "text-cyan-400 bg-cyan-500/10",
-  course: "text-green-400 bg-green-500/10",
-  success: "text-green-400 bg-green-500/10",
+  tournament: "text-primary-light bg-primary/10",
+  message: "text-primary-light bg-primary/10",
+  course: "text-primary-light bg-primary/10",
+  success: "text-primary-light bg-primary/10",
   info: "text-blue-400 bg-blue-500/10",
   warning: "text-yellow-400 bg-yellow-500/10",
   error: "text-red-400 bg-red-500/10",
@@ -201,7 +201,7 @@ export default function NotificationPanel({
                 <div
                   key={notification.id}
                   className={`group relative px-4 py-3 hover:bg-white/5 transition-all ${
-                    !notification.is_read ? "bg-cyan-500/5" : ""
+                    !notification.is_read ? "bg-primary/5" : ""
                   }`}
                 >
                   {/* Unread indicator */}

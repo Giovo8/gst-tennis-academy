@@ -498,7 +498,7 @@ export default function ChampionshipStandingsView({
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           standing.position === 1 ? 'bg-yellow-500 text-black' :
                           standing.position === 2 ? 'bg-gray-400 text-black' :
-                          standing.position === 3 ? 'bg-amber-600 text-white' :
+                          standing.position === 3 ? 'bg-primary-hover text-white' :
                           'bg-surface text-white'
                         }`}>
                           {standing.position}

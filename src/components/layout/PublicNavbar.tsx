@@ -120,7 +120,7 @@ export default function PublicNavbar() {
               href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-primary hover:bg-blue-50 transition-colors"
               aria-label="WhatsApp"
             >
               <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor">
@@ -138,9 +138,9 @@ export default function PublicNavbar() {
                     userRole === 'atleta' 
                       ? 'border-primary text-primary bg-blue-50 hover:bg-blue-100' 
                       : userRole === 'maestro'
-                      ? 'border-emerald-600 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                      ? 'border-primary text-primary bg-blue-50 hover:bg-blue-100'
                       : userRole === 'admin' || userRole === 'gestore'
-                      ? 'border-amber-600 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                      ? 'border-primary-dark text-primary-dark bg-blue-50 hover:bg-blue-100'
                       : 'border-slate-600 text-slate-700 bg-slate-50 hover:bg-slate-100'
                   }`}
                 >
@@ -164,7 +164,7 @@ export default function PublicNavbar() {
             {user && (
               <button
                 onClick={handleLogout}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-primary hover:bg-blue-50 transition-colors"
                 aria-label="Esci"
               >
                 <LogOut className="h-[18px] w-[18px]" />
@@ -215,7 +215,7 @@ export default function PublicNavbar() {
                     setIsOpen(false);
                     handleLogout();
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-xl min-h-[48px] touch-manipulation"
+                  className="flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-primary hover:text-primary-hover bg-blue-50 hover:bg-blue-100 rounded-xl min-h-[48px] touch-manipulation"
                 >
                   <LogOut className="h-5 w-5" />
                   <span>Esci</span>

@@ -297,7 +297,7 @@ export default function GroupStageManager({ tournamentId, matchFormat, isAdmin =
           className={`flex items-center gap-3 rounded-lg border p-4 ${
             message.type === "success"
               ? "border-blue-500/30 bg-blue-500/10 text-blue-300"
-              : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+              : "border-primary/30 bg-primary/10 text-primary-light"
           }`}
         >
           {message.type === "success" ? (
