@@ -88,7 +88,7 @@ export default function PromoBannerSettings() {
   }
 
   return (
-    <div className="bg-[#042b4a] rounded-2xl border border-white/10 p-6 space-y-6">
+    <div className="bg-tournament-bg-card rounded-2xl border border-white/10 p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -153,7 +153,7 @@ export default function PromoBannerSettings() {
             value={settings.message}
             onChange={(e) => setSettings({ ...settings, message: e.target.value })}
             rows={3}
-            className="w-full px-4 py-3 bg-[#021627] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full px-4 py-3 bg-tournament-bg-table border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             placeholder="Inserisci il messaggio del banner..."
           />
         </div>
@@ -168,7 +168,7 @@ export default function PromoBannerSettings() {
               type="text"
               value={settings.cta_text}
               onChange={(e) => setSettings({ ...settings, cta_text: e.target.value })}
-              className="w-full px-4 py-3 bg-[#021627] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-tournament-bg-table border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="es. Iscriviti"
             />
           </div>
@@ -181,7 +181,7 @@ export default function PromoBannerSettings() {
               type="text"
               value={settings.cta_url}
               onChange={(e) => setSettings({ ...settings, cta_url: e.target.value })}
-              className="w-full px-4 py-3 bg-[#021627] border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-tournament-bg-table border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="es. /register"
             />
           </div>

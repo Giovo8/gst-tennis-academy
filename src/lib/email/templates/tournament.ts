@@ -147,7 +147,7 @@ export function tournamentResultsTemplate(data: TournamentResultsData): string {
     <div class="${data.is_winner ? "success-box" : "info-box"}">
       <h2 style="margin-top: 0;">Le Tue Statistiche</h2>
       <p style="margin: 8px 0;"><strong>Torneo:</strong> ${data.tournament_name}</p>
-      <p style="margin: 8px 0; font-size: 24px; color: ${data.is_winner ? "#10b981" : "#3b82f6"};">
+      <p style="margin: 8px 0; font-size: 24px; color: ${data.is_winner ? "#10b981" : "#0690c6"};">
         <strong>${data.final_position}</strong>
       </p>
       <p style="margin: 8px 0;"><strong>Match Giocati:</strong> ${data.matches_played}</p>

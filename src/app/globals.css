@@ -53,32 +53,45 @@
 }
 
 :root {
-  /* Primary Brand Colors - Enterprise Blue */
-  --primary: #1e40af;           /* Blue-800 - Professional Blue */
-  --primary-light: #3b82f6;     /* Blue-500 */
-  --primary-dark: #1e3a8a;      /* Blue-900 */
-  --primary-50: rgba(30, 64, 175, 0.05);
-  --primary-100: rgba(30, 64, 175, 0.1);
-  --primary-200: rgba(30, 64, 175, 0.2);
-  --primary-300: rgba(30, 64, 175, 0.3);
-  --primary-hover: #2563eb;     /* Blue-600 */
+  /* Frozen Lake Color Palette - Complete Scale */
+  --color-frozen-lake-50: #e6f7fe;
+  --color-frozen-lake-100: #cef0fd;
+  --color-frozen-lake-200: #9ce1fc;
+  --color-frozen-lake-300: #6bd2fa;
+  --color-frozen-lake-400: #39c3f9;
+  --color-frozen-lake-500: #08b3f7;
+  --color-frozen-lake-600: #0690c6;
+  --color-frozen-lake-700: #056c94;
+  --color-frozen-lake-800: #034863;
+  --color-frozen-lake-900: #022431;
+  --color-frozen-lake-950: #011923;
+
+  /* Primary Brand Colors - Frozen Lake Palette */
+  --primary: #0690c6;           /* frozen-lake-600 - Primary Brand */
+  --primary-light: #39c3f9;     /* frozen-lake-400 */
+  --primary-dark: #056c94;      /* frozen-lake-700 */
+  --primary-50: rgba(6, 144, 198, 0.05);
+  --primary-100: rgba(6, 144, 198, 0.1);
+  --primary-200: rgba(6, 144, 198, 0.2);
+  --primary-300: rgba(6, 144, 198, 0.3);
+  --primary-hover: #08b3f7;     /* frozen-lake-500 */
   
   /* Secondary Colors */
-  --secondary: #0f172a;         /* Slate-900 - Deep Navy */
-  --secondary-light: #1e293b;   /* Slate-800 */
-  --secondary-hover: #334155;   /* Slate-700 */
-  --accent: #0891b2;            /* Cyan-600 - Darker, more professional */
-  --accent-hover: #0e7490;      /* Cyan-700 */
+  --secondary: #011923;         /* frozen-lake-950 - Deep Dark */
+  --secondary-light: #022431;   /* frozen-lake-900 */
+  --secondary-hover: #034863;   /* frozen-lake-800 */
+  --accent: #39c3f9;            /* frozen-lake-400 - Accent */
+  --accent-hover: #08b3f7;      /* frozen-lake-500 */
   
-  /* Tournament & Sport Colors - Cyan/Teal Theme */
-  --tournament-primary: #7de3ff;      /* Bright Cyan - Primary tournament color */
-  --tournament-primary-dark: #6dd0ed; /* Darker Cyan - Hover states */
-  --tournament-secondary: #4fb3ff;    /* Sky Blue - Secondary accent */
-  --tournament-border: #2f7de1;       /* Deep Blue - Borders */
-  --tournament-bg: #0a1929;           /* Deep Navy - Background */
-  --tournament-bg-light: #0d1f35;     /* Lighter Navy - Surface */
-  --tournament-bg-card: #1a3d5c;      /* Card background */
-  --tournament-bg-table: #0c1424;     /* Table background */
+  /* Tournament & Sport Colors - Frozen Lake Theme */
+  --tournament-primary: #39c3f9;      /* frozen-lake-400 - Primary tournament color */
+  --tournament-primary-dark: #08b3f7; /* frozen-lake-500 - Hover states */
+  --tournament-secondary: #6bd2fa;    /* frozen-lake-300 - Secondary accent */
+  --tournament-border: #0690c6;       /* frozen-lake-600 - Borders */
+  --tournament-bg: #011923;           /* frozen-lake-950 - Background */
+  --tournament-bg-light: #022431;     /* frozen-lake-900 - Surface */
+  --tournament-bg-card: #034863;      /* frozen-lake-800 - Card background */
+  --tournament-bg-table: #022431;     /* frozen-lake-900 - Table background */
   
   /* Notification Colors */
   --notification-bg: #0a1525;         /* Dark background for notifications */
@@ -107,7 +120,7 @@
   --border: #e2e8f0;            /* Slate-200 - Default */
   --border-light: #f1f5f9;      /* Slate-100 - Subtle */
   --border-strong: #cbd5e1;     /* Slate-300 - Emphasized */
-  --border-focus: #2563eb;      /* Blue-600 - Focus ring */
+  --border-focus: #0690c6;      /* frozen-lake-600 - Focus ring */
   --border-error: #dc2626;      /* Red-600 - Error state */
   --border-success: #059669;    /* Emerald-600 - Success state */
   --border-radius-sm: 6px;
@@ -144,11 +157,11 @@
   --error-bg: #fef2f2;          /* Red-50 */
   --error-border: #fecaca;      /* Red-200 */
   
-  --info: #2563eb;              /* Blue-600 */
-  --info-light: #3b82f6;        /* Blue-500 */
-  --info-dark: #1e40af;         /* Blue-800 */
-  --info-bg: #eff6ff;           /* Blue-50 */
-  --info-border: #bfdbfe;       /* Blue-200 */
+  --info: #0690c6;              /* frozen-lake-600 */
+  --info-light: #39c3f9;        /* frozen-lake-400 */
+  --info-dark: #056c94;         /* frozen-lake-700 */
+  --info-bg: #e6f7fe;           /* frozen-lake-50 */
+  --info-border: #9ce1fc;       /* frozen-lake-200 */
   
   /* Layout */
   --sidebar-width: 280px;
@@ -156,23 +169,23 @@
   --header-height: 64px;
   
   /* Legacy variables for compatibility */
-  --accent-strong: #1e40af;     /* Updated to new primary */
-  --accent-mid: #3b82f6;        /* Updated to new primary-light */
-  --accent-dark: #1e3a8a;       /* Updated to new primary-dark */
-  --accent-15: rgba(30, 64, 175, 0.15);
-  --accent-12: rgba(30, 64, 175, 0.12);
-  --accent-20: rgba(30, 64, 175, 0.2);
+  --accent-strong: #0690c6;     /* frozen-lake-600 */
+  --accent-mid: #39c3f9;        /* frozen-lake-400 */
+  --accent-dark: #056c94;       /* frozen-lake-700 */
+  --accent-15: rgba(6, 144, 198, 0.15);
+  --accent-12: rgba(6, 144, 198, 0.12);
+  --accent-20: rgba(6, 144, 198, 0.2);
   --muted: #64748b;
   --muted-2: #94a3b8;
   --text-dark: #0f172a;
   --border-strong: #cbd5e1;     /* Updated to new border-strong */
   
-  --gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #0891b2 100%);
+  --gradient-primary: linear-gradient(135deg, #056c94 0%, #0690c6 50%, #39c3f9 100%);
   --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(30, 64, 175, 0.2);
+  --glass-border: rgba(6, 144, 198, 0.2);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 20px rgba(30, 64, 175, 0.15);
-  --shadow-glow-strong: 0 0 30px rgba(30, 64, 175, 0.25);
+  --shadow-glow: 0 0 20px rgba(6, 144, 198, 0.15);
+  --shadow-glow-strong: 0 0 30px rgba(6, 144, 198, 0.25);
   
   /* Spacing */
   --space-1: 4px;
@@ -226,18 +239,18 @@
   --warning-border: rgba(217, 119, 6, 0.3);
   --error-bg: rgba(220, 38, 38, 0.15);
   --error-border: rgba(220, 38, 38, 0.3);
-  --info-bg: rgba(37, 99, 235, 0.15);
-  --info-border: rgba(37, 99, 235, 0.3);
+  --info-bg: rgba(6, 144, 198, 0.15);
+  --info-border: rgba(6, 144, 198, 0.3);
   
-  --glass-bg: rgba(15, 23, 42, 0.8);
-  --glass-border: rgba(30, 64, 175, 0.2);
-  --shadow-glow: 0 0 20px rgba(30, 64, 175, 0.25);
-  --shadow-glow-strong: 0 0 30px rgba(30, 64, 175, 0.4);
+  --glass-bg: rgba(1, 25, 35, 0.8);
+  --glass-border: rgba(6, 144, 198, 0.2);
+  --shadow-glow: 0 0 20px rgba(6, 144, 198, 0.25);
+  --shadow-glow-strong: 0 0 30px rgba(6, 144, 198, 0.4);
   
   /* Tournament colors in dark mode */
-  --tournament-border: rgba(47, 125, 225, 0.3);
-  --tournament-bg-card: rgba(26, 61, 92, 0.6);
-  --tournament-bg-table: rgba(12, 20, 36, 0.4);
+  --tournament-border: rgba(6, 144, 198, 0.3);
+  --tournament-bg-card: rgba(3, 72, 99, 0.6);
+  --tournament-bg-table: rgba(2, 36, 49, 0.4);
 }
 
 @theme inline {

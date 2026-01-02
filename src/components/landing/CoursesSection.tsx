@@ -102,7 +102,7 @@ export default function CoursesSection() {
         // Layout: Frequency Grid (Base, Avanzato)
         if (section.layout_type === "frequency_grid") {
           return (
-            <div key={section.id} className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 md:p-10 hover:border-[#1e40af]/30 transition-all shadow-sm">
+            <div key={section.id} className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 md:p-10 hover:border-primary/30 transition-all shadow-sm">
               <div className="mb-5 sm:mb-7">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">{section.section_title}</h3>
                 {section.section_description && (
@@ -112,8 +112,8 @@ export default function CoursesSection() {
               
               <div className="grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                 {section.items.map((item, idx) => (
-                  <div key={idx} className="group rounded-lg sm:rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 sm:p-7 hover:bg-white hover:border-[#1e40af]/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                    <p className="text-xs sm:text-sm uppercase tracking-wider text-[#1e40af] mb-3 sm:mb-4 font-bold">{item.frequency}</p>
+                  <div key={idx} className="group rounded-lg sm:rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 sm:p-7 hover:bg-white hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <p className="text-xs sm:text-sm uppercase tracking-wider text-primary mb-3 sm:mb-4 font-bold">{item.frequency}</p>
                     <div className="space-y-2 sm:space-y-3">
                       {item.price_monthly && (
                         <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#1e40af] to-[#2563eb] bg-clip-text text-transparent">
@@ -136,7 +136,7 @@ export default function CoursesSection() {
         // Layout: List with Price (Extra)
         if (section.layout_type === "list_with_price") {
           return (
-            <div key={section.id} className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 hover:border-[#1e40af]/30 transition-all shadow-sm">
+            <div key={section.id} className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 hover:border-primary/30 transition-all shadow-sm">
               <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-3 sm:mb-4">{section.section_title}</h3>
               <div className="space-y-2 sm:space-y-3">
                 {section.items.map((item, idx) => (

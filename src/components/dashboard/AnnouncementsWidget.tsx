@@ -164,7 +164,7 @@ export default function AnnouncementsWidget() {
           onClick={() => setSelectedAnnouncement(null)}
         >
           <div
-            className="bg-[#021627] rounded-2xl border-2 border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-tournament-bg-table rounded-2xl border-2 border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {selectedAnnouncement.image_url && (

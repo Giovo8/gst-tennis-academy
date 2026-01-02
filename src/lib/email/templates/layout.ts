@@ -40,7 +40,7 @@ export function baseEmailLayout({ preheader, content }: BaseLayoutProps): string
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .email-header {
-      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      background: linear-gradient(135deg, #056c94 0%, #39c3f9 100%);
       padding: 30px 20px;
       text-align: center;
     }
@@ -51,7 +51,7 @@ export function baseEmailLayout({ preheader, content }: BaseLayoutProps): string
       margin: 0;
     }
     .email-tagline {
-      color: #dbeafe;
+      color: #cef0fd;
       font-size: 14px;
       margin: 5px 0 0 0;
     }
@@ -67,7 +67,7 @@ export function baseEmailLayout({ preheader, content }: BaseLayoutProps): string
     .button {
       display: inline-block;
       padding: 14px 28px;
-      background-color: #2563eb;
+      background-color: #0690c6;
       color: #ffffff !important;
       text-decoration: none;
       border-radius: 6px;
@@ -75,11 +75,11 @@ export function baseEmailLayout({ preheader, content }: BaseLayoutProps): string
       margin: 20px 0;
     }
     .button:hover {
-      background-color: #1d4ed8;
+      background-color: #056c94;
     }
     .info-box {
-      background-color: #eff6ff;
-      border-left: 4px solid #3b82f6;
+      background-color: #e6f7fe;
+      border-left: 4px solid #39c3f9;
       padding: 15px 20px;
       margin: 20px 0;
       border-radius: 4px;
@@ -120,7 +120,7 @@ export function baseEmailLayout({ preheader, content }: BaseLayoutProps): string
       margin: 15px 0;
     }
     .footer-links a {
-      color: #3b82f6;
+      color: #0690c6;
       text-decoration: none;
       margin: 0 10px;
     }

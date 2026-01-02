@@ -5,11 +5,11 @@
  */
 
 export const EMAIL_COLORS = {
-  // Brand Colors
-  primary: '#1e40af',      // Blue-800
-  primaryHover: '#2563eb', // Blue-600
-  primaryDark: '#1e3a8a',  // Blue-900
-  primaryLight: '#3b82f6', // Blue-500
+  // Brand Colors - Frozen Lake Palette
+  primary: '#0690c6',      // frozen-lake-600
+  primaryHover: '#08b3f7', // frozen-lake-500
+  primaryDark: '#056c94',  // frozen-lake-700
+  primaryLight: '#39c3f9', // frozen-lake-400
   
   // Background Colors
   background: '#f5f5f5',
@@ -41,9 +41,9 @@ export const EMAIL_COLORS = {
   errorDark: '#dc2626',    // Red-600
   errorBg: '#fee2e2',      // Red-100
   
-  info: '#3b82f6',         // Blue-500
-  infoDark: '#2563eb',     // Blue-600
-  infoBg: '#dbeafe',       // Blue-100
+  info: '#39c3f9',         // frozen-lake-400
+  infoDark: '#0690c6',     // frozen-lake-600
+  infoBg: '#cef0fd',       // frozen-lake-100
   
   // Priority Colors (for notifications)
   urgent: '#dc2626',       // Red-600

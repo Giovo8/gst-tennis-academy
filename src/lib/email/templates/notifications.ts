@@ -118,7 +118,7 @@ export function announcementNotificationTemplate(data: AnnouncementNotificationD
   const priorityColors: Record<string, string> = {
     urgent: "#dc2626",
     high: "#ea580c",
-    medium: "#3b82f6",
+    medium: "#0690c6",
     low: "#64748b",
   };
 

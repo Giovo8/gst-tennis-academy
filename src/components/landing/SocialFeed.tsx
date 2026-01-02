@@ -64,7 +64,7 @@ export default function SocialFeed() {
         </div>
 
         <div className="max-w-2xl mx-auto px-2">
-          <div className="rounded-xl sm:rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 backdrop-blur-xl overflow-hidden shadow-xl shadow-blue-500/20 w-full">
+          <div className="rounded-xl sm:rounded-2xl border border-tournament-border/30 bg-tournament-bg-card/60 backdrop-blur-xl overflow-hidden shadow-xl shadow-blue-500/20 w-full">
             <iframe
               title="Facebook Page"
               src={`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent('https://www.facebook.com/TnnisTimeOut/')}&tabs=timeline&width=500&height=650&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`}

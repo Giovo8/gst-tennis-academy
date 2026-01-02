@@ -224,7 +224,7 @@ export default function TournamentsSection() {
           <div className="mt-6 sm:mt-8 text-center">
             <Link 
               href="/tornei" 
-              className="inline-flex items-center gap-2 text-xs sm:text-sm text-[#7de3ff] hover:text-[#4fb3ff] font-semibold transition-colors"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm text-tournament-primary hover:text-tournament-secondary font-semibold transition-colors"
             >
               Vedi tutte le competizioni
               <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

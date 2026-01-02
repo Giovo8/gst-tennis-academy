@@ -32,7 +32,7 @@ export default function QuickActions({ actions, title = "Azioni Rapide" }: Quick
   const { containerRef, visibleItems } = useStaggeredFadeIn(actions.length);
 
   return (
-    <div ref={containerRef} className="rounded-xl border border-white/10 bg-[#042b4a] p-6 fade-in">
+    <div ref={containerRef} className="rounded-xl border border-white/10 bg-tournament-bg-card p-6 fade-in">
       <div className="flex items-center gap-3 mb-4">
         <Zap className="h-5 w-5 text-yellow-400" />
         <h3 className="text-lg font-semibold text-white">{title}</h3>

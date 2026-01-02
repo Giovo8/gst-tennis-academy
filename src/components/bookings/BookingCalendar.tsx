@@ -468,7 +468,7 @@ export default function BookingCalendar() {
               <CalendarDays className="h-5 w-5" />
             </button>
             {showDatePicker && (
-              <div className="absolute right-0 top-full mt-2 z-50 rounded-lg border border-white/15 bg-[#0d1f35] p-4 shadow-xl">
+              <div className="absolute right-0 top-full mt-2 z-50 rounded-lg border border-white/15 bg-tournament-bg-light p-4 shadow-xl">
                 <input
                   type="date"
                   value={format(selectedDate, "yyyy-MM-dd")}
