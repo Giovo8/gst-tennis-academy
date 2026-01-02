@@ -38,15 +38,15 @@ export default async function ServicePage({ params }: Props) {
       >
         <div>
           <label className="block text-sm text-[#c6d8c9]">Profilo ID</label>
-          <input name="profile_id" required className="w-full mt-1 p-2 rounded bg-[#071022] text-white" />
+          <input name="profile_id" required className="w-full mt-1 p-2 rounded bg-frozen-900 text-white" />
         </div>
         <div>
           <label className="block text-sm text-[#c6d8c9]">Data e ora inizio</label>
-          <input name="start_at" type="datetime-local" required className="w-full mt-1 p-2 rounded bg-[#071022] text-white" />
+          <input name="start_at" type="datetime-local" required className="w-full mt-1 p-2 rounded bg-frozen-900 text-white" />
         </div>
         <div>
           <label className="block text-sm text-[#c6d8c9]">Data e ora fine</label>
-          <input name="end_at" type="datetime-local" required className="w-full mt-1 p-2 rounded bg-[#071022] text-white" />
+          <input name="end_at" type="datetime-local" required className="w-full mt-1 p-2 rounded bg-frozen-900 text-white" />
         </div>
         <div>
           <button className="btn btn-primary" type="submit">Prenota</button>

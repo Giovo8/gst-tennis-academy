@@ -173,12 +173,12 @@ export default function TournamentDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d1f35] to-[#0a1929]">
+      <div className="min-h-screen bg-gradient-to-br from-frozen-900 via-frozen-950 to-frozen-900">
         <PublicNavbar />
         <main className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#7de3ff]/30 border-t-[#7de3ff]"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-frozen-400/30 border-t-frozen-400"></div>
               <p className="mt-4 text-gray-400">Caricamento torneo...</p>
             </div>
           </div>
@@ -189,7 +189,7 @@ export default function TournamentDetail() {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d1f35] to-[#0a1929]">
+      <div className="min-h-screen bg-gradient-to-br from-frozen-900 via-frozen-950 to-frozen-900">
         <PublicNavbar />
         <main className="container mx-auto px-4 py-12">
           <div className="text-center py-20">
@@ -198,7 +198,7 @@ export default function TournamentDetail() {
             <p className="text-gray-400 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
             <button
               onClick={() => router.push('/tornei')}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 text-sm font-bold text-[#0a1929] hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-frozen-400 to-frozen-500 px-6 py-3 text-sm font-bold text-frozen-950 hover:shadow-lg hover:shadow-frozen-400/40 transition-all"
             >
               <ArrowLeft className="h-4 w-4" />
               Torna ai Tornei
@@ -232,17 +232,17 @@ export default function TournamentDetail() {
         return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
       case 'In Corso':
       case 'In corso':
-        return 'bg-sky-500/10 text-sky-400 border-sky-500/30';
+        return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
       case 'Completato':
       case 'Concluso':
         return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
       default:
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d1f35] to-[#0a1929]">
+    <div className="min-h-screen bg-gradient-to-br from-frozen-900 via-frozen-950 to-frozen-900">
       <PublicNavbar />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-7xl">
@@ -256,22 +256,22 @@ export default function TournamentDetail() {
         </button>
 
         {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35] to-[#0a1929] p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8">
+        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950 to-frozen-900 p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8">
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#7de3ff]/5 via-transparent to-[#4fb3ff]/5"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-frozen-400/5 via-transparent to-frozen-500/5"></div>
           
           <div className="relative z-10">
             {/* Tournament Type Badge */}
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#7de3ff]/10 border border-[#7de3ff]/30">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-frozen-400/10 border border-frozen-400/30">
               {isCampionato ? (
                 <>
-                  <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#7de3ff]" />
-                  <span className="text-xs sm:text-sm font-bold text-[#7de3ff] uppercase tracking-wider">Campionato</span>
+                  <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-frozen-400" />
+                  <span className="text-xs sm:text-sm font-bold text-frozen-400 uppercase tracking-wider">Campionato</span>
                 </>
               ) : (
                 <>
-                  <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#7de3ff]" />
-                  <span className="text-xs sm:text-sm font-bold text-[#7de3ff] uppercase tracking-wider">Torneo</span>
+                  <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-frozen-400" />
+                  <span className="text-xs sm:text-sm font-bold text-frozen-400 uppercase tracking-wider">Torneo</span>
                 </>
               )}
             </div>
@@ -316,10 +316,10 @@ export default function TournamentDetail() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
           {/* Date Card */}
           {tournament.start_date && (
-            <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
+            <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6">
               <div className="flex items-start gap-3">
-                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
+                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-400/20 to-frozen-500/20 p-2.5 sm:p-3 ring-1 ring-frozen-400/30">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Inizio</p>
@@ -342,10 +342,10 @@ export default function TournamentDetail() {
           )}
 
           {/* Participants Card */}
-          <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
+          <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
+              <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-400/20 to-frozen-500/20 p-2.5 sm:p-3 ring-1 ring-frozen-400/30">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
               </div>
               <div className="flex-1">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Partecipanti</p>
@@ -363,10 +363,10 @@ export default function TournamentDetail() {
 
           {/* Format Card */}
           {tournament.best_of && (
-            <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6">
+            <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6">
               <div className="flex items-start gap-3">
-                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 sm:p-3 ring-1 ring-[#7de3ff]/30">
-                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-[#7de3ff]" />
+                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-400/20 to-frozen-500/20 p-2.5 sm:p-3 ring-1 ring-frozen-400/30">
+                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Formato Match</p>
@@ -383,7 +383,7 @@ export default function TournamentDetail() {
         </div>
 
         {/* Action Section */}
-        <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/80 to-[#0a1929]/80 backdrop-blur-sm p-4 sm:p-6 mb-4 sm:mb-6 lg:mb-8">
+        <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6 mb-4 sm:mb-6 lg:mb-8">
           {isManager ? (
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Gestione Competizione</h3>
@@ -443,12 +443,12 @@ export default function TournamentDetail() {
                   </button>
                   
                   {profile?.role === 'maestro' && (
-                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
                       <p className="text-xs sm:text-sm text-gray-300">
-                        <span className="font-semibold text-blue-400">Sei un maestro?</span> Puoi iscrivere i tuoi atleti dalla{' '}
+                        <span className="font-semibold text-frozen-400">Sei un maestro?</span> Puoi iscrivere i tuoi atleti dalla{' '}
                         <button 
                           onClick={() => router.push('/dashboard/maestro')} 
-                          className="underline text-[#7de3ff] hover:text-[#4fb3ff] transition-colors font-semibold"
+                          className="underline text-frozen-400 hover:text-frozen-300 transition-colors font-semibold"
                         >
                           Dashboard Maestro
                         </button>
@@ -474,7 +474,7 @@ export default function TournamentDetail() {
         </div>
 
         {/* Competition View Section */}
-        <div className="rounded-xl sm:rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#0d1f35]/60 to-[#0a1929]/60 backdrop-blur-sm p-4 sm:p-6">
+        <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/60 to-frozen-900/60 backdrop-blur-sm p-4 sm:p-6">
           <CompetitionView 
             tournament={tournament}
             participants={participantsList}

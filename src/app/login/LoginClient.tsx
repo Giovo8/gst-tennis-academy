@@ -99,8 +99,8 @@ export default function LoginClient() {
 
           {/* Redirect Info Message */}
           {redirectPath && (
-            <div className="mb-4 sm:mb-6 rounded-lg sm:rounded-xl bg-blue-100 border border-blue-300 p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-blue-700 font-medium">
+            <div className="mb-4 sm:mb-6 rounded-lg sm:rounded-xl bg-frozen-100 border border-frozen-300 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-frozen-700 font-medium">
                 🔒 Accedi per continuare alla pagina richiesta
               </p>
             </div>
@@ -115,7 +115,7 @@ export default function LoginClient() {
               <input
                 id="email"
                 type="email"
-                className="w-full px-3 py-3 sm:px-4 sm:py-3.5 bg-white border border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-3 sm:px-4 sm:py-3.5 bg-white border border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent transition-all"
                 placeholder="nome@esempio.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -133,7 +133,7 @@ export default function LoginClient() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-3 py-3 sm:px-4 sm:py-3.5 bg-white border border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-10 sm:pr-12"
+                  className="w-full px-3 py-3 sm:px-4 sm:py-3.5 bg-white border border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent transition-all pr-10 sm:pr-12"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -143,7 +143,7 @@ export default function LoginClient() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-600 transition-colors p-1.5 rounded-lg hover:bg-gray-100"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-frozen-600 transition-colors p-1.5 rounded-lg hover:bg-gray-100"
                   aria-label={showPassword ? "Nascondi password" : "Mostra password"}
                 >
                   {showPassword ? <EyeOff size={18} className="sm:w-5 sm:h-5" /> : <Eye size={18} className="sm:w-5 sm:h-5" />}
@@ -161,7 +161,7 @@ export default function LoginClient() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 sm:py-4 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-lg sm:rounded-xl text-sm sm:text-base shadow-sm hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 sm:py-4 px-4 bg-gradient-to-r from-frozen-500 to-frozen-600 text-white font-bold rounded-lg sm:rounded-xl text-sm sm:text-base shadow-sm hover:from-frozen-600 hover:to-frozen-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (

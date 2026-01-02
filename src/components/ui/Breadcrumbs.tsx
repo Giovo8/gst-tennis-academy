@@ -23,7 +23,7 @@ export function Breadcrumbs({ items, showHome = true, className = "" }: Breadcru
             <li>
               <Link
                 href="/"
-                className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+                className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-frozen-400 transition-colors"
                 aria-label="Home"
               >
                 <Home className="h-4 w-4" />
@@ -44,7 +44,7 @@ export function Breadcrumbs({ items, showHome = true, className = "" }: Breadcru
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+                  className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-frozen-400 transition-colors"
                 >
                   {item.label}
                 </Link>

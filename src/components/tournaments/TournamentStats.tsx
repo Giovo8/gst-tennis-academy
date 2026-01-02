@@ -63,7 +63,7 @@ export default function TournamentStats() {
         <StatCard
           title="Tornei Totali"
           value={stats.total}
-          icon={<Trophy className="h-8 w-8 text-blue-300" />}
+          icon={<Trophy className="h-8 w-8 text-frozen-300" />}
           color="blue"
         />
         <StatCard
@@ -119,9 +119,9 @@ export default function TournamentStats() {
       </div>
 
       {/* Tournament Types Breakdown */}
-      <div className="rounded-2xl border-2 border-blue-400/50 bg-gradient-to-br from-blue-500/25 via-blue-600/20 to-blue-700/15 backdrop-blur-sm p-6 hover:border-blue-400/70 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300">
+      <div className="rounded-2xl border-2 border-frozen-400/50 bg-gradient-to-br from-frozen-500/25 via-frozen-600/20 to-frozen-700/15 backdrop-blur-sm p-6 hover:border-frozen-400/70 hover:shadow-xl hover:shadow-frozen-500/30 transition-all duration-300">
         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-300 mb-4 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-blue-400" />
+          <Trophy className="w-5 h-5 text-frozen-400" />
           Distribuzione per Tipo
         </h3>
         <div className="space-y-4">
@@ -141,11 +141,11 @@ export default function TournamentStats() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-white font-medium">Girone + Eliminazione</span>
-              <span className="text-sm font-bold bg-gradient-to-r from-blue-300 to-cyan-400 bg-clip-text text-transparent">{stats.byType.girone_eliminazione}</span>
+              <span className="text-sm font-bold bg-gradient-to-r from-frozen-300 to-frozen-400 bg-clip-text text-transparent">{stats.byType.girone_eliminazione}</span>
             </div>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-frozen-500 to-frozen-400 rounded-full transition-all duration-500"
                 style={{ width: `${stats.total > 0 ? (stats.byType.girone_eliminazione / stats.total) * 100 : 0}%` }}
               />
             </div>

@@ -49,7 +49,7 @@
 
 /* Gradient Text Effects */
 .gradient-text-primary {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0690c6 0%, #08b3f7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -63,7 +63,7 @@
 }
 
 .gradient-text-accent {
-  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  background: linear-gradient(135deg, #0690c6 0%, #39c3f9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -71,7 +71,7 @@
 
 /* Background Gradients */
 .bg-gradient-primary {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0690c6 0%, #08b3f7 100%);
 }
 
 .bg-gradient-success {
@@ -83,16 +83,16 @@
 }
 
 .bg-gradient-subtle {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #e6f7fe 100%);
 }
 
 .dark .bg-gradient-subtle {
-  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  background: linear-gradient(180deg, #011923 0%, #022431 100%);
 }
 
 /* Focus Ring Utility */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+  @apply focus:outline-none focus:ring-2 focus:ring-frozen-600 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-frozen-950;
 }
 
 /* Hover Lift Effect */
@@ -172,22 +172,22 @@
 .card-hover {
   @apply transition-all duration-300;
   @apply hover:shadow-xl hover:-translate-y-1;
-  @apply hover:border-[#1e40af]/30;
+  @apply hover:border-frozen-600/30;
 }
 
 /* Loading Pulse */
 .loading-pulse {
-  @apply animate-pulse bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200;
-  @apply dark:from-slate-800 dark:via-slate-700 dark:dark:to-slate-800;
+  @apply animate-pulse bg-gradient-to-r from-frozen-200 via-frozen-300 to-frozen-200;
+  @apply dark:from-frozen-800 dark:via-frozen-700 dark:dark:to-frozen-800;
 }
 
 /* Divider */
 .divider {
-  @apply border-t border-slate-200 dark:border-slate-800;
+  @apply border-t border-frozen-200 dark:border-frozen-800;
 }
 
 .divider-vertical {
-  @apply border-l border-slate-200 dark:border-slate-800;
+  @apply border-l border-frozen-200 dark:border-frozen-800;
 }
 
 /* Text Utilities */

@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 
 export default function RefundPolicyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-frozen-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-frozen-600 rounded-full mb-6">
             <RotateCcw className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -146,11 +146,11 @@ export default function RefundPolicyPage() {
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                 6. Come Richiedere un Rimborso
               </h2>
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">
+              <div className="bg-frozen-50 dark:bg-frozen-900/20 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-frozen-900 dark:text-frozen-100 mb-3">
                   Procedura di Rimborso:
                 </h3>
-                <ol className="list-decimal list-inside text-blue-800 dark:text-blue-200 space-y-2">
+                <ol className="list-decimal list-inside text-frozen-800 dark:text-frozen-200 space-y-2">
                   <li>Accedi al tuo account GST Tennis Academy</li>
                   <li>Vai alla sezione "Le mie prenotazioni"</li>
                   <li>Seleziona la prenotazione da cancellare</li>
@@ -198,15 +198,15 @@ export default function RefundPolicyPage() {
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-3">
-                    <Mail className="w-5 h-5 text-blue-600" />
+                    <Mail className="w-5 h-5 text-frozen-600" />
                     <span className="text-gray-700 dark:text-gray-300">rimborsi@gsttennis.com</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-blue-600" />
+                    <Phone className="w-5 h-5 text-frozen-600" />
                     <span className="text-gray-700 dark:text-gray-300">+39 123 456 7890</span>
                   </div>
                   <div className="flex items-center space-x-3 md:col-span-2">
-                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <MapPin className="w-5 h-5 text-frozen-600" />
                     <span className="text-gray-700 dark:text-gray-300">Via del Tennis 123, 00100 Roma, Italia</span>
                   </div>
                 </div>

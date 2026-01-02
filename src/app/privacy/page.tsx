@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-frozen-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-frozen-600 rounded-full mb-6">
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
                 7. Cookie e Tecnologie Simili
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Utilizziamo cookie e tecnologie simili per migliorare la tua esperienza sul nostro sito. Per maggiori dettagli, consulta la nostra <a href="/cookie-policy" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Cookie Policy</a>.
+                Utilizziamo cookie e tecnologie simili per migliorare la tua esperienza sul nostro sito. Per maggiori dettagli, consulta la nostra <a href="/cookie-policy" className="text-frozen-600 hover:text-frozen-800 dark:text-frozen-400 dark:hover:text-frozen-300">Cookie Policy</a>.
               </p>
             </section>
 
@@ -145,15 +145,15 @@ export default function PrivacyPage() {
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-3">
-                    <Mail className="w-5 h-5 text-blue-600" />
+                    <Mail className="w-5 h-5 text-frozen-600" />
                     <span className="text-gray-700 dark:text-gray-300">privacy@gsttennis.com</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-blue-600" />
+                    <Phone className="w-5 h-5 text-frozen-600" />
                     <span className="text-gray-700 dark:text-gray-300">+39 123 456 7890</span>
                   </div>
                   <div className="flex items-center space-x-3 md:col-span-2">
-                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <MapPin className="w-5 h-5 text-frozen-600" />
                     <span className="text-gray-700 dark:text-gray-300">Via del Tennis 123, 00100 Roma, Italia</span>
                   </div>
                 </div>

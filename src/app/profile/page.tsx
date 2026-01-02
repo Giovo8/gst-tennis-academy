@@ -101,7 +101,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10 bg-[#021627] text-white">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10 bg-frozen-950 text-white">
       <div className="mx-auto w-full max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
@@ -124,7 +124,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <div className="rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
+      <div className="rounded-3xl border border-frozen-500/30 bg-frozen-800/60 p-6">
         {loading ? (
           <p className="text-sm text-[#c6d8c9]">Caricamento profilo...</p>
         ) : (
@@ -133,7 +133,7 @@ export default function ProfilePage() {
               <label className="block text-sm text-[#c6d8c9] sm:col-span-2">
                 Nome completo
                 <input
-                  className="mt-2 w-full rounded-xl border border-white/15 bg-[#1a3d5c]/60 px-3 py-2 text-white outline-none focus:border-[#7de3ff]/60"
+                  className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-800/60 px-3 py-2 text-white outline-none focus:border-frozen-400/60"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nome e Cognome"
@@ -142,7 +142,7 @@ export default function ProfilePage() {
               <label className="block text-sm text-[#c6d8c9]">
                 Email
                 <input
-                  className="mt-2 w-full rounded-xl border border-white/15 bg-[#1a3d5c]/60 px-3 py-2 text-white opacity-70"
+                  className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-800/60 px-3 py-2 text-white opacity-70"
                   value={profile?.email ?? ""}
                   readOnly
                 />
@@ -150,7 +150,7 @@ export default function ProfilePage() {
               <label className="block text-sm text-[#c6d8c9]">
                 Abbonamento
                 <input
-                  className="mt-2 w-full rounded-xl border border-white/15 bg-[#1a3d5c]/60 px-3 py-2 text-white outline-none focus:border-[#7de3ff]/60"
+                  className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-800/60 px-3 py-2 text-white outline-none focus:border-frozen-400/60"
                   value={subscriptionType}
                   onChange={(e) => setSubscriptionType(e.target.value)}
                   placeholder="Es. Mensile, Annuale, Clinic Pack"
@@ -159,10 +159,10 @@ export default function ProfilePage() {
             </div>
 
             {/* Notification Preferences */}
-            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+            <div className="rounded-2xl border border-frozen-500/20 bg-frozen-500/5 p-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-cyan-500/10 p-2">
-                  <Bell className="h-5 w-5 text-cyan-400" />
+                <div className="rounded-xl bg-frozen-500/10 p-2">
+                  <Bell className="h-5 w-5 text-frozen-400" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-white mb-1">Preferenze Notifiche</h3>
@@ -177,11 +177,11 @@ export default function ProfilePage() {
                         onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-frozen-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-frozen-500"></div>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-cyan-400" />
+                        <Mail className="h-4 w-4 text-frozen-400" />
                         <span className="text-sm font-medium text-white">Notifiche Email</span>
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -197,7 +197,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold bg-accent text-[#06101f] transition hover:bg-[#5fc7e0] disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold bg-accent text-frozen-950 transition hover:bg-frozen-400 disabled:opacity-60"
               >
                 {saving ? "Salvataggio..." : "Salva modifiche"}
               </button>
@@ -209,7 +209,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 justify-center rounded-full border border-red-400/30 px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:border-red-400/50 hover:bg-red-400/10"
+                className="inline-flex items-center gap-2 justify-center rounded-full border border-red-400/30 px-6 py-3 text-sm font-semibold text-frozen-300 transition hover:border-red-400/50 hover:bg-red-400/10"
               >
                 <LogOut className="h-4 w-4" />
                 Logout

@@ -69,7 +69,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
 
 const variantConfig = {
   success: {
-    bg: "bg-blue-50 dark:bg-blue-950 border-primary/30 dark:border-primary/80",
+    bg: "bg-frozen-50 dark:bg-frozen-950 border-primary/30 dark:border-primary/80",
     icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
     title: "text-emerald-900 dark:text-emerald-100",
     text: "text-emerald-700 dark:text-emerald-300",
@@ -81,16 +81,16 @@ const variantConfig = {
     text: "text-red-700 dark:text-red-300",
   },
   warning: {
-    bg: "bg-blue-50 dark:bg-blue-950 border-primary/30 dark:border-primary/80",
+    bg: "bg-frozen-50 dark:bg-frozen-950 border-primary/30 dark:border-primary/80",
     icon: <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
     title: "text-amber-900 dark:text-amber-100",
     text: "text-amber-700 dark:text-amber-300",
   },
   info: {
-    bg: "bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800",
-    icon: <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
-    title: "text-blue-900 dark:text-blue-100",
-    text: "text-blue-700 dark:text-blue-300",
+    bg: "bg-frozen-50 dark:bg-frozen-950 border-frozen-200 dark:border-frozen-800",
+    icon: <Info className="h-5 w-5 text-frozen-600 dark:text-frozen-400" />,
+    title: "text-frozen-900 dark:text-frozen-100",
+    text: "text-frozen-700 dark:text-frozen-300",
   },
 };
 

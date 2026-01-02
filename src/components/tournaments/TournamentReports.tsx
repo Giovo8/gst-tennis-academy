@@ -80,7 +80,7 @@ export default function TournamentReports() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-frozen-600"></div>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export default function TournamentReports() {
             onClick={() => setActiveTab('overview')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'overview'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-frozen-600 text-frozen-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -122,7 +122,7 @@ export default function TournamentReports() {
             onClick={() => setActiveTab('rankings')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'rankings'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-frozen-600 text-frozen-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -133,7 +133,7 @@ export default function TournamentReports() {
             onClick={() => setActiveTab('tournaments')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'tournaments'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-frozen-600 text-frozen-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -150,8 +150,8 @@ export default function TournamentReports() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Trophy className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-frozen-100 rounded-lg">
+                  <Trophy className="w-6 h-6 text-frozen-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Tornei Totali</p>
@@ -165,7 +165,7 @@ export default function TournamentReports() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-frozen-100 rounded-lg">
                   <Users className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
@@ -180,7 +180,7 @@ export default function TournamentReports() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-frozen-100 rounded-lg">
                   <Target className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
@@ -195,7 +195,7 @@ export default function TournamentReports() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-frozen-100 rounded-lg">
                   <BarChart3 className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
@@ -252,7 +252,7 @@ export default function TournamentReports() {
             {/* Most Active Players */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Award className="w-5 h-5 mr-2 text-blue-600" />
+                <Award className="w-5 h-5 mr-2 text-frozen-600" />
                 Più Attivi
               </h3>
               <div className="space-y-3">
@@ -262,7 +262,7 @@ export default function TournamentReports() {
                       <span className="text-sm font-medium text-gray-500 w-6">#{idx + 1}</span>
                       <span className="text-sm font-medium text-gray-900">{player.player_name}</span>
                     </div>
-                    <span className="text-sm font-bold text-blue-600">{player.matches_played} match</span>
+                    <span className="text-sm font-bold text-frozen-600">{player.matches_played} match</span>
                   </div>
                 ))}
               </div>
@@ -323,7 +323,7 @@ export default function TournamentReports() {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className={`text-sm font-bold ${
                         player.win_rate >= 70 ? 'text-green-600' :
-                        player.win_rate >= 50 ? 'text-blue-600' :
+                        player.win_rate >= 50 ? 'text-frozen-600' :
                         'text-gray-600'
                       }`}>
                         {player.win_rate.toFixed(1)}%
@@ -381,9 +381,9 @@ export default function TournamentReports() {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         tournament.status === 'Completato' || tournament.status === 'Concluso'
-                          ? 'bg-blue-100 text-primary'
+                          ? 'bg-frozen-100 text-primary'
                           : tournament.status === 'In Corso' || tournament.status === 'In corso'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-frozen-100 text-frozen-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}>
                         {tournament.status}
@@ -402,7 +402,7 @@ export default function TournamentReports() {
                       <div className="flex items-center justify-center">
                         <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
                           <div
-                            className="bg-blue-600 h-2 rounded-full"
+                            className="bg-frozen-600 h-2 rounded-full"
                             style={{ width: `${tournament.completion_rate}%` }}
                           ></div>
                         </div>

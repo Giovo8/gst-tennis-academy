@@ -23,12 +23,12 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-  primary: "bg-blue-100 text-primary border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900",
+  primary: "bg-frozen-100 text-primary border-frozen-200 dark:bg-frozen-950 dark:text-frozen-400 dark:border-frozen-900",
   secondary: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
-  success: "bg-blue-100 text-primary border-primary/30 dark:bg-blue-950 dark:text-primary-light dark:border-primary/90",
+  success: "bg-frozen-100 text-primary border-primary/30 dark:bg-frozen-950 dark:text-primary-light dark:border-primary/90",
   error: "bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900",
-  warning: "bg-blue-100 text-primary-dark border-primary/30 dark:bg-blue-950 dark:text-primary-light dark:border-primary/90",
-  info: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900",
+  warning: "bg-frozen-100 text-primary-dark border-primary/30 dark:bg-frozen-950 dark:text-primary-light dark:border-primary/90",
+  info: "bg-frozen-100 text-frozen-700 border-frozen-200 dark:bg-frozen-950 dark:text-frozen-400 dark:border-frozen-900",
 };
 
 const sizeStyles: Record<BadgeSize, string> = {
@@ -74,7 +74,7 @@ function Badge({
           variant === 'success' ? 'bg-primary' : 
           variant === 'error' ? 'bg-red-500' : 
           variant === 'warning' ? 'bg-primary-hover' : 
-          variant === 'info' ? 'bg-blue-500' : 
+          variant === 'info' ? 'bg-frozen-500' : 
           'bg-slate-500'
         }`} />
       )}

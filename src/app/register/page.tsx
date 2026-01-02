@@ -158,7 +158,7 @@ function RegisterForm() {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <Loader2 className="mx-auto h-12 w-12 text-blue-600 animate-spin" />
+          <Loader2 className="mx-auto h-12 w-12 text-frozen-600 animate-spin" />
           <p className="mt-4 text-gray-600">Validazione codice invito...</p>
         </div>
       </main>
@@ -184,7 +184,7 @@ function RegisterForm() {
             </p>
             <Link 
               href="/login"
-              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
+              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-frozen-500 to-frozen-600 px-6 py-3 text-sm font-semibold text-white hover:from-frozen-600 hover:to-frozen-700 transition-all shadow-sm"
             >
               Torna al Login
             </Link>
@@ -199,14 +199,14 @@ function RegisterForm() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm">
           <div className="text-center mb-6">
-            <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-              <UserPlus className="h-8 w-8 text-blue-600" />
+            <div className="mx-auto w-16 h-16 bg-frozen-50 rounded-full flex items-center justify-center mb-4">
+              <UserPlus className="h-8 w-8 text-frozen-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-700 mb-2">
               Crea Account
             </h1>
             <p className="text-sm text-gray-600">
-              Registrazione come: <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-blue-100 text-blue-700 border border-blue-300">{codeRole}</span>
+              Registrazione come: <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-frozen-100 text-frozen-700 border border-frozen-300">{codeRole}</span>
             </p>
           </div>
 
@@ -226,7 +226,7 @@ function RegisterForm() {
                 required
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent"
                 placeholder="Mario Rossi"
               />
             </div>
@@ -240,7 +240,7 @@ function RegisterForm() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent"
                 placeholder="email@esempio.com"
               />
             </div>
@@ -253,7 +253,7 @@ function RegisterForm() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent"
                 placeholder="+39 123 456 7890"
               />
             </div>
@@ -267,7 +267,7 @@ function RegisterForm() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent"
                 placeholder="Minimo 6 caratteri"
               />
             </div>
@@ -281,7 +281,7 @@ function RegisterForm() {
                 required
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-transparent"
                 placeholder="Ripeti la password"
               />
             </div>
@@ -289,7 +289,7 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+              className="w-full py-3 rounded-lg bg-gradient-to-r from-frozen-500 to-frozen-600 text-white font-semibold hover:from-frozen-600 hover:to-frozen-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
             >
               {loading ? (
                 <>
@@ -306,7 +306,7 @@ function RegisterForm() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/login" className="text-sm text-frozen-600 hover:text-frozen-700 font-medium">
               Hai già un account? Accedi
             </Link>
           </div>

@@ -46,7 +46,7 @@ export default function WorkWithUsPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 sm:gap-8 md:gap-10 px-6 sm:px-8 py-10 sm:py-12 md:py-16 bg-[#021627]">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 sm:gap-8 md:gap-10 px-6 sm:px-8 py-10 sm:py-12 md:py-16 bg-frozen-950">
       {/* Header Section */}
       <div className="space-y-3 sm:space-y-4 text-center">
         <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">Entra nel Team</p>
@@ -59,9 +59,9 @@ export default function WorkWithUsPage() {
 
       {/* Posizioni Aperte */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
-        <div className="rounded-xl sm:rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-4 sm:p-6">
-          <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-blue-500/20 p-2 sm:p-3">
-            <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+        <div className="rounded-xl sm:rounded-2xl border border-frozen-500/30 bg-gradient-to-br from-frozen-500/10 to-frozen-500/5 p-4 sm:p-6">
+          <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-frozen-500/20 p-2 sm:p-3">
+            <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
           </div>
           <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Maestri di Tennis</h3>
           <p className="text-xs sm:text-sm text-muted mb-3 sm:mb-4">
@@ -70,23 +70,23 @@ export default function WorkWithUsPage() {
           </p>
           <ul className="space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-300" />
+              <CheckCircle className="h-4 w-4 text-frozen-300" />
               Certificazione FIT richiesta
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-300" />
+              <CheckCircle className="h-4 w-4 text-frozen-300" />
               Esperienza con bambini e adulti
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-300" />
+              <CheckCircle className="h-4 w-4 text-frozen-300" />
               Disponibilità part-time/full-time
             </li>
           </ul>
         </div>
 
-        <div className="rounded-xl sm:rounded-2xl border border-[#2f7de1]/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/5 p-4 sm:p-6">
-          <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-cyan-500/20 p-2 sm:p-3">
-            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-300" />
+        <div className="rounded-xl sm:rounded-2xl border border-frozen-500/30 bg-gradient-to-br from-frozen-500/10 to-frozen-500/5 p-4 sm:p-6">
+          <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-frozen-500/20 p-2 sm:p-3">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-300" />
           </div>
           <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Personale di Campo</h3>
           <p className="text-xs sm:text-sm text-muted mb-3 sm:mb-4">
@@ -95,15 +95,15 @@ export default function WorkWithUsPage() {
           </p>
           <ul className="space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-300" />
+              <CheckCircle className="h-4 w-4 text-frozen-300" />
               Accoglienza e front office
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-300" />
+              <CheckCircle className="h-4 w-4 text-frozen-300" />
               Gestione prenotazioni
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-300" />
+              <CheckCircle className="h-4 w-4 text-frozen-300" />
               Manutenzione ordinaria campi
             </li>
           </ul>
@@ -111,7 +111,7 @@ export default function WorkWithUsPage() {
       </div>
 
       {/* Form Candidatura */}
-      <div className="rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-8">
+      <div className="rounded-3xl border border-frozen-500/30 bg-frozen-800/60 p-8">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-white mb-2">Invia la tua candidatura</h2>
           <p className="text-sm text-muted">
@@ -122,7 +122,7 @@ export default function WorkWithUsPage() {
           <label className="text-sm text-white sm:col-span-2">
             Nome completo *
             <input
-              className="mt-2 w-full rounded-xl border border-white/15 bg-[#0d1f35]/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
+              className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-900/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Mario Rossi"
@@ -133,7 +133,7 @@ export default function WorkWithUsPage() {
             Email *
             <input
               type="email"
-              className="mt-2 w-full rounded-xl border border-white/15 bg-[#0d1f35]/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
+              className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-900/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="mario.rossi@email.it"
@@ -143,7 +143,7 @@ export default function WorkWithUsPage() {
           <label className="text-sm text-white">
             Posizione *
             <select
-              className="mt-2 w-full rounded-xl border border-white/15 bg-[#0d1f35]/80 px-4 py-3 text-white outline-none focus:border-accent transition"
+              className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-900/80 px-4 py-3 text-white outline-none focus:border-accent transition"
               value={role}
               onChange={(e) => setRole(e.target.value as RoleOption)}
             >
@@ -154,7 +154,7 @@ export default function WorkWithUsPage() {
           <label className="text-sm text-white sm:col-span-2">
             Link CV (opzionale)
             <input
-              className="mt-2 w-full rounded-xl border border-white/15 bg-[#0d1f35]/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
+              className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-900/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
               value={cvUrl}
               onChange={(e) => setCvUrl(e.target.value)}
               placeholder="https://drive.google.com/... o LinkedIn"
@@ -163,7 +163,7 @@ export default function WorkWithUsPage() {
           <label className="text-sm text-white sm:col-span-2">
             Presentazione
             <textarea
-              className="mt-2 w-full rounded-xl border border-white/15 bg-[#0d1f35]/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
+              className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-900/80 px-4 py-3 text-white outline-none focus:border-accent transition placeholder:text-muted"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Parlaci delle tue esperienze, certificazioni, disponibilità e motivazioni..."
@@ -174,18 +174,18 @@ export default function WorkWithUsPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-semibold bg-accent text-[#06101f] transition hover:bg-[#5fc7e0] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-semibold bg-accent text-frozen-950 transition hover:bg-frozen-400 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {loading ? "Invio in corso..." : "Invia candidatura"}
             </button>
             {success && (
-              <div className="flex items-center gap-2 text-sm text-blue-300">
+              <div className="flex items-center gap-2 text-sm text-frozen-300">
                 <CheckCircle className="h-4 w-4" />
                 {success}
               </div>
             )}
-            {error && <span className="text-sm text-cyan-300">{error}</span>}
+            {error && <span className="text-sm text-frozen-300">{error}</span>}
           </div>
         </form>
       </div>
