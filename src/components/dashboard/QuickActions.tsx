@@ -10,7 +10,7 @@ type QuickAction = {
   icon: React.ReactNode;
   onClick?: () => void;
   href?: string;
-  color?: "blue" | "green" | "yellow" | "red" | "purple";
+  color?: "blue" | "green" | "yellow" | "red" | "purple" | "orange";
   disabled?: boolean;
 };
 
@@ -25,6 +25,7 @@ const colorClasses = {
   yellow: "from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600",
   red: "from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600",
   purple: "from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600",
+  orange: "from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600",
 };
 
 export default function QuickActions({ actions, title = "Azioni Rapide" }: QuickActionsProps) {

@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
-import StatsCard from '@/components/dashboard/StatsCard';
-import ChartCard from '@/components/dashboard/ChartCard';
-import RecentActivity from '@/components/dashboard/RecentActivity';
+import { StatsCard } from '@/components/dashboard/StatsCard';
+import { ChartCard } from '@/components/dashboard/ChartCard';
+import { TimeTracker } from '@/components/dashboard/TimeTracker';
 import QuickActions from '@/components/dashboard/QuickActions';
-import TimeTracker from '@/components/dashboard/TimeTracker';
-import ProjectCard from '@/components/dashboard/ProjectCard';
 import { 
   Users, 
   Calendar, 
@@ -46,7 +44,7 @@ export default function MaestroDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
+    // supabase già importato
 
     const loadData = async () => {
       try {
@@ -103,88 +101,34 @@ export default function MaestroDashboard() {
     { day: 'D', value: 8 },
   ];
 
-  const recentActivities = [
-    {
-      id: '1',
-      title: 'Corso Principianti Completato',
-      description: 'Gruppo A - 8 studenti diplomati',
-      time: '1 ora fa',
-      status: 'completed' as const,
-    },
-    {
-      id: '2',
-      title: 'Nuova Valutazione',
-      description: '5 stelle da Alessandro Neri',
-      time: '3 ore fa',
-      status: 'completed' as const,
-    },
-    {
-      id: '3',
-      title: 'Lezione di Gruppo',
-      description: 'Tecnica avanzata - In corso',
-      time: '5 ore fa',
-      status: 'in-progress' as const,
-    },
-  ];
-
   const quickActions = [
     {
-      title: 'Nuovo Corso',
+      label: 'Nuovo Corso',
       description: 'Crea un nuovo corso di tennis',
-      icon: BookOpen,
+      icon: <BookOpen className="h-6 w-6" />,
       color: 'green' as const,
       href: '/courses/new',
     },
     {
-      title: 'Programma Lezioni',
+      label: 'Programma Lezioni',
       description: 'Organizza il calendario lezioni',
-      icon: Calendar,
+      icon: <Calendar className="h-6 w-6" />,
       color: 'blue' as const,
       href: '/dashboard/maestro/schedule',
     },
     {
-      title: 'Valuta Studenti',
+      label: 'Valuta Studenti',
       description: 'Registra progressi e feedback',
-      icon: ClipboardCheck,
+      icon: <ClipboardCheck className="h-6 w-6" />,
       color: 'purple' as const,
       href: '/dashboard/maestro/evaluations',
     },
     {
-      title: 'Messaggi',
+      label: 'Messaggi',
       description: 'Comunica con studenti e genitori',
-      icon: MessageSquare,
+      icon: <MessageSquare className="h-6 w-6" />,
       color: 'orange' as const,
       href: '/chat',
-    },
-  ];
-
-  const activeCourses = [
-    {
-      id: '1',
-      title: 'Corso Intermedio Estate',
-      description: '12 studenti iscritti',
-      progress: 70,
-      status: 'In Progress' as const,
-      dueDate: 'Gen 15, 2026',
-      color: 'green' as const,
-    },
-    {
-      id: '2',
-      title: 'Preparazione Agonistica',
-      description: '6 atleti professionisti',
-      progress: 45,
-      status: 'In Progress' as const,
-      dueDate: 'Gen 30, 2026',
-      color: 'blue' as const,
-    },
-    {
-      id: '3',
-      title: 'Corso Bambini 6-10 anni',
-      description: '15 bambini iscritti',
-      progress: 55,
-      status: 'In Progress' as const,
-      dueDate: 'Feb 10, 2026',
-      color: 'purple' as const,
     },
   ];
 
@@ -214,35 +158,26 @@ export default function MaestroDashboard() {
           <StatsCard
             title="Studenti Totali"
             value={stats.totalStudents}
-            change={stats.studentsChange}
             icon={Users}
-            trend="up"
             color="green"
           />
           <StatsCard
             title="Corsi Attivi"
             value={stats.activeCourses}
-            change={stats.coursesChange}
             icon={BookOpen}
-            trend="up"
             color="blue"
           />
           <StatsCard
             title="Lezioni Settimana"
             value={stats.lessonsThisWeek}
-            change={stats.lessonsChange}
             icon={Calendar}
-            trend="up"
             color="purple"
           />
           <StatsCard
             title="Valutazione Media"
             value={stats.averageRating}
-            change={stats.ratingChange}
             icon={Star}
-            trend="up"
             color="orange"
-            suffix="/5"
           />
         </div>
 
@@ -252,43 +187,17 @@ export default function MaestroDashboard() {
             <ChartCard
               title="Lezioni Settimanali"
               data={chartData}
-              color="green"
+
             />
           </div>
 
           {/* Time Tracker */}
-          <TimeTracker
-            time="06:15:32"
-            project="Corso Intermedio Estate"
-            isRunning={true}
-          />
+          <TimeTracker />
         </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
           <QuickActions actions={quickActions} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Active Courses */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Corsi Attivi
-              </h2>
-              <button className="px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors">
-                + Nuovo
-              </button>
-            </div>
-            <div className="space-y-4">
-              {activeCourses.map((course) => (
-                <ProjectCard key={course.id} {...course} />
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <RecentActivity activities={recentActivities} />
         </div>
       </div>
     </div>

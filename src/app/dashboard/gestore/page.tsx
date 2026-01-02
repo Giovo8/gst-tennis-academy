@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
-import StatsCard from '@/components/dashboard/StatsCard';
-import ChartCard from '@/components/dashboard/ChartCard';
-import RecentActivity from '@/components/dashboard/RecentActivity';
+import { StatsCard } from '@/components/dashboard/StatsCard';
+import { ChartCard } from '@/components/dashboard/ChartCard';
+import { TimeTracker } from '@/components/dashboard/TimeTracker';
 import QuickActions from '@/components/dashboard/QuickActions';
-import TimeTracker from '@/components/dashboard/TimeTracker';
-import ProjectCard from '@/components/dashboard/ProjectCard';
 import { 
   DollarSign, 
   Users, 
@@ -46,7 +44,7 @@ export default function GestoreDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
+    // supabase già importato
 
     const loadData = async () => {
       try {
@@ -100,95 +98,34 @@ export default function GestoreDashboard() {
     { day: 'D', value: 4000 },
   ];
 
-  const recentActivities = [
-    {
-      id: '1',
-      title: 'Nuovo Abbonamento',
-      description: 'Marco Rossi - Abbonamento Annuale Premium',
-      time: '30 minuti fa',
-      status: 'completed' as const,
-    },
-    {
-      id: '2',
-      title: 'Manutenzione Campo 3',
-      description: 'Riparazione rete e superficie - In corso',
-      time: '2 ore fa',
-      status: 'in-progress' as const,
-    },
-    {
-      id: '3',
-      title: 'Pagamento Ricevuto',
-      description: '€850 - Lezioni di gruppo Gennaio',
-      time: '4 ore fa',
-      status: 'completed' as const,
-    },
-    {
-      id: '4',
-      title: 'Alert Manutenzione',
-      description: 'Campo 2 - Controllo illuminazione richiesto',
-      time: '1 giorno fa',
-      status: 'pending' as const,
-    },
-  ];
-
   const quickActions = [
     {
-      title: 'Gestisci Campi',
+      label: 'Gestisci Campi',
       description: 'Visualizza disponibilità e stato campi',
-      icon: Activity,
+      icon: <Activity className="h-6 w-6" />,
       color: 'green' as const,
       href: '/dashboard/gestore/courts',
     },
     {
-      title: 'Report Finanziari',
+      label: 'Report Finanziari',
       description: 'Analizza entrate e uscite',
-      icon: FileText,
+      icon: <FileText className="h-6 w-6" />,
       color: 'blue' as const,
       href: '/dashboard/gestore/reports',
     },
     {
-      title: 'Gestisci Membri',
+      label: 'Gestisci Membri',
       description: 'Visualizza e gestisci iscrizioni',
-      icon: Users,
+      icon: <Users className="h-6 w-6" />,
       color: 'purple' as const,
       href: '/dashboard/gestore/members',
     },
     {
-      title: 'Impostazioni',
+      label: 'Impostazioni',
       description: 'Configura tariffe e orari',
-      icon: Settings,
+      icon: <Settings className="h-6 w-6" />,
       color: 'orange' as const,
       href: '/dashboard/gestore/settings',
-    },
-  ];
-
-  const ongoingProjects = [
-    {
-      id: '1',
-      title: 'Ristrutturazione Campo 1',
-      description: 'Sostituzione superficie e illuminazione',
-      progress: 65,
-      status: 'In Progress' as const,
-      dueDate: 'Gen 20, 2026',
-      color: 'blue' as const,
-    },
-    {
-      id: '2',
-      title: 'Campagna Marketing Estate',
-      description: 'Promozione corsi estivi e tornei',
-      progress: 30,
-      status: 'In Progress' as const,
-      dueDate: 'Feb 1, 2026',
-      color: 'green' as const,
-    },
-    {
-      id: '3',
-      title: 'Aggiornamento Sistema Prenotazioni',
-      description: 'Implementazione nuove funzionalità',
-      progress: 80,
-      status: 'Pending' as const,
-      dueDate: 'Gen 10, 2026',
-      color: 'purple' as const,
     },
   ];
 
@@ -218,36 +155,26 @@ export default function GestoreDashboard() {
           <StatsCard
             title="Entrate Mensili"
             value={stats.monthlyRevenue}
-            change={stats.revenueChange}
             icon={DollarSign}
-            trend="up"
             color="green"
-            prefix="€"
           />
           <StatsCard
             title="Prenotazioni Mese"
             value={stats.totalBookings}
-            change={stats.bookingsChange}
             icon={Calendar}
-            trend="up"
             color="blue"
           />
           <StatsCard
             title="Membri Attivi"
             value={stats.activeMembers}
-            change={stats.membersChange}
             icon={Users}
-            trend="up"
             color="purple"
           />
           <StatsCard
             title="Occupazione Campi"
             value={stats.occupancyRate}
-            change={stats.occupancyChange}
             icon={TrendingUp}
-            trend="up"
             color="orange"
-            suffix="%"
           />
         </div>
 
@@ -257,44 +184,16 @@ export default function GestoreDashboard() {
             <ChartCard
               title="Entrate Settimanali"
               data={revenueData}
-              color="green"
-              valuePrefix="€"
             />
           </div>
 
           {/* Time Tracker */}
-          <TimeTracker
-            time="08:45:20"
-            project="Gestione Struttura"
-            isRunning={false}
-          />
+          <TimeTracker />
         </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
           <QuickActions actions={quickActions} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Ongoing Projects */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Progetti in Corso
-              </h2>
-              <button className="px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors">
-                + Nuovo
-              </button>
-            </div>
-            <div className="space-y-4">
-              {ongoingProjects.map((project) => (
-                <ProjectCard key={project.id} {...project} />
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <RecentActivity activities={recentActivities} />
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ interface Stats {
   pendingEmails: number;
   newsCount: number;
   announcementsCount: number;
+  newUsersThisMonth: number;
 }
 
 export default function AdminDashboard() {
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
     pendingEmails: 0,
     newsCount: 0,
     announcementsCount: 0,
+    newUsersThisMonth: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
@@ -152,6 +154,7 @@ export default function AdminDashboard() {
         pendingEmails: emailsCount || 0,
         newsCount: newsCount || 0,
         announcementsCount: announcementsCount || 0,
+        newUsersThisMonth: usersCount || 0,
       });
 
       setRecentActivity(recentBookings || []);
