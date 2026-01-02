@@ -91,7 +91,7 @@ export default function NewsSection() {
       <section id="news" className="py-20">
         <div className="container section">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-blue-800" />
           </div>
         </div>
       </section>
@@ -103,13 +103,13 @@ export default function NewsSection() {
       <section id="news" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
         <div className="space-y-8 sm:space-y-12">
           <div className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-3 sm:mb-4 text-center">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-bold text-blue-800 mb-3 sm:mb-4 text-center">
               Ultime News
             </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-3 sm:mb-4">
               Novità e Aggiornamenti
             </h2>
-            <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
               Resta aggiornato su tutte le novità e gli eventi della nostra accademia
             </p>
           </div>
@@ -119,7 +119,7 @@ export default function NewsSection() {
             <article 
               key={item.id} 
               onClick={() => setSelectedNews(item)}
-              className="group flex h-full flex-col rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden cursor-pointer hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
+              className="group flex h-full flex-col rounded-xl border border-slate-200 bg-white overflow-hidden cursor-pointer hover:border-blue-800/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               {item.image_url && (
                 <div className="w-full aspect-[16/9] overflow-hidden">
@@ -132,10 +132,10 @@ export default function NewsSection() {
               )}
               <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2 sm:gap-3 flex-1">
                 <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
-                  <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-800">
                     {item.category}
                   </span>
-                  <p className="text-xs sm:text-sm text-gray-400">
+                  <p className="text-xs sm:text-sm text-slate-500">
                   {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                     day: "numeric",
                     month: "long",
@@ -143,8 +143,8 @@ export default function NewsSection() {
                   })}
                 </p>
               </div>
-              <h3 className="text-base sm:text-lg font-bold gradient-text">{item.title}</h3>
-              <p className="text-sm sm:text-base leading-relaxed text-gray-300">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-blue-800 transition-colors">{item.title}</h3>
+              <p className="text-sm sm:text-base leading-relaxed text-slate-600">
                 {item.excerpt || item.content.substring(0, 150) + '...'}
               </p>
             </div>

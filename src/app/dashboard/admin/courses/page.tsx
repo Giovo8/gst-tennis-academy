@@ -179,14 +179,14 @@ export default function AdminCoursesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#021627] text-white">
-        <p>Caricamento...</p>
+      <div className="flex items-center justify-center p-6">
+        <p className="text-gray-600">Caricamento...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#021627] p-6 text-white">
+    <div className="p-6">
       <div className="mx-auto max-w-6xl">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-4">

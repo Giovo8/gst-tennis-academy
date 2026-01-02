@@ -143,7 +143,7 @@ export default function TennisScoreInput({
   const setsToWin = Math.ceil(bestOf / 2);
 
   return (
-    <div className="rounded-lg border border-[#7de3ff]/30 bg-[#0a1929]/90 p-4 space-y-4">
+    <div className="rounded-lg border border-tournament-border/30 bg-tournament-bg/90 p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -151,7 +151,7 @@ export default function TennisScoreInput({
           <p className="text-xs text-gray-400">Al meglio dei {bestOf} set (vince con {setsToWin} set)</p>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-[#7de3ff]">
+          <div className="text-lg font-bold text-tournament-primary">
             {setsWon.p1} - {setsWon.p2}
           </div>
           <div className="text-xs text-gray-400">Set vinti</div>
@@ -159,7 +159,7 @@ export default function TennisScoreInput({
       </div>
 
       {/* Players Header */}
-      <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-center pb-2 border-b border-[#7de3ff]/20">
+      <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-center pb-2 border-b border-tournament-border/20">
         <div className="text-sm font-medium text-white truncate">{player1Name}</div>
         <div className="text-xs text-gray-500 w-16 text-center">Set</div>
         <div className="text-sm font-medium text-white truncate text-right">{player2Name}</div>
@@ -174,7 +174,7 @@ export default function TennisScoreInput({
               type="number"
               value={set.player1_score}
               onChange={(e) => updateSet(index, 'player1', e.target.value)}
-              className="w-full rounded border border-[#7de3ff]/30 bg-[#0d1f35] px-3 py-2 text-center text-white focus:border-[#7de3ff] focus:outline-none"
+              className="w-full rounded border border-tournament-border/30 bg-tournament-bg-light px-3 py-2 text-center text-white focus:border-tournament-primary focus:outline-none"
               min="0"
               max="99"
               placeholder="0"
@@ -190,7 +190,7 @@ export default function TennisScoreInput({
               type="number"
               value={set.player2_score}
               onChange={(e) => updateSet(index, 'player2', e.target.value)}
-              className="w-full rounded border border-[#7de3ff]/30 bg-[#0d1f35] px-3 py-2 text-center text-white focus:border-[#7de3ff] focus:outline-none"
+              className="w-full rounded border border-tournament-border/30 bg-tournament-bg-light px-3 py-2 text-center text-white focus:border-tournament-primary focus:outline-none"
               min="0"
               max="99"
               placeholder="0"
@@ -214,7 +214,7 @@ export default function TennisScoreInput({
       {sets.length < bestOf && (
         <button
           onClick={addSet}
-          className="w-full rounded-lg border border-dashed border-[#7de3ff]/30 bg-[#0d1f35]/50 px-4 py-2 text-sm text-[#7de3ff] hover:bg-[#0d1f35] transition-colors flex items-center justify-center gap-2"
+          className="w-full rounded-lg border border-dashed border-tournament-border/30 bg-tournament-bg-light/50 px-4 py-2 text-sm text-tournament-primary hover:bg-tournament-bg-light transition-colors flex items-center justify-center gap-2"
           type="button"
         >
           <Plus className="h-4 w-4" />
@@ -234,7 +234,7 @@ export default function TennisScoreInput({
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="flex-1 rounded-lg bg-[#7de3ff] px-4 py-2 text-sm font-semibold text-[#0a1929] hover:bg-[#6dd0ed] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="flex-1 rounded-lg bg-tournament-primary px-4 py-2 text-sm font-semibold text-tournament-bg hover:bg-tournament-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           <Check className="h-4 w-4" />
           {submitting ? 'Salvataggio...' : 'Salva Punteggio'}

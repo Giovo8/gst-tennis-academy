@@ -86,7 +86,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <PromoBanner />
         <PublicNavbar />
         <main className="flex flex-col gap-12 px-6 pb-16 pt-10">
@@ -97,7 +97,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <PromoBanner />
       <PublicNavbar />
       <main>

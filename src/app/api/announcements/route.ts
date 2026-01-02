@@ -29,24 +29,7 @@ export async function GET(req: NextRequest) {
     // Build query
     let query = supabase
       .from("announcements")
-      .select(`
-        id,
-        title,
-        content,
-        announcement_type,
-        priority,
-        expiry_date,
-        visibility,
-        is_published,
-        is_pinned,
-        view_count,
-        image_url,
-        link_url,
-        link_text,
-        created_at,
-        updated_at,
-        author_id
-      `);
+      .select("*");
 
     // Filter published unless admin explicitly includes unpublished
     if (!includeUnpublished) {
@@ -88,6 +71,17 @@ export async function GET(req: NextRequest) {
     // Add view status for authenticated users
     const announcementsWithViews = await Promise.all(
       (announcements || []).map(async (announcement: any) => {
+        // Get author profile
+        let authorProfile = null;
+        if (announcement.author_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", announcement.author_id)
+            .single();
+          authorProfile = profile;
+        }
+
         if (user) {
           const { data: view } = await supabase
             .from("announcement_views")
@@ -98,6 +92,7 @@ export async function GET(req: NextRequest) {
 
           return {
             ...announcement,
+            profiles: authorProfile,
             has_viewed: !!view,
             days_until_expiry: announcement.expiry_date
               ? Math.ceil((new Date(announcement.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -106,6 +101,7 @@ export async function GET(req: NextRequest) {
         }
         return {
           ...announcement,
+          profiles: authorProfile,
           has_viewed: false,
           days_until_expiry: announcement.expiry_date
             ? Math.ceil((new Date(announcement.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))

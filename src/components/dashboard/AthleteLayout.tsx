@@ -12,6 +12,7 @@ import {
   User,
   Clock,
   CreditCard,
+  Megaphone,
 } from "lucide-react";
 
 interface AthleteLayoutProps {
@@ -22,8 +23,10 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
   const router = useRouter();
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [userAvatar, setUserAvatar] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [pendingBookings, setPendingBookings] = useState(0);
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
 
   useEffect(() => {
     async function loadUser() {
@@ -38,7 +41,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, role")
+        .select("full_name, role, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -48,6 +51,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       }
 
       setUserName(profile.full_name || "Atleta");
+      setUserAvatar(profile.avatar_url || "");
 
       // Count pending bookings
       const { count } = await supabase
@@ -57,10 +61,52 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
         .eq("status", "pending");
       
       setPendingBookings(count || 0);
+
+      // Count unread announcements
+      await loadUnreadCount(user.id);
+
       setLoading(false);
     }
 
+    async function loadUnreadCount(userId: string) {
+      const { data: announcements } = await supabase
+        .from("announcements")
+        .select("id")
+        .eq("is_published", true)
+        .or("expiry_date.is.null,expiry_date.gt." + new Date().toISOString());
+
+      if (announcements && announcements.length > 0) {
+        const announcementIds = announcements.map((a) => a.id);
+        
+        const { data: viewedAnnouncements } = await supabase
+          .from("announcement_views")
+          .select("announcement_id")
+          .eq("user_id", userId)
+          .in("announcement_id", announcementIds);
+
+        const viewedIds = new Set(viewedAnnouncements?.map((v) => v.announcement_id) || []);
+        const unreadCount = announcements.filter((a) => !viewedIds.has(a.id)).length;
+        setUnreadAnnouncements(unreadCount);
+      } else {
+        setUnreadAnnouncements(0);
+      }
+    }
+
+    // Listen for announcement read events
+    const handleAnnouncementRead = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await loadUnreadCount(user.id);
+      }
+    };
+
+    window.addEventListener('announcementRead', handleAnnouncementRead);
+
     loadUser();
+
+    return () => {
+      window.removeEventListener('announcementRead', handleAnnouncementRead);
+    };
   }, [router]);
 
   const navItems: NavItem[] = [
@@ -73,7 +119,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: "Prenotazioni",
       href: "/dashboard/atleta/bookings",
       icon: <Calendar className="h-5 w-5" />,
-      badge: pendingBookings,
+      badge: pendingBookings > 0 ? pendingBookings : undefined,
     },
     {
       label: "Tornei",
@@ -84,6 +130,12 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: "I Miei Video",
       href: "/dashboard/atleta/videos",
       icon: <Video className="h-5 w-5" />,
+    },
+    {
+      label: "Annunci",
+      href: "/dashboard/atleta/annunci",
+      icon: <Megaphone className="h-5 w-5" />,
+      badge: unreadAnnouncements > 0 ? unreadAnnouncements : undefined,
     },
     {
       label: "Abbonamento",
@@ -99,10 +151,10 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#021627] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 border-4 border-sky-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-sky-500/20" />
-          <p className="text-white/60 font-medium">Caricamento dashboard...</p>
+          <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-600 font-medium">Caricamento dashboard...</p>
         </div>
       </div>
     );
@@ -114,6 +166,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       role="atleta"
       userName={userName}
       userEmail={userEmail}
+      userAvatar={userAvatar}
     >
       {children}
     </DashboardShell>

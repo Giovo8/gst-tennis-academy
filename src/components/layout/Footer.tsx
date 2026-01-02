@@ -5,7 +5,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#021627] border-t border-white/10 text-white">
+    <footer className="bg-secondary border-t border-white/10 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
@@ -23,7 +23,7 @@ export default function Footer() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                className="p-2 rounded-lg bg-blue-500/10 hover:bg-primary text-blue-400 hover:text-white transition-all"
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
@@ -32,7 +32,7 @@ export default function Footer() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 transition-colors"
+                className="p-2 rounded-lg bg-pink-500/10 hover:bg-pink-600 text-pink-400 hover:text-white transition-all"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
@@ -41,7 +41,7 @@ export default function Footer() {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 transition-colors"
+                className="p-2 rounded-lg bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white transition-all"
                 aria-label="Twitter"
               >
                 <Twitter className="h-5 w-5" />
@@ -50,7 +50,7 @@ export default function Footer() {
                 href="#youtube"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white transition-all"
                 aria-label="YouTube"
               >
                 <Youtube className="h-5 w-5" />
@@ -63,32 +63,32 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4 text-white">Link Rapidi</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/courses" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="/courses" className="text-gray-400 hover:text-primary transition-colors">
                   Corsi
                 </Link>
               </li>
               <li>
-                <Link href="/bookings" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="/bookings" className="text-gray-400 hover:text-primary transition-colors">
                   Prenotazioni
                 </Link>
               </li>
               <li>
-                <Link href="/tornei" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="/tornei" className="text-gray-400 hover:text-primary transition-colors">
                   Tornei
                 </Link>
               </li>
               <li>
-                <Link href="/news" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="/news" className="text-gray-400 hover:text-primary transition-colors">
                   News
                 </Link>
               </li>
               <li>
-                <Link href="/annunci" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="/annunci" className="text-gray-400 hover:text-primary transition-colors">
                   Bacheca Annunci
                 </Link>
               </li>
               <li>
-                <Link href="/lavora-con-noi" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="/lavora-con-noi" className="text-gray-400 hover:text-primary transition-colors">
                   Lavora con Noi
                 </Link>
               </li>

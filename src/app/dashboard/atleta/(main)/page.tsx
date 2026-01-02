@@ -17,6 +17,8 @@ import {
   BookOpen,
   CheckCircle2,
   Zap,
+  Megaphone,
+  Bell,
 } from "lucide-react";
 
 interface Stats {
@@ -36,6 +38,19 @@ interface Booking {
   status: string;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  announcement_type: string;
+  priority: string;
+  created_at: string;
+  is_pinned: boolean;
+  profiles?: {
+    full_name: string;
+  };
+}
+
 export default function AtletaDashboard() {
   const [stats, setStats] = useState<Stats>({
     creditsAvailable: 0,
@@ -45,6 +60,7 @@ export default function AtletaDashboard() {
     completedLessons: 0,
   });
   const [nextBookings, setNextBookings] = useState<Booking[]>([]);
+  const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
 
@@ -98,6 +114,25 @@ export default function AtletaDashboard() {
     });
 
     setNextBookings(bookings || []);
+
+    // Load recent announcements
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: HeadersInit = {};
+    if (session) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+
+    try {
+      const response = await fetch("/api/announcements", { headers });
+      if (response.ok) {
+        const data = await response.json();
+        // Get only the first 3 announcements
+        setRecentAnnouncements((data.announcements || []).slice(0, 3));
+      }
+    } catch (error) {
+      console.error("Error loading announcements:", error);
+    }
+
     setLoading(false);
   }
 
@@ -207,8 +242,8 @@ export default function AtletaDashboard() {
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Prossime Prenotazioni - 2 colonne */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+        {/* Prossime Prenotazioni - 1 colonna */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-black flex items-center gap-2">
@@ -227,15 +262,15 @@ export default function AtletaDashboard() {
 
           <div className="p-6">
             {nextBookings.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-sm font-semibold text-gray-700 mb-2">Nessuna prenotazione</p>
-                <p className="text-xs text-gray-600 mb-4">Prenota un campo per iniziare ad allenarti</p>
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm font-semibold text-gray-700 mb-1">Nessuna prenotazione</p>
+                <p className="text-xs text-gray-600 mb-3">Prenota un campo</p>
                 <Link
                   href="/dashboard/atleta/bookings/new"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3" />
                   Prenota Ora
                 </Link>
               </div>
@@ -244,21 +279,104 @@ export default function AtletaDashboard() {
                 {nextBookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all"
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all"
                   >
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      <Calendar className="h-5 w-5 text-blue-600" />
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Calendar className="h-4 w-4 text-blue-600" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{booking.court}</p>
-                      <p className="text-sm text-gray-600">
-                        {formatDate(booking.start_time)} • {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 text-sm">{booking.court}</p>
+                      <p className="text-xs text-gray-600">
+                        {formatDate(booking.start_time)} • {formatTime(booking.start_time)}
                       </p>
                     </div>
-                    <span className="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full">
+                    <span className="text-[10px] font-bold px-2 py-1 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full">
                       {booking.type}
                     </span>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Annunci Recenti - 1 colonna */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-black flex items-center gap-2">
+                <Bell className="h-5 w-5 text-cyan-600" />
+                Ultimi Annunci
+              </h2>
+              <Link
+                href="/dashboard/atleta/annunci"
+                className="text-sm font-medium text-cyan-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                Tutti
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {recentAnnouncements.length === 0 ? (
+              <div className="text-center py-8">
+                <Megaphone className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm font-semibold text-gray-700 mb-1">Nessun annuncio</p>
+                <p className="text-xs text-gray-600">Al momento non ci sono annunci</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentAnnouncements.map((announcement) => (
+                  <Link
+                    key={announcement.id}
+                    href="/dashboard/atleta/annunci"
+                    className="group relative block bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 p-3 hover:shadow-md hover:border-cyan-300 transition-all"
+                  >
+                    {announcement.is_pinned && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full ring-2 ring-cyan-200" />
+                    )}
+                    
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="p-1.5 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-lg">
+                        <Megaphone className="h-3 w-3 text-cyan-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-xs line-clamp-2 group-hover:text-cyan-600 transition-colors">
+                          {announcement.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+                      {announcement.content}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      {announcement.profiles?.full_name && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-[8px]">
+                            {announcement.profiles.full_name.charAt(0)}
+                          </div>
+                          <span className="truncate">{announcement.profiles.full_name}</span>
+                        </div>
+                      )}
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(announcement.created_at).toLocaleDateString("it-IT", {
+                          day: "numeric",
+                          month: "short"
+                        })}
+                      </span>
+                    </div>
+
+                    {announcement.priority === "urgent" && (
+                      <div className="absolute bottom-2 right-2">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-100 text-orange-700 border border-orange-300">
+                          URGENTE
+                        </span>
+                      </div>
+                    )}
+                  </Link>
                 ))}
               </div>
             )}
@@ -329,6 +447,20 @@ export default function AtletaDashboard() {
                 <p className="text-xs text-gray-600">Dati e statistiche</p>
               </div>
               <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+            </Link>
+
+            <Link
+              href="/dashboard/atleta/annunci"
+              className="flex items-center gap-3 p-4 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg border border-cyan-200 hover:border-cyan-300 transition-all group"
+            >
+              <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg">
+                <Megaphone className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">Annunci</p>
+                <p className="text-xs text-gray-600">Novità e aggiornamenti</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-cyan-600 transition-colors" />
             </Link>
           </div>
         </div>

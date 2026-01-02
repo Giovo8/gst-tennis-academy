@@ -441,7 +441,7 @@ export default function BookingCalendar() {
   const dayLabel = format(selectedDate, "EEEE dd MMMM");
 
   return (
-    <div className="space-y-4 sm:space-y-6 rounded-2xl sm:rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 rounded-2xl sm:rounded-3xl border border-tournament-border/30 bg-tournament-bg-card/60 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
@@ -452,7 +452,7 @@ export default function BookingCalendar() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
-            className="rounded-lg border border-white/15 bg-[#1a3d5c]/60 p-3 text-white transition hover:border-accent/50 hover:bg-[#1a3d5c]/80 hover:scale-105"
+            className="rounded-lg border border-white/15 bg-tournament-bg-card/60 p-3 text-white transition hover:border-accent/50 hover:bg-tournament-bg-card/80 hover:scale-105"
             aria-label="Giorno precedente"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,7 +485,7 @@ export default function BookingCalendar() {
           </div>
           <button
             onClick={() => setSelectedDate((d) => addDays(d, 1))}
-            className="rounded-lg border border-white/15 bg-[#1a3d5c]/60 p-3 text-white transition hover:border-accent/50 hover:bg-[#1a3d5c]/80 hover:scale-105"
+            className="rounded-lg border border-white/15 bg-tournament-bg-card/60 p-3 text-white transition hover:border-accent/50 hover:bg-tournament-bg-card/80 hover:scale-105"
             aria-label="Giorno successivo"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -563,7 +563,7 @@ export default function BookingCalendar() {
       </div>
 
       {/* Multi-Select Toggle */}
-      <div className="flex items-center justify-between p-4 bg-[#1a3d5c]/40 rounded-xl border border-white/10">
+      <div className="flex items-center justify-between p-4 bg-tournament-bg-card/40 rounded-xl border border-white/10">
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-white">Selezione Multipla</span>
@@ -624,7 +624,7 @@ export default function BookingCalendar() {
           {/* Legenda */}
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded border-2 border-[#2f7de1] bg-[#2f7de1]/20"></div>
+              <div className="w-3 h-3 rounded border-2 border-tournament-border bg-tournament-border/20"></div>
               <span className="text-gray-400">Disponibile</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -688,8 +688,8 @@ export default function BookingCalendar() {
                       : pending
                       ? "cursor-pointer border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:border-yellow-400/50 hover:bg-yellow-400/20"
                       : isSelected
-                      ? "border-[#2f7de1] bg-[#2f7de1]/20 text-white ring-2 ring-[#2f7de1]/50"
-                      : "border-white/10 bg-[#1a3d5c]/60 text-white hover:border-[#2f7de1]/50 hover:bg-[#1a3d5c]/80 hover:scale-105"
+                      ? "border-tournament-border bg-tournament-border/20 text-white ring-2 ring-tournament-border/50"
+                      : "border-white/10 bg-tournament-bg-card/60 text-white hover:border-tournament-border/50 hover:bg-tournament-bg-card/80 hover:scale-105"
                    } focus:outline-none focus-ring-accent`}
                 >
                   {(confirmed || isPast || tooSoon) && (
@@ -723,7 +723,7 @@ export default function BookingCalendar() {
         <button
           onClick={handleCreateBooking}
           disabled={saving || (multiSelectMode ? selectedSlots.length === 0 : !selectedSlot)}
-          className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold bg-[#2f7de1] text-white transition hover:bg-[#2563c7] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold bg-tournament-border text-white transition hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
         >
           {saving ? (
             <>
@@ -743,13 +743,13 @@ export default function BookingCalendar() {
         
         {/* Riepilogo selezione */}
         {!multiSelectMode && selectedSlot && (
-          <span className="text-xs sm:text-sm text-[#c6d8c9] text-center sm:text-left">
+          <span className="text-xs sm:text-sm text-gray-300 text-center sm:text-left">
             Slot: {format(selectedSlot, "HH:mm")}-{format(addHours(selectedSlot, 1), "HH:mm")} · {format(selectedSlot, "dd/MM/yyyy")} · {selectedCourt}
           </span>
         )}
         
         {multiSelectMode && selectedSlots.length > 0 && (
-          <span className="text-xs sm:text-sm text-[#c6d8c9] text-center sm:text-left">
+          <span className="text-xs sm:text-sm text-gray-300 text-center sm:text-left">
             {selectedSlots.length} slot · {format(selectedDate, "dd/MM/yyyy")} · {selectedCourt}
           </span>
         )}

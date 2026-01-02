@@ -363,6 +363,18 @@ CREATE TRIGGER update_announcements_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
+-- TABELLA ANNOUNCEMENT_VIEWS (Tracking visualizzazioni annunci)
+CREATE TABLE public.announcement_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  announcement_id UUID NOT NULL REFERENCES public.announcements(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  viewed_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(announcement_id, user_id)
+);
+
+CREATE INDEX announcement_views_announcement_idx ON public.announcement_views (announcement_id);
+CREATE INDEX announcement_views_user_idx ON public.announcement_views (user_id);
+
 -- TABELLA CONVERSATIONS (Chat - Conversazioni)
 CREATE TABLE public.conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -466,6 +478,7 @@ ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournament_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.news ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.announcement_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversation_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
@@ -621,6 +634,15 @@ CREATE POLICY "Admins can manage announcements"
   USING (
     EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role IN ('admin', 'gestore'))
   );
+
+-- ANNOUNCEMENT_VIEWS POLICIES
+CREATE POLICY "Users can view their own announcement views"
+  ON public.announcement_views FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own announcement views"
+  ON public.announcement_views FOR INSERT
+  WITH CHECK (user_id = auth.uid());
 
 -- CONVERSATIONS POLICIES
 CREATE POLICY "Users can view their conversations"

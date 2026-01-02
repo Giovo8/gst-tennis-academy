@@ -34,7 +34,7 @@ export default function ActivityFeed({ activities, maxItems = 5 }: ActivityFeedP
 
   if (activities.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-[#042b4a] p-6 fade-in">
+      <div className="rounded-xl border border-white/10 bg-tournament-bg-card/60 p-6 fade-in">
         <div className="flex items-center gap-3 mb-4">
           <Activity className="h-5 w-5 text-blue-400" />
           <h3 className="text-lg font-semibold text-white">Attività Recenti</h3>
@@ -45,7 +45,7 @@ export default function ActivityFeed({ activities, maxItems = 5 }: ActivityFeedP
   }
 
   return (
-    <div ref={containerRef} className="rounded-xl border border-white/10 bg-[#042b4a] p-6 fade-in">
+    <div ref={containerRef} className="rounded-xl border border-white/10 bg-tournament-bg-card/60 p-6 fade-in">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Activity className="h-5 w-5 text-blue-400" />
@@ -58,7 +58,7 @@ export default function ActivityFeed({ activities, maxItems = 5 }: ActivityFeedP
         {displayedActivities.map((activity, index) => (
           <div
             key={activity.id}
-            className={`flex items-start gap-3 p-3 rounded-lg bg-[#021627] border border-white/5 hover:border-white/10 card-hover transition-all duration-300 ${
+            className={`flex items-start gap-3 p-3 rounded-lg bg-tournament-bg-table border border-white/5 hover:border-white/10 card-hover transition-all duration-300 ${
               visibleItems.has(index) ? 'fade-in' : 'opacity-0'
             }`}
             style={{

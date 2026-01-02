@@ -167,10 +167,10 @@ export default function CoachHomePage() {
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-24 bg-white/5 rounded-2xl border border-white/10" />
+        <div className="h-24 bg-gray-200 rounded-2xl" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-white/5 rounded-2xl border border-white/10" />
+            <div key={i} className="h-32 bg-gray-200 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -180,19 +180,19 @@ export default function CoachHomePage() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/10 via-transparent to-teal-500/10 backdrop-blur-xl p-6 sm:p-8">
-        <div className="pointer-events-none absolute left-10 top-5 h-32 w-32 rounded-full blur-3xl bg-cyan-500/20 animate-pulse" />
-        <div className="pointer-events-none absolute right-10 bottom-5 h-24 w-24 rounded-full blur-3xl bg-teal-500/15 animate-pulse" style={{animationDelay: '1s'}} />
+      <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-cyan-50 via-blue-50 to-teal-50 p-6 sm:p-8">
+        <div className="pointer-events-none absolute left-10 top-5 h-32 w-32 rounded-full blur-3xl bg-cyan-200/40 animate-pulse" />
+        <div className="pointer-events-none absolute right-10 bottom-5 h-24 w-24 rounded-full blur-3xl bg-teal-200/30 animate-pulse" style={{animationDelay: '1s'}} />
         
         <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-300 mb-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700 mb-3">
             <Sparkles className="h-3.5 w-3.5" />
             Area Maestro
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             {getGreeting()}, Coach {userName}! 🎾
           </h1>
-          <p className="text-white/60">
+          <p className="text-gray-600">
             Gestisci le tue lezioni e i tuoi allievi
           </p>
         </div>
@@ -200,59 +200,59 @@ export default function CoachHomePage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-cyan-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-cyan-400" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-cyan-600" />
               </div>
-              <span className="text-xs text-white/40">Oggi</span>
+              <span className="text-xs text-gray-500">Oggi</span>
             </div>
-            <p className="text-3xl font-bold text-white">{stats.todayLessons}</p>
-            <p className="text-sm text-white/50 mt-1">lezioni</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.todayLessons}</p>
+            <p className="text-sm text-gray-600 mt-1">lezioni</p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-500/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-green-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-green-400" />
+              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-green-600" />
               </div>
-              <span className="text-xs text-white/40">Settimana</span>
+              <span className="text-xs text-gray-500">Settimana</span>
             </div>
-            <p className="text-3xl font-bold text-white">{stats.weekLessons}</p>
-            <p className="text-sm text-white/50 mt-1">lezioni programmate</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.weekLessons}</p>
+            <p className="text-sm text-gray-600 mt-1">lezioni programmate</p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-purple-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Users className="h-5 w-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-purple-600" />
               </div>
-              <span className="text-xs text-white/40">Allievi</span>
+              <span className="text-xs text-gray-500">Allievi</span>
             </div>
-            <p className="text-3xl font-bold text-white">{stats.studentsCount}</p>
-            <p className="text-sm text-white/50 mt-1">totali</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.studentsCount}</p>
+            <p className="text-sm text-gray-600 mt-1">totali</p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-500/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-red-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <Video className="h-5 w-5 text-red-400" />
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                <Video className="h-5 w-5 text-red-600" />
               </div>
-              <span className="text-xs text-white/40">Video</span>
+              <span className="text-xs text-gray-500">Video</span>
             </div>
-            <p className="text-3xl font-bold text-white">{stats.videosShared}</p>
-            <p className="text-sm text-white/50 mt-1">condivisi</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.videosShared}</p>
+            <p className="text-sm text-gray-600 mt-1">condivisi</p>
           </div>
         </div>
       </div>
@@ -261,54 +261,54 @@ export default function CoachHomePage() {
       <div className="grid md:grid-cols-2 gap-4">
         <Link
           href="/dashboard/maestro/video-lab"
-          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:border-red-500/30 hover:bg-white/10 transition-all duration-300"
+          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-red-300 hover:shadow-lg transition-all duration-300"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-r from-red-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-rose-500/20 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all">
-              <Video className="h-7 w-7 text-red-400" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-red-200 transition-all">
+              <Video className="h-7 w-7 text-red-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-white text-lg">Video Lab</h3>
-              <p className="text-sm text-white/50">Carica e assegna video ai tuoi allievi</p>
+              <h3 className="font-semibold text-gray-900 text-lg">Video Lab</h3>
+              <p className="text-sm text-gray-600">Carica e assegna video ai tuoi allievi</p>
             </div>
           </div>
-          <ArrowRight className="relative h-5 w-5 text-white/30 group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
+          <ArrowRight className="relative h-5 w-5 text-gray-400 group-hover:text-red-600 group-hover:translate-x-1 transition-all" />
         </Link>
 
         <Link
           href="/dashboard/maestro/students"
-          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:border-purple-500/30 hover:bg-white/10 transition-all duration-300"
+          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-purple-300 hover:shadow-lg transition-all duration-300"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all">
-              <Users className="h-7 w-7 text-purple-400" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-200 transition-all">
+              <Users className="h-7 w-7 text-purple-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-white text-lg">I Miei Allievi</h3>
-              <p className="text-sm text-white/50">Gestisci i tuoi allievi e le note</p>
+              <h3 className="font-semibold text-gray-900 text-lg">I Miei Allievi</h3>
+              <p className="text-sm text-gray-600">Gestisci i tuoi allievi e le note</p>
             </div>
           </div>
-          <ArrowRight className="relative h-5 w-5 text-white/30 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+          <ArrowRight className="relative h-5 w-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
         </Link>
       </div>
 
       {/* Today's Schedule */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-cyan-400" />
+            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-cyan-600" />
             </div>
             <div>
-              <h2 className="font-semibold text-white">Lezioni di Oggi</h2>
-              <p className="text-xs text-white/50">Il tuo programma giornaliero</p>
+              <h2 className="font-semibold text-gray-900">Lezioni di Oggi</h2>
+              <p className="text-xs text-gray-600">Il tuo programma giornaliero</p>
             </div>
           </div>
           <Link
             href="/dashboard/maestro/agenda"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-cyan-600 bg-cyan-50 border border-cyan-200 hover:bg-cyan-100 transition-all"
           >
             Agenda
             <ArrowRight className="h-4 w-4" />
@@ -317,36 +317,36 @@ export default function CoachHomePage() {
         
         {todayLessons.length === 0 ? (
           <div className="p-8 text-center">
-            <Calendar className="h-14 w-14 text-white/20 mx-auto mb-4" />
-            <p className="text-white/50">Nessuna lezione oggi</p>
+            <Calendar className="h-14 w-14 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Nessuna lezione oggi</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-gray-100">
             {todayLessons.map((lesson) => (
-              <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-all">
+              <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center">
-                    <Clock className="h-5 w-5 text-cyan-400" />
+                  <div className="w-14 h-14 rounded-xl bg-gray-100 border border-gray-200 flex flex-col items-center justify-center">
+                    <Clock className="h-5 w-5 text-cyan-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-white">
+                    <p className="font-medium text-gray-900">
                       {lesson.athlete?.full_name || "Atleta"}
                     </p>
-                    <div className="flex items-center gap-2 text-sm text-white/50">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
                       <span>{lesson.court}</span>
-                      <span className="text-white/20">•</span>
+                      <span className="text-gray-300">•</span>
                       <span>{formatTime(lesson.start_time)} - {formatTime(lesson.end_time)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {lesson.status === "confirmed" ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/30">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300">
                       <CheckCircle className="h-3.5 w-3.5" />
                       Confermata
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-300">
                       <AlertCircle className="h-3.5 w-3.5" />
                       In attesa
                     </span>
@@ -360,42 +360,42 @@ export default function CoachHomePage() {
 
       {/* Recent Students */}
       {recentStudents.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-white/10">
+        <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Users className="h-5 w-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="font-semibold text-white">I Tuoi Allievi</h2>
-                <p className="text-xs text-white/50">Allievi seguiti</p>
+                <h2 className="font-semibold text-gray-900">I Tuoi Allievi</h2>
+                <p className="text-xs text-gray-600">Allievi seguiti</p>
               </div>
             </div>
             <Link
               href="/dashboard/maestro/students"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-purple-400 bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-all"
             >
               Vedi tutti
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-gray-100">
             {recentStudents.map((student) => (
               <Link
                 key={student.id}
                 href={`/dashboard/maestro/students/${student.id}`}
-                className="p-4 flex items-center justify-between hover:bg-white/5 transition-all group"
+                className="p-4 flex items-center justify-between hover:bg-gray-50 transition-all group"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg">
                     {student.full_name?.charAt(0)?.toUpperCase() || "A"}
                   </div>
                   <div>
-                    <p className="font-medium text-white group-hover:text-cyan-400 transition-colors">{student.full_name}</p>
-                    <p className="text-sm text-white/50">{student.email}</p>
+                    <p className="font-medium text-gray-900 group-hover:text-cyan-600 transition-colors">{student.full_name}</p>
+                    <p className="text-sm text-gray-600">{student.email}</p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-white/30 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-cyan-600 group-hover:translate-x-1 transition-all" />
               </Link>
             ))}
           </div>

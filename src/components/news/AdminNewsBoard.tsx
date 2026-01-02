@@ -56,7 +56,7 @@ export default function AdminNewsBoard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-5">
+      <div className="rounded-3xl border border-tournament-border/30 bg-tournament-bg-card p-5">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
           <Newspaper className="h-4 w-4 text-accent" />
           Pubblica un annuncio
@@ -71,14 +71,14 @@ export default function AdminNewsBoard() {
           <div className="flex items-center gap-2">
             <ImagePlus className="h-4 w-4 text-accent" />
             <input
-              className="w-full rounded-xl border border-white/15 bg-[#1a3d5c]/60 px-3 py-2 text-sm text-white outline-none focus-ring-accent"
+              className="w-full rounded-xl border border-white/15 bg-tournament-bg-card px-3 py-2 text-sm text-white outline-none focus-ring-accent"
               placeholder="URL immagine (opzionale)"
               value={image}
               onChange={(e) => setImage(e.target.value)}
             />
           </div>
           <textarea
-            className="sm:col-span-2 min-h-[120px] rounded-xl border border-white/15 bg-[#1a3d5c]/60 px-3 py-2 text-sm text-white outline-none focus-ring-accent"
+            className="sm:col-span-2 min-h-[120px] rounded-xl border border-white/15 bg-tournament-bg-card px-3 py-2 text-sm text-white outline-none focus-ring-accent"
             placeholder="Testo del post"
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -92,7 +92,7 @@ export default function AdminNewsBoard() {
         <div className="mt-3">
           <button
             onClick={addPost}
-            className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-[#06101f] shadow-accent transition hover:-translate-y-0.5 accent-gradient"
+            className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-secondary shadow-accent transition hover:-translate-y-0.5 accent-gradient"
           >
             Pubblica
           </button>
@@ -101,7 +101,7 @@ export default function AdminNewsBoard() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {posts.map((post) => (
-          <article key={post.id} className="overflow-hidden rounded-2xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60">
+          <article key={post.id} className="overflow-hidden rounded-2xl border border-tournament-border/30 bg-tournament-bg-card">
             <div
               className="h-40 w-full bg-cover bg-center"
               style={{ backgroundImage: `url(${post.image})` }}

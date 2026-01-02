@@ -389,7 +389,7 @@ export default function TournamentDetail() {
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Gestione Competizione</h3>
               <button 
                 onClick={() => router.push(profile?.role === 'admin' ? '/dashboard/admin/tornei' : '/dashboard/gestore/tornei')} 
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 min-h-[44px] w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-tournament-primary to-tournament-secondary px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-tournament-bg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95 min-h-[44px] w-full sm:w-auto"
               >
                 <Target className="h-4 w-4" />
                 Gestisci Competizione
@@ -427,11 +427,11 @@ export default function TournamentDetail() {
                   <button 
                     onClick={handleJoin} 
                     disabled={actionLoading} 
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 sm:px-8 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-tournament-primary to-tournament-secondary px-6 sm:px-8 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-tournament-bg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
                   >
                     {actionLoading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-[#0a1929]/30 border-t-[#0a1929] rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-tournament-bg/30 border-t-tournament-bg rounded-full animate-spin"></div>
                         Iscrivendo...
                       </>
                     ) : (

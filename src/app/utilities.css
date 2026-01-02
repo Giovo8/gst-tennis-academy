@@ -1,0 +1,258 @@
+/**
+ * Design System Utility Classes
+ * Classi utility aggiuntive per il design system GST Tennis Academy
+ */
+
+/* Typography Scale Classes */
+.text-display-2xl {
+  font-size: 4.5rem; /* 72px */
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.text-display-xl {
+  font-size: 3.75rem; /* 60px */
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.text-display-lg {
+  font-size: 3rem; /* 48px */
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.text-display-md {
+  font-size: 2.25rem; /* 36px */
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.text-display-sm {
+  font-size: 1.875rem; /* 30px */
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Responsive Typography */
+@media (max-width: 640px) {
+  .text-display-2xl { font-size: 2.5rem; }
+  .text-display-xl { font-size: 2.25rem; }
+  .text-display-lg { font-size: 2rem; }
+  .text-display-md { font-size: 1.75rem; }
+  .text-display-sm { font-size: 1.5rem; }
+}
+
+/* Gradient Text Effects */
+.gradient-text-primary {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-success {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Background Gradients */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+}
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+}
+
+.bg-gradient-error {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+}
+
+.bg-gradient-subtle {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.dark .bg-gradient-subtle {
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+}
+
+/* Focus Ring Utility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+}
+
+/* Hover Lift Effect */
+.hover-lift {
+  @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
+}
+
+/* Smooth Scale Effect */
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Interactive States */
+.interactive {
+  @apply transition-all duration-200 cursor-pointer;
+  @apply hover:shadow-md hover:-translate-y-0.5;
+  @apply active:scale-[0.98];
+}
+
+/* Glass Morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Status Indicators */
+.status-indicator {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold;
+}
+
+.status-online {
+  @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400;
+}
+
+.status-offline {
+  @apply bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400;
+}
+
+.status-away {
+  @apply bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400;
+}
+
+/* Section Spacing */
+.section-sm {
+  @apply py-12 md:py-16;
+}
+
+.section-md {
+  @apply py-16 md:py-20;
+}
+
+.section-lg {
+  @apply py-20 md:py-24;
+}
+
+.section-xl {
+  @apply py-24 md:py-32;
+}
+
+/* Container Variations */
+.container-narrow {
+  @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.container-wide {
+  @apply max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Card Hover Effects */
+.card-hover {
+  @apply transition-all duration-300;
+  @apply hover:shadow-xl hover:-translate-y-1;
+  @apply hover:border-[#1e40af]/30;
+}
+
+/* Loading Pulse */
+.loading-pulse {
+  @apply animate-pulse bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200;
+  @apply dark:from-slate-800 dark:via-slate-700 dark:dark:to-slate-800;
+}
+
+/* Divider */
+.divider {
+  @apply border-t border-slate-200 dark:border-slate-800;
+}
+
+.divider-vertical {
+  @apply border-l border-slate-200 dark:border-slate-800;
+}
+
+/* Text Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Scrollbar Styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.7);
+}
+
+/* Backdrop Blur Variants */
+.backdrop-blur-xs {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Responsive Show/Hide */
+.mobile-only {
+  @apply block sm:hidden;
+}
+
+.desktop-only {
+  @apply hidden sm:block;
+}
+
+/* Print Utilities */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+}

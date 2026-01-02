@@ -118,7 +118,7 @@ export default function GestoreNavbar({
   }, []);
 
   return (
-    <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-white/10 bg-secondary/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -151,7 +151,7 @@ export default function GestoreNavbar({
                     </button>
                     
                     {activeDropdown === section.id && (
-                      <div className="absolute top-full left-0 mt-2 w-56 rounded-lg border border-white/15 bg-[#06101f] shadow-xl py-2">
+                      <div className="absolute top-full left-0 mt-2 w-56 rounded-lg border border-white/15 bg-secondary-light shadow-xl py-2">
                         {section.items.map((item) => {
                           const ItemIcon = item.icon;
                           return (
@@ -210,7 +210,7 @@ export default function GestoreNavbar({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-[#031226]">
+                <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-tournament-bg">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -251,7 +251,7 @@ export default function GestoreNavbar({
                   className="h-10 w-10 rounded-full"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-lg font-bold text-[#031226]">
+                <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-lg font-bold text-tournament-bg">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -263,7 +263,7 @@ export default function GestoreNavbar({
                 </p>
               </div>
               {notificationsCount > 0 && (
-                <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-[#031226]">
+                <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-tournament-bg">
                   {notificationsCount > 9 ? "9+" : notificationsCount}
                 </div>
               )}

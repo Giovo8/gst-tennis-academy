@@ -37,9 +37,9 @@ export default function DashboardPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#021627]">
-      <div className="flex items-center gap-3 text-white">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex items-center gap-3 text-gray-700">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
         <span>Caricamento dashboard...</span>
       </div>
     </div>

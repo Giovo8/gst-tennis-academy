@@ -55,13 +55,13 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#021627] p-6">
+    <div className="p-6">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Impostazioni
           </h1>
-          <p className="text-white/50">Configura le impostazioni del sistema</p>
+          <p className="text-gray-600">Configura le impostazioni del sistema</p>
         </div>
         <button
           onClick={handleSave}

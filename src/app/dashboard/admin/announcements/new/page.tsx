@@ -100,18 +100,18 @@ export default function NewAnnouncementPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#021627]">
-      <main className="container mx-auto px-6 py-8">
+    <div className="p-6">
+      <main className="container mx-auto">
         <div className="mb-8">
           <Link
             href="/dashboard/admin/announcements"
-            className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 mb-4 transition-colors"
+            className="inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-700 mb-4 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
             Torna agli annunci
           </Link>
-          <h1 className="text-4xl font-bold gradient-text mb-2">Nuovo Annuncio</h1>
-          <p className="text-gray-400">Crea un nuovo annuncio per la bacheca</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Nuovo Annuncio</h1>
+          <p className="text-gray-600">Crea un nuovo annuncio per la bacheca</p>
         </div>
 
         {success && (

@@ -50,7 +50,7 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50 safe-top">
+    <nav className="border-b border-white/10 bg-secondary/95 backdrop-blur-sm sticky top-0 z-50 safe-top">
       <div className="container py-2 sm:py-3 px-4 sm:px-6">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo */}

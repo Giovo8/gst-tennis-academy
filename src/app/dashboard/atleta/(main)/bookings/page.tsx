@@ -15,8 +15,12 @@ import {
   Search,
   RefreshCw,
   Trash2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Booking {
   id: string;
@@ -39,6 +43,17 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<string>("start_time");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  }
 
   useEffect(() => {
     loadBookings();
@@ -146,14 +161,48 @@ export default function BookingsPage() {
     cancelled: { label: "Annullata", color: "bg-red-100 text-red-700 border-red-300", icon: XCircle },
   };
 
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesStatus = filter === "all" || booking.status === filter;
-    const matchesSearch =
-      !search ||
-      booking.court?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.coach?.full_name?.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const filteredBookings = bookings
+    .filter((booking) => {
+      const matchesStatus = filter === "all" || booking.status === filter;
+      const matchesSearch =
+        !search ||
+        booking.court?.toLowerCase().includes(search.toLowerCase()) ||
+        booking.coach?.full_name?.toLowerCase().includes(search.toLowerCase());
+      return matchesStatus && matchesSearch;
+    })
+    .sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case "start_time":
+          aValue = new Date(a.start_time).getTime();
+          bValue = new Date(b.start_time).getTime();
+          break;
+        case "court":
+          aValue = a.court;
+          bValue = b.court;
+          break;
+        case "type":
+          aValue = a.type;
+          bValue = b.type;
+          break;
+        case "coach":
+          aValue = a.coach?.full_name || "";
+          bValue = b.coach?.full_name || "";
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
 
   const now = new Date().toISOString();
   const stats = {
@@ -180,22 +229,13 @@ export default function BookingsPage() {
     <div className="space-y-6" style={{ color: '#111827' }}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-black mb-2">
-            Le Mie Prenotazioni
+        <div className="flex items-center gap-3">
+          <Calendar className="h-8 w-8 text-cyan-600" />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+            Prenotazioni
           </h1>
-          <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
-            Visualizza e gestisci tutte le tue prenotazioni di campi e lezioni
-          </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => loadBookings()}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Ricarica
-          </button>
           <Link
             href="/dashboard/atleta/bookings/new"
             className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all flex items-center gap-2 shadow-sm"
@@ -203,77 +243,70 @@ export default function BookingsPage() {
             <Plus className="h-4 w-4" />
             Nuova Prenotazione
           </Link>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Totale</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-cyan-50 rounded-lg">
-              <Clock className="h-5 w-5 text-cyan-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.upcoming}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Prossime</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.confirmed}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Confermate</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.pending}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>In Attesa</p>
+          <button
+            onClick={() => loadBookings()}
+            className="p-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+            title="Ricarica"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-4 border border-gray-200">
+      <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Cerca per campo o maestro..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-gray-900 font-medium placeholder:text-gray-500 transition-all"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-600" />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                filter === "all"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              <option value="all">Tutte</option>
-              <option value="confirmed">Confermate</option>
-              <option value="pending">In Attesa</option>
-              <option value="cancelled">Annullate</option>
-            </select>
+              Tutte
+            </button>
+            <button
+              onClick={() => setFilter("confirmed")}
+              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                filter === "confirmed"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Confermate
+            </button>
+            <button
+              onClick={() => setFilter("pending")}
+              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                filter === "pending"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              In Attesa
+            </button>
+            <button
+              onClick={() => setFilter("cancelled")}
+              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                filter === "cancelled"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Annullate
+            </button>
           </div>
         </div>
       </div>
@@ -306,20 +339,80 @@ export default function BookingsPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Data & Ora
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort("start_time")}
+                      className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        sortField === "start_time" 
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent" 
+                          : "text-gray-700 hover:text-cyan-600"
+                      }`}
+                    >
+                      Data & Ora
+                      {sortField === "start_time" && (
+                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4 text-cyan-600" /> : <ArrowDown className="h-4 w-4 text-cyan-600" />
+                      )}
+                    </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Campo
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort("court")}
+                      className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        sortField === "court" 
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent" 
+                          : "text-gray-700 hover:text-cyan-600"
+                      }`}
+                    >
+                      Campo
+                      {sortField === "court" && (
+                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4 text-cyan-600" /> : <ArrowDown className="h-4 w-4 text-cyan-600" />
+                      )}
+                    </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Tipo
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort("type")}
+                      className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        sortField === "type" 
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent" 
+                          : "text-gray-700 hover:text-cyan-600"
+                      }`}
+                    >
+                      Tipo
+                      {sortField === "type" && (
+                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4 text-cyan-600" /> : <ArrowDown className="h-4 w-4 text-cyan-600" />
+                      )}
+                    </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Maestro
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort("coach")}
+                      className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        sortField === "coach" 
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent" 
+                          : "text-gray-700 hover:text-cyan-600"
+                      }`}
+                    >
+                      Maestro
+                      {sortField === "coach" && (
+                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4 text-cyan-600" /> : <ArrowDown className="h-4 w-4 text-cyan-600" />
+                      )}
+                    </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Stato
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort("status")}
+                      className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                        sortField === "status" 
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent" 
+                          : "text-gray-700 hover:text-cyan-600"
+                      }`}
+                    >
+                      Stato
+                      {sortField === "status" && (
+                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4 text-cyan-600" /> : <ArrowDown className="h-4 w-4 text-cyan-600" />
+                      )}
+                    </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Conferme

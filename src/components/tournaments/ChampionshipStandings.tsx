@@ -70,7 +70,7 @@ export default function ChampionshipStandings({
       <div className="hidden md:block overflow-x-auto rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-xl">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[#2f7de1]/20 bg-[#0c1424]/40">
+            <tr className="border-b border-tournament-border/20 bg-tournament-bg-table/40">
               <th className="py-4 px-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-2">
                 Pos
               </th>
@@ -97,7 +97,7 @@ export default function ChampionshipStandings({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2f7de1]/10">
+          <tbody className="divide-y divide-tournament-border/10">
             {sortedStandings.map((entry, idx) => {
               const position = idx + 1;
               const setsDiff = entry.sets_won - entry.sets_lost;
@@ -106,16 +106,16 @@ export default function ChampionshipStandings({
               return (
                 <tr 
                   key={entry.player_id}
-                  className={`hover:bg-[#2f7de1]/10 transition-colors ${
-                    position === 1 ? 'bg-[#7de3ff]/5' : ''
+                  className={`hover:bg-tournament-border/10 transition-colors ${
+                    position === 1 ? 'bg-tournament-primary/5' : ''
                   }`}
                 >
                   <td className="py-4 px-4">
                     <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
                       position === 1 
-                        ? 'bg-[#7de3ff]/20 text-[#7de3ff] font-bold' 
+                        ? 'bg-tournament-primary/20 text-tournament-primary font-bold' 
                         : position <= 3
-                        ? 'bg-[#2f7de1]/20 text-[#4fb3ff]'
+                        ? 'bg-tournament-border/20 text-tournament-secondary'
                         : 'text-muted-2'
                     }`}>
                       {position}
@@ -146,7 +146,7 @@ export default function ChampionshipStandings({
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
-                    <span className="font-bold text-[#7de3ff] text-lg">
+                    <span className="font-bold text-tournament-primary text-lg">
                       {entry.points}
                     </span>
                   </td>
@@ -167,18 +167,18 @@ export default function ChampionshipStandings({
           return (
             <div
               key={entry.player_id}
-              className={`rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4 ${
-                position === 1 ? 'border-[#7de3ff]/50 bg-[#7de3ff]/5' : ''
+              className={`rounded-xl border border-tournament-border/30 bg-tournament-bg-card p-4 ${
+                position === 1 ? 'border-tournament-primary/50 bg-tournament-primary/5' : ''
               }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
                     position === 1 
-                      ? 'bg-[#7de3ff]/20 text-[#7de3ff] font-bold text-lg' 
+                      ? 'bg-tournament-primary/20 text-tournament-primary font-bold text-lg' 
                       : position <= 3
-                      ? 'bg-[#2f7de1]/20 text-[#4fb3ff] font-semibold'
-                      : 'bg-[#0c1424]/60 text-muted-2'
+                      ? 'bg-tournament-border/20 text-tournament-secondary font-semibold'
+                      : 'bg-tournament-bg-table/60 text-muted-2'
                   }`}>
                     {position}
                   </div>
@@ -187,7 +187,7 @@ export default function ChampionshipStandings({
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-[#7de3ff]">
+                  <div className="text-2xl font-bold text-tournament-primary">
                     {entry.points}
                   </div>
                   <div className="text-xs text-muted-2">punti</div>
@@ -222,7 +222,7 @@ export default function ChampionshipStandings({
       </div>
 
       {/* Legend */}
-      <div className="text-xs text-muted-2 text-center pt-4 border-t border-[#2f7de1]/20">
+      <div className="text-xs text-muted-2 text-center pt-4 border-t border-tournament-border/20">
         <p>PG = Partite Giocate • V = Vittorie • P = Perdite • Punti: Vittoria = 3, Sconfitta = 0</p>
       </div>
     </div>

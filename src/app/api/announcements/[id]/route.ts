@@ -170,7 +170,7 @@ export async function DELETE(
   }
 }
 
-// PATCH /api/announcements/[id] - Partial update (for quick actions like publish/unpublish)
+// PATCH /api/announcements/[id] - Mark announcement as viewed or update (admin)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -185,7 +185,30 @@ export async function PATCH(
       return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
 
-    // Check if user is admin/gestore
+    const body = await req.json();
+
+    // If it's just marking as viewed (no body or empty body)
+    if (!body || Object.keys(body).length === 0) {
+      // Insert view record (upsert to avoid duplicates)
+      const { error: viewError } = await supabase
+        .from("announcement_views")
+        .upsert({
+          announcement_id: id,
+          user_id: user.id,
+          viewed_at: new Date().toISOString(),
+        }, {
+          onConflict: "announcement_id,user_id",
+        });
+
+      if (viewError) {
+        console.error("Error marking as viewed:", viewError);
+        return NextResponse.json({ error: "Errore nel tracking visualizzazione" }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, message: "Annuncio marcato come letto" });
+    }
+
+    // Otherwise, it's an admin update - check permissions
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -195,8 +218,6 @@ export async function PATCH(
     if (!profile || !["admin", "gestore"].includes(profile.role)) {
       return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
     }
-
-    const body = await req.json();
 
     // Update announcement
     const { data: announcement, error: updateError } = await supabase

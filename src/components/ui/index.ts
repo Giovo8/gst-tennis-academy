@@ -21,3 +21,25 @@ export type { SpinnerProps, SpinnerSize } from "./Spinner";
 
 export { Badge } from "./Badge";
 export type { BadgeProps, BadgeVariant, BadgeSize } from "./Badge";
+
+export { Alert } from "./Alert";
+export type { AlertProps, AlertVariant } from "./Alert";
+
+export { Breadcrumbs } from "./Breadcrumbs";
+export type { BreadcrumbItem } from "./Breadcrumbs";
+
+export { ToastProvider, useToast } from "./Toast";
+export type { Toast, ToastVariant } from "./Toast";
+
+export {
+  Modal,
+  ModalTrigger,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalBody,
+  ModalFooter,
+  useModal,
+} from "./Modal";
+

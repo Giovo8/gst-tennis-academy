@@ -34,6 +34,7 @@ interface DashboardShellProps {
   role: UserRole;
   userName?: string;
   userEmail?: string;
+  userAvatar?: string;
 }
 
 const roleColors: Record<UserRole, string> = {
@@ -49,6 +50,7 @@ export default function DashboardShell({
   role,
   userName,
   userEmail,
+  userAvatar,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -156,9 +158,9 @@ export default function DashboardShell({
           <>
             <span className="text-sm font-medium flex-1">{item.label}</span>
             {item.badge && item.badge > 0 && (
-              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md min-w-[24px] text-center ${
+              <span className={`px-2.5 py-1 text-xs font-bold rounded-lg min-w-[28px] text-center shadow-sm ${
                 active 
-                  ? "bg-white/20 text-white" 
+                  ? "bg-white text-cyan-600" 
                   : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
               }`}>
                 {item.badge > 99 ? "99+" : item.badge}
@@ -167,7 +169,7 @@ export default function DashboardShell({
           </>
         )}
         {sidebarCollapsed && item.badge && item.badge > 0 && (
-          <span className="absolute top-1 right-1 w-2 h-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full shadow-sm" />
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full shadow-md ring-2 ring-white" />
         )}
       </Link>
     );
@@ -318,20 +320,40 @@ export default function DashboardShell({
             {sidebarCollapsed ? (
               <div className="flex justify-center">
                 <div 
-                  className={`w-10 h-10 rounded-full ${roleColors[role]} flex items-center justify-center text-white font-bold text-sm shadow-sm`}
+                  className="w-10 h-10 rounded-full shadow-md ring-2 ring-gray-100 overflow-hidden"
                   title={userName || "User"}
                 >
-                  {userName?.charAt(0)?.toUpperCase() || "U"}
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userName || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full ${roleColors[role]} flex items-center justify-center text-white font-bold text-sm`}>
+                      {userName?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50">
-                <div className={`w-10 h-10 rounded-full ${roleColors[role]} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
-                  {userName?.charAt(0)?.toUpperCase() || "U"}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
+                <div className="w-10 h-10 rounded-full shadow-md ring-2 ring-white overflow-hidden flex-shrink-0">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userName || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full ${roleColors[role]} flex items-center justify-center text-white font-bold text-sm`}>
+                      {userName?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{userName || "User"}</p>
-                  <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{userName || "User"}</p>
+                  <p className="text-xs font-medium text-gray-600 truncate">{userEmail}</p>
                 </div>
               </div>
             )}

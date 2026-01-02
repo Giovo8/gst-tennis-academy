@@ -13,6 +13,9 @@ import {
   Check,
   Shield,
   CreditCard,
+  Upload,
+  Link as LinkIcon,
+  X,
 } from "lucide-react";
 
 interface Profile {
@@ -33,6 +36,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -90,6 +96,128 @@ export default function ProfilePage() {
     }
 
     setSaving(false);
+  }
+
+  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !profile) return;
+
+    // Verifica dimensione (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("L'immagine deve essere inferiore a 5MB");
+      return;
+    }
+
+    // Verifica tipo file
+    if (!file.type.startsWith("image/")) {
+      alert("Il file deve essere un'immagine");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setShowAvatarModal(false);
+
+    try {
+      // Cancella il vecchio avatar se esiste ed è nel nostro storage
+      if (profile.avatar_url && profile.avatar_url.includes("/avatars/")) {
+        const oldPath = profile.avatar_url.split("/avatars/").pop();
+        if (oldPath) {
+          await supabase.storage.from("avatars").remove([oldPath]);
+        }
+      }
+
+      // Genera un nome file unico
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${profile.id}/${fileName}`;
+
+      // Upload del file
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        alert("Errore durante l'upload dell'immagine");
+        return;
+      }
+
+      // Ottieni URL pubblico
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      // Aggiorna il profilo nel database
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", profile.id);
+
+      if (updateError) {
+        console.error("Update error:", updateError);
+        alert("Errore durante l'aggiornamento del profilo");
+        return;
+      }
+
+      // Aggiorna lo stato locale
+      setProfile({ ...profile, avatar_url: publicUrl });
+      
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      alert("Errore durante l'upload dell'immagine");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleAvatarUrl() {
+    if (!avatarUrl || !profile) return;
+
+    // Verifica che sia un URL valido
+    try {
+      new URL(avatarUrl);
+    } catch {
+      alert("Inserisci un URL valido");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setShowAvatarModal(false);
+
+    try {
+      // Cancella il vecchio avatar se esiste ed è nel nostro storage
+      if (profile.avatar_url && profile.avatar_url.includes("/avatars/")) {
+        const oldPath = profile.avatar_url.split("/avatars/").pop();
+        if (oldPath) {
+          await supabase.storage.from("avatars").remove([oldPath]);
+        }
+      }
+
+      // Aggiorna il profilo nel database con l'URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", profile.id);
+
+      if (updateError) {
+        console.error("Update error:", updateError);
+        alert("Errore durante l'aggiornamento del profilo");
+        return;
+      }
+
+      // Aggiorna lo stato locale
+      setProfile({ ...profile, avatar_url: avatarUrl });
+      setAvatarUrl("");
+      
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      alert("Errore durante l'aggiornamento dell'immagine");
+    } finally {
+      setUploadingAvatar(false);
+    }
   }
 
   function formatDate(dateString: string) {
@@ -174,8 +302,16 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <button className="absolute bottom-2 right-2 p-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg">
-                <Camera className="h-4 w-4" />
+              <button 
+                onClick={() => setShowAvatarModal(true)}
+                disabled={uploadingAvatar}
+                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
             </div>
             
@@ -318,6 +454,86 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* Avatar Modal */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Cambia Avatar</h3>
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Upload File */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Carica un'immagine
+                </label>
+                <button
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:from-cyan-600 hover:to-blue-700 transition-all shadow-md"
+                >
+                  <Upload className="h-5 w-5" />
+                  Scegli File
+                </button>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Massimo 5MB - Formati: JPG, PNG, GIF
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500 font-medium">oppure</span>
+                </div>
+              </div>
+
+              {/* URL Input */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Inserisci URL immagine
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    placeholder="https://esempio.com/immagine.jpg"
+                    className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
+                  />
+                  <button
+                    onClick={handleAvatarUrl}
+                    disabled={!avatarUrl}
+                    className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:from-cyan-600 hover:to-blue-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <LinkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Incolla l'URL di un'immagine già caricata online
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

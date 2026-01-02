@@ -2,7 +2,7 @@
 
 import { HTMLAttributes, forwardRef } from "react";
 
-export type CardVariant = "default" | "glass" | "bordered" | "elevated";
+export type CardVariant = "default" | "glass" | "bordered" | "elevated" | "interactive";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
@@ -11,10 +11,11 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles: Record<CardVariant, string> = {
-  default: "bg-surface border-border",
-  glass: "bg-white/5 backdrop-blur-xl border-white/10",
-  bordered: "bg-transparent border-white/20",
-  elevated: "bg-surface border-border shadow-lg",
+  default: "bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800",
+  glass: "bg-white/60 backdrop-blur-xl border-slate-200/50 dark:bg-slate-900/60 dark:border-slate-700/50",
+  bordered: "bg-transparent border-slate-300 dark:border-slate-700",
+  elevated: "bg-white border-slate-200 shadow-lg dark:bg-slate-900 dark:border-slate-800",
+  interactive: "bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all",
 };
 
 const paddingStyles: Record<"none" | "sm" | "md" | "lg", string> = {
@@ -44,7 +45,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
           transition-all duration-200
           ${variantStyles[variant]}
           ${paddingStyles[padding]}
-          ${hover ? "hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5" : ""}
+          ${hover ? "hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5" : ""}
           ${className}
         `}
         {...props}
@@ -83,7 +84,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     return (
       <h3
         ref={ref}
-        className={`text-lg font-semibold text-white ${className}`}
+        className={`text-lg font-semibold text-slate-900 dark:text-white ${className}`}
         {...props}
       >
         {children}
@@ -101,7 +102,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
     return (
       <p
         ref={ref}
-        className={`text-sm text-muted ${className}`}
+        className={`text-sm text-slate-600 dark:text-slate-400 ${className}`}
         {...props}
       >
         {children}

@@ -95,16 +95,16 @@ export default function AdminHomepageOrderPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#021627] text-white p-6">
-        <div className="mx-auto max-w-3xl">
-          <p>Caricamento...</p>
+      <div className="p-6">
+        <div className="mx-auto max-w-4xl">
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#021627] text-white p-6">
+    <div className="p-6">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
