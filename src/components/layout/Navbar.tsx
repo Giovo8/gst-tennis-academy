@@ -50,19 +50,19 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container py-3">
-        <div className="flex items-center justify-between gap-4">
+    <nav className="border-b border-white/10 bg-[#021627]/95 backdrop-blur-sm sticky top-0 z-50 safe-top">
+      <div className="container py-2 sm:py-3 px-4 sm:px-6">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
             <Image 
               src="/images/logo-tennis.png" 
               alt="GST Tennis Academy" 
-              width={36} 
-              height={36}
-              className="h-9 w-9"
+              width={32} 
+              height={32}
+              className="h-7 w-7 sm:h-9 sm:w-9 flex-shrink-0"
             />
-            <span className="text-lg font-bold text-white">GST Academy</span>
+            <span className="text-base sm:text-lg font-bold text-white truncate">GST Academy</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -141,7 +141,8 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden rounded-xl border border-blue-400/20 p-2 text-white transition-all duration-300 hover:bg-blue-500/10 hover:border-blue-400/40"
+            className="md:hidden rounded-xl border border-blue-400/20 p-2.5 text-white transition-all duration-300 hover:bg-blue-500/10 hover:border-blue-400/40 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -149,14 +150,14 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden border-t border-blue-400/20 py-4 space-y-3 pb-safe-bottom animate-in slide-in-from-top duration-300">
+          <div className="md:hidden border-t border-blue-400/20 mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
             {/* Social Icons */}
-            <div className="flex items-center justify-center gap-3 pb-2">
+            <div className="flex items-center justify-center gap-4 pb-2">
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="rounded-full border border-white/10 p-3 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
@@ -165,7 +166,7 @@ export default function Navbar() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="rounded-full border border-white/10 p-3 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
@@ -174,7 +175,7 @@ export default function Navbar() {
                 href="#youtube"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="rounded-full border border-white/10 p-3 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
                 aria-label="YouTube"
               >
                 <Youtube className="h-5 w-5" />
@@ -183,7 +184,7 @@ export default function Navbar() {
                 href="https://wa.me/393762351777"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 p-2.5 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="rounded-full border border-white/10 p-3 text-white transition hover:border-accent hover:bg-accent-15 hover:text-accent min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
                 aria-label="WhatsApp"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -194,33 +195,34 @@ export default function Navbar() {
 
             {/* User Status */}
             {profile && (
-              <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl text-center">
-                <span className="text-sm text-white font-medium">{profile.full_name || user.email}</span>
-                <span className="mx-2 text-muted-2">•</span>
-                <span className={`text-sm font-semibold ${roleColors[profile.role]}`}>
+              <div className="mx-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl text-center">
+                <div className="text-sm text-white font-medium mb-1">{profile.full_name || user.email}</div>
+                <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${roleColors[profile.role]}`}>
                   {profile.role.toUpperCase()}
                 </span>
               </div>
             )}
             
-            <Link
-              href={dashboardLink}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300"
-            >
-              <Shield className="h-4 w-4 text-white" />
-              <span className="text-white">Area GST</span>
-            </Link>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                handleLogout();
-              }}
-              className="w-full flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 transition-all duration-300"
-            >
-              <LogOut className="h-4 w-4 text-white" />
-              <span className="text-white">Esci</span>
-            </button>
+            <div className="px-2 space-y-2">
+              <Link
+                href={dashboardLink}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300 min-h-[48px] touch-manipulation"
+              >
+                <Shield className="h-5 w-5 text-white" />
+                <span className="text-white">Area GST</span>
+              </Link>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/40 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 transition-all duration-300 min-h-[48px] touch-manipulation"
+              >
+                <LogOut className="h-5 w-5 text-white" />
+                <span className="text-white">Esci</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

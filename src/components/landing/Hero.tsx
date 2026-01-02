@@ -115,17 +115,17 @@ export default function Hero() {
                 <img
                   src={image.image_url}
                   alt={image.alt_text}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover object-center"
                 />
                 {/* Dark overlay for better text readability */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
               </>
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="text-6xl animate-bounce">🎾</div>
-                  <p className="text-base text-gray-300 font-semibold">{image.alt_text}</p>
-                  <p className="text-sm text-gray-400">Superfici professionali ITF</p>
+                <div className="text-center space-y-2 sm:space-y-4 px-4">
+                  <div className="text-4xl sm:text-6xl animate-bounce">🎾</div>
+                  <p className="text-sm sm:text-base text-gray-300 font-semibold">{image.alt_text}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Superfici professionali ITF</p>
                 </div>
               </div>
             )}
@@ -133,19 +133,19 @@ export default function Hero() {
         ))}
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 relative">
-        <div className="relative min-h-[calc(100vh-5rem)] py-12 sm:py-16 flex flex-col justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="relative min-h-[70vh] sm:min-h-[80vh] lg:min-h-[calc(100vh-5rem)] py-8 sm:py-12 lg:py-16 flex flex-col justify-between">
           {/* Empty hero - solo sfondo immagine */}
         </div>
 
         {/* Minimal Indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
           {images.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === currentIndex ? "w-8 bg-white" : "w-1.5 bg-white/50 hover:bg-white/70"
+              className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 touch-manipulation ${
+                idx === currentIndex ? "w-6 sm:w-8 bg-white" : "w-1 sm:w-1.5 bg-white/50 hover:bg-white/70"
               }`}
               aria-label={`Vai all'immagine ${idx + 1}`}
             />
