@@ -38,10 +38,10 @@ interface DashboardShellProps {
 }
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-blue-600",
-  gestore: "bg-cyan-600",
-  maestro: "bg-blue-500",
-  atleta: "bg-cyan-500",
+  admin: "bg-frozen-600",
+  gestore: "bg-frozen-600",
+  maestro: "bg-frozen-500",
+  atleta: "bg-frozen-500",
 };
 
 export default function DashboardShell({
@@ -146,7 +146,7 @@ export default function DashboardShell({
           ${sidebarCollapsed ? "p-3 justify-center" : "px-3 py-2.5 gap-3"}
           ${
             active
-              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
+              ? "bg-frozen-500 text-white shadow-sm"
               : "text-gray-600 hover:bg-gray-50"
           }
         `}
@@ -160,8 +160,8 @@ export default function DashboardShell({
             {item.badge && item.badge > 0 && (
               <span className={`px-2.5 py-1 text-xs font-bold rounded-lg min-w-[28px] text-center shadow-sm ${
                 active 
-                  ? "bg-white text-cyan-600" 
-                  : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                  ? "bg-white text-frozen-600" 
+                  : "bg-frozen-500 text-white"
               }`}>
                 {item.badge > 99 ? "99+" : item.badge}
               </span>
@@ -169,7 +169,7 @@ export default function DashboardShell({
           </>
         )}
         {sidebarCollapsed && item.badge && item.badge > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full shadow-md ring-2 ring-white" />
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-frozen-500 rounded-full shadow-md ring-2 ring-white" />
         )}
       </Link>
     );
@@ -337,7 +337,7 @@ export default function DashboardShell({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-frozen-50 border border-frozen-100">
                 <div className="w-10 h-10 rounded-full shadow-md ring-2 ring-white overflow-hidden flex-shrink-0">
                   {userAvatar ? (
                     <img

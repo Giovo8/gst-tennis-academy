@@ -184,8 +184,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
         return {
           icon: Target,
           name: 'Girone + Eliminazione',
-          color: 'text-blue-400',
-          bgColor: 'bg-blue-500/10'
+          color: 'text-frozen-400',
+          bgColor: 'bg-frozen-500/10'
         };
       case 'campionato':
         return {
@@ -221,8 +221,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-xl font-semibold text-gray-900">{tournament.title}</h3>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  tournament.status === 'Aperto' ? 'bg-blue-100 text-primary' :
-                  tournament.status === 'In Corso' ? 'bg-blue-100 text-primary-dark' :
+                  tournament.status === 'Aperto' ? 'bg-frozen-100 text-primary' :
+                  tournament.status === 'In Corso' ? 'bg-frozen-100 text-primary-dark' :
                   tournament.status === 'Concluso' ? 'bg-gray-100 text-gray-700' :
                   'bg-gray-100 text-gray-600'
                 }`}>
@@ -292,20 +292,20 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
           >
             Panoramica
             {activeTab === 'overview' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-frozen-600" />
             )}
           </button>
           <button
             onClick={() => setActiveTab('bracket')}
             className={`px-4 py-2 text-sm font-medium transition-colors relative ${
               activeTab === 'bracket'
-                ? 'text-blue-600'
+                ? 'text-frozen-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Tabellone
             {activeTab === 'bracket' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-frozen-600" />
             )}
           </button>
         </div>

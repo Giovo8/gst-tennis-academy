@@ -153,7 +153,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-14 h-14 border-4 border-frozen-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-gray-600 font-medium">Caricamento dashboard...</p>
         </div>
       </div>
