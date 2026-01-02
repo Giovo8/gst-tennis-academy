@@ -123,24 +123,24 @@ export default function CoachLessonsPage() {
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-green-500/20 bg-green-500/5 backdrop-blur-xl p-5">
+        <div className="rounded-xl border border-frozen-500/20 bg-frozen-500/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-green-400" />
+            <div className="w-12 h-12 rounded-xl bg-frozen-500/20 flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-frozen-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-green-400">{stats.confirmed}</p>
+              <p className="text-2xl font-bold text-frozen-400">{stats.confirmed}</p>
               <p className="text-sm text-white/50">Confermate</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 backdrop-blur-xl p-5">
+        <div className="rounded-xl border border-frozen-500/20 bg-frozen-500/5 backdrop-blur-xl p-5">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-              <Clock className="h-6 w-6 text-yellow-400" />
+            <div className="w-12 h-12 rounded-xl bg-frozen-500/20 flex items-center justify-center">
+              <Clock className="h-6 w-6 text-frozen-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
+              <p className="text-2xl font-bold text-frozen-400">{stats.pending}</p>
               <p className="text-sm text-white/50">In Attesa</p>
             </div>
           </div>
@@ -208,15 +208,15 @@ export default function CoachLessonsPage() {
                     </span>
                     <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                       lesson.coach_confirmed
-                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                        : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                        ? "bg-frozen-500/20 text-frozen-400 border border-frozen-500/30"
+                        : "bg-frozen-500/20 text-frozen-400 border border-frozen-500/30"
                     }`}>
                       {lesson.coach_confirmed ? "✓ Confermata" : "⏳ Da confermare"}
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-white/70">
                     <span className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 text-cyan-400" />
+                      <Clock className="h-4 w-4 text-frozen-400" />
                       {format(new Date(lesson.start_time), "HH:mm")} - {format(new Date(lesson.end_time), "HH:mm")}
                     </span>
                     <span className="flex items-center gap-1.5">

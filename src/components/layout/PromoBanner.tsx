@@ -58,19 +58,19 @@ export default function PromoBanner() {
 
   const colorThemes = {
     blue: {
-      gradient: "from-frozen-600 via-frozen-500 to-frozen-600",
+      bg: "bg-frozen-600",
       button: "bg-white text-frozen-600 hover:bg-frozen-50",
     },
     green: {
-      gradient: "from-green-600 via-emerald-500 to-green-600",
+      bg: "bg-frozen-600",
       button: "bg-white text-frozen-500 hover:bg-frozen-50",
     },
     purple: {
-      gradient: "from-purple-600 via-violet-500 to-purple-600",
+      bg: "bg-frozen-600",
       button: "bg-white text-frozen-500 hover:bg-frozen-50",
     },
     red: {
-      gradient: "from-red-600 via-rose-500 to-red-600",
+      bg: "bg-frozen-600",
       button: "bg-white text-frozen-500 hover:bg-frozen-50",
     },
   };
@@ -78,7 +78,7 @@ export default function PromoBanner() {
   const theme = colorThemes[settings.background_color as keyof typeof colorThemes] || colorThemes.blue;
 
   return (
-    <div className={`relative bg-gradient-to-r ${theme.gradient} text-white overflow-hidden`}>
+    <div className={`relative ${theme.bg} text-white overflow-hidden`}>
       {/* Animated background pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" />

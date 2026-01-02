@@ -82,7 +82,7 @@ export default function CoursesPage() {
         {loading ? (
           <div className="text-sm text-[#c6d8c9]">Caricamento...</div>
         ) : error ? (
-          <div className="text-sm text-cyan-300">{error}</div>
+          <div className="text-sm text-frozen-300">{error}</div>
         ) : courses.length === 0 ? (
           <div className="text-sm text-[#c6d8c9]">Nessun corso disponibile.</div>
         ) : (

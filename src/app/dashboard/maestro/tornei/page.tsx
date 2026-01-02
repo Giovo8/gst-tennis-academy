@@ -70,9 +70,9 @@ export default function MaestroTorneiPage() {
 
   const getStatusColor = (status?: string) => {
     switch(status) {
-      case 'Aperto': return 'bg-green-500/10 text-green-400 border-green-500/30';
+      case 'Aperto': return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
       case 'In Corso':
-      case 'In corso': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+      case 'In corso': return 'bg-frozen-600/10 text-frozen-400 border-frozen-600/30';
       case 'Completato':
       case 'Concluso': return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
       default: return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
@@ -115,21 +115,21 @@ export default function MaestroTorneiPage() {
         <StatCard
           title="Tornei Totali"
           value={tournaments.length}
-          icon={<Trophy className="h-8 w-8 text-blue-300" />}
+          icon={<Trophy className="h-8 w-8 text-frozen-300" />}
           color="blue"
         />
 
         <StatCard
           title="Aperti"
           value={tournaments.filter(t => t.status === 'Aperto').length}
-          icon={<Calendar className="h-8 w-8 text-emerald-300" />}
+          icon={<Calendar className="h-8 w-8 text-frozen-300" />}
           color="green"
         />
 
         <StatCard
           title="In Corso"
           value={tournaments.filter(t => t.status === 'In Corso' || t.status === 'In corso').length}
-          icon={<Trophy className="h-8 w-8 text-amber-300" />}
+          icon={<Trophy className="h-8 w-8 text-frozen-300" />}
           color="yellow"
         />
 

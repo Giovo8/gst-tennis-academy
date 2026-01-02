@@ -180,12 +180,12 @@ export default function CoachHomePage() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-cyan-50 via-blue-50 to-teal-50 p-6 sm:p-8">
-        <div className="pointer-events-none absolute left-10 top-5 h-32 w-32 rounded-full blur-3xl bg-cyan-200/40 animate-pulse" />
-        <div className="pointer-events-none absolute right-10 bottom-5 h-24 w-24 rounded-full blur-3xl bg-teal-200/30 animate-pulse" style={{animationDelay: '1s'}} />
+      <div className="relative overflow-hidden rounded-2xl border border-frozen-200 bg-frozen-50 p-6 sm:p-8">
+        <div className="pointer-events-none absolute left-10 top-5 h-32 w-32 rounded-full blur-3xl bg-frozen-200/40 animate-pulse" />
+        <div className="pointer-events-none absolute right-10 bottom-5 h-24 w-24 rounded-full blur-3xl bg-frozen-200/30 animate-pulse" style={{animationDelay: '1s'}} />
         
         <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700 mb-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-frozen-300 bg-frozen-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-frozen-700 mb-3">
             <Sparkles className="h-3.5 w-3.5" />
             Area Maestro
           </div>
@@ -200,12 +200,12 @@ export default function CoachHomePage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-cyan-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-cyan-600" />
+              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-frozen-600" />
               </div>
               <span className="text-xs text-gray-500">Oggi</span>
             </div>
@@ -214,12 +214,12 @@ export default function CoachHomePage() {
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-green-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-frozen-600" />
               </div>
               <span className="text-xs text-gray-500">Settimana</span>
             </div>
@@ -228,12 +228,12 @@ export default function CoachHomePage() {
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-purple-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <Users className="h-5 w-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-frozen-600" />
               </div>
               <span className="text-xs text-gray-500">Allievi</span>
             </div>
@@ -242,12 +242,12 @@ export default function CoachHomePage() {
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-red-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                <Video className="h-5 w-5 text-red-600" />
+              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
+                <Video className="h-5 w-5 text-frozen-600" />
               </div>
               <span className="text-xs text-gray-500">Video</span>
             </div>
@@ -298,8 +298,8 @@ export default function CoachHomePage() {
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-cyan-600" />
+            <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-frozen-600" />
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">Lezioni di Oggi</h2>
@@ -308,7 +308,7 @@ export default function CoachHomePage() {
           </div>
           <Link
             href="/dashboard/maestro/agenda"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-cyan-600 bg-cyan-50 border border-cyan-200 hover:bg-cyan-100 transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-frozen-600 bg-frozen-50 border border-frozen-200 hover:bg-frozen-100 transition-all"
           >
             Agenda
             <ArrowRight className="h-4 w-4" />
@@ -341,12 +341,12 @@ export default function CoachHomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {lesson.status === "confirmed" ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-frozen-100 text-frozen-700 border border-frozen-300">
                       <CheckCircle className="h-3.5 w-3.5" />
                       Confermata
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-300">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-frozen-100 text-frozen-700 border border-frozen-300">
                       <AlertCircle className="h-3.5 w-3.5" />
                       In attesa
                     </span>
@@ -363,8 +363,8 @@ export default function CoachHomePage() {
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <Users className="h-5 w-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-frozen-600" />
               </div>
               <div>
                 <h2 className="font-semibold text-gray-900">I Tuoi Allievi</h2>
@@ -373,7 +373,7 @@ export default function CoachHomePage() {
             </div>
             <Link
               href="/dashboard/maestro/students"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-frozen-600 bg-frozen-50 border border-frozen-200 hover:bg-frozen-100 transition-all"
             >
               Vedi tutti
               <ArrowRight className="h-4 w-4" />

@@ -52,9 +52,9 @@ export default function TorneiPage() {
   const getStatusStyle = (status?: string) => {
     switch (status?.toLowerCase()) {
       case 'aperto':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return 'bg-frozen-500/20 text-frozen-400 border-frozen-500/30';
       case 'in corso':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+        return 'bg-frozen-600/20 text-frozen-300 border-frozen-600/30';
       case 'completato':
       case 'concluso':
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
@@ -81,7 +81,7 @@ export default function TorneiPage() {
                 Tornei GST Academy
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">
-                <span className="bg-gradient-to-r from-white via-frozen-200 to-white bg-clip-text text-transparent">
+                <span className="bg-frozen-200 bg-clip-text text-transparent">
                   Tornei in Arrivo
                 </span>
               </h1>
@@ -112,8 +112,8 @@ export default function TorneiPage() {
             <p className="mt-4 text-white/50 animate-pulse">Caricamento tornei...</p>
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-8 text-center">
-            <p className="text-red-400">{error}</p>
+          <div className="rounded-2xl border border-frozen-500/20 bg-frozen-500/10 p-8 text-center">
+            <p className="text-frozen-400">{error}</p>
           </div>
         ) : tournaments.length === 0 ? (
           <div className="text-center py-20">

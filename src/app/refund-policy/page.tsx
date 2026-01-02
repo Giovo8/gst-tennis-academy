@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function RefundPolicyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-frozen-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-frozen-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-12">
@@ -43,38 +43,38 @@ export default function RefundPolicyPage() {
                 2. Prenotazioni Campi da Tennis
               </h2>
               <div className="space-y-6">
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+                <div className="bg-frozen-50 dark:bg-frozen-900/20 rounded-lg p-6">
                   <div className="flex items-center mb-3">
-                    <Clock className="w-6 h-6 text-green-600 mr-3" />
-                    <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
+                    <Clock className="w-6 h-6 text-frozen-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-frozen-900 dark:text-frozen-100">
                       Cancellazione con 48+ ore di anticipo
                     </h3>
                   </div>
-                  <p className="text-green-800 dark:text-green-200">
+                  <p className="text-frozen-800 dark:text-frozen-200">
                     <strong>Rimborso completo:</strong> 100% del pagamento rimborsato entro 5-7 giorni lavorativi.
                   </p>
                 </div>
 
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6">
+                <div className="bg-frozen-50 dark:bg-frozen-900/20 rounded-lg p-6">
                   <div className="flex items-center mb-3">
-                    <Clock className="w-6 h-6 text-yellow-600 mr-3" />
-                    <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100">
+                    <Clock className="w-6 h-6 text-frozen-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-frozen-900 dark:text-frozen-100">
                       Cancellazione con 24-48 ore di anticipo
                     </h3>
                   </div>
-                  <p className="text-yellow-800 dark:text-yellow-200">
+                  <p className="text-frozen-800 dark:text-frozen-200">
                     <strong>Rimborso parziale:</strong> 50% del pagamento rimborsato. L'altra metà viene trattenuta come penale di cancellazione.
                   </p>
                 </div>
 
-                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6">
+                <div className="bg-frozen-50 dark:bg-frozen-900/20 rounded-lg p-6">
                   <div className="flex items-center mb-3">
-                    <Clock className="w-6 h-6 text-red-600 mr-3" />
-                    <h3 className="text-lg font-semibold text-red-900 dark:text-red-100">
+                    <Clock className="w-6 h-6 text-frozen-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-frozen-900 dark:text-frozen-100">
                       Cancellazione con meno di 24 ore di anticipo
                     </h3>
                   </div>
-                  <p className="text-red-800 dark:text-red-200">
+                  <p className="text-frozen-800 dark:text-frozen-200">
                     <strong>Nessun rimborso:</strong> Il pagamento completo viene trattenuto. La prenotazione può essere trasferita a un'altra persona con il consenso dell'accademia.
                   </p>
                 </div>

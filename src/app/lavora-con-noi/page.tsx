@@ -59,7 +59,7 @@ export default function WorkWithUsPage() {
 
       {/* Posizioni Aperte */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
-        <div className="rounded-xl sm:rounded-2xl border border-frozen-500/30 bg-gradient-to-br from-frozen-500/10 to-frozen-500/5 p-4 sm:p-6">
+        <div className="rounded-xl sm:rounded-2xl border border-frozen-500/30 bg-frozen-500/10 p-4 sm:p-6">
           <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-frozen-500/20 p-2 sm:p-3">
             <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
           </div>
@@ -84,7 +84,7 @@ export default function WorkWithUsPage() {
           </ul>
         </div>
 
-        <div className="rounded-xl sm:rounded-2xl border border-frozen-500/30 bg-gradient-to-br from-frozen-500/10 to-frozen-500/5 p-4 sm:p-6">
+        <div className="rounded-xl sm:rounded-2xl border border-frozen-500/30 bg-frozen-500/10 p-4 sm:p-6">
           <div className="mb-3 sm:mb-4 inline-flex rounded-full bg-frozen-500/20 p-2 sm:p-3">
             <Users className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-300" />
           </div>

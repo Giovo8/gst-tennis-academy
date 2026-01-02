@@ -154,7 +154,7 @@ export default function PublicNavbar() {
             {/* Area GST Button - Dashboard Style */}
             <Link
               href={getDashboardLink()}
-              className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-white font-semibold text-sm hover:from-primary-dark hover:to-primary transition-all shadow-sm hover:shadow-md h-[38px]"
+              className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-frozen-500 text-white font-semibold text-sm hover:bg-frozen-600 transition-all shadow-sm hover:shadow-md h-[38px]"
             >
               <Shield className="h-[18px] w-[18px]" />
               <span>Area GST</span>
@@ -187,7 +187,7 @@ export default function PublicNavbar() {
           <div className="lg:hidden border-t border-frozen-100 mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
             {/* User Info */}
             {user && userRole && (
-              <div className="flex items-center justify-center gap-2 py-3 px-4 border-y border-frozen-100 mx-2 rounded-lg bg-gradient-to-r from-frozen-50 to-frozen-100">
+              <div className="flex items-center justify-center gap-2 py-3 px-4 border-y border-frozen-100 mx-2 rounded-lg bg-frozen-50">
                 <p className="text-sm text-frozen-800 font-medium truncate">{userFullName || user.email}</p>
                 <p className={`text-xs font-semibold uppercase ${
                   userRole === 'atleta' ? 'text-frozen-500' :
@@ -203,7 +203,7 @@ export default function PublicNavbar() {
               <Link
                 href={getDashboardLink()}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-frozen-500 to-frozen-600 text-white shadow-sm min-h-[48px] touch-manipulation"
+                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-sm font-semibold bg-frozen-500 text-white hover:bg-frozen-600 shadow-sm min-h-[48px] touch-manipulation"
               >
                 <Shield className="h-5 w-5" />
                 <span>Area GST</span>

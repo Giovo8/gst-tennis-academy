@@ -171,21 +171,21 @@ export default function StudentsPage() {
           <p className="text-sm text-[var(--foreground-muted)]">Allievi totali</p>
         </div>
         <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
-          <TrendingUp className="h-5 w-5 text-green-500 mb-2" />
+          <TrendingUp className="h-5 w-5 text-frozen-500 mb-2" />
           <p className="text-2xl font-bold text-[var(--foreground)]">
             {students.filter(s => s.subscription_type).length}
           </p>
           <p className="text-sm text-[var(--foreground-muted)]">Con abbonamento</p>
         </div>
         <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
-          <Calendar className="h-5 w-5 text-blue-500 mb-2" />
+          <Calendar className="h-5 w-5 text-frozen-500 mb-2" />
           <p className="text-2xl font-bold text-[var(--foreground)]">
             {students.reduce((sum, s) => sum + (s.lessons_count || 0), 0)}
           </p>
           <p className="text-sm text-[var(--foreground-muted)]">Lezioni totali</p>
         </div>
         <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
-          <Video className="h-5 w-5 text-purple-500 mb-2" />
+          <Video className="h-5 w-5 text-frozen-500 mb-2" />
           <p className="text-2xl font-bold text-[var(--foreground)]">
             {Math.round(students.reduce((sum, s) => sum + (s.lessons_count || 0), 0) / Math.max(students.length, 1))}
           </p>
@@ -246,7 +246,7 @@ export default function StudentsPage() {
                     )}
                   </div>
                   {student.subscription_type && (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-frozen-100 text-frozen-700 dark:bg-frozen-900/30 dark:text-frozen-300">
                       {student.subscription_type}
                     </span>
                   )}

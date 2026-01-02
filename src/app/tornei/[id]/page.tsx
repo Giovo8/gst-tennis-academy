@@ -173,7 +173,7 @@ export default function TournamentDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-frozen-900 via-frozen-950 to-frozen-900">
+      <div className="min-h-screen bg-frozen-950">
         <PublicNavbar />
         <main className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center min-h-[60vh]">
@@ -229,7 +229,7 @@ export default function TournamentDetail() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Aperto':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
       case 'In Corso':
       case 'In corso':
         return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
@@ -242,7 +242,7 @@ export default function TournamentDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-frozen-900 via-frozen-950 to-frozen-900">
+    <div className="min-h-screen bg-frozen-950">
       <PublicNavbar />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-7xl">
@@ -353,9 +353,9 @@ export default function TournamentDetail() {
                   {currentParticipants}<span className="text-gray-400">/{tournament.max_participants}</span>
                 </p>
                 {spotsLeft > 0 ? (
-                  <p className="text-xs text-emerald-400 mt-0.5">{spotsLeft} posti disponibili</p>
+                  <p className="text-xs text-frozen-400 mt-0.5">{spotsLeft} posti disponibili</p>
                 ) : (
-                  <p className="text-xs text-red-400 mt-0.5">Tutto esaurito</p>
+                  <p className="text-xs text-frozen-500 mt-0.5">Tutto esaurito</p>
                 )}
               </div>
             </div>
@@ -399,26 +399,26 @@ export default function TournamentDetail() {
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Iscrizione</h3>
               {joined ? (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-frozen-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-frozen-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-emerald-400 font-bold">Sei già iscritto a questo torneo</p>
+                    <p className="text-frozen-400 font-bold">Sei già iscritto a questo torneo</p>
                     <p className="text-sm text-gray-400 mt-0.5">Controlla la dashboard per gli aggiornamenti</p>
                   </div>
                 </div>
               ) : spotsLeft <= 0 ? (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-frozen-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-frozen-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-red-400 font-bold">Iscrizioni chiuse - Sold Out</p>
+                    <p className="text-frozen-400 font-bold">Iscrizioni chiuse - Sold Out</p>
                     <p className="text-sm text-gray-400 mt-0.5">Tutti i posti sono stati occupati</p>
                   </div>
                 </div>
@@ -461,12 +461,12 @@ export default function TournamentDetail() {
           )}
 
           {error && (
-            <div className="mt-3 sm:mt-4 flex items-start gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mt-3 sm:mt-4 flex items-start gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-frozen-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-red-400 text-sm sm:text-base font-semibold">Errore</p>
+                <p className="text-frozen-400 text-sm sm:text-base font-semibold">Errore</p>
                 <p className="text-xs sm:text-sm text-gray-300 mt-0.5">{error}</p>
               </div>
             </div>

@@ -47,47 +47,38 @@
   .text-display-sm { font-size: 1.5rem; }
 }
 
-/* Gradient Text Effects */
-.gradient-text-primary {
-  background: linear-gradient(135deg, #0690c6 0%, #08b3f7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Flat Text Effects - No Gradients */
+.text-primary {
+  @apply text-frozen-600;
 }
 
-.gradient-text-success {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.text-success {
+  @apply text-frozen-600;
 }
 
-.gradient-text-accent {
-  background: linear-gradient(135deg, #0690c6 0%, #39c3f9 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.text-accent {
+  @apply text-frozen-500;
 }
 
-/* Background Gradients */
-.bg-gradient-primary {
-  background: linear-gradient(135deg, #0690c6 0%, #08b3f7 100%);
+/* Flat Background Colors */
+.bg-flat-primary {
+  @apply bg-frozen-600;
 }
 
-.bg-gradient-success {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+.bg-flat-success {
+  @apply bg-frozen-600;
 }
 
-.bg-gradient-error {
-  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+.bg-flat-error {
+  @apply bg-frozen-700;
 }
 
-.bg-gradient-subtle {
-  background: linear-gradient(180deg, #ffffff 0%, #e6f7fe 100%);
+.bg-flat-subtle {
+  @apply bg-frozen-50;
 }
 
-.dark .bg-gradient-subtle {
-  background: linear-gradient(180deg, #011923 0%, #022431 100%);
+.dark .bg-flat-subtle {
+  @apply bg-frozen-900;
 }
 
 /* Focus Ring Utility */
@@ -131,7 +122,7 @@
 }
 
 .status-online {
-  @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400;
+  @apply bg-frozen-100 text-frozen-700 dark:bg-frozen-950 dark:text-frozen-400;
 }
 
 .status-offline {
@@ -139,7 +130,7 @@
 }
 
 .status-away {
-  @apply bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400;
+  @apply bg-frozen-100 text-frozen-700 dark:bg-frozen-950 dark:text-frozen-400;
 }
 
 /* Section Spacing */
@@ -177,8 +168,8 @@
 
 /* Loading Pulse */
 .loading-pulse {
-  @apply animate-pulse bg-gradient-to-r from-frozen-200 via-frozen-300 to-frozen-200;
-  @apply dark:from-frozen-800 dark:via-frozen-700 dark:dark:to-frozen-800;
+  @apply animate-pulse bg-frozen-200;
+  @apply dark:bg-frozen-800;
 }
 
 /* Divider */

@@ -169,9 +169,9 @@ function RegisterForm() {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-xl border border-red-200 p-8 text-center shadow-sm">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <XCircle className="h-8 w-8 text-red-600" />
+          <div className="bg-white rounded-xl border border-frozen-200 p-8 text-center shadow-sm">
+            <div className="mx-auto w-16 h-16 bg-frozen-100 rounded-full flex items-center justify-center mb-4">
+              <XCircle className="h-8 w-8 text-frozen-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-700 mb-3">
               Registrazione Non Disponibile
@@ -184,7 +184,7 @@ function RegisterForm() {
             </p>
             <Link 
               href="/login"
-              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-frozen-500 to-frozen-600 px-6 py-3 text-sm font-semibold text-white hover:from-frozen-600 hover:to-frozen-700 transition-all shadow-sm"
+              className="inline-flex items-center justify-center rounded-lg bg-frozen-500 px-6 py-3 text-sm font-semibold text-white hover:bg-frozen-600 transition-all shadow-sm"
             >
               Torna al Login
             </Link>
@@ -211,7 +211,7 @@ function RegisterForm() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-100 border border-red-300 text-red-700 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-frozen-100 border border-frozen-300 text-frozen-700 text-sm">
               {error}
             </div>
           )}
@@ -320,7 +320,7 @@ export default function RegisterPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-frozen-600" />
       </div>
     }>
       <RegisterForm />

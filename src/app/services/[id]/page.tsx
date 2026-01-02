@@ -11,7 +11,7 @@ export default async function ServicePage({ params }: Props) {
   return (
     <div className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-semibold text-white">{data.title}</h1>
-      <p className="mt-2 text-[#c6d8c9]">{data.description}</p>
+      <p className="mt-2 text-frozen-300">{data.description}</p>
       <p className="mt-2 text-accent font-semibold">Prezzo: €{data.price}</p>
 
       <form
@@ -37,15 +37,15 @@ export default async function ServicePage({ params }: Props) {
         className="mt-6 space-y-4"
       >
         <div>
-          <label className="block text-sm text-[#c6d8c9]">Profilo ID</label>
+          <label className="block text-sm text-frozen-300">Profilo ID</label>
           <input name="profile_id" required className="w-full mt-1 p-2 rounded bg-frozen-900 text-white" />
         </div>
         <div>
-          <label className="block text-sm text-[#c6d8c9]">Data e ora inizio</label>
+          <label className="block text-sm text-frozen-300">Data e ora inizio</label>
           <input name="start_at" type="datetime-local" required className="w-full mt-1 p-2 rounded bg-frozen-900 text-white" />
         </div>
         <div>
-          <label className="block text-sm text-[#c6d8c9]">Data e ora fine</label>
+          <label className="block text-sm text-frozen-300">Data e ora fine</label>
           <input name="end_at" type="datetime-local" required className="w-full mt-1 p-2 rounded bg-frozen-900 text-white" />
         </div>
         <div>

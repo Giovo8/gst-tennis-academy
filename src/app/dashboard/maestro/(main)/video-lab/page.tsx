@@ -228,8 +228,8 @@ export default function VideoLabPage() {
               className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4 flex items-center justify-between"
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                  <Video className="h-6 w-6 text-red-500" />
+                <div className="w-12 h-12 rounded-lg bg-frozen-500/10 flex items-center justify-center flex-shrink-0">
+                  <Video className="h-6 w-6 text-frozen-500" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="font-semibold text-[var(--foreground)] truncate">
@@ -264,7 +264,7 @@ export default function VideoLabPage() {
                 <button
                   onClick={() => handleDelete(video.id)}
                   disabled={deleting === video.id}
-                  className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[var(--foreground-muted)] hover:text-red-500 transition-colors disabled:opacity-50"
+                  className="p-2 rounded-lg hover:bg-frozen-50 dark:hover:bg-frozen-900/20 text-[var(--foreground-muted)] hover:text-frozen-500 transition-colors disabled:opacity-50"
                 >
                   {deleting === video.id ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
