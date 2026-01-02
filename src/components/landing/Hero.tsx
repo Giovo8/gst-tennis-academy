@@ -100,7 +100,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative bg-gray-900 overflow-hidden">
+    <section className="relative bg-frozen-900 overflow-hidden">
       {/* Background Image Carousel */}
       <div className="absolute inset-0">
         {images.map((image, idx) => (
@@ -118,14 +118,14 @@ export default function Hero() {
                   className="h-full w-full object-cover object-center"
                 />
                 {/* Dark overlay for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-frozen-950/60 via-frozen-950/40 to-frozen-950/60"></div>
               </>
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-frozen-950 via-frozen-900 to-frozen-800 flex items-center justify-center">
                 <div className="text-center space-y-2 sm:space-y-4 px-4">
                   <div className="text-4xl sm:text-6xl animate-bounce">🎾</div>
-                  <p className="text-sm sm:text-base text-gray-300 font-semibold">{image.alt_text}</p>
-                  <p className="text-xs sm:text-sm text-gray-400">Superfici professionali ITF</p>
+                  <p className="text-sm sm:text-base text-frozen-300 font-semibold">{image.alt_text}</p>
+                  <p className="text-xs sm:text-sm text-frozen-400">Superfici professionali ITF</p>
                 </div>
               </div>
             )}
@@ -145,7 +145,7 @@ export default function Hero() {
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 touch-manipulation ${
-                idx === currentIndex ? "w-6 sm:w-8 bg-white" : "w-1 sm:w-1.5 bg-white/50 hover:bg-white/70"
+                idx === currentIndex ? "w-6 sm:w-8 bg-frozen-50" : "w-1 sm:w-1.5 bg-frozen-50/50 hover:bg-frozen-50/70"
               }`}
               aria-label={`Vai all'immagine ${idx + 1}`}
             />

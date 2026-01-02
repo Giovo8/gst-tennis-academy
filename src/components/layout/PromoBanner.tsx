@@ -58,20 +58,20 @@ export default function PromoBanner() {
 
   const colorThemes = {
     blue: {
-      gradient: "from-blue-600 via-cyan-500 to-blue-600",
-      button: "bg-white text-blue-600 hover:bg-blue-50",
+      gradient: "from-frozen-600 via-frozen-500 to-frozen-600",
+      button: "bg-white text-frozen-600 hover:bg-frozen-50",
     },
     green: {
       gradient: "from-green-600 via-emerald-500 to-green-600",
-      button: "bg-white text-primary hover:bg-blue-50",
+      button: "bg-white text-frozen-500 hover:bg-frozen-50",
     },
     purple: {
       gradient: "from-purple-600 via-violet-500 to-purple-600",
-      button: "bg-white text-primary hover:bg-blue-50",
+      button: "bg-white text-frozen-500 hover:bg-frozen-50",
     },
     red: {
       gradient: "from-red-600 via-rose-500 to-red-600",
-      button: "bg-white text-primary hover:bg-blue-50",
+      button: "bg-white text-frozen-500 hover:bg-frozen-50",
     },
   };
 
@@ -82,7 +82,7 @@ export default function PromoBanner() {
       {/* Animated background pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-frozen-300 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <div className="relative container mx-auto px-4 py-3">

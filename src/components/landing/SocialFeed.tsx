@@ -10,7 +10,7 @@ export default function SocialFeed() {
         <div className="text-center mb-8 sm:mb-12">
           <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-3 sm:mb-4">Social Feed</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">Seguici sui social</h2>
-          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-frozen-500 max-w-2xl mx-auto">
             Resta aggiornato su tutte le nostre attività, eventi e successi seguendoci sui nostri canali social
           </p>
           

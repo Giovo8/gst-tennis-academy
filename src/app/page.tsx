@@ -90,7 +90,7 @@ export default function Home() {
         <PromoBanner />
         <PublicNavbar />
         <main className="flex flex-col gap-12 px-6 pb-16 pt-10">
-          <p className="text-center text-gray-600">Caricamento...</p>
+          <p className="text-center text-frozen-800">Caricamento...</p>
         </main>
       </div>
     );

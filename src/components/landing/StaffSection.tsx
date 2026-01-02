@@ -82,7 +82,7 @@ export default function StaffSection() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
             I nostri professionisti
           </h2>
-          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-frozen-500 max-w-2xl mx-auto">
             Un team di esperti dedicato al tuo miglioramento
           </p>
 
@@ -98,19 +98,19 @@ export default function StaffSection() {
                 className="w-full h-48 sm:h-56 md:h-64 object-cover"
               />
             ) : (
-              <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-br from-cyan-900/30 to-blue-900/50 flex items-center justify-center group-hover:from-cyan-900/40 transition-all">
-                <User className="h-16 w-16 sm:h-20 sm:w-20 text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
+              <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-br from-frozen-900/30 to-frozen-800/50 flex items-center justify-center group-hover:from-frozen-900/40 transition-all">
+                <User className="h-16 w-16 sm:h-20 sm:w-20 text-frozen-400/60 group-hover:text-frozen-400 transition-colors" />
               </div>
             )}
             <div className="p-5 sm:p-6 md:p-7 space-y-3 sm:space-y-4">
               <div>
                 <h3 className="text-lg sm:text-xl font-bold gradient-text">{member.full_name}</h3>
-                <span className="inline-block mt-2 sm:mt-2.5 rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold text-cyan-300">
+                <span className="inline-block mt-2 sm:mt-2.5 rounded-full bg-frozen-500/20 border-2 border-frozen-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold text-frozen-300">
                   {member.role}
                 </span>
               </div>
               {member.bio && (
-                <p className="text-sm sm:text-base leading-relaxed text-gray-300">
+                <p className="text-sm sm:text-base leading-relaxed text-frozen-300">
                   {member.bio}
                 </p>
               )}

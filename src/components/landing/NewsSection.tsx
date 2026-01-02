@@ -103,13 +103,13 @@ export default function NewsSection() {
       <section id="news" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
         <div className="space-y-8 sm:space-y-12">
           <div className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-bold text-blue-800 mb-3 sm:mb-4 text-center">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-bold text-frozen-600 mb-3 sm:mb-4 text-center">
               Ultime News
             </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-frozen-900 to-frozen-700 bg-clip-text text-transparent mb-3 sm:mb-4">
               Novità e Aggiornamenti
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-frozen-600 max-w-2xl mx-auto">
               Resta aggiornato su tutte le novità e gli eventi della nostra accademia
             </p>
           </div>
@@ -119,7 +119,7 @@ export default function NewsSection() {
             <article 
               key={item.id} 
               onClick={() => setSelectedNews(item)}
-              className="group flex h-full flex-col rounded-xl border border-slate-200 bg-white overflow-hidden cursor-pointer hover:border-blue-800/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className="group flex h-full flex-col rounded-xl border border-frozen-200 bg-white overflow-hidden cursor-pointer hover:border-frozen-600/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               {item.image_url && (
                 <div className="w-full aspect-[16/9] overflow-hidden">
@@ -132,10 +132,10 @@ export default function NewsSection() {
               )}
               <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2 sm:gap-3 flex-1">
                 <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-800">
+                  <span className="rounded-full bg-frozen-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-frozen-800">
                     {item.category}
                   </span>
-                  <p className="text-xs sm:text-sm text-slate-500">
+                  <p className="text-xs sm:text-sm text-frozen-500">
                   {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                     day: "numeric",
                     month: "long",
@@ -143,8 +143,8 @@ export default function NewsSection() {
                   })}
                 </p>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-blue-800 transition-colors">{item.title}</h3>
-              <p className="text-sm sm:text-base leading-relaxed text-slate-600">
+              <h3 className="text-base sm:text-lg font-bold text-frozen-900 group-hover:text-frozen-600 transition-colors">{item.title}</h3>
+              <p className="text-sm sm:text-base leading-relaxed text-frozen-600">
                 {item.excerpt || item.content.substring(0, 150) + '...'}
               </p>
             </div>
@@ -219,7 +219,7 @@ export default function NewsSection() {
             <span className="rounded-full bg-accent-20 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-accent border border-[var(--glass-border)]">
               {selectedNews.category}
             </span>
-            <p className="text-[10px] sm:text-xs text-gray-400">
+            <p className="text-[10px] sm:text-xs text-frozen-500">
               {new Date(selectedNews.published_at || selectedNews.created_at).toLocaleDateString("it-IT", {
                 day: "numeric",
                 month: "long",
@@ -239,7 +239,7 @@ export default function NewsSection() {
           )}
 
           <div className="prose prose-invert max-w-none">
-            <p className="text-sm sm:text-base leading-relaxed text-gray-300 whitespace-pre-wrap">
+            <p className="text-sm sm:text-base leading-relaxed text-frozen-300 whitespace-pre-wrap">
               {selectedNews.content}
             </p>
           </div>

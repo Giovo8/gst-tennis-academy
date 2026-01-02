@@ -67,35 +67,35 @@
   --color-frozen-lake-950: #011923;
 
   /* Primary Brand Colors - Frozen Lake Palette */
-  --primary: #0690c6;           /* frozen-lake-600 - Primary Brand */
-  --primary-light: #39c3f9;     /* frozen-lake-400 */
-  --primary-dark: #056c94;      /* frozen-lake-700 */
-  --primary-50: rgba(6, 144, 198, 0.05);
-  --primary-100: rgba(6, 144, 198, 0.1);
-  --primary-200: rgba(6, 144, 198, 0.2);
-  --primary-300: rgba(6, 144, 198, 0.3);
-  --primary-hover: #08b3f7;     /* frozen-lake-500 */
+  --primary: #08b3f7;           /* frozen-500 - Primary Brand */
+  --primary-light: #39c3f9;     /* frozen-400 */
+  --primary-dark: #0690c6;      /* frozen-600 */
+  --primary-50: rgba(8, 179, 247, 0.05);
+  --primary-100: rgba(8, 179, 247, 0.1);
+  --primary-200: rgba(8, 179, 247, 0.2);
+  --primary-300: rgba(8, 179, 247, 0.3);
+  --primary-hover: #0690c6;     /* frozen-600 */
   
   /* Secondary Colors */
-  --secondary: #011923;         /* frozen-lake-950 - Deep Dark */
-  --secondary-light: #022431;   /* frozen-lake-900 */
-  --secondary-hover: #034863;   /* frozen-lake-800 */
-  --accent: #39c3f9;            /* frozen-lake-400 - Accent */
-  --accent-hover: #08b3f7;      /* frozen-lake-500 */
+  --secondary: #034863;         /* frozen-800 - Deep Dark */
+  --secondary-light: #056c94;   /* frozen-700 */
+  --secondary-hover: #022431;   /* frozen-900 */
+  --accent: #08b3f7;            /* frozen-500 - Accent */
+  --accent-hover: #0690c6;      /* frozen-600 */
   
   /* Tournament & Sport Colors - Frozen Lake Theme */
-  --tournament-primary: #39c3f9;      /* frozen-lake-400 - Primary tournament color */
-  --tournament-primary-dark: #08b3f7; /* frozen-lake-500 - Hover states */
-  --tournament-secondary: #6bd2fa;    /* frozen-lake-300 - Secondary accent */
-  --tournament-border: #0690c6;       /* frozen-lake-600 - Borders */
-  --tournament-bg: #011923;           /* frozen-lake-950 - Background */
-  --tournament-bg-light: #022431;     /* frozen-lake-900 - Surface */
-  --tournament-bg-card: #034863;      /* frozen-lake-800 - Card background */
-  --tournament-bg-table: #022431;     /* frozen-lake-900 - Table background */
+  --tournament-primary: #08b3f7;      /* frozen-500 - Primary tournament color */
+  --tournament-primary-dark: #0690c6; /* frozen-600 - Hover states */
+  --tournament-secondary: #39c3f9;    /* frozen-400 - Secondary accent */
+  --tournament-border: #056c94;       /* frozen-700 - Borders */
+  --tournament-bg: #022431;           /* frozen-900 - Background */
+  --tournament-bg-light: #034863;     /* frozen-800 - Surface */
+  --tournament-bg-card: #056c94;      /* frozen-700 - Card background */
+  --tournament-bg-table: #034863;     /* frozen-800 - Table background */
   
   /* Notification Colors */
-  --notification-bg: #0a1525;         /* Dark background for notifications */
-  --notification-border: rgba(255, 255, 255, 0.1);
+  --notification-bg: #011923;         /* frozen-950 - Dark background for notifications */
+  --notification-border: rgba(8, 179, 247, 0.2);
   
   /* Email Template Colors */
   --email-bg: #f5f5f5;
@@ -105,24 +105,24 @@
   
   /* Light Mode - Default */
   --background: #ffffff;
-  --background-subtle: #f8fafc;
-  --background-muted: #f1f5f9;
-  --foreground: #0f172a;
-  --foreground-muted: #475569;
-  --foreground-subtle: #64748b;
+  --background-subtle: #e6f7fe;     /* frozen-50 */
+  --background-muted: #cef0fd;      /* frozen-100 */
+  --foreground: #034863;            /* frozen-800 */
+  --foreground-muted: #056c94;      /* frozen-700 */
+  --foreground-subtle: #0690c6;     /* frozen-600 */
   
   /* Surfaces */
   --surface: #ffffff;
   --surface-elevated: #ffffff;
-  --surface-hover: #f8fafc;
+  --surface-hover: #e6f7fe;         /* frozen-50 */
   
   /* Borders - Enterprise System */
-  --border: #e2e8f0;            /* Slate-200 - Default */
-  --border-light: #f1f5f9;      /* Slate-100 - Subtle */
-  --border-strong: #cbd5e1;     /* Slate-300 - Emphasized */
-  --border-focus: #0690c6;      /* frozen-lake-600 - Focus ring */
-  --border-error: #dc2626;      /* Red-600 - Error state */
-  --border-success: #059669;    /* Emerald-600 - Success state */
+  --border: #9ce1fc;                /* frozen-200 - Default */
+  --border-light: #cef0fd;          /* frozen-100 - Subtle */
+  --border-strong: #6bd2fa;         /* frozen-300 - Emphasized */
+  --border-focus: #08b3f7;          /* frozen-500 - Focus ring */
+  --border-error: #dc2626;          /* Red-600 - Error state */
+  --border-success: #059669;        /* Emerald-600 - Success state */
   --border-radius-sm: 6px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
@@ -157,11 +157,11 @@
   --error-bg: #fef2f2;          /* Red-50 */
   --error-border: #fecaca;      /* Red-200 */
   
-  --info: #0690c6;              /* frozen-lake-600 */
-  --info-light: #39c3f9;        /* frozen-lake-400 */
-  --info-dark: #056c94;         /* frozen-lake-700 */
-  --info-bg: #e6f7fe;           /* frozen-lake-50 */
-  --info-border: #9ce1fc;       /* frozen-lake-200 */
+  --info: #08b3f7;              /* frozen-500 */
+  --info-light: #39c3f9;        /* frozen-400 */
+  --info-dark: #0690c6;         /* frozen-600 */
+  --info-bg: #e6f7fe;           /* frozen-50 */
+  --info-border: #9ce1fc;       /* frozen-200 */
   
   /* Layout */
   --sidebar-width: 280px;
@@ -169,23 +169,23 @@
   --header-height: 64px;
   
   /* Legacy variables for compatibility */
-  --accent-strong: #0690c6;     /* frozen-lake-600 */
-  --accent-mid: #39c3f9;        /* frozen-lake-400 */
-  --accent-dark: #056c94;       /* frozen-lake-700 */
-  --accent-15: rgba(6, 144, 198, 0.15);
-  --accent-12: rgba(6, 144, 198, 0.12);
-  --accent-20: rgba(6, 144, 198, 0.2);
-  --muted: #64748b;
-  --muted-2: #94a3b8;
-  --text-dark: #0f172a;
-  --border-strong: #cbd5e1;     /* Updated to new border-strong */
+  --accent-strong: #08b3f7;     /* frozen-500 */
+  --accent-mid: #39c3f9;        /* frozen-400 */
+  --accent-dark: #0690c6;       /* frozen-600 */
+  --accent-15: rgba(8, 179, 247, 0.15);
+  --accent-12: rgba(8, 179, 247, 0.12);
+  --accent-20: rgba(8, 179, 247, 0.2);
+  --muted: #0690c6;
+  --muted-2: #39c3f9;
+  --text-dark: #034863;
+  --border-strong: #6bd2fa;     /* frozen-300 */
   
-  --gradient-primary: linear-gradient(135deg, #056c94 0%, #0690c6 50%, #39c3f9 100%);
+  --gradient-primary: linear-gradient(135deg, #08b3f7 0%, #39c3f9 50%, #6bd2fa 100%);
   --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(6, 144, 198, 0.2);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 20px rgba(6, 144, 198, 0.15);
-  --shadow-glow-strong: 0 0 30px rgba(6, 144, 198, 0.25);
+  --glass-border: rgba(8, 179, 247, 0.2);
+  --glass-shadow: 0 8px 32px rgba(8, 179, 247, 0.08);
+  --shadow-glow: 0 0 20px rgba(8, 179, 247, 0.15);
+  --shadow-glow-strong: 0 0 30px rgba(8, 179, 247, 0.25);
   
   /* Spacing */
   --space-1: 4px;
@@ -211,27 +211,27 @@
    DARK MODE
    ================================= */
 .dark {
-  --background: #020617;        /* Slate-950 */
-  --background-subtle: #0f172a; /* Slate-900 */
-  --background-muted: #1e293b;  /* Slate-800 */
-  --foreground: #f8fafc;        /* Slate-50 */
-  --foreground-muted: #94a3b8;  /* Slate-400 */
-  --foreground-subtle: #64748b; /* Slate-500 */
+  --background: #011923;        /* frozen-950 */
+  --background-subtle: #022431; /* frozen-900 */
+  --background-muted: #034863;  /* frozen-800 */
+  --foreground: #e6f7fe;        /* frozen-50 */
+  --foreground-muted: #6bd2fa;  /* frozen-300 */
+  --foreground-subtle: #39c3f9; /* frozen-400 */
   
-  --surface: #0f172a;
-  --surface-elevated: #1e293b;
-  --surface-hover: #334155;
+  --surface: #022431;
+  --surface-elevated: #034863;
+  --surface-hover: #056c94;
   
-  --border: #334155;            /* Slate-700 */
-  --border-light: #1e293b;      /* Slate-800 */
-  --border-strong: #475569;     /* Slate-600 */
+  --border: #056c94;            /* frozen-700 */
+  --border-light: #034863;      /* frozen-800 */
+  --border-strong: #0690c6;     /* frozen-600 */
   
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -1px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -2px rgb(0 0 0 / 0.4);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 10px 10px -5px rgb(0 0 0 / 0.3);
-  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+  --shadow-xs: 0 1px 2px 0 rgb(8 179 247 / 0.2);
+  --shadow-sm: 0 1px 3px 0 rgb(8 179 247 / 0.3), 0 1px 2px 0 rgb(8 179 247 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(8 179 247 / 0.3), 0 2px 4px -1px rgb(8 179 247 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(8 179 247 / 0.3), 0 4px 6px -2px rgb(8 179 247 / 0.2);
+  --shadow-xl: 0 20px 25px -5px rgb(8 179 247 / 0.4), 0 10px 10px -5px rgb(8 179 247 / 0.2);
+  --shadow-2xl: 0 25px 50px -12px rgb(8 179 247 / 0.5);
   
   --success-bg: rgba(5, 150, 105, 0.15);
   --success-border: rgba(5, 150, 105, 0.3);
@@ -239,25 +239,39 @@
   --warning-border: rgba(217, 119, 6, 0.3);
   --error-bg: rgba(220, 38, 38, 0.15);
   --error-border: rgba(220, 38, 38, 0.3);
-  --info-bg: rgba(6, 144, 198, 0.15);
-  --info-border: rgba(6, 144, 198, 0.3);
+  --info-bg: rgba(8, 179, 247, 0.15);
+  --info-border: rgba(8, 179, 247, 0.3);
   
   --glass-bg: rgba(1, 25, 35, 0.8);
-  --glass-border: rgba(6, 144, 198, 0.2);
-  --shadow-glow: 0 0 20px rgba(6, 144, 198, 0.25);
-  --shadow-glow-strong: 0 0 30px rgba(6, 144, 198, 0.4);
+  --glass-border: rgba(8, 179, 247, 0.2);
+  --shadow-glow: 0 0 20px rgba(8, 179, 247, 0.25);
+  --shadow-glow-strong: 0 0 30px rgba(8, 179, 247, 0.4);
   
   /* Tournament colors in dark mode */
-  --tournament-border: rgba(6, 144, 198, 0.3);
-  --tournament-bg-card: rgba(3, 72, 99, 0.6);
-  --tournament-bg-table: rgba(2, 36, 49, 0.4);
+  --tournament-border: rgba(8, 179, 247, 0.3);
+  --tournament-bg-card: rgba(5, 108, 148, 0.6);
+  --tournament-bg-table: rgba(3, 72, 99, 0.4);
 }
 
 @theme inline {
+  /* Frozen Lake Palette - Single Source of Truth */
+  --color-frozen-50: #e6f7fe;
+  --color-frozen-100: #cef0fd;
+  --color-frozen-200: #9ce1fc;
+  --color-frozen-300: #6bd2fa;
+  --color-frozen-400: #39c3f9;
+  --color-frozen-500: #08b3f7;
+  --color-frozen-600: #0690c6;
+  --color-frozen-700: #056c94;
+  --color-frozen-800: #034863;
+  --color-frozen-900: #022431;
+  --color-frozen-950: #011923;
+  
+  /* System Colors mapped to Frozen Lake */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-accent: var(--accent);
+  --color-primary: var(--color-frozen-500);
+  --color-accent: var(--color-frozen-500);
   --color-muted: var(--foreground-muted);
   --color-surface: var(--surface);
   --color-border: var(--border);

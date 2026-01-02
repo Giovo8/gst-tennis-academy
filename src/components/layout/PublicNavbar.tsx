@@ -79,7 +79,7 @@ export default function PublicNavbar() {
   };
 
   return (
-    <nav className="bg-white sticky top-0 z-50 border-b border-gray-100 safe-top shadow-sm">
+    <nav className="bg-white sticky top-0 z-50 border-b border-frozen-100 safe-top shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo - Left */}
@@ -92,7 +92,7 @@ export default function PublicNavbar() {
               priority
               className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
             />
-            <span className="text-base sm:text-lg font-bold text-gray-900 truncate">GST Academy</span>
+            <span className="text-base sm:text-lg font-bold text-frozen-900 truncate">GST Academy</span>
           </Link>
 
           {/* Right Side - Desktop */}
@@ -102,7 +102,7 @@ export default function PublicNavbar() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-frozen-700 hover:text-frozen-500 hover:bg-frozen-50 transition-colors"
               aria-label="Instagram"
             >
               <Instagram className="h-5 w-5" />
@@ -111,7 +111,7 @@ export default function PublicNavbar() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-frozen-700 hover:text-frozen-500 hover:bg-frozen-50 transition-colors"
               aria-label="Facebook"
             >
               <Facebook className="h-5 w-5" />
@@ -120,7 +120,7 @@ export default function PublicNavbar() {
               href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-primary hover:bg-blue-50 transition-colors"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-frozen-700 hover:text-frozen-500 hover:bg-frozen-50 transition-colors"
               aria-label="WhatsApp"
             >
               <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor">
@@ -128,7 +128,7 @@ export default function PublicNavbar() {
               </svg>
             </a>
 
-            <div className="w-px h-6 bg-gray-200"></div>
+            <div className="w-px h-6 bg-frozen-200"></div>
 
             {user && userRole && (
               <>
@@ -136,12 +136,12 @@ export default function PublicNavbar() {
                   href={`/dashboard/${userRole.toLowerCase()}/profile`}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all h-[38px] hover:shadow-md ${
                     userRole === 'atleta' 
-                      ? 'border-primary text-primary bg-blue-50 hover:bg-blue-100' 
+                      ? 'border-frozen-500 text-frozen-500 bg-frozen-50 hover:bg-frozen-100' 
                       : userRole === 'maestro'
-                      ? 'border-primary text-primary bg-blue-50 hover:bg-blue-100'
+                      ? 'border-frozen-500 text-frozen-500 bg-frozen-50 hover:bg-frozen-100'
                       : userRole === 'admin' || userRole === 'gestore'
-                      ? 'border-primary-dark text-primary-dark bg-blue-50 hover:bg-blue-100'
-                      : 'border-slate-600 text-slate-700 bg-slate-50 hover:bg-slate-100'
+                      ? 'border-frozen-600 text-frozen-600 bg-frozen-50 hover:bg-frozen-100'
+                      : 'border-frozen-700 text-frozen-800 bg-frozen-50 hover:bg-frozen-100'
                   }`}
                 >
                   <span className="font-medium">{userFullName || user.email?.split('@')[0]}</span>
@@ -164,7 +164,7 @@ export default function PublicNavbar() {
             {user && (
               <button
                 onClick={handleLogout}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-primary hover:bg-blue-50 transition-colors"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-frozen-700 hover:text-frozen-500 hover:bg-frozen-50 transition-colors"
                 aria-label="Esci"
               >
                 <LogOut className="h-[18px] w-[18px]" />
@@ -175,7 +175,7 @@ export default function PublicNavbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg p-2.5 text-slate-900 transition hover:bg-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
+            className="lg:hidden rounded-lg p-2.5 text-frozen-900 transition hover:bg-frozen-50 min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
             aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -184,16 +184,16 @@ export default function PublicNavbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-gray-100 mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
+          <div className="lg:hidden border-t border-frozen-100 mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
             {/* User Info */}
             {user && userRole && (
-              <div className="flex items-center justify-center gap-2 py-3 px-4 border-y border-slate-100 mx-2 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100">
-                <p className="text-sm text-slate-700 font-medium truncate">{userFullName || user.email}</p>
+              <div className="flex items-center justify-center gap-2 py-3 px-4 border-y border-frozen-100 mx-2 rounded-lg bg-gradient-to-r from-frozen-50 to-frozen-100">
+                <p className="text-sm text-frozen-800 font-medium truncate">{userFullName || user.email}</p>
                 <p className={`text-xs font-semibold uppercase ${
-                  userRole === 'atleta' ? 'text-primary' :
-                  userRole === 'maestro' ? 'text-emerald-600' :
-                  userRole === 'admin' || userRole === 'gestore' ? 'text-amber-600' :
-                  'text-slate-600'
+                  userRole === 'atleta' ? 'text-frozen-500' :
+                  userRole === 'maestro' ? 'text-frozen-600' :
+                  userRole === 'admin' || userRole === 'gestore' ? 'text-frozen-700' :
+                  'text-frozen-700'
                 }`}>{userRole}</p>
               </div>
             )}
@@ -203,7 +203,7 @@ export default function PublicNavbar() {
               <Link
                 href={getDashboardLink()}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm min-h-[48px] touch-manipulation"
+                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-frozen-500 to-frozen-600 text-white shadow-sm min-h-[48px] touch-manipulation"
               >
                 <Shield className="h-5 w-5" />
                 <span>Area GST</span>
@@ -215,7 +215,7 @@ export default function PublicNavbar() {
                     setIsOpen(false);
                     handleLogout();
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-primary hover:text-primary-hover bg-blue-50 hover:bg-blue-100 rounded-xl min-h-[48px] touch-manipulation"
+                  className="flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-frozen-500 hover:text-frozen-600 bg-frozen-50 hover:bg-frozen-100 rounded-xl min-h-[48px] touch-manipulation"
                 >
                   <LogOut className="h-5 w-5" />
                   <span>Esci</span>

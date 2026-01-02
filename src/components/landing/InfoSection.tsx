@@ -4,7 +4,7 @@ import { MapPin, Phone, Clock, Mail } from "lucide-react";
 
 export default function InfoSection() {
   return (
-    <section className="bg-gradient-to-b from-gray-900/50 to-transparent border-t border-white/5 py-20">
+    <section className="bg-gradient-to-b from-frozen-900/50 to-transparent border-t border-white/5 py-20">
       <div className="container py-lg">
         <div className="grid gap-6 md:grid-cols-3">
           {/* Location */}
@@ -15,7 +15,7 @@ export default function InfoSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">La nostra sede</h3>
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-frozen-300 leading-relaxed">
                   Via dello Sport, 12<br />
                   20100 Milano (MI)<br />
                   Italy
@@ -32,7 +32,7 @@ export default function InfoSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">Contatti</h3>
-                <div className="space-y-2 text-sm text-gray-300">
+                <div className="space-y-2 text-sm text-frozen-300">
                   <a href="tel:+393762351777" className="flex items-center gap-2 hover:text-accent transition-colors">
                     <Phone className="h-4 w-4" />
                     +39 376 235 1777
@@ -54,7 +54,7 @@ export default function InfoSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">Orari di apertura</h3>
-                <div className="space-y-2 text-sm text-gray-300">
+                <div className="space-y-2 text-sm text-frozen-300">
                   <p><span className="font-bold text-white">Lun - Ven:</span> 07:00 - 23:00</p>
                   <p><span className="font-bold text-white">Sabato:</span> 08:00 - 22:00</p>
                   <p><span className="font-bold text-white">Domenica:</span> 08:00 - 20:00</p>
