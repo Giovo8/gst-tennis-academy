@@ -197,8 +197,8 @@ export default function AtletaDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <CreditCard className="h-5 w-5 text-emerald-600" />
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <CreditCard className="h-5 w-5 text-primary" />
             </div>
             <p className="text-2xl font-bold text-gray-700">{stats.creditsAvailable}</p>
           </div>
@@ -209,7 +209,7 @@ export default function AtletaDashboard() {
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-blue-50 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
+              <Calendar className="h-5 w-5 text-primary" />
             </div>
             <p className="text-2xl font-bold text-gray-700">{stats.upcomingBookings}</p>
           </div>
@@ -219,8 +219,8 @@ export default function AtletaDashboard() {
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <Trophy className="h-5 w-5 text-amber-600" />
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Trophy className="h-5 w-5 text-primary" />
             </div>
             <p className="text-2xl font-bold text-gray-700">{stats.activeTournaments}</p>
           </div>
@@ -230,8 +230,8 @@ export default function AtletaDashboard() {
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <Video className="h-5 w-5 text-purple-600" />
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Video className="h-5 w-5 text-primary" />
             </div>
             <p className="text-2xl font-bold text-gray-700">{stats.completedLessons}</p>
           </div>
@@ -247,12 +247,12 @@ export default function AtletaDashboard() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-black flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
+                <Calendar className="h-5 w-5 text-primary" />
                 Prossime Prenotazioni
               </h2>
               <Link
                 href="/dashboard/atleta/bookings"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-sm font-medium text-primary hover:text-primary-hover flex items-center gap-1"
               >
                 Vedi tutte
                 <ArrowRight className="h-4 w-4" />
@@ -268,7 +268,7 @@ export default function AtletaDashboard() {
                 <p className="text-xs text-gray-600 mb-3">Prenota un campo</p>
                 <Link
                   href="/dashboard/atleta/bookings/new"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-primary-light to-primary rounded-lg hover:from-primary to-primary-dark transition-all"
                 >
                   <Plus className="h-3 w-3" />
                   Prenota Ora
@@ -282,7 +282,7 @@ export default function AtletaDashboard() {
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all"
                   >
                     <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <Calendar className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 text-sm">{booking.court}</p>
@@ -290,7 +290,7 @@ export default function AtletaDashboard() {
                         {formatDate(booking.start_time)} • {formatTime(booking.start_time)}
                       </p>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-1 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full">
+                    <span className="text-[10px] font-bold px-2 py-1 bg-blue-50 text-primary border border-primary/30 rounded-full">
                       {booking.type}
                     </span>
                   </div>
@@ -355,7 +355,7 @@ export default function AtletaDashboard() {
                     <div className="flex items-center justify-between">
                       {announcement.profiles?.full_name && (
                         <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-[8px]">
+                          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-primary-light to-primary flex items-center justify-center text-white font-bold text-[8px]">
                             {announcement.profiles.full_name.charAt(0)}
                           </div>
                           <span className="truncate">{announcement.profiles.full_name}</span>
@@ -371,7 +371,7 @@ export default function AtletaDashboard() {
 
                     {announcement.priority === "urgent" && (
                       <div className="absolute bottom-2 right-2">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-100 text-orange-700 border border-orange-300">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-700 border border-red-300">
                           URGENTE
                         </span>
                       </div>
@@ -387,7 +387,7 @@ export default function AtletaDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-bold text-black flex items-center gap-2">
-              <Zap className="h-5 w-5 text-amber-600" />
+              <Zap className="h-5 w-5 text-primary" />
               Azioni Rapide
             </h2>
           </div>
@@ -398,69 +398,69 @@ export default function AtletaDashboard() {
               className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all group"
             >
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-blue-600" />
+                <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Prenota Campo</p>
                 <p className="text-xs text-gray-600">Nuovo allenamento</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
             </Link>
 
             <Link
               href="/dashboard/atleta/tornei"
               className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all group"
             >
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <Trophy className="h-5 w-5 text-amber-600" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Trophy className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Iscriviti a Torneo</p>
                 <p className="text-xs text-gray-600">Competizioni disponibili</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-amber-600 transition-colors" />
+              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
             </Link>
 
             <Link
               href="/dashboard/atleta/videos"
               className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all group"
             >
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Video className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Video className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Video Lezioni</p>
                 <p className="text-xs text-gray-600">Migliora la tecnica</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-purple-600 transition-colors" />
+              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
             </Link>
 
             <Link
               href="/dashboard/atleta/profile"
               className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all group"
             >
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <BookOpen className="h-5 w-5 text-emerald-600" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <BookOpen className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Il Mio Profilo</p>
                 <p className="text-xs text-gray-600">Dati e statistiche</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
             </Link>
 
             <Link
               href="/dashboard/atleta/annunci"
-              className="flex items-center gap-3 p-4 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg border border-cyan-200 hover:border-cyan-300 transition-all group"
+              className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-primary/30 hover:border-primary/50 transition-all group"
             >
-              <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-primary-light to-primary rounded-lg">
                 <Megaphone className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Annunci</p>
                 <p className="text-xs text-gray-600">Novità e aggiornamenti</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-cyan-600 transition-colors" />
+              <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
             </Link>
           </div>
         </div>
@@ -472,7 +472,7 @@ export default function AtletaDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-bold text-black flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Progressi Mensili
             </h2>
           </div>
@@ -481,29 +481,29 @@ export default function AtletaDashboard() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-700">Lezioni Completate</span>
-                <span className="text-sm font-bold text-blue-600">{stats.completedLessons}/30</span>
+                <span className="text-sm font-bold text-primary">{stats.completedLessons}/30</span>
               </div>
               <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all"
+                  className="h-full bg-gradient-to-r from-primary-light to-primary rounded-full transition-all"
                   style={{ width: `${(stats.completedLessons / 30) * 100}%` }}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 pt-4">
-              <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                <CheckCircle2 className="h-6 w-6 text-emerald-600 mx-auto mb-1" />
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-primary/30">
+                <CheckCircle2 className="h-6 w-6 text-primary mx-auto mb-1" />
                 <p className="text-2xl font-bold text-gray-900">{stats.completedLessons}</p>
                 <p className="text-xs text-gray-600">Completate</p>
               </div>
-              <div className="text-center p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <Clock className="h-6 w-6 text-amber-600 mx-auto mb-1" />
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-primary/30">
+                <Clock className="h-6 w-6 text-primary mx-auto mb-1" />
                 <p className="text-2xl font-bold text-gray-900">{stats.upcomingBookings}</p>
                 <p className="text-xs text-gray-600">In Programma</p>
               </div>
-              <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
-                <Trophy className="h-6 w-6 text-purple-600 mx-auto mb-1" />
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-primary/30">
+                <Trophy className="h-6 w-6 text-primary mx-auto mb-1" />
                 <p className="text-2xl font-bold text-gray-900">{stats.activeTournaments}</p>
                 <p className="text-xs text-gray-600">Tornei</p>
               </div>
@@ -515,7 +515,7 @@ export default function AtletaDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-bold text-black flex items-center gap-2">
-              <Target className="h-5 w-5 text-amber-600" />
+              <Target className="h-5 w-5 text-primary" />
               I Tuoi Obiettivi
             </h2>
           </div>
@@ -527,7 +527,7 @@ export default function AtletaDashboard() {
                 <span className="text-sm font-bold text-gray-900">3/4</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-green-600 rounded-full" style={{ width: '75%' }} />
+                <div className="h-full bg-gradient-to-r from-primary-light to-primary rounded-full" style={{ width: '75%' }} />
               </div>
             </div>
 
@@ -537,13 +537,13 @@ export default function AtletaDashboard() {
                 <span className="text-sm font-bold text-gray-900">8/10</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-amber-500 to-orange-600 rounded-full" style={{ width: '80%' }} />
+                <div className="h-full bg-gradient-to-r from-primary-light to-primary-hover rounded-full" style={{ width: '80%' }} />
               </div>
             </div>
 
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mt-4">
+            <div className="bg-blue-50 rounded-lg p-4 border border-primary/30 mt-4">
               <div className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-blue-600" />
+                <Award className="h-5 w-5 text-primary" />
                 <p className="text-sm font-medium text-gray-700">
                   Ottimo lavoro! Continua così per raggiungere i tuoi obiettivi mensili.
                 </p>
