@@ -3,8 +3,11 @@
 -- ============================================
 -- Tabella per gestire video lezioni assegnate agli utenti
 
+-- Drop tabella esistente se ha struttura diversa
+DROP TABLE IF EXISTS public.video_lessons CASCADE;
+
 -- Tabella video_lessons
-CREATE TABLE IF NOT EXISTS public.video_lessons (
+CREATE TABLE public.video_lessons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
@@ -13,12 +16,12 @@ CREATE TABLE IF NOT EXISTS public.video_lessons (
   duration_minutes INT,
   
   -- Chi ha creato e chi è assegnato
-  created_by UUID REFERENCES auth.users ON DELETE SET NULL,
-  assigned_to UUID REFERENCES auth.users ON DELETE CASCADE,
+  created_by UUID,
+  assigned_to UUID,
   
   -- Categorizzazione
-  category TEXT DEFAULT 'generale', -- 'tecnica', 'tattica', 'fitness', 'mentale', 'generale'
-  level TEXT DEFAULT 'tutti', -- 'principiante', 'intermedio', 'avanzato', 'tutti'
+  category TEXT DEFAULT 'generale',
+  level TEXT DEFAULT 'tutti',
   
   -- Status
   is_active BOOLEAN NOT NULL DEFAULT true,
@@ -40,6 +43,13 @@ CREATE INDEX IF NOT EXISTS video_lessons_active_idx ON public.video_lessons (is_
 
 -- RLS
 ALTER TABLE public.video_lessons ENABLE ROW LEVEL SECURITY;
+
+-- Elimina policy esistenti se ci sono
+DROP POLICY IF EXISTS "Users can view their assigned videos" ON public.video_lessons;
+DROP POLICY IF EXISTS "Staff can create videos" ON public.video_lessons;
+DROP POLICY IF EXISTS "Staff can update videos" ON public.video_lessons;
+DROP POLICY IF EXISTS "Users can update watch status" ON public.video_lessons;
+DROP POLICY IF EXISTS "Admin can delete videos" ON public.video_lessons;
 
 -- Gli utenti possono vedere solo i video assegnati a loro
 CREATE POLICY "Users can view their assigned videos"
@@ -80,6 +90,7 @@ CREATE POLICY "Admin can delete videos"
   USING (public.get_my_role() IN ('admin', 'gestore'));
 
 -- Trigger per updated_at
+DROP TRIGGER IF EXISTS update_video_lessons_updated_at ON public.video_lessons;
 CREATE TRIGGER update_video_lessons_updated_at
   BEFORE UPDATE ON public.video_lessons
   FOR EACH ROW

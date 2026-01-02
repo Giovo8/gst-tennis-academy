@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/serverClient";
+import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,26 @@ const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder_key_for_
 // POST /api/admin/send-email - Send bulk emails
 export async function POST(req: NextRequest) {
   try {
-    const supabase = supabaseServer;
+    // Get auth token from cookie
+    const authCookie = req.cookies.get("sb-access-token")?.value || 
+                       req.cookies.get("sb-localhost-auth-token")?.value;
+    
+    if (!authCookie) {
+      return NextResponse.json({ error: "Non autorizzato - sessione mancante" }, { status: 401 });
+    }
+
+    // Create supabase client with user's token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${authCookie}`
+          }
+        }
+      }
+    );
 
     // Verify admin access
     const { data: { user } } = await supabase.auth.getUser();

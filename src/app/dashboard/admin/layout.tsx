@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import AdminLayoutComponent from "@/components/dashboard/AdminLayout";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | GST Tennis Academy",
@@ -10,5 +11,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <AdminLayoutComponent>{children}</AdminLayoutComponent>;
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
   Video,
@@ -11,6 +10,10 @@ import {
   ExternalLink,
   Search,
   Filter,
+  RefreshCw,
+  CheckCircle2,
+  Clock,
+  Eye,
 } from "lucide-react";
 
 interface VideoLesson {
@@ -29,7 +32,7 @@ interface VideoLesson {
   };
 }
 
-export default function AthleteVideosPage() {
+export default function VideosPage() {
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,14 +43,60 @@ export default function AthleteVideosPage() {
   }, []);
 
   async function loadVideos() {
+    console.log("🔍 Caricamento video atleta...");
+    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      console.log("❌ Nessun utente loggato");
+      setLoading(false);
+      return;
+    }
+
+    console.log("👤 User ID:", user.id);
 
     try {
-      const response = await fetch(`/api/video-lessons?assigned_to=${user.id}`);
-      const data = await response.json();
-      setVideos(data.videos || []);
+      // Carica tutti i video disponibili
+      const { data: videosData } = await supabase
+        .from("video_lessons")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      console.log("✅ Video caricati:", videosData?.length || 0);
+
+      if (!videosData || videosData.length === 0) {
+        console.log("⚠️ Nessun video trovato");
+        setVideos([]);
+        setLoading(false);
+        return;
+      }
+
+      // Aggiungi i dati del creator se necessario
+      const creatorIds = [...new Set(videosData.map(v => v.created_by).filter(Boolean))];
+      let creatorsMap = new Map();
+      
+      if (creatorIds.length > 0) {
+        const { data: creatorsData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", creatorIds);
+        
+        if (creatorsData) {
+          creatorsMap = new Map(creatorsData.map(c => [c.id, c]));
+        }
+      }
+
+      // Combina i dati
+      const enrichedVideos = videosData.map(video => ({
+        ...video,
+        watched_at: null,
+        watch_count: 0,
+        creator: video.created_by ? creatorsMap.get(video.created_by) : null
+      }));
+
+      console.log("📹 Video con dati creator:", enrichedVideos);
+      setVideos(enrichedVideos);
     } catch (error) {
+      console.error("❌ Errore generale:", error);
       setVideos([]);
     } finally {
       setLoading(false);
@@ -72,6 +121,12 @@ export default function AthleteVideosPage() {
 
   const categories = [...new Set(videos.map((v) => v.category).filter(Boolean))];
 
+  const stats = {
+    total: videos.length,
+    watched: videos.filter(v => v.watched_at).length,
+    notWatched: videos.filter(v => !v.watched_at).length,
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("it-IT", {
       day: "numeric",
@@ -87,11 +142,11 @@ export default function AthleteVideosPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-10 skeleton rounded-lg w-48" />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 skeleton rounded-xl" />
+      <div className="space-y-6" style={{ color: '#111827' }}>
+        <div className="h-24 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -99,53 +154,99 @@ export default function AthleteVideosPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ color: '#111827' }}>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">I Miei Video</h1>
-        <p className="text-[var(--foreground-muted)] mt-1">
-          Video di allenamento assegnati dai tuoi maestri
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-black mb-2">
+            I Miei Video
+          </h1>
+          <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
+            Video di allenamento e tecnica assegnati dai tuoi maestri
+          </p>
+        </div>
+        <button
+          onClick={() => loadVideos()}
+          className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Ricarica
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Video className="h-5 w-5 text-blue-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
+          </div>
+          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Video Totali</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-50 rounded-lg">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.watched}</p>
+          </div>
+          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Video Visti</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Clock className="h-5 w-5 text-amber-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.notWatched}</p>
+          </div>
+          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Da Vedere</p>
+        </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--foreground-subtle)]" />
-          <input
-            type="text"
-            placeholder="Cerca video..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] placeholder:text-[var(--foreground-subtle)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-          />
-        </div>
-        
-        {categories.length > 0 && (
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--foreground-subtle)]" />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="pl-10 pr-8 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 appearance-none"
-            >
-              <option value="all">Tutte le categorie</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cerca video..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            />
           </div>
-        )}
+          
+          {categories.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+              >
+                <option value="all">Tutte le categorie</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Videos Grid */}
       {filteredVideos.length === 0 ? (
-        <div className="text-center py-16 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-          <Video className="h-16 w-16 text-[var(--foreground-subtle)] mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
             {videos.length === 0 ? "Nessun video assegnato" : "Nessun risultato"}
           </h3>
-          <p className="text-[var(--foreground-muted)]">
+          <p className="text-gray-600">
             {videos.length === 0
               ? "I tuoi maestri non hanno ancora condiviso video con te"
               : "Prova a modificare i filtri di ricerca"
@@ -153,7 +254,7 @@ export default function AthleteVideosPage() {
           </p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVideos.map((video) => {
             const youtubeId = getYouTubeId(video.video_url);
             const thumbnailUrl = video.thumbnail_url || 
@@ -162,10 +263,10 @@ export default function AthleteVideosPage() {
             return (
               <div
                 key={video.id}
-                className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
               >
                 {/* Thumbnail */}
-                <div className="relative aspect-video bg-[var(--background-muted)]">
+                <div className="relative aspect-video bg-gray-100">
                   {thumbnailUrl ? (
                     <img
                       src={thumbnailUrl}
@@ -174,7 +275,7 @@ export default function AthleteVideosPage() {
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Video className="h-12 w-12 text-[var(--foreground-subtle)]" />
+                      <Video className="h-12 w-12 text-gray-300" />
                     </div>
                   )}
                   
@@ -183,62 +284,71 @@ export default function AthleteVideosPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => markAsWatched(video.id)}
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
                   >
-                    <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-                      <Play className="h-8 w-8 text-[var(--primary)] ml-1" />
+                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Play className="h-8 w-8 text-blue-600 ml-1" />
                     </div>
                   </a>
 
                   {video.watched_at && (
-                    <span className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded">
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-lg">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
                       Visto
-                    </span>
+                    </div>
+                  )}
+
+                  {video.watch_count > 0 && (
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-black/70 text-white text-xs font-medium rounded-lg">
+                      <Eye className="h-3 w-3" />
+                      {video.watch_count}
+                    </div>
                   )}
                 </div>
 
                 {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-[var(--foreground)] mb-1 line-clamp-1">
+                <div className="p-5">
+                  <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 text-lg">
                     {video.title}
                   </h3>
                   
                   {video.description && (
-                    <p className="text-sm text-[var(--foreground-muted)] mb-3 line-clamp-2">
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                       {video.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-[var(--foreground-subtle)]">
-                    <div className="flex items-center gap-3">
-                      {video.creator && (
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {video.creator.full_name}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(video.created_at)}
+                  <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+                    {video.creator && (
+                      <span className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" />
+                        {video.creator.full_name}
                       </span>
-                    </div>
+                    )}
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(video.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    {video.category && (
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-700 border border-purple-300">
+                        {video.category}
+                      </span>
+                    )}
 
                     <a
                       href={video.video_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => markAsWatched(video.id)}
-                      className="text-[var(--primary)] hover:underline flex items-center gap-1"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all"
                     >
-                      Apri <ExternalLink className="h-3 w-3" />
+                      Guarda
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
-
-                  {video.category && (
-                    <span className="inline-block mt-3 px-2 py-1 text-xs font-medium rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-                      {video.category}
-                    </span>
-                  )}
                 </div>
               </div>
             );

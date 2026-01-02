@@ -8,196 +8,242 @@ import {
   Calendar,
   Trophy,
   TrendingUp,
-  AlertCircle,
   CheckCircle,
   Clock,
-  ArrowRight,
-  LayoutGrid,
+  UserPlus,
   Activity,
+  LayoutGrid,
+  Mail,
+  MessageSquare,
+  Bell,
+  Newspaper,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
   todayBookings: number;
+  weekBookings: number;
   pendingBookings: number;
   activeTournaments: number;
-  monthlyRevenue: number;
-  newUsersThisMonth: number;
+  totalTournaments: number;
+  unreadMessages: number;
+  totalCourts: number;
+  activeUsers: number;
+  pendingEmails: number;
+  newsCount: number;
+  announcementsCount: number;
 }
 
-interface CourtStatus {
-  name: string;
-  status: "free" | "occupied" | "maintenance";
-  currentBooking?: {
-    user: string;
-    endTime: string;
-  };
-}
-
-interface RecentActivity {
-  id: string;
-  type: "booking" | "registration" | "tournament";
-  message: string;
-  time: string;
-}
-
-export default function AdminControlRoom() {
+export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     todayBookings: 0,
+    weekBookings: 0,
     pendingBookings: 0,
     activeTournaments: 0,
-    monthlyRevenue: 0,
-    newUsersThisMonth: 0,
+    totalTournaments: 0,
+    unreadMessages: 0,
+    totalCourts: 8,
+    activeUsers: 0,
+    pendingEmails: 0,
+    newsCount: 0,
+    announcementsCount: 0,
   });
-  const [courts, setCourts] = useState<CourtStatus[]>([]);
-  const [activities, setActivities] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboardData();
-    const interval = setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
   }, []);
 
   async function loadDashboardData() {
-    // Load stats from API
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     try {
-      const response = await fetch("/api/stats/admin");
-      if (response.ok) {
-        const data = await response.json();
-        setStats({
-          totalUsers: data.totalUsers || 0,
-          todayBookings: data.bookingsToday || 0,
-          pendingBookings: data.pendingBookings || 0,
-          activeTournaments: data.activeTournaments || 0,
-          monthlyRevenue: data.monthlyRevenue || 0,
-          newUsersThisMonth: data.newUsersThisMonth || 0,
-        });
-      }
-    } catch {}
+      // Total Users
+      const { count: usersCount } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
 
-    // Load court status
-    const now = new Date();
-    const courtNames = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
-    
-    const { data: currentBookings } = await supabase
-      .from("bookings")
-      .select("court, user_id, end_time")
-      .neq("status", "cancelled")
-      .lte("start_time", now.toISOString())
-      .gt("end_time", now.toISOString());
+      // Active Users (logged in last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const { count: activeCount } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("updated_at", sevenDaysAgo.toISOString());
 
-    const { data: blockedCourts } = await supabase
-      .from("court_blocks")
-      .select("court_name")
-      .lte("start_time", now.toISOString())
-      .gt("end_time", now.toISOString());
+      // Today's Bookings
+      const today = new Date().toISOString().split("T")[0];
+      const { count: todayCount } = await supabase
+        .from("bookings")
+        .select("*", { count: "exact", head: true })
+        .gte("start_time", `${today}T00:00:00`)
+        .lte("start_time", `${today}T23:59:59`);
 
-    const blockedCourtNames = blockedCourts?.map(b => b.court_name) || [];
+      // Week Bookings
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const { count: weekCount } = await supabase
+        .from("bookings")
+        .select("*", { count: "exact", head: true })
+        .gte("start_time", weekAgo.toISOString());
 
-    const courtStatuses: CourtStatus[] = courtNames.map(name => {
-      if (blockedCourtNames.includes(name)) {
-        return { name, status: "maintenance" };
-      }
+      // Pending Bookings
+      const { count: pendingCount } = await supabase
+        .from("bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("manager_confirmed", false)
+        .neq("status", "cancelled");
 
-      const booking = currentBookings?.find(b => b.court === name);
-      if (booking) {
-        return {
-          name,
-          status: "occupied",
-          currentBooking: {
-            user: "In uso",
-            endTime: new Date(booking.end_time).toLocaleTimeString("it-IT", {
-              hour: "2-digit",
-              minute: "2-digit"
-            }),
-          },
-        };
-      }
+      // Active Tournaments
+      const { count: activeTournamentsCount } = await supabase
+        .from("tournaments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
 
-      return { name, status: "free" };
-    });
+      // Total Tournaments
+      const { count: totalTournamentsCount } = await supabase
+        .from("tournaments")
+        .select("*", { count: "exact", head: true });
 
-    setCourts(courtStatuses);
+      // Unread Messages
+      const { count: messagesCount } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("read", false);
 
-    // Load recent activities
-    const recentActivities: RecentActivity[] = [];
-    
-    // Recent bookings
-    const { data: recentBookings } = await supabase
-      .from("bookings")
-      .select("id, court, created_at")
-      .order("created_at", { ascending: false })
-      .limit(3);
+      // Pending Emails
+      const { count: emailsCount } = await supabase
+        .from("email_logs")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
 
-    recentBookings?.forEach(b => {
-      recentActivities.push({
-        id: `booking-${b.id}`,
-        type: "booking",
-        message: `Nuova prenotazione: ${b.court}`,
-        time: getRelativeTime(b.created_at),
+      // News Count
+      const { count: newsCount } = await supabase
+        .from("news")
+        .select("*", { count: "exact", head: true });
+
+      // Announcements Count
+      const { count: announcementsCount } = await supabase
+        .from("announcements")
+        .select("*", { count: "exact", head: true });
+
+      // Recent Activity - ultimi 5 booking
+      const { data: recentBookings } = await supabase
+        .from("bookings")
+        .select("id, start_time, court, profiles(full_name)")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      setStats({
+        totalUsers: usersCount || 0,
+        todayBookings: todayCount || 0,
+        weekBookings: weekCount || 0,
+        pendingBookings: pendingCount || 0,
+        activeTournaments: activeTournamentsCount || 0,
+        totalTournaments: totalTournamentsCount || 0,
+        unreadMessages: messagesCount || 0,
+        totalCourts: 8,
+        activeUsers: activeCount || 0,
+        pendingEmails: emailsCount || 0,
+        newsCount: newsCount || 0,
+        announcementsCount: announcementsCount || 0,
       });
-    });
 
-    // Recent registrations
-    const { data: recentUsers } = await supabase
-      .from("profiles")
-      .select("id, full_name, created_at")
-      .order("created_at", { ascending: false })
-      .limit(2);
+      setRecentActivity(recentBookings || []);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    }
 
-    recentUsers?.forEach(u => {
-      recentActivities.push({
-        id: `user-${u.id}`,
-        type: "registration",
-        message: `Nuovo utente: ${u.full_name || "Anonimo"}`,
-        time: getRelativeTime(u.created_at),
-      });
-    });
-
-    // Sort by time
-    setActivities(recentActivities.slice(0, 5));
     setLoading(false);
   }
 
-  function getRelativeTime(dateString: string) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+  // Mock data per il grafico (sostituire con dati reali)
+  const weeklyData = [
+    { day: "L", value: 45 },
+    { day: "M", value: 78 },
+    { day: "M", value: 62 },
+    { day: "G", value: 95 },
+    { day: "V", value: 58 },
+    { day: "S", value: 82 },
+    { day: "D", value: 48 },
+  ];
 
-    if (diffMins < 1) return "Ora";
-    if (diffMins < 60) return `${diffMins} min fa`;
-    if (diffHours < 24) return `${diffHours} ore fa`;
-    return `${diffDays} giorni fa`;
-  }
+  const reminders = [
+    {
+      id: "1",
+      title: "Riunione Staff Mensile",
+      time: "Oggi • 14:00 - 16:00",
+      type: "meeting" as const,
+    },
+  ];
 
-  const getCourtStatusColor = (status: CourtStatus["status"]) => {
-    switch (status) {
-      case "free": return "bg-green-500";
-      case "occupied": return "bg-red-500";
-      case "maintenance": return "bg-yellow-500";
-    }
-  };
+  const projects = [
+    {
+      id: "1",
+      title: "Gestione Tornei",
+      subtitle: `${stats.activeTournaments} tornei attivi`,
+      icon: Trophy,
+      color: "blue",
+    },
+    {
+      id: "2",
+      title: "Nuovi Iscritti",
+      subtitle: `${stats.newUsersThisMonth} questo mese`,
+      icon: UserPlus,
+      color: "purple",
+    },
+    {
+      id: "3",
+      title: "Prenotazioni",
+      subtitle: `${stats.todayBookings} oggi`,
+      icon: Calendar,
+      color: "green",
+    },
+    {
+      id: "4",
+      title: "Notifiche",
+      subtitle: "Sistema attivo",
+      icon: Bell,
+      color: "orange",
+    },
+  ];
 
-  const getCourtStatusLabel = (status: CourtStatus["status"]) => {
-    switch (status) {
-      case "free": return "Libero";
-      case "occupied": return "Occupato";
-      case "maintenance": return "Manutenzione";
-    }
-  };
+  const teamMembers = [
+    {
+      id: "1",
+      name: "Staff Tennis",
+      role: "Gestione Campi",
+      project: "Prenotazioni e Manutenzione",
+      status: "active" as const,
+    },
+    {
+      id: "2",
+      name: "Coach Team",
+      role: "Allenamenti",
+      project: "Programmi di Training",
+      status: "active" as const,
+    },
+    {
+      id: "3",
+      name: "Admin Support",
+      role: "Assistenza",
+      project: "Supporto Utenti",
+      status: "active" as const,
+    },
+  ];
 
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-20 skeleton rounded-xl" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 skeleton rounded-xl" />
+        <div className="h-20 bg-gray-200 rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-xl" />
           ))}
         </div>
       </div>
@@ -207,182 +253,247 @@ export default function AdminControlRoom() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Control Room</h1>
-          <p className="text-[var(--foreground-muted)] mt-1">
-            Panoramica in tempo reale dell'academy
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
-          <Activity className="h-4 w-4 text-green-500 animate-pulse" />
-          Live
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Dashboard Generale
+        </h1>
+        <p className="text-gray-600">
+          Panoramica completa di tutte le attività dell'accademia
+        </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[var(--surface)] rounded-xl p-5 border border-[var(--border)]">
-          <div className="flex items-center justify-between mb-3">
-            <Users className="h-5 w-5 text-[var(--primary)]" />
-            <span className="text-xs text-green-500">
-              +{stats.newUsersThisMonth} questo mese
-            </span>
-          </div>
-          <p className="text-3xl font-bold text-[var(--foreground)]">{stats.totalUsers}</p>
-          <p className="text-sm text-[var(--foreground-subtle)] mt-1">utenti totali</p>
-        </div>
-
-        <div className="bg-[var(--surface)] rounded-xl p-5 border border-[var(--border)]">
-          <div className="flex items-center justify-between mb-3">
-            <Calendar className="h-5 w-5 text-green-500" />
-            <span className="text-xs text-[var(--foreground-subtle)]">Oggi</span>
-          </div>
-          <p className="text-3xl font-bold text-[var(--foreground)]">{stats.todayBookings}</p>
-          <p className="text-sm text-[var(--foreground-subtle)] mt-1">prenotazioni</p>
-        </div>
-
-        <div className="bg-[var(--surface)] rounded-xl p-5 border border-[var(--border)]">
-          <div className="flex items-center justify-between mb-3">
-            <Clock className="h-5 w-5 text-yellow-500" />
-            <span className="text-xs text-yellow-500">Da confermare</span>
-          </div>
-          <p className="text-3xl font-bold text-[var(--foreground)]">{stats.pendingBookings}</p>
-          <p className="text-sm text-[var(--foreground-subtle)] mt-1">in attesa</p>
-        </div>
-
-        <div className="bg-[var(--surface)] rounded-xl p-5 border border-[var(--border)]">
-          <div className="flex items-center justify-between mb-3">
-            <Trophy className="h-5 w-5 text-purple-500" />
-            <span className="text-xs text-[var(--foreground-subtle)]">Attivi</span>
-          </div>
-          <p className="text-3xl font-bold text-[var(--foreground)]">{stats.activeTournaments}</p>
-          <p className="text-sm text-[var(--foreground-subtle)] mt-1">tornei</p>
-        </div>
-      </div>
-
-      {/* Courts Status */}
-      <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-        <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2">
-            <LayoutGrid className="h-5 w-5 text-[var(--primary)]" />
-            <h2 className="font-semibold text-[var(--foreground)]">Stato Campi</h2>
-          </div>
-          <Link
-            href="/dashboard/admin/courts"
-            className="text-sm text-[var(--primary)] hover:underline"
-          >
-            Gestisci
-          </Link>
-        </div>
-        
-        <div className="p-5 grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {courts.map((court) => (
-            <div
-              key={court.name}
-              className="p-4 rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-medium text-[var(--foreground)]">{court.name}</span>
-                <span className={`w-3 h-3 rounded-full ${getCourtStatusColor(court.status)}`} />
-              </div>
-              <p className={`text-sm font-medium ${
-                court.status === "free" ? "text-green-600 dark:text-green-400" :
-                court.status === "occupied" ? "text-red-600 dark:text-red-400" :
-                "text-yellow-600 dark:text-yellow-400"
-              }`}>
-                {getCourtStatusLabel(court.status)}
-              </p>
-              {court.currentBooking && (
-                <p className="text-xs text-[var(--foreground-muted)] mt-1">
-                  Fino alle {court.currentBooking.endTime}
-                </p>
-              )}
+      {/* Statistiche Principali */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Utenti */}
+        <Link href="/dashboard/admin/users" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <Users className="h-6 w-6 text-blue-600" />
             </div>
-          ))}
-        </div>
-      </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalUsers}</h3>
+          <p className="text-sm text-gray-600 mb-2">Utenti Totali</p>
+          <div className="flex items-center gap-2 text-xs text-blue-600">
+            <Activity className="h-3 w-3" />
+            <span>{stats.activeUsers} attivi ultimi 7 giorni</span>
+          </div>
+        </Link>
 
-      {/* Quick Actions & Recent Activity */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-          <div className="p-5 border-b border-[var(--border)]">
-            <h2 className="font-semibold text-[var(--foreground)]">Azioni Rapide</h2>
+        {/* Prenotazioni Oggi */}
+        <Link href="/dashboard/admin/courts" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-cyan-50 rounded-lg group-hover:bg-cyan-100 transition-colors">
+              <Calendar className="h-6 w-6 text-cyan-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-cyan-600 transition-colors" />
           </div>
-          <div className="p-4 space-y-2">
-            <Link
-              href="/dashboard/admin/users"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover)] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-[var(--primary)]" />
-                <span className="text-[var(--foreground)]">Gestione Utenti</span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[var(--foreground-subtle)] group-hover:text-[var(--primary)]" />
-            </Link>
-            
-            <Link
-              href="/dashboard/admin/bookings"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover)] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-green-500" />
-                <span className="text-[var(--foreground)]">Gestione Prenotazioni</span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[var(--foreground-subtle)] group-hover:text-green-500" />
-            </Link>
-            
-            <Link
-              href="/dashboard/admin/tornei"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover)] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <Trophy className="h-5 w-5 text-purple-500" />
-                <span className="text-[var(--foreground)]">Gestione Tornei</span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[var(--foreground-subtle)] group-hover:text-purple-500" />
-            </Link>
-            
-            <Link
-              href="/dashboard/admin/invite-codes"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover)] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-yellow-500" />
-                <span className="text-[var(--foreground)]">Codici Invito</span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[var(--foreground-subtle)] group-hover:text-yellow-500" />
-            </Link>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.todayBookings}</h3>
+          <p className="text-sm text-gray-600 mb-2">Prenotazioni Oggi</p>
+          <div className="flex items-center gap-2 text-xs text-cyan-600">
+            <TrendingUp className="h-3 w-3" />
+            <span>{stats.weekBookings} questa settimana</span>
           </div>
-        </div>
+        </Link>
 
-        {/* Recent Activity */}
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-          <div className="p-5 border-b border-[var(--border)]">
-            <h2 className="font-semibold text-[var(--foreground)]">Attività Recenti</h2>
-          </div>
-          <div className="divide-y divide-[var(--border)]">
-            {activities.length === 0 ? (
-              <div className="p-8 text-center text-[var(--foreground-muted)]">
-                Nessuna attività recente
-              </div>
-            ) : (
-              activities.map((activity) => (
-                <div key={activity.id} className="p-4 flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    activity.type === "booking" ? "bg-green-500" :
-                    activity.type === "registration" ? "bg-blue-500" :
-                    "bg-purple-500"
-                  }`} />
-                  <div className="flex-1">
-                    <p className="text-sm text-[var(--foreground)]">{activity.message}</p>
-                    <p className="text-xs text-[var(--foreground-subtle)]">{activity.time}</p>
-                  </div>
-                </div>
-              ))
+        {/* Prenotazioni Pendenti */}
+        <Link href="/dashboard/admin/courts" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-orange-50 rounded-lg group-hover:bg-orange-100 transition-colors">
+              <Clock className="h-6 w-6 text-orange-600" />
+            </div>
+            {stats.pendingBookings > 0 && (
+              <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">
+                {stats.pendingBookings}
+              </span>
             )}
           </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.pendingBookings}</h3>
+          <p className="text-sm text-gray-600 mb-2">Da Confermare</p>
+          <div className="flex items-center gap-2 text-xs text-orange-600">
+            <AlertCircle className="h-3 w-3" />
+            <span>Richiede approvazione</span>
+          </div>
+        </Link>
+
+        {/* Tornei */}
+        <Link href="/dashboard/admin/tornei" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors">
+              <Trophy className="h-6 w-6 text-purple-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.activeTournaments}</h3>
+          <p className="text-sm text-gray-600 mb-2">Tornei Attivi</p>
+          <div className="flex items-center gap-2 text-xs text-purple-600">
+            <CheckCircle className="h-3 w-3" />
+            <span>{stats.totalTournaments} totali</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Sezione Comunicazioni */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Chat */}
+        <Link href="/dashboard/admin/chat" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+              <MessageSquare className="h-6 w-6 text-green-600" />
+            </div>
+            {stats.unreadMessages > 0 && (
+              <span className="px-2 py-1 bg-green-100 text-green-600 text-xs font-bold rounded-full">
+                {stats.unreadMessages}
+              </span>
+            )}
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.unreadMessages}</h3>
+          <p className="text-sm text-gray-600">Messaggi Non Letti</p>
+        </Link>
+
+        {/* Email */}
+        <Link href="/dashboard/admin/email" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <Mail className="h-6 w-6 text-blue-600" />
+            </div>
+            {stats.pendingEmails > 0 && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs font-bold rounded-full">
+                {stats.pendingEmails}
+              </span>
+            )}
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.pendingEmails}</h3>
+          <p className="text-sm text-gray-600">Email in Coda</p>
+        </Link>
+
+        {/* News */}
+        <Link href="/dashboard/admin/news" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+              <Newspaper className="h-6 w-6 text-indigo-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-indigo-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.newsCount}</h3>
+          <p className="text-sm text-gray-600">News Pubblicate</p>
+        </Link>
+
+        {/* Annunci */}
+        <Link href="/dashboard/admin/announcements" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-pink-50 rounded-lg group-hover:bg-pink-100 transition-colors">
+              <Bell className="h-6 w-6 text-pink-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-pink-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.announcementsCount}</h3>
+          <p className="text-sm text-gray-600">Annunci Attivi</p>
+        </Link>
+      </div>
+
+      {/* Campi e Attività Recenti */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Info Campi */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-cyan-50 rounded-lg">
+              <LayoutGrid className="h-6 w-6 text-cyan-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900">Campi Tennis</h3>
+              <p className="text-sm text-gray-600">Strutture disponibili</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm text-gray-700">Campi Totali</span>
+              <span className="text-lg font-bold text-gray-900">{stats.totalCourts}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <span className="text-sm text-green-700">Prenotazioni Settimana</span>
+              <span className="text-lg font-bold text-green-900">{stats.weekBookings}</span>
+            </div>
+            <Link
+              href="/dashboard/admin/courts"
+              className="block w-full text-center px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all text-sm font-medium"
+            >
+              Gestisci Campi
+            </Link>
+          </div>
+        </div>
+
+        {/* Attività Recenti */}
+        <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-blue-600" />
+            Attività Recenti
+          </h3>
+          <div className="space-y-3">
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity: any, index) => (
+                <div key={activity.id || index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {activity.profiles?.full_name || "Utente"}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {activity.court} - {new Date(activity.start_time).toLocaleString("it-IT", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nessuna attività recente</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl p-6 text-white">
+        <h3 className="text-xl font-bold mb-4">Azioni Rapide</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link
+            href="/dashboard/admin/users"
+            className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all text-center"
+          >
+            <UserPlus className="h-6 w-6 mx-auto mb-2" />
+            <p className="text-sm font-medium">Nuovo Utente</p>
+          </Link>
+          <Link
+            href="/dashboard/admin/bookings"
+            className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all text-center"
+          >
+            <Calendar className="h-6 w-6 mx-auto mb-2" />
+            <p className="text-sm font-medium">Nuova Prenotazione</p>
+          </Link>
+          <Link
+            href="/dashboard/admin/tornei"
+            className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all text-center"
+          >
+            <Trophy className="h-6 w-6 mx-auto mb-2" />
+            <p className="text-sm font-medium">Nuovo Torneo</p>
+          </Link>
+          <Link
+            href="/dashboard/admin/news"
+            className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all text-center"
+          >
+            <Newspaper className="h-6 w-6 mx-auto mb-2" />
+            <p className="text-sm font-medium">Nuova News</p>
+          </Link>
         </div>
       </div>
     </div>

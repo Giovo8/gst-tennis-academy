@@ -150,7 +150,7 @@ html {
 
 body {
   background-color: var(--background);
-  color: var(--foreground);
+  /* color: var(--foreground); */ /* Removed - let Tailwind handle text colors */
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.6;
@@ -167,7 +167,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.25;
-  color: var(--foreground);
+  /* color: var(--foreground); */ /* Removed - let Tailwind handle text colors */
 }
 
 p, li, span, a, label, button {
@@ -256,26 +256,8 @@ p, li, span, a, label, button {
   color: var(--foreground);
 }
 
-/* Form Elements */
-input, textarea, select {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--foreground);
-  padding: var(--space-3) var(--space-4);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-  font-size: 0.875rem;
-}
-
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
-
-input::placeholder, textarea::placeholder {
-  color: var(--foreground-subtle);
-}
+/* Form Elements - Styling removed to avoid conflicts with Tailwind utilities in dashboard */
+/* Use Tailwind utility classes directly in components for better control */
 
 /* Badges */
 .badge {
@@ -464,6 +446,20 @@ input::placeholder, textarea::placeholder {
 .brand-badge { background-color: var(--primary-100); color: var(--primary-dark); }
 .accent-gradient { background: var(--gradient-primary); color: white; }
 .glass-panel { border: 1px solid var(--border); background: var(--surface); backdrop-filter: blur(8px); }
+
+/* Animazione per drawer laterale */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
 
 
 

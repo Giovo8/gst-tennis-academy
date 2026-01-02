@@ -58,25 +58,39 @@ export default function GestoreTorneiPage() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      active: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-      upcoming: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      completed: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-      cancelled: "bg-red-500/20 text-red-300 border-red-500/30",
+      active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+      upcoming: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+      completed: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+      cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
     };
     return styles[status] || styles.upcoming;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 skeleton rounded-lg w-48" />
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-24 skeleton rounded-xl" />
+          ))}
+        </div>
+        <div className="h-64 skeleton rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Gestione Tornei</h1>
-          <p className="text-muted-2">Visualizza e gestisci i tornei dell&apos;academy</p>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Gestione Tornei</h1>
+          <p className="text-[var(--foreground-muted)]">Visualizza e gestisci i tornei dell&apos;academy</p>
         </div>
         <Link
-          href="/dashboard/gestore/tornei"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl transition-all"
+          href="/dashboard/admin/tornei"
+          className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--primary-dark)] transition-all"
         >
           <Plus className="h-4 w-4" />
           Gestione Avanzata
@@ -85,58 +99,54 @@ export default function GestoreTorneiPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-          <p className="text-sm text-emerald-300">Tornei Attivi</p>
-          <p className="text-2xl font-bold text-white">
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
+          <p className="text-sm text-[var(--foreground-muted)]">Tornei Attivi</p>
+          <p className="text-2xl font-bold text-[var(--foreground)]">
             {tournaments.filter(t => t.status === "active").length}
           </p>
         </div>
-        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
-          <p className="text-sm text-blue-300">In Arrivo</p>
-          <p className="text-2xl font-bold text-white">
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
+          <p className="text-sm text-[var(--foreground-muted)]">In Arrivo</p>
+          <p className="text-2xl font-bold text-[var(--foreground)]">
             {tournaments.filter(t => t.status === "upcoming").length}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-500/30 bg-gray-500/10 p-4">
-          <p className="text-sm text-gray-300">Completati</p>
-          <p className="text-2xl font-bold text-white">
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
+          <p className="text-sm text-[var(--foreground-muted)]">Completati</p>
+          <p className="text-2xl font-bold text-[var(--foreground)]">
             {tournaments.filter(t => t.status === "completed").length}
           </p>
         </div>
       </div>
 
       {/* Tournaments List */}
-      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-          </div>
-        ) : tournaments.length === 0 ? (
-          <div className="text-center py-12 text-muted-2">
+      <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+        {tournaments.length === 0 ? (
+          <div className="text-center py-12 text-[var(--foreground-muted)]">
             <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>Nessun torneo trovato</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/10">
+          <div className="divide-y divide-[var(--border)]">
             {tournaments.map((tournament) => (
               <Link
                 key={tournament.id}
-                href={`/dashboard/gestore/tornei?t=${tournament.id}`}
-                className="block p-4 hover:bg-white/5 transition group"
+                href={`/dashboard/admin/tornei?t=${tournament.id}`}
+                className="block p-4 hover:bg-[var(--surface-hover)] transition-colors group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="rounded-lg bg-amber-500/20 p-3">
-                      <Trophy className="h-5 w-5 text-amber-400" />
+                    <div className="rounded-lg bg-amber-500/10 p-3">
+                      <Trophy className="h-5 w-5 text-amber-500" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-white">{tournament.title}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs border ${getStatusBadge(tournament.status)}`}>
+                        <span className="font-medium text-[var(--foreground)]">{tournament.title}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(tournament.status)}`}>
                           {tournament.status}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-2">
+                      <div className="flex items-center gap-4 text-sm text-[var(--foreground-muted)]">
                         {tournament.start_date && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
@@ -151,7 +161,7 @@ export default function GestoreTorneiPage() {
                       </div>
                     </div>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-muted-2 opacity-0 group-hover:opacity-100 transition" />
+                  <ArrowRight className="h-5 w-5 text-[var(--foreground-muted)] opacity-0 group-hover:opacity-100 transition" />
                 </div>
               </Link>
             ))}

@@ -72,11 +72,11 @@ export default function TournamentsSection() {
     <section id="tornei" className="max-w-7xl mx-auto px-6 sm:px-8 py-12 sm:py-16 md:py-20">
       <div className="space-y-10 sm:space-y-12">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-4">Competizioni</p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-bold text-cyan-600 mb-4">Competizioni</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
             Tornei e Campionati
           </h2>
-          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
             Partecipa alle nostre competizioni e metti alla prova le tue abilità
           </p>
         </div>
@@ -87,8 +87,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('all')}
             className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'all'
-                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-200 hover:border-cyan-300 hover:bg-gray-50'
             }`}
           >
             Tutti ({items.length})
@@ -97,8 +97,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('eliminazione_diretta')}
             className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'eliminazione_diretta'
-                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-200 hover:border-cyan-300 hover:bg-gray-50'
             }`}
           >
             <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -108,8 +108,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('girone_eliminazione')}
             className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'girone_eliminazione'
-                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-200 hover:border-cyan-300 hover:bg-gray-50'
             }`}
           >
             <Target className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -119,8 +119,8 @@ export default function TournamentsSection() {
             onClick={() => setFilter('campionato')}
             className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               filter === 'campionato'
-                ? 'accent-gradient text-text-dark shadow-lg shadow-accent-strong/30'
-                : 'bg-white/5 text-gray-300 border-2 border-white/20 hover:border-white/40 hover:bg-white/10 backdrop-blur-xl'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-200 hover:border-cyan-300 hover:bg-gray-50'
             }`}
           >
             <Award className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -132,11 +132,11 @@ export default function TournamentsSection() {
         <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="col-span-3 flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            <Loader2 className="h-6 w-6 animate-spin text-cyan-600" />
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="col-span-3 text-center py-12">
-            <p className="text-sm text-muted-2">
+            <p className="text-sm text-gray-600">
               {filter === 'all' 
                 ? 'Nessun torneo imminente.' 
                 : `Nessun torneo di tipo "${getTournamentTypeLabel(filter as TournamentType)}" imminente.`}
@@ -150,26 +150,26 @@ export default function TournamentsSection() {
             return (
               <article 
                 key={t.id} 
-                className="group flex h-full flex-col rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300"
+                className="group flex h-full flex-col rounded-xl sm:rounded-2xl border border-gray-200 bg-white overflow-hidden hover:border-cyan-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2.5 sm:gap-3 flex-1">
                   {/* Header with icon and type badge */}
                   <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-cyan-500/20 border-2 border-cyan-400/40 text-cyan-300 group-hover:scale-110 transition-transform">
+                      <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white group-hover:scale-110 transition-transform">
                         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <span className="rounded-full bg-cyan-500/20 border-2 border-cyan-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-300">
+                      <span className="rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-200 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-cyan-700">
                         {typeLabel}
                       </span>
                     </div>
                     {t.status && (
                       <span className={`text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-1.5 rounded-full font-bold ${
                         t.status === 'Aperto' 
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : t.status === 'In Corso'
-                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
-                          : 'bg-gray-500/20 text-gray-300 border border-gray-500/40'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-gray-100 text-gray-700 border border-gray-200'
                       }`}>
                         {t.status}
                       </span>
@@ -177,12 +177,12 @@ export default function TournamentsSection() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-base sm:text-lg font-bold gradient-text">{t.title}</h3>
+                  <h3 className="text-base sm:text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{t.title}</h3>
 
                   {/* Info */}
                   <div className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
                     {t.start_date && (
-                      <div className="flex items-center gap-2 sm:gap-3 text-gray-300">
+                      <div className="flex items-center gap-2 sm:gap-3 text-gray-600">
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -194,7 +194,7 @@ export default function TournamentsSection() {
                       </div>
                     )}
                     {t.max_participants && (
-                      <div className="flex items-center gap-2 sm:gap-3 text-gray-300">
+                      <div className="flex items-center gap-2 sm:gap-3 text-gray-600">
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
@@ -207,7 +207,7 @@ export default function TournamentsSection() {
                   <div className="pt-1.5 sm:pt-2 mt-auto">
                     <Link 
                       href={`/tornei/${t.id}`} 
-                      className="block w-full text-center rounded-lg sm:rounded-xl accent-gradient px-4 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold text-text-dark hover:shadow-lg hover:shadow-accent-strong/30 transition-all duration-300 group-hover:scale-105"
+                      className="block w-full text-center rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold text-white hover:shadow-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 group-hover:scale-105"
                     >
                       Vedi Dettagli
                     </Link>

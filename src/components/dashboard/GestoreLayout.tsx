@@ -93,8 +93,11 @@ export default function GestoreLayout({ children }: GestoreLayoutProps) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#021627]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+      <div className="min-h-screen bg-[#021627] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
+          <p className="text-white/60 font-medium">Caricamento dashboard...</p>
+        </div>
       </div>
     );
   }

@@ -18,6 +18,13 @@ import {
   Image,
   Layers,
   Bell,
+  Video,
+  Megaphone,
+  Layout,
+  ImageIcon,
+  Briefcase,
+  UsersIcon,
+  ListOrdered,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -63,92 +70,88 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const navItems: NavItem[] = [
     {
-      label: "Control Room",
+      label: "Dashboard",
       href: "/dashboard/admin",
       icon: <Home className="h-5 w-5" />,
     },
     {
-      label: "Campi Real-Time",
-      href: "/dashboard/admin/courts",
-      icon: <LayoutGrid className="h-5 w-5" />,
-    },
-    {
-      label: "Prenotazioni",
+      label: "Gestione Prenotazioni",
       href: "/dashboard/admin/bookings",
       icon: <Calendar className="h-5 w-5" />,
     },
     {
-      label: "Tornei",
+      label: "Gestione Tornei",
       href: "/dashboard/admin/tornei",
       icon: <Trophy className="h-5 w-5" />,
     },
     {
-      label: "Anagrafica",
+      label: "Gestione Utenti",
       href: "/dashboard/admin/users",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      label: "Comunicazioni",
-      href: "/dashboard/admin/communications",
-      icon: <MessageSquare className="h-5 w-5" />,
-      children: [
-        {
-          label: "Chat",
-          href: "/dashboard/admin/chat",
-          icon: <MessageSquare className="h-4 w-4" />,
-        },
-        {
-          label: "Email",
-          href: "/dashboard/admin/email",
-          icon: <Mail className="h-4 w-4" />,
-        },
-        {
-          label: "Notifiche",
-          href: "/dashboard/admin/notifications",
-          icon: <Bell className="h-4 w-4" />,
-        },
-      ],
-    },
-    {
-      label: "Contenuti",
-      href: "/dashboard/admin/content",
+      label: "Home Corsi",
+      href: "/dashboard/admin/courses",
       icon: <Layers className="h-5 w-5" />,
-      children: [
-        {
-          label: "News",
-          href: "/dashboard/admin/news",
-          icon: <Newspaper className="h-4 w-4" />,
-        },
-        {
-          label: "Annunci",
-          href: "/dashboard/admin/announcements",
-          icon: <Bell className="h-4 w-4" />,
-        },
-        {
-          label: "Galleria",
-          href: "/dashboard/admin/gallery",
-          icon: <Image className="h-4 w-4" />,
-        },
-      ],
     },
     {
-      label: "Codici Invito",
-      href: "/dashboard/admin/invite-codes",
-      icon: <Key className="h-5 w-5" />,
+      label: "Gestione Video Lezioni",
+      href: "/dashboard/admin/video-lessons",
+      icon: <Video className="h-5 w-5" />,
     },
     {
-      label: "Impostazioni",
-      href: "/dashboard/admin/settings",
-      icon: <Settings className="h-5 w-5" />,
+      label: "Email",
+      href: "/dashboard/admin/email",
+      icon: <Mail className="h-5 w-5" />,
+    },
+    {
+      label: "Home News",
+      href: "/dashboard/admin/news",
+      icon: <Newspaper className="h-5 w-5" />,
+    },
+    {
+      label: "Annunci",
+      href: "/dashboard/admin/announcements",
+      icon: <Bell className="h-5 w-5" />,
+    },
+    {
+      label: "Banner Promozionale",
+      href: "/dashboard/admin/promo-banner",
+      icon: <Megaphone className="h-5 w-5" />,
+    },
+    {
+      label: "Disposizione Homepage",
+      href: "/dashboard/admin/homepage-order",
+      icon: <Layout className="h-5 w-5" />,
+    },
+    {
+      label: "Hero Section",
+      href: "/dashboard/admin/hero-content",
+      icon: <ImageIcon className="h-5 w-5" />,
+    },
+    {
+      label: "Hero Immagini",
+      href: "/dashboard/admin/hero-images",
+      icon: <Image className="h-5 w-5" />,
+    },
+    {
+      label: "Home Staff",
+      href: "/dashboard/admin/staff",
+      icon: <UsersIcon className="h-5 w-5" />,
+    },
+    {
+      label: "Programmi",
+      href: "/dashboard/admin/programs",
+      icon: <ListOrdered className="h-5 w-5" />,
     },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--background-subtle)] flex items-center justify-center">
+      <div className="min-h-screen bg-[#021627] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[var(--foreground-muted)]">Caricamento...</p>
+          <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-cyan-500/20" />
+          <p className="text-white/60 font-medium">Caricamento dashboard...</p>
         </div>
       </div>
     );

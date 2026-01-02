@@ -119,10 +119,10 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-10 skeleton rounded-lg w-48" />
-        <div className="h-64 skeleton rounded-xl" />
-        <div className="h-96 skeleton rounded-xl" />
+      <div className="space-y-6" style={{ color: '#111827' }}>
+        <div className="h-10 bg-gray-200 rounded-lg w-48 animate-pulse" />
+        <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-96 bg-gray-200 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -130,28 +130,36 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="text-center py-16">
-        <p className="text-[var(--foreground-muted)]">Profilo non trovato</p>
+        <p className="text-gray-600">Profilo non trovato</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6" style={{ color: '#111827' }}>
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">Il Mio Profilo</h1>
-        <p className="text-[var(--foreground-muted)] mt-1">
+        <h1 className="text-3xl font-extrabold text-black mb-2">Il Mio Profilo</h1>
+        <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
           Gestisci le tue informazioni personali
         </p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden">
-        <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] h-24" />
-        <div className="px-6 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-[var(--surface)] border-4 border-[var(--surface)] flex items-center justify-center">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="relative bg-gradient-to-r from-cyan-500 to-blue-600 h-40">
+          {/* Badge Ruolo */}
+          <div className="absolute top-4 right-4">
+            <span className="px-4 py-2 text-sm font-bold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
+              {getRoleLabel(profile.role)}
+            </span>
+          </div>
+        </div>
+        
+        <div className="px-6 pb-6 -mt-16">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-4">
+              <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -159,80 +167,84 @@ export default function ProfilePage() {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-3xl font-bold text-[var(--primary)]">
-                    {getInitials(profile.full_name, profile.email)}
-                  </span>
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                    <span className="text-4xl font-bold text-white">
+                      {getInitials(profile.full_name, profile.email)}
+                    </span>
+                  </div>
                 )}
               </div>
-              <button className="absolute bottom-0 right-0 p-2 rounded-full bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] transition-colors">
+              <button className="absolute bottom-2 right-2 p-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg">
                 <Camera className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-[var(--foreground)]">
-                {profile.full_name || "Nome non impostato"}
-              </h2>
-              <p className="text-[var(--foreground-muted)]">{profile.email}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-                {getRoleLabel(profile.role)}
-              </span>
-            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              {profile.full_name || "Nome non impostato"}
+            </h2>
+            <p className="text-gray-600 font-medium">{profile.email}</p>
           </div>
         </div>
       </div>
 
       {/* Account Info */}
-      <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-6">
-        <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-[var(--primary)]" />
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 uppercase tracking-wider">
+          <Shield className="h-5 w-5 text-blue-600" />
           Informazioni Account
         </h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--surface-hover)]">
-            <Mail className="h-5 w-5 text-[var(--foreground-muted)]" />
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Mail className="h-5 w-5 text-blue-600" />
+            </div>
             <div>
-              <p className="text-xs text-[var(--foreground-muted)]">Email</p>
-              <p className="text-sm text-[var(--foreground)]">{profile.email}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</p>
+              <p className="text-sm font-semibold text-gray-900">{profile.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--surface-hover)]">
-            <Calendar className="h-5 w-5 text-[var(--foreground-muted)]" />
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <div className="p-2 bg-cyan-50 rounded-lg">
+              <Calendar className="h-5 w-5 text-cyan-600" />
+            </div>
             <div>
-              <p className="text-xs text-[var(--foreground-muted)]">Membro dal</p>
-              <p className="text-sm text-[var(--foreground)]">{formatDate(profile.created_at)}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Membro dal</p>
+              <p className="text-sm font-semibold text-gray-900">{formatDate(profile.created_at)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--surface-hover)]">
-            <CreditCard className="h-5 w-5 text-[var(--foreground-muted)]" />
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <div className="p-2 bg-emerald-50 rounded-lg">
+              <CreditCard className="h-5 w-5 text-emerald-600" />
+            </div>
             <div>
-              <p className="text-xs text-[var(--foreground-muted)]">Abbonamento</p>
-              <p className="text-sm text-[var(--foreground)]">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Abbonamento</p>
+              <p className="text-sm font-semibold text-gray-900">
                 {profile.subscription_type || "Nessuno"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--surface-hover)]">
-            <User className="h-5 w-5 text-[var(--foreground-muted)]" />
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <User className="h-5 w-5 text-purple-600" />
+            </div>
             <div>
-              <p className="text-xs text-[var(--foreground-muted)]">Ruolo</p>
-              <p className="text-sm text-[var(--foreground)]">{getRoleLabel(profile.role)}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ruolo</p>
+              <p className="text-sm font-semibold text-gray-900">{getRoleLabel(profile.role)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Edit Form */}
-      <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-6">
-        <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
-          <User className="h-5 w-5 text-[var(--primary)]" />
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 uppercase tracking-wider">
+          <User className="h-5 w-5 text-blue-600" />
           Dati Personali
         </h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
               Nome Completo
             </label>
             <input
@@ -240,12 +252,12 @@ export default function ProfilePage() {
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               placeholder="Mario Rossi"
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
               Telefono
             </label>
             <input
@@ -253,24 +265,24 @@ export default function ProfilePage() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+39 123 456 7890"
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
               Data di Nascita
             </label>
             <input
               type="date"
               value={formData.birth_date}
               onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
               Bio
             </label>
             <textarea
@@ -278,14 +290,14 @@ export default function ProfilePage() {
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               rows={3}
               placeholder="Scrivi qualcosa su di te..."
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] resize-none"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
 
           <button
             onClick={saveProfile}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-dark)] transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-bold hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-lg disabled:shadow-none"
           >
             {saving ? (
               <>

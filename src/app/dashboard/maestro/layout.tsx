@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import CoachLayoutComponent from "@/components/dashboard/CoachLayout";
 
 export const metadata: Metadata = {
   title: "Dashboard Maestro | GST Tennis Academy",
@@ -10,5 +11,5 @@ export default function MaestroLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <CoachLayoutComponent>{children}</CoachLayoutComponent>;
 }

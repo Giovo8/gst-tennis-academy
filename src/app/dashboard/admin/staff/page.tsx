@@ -162,203 +162,196 @@ export default function AdminStaffPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#021627] text-white p-6">
-        <div className="mx-auto max-w-4xl">
-          <p>Caricamento...</p>
-        </div>
+      <div className="space-y-6">
+        <p className="text-gray-600">Caricamento...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#021627] text-white p-6">
-      <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/admin"
-              className="rounded-lg border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-2 hover:bg-[#1a3d5c]/80 transition"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="text-3xl font-bold">Gestione Staff</h1>
-          </div>
-          <button
-            onClick={handleNew}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#06101f] hover:bg-[#5fc7e0] transition"
-          >
-            <Plus className="h-4 w-4" />
-            Nuovo Membro
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-700 mb-2">Gestione Staff</h1>
+          <p className="text-gray-600">Gestisci i membri dello staff visibili nella homepage</p>
         </div>
+        <button
+          onClick={handleNew}
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
+        >
+          <Plus className="h-5 w-5" />
+          Nuovo Membro
+        </button>
+      </div>
 
-        {/* Form */}
-        {showForm && (
-          <div className="mb-5 rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingId ? "Modifica Membro" : "Nuovo Membro"}
-            </h2>
+      {/* Form */}
+      {showForm && (
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <h2 className="text-xl font-bold text-gray-700 mb-4">
+            {editingId ? "Modifica Membro" : "Nuovo Membro"}
+          </h2>
 
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Nome Completo</label>
+              <input
+                type="text"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Mario Rossi"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Ruolo</label>
+              <input
+                type="text"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Maestro FIT"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                rows={4}
+                className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Descrizione del membro dello staff..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">URL Immagine</label>
+              <input
+                type="url"
+                value={formData.image_url}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="https://esempio.com/foto.jpg"
+              />
+              {formData.image_url && (
+                <div className="mt-3">
+                  <img
+                    src={formData.image_url}
+                    alt="Preview"
+                    className="h-32 w-32 rounded-full object-cover border-2 border-gray-200"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Nome Completo</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Ordine</label>
                 <input
-                  type="text"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#021627] px-4 py-2 text-white"
-                  placeholder="Mario Rossi"
+                  type="number"
+                  value={formData.order_index}
+                  onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) })}
+                  className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Ruolo</label>
-                <input
-                  type="text"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#021627] px-4 py-2 text-white"
-                  placeholder="Maestro FIT"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Stato</label>
+                <label className="flex items-center gap-2 mt-2.5">
+                  <input
+                    type="checkbox"
+                    checked={formData.active}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <span className="text-sm text-gray-700 font-semibold">Attivo</span>
+                </label>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Bio</label>
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  rows={4}
-                  className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#021627] px-4 py-2 text-white"
-                  placeholder="Descrizione del membro dello staff..."
-                />
-              </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={handleSave}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
+              >
+                <Save className="h-5 w-5" />
+                Salva
+              </button>
+              <button
+                onClick={handleCancel}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                <X className="h-5 w-5" />
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div>
-                <label className="block text-sm font-medium mb-2">URL Immagine</label>
-                <input
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#021627] px-4 py-2 text-white"
-                  placeholder="https://esempio.com/foto.jpg"
-                />
-                {formData.image_url && (
-                  <div className="mt-2">
-                    <img
-                      src={formData.image_url}
-                      alt="Preview"
-                      className="h-32 w-32 rounded-full object-cover"
-                    />
+      {/* Staff List */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-gray-700">Membri Staff ({staff.length})</h2>
+        
+        {staff.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+            <p className="text-gray-500">Nessun membro dello staff presente.</p>
+          </div>
+        ) : (
+          staff.map((member) => (
+            <div
+              key={member.id}
+              className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-all"
+            >
+              {/* Image */}
+              <div className="flex-shrink-0">
+                {member.image_url ? (
+                  <img
+                    src={member.image_url}
+                    alt={member.full_name}
+                    className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 border-2 border-gray-200">
+                    <User className="h-8 w-8 text-gray-400" />
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Ordine</label>
-                  <input
-                    type="number"
-                    value={formData.order_index}
-                    onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) })}
-                    className="w-full rounded-lg border border-[#2f7de1]/30 bg-[#021627] px-4 py-2 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Stato</label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.active}
-                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                      className="h-4 w-4 rounded border-[#2f7de1]/30"
-                    />
-                    <span className="text-sm">Attivo</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleSave}
-                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#06101f] hover:bg-[#5fc7e0] transition"
-                >
-                  <Save className="h-4 w-4" />
-                  Salva
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#2f7de1]/30 px-4 py-2 text-sm font-semibold text-white hover:bg-[#1a3d5c]/60 transition"
-                >
-                  <X className="h-4 w-4" />
-                  Annulla
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Staff List */}
-        <div className="space-y-4">
-          {staff.length === 0 ? (
-            <div className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 text-center">
-              <p className="text-muted">Nessun membro dello staff presente.</p>
-            </div>
-          ) : (
-            staff.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-4 rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-4"
-              >
-                {/* Image */}
-                <div className="flex-shrink-0">
-                  {member.image_url ? (
-                    <img
-                      src={member.image_url}
-                      alt={member.full_name}
-                      className="h-16 w-16 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2f7de1]/30">
-                      <User className="h-8 w-8 text-muted" />
-                    </div>
+              {/* Content */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-gray-700">{member.full_name}</h3>
+                  {!member.active && (
+                    <span className="rounded-full bg-gray-100 border border-gray-300 px-2 py-0.5 text-xs text-gray-600 font-bold">
+                      Non attivo
+                    </span>
                   )}
                 </div>
-
-                {/* Content */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">{member.full_name}</h3>
-                    {!member.active && (
-                      <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs text-cyan-300">
-                        Non attivo
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-accent">{member.role}</p>
-                  <p className="mt-1 text-sm text-muted line-clamp-2">{member.bio}</p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(member)}
-                    className="rounded-lg border border-[#2f7de1]/30 bg-[#021627] p-2 hover:bg-[#1a3d5c]/60 transition"
-                  >
-                    <Edit2 className="h-4 w-4 text-accent" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(member.id)}
-                    className="rounded-lg border border-cyan-500/30 bg-[#021627] p-2 hover:bg-cyan-500/20 transition"
-                  >
-                    <Trash2 className="h-4 w-4 text-cyan-300" />
-                  </button>
-                </div>
+                <p className="text-sm text-blue-600 font-semibold">{member.role}</p>
+                <p className="mt-1 text-sm text-gray-600 line-clamp-2">{member.bio}</p>
               </div>
-            ))
-          )}
-        </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(member)}
+                  className="rounded-lg border border-blue-300 bg-blue-100 p-2 hover:bg-blue-200 transition-colors"
+                >
+                  <Edit2 className="h-4 w-4 text-blue-700" />
+                </button>
+                <button
+                  onClick={() => handleDelete(member.id)}
+                  className="rounded-lg border border-gray-300 bg-gray-100 p-2 hover:bg-gray-200 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4 text-gray-700" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

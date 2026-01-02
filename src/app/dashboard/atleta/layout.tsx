@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import AthleteLayoutComponent from "@/components/dashboard/AthleteLayout";
 
 export const metadata: Metadata = {
   title: "Dashboard Atleta | GST Tennis Academy",
@@ -10,5 +11,5 @@ export default function AthleteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <AthleteLayoutComponent>{children}</AthleteLayoutComponent>;
 }

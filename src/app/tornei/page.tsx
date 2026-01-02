@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { Trophy, Calendar, Users, ArrowRight, Loader2, Award } from "lucide-react";
 
 type Tournament = {
   id: string;
@@ -13,6 +14,7 @@ type Tournament = {
   level?: string;
   max_participants?: number;
   status?: string;
+  tournament_type?: string;
 };
 
 export default function TorneiPage() {
@@ -47,39 +49,145 @@ export default function TorneiPage() {
     return () => { mounted = false; };
   }, []);
 
+  const getStatusStyle = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case 'aperto':
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'in corso':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'completato':
+      case 'concluso':
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      default:
+        return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
+    }
+  };
+
   return (
-    <main className="mx-auto max-w-7xl px-6 sm:px-8 py-6 sm:py-10 min-h-screen">
-      <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-6">
-        <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-[#9fb6a6]">Tornei</p>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-white">Tornei in arrivo</h1>
-        <p className="text-sm sm:text-base text-[#c6d8c9]">Iscriviti ai tornei organizzati dall'Academy.</p>
+    <main className="min-h-screen bg-[#021627]">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute left-1/4 top-20 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl animate-pulse" style={{animationDuration: '4s'}} />
+          <div className="absolute right-1/4 top-10 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '2s'}} />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-6 sm:px-8 py-12 sm:py-20">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
+                <Trophy className="h-4 w-4" />
+                Tornei GST Academy
+              </div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">
+                <span className="bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
+                  Tornei in Arrivo
+                </span>
+              </h1>
+              <p className="text-lg text-white/60 max-w-xl">
+                Partecipa ai nostri tornei e metti alla prova le tue abilità. 
+                Sfida altri giocatori e scala la classifica!
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/5">
+                <Trophy className="h-4 w-4 text-cyan-400" />
+                <span className="text-white/70">{tournaments.length} tornei</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-5 sm:mt-6 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Content Section */}
+      <div className="mx-auto max-w-7xl px-6 sm:px-8 pb-20">
         {loading ? (
-          <div className="text-sm text-[#c6d8c9]">Caricamento...</div>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-xl animate-pulse" />
+              <Loader2 className="relative w-12 h-12 animate-spin text-cyan-400" />
+            </div>
+            <p className="mt-4 text-white/50 animate-pulse">Caricamento tornei...</p>
+          </div>
         ) : error ? (
-          <div className="text-sm text-cyan-300">{error}</div>
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-8 text-center">
+            <p className="text-red-400">{error}</p>
+          </div>
         ) : tournaments.length === 0 ? (
-          <div className="text-sm text-[#c6d8c9]">Nessun torneo programmato.</div>
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/5 border border-white/10 mb-6">
+              <Trophy className="w-10 h-10 text-white/30" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Nessun torneo programmato</h3>
+            <p className="text-white/50">Torna presto per scoprire i nuovi tornei!</p>
+          </div>
         ) : (
-          tournaments.map((t) => (
-            <Link
-              key={t.id}
-              href={`/tornei/${t.id}`}
-              aria-label={`Apri dettaglio torneo ${t.title}`}
-              className="group block card rounded-lg sm:rounded-xl hover:scale-[1.01] transition-transform p-3 sm:p-4 min-h-[120px] sm:min-h-[140px] flex flex-col justify-between"
-            >
-              <div>
-                <h3 className="font-semibold text-white text-base sm:text-lg">{t.title}</h3>
-                <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted overflow-hidden line-clamp-2">{t.description}</p>
-              </div>
-              <div className="mt-2 text-xs sm:text-sm flex items-center justify-between gap-2 flex-wrap">
-                <div className="text-xs sm:text-sm text-muted-2">{t.start_date ? new Date(t.start_date).toLocaleDateString() : ''}</div>
-                <div className="text-xs sm:text-sm text-muted">{t.category ?? ''} {t.level ? `· ${t.level}` : ''}</div>
-              </div>
-            </Link>
-          ))
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {tournaments.map((t) => (
+              <Link
+                key={t.id}
+                href={`/tornei/${t.id}`}
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 hover:border-cyan-500/30 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10"
+              >
+                {/* Hover gradient effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="relative">
+                  {/* Icon and Status */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      {t.tournament_type === 'campionato' ? (
+                        <Award className="w-6 h-6 text-cyan-400" />
+                      ) : (
+                        <Trophy className="w-6 h-6 text-cyan-400" />
+                      )}
+                    </div>
+                    {t.status && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(t.status)}`}>
+                        {t.status}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title and Description */}
+                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
+                    {t.title}
+                  </h3>
+                  {t.description && (
+                    <p className="text-sm text-white/50 line-clamp-2 mb-4">{t.description}</p>
+                  )}
+
+                  {/* Meta Info */}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/40">
+                    {t.start_date && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5">
+                        <Calendar className="h-3.5 w-3.5 text-cyan-400" />
+                        {new Date(t.start_date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}
+                      </div>
+                    )}
+                    {t.max_participants && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5">
+                        <Users className="h-3.5 w-3.5 text-cyan-400" />
+                        {t.max_participants} partecipanti
+                      </div>
+                    )}
+                    {t.category && (
+                      <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-400">
+                        {t.category}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Arrow indicator */}
+                  <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                    <ArrowRight className="h-5 w-5 text-cyan-400" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         )}
       </div>
     </main>

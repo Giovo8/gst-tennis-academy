@@ -211,26 +211,26 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-lighter p-6">
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className={`rounded-xl ${typeInfo.bgColor} p-3`}>
+            <div className={`rounded-lg ${typeInfo.bgColor} p-3`}>
               <Icon className={`h-6 w-6 ${typeInfo.color}`} />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-semibold text-white">{tournament.title}</h3>
+                <h3 className="text-xl font-semibold text-gray-900">{tournament.title}</h3>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  tournament.status === 'Aperto' ? 'bg-green-500/20 text-green-400' :
-                  tournament.status === 'In Corso' ? 'bg-yellow-500/20 text-yellow-400' :
-                  tournament.status === 'Concluso' ? 'bg-gray-500/20 text-gray-400' :
-                  'bg-surface text-muted'
+                  tournament.status === 'Aperto' ? 'bg-emerald-100 text-emerald-700' :
+                  tournament.status === 'In Corso' ? 'bg-amber-100 text-amber-700' :
+                  tournament.status === 'Concluso' ? 'bg-gray-100 text-gray-700' :
+                  'bg-gray-100 text-gray-600'
                 }`}>
                   {tournament.status}
                 </span>
               </div>
-              <p className="text-sm text-muted mb-2">{typeInfo.name}</p>
-              <div className="flex items-center gap-4 text-xs text-muted-2">
+              <p className="text-sm text-gray-600 mb-2">{typeInfo.name}</p>
+              <div className="flex items-center gap-4 text-xs text-gray-500">
                 <span>Partecipanti: {participants.length}/{tournament.max_participants}</span>
                 <span>•</span>
                 <span>Fase: {tournament.current_phase}</span>
@@ -253,7 +253,7 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
               <button
                 onClick={handleStartTournament}
                 disabled={starting}
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 disabled:opacity-50"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50"
               >
                 {starting ? (
                   <span className="flex items-center gap-2">
@@ -281,31 +281,31 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Tabs per Eliminazione Diretta */}
       {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione' && (
-        <div className="flex gap-2 border-b border-border">
+        <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setActiveTab('overview')}
             className={`px-4 py-2 text-sm font-medium transition-colors relative ${
               activeTab === 'overview'
-                ? 'text-accent'
-                : 'text-muted hover:text-white'
+                ? 'text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Panoramica
             {activeTab === 'overview' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
             )}
           </button>
           <button
             onClick={() => setActiveTab('bracket')}
             className={`px-4 py-2 text-sm font-medium transition-colors relative ${
               activeTab === 'bracket'
-                ? 'text-accent'
-                : 'text-muted hover:text-white'
+                ? 'text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Tabellone
             {activeTab === 'bracket' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
             )}
           </button>
         </div>
@@ -313,16 +313,16 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Contenuto in base al tipo e fase */}
       {tournament.current_phase === 'iscrizioni' && (
-        <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-          <Users className="mx-auto h-12 w-12 text-muted mb-4" />
-          <h4 className="text-lg font-semibold text-white mb-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
+          <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">
             Fase Iscrizioni
           </h4>
-          <p className="text-sm text-muted mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Il torneo accetta ancora iscrizioni. {participants.length} partecipanti su {tournament.max_participants}.
           </p>
           {isAdmin && participants.length >= 2 && (
-            <p className="text-xs text-accent">
+            <p className="text-xs text-blue-600 font-medium">
               Puoi avviare il torneo quando sei pronto usando il pulsante in alto
             </p>
           )}
@@ -347,9 +347,9 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
             <>
               {/* Lista Partecipanti */}
               {participants.length > 0 && (
-                <div className="rounded-2xl border border-border bg-surface p-6">
+                <div className="rounded-xl border border-gray-200 bg-white p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-white">
+                    <h4 className="font-semibold text-gray-900">
                       Partecipanti ({participants.length})
                     </h4>
                   </div>
@@ -357,26 +357,26 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
                     {participants.map((participant: any) => (
                       <div
                         key={participant.id}
-                        className="rounded-lg border border-border bg-surface-lighter p-3"
+                        className="rounded-lg border border-gray-200 bg-gray-50 p-3"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">
+                            <p className="text-sm font-medium text-gray-900 truncate">
                               {participant.profiles?.full_name || participant.user_id || 'Giocatore'}
                             </p>
                             {participant.profiles?.email && (
-                              <p className="text-xs text-muted mt-1 truncate">
+                              <p className="text-xs text-gray-600 mt-1 truncate">
                                 {participant.profiles.email}
                               </p>
                             )}
                             <div className="flex items-center gap-2 mt-2 flex-wrap">
                               {participant.seed && (
-                                <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                                   Testa di serie #{participant.seed}
                                 </span>
                               )}
                               {participant.stats?.matches_played > 0 && (
-                                <span className="text-xs text-muted">
+                                <span className="text-xs text-gray-600">
                                   {participant.stats.matches_won}W - {participant.stats.matches_lost}L
                                 </span>
                               )}
@@ -410,8 +410,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
           
           {tournament.current_phase === 'eliminazione' && (
             <div className="space-y-6">
-              <div className="rounded-lg bg-accent/10 border border-accent/30 p-4">
-                <p className="text-sm text-white">
+              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                <p className="text-sm text-gray-900">
                   <strong>Fase Eliminazione:</strong> Le migliori {tournament.teams_advancing} squadre di ogni girone si sfidano
                 </p>
               </div>
@@ -441,9 +441,9 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Lista Partecipanti - Solo per tipi diversi da campionato, girone_eliminazione e eliminazione_diretta in fase eliminazione */}
       {participants.length > 0 && tournament.tournament_type !== 'campionato' && tournament.tournament_type !== 'girone_eliminazione' && !(tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione') && (
-        <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-white">
+            <h4 className="font-semibold text-gray-900">
               Partecipanti ({participants.length})
             </h4>
             {isAdmin && tournament.current_phase === 'iscrizioni' && (
@@ -459,26 +459,26 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
             {participants.map((participant: any) => (
               <div
                 key={participant.id}
-                className="rounded-lg border border-border bg-surface-lighter p-3"
+                className="rounded-lg border border-gray-200 bg-gray-50 p-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-sm font-medium text-gray-900 truncate">
                       {participant.profiles?.full_name || participant.user_id || 'Giocatore'}
                     </p>
                     {participant.profiles?.email && (
-                      <p className="text-xs text-muted mt-1 truncate">
+                      <p className="text-xs text-gray-600 mt-1 truncate">
                         {participant.profiles.email}
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {participant.seed && (
-                        <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                           Testa di serie #{participant.seed}
                         </span>
                       )}
                       {participant.stats?.matches_played > 0 && (
-                        <span className="text-xs text-muted">
+                        <span className="text-xs text-gray-600">
                           {participant.stats.matches_won}W - {participant.stats.matches_lost}L
                         </span>
                       )}
@@ -490,7 +490,7 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
                         participant.id, 
                         participant.profiles?.full_name || participant.user_id || 'Giocatore'
                       )}
-                      className="flex-shrink-0 rounded-lg p-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                      className="flex-shrink-0 rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
                       title="Rimuovi partecipante"
                     >
                       <Trash2 className="h-4 w-4" />

@@ -1,6 +1,6 @@
-import GestoreLayout from "@/components/dashboard/GestoreLayout";
 import { ReactNode } from "react";
 
 export default function GestoreMainLayout({ children }: { children: ReactNode }) {
-  return <GestoreLayout>{children}</GestoreLayout>;
+  // GestoreLayout is now applied at the parent level (/dashboard/gestore/layout.tsx)
+  return children;
 }

@@ -176,28 +176,28 @@ export default function AdminNewsPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-5 px-6 py-10 bg-[#021627] text-white">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2 flex items-center gap-2">
-            <Newspaper className="h-4 w-4" />
-            Gestione News
-          </p>
-          <h1 className="text-4xl font-bold text-white">News dell'Academy</h1>
-          <p className="text-sm text-muted">Crea, modifica ed elimina le news visibili nella homepage</p>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-700 mb-2">
+              Gestione News
+            </h1>
+            <p className="text-gray-600">Crea, modifica ed elimina le news visibili nella homepage</p>
+          </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-              <Plus className="h-5 w-5 text-accent" />
+            <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
+              <Plus className="h-5 w-5 text-blue-600" />
               {editingId ? "Modifica News" : "Nuova News"}
             </h2>
             {editingId && (
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-sm px-4 py-2 rounded-xl border-2 border-gray-400/40 bg-gradient-to-r from-gray-500/20 to-gray-600/20 text-gray-300 hover:from-gray-500/30 hover:to-gray-600/30 hover:border-gray-400/60 hover:text-white transition-all duration-300"
+                className="text-sm px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-all"
               >
                 Annulla modifica
               </button>
@@ -210,13 +210,13 @@ export default function AdminNewsPage() {
               placeholder="Titolo *"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
+              className="rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
+              className="rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
               <option value="">Seleziona Categoria *</option>
@@ -234,7 +234,7 @@ export default function AdminNewsPage() {
               placeholder="URL Immagine (opzionale)"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
+              className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {imageUrl && (
               <div className="relative w-full rounded-xl overflow-hidden border border-white/15 bg-surface/50">
@@ -262,28 +262,28 @@ export default function AdminNewsPage() {
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={4}
-            className="w-full rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
+            className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
 
-          <label className="flex items-center gap-2 text-sm text-white">
+          <label className="flex items-center gap-2 text-sm text-gray-700 font-semibold">
             <input
               type="checkbox"
               checked={published}
               onChange={(e) => setPublished(e.target.checked)}
-              className="h-4 w-4 rounded border-white/15"
+              className="h-4 w-4 rounded border-gray-300"
             />
             Pubblicata
           </label>
 
           {error && (
-            <p className="rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm text-red-100">
+            <p className="rounded-lg border border-red-300 bg-red-100 px-4 py-3 text-sm text-red-700">
               {error}
             </p>
           )}
 
           {success && (
-            <p className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">
+            <p className="rounded-lg border border-green-300 bg-green-100 px-4 py-3 text-sm text-green-700">
               {success}
             </p>
           )}
@@ -291,7 +291,7 @@ export default function AdminNewsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold bg-[#2f7de1] text-white transition hover:bg-[#2563c7] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-sm"
           >
             {saving ? (
               <>
@@ -309,31 +309,31 @@ export default function AdminNewsPage() {
 
         {/* News List */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-semibold text-white">Tutte le News ({news.length})</h2>
+          <h2 className="text-2xl font-bold text-gray-700">Tutte le News ({news.length})</h2>
           
           {loading ? (
-            <div className="flex items-center gap-2 text-muted">
+            <div className="flex items-center gap-2 text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin" />
               Caricamento...
             </div>
           ) : news.length === 0 ? (
-            <p className="text-muted">Nessuna news presente. Crea la prima!</p>
+            <p className="text-gray-500">Nessuna news presente. Crea la prima!</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {news.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#2f7de1]/30 bg-[#1a3d5c]/60 p-5 space-y-3"
+                  className="bg-white rounded-xl border border-gray-200 p-5 space-y-3 shadow-sm hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-                      item.is_published ? 'bg-blue-500/20 text-blue-300' : 'bg-cyan-500/20 text-cyan-300'
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold border ${
+                      item.is_published ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 border-gray-300'
                     }`}>
                       {categoryLabels[item.category] || item.category}
                     </span>
                     <button
                       onClick={() => togglePublished(item.id, item.is_published)}
-                      className="text-muted hover:text-white"
+                      className="text-gray-500 hover:text-gray-700"
                       title={item.is_published ? "Nascondi" : "Pubblica"}
                     >
                       {item.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -341,7 +341,7 @@ export default function AdminNewsPage() {
                   </div>
 
                   {item.image_url && (
-                    <div className="w-full rounded-lg overflow-hidden bg-surface/50">
+                    <div className="w-full rounded-lg overflow-hidden bg-gray-100">
                       <img
                         src={item.image_url}
                         alt={item.title}
@@ -353,9 +353,9 @@ export default function AdminNewsPage() {
                     </div>
                   )}
 
-                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-                  <p className="text-sm text-muted line-clamp-3">{item.excerpt || item.content}</p>
-                  <p className="text-xs text-muted-2">
+                  <h3 className="text-base font-semibold text-gray-700">{item.title}</h3>
+                  <p className="text-sm text-gray-500 line-clamp-3">{item.excerpt || item.content}</p>
+                  <p className="text-xs text-gray-400">
                     {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
                       day: "numeric",
                       month: "long",
@@ -366,14 +366,14 @@ export default function AdminNewsPage() {
                   <div className="flex items-center gap-2 pt-2">
                     <button
                       onClick={() => editNews(item)}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-amber-400/40 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-3 py-2 text-sm font-semibold text-amber-200 hover:from-amber-500/30 hover:to-yellow-500/30 hover:border-amber-400/60 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
+                      className="flex-1 flex items-center justify-center gap-2 p-2 bg-blue-100 text-blue-700 border border-blue-300 rounded-lg hover:bg-blue-200 transition-colors"
                     >
                       <Pencil className="h-4 w-4" />
                       Modifica
                     </button>
                     <button
                       onClick={() => deleteNews(item.id)}
-                      className="flex items-center justify-center gap-2 rounded-xl border-2 border-red-400/40 bg-gradient-to-r from-red-500/20 to-rose-500/20 px-3 py-2 text-sm font-semibold text-red-200 hover:from-red-500/30 hover:to-rose-500/30 hover:border-red-400/60 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300"
+                      className="flex items-center justify-center gap-2 p-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -383,7 +383,7 @@ export default function AdminNewsPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </AuthGuard>
   );
 }

@@ -86,18 +86,18 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#021627] text-white">
+      <div className="min-h-screen bg-gray-50">
         <PromoBanner />
         <PublicNavbar />
         <main className="flex flex-col gap-12 px-6 pb-16 pt-10">
-          <p className="text-center text-muted">Caricamento...</p>
+          <p className="text-center text-gray-600">Caricamento...</p>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#021627] text-white">
+    <div className="min-h-screen bg-gray-50">
       <PromoBanner />
       <PublicNavbar />
       <main>

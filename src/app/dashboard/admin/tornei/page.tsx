@@ -3,7 +3,17 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Trophy, Award, CheckCircle, Plus, Trash2, BarChart3 } from "lucide-react";
+import { 
+  Loader2, 
+  Trophy, 
+  Plus, 
+  Trash2, 
+  BarChart3,
+  Users as UsersIcon,
+  Calendar,
+  Filter,
+  Search
+} from "lucide-react";
 import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import TournamentStats from "@/components/tournaments/TournamentStats";
@@ -23,35 +33,15 @@ type Tournament = {
   entry_fee?: number;
 };
 
-
 function AdminTorneiPageInner() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [participants, setParticipants] = useState<any[]>([]);
-  const [sessionInfo, setSessionInfo] = useState<{userId?: string, role?: string, token?: string}>({});
-  const searchParams = useSearchParams();
-  const selectedTournament = searchParams?.get("t");
-  const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
-  const [showReports, setShowReports] = useState(false);
-
-  const getTournamentTypeLabel = (type?: string) => {
-    switch(type) {
-      case 'eliminazione_diretta': return 'Eliminazione Diretta';
-      case 'girone_eliminazione': return 'Girone + Eliminazione';
-      case 'campionato': return 'Campionato';
-      default: return 'Torneo';
-    }
-  };
-
-  const getTournamentTypeIcon = (type?: string) => {
-    switch(type) {
-      case 'campionato': return Award;
-      default: return Trophy;
-    }
-  };
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [managingTournamentId, setManagingTournamentId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
+  const [showReports, setShowReports] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     load();
@@ -72,47 +62,11 @@ function AdminTorneiPageInner() {
     }
   }
 
-  async function loadParticipants(tournamentId: string) {
-    setManagingTournamentId(tournamentId);
-    try {
-      const res = await fetch(`/api/tournament_participants?tournament_id=${tournamentId}`);
-      let json: any = {};
-      try { json = await res.json(); } catch (e) { json = {}; }
-      if (res.ok) setParticipants(json.participants ?? []);
-      else setError(json.error || 'Errore caricamento partecipanti');
-    } catch (err) {
-      // ignore
-    }
-  }
-
-  async function handleEditTournament(tournamentId: string, updatedData: Partial<Tournament>) {
-    setError(null);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token ?? null;
-      const res = await fetch(`/api/tournaments?id=${tournamentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify(updatedData),
-      });
-      let json: any = {};
-      try { json = await res.json(); } catch (e) { json = {}; }
-      if (!res.ok) {
-        setError(json.error || 'Errore modifica');
-      } else {
-        load();
-      }
-    } catch (err: any) {
-      setError(err.message || 'Errore rete');
-    }
-  }
-
   async function handleDeleteTournament(tournamentId: string) {
-    if (!confirm('Sei sicuro di voler eliminare questo torneo? Questa azione è irreversibile e cancellerà anche tutti i match e i partecipanti associati.')) {
+    if (!confirm('Sei sicuro di voler eliminare questo torneo? Questa azione è irreversibile.')) {
       return;
     }
 
-    setError(null);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token ?? null;
@@ -120,408 +74,348 @@ function AdminTorneiPageInner() {
         method: 'DELETE',
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      let json: any = {};
-      try { json = await res.json(); } catch (e) { json = {}; }
-      if (!res.ok) {
-        setError(json.error || 'Errore eliminazione');
-      } else {
+      if (res.ok) {
         load();
+      } else {
+        setError('Errore eliminazione torneo');
       }
     } catch (err: any) {
       setError(err.message || 'Errore rete');
     }
   }
 
+  const typeConfig: Record<string, { label: string; color: string }> = {
+    eliminazione_diretta: { label: "Eliminazione Diretta", color: "bg-blue-100 text-blue-700 border-blue-300" },
+    girone_eliminazione: { label: "Girone + Eliminazione", color: "bg-purple-100 text-purple-700 border-purple-300" },
+    campionato: { label: "Campionato", color: "bg-pink-100 text-pink-700 border-pink-300" },
+  };
+
+  const statusConfig: Record<string, { label: string; color: string }> = {
+    "Aperto": { label: "Aperto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+    "In Corso": { label: "In Corso", color: "bg-amber-100 text-amber-700 border-amber-300" },
+    "In corso": { label: "In Corso", color: "bg-amber-100 text-amber-700 border-amber-300" },
+    "Completato": { label: "Completato", color: "bg-gray-100 text-gray-700 border-gray-300" },
+    "Concluso": { label: "Concluso", color: "bg-gray-100 text-gray-700 border-gray-300" },
+    "Chiuso": { label: "Chiuso", color: "bg-red-100 text-red-700 border-red-300" },
+  };
+
+  const filteredTournaments = tournaments.filter((t) => {
+    const matchesType = filterType === 'all' || t.tournament_type === filterType;
+    const matchesSearch = 
+      !search ||
+      t.title?.toLowerCase().includes(search.toLowerCase()) ||
+      t.description?.toLowerCase().includes(search.toLowerCase()) ||
+      t.category?.toLowerCase().includes(search.toLowerCase());
+    return matchesType && matchesSearch;
+  });
+
+  const stats = {
+    total: tournaments.length,
+    aperto: tournaments.filter((t) => t.status === "Aperto").length,
+    inCorso: tournaments.filter((t) => t.status === "In Corso" || t.status === "In corso").length,
+    completato: tournaments.filter((t) => t.status === "Completato" || t.status === "Concluso").length,
+  };
+
   return (
-    <main className="mx-auto min-h-screen max-w-7xl px-6 py-16">
-      {/* Header Section with Gradient */}
-      <div className="relative mb-5">
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full bg-[#7de3ff]/10 blur-3xl" />
-          <div className="absolute right-1/4 top-20 h-48 w-48 rounded-full bg-[#4fb3ff]/10 blur-3xl" />
-        </div>
-        
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-1 w-12 rounded-full bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff]" />
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7de3ff]">Area Admin</p>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-white via-[#7de3ff] to-white bg-clip-text text-transparent">
-              Gestione Tornei
-            </span>
+    <div className="space-y-6" style={{ color: '#111827' }}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-700 mb-2">
+            Gestione Tornei
           </h1>
-          <p className="text-sm text-gray-400 max-w-2xl">
-            Crea e gestisci tornei e campionati con il sistema semplificato. 
-            Scegli tra eliminazione diretta, girone + eliminazione o campionato.
+          <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
+            Crea e gestisci tornei e campionati
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            {showCreateForm ? "Nascondi Form" : "Nuovo Torneo"}
+          </button>
+          <button
+            onClick={() => setShowReports(!showReports)}
+            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Report
+          </button>
+        </div>
       </div>
 
-      {/* Statistics Section */}
-      <div className="mt-8">
-        <TournamentStats />
-      </div>
-
-      {/* Reports Section */}
-      <div className="mt-8">
-        <button
-          onClick={() => setShowReports(!showReports)}
-          className="w-full group relative overflow-hidden rounded-xl border border-[#7de3ff]/20 bg-gradient-to-r from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl p-4 transition-all hover:border-[#7de3ff]/40 hover:shadow-lg hover:shadow-[#7de3ff]/10"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-[#7de3ff]/30 to-[#4fb3ff]/30 ring-1 ring-[#7de3ff]/50">
-                <BarChart3 className="w-5 h-5 text-[#7de3ff]" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-white">Statistiche e Report Avanzati</h3>
-                <p className="text-xs text-gray-400">Classifiche giocatori, performance e storico tornei</p>
-              </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Trophy className="h-5 w-5 text-gray-600" />
             </div>
-            <div className={`transform transition-transform ${showReports ? 'rotate-180' : ''}`}>
-              <svg className="w-5 h-5 text-[#7de3ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
           </div>
-        </button>
-        
-        {showReports && (
-          <div className="mt-4 rounded-xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl p-6">
-            <TournamentReports />
-          </div>
-        )}
-      </div>
-
-      <div className="mt-8 grid gap-6">
-        {/* Nuovo form semplificato con design moderno */}
-        <div className="group relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl shadow-2xl shadow-[#7de3ff]/5 transition-all hover:border-[#7de3ff]/40 hover:shadow-[#7de3ff]/10">
-          {/* Animated background orbs */}
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-10 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" style={{animationDuration: '4s'}} />
-            <div className="absolute right-10 bottom-10 h-24 w-24 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-2xl" style={{animationDuration: '6s', animationDelay: '2s'}} />
-          </div>
-          
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="group-hover:scale-110 transition-transform duration-300">
-                  <div className="relative">
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-20 blur-lg" />
-                    <div className="relative rounded-xl bg-gradient-to-br from-[#7de3ff]/30 to-[#4fb3ff]/30 p-3 ring-1 ring-[#7de3ff]/50">
-                      <Trophy className="w-7 h-7 text-[#7de3ff] drop-shadow-[0_0_8px_rgba(125,227,255,0.5)]" />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">Crea Nuovo Torneo</h2>
-                  <p className="text-sm text-gray-400">Sistema semplificato con wizard in 3 step</p>
-                </div>
-              </div>
-              
-              {!showCreateForm && (
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="group/btn relative overflow-hidden rounded-xl bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 font-bold text-[#0a1929] shadow-lg shadow-[#7de3ff]/30 transition-all hover:shadow-xl hover:shadow-[#7de3ff]/40 hover:scale-105 active:scale-95"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
-                  <div className="relative flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    <span>Nuovo Torneo</span>
-                  </div>
-                </button>
-              )}
-            </div>
-
-          {showCreateForm && (
-            <SimpleTournamentCreator 
-              onSuccess={() => {
-                setShowCreateForm(false);
-                load();
-              }}
-            />
-          )}
-
-          {!showCreateForm && (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30 mb-4">
-                <Trophy className="w-8 h-8 text-[#7de3ff]/60" />
-              </div>
-              <p className="text-sm text-gray-400 max-w-md mx-auto">
-                Clicca su <span className="font-semibold text-[#7de3ff]">&quot;Nuovo Torneo&quot;</span> per creare un torneo semplificato con wizard intuitivo in 3 step
-              </p>
-            </div>
-          )}
-          </div>
+          <p className="text-sm font-semibold text-gray-600">Totale</p>
         </div>
 
-        {/* Lista Competizioni */}
-        <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 via-[#0a1929]/90 to-[#0a1929]/80 backdrop-blur-xl shadow-2xl shadow-[#7de3ff]/5">
-          {/* Animated background for list */}
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute right-20 top-20 h-40 w-40 animate-pulse rounded-full bg-[#4fb3ff]/5 blur-3xl" style={{animationDuration: '8s'}} />
-          </div>
-          
-          <div className="relative p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-white mb-1">Competizioni Attive</h2>
-                <p className="text-sm text-gray-400">Gestisci e monitora tutti i tornei</p>
-              </div>
-              <div className="flex justify-center gap-2 overflow-x-auto pb-1">
-              <button
-                onClick={() => setFilterType('all')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                  filterType === 'all'
-                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
-                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
-                }`}
-              >
-                Tutte
-              </button>
-              <button
-                onClick={() => setFilterType('eliminazione_diretta')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                  filterType === 'eliminazione_diretta'
-                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
-                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
-                }`}
-              >
-                Eliminazione
-              </button>
-              <button
-                onClick={() => setFilterType('girone_eliminazione')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                  filterType === 'girone_eliminazione'
-                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
-                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
-                }`}
-              >
-                Gironi
-              </button>
-              <button
-                onClick={() => setFilterType('campionato')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                  filterType === 'campionato'
-                    ? 'bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-lg shadow-[#7de3ff]/30'
-                    : 'bg-[#0a1929]/60 text-gray-400 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:text-[#7de3ff]'
-                }`}
-              >
-                Campionati
-              </button>
-              </div>
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <Calendar className="h-5 w-5 text-emerald-600" />
             </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.aperto}</p>
           </div>
-          
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-[#7de3ff]/20 blur-xl animate-pulse" />
-                <Loader2 className="relative w-10 h-10 animate-spin text-[#7de3ff]" />
-              </div>
-              <p className="mt-4 text-sm text-gray-400 animate-pulse">Caricamento tornei...</p>
-            </div>
-          )}
+          <p className="text-sm font-semibold text-gray-600">Aperti</p>
+        </div>
 
-          {!loading && tournaments.length === 0 && (
-            <div className="py-20 text-center">
-              <div className="relative inline-flex mb-6">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 blur-xl" />
-                <div className="relative rounded-2xl bg-[#0a1929]/60 p-6 ring-1 ring-[#7de3ff]/20">
-                  <Trophy className="w-16 h-16 text-[#7de3ff]/40" />
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <Trophy className="h-5 w-5 text-amber-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.inCorso}</p>
+          </div>
+          <p className="text-sm font-semibold text-gray-600">In Corso</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Trophy className="h-5 w-5 text-gray-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.completato}</p>
+          </div>
+          <p className="text-sm font-semibold text-gray-600">Completati</p>
+        </div>
+      </div>
+
+      {/* Reports */}
+      {showReports && (
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <TournamentReports />
+        </div>
+      )}
+
+      {/* Create Form */}
+      {showCreateForm && (
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <SimpleTournamentCreator 
+            onSuccess={() => {
+              setShowCreateForm(false);
+              load();
+            }}
+          />
+        </div>
+      )}
+
+      {/* Filters */}
+      {!showCreateForm && !showReports && (
+        <>
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cerca per nome torneo, descrizione o categoria..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setFilterType("all")}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                filterType === "all"
+                  ? "text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-sm"
+                  : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <Filter className="inline-block w-4 h-4 mr-1.5" />
+              Tutti
+            </button>
+            {Object.entries(typeConfig).map(([type, { label }]) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type as any)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  filterType === type
+                    ? "text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-sm"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Tournaments List */}
+      {!showCreateForm && !showReports && (
+        <>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+              <p className="mt-4 text-gray-600">Caricamento tornei...</p>
+            </div>
+          ) : filteredTournaments.length === 0 ? (
+            <div className="text-center py-20 rounded-xl border border-gray-200 bg-white">
+              <Trophy className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessun torneo trovato</h3>
+              <p className="text-gray-600">Crea il tuo primo torneo</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Header Row */}
+              <div className="bg-gray-100 rounded-xl px-5 py-3 border border-gray-200">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-6 flex-1">
+                    <div className="w-64">
+                      <div className="text-xs font-bold text-gray-600 uppercase">Nome Torneo</div>
+                    </div>
+                    <div className="w-40">
+                      <div className="text-xs font-bold text-gray-600 uppercase">Tipo</div>
+                    </div>
+                    <div className="w-32">
+                      <div className="text-xs font-bold text-gray-600 uppercase">Data</div>
+                    </div>
+                    <div className="w-24">
+                      <div className="text-xs font-bold text-gray-600 uppercase">Partecipanti</div>
+                    </div>
+                    <div className="w-32">
+                      <div className="text-xs font-bold text-gray-600 uppercase">Stato</div>
+                    </div>
+                  </div>
+                  <div className="w-36 text-right">
+                    <div className="text-xs font-bold text-gray-600 uppercase">Azioni</div>
+                  </div>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Nessun torneo ancora</h3>
-              <p className="text-sm text-gray-400 max-w-sm mx-auto">Inizia creando il tuo primo torneo con il sistema semplificato</p>
-            </div>
-          )}
 
-          {!loading && tournaments.length > 0 && (
-            <div className="space-y-3">
-              {tournaments
-                .filter((t) => filterType === 'all' || t.tournament_type === filterType)
-                .map((t) => {
-                  const Icon = getTournamentTypeIcon(t.tournament_type);
-                  const typeLabel = getTournamentTypeLabel(t.tournament_type);
-                  return (
+              {/* Data Rows */}
+              {filteredTournaments.map((tournament) => {
+                const typeInfo = typeConfig[tournament.tournament_type || 'eliminazione_diretta'];
+                const statusInfo = statusConfig[tournament.status || 'Aperto'] || statusConfig["Aperto"];
+
+                return (
                   <div
-                    key={t.id}
-                    className="group/item relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/40 hover:bg-[#0a1929]/80 transition-all duration-300 hover:shadow-lg hover:shadow-[#7de3ff]/10 hover:-translate-y-0.5"
+                    key={tournament.id}
+                    onClick={() => setManagingTournamentId(tournament.id)}
+                    className="group bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer"
                   >
-                    {/* Hover gradient effect */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#7de3ff]/0 via-[#7de3ff]/5 to-[#7de3ff]/0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500" />
-                    
-                    <div className="relative flex items-start gap-4 flex-1">
-                      <div className="group-hover/item:scale-110 transition-transform duration-300">
-                        <div className="relative">
-                          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-0 group-hover/item:opacity-20 blur-lg transition-opacity" />
-                          <div className="relative p-3 rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30">
-                            <Icon className="w-5 h-5 text-[#7de3ff]" />
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-6 flex-1">
+                        {/* Nome */}
+                        <div className="w-64">
+                          <div className="font-bold text-gray-700 truncate">
+                            {tournament.title}
+                          </div>
+                          {tournament.description && (
+                            <div className="text-xs text-gray-500 truncate">
+                              {tournament.description}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tipo */}
+                        <div className="w-40">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md border ${typeInfo.color}`}>
+                            {typeInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Data */}
+                        <div className="w-32">
+                          {tournament.start_date ? (
+                            <div className="text-sm font-semibold text-gray-700">
+                              {new Date(tournament.start_date).toLocaleDateString('it-IT', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-400">-</div>
+                          )}
+                        </div>
+
+                        {/* Partecipanti */}
+                        <div className="w-24">
+                          <div className="text-sm font-semibold text-gray-700">
+                            {tournament.max_participants || 0}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-white mb-2 truncate group-hover/item:text-[#7de3ff] transition-colors">{t.title}</h3>
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className="px-2 py-0.5 rounded-full bg-[#7de3ff]/10 text-[#7de3ff]">
-                            {typeLabel}
+
+                        {/* Status */}
+                        <div className="w-32">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md border ${statusInfo.color}`}>
+                            {statusInfo.label}
                           </span>
-                          {t.start_date && (
-                            <span>📅 {new Date(t.start_date).toLocaleDateString('it-IT')}</span>
-                          )}
-                          <span>👥 {t.max_participants || 0} max</span>
-                          {t.status && (
-                            <span className={`px-2 py-0.5 rounded-full ${
-                              t.status === 'Aperto' ? 'bg-green-500/10 text-green-400' :
-                              t.status === 'In Corso' || t.status === 'In corso' ? 'bg-yellow-500/10 text-yellow-400' :
-                              t.status === 'Completato' || t.status === 'Concluso' ? 'bg-gray-500/10 text-gray-400' :
-                              'bg-[#0c1424]/40 text-muted-2'
-                            }`}>
-                              {t.status}
-                            </span>
-                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="relative flex items-center gap-2 sm:ml-3">
-                      <button
-                        onClick={() => handleDeleteTournament(t.id)}
-                        className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/20 transition-all hover:shadow-md"
-                        title="Elimina torneo"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm('Vuoi chiudere le iscrizioni?')) {
-                            handleEditTournament(t.id, { status: 'Chiuso' });
-                          }
-                        }}
-                        className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all hover:shadow-md"
-                      >
-                        Chiudi
-                      </button>
-                      <button
-                        onClick={() => loadParticipants(t.id)}
-                        className="group/manage relative overflow-hidden px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/manage:translate-x-[100%] transition-transform duration-700" />
-                        <span className="relative">Gestisci</span>
-                      </button>
-                    </div>
-                  </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
 
-        {/* Pannello di Gestione Torneo */}
-        {managingTournamentId && (
-          <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl shadow-xl shadow-[#7de3ff]/5">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute left-20 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" />
-            </div>
-            
-            <div className="relative p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
-                    <Trophy className="w-6 h-6 text-[#7de3ff]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Gestione Torneo</h3>
-                    <p className="text-xs text-gray-400">Gestisci partecipanti, gironi e tabelloni</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setManagingTournamentId(null);
-                    setParticipants([]);
-                  }}
-                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-[#0a1929]/80 text-gray-300 border border-[#7de3ff]/20 hover:border-[#7de3ff]/50 hover:text-[#7de3ff] hover:bg-[#0a1929] transition-all"
-                >
-                  Chiudi
-                </button>
-              </div>
-              <TournamentManagerWrapper tournamentId={managingTournamentId} isAdmin={true} />
-            </div>
-          </div>
-        )}
-
-        {/* Partecipanti del torneo selezionato */}
-        {selectedTournament && participants.length > 0 && (
-          <div className="relative overflow-hidden rounded-2xl border border-[#7de3ff]/20 bg-gradient-to-br from-[#1a3d5c]/80 to-[#0a1929]/80 backdrop-blur-xl shadow-xl shadow-[#7de3ff]/5">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute left-20 top-10 h-32 w-32 animate-pulse rounded-full bg-[#7de3ff]/5 blur-2xl" />
-            </div>
-            
-            <div className="relative p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2.5 ring-1 ring-[#7de3ff]/30">
-                  <Award className="w-5 h-5 text-[#7de3ff]" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">
-                    Iscritti ({participants.length})
-                  </h3>
-                  <p className="text-xs text-gray-400">Partecipanti registrati al torneo</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {participants.map((p: any) => (
-                  <div
-                    key={p.id}
-                    className="group/participant flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-[#0a1929]/60 to-[#0a1929]/40 border border-[#7de3ff]/10 hover:border-[#7de3ff]/30 hover:bg-[#0a1929]/80 transition-all hover:shadow-md hover:shadow-[#7de3ff]/10"
-                  >
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#7de3ff] to-[#4fb3ff] opacity-20 blur-md group-hover/participant:opacity-40 transition-opacity" />
-                      <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 ring-1 ring-[#7de3ff]/30 flex items-center justify-center">
-                        <span className="text-[#7de3ff] font-bold text-sm">
-                          {(p.user?.full_name || p.user_id || '?').charAt(0).toUpperCase()}
-                        </span>
+                      {/* Actions */}
+                      <div className="flex gap-2 w-36 justify-end">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTournament(tournament.id);
+                          }}
+                          className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-sm"
+                          title="Elimina"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-white truncate group-hover/participant:text-[#7de3ff] transition-colors">
-                      {p.user?.full_name || p.user_id}
-                    </span>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </>
+      )}
 
-      {/* Error notification with better design */}
+      {/* Pannello di Gestione Torneo */}
+      {managingTournamentId && (
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-xl font-bold text-gray-900">Gestione Torneo</h3>
+            <button
+              onClick={() => setManagingTournamentId(null)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Chiudi
+            </button>
+          </div>
+          <TournamentManagerWrapper tournamentId={managingTournamentId} isAdmin={true} />
+        </div>
+      )}
+
+      {/* Error notification */}
       {error && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300 pb-safe">
-          <div className="relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-900/10 backdrop-blur-xl p-4 shadow-2xl shadow-red-500/20 max-w-md">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent" />
-            <div className="relative flex items-start gap-3">
-              <div className="rounded-lg bg-red-500/20 p-2 ring-1 ring-red-500/30">
-                <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-red-300 mb-1">Errore</p>
-                <p className="text-xs text-red-200/80">{error}</p>
+        <div className="fixed bottom-6 right-6 z-50 max-w-md">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="text-red-600">⚠️</div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800 mb-1">Errore</p>
+                <p className="text-xs text-red-700">{error}</p>
               </div>
               <button
                 onClick={() => setError(null)}
-                className="text-red-300 hover:text-red-200 transition-colors"
+                className="text-red-600 hover:text-red-800"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                ✕
               </button>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -529,7 +423,7 @@ export default function AdminTorneiPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     }>
       <AdminTorneiPageInner />

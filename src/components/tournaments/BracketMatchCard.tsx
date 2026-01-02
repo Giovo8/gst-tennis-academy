@@ -44,12 +44,12 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
   return (
     <div className={`rounded-lg border overflow-hidden ${
       isPending 
-        ? 'border-gray-600/30 bg-gradient-to-br from-gray-800/30 to-gray-900/30 opacity-60'
-        : 'border-[#7de3ff]/20 bg-gradient-to-br from-[#0a1929] to-[#0d1f35]'
+        ? 'border-gray-300 bg-gray-50 opacity-60'
+        : 'border-gray-200 bg-white'
     }`}>
       {/* Match Header */}
-      <div className="border-b border-[#7de3ff]/10 bg-[#0a1929]/50 px-4 py-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-[#7de3ff]">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 flex items-center justify-between">
+        <span className="text-xs font-semibold text-blue-600">
           {match.round_name} - Match #{match.match_number}
         </span>
         <div className="flex items-center gap-2">
@@ -57,12 +57,12 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
             <span className="text-xs text-gray-500">In attesa</span>
           )}
           {isCompleted && (
-            <Trophy className="h-4 w-4 text-yellow-400" />
+            <Trophy className="h-4 w-4 text-yellow-500" />
           )}
           {isAdmin && !isPending && !editing && (
             <button
               onClick={() => setEditing(true)}
-              className="p-1 text-[#7de3ff]/60 hover:text-[#7de3ff] transition-colors"
+              className="p-1 text-blue-600 hover:text-blue-700 transition-colors"
               title="Modifica punteggio"
             >
               <Edit2 className="h-3.5 w-3.5" />
@@ -91,15 +91,15 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
             {/* Player 1 */}
             <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
               isWinner(match.player1?.id) 
-                ? 'bg-gradient-to-r from-[#7de3ff]/20 to-transparent ring-2 ring-[#7de3ff]/50' 
-                : 'bg-[#0a1929]/40'
+                ? 'bg-blue-50 ring-2 ring-blue-500' 
+                : 'bg-gray-50'
             }`}>
               <div className="flex items-center gap-2 flex-1">
                 {isWinner(match.player1?.id) && (
-                  <Trophy className="h-4 w-4 text-[#7de3ff]" />
+                  <Trophy className="h-4 w-4 text-blue-600" />
                 )}
                 <span className={`text-sm font-medium ${
-                  isWinner(match.player1?.id) ? 'text-white' : 'text-gray-300'
+                  isWinner(match.player1?.id) ? 'text-gray-900 font-semibold' : 'text-gray-700'
                 }`}>
                   {getPlayerName(match.player1)}
                 </span>
@@ -115,7 +115,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                         key={idx}
                         className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
                           set.player1_score > set.player2_score
-                            ? 'bg-[#7de3ff]/20 text-[#7de3ff]'
+                            ? 'bg-blue-100 text-blue-700'
                             : 'text-gray-500'
                         }`}
                       >
@@ -125,7 +125,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                   </div>
                 )}
                 <span className={`text-lg font-bold min-w-[2rem] text-right ${
-                  isWinner(match.player1?.id) ? 'text-[#7de3ff]' : 'text-gray-400'
+                  isWinner(match.player1?.id) ? 'text-blue-600' : 'text-gray-500'
                 }`}>
                   {player1SetsWon}
                 </span>
@@ -135,15 +135,15 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
             {/* Player 2 */}
             <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
               isWinner(match.player2?.id) 
-                ? 'bg-gradient-to-r from-[#7de3ff]/20 to-transparent ring-2 ring-[#7de3ff]/50' 
-                : 'bg-[#0a1929]/40'
+                ? 'bg-blue-50 ring-2 ring-blue-500' 
+                : 'bg-gray-50'
             }`}>
               <div className="flex items-center gap-2 flex-1">
                 {isWinner(match.player2?.id) && (
-                  <Trophy className="h-4 w-4 text-[#7de3ff]" />
+                  <Trophy className="h-4 w-4 text-blue-600" />
                 )}
                 <span className={`text-sm font-medium ${
-                  isWinner(match.player2?.id) ? 'text-white' : 'text-gray-300'
+                  isWinner(match.player2?.id) ? 'text-gray-900 font-semibold' : 'text-gray-700'
                 }`}>
                   {getPlayerName(match.player2)}
                 </span>
@@ -159,7 +159,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                         key={idx}
                         className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
                           set.player2_score > set.player1_score
-                            ? 'bg-[#7de3ff]/20 text-[#7de3ff]'
+                            ? 'bg-blue-100 text-blue-700'
                             : 'text-gray-500'
                         }`}
                       >
@@ -169,7 +169,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                   </div>
                 )}
                 <span className={`text-lg font-bold min-w-[2rem] text-right ${
-                  isWinner(match.player2?.id) ? 'text-[#7de3ff]' : 'text-gray-400'
+                  isWinner(match.player2?.id) ? 'text-blue-600' : 'text-gray-500'
                 }`}>
                   {player2SetsWon}
                 </span>
@@ -179,7 +179,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
 
           {/* Match Info Footer */}
           {(match.court_number || match.scheduled_time) && (
-            <div className="border-t border-[#7de3ff]/10 bg-[#0a1929]/30 px-4 py-2 flex items-center justify-between text-xs text-gray-400">
+            <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 flex items-center justify-between text-xs text-gray-600">
               {match.court_number && <span>Campo {match.court_number}</span>}
               {match.scheduled_time && (
                 <span>{new Date(match.scheduled_time).toLocaleString('it-IT', { 

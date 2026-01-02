@@ -165,7 +165,7 @@ export default function ManualEnrollment({
 
   const modalContent = (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 pt-safe pb-safe px-safe"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           setShowModal(false);
@@ -174,20 +174,20 @@ export default function ManualEnrollment({
         }
       }}
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl sm:rounded-2xl border border-[#7de3ff]/30 bg-gradient-to-br from-[#0d1f35] to-[#0a1929] shadow-2xl shadow-[#7de3ff]/20 flex flex-col">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#7de3ff]/20 p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-[#7de3ff]/20 to-[#4fb3ff]/20 p-2 sm:p-2.5 ring-1 ring-[#7de3ff]/30">
-                  <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-[#7de3ff]" />
+        <div className="flex items-center justify-between border-b border-gray-200 p-6 bg-gray-50">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-100 p-2.5">
+                  <UserPlus className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white">Iscrivi Atleti al Torneo</h3>
-                  <p className="text-xs text-gray-400">
+                  <h3 className="text-lg font-bold text-gray-900">Iscrivi Atleti al Torneo</h3>
+                  <p className="text-xs text-gray-600">
                     Posti disponibili: {maxParticipants - currentParticipants} su {maxParticipants}
                   </p>
                   {selectedUserIds.size > 0 && (
-                    <p className="text-xs text-[#7de3ff] mt-1">
+                    <p className="text-xs text-blue-600 mt-1 font-medium">
                       {selectedUserIds.size} atleta/i selezionato/i
                     </p>
                   )}
@@ -199,14 +199,14 @@ export default function ManualEnrollment({
                   setSelectedUserIds(new Set());
                   setSearchQuery('');
                 }}
-                className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Search */}
-            <div className="p-4 sm:p-6 border-b border-[#7de3ff]/10">
+            <div className="p-6 border-b border-gray-200">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -214,20 +214,20 @@ export default function ManualEnrollment({
                   placeholder="Cerca per nome o email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-[#7de3ff]/20 bg-[#0a1929]/60 pl-10 pr-4 py-3 text-white placeholder:text-gray-500 focus:border-[#7de3ff]/50 focus:outline-none focus:ring-2 focus:ring-[#7de3ff]/20"
+                  className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
             </div>
 
             {/* User List */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="flex-1 overflow-y-auto p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#7de3ff]" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-400">Nessun atleta trovato</p>
+                  <p className="text-gray-500">Nessun atleta trovato</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -237,24 +237,24 @@ export default function ManualEnrollment({
                       <div
                         key={user.id}
                         onClick={() => toggleUserSelection(user.id)}
-                        className={`flex items-center justify-between rounded-lg border p-3 sm:p-4 cursor-pointer transition-all min-h-[60px] ${
+                        className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all ${
                           isSelected
-                            ? 'border-[#7de3ff] bg-[#7de3ff]/10'
-                            : 'border-[#7de3ff]/10 bg-gradient-to-r from-[#0a1929]/60 to-transparent hover:border-[#7de3ff]/30'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'
                         }`}
                       >
-                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
                             isSelected
-                              ? 'border-[#7de3ff] bg-[#7de3ff]'
-                              : 'border-gray-500'
+                              ? 'border-blue-500 bg-blue-500'
+                              : 'border-gray-300'
                           }`}>
-                            {isSelected && <Check className="h-3 w-3 text-[#0a1929]" />}
+                            {isSelected && <Check className="h-3 w-3 text-white" />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white text-sm sm:text-base truncate">{user.full_name || 'Senza nome'}</p>
-                            <p className="text-xs sm:text-sm text-gray-400 truncate">{user.email}</p>
-                            <span className="mt-1 inline-block rounded-full bg-[#7de3ff]/10 px-2 py-0.5 text-xs text-[#7de3ff]">
+                            <p className="font-semibold text-gray-900 text-base truncate">{user.full_name || 'Senza nome'}</p>
+                            <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                            <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 font-medium">
                               {user.role}
                             </span>
                           </div>
@@ -267,11 +267,11 @@ export default function ManualEnrollment({
             </div>
 
             {/* Footer con bottone iscrizione multipla */}
-            <div className="border-t border-[#7de3ff]/20 p-4 sm:p-6 flex-shrink-0">
+            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-gray-50">
               <button
                 onClick={handleEnrollSelected}
                 disabled={enrolling || selectedUserIds.size === 0}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-6 py-3 text-sm font-bold text-[#0a1929] hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {enrolling ? (
                   <>
@@ -295,7 +295,7 @@ export default function ManualEnrollment({
       <button
         onClick={() => setShowModal(true)}
         disabled={currentParticipants >= maxParticipants}
-        className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7de3ff] to-[#4fb3ff] px-4 py-2 text-sm font-bold text-[#0a1929] shadow-md shadow-[#7de3ff]/30 hover:shadow-lg hover:shadow-[#7de3ff]/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+        className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <UserPlus className="h-4 w-4" />
         Iscrivi Atleta

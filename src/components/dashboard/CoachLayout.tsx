@@ -93,10 +93,10 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--background-subtle)] flex items-center justify-center">
+      <div className="min-h-screen bg-[#021627] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[var(--foreground-muted)]">Caricamento...</p>
+          <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-cyan-500/20" />
+          <p className="text-white/60 font-medium">Caricamento dashboard...</p>
         </div>
       </div>
     );

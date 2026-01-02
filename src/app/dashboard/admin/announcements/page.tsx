@@ -100,13 +100,13 @@ export default function AnnouncementsPage() {
   }
 
   const typeLabels = {
-    announcement: { label: "Generale", color: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
-    event: { label: "Evento", color: "bg-purple-500/20 text-purple-300 border-purple-500/40" },
-    promotion: { label: "Promozione", color: "bg-green-500/20 text-green-300 border-green-500/40" },
-    partner: { label: "Partner", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40" },
-    news: { label: "Notizia", color: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" },
-    tournament: { label: "Torneo", color: "bg-orange-500/20 text-orange-300 border-orange-500/40" },
-    lesson: { label: "Lezione", color: "bg-pink-500/20 text-pink-300 border-pink-500/40" },
+    announcement: { label: "Generale", color: "bg-blue-100 text-blue-700 border-blue-300" },
+    event: { label: "Evento", color: "bg-purple-100 text-purple-700 border-purple-300" },
+    promotion: { label: "Promozione", color: "bg-green-100 text-green-700 border-green-300" },
+    partner: { label: "Partner", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+    news: { label: "Notizia", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
+    tournament: { label: "Torneo", color: "bg-orange-100 text-orange-700 border-orange-300" },
+    lesson: { label: "Lezione", color: "bg-pink-100 text-pink-700 border-pink-300" },
   };
 
   const priorityIcons = {
@@ -117,12 +117,13 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#021627]">
-      <main className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">Bacheca Annunci</h1>
-          <p className="text-gray-400">Gestisci gli annunci visibili nella bacheca</p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-700 mb-2">Gestione Annunci</h1>
+          <p className="text-gray-600">Gestisci gli annunci visibili nella bacheca</p>
         </div>
+      </div>
 
         {/* Actions Bar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -141,131 +142,130 @@ export default function AnnouncementsPage() {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
                   filter === key
-                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
-                    : "bg-white/5 text-gray-300 border border-white/10 hover:border-white/30"
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-transparent shadow-sm"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
               >
                 {label}
               </button>
-            ))}
-          </div>
+          ))}
+        </div>
 
-          <Link
-            href="/dashboard/admin/announcements/new"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-white hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+        <Link
+          href="/dashboard/admin/announcements/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
           >
             <Plus className="h-5 w-5" />
             Nuovo Annuncio
           </Link>
         </div>
 
-        {/* Announcements List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
-            <p className="mt-4 text-gray-400">Caricamento...</p>
-          </div>
-        ) : announcements.length === 0 ? (
-          <div className="text-center py-12 rounded-2xl border-2 border-white/10 bg-white/5 backdrop-blur-xl">
-            <MessageSquare className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-400 mb-4">Nessun annuncio trovato</p>
-            <Link
-              href="/dashboard/admin/announcements/new"
-              className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold"
-            >
-              <Plus className="h-5 w-5" />
-              Crea il primo annuncio
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {announcements.map((announcement) => {
-              const typeInfo = typeLabels[announcement.announcement_type];
-              const isExpired = announcement.expiry_date && new Date(announcement.expiry_date) < new Date();
+      {/* Announcements List */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Caricamento...</p>
+        </div>
+      ) : announcements.length === 0 ? (
+        <div className="text-center py-12 rounded-xl border border-gray-200 bg-white shadow-sm">
+          <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 mb-4">Nessun annuncio trovato</p>
+          <Link
+            href="/dashboard/admin/announcements/new"
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
+          >
+            <Plus className="h-5 w-5" />
+            Crea il primo annuncio
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {announcements.map((announcement) => {
+            const typeInfo = typeLabels[announcement.announcement_type];
+            const isExpired = announcement.expiry_date && new Date(announcement.expiry_date) < new Date();
 
-              return (
-                <article
-                  key={announcement.id}
-                  className={`group rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl p-6 hover:border-white/40 transition-all ${
-                    isExpired ? "opacity-50" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3 flex-wrap">
-                        {announcement.is_pinned && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/20 border border-yellow-500/40 px-2 py-1 text-xs font-bold text-yellow-300">
-                            <Pin className="h-3 w-3" />
-                            Fissato
-                          </span>
-                        )}
-                        <span className={`rounded-full border px-3 py-1 text-xs font-bold ${typeInfo.color}`}>
-                          {typeInfo.label}
+            return (
+              <article
+                key={announcement.id}
+                className={`group rounded-xl border border-gray-200 bg-white p-6 hover:shadow-md transition-all ${
+                  isExpired ? "opacity-50" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3 flex-wrap">
+                      {announcement.is_pinned && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 border border-yellow-300 px-2 py-1 text-xs font-bold text-yellow-700">
+                          <Pin className="h-3 w-3" />
+                          Fissato
                         </span>
-                        <span className="text-xs text-gray-400">
-                          Priorità: {priorityIcons[announcement.priority]}
+                      )}
+                      <span className={`rounded-full border px-3 py-1 text-xs font-bold ${typeInfo.color}`}>
+                        {typeInfo.label}
+                      </span>
+                      <span className="text-xs text-gray-600 font-semibold">
+                        Priorità: {priorityIcons[announcement.priority]}
+                      </span>
+                      {announcement.expiry_date && (
+                        <span className={`inline-flex items-center gap-1 text-xs ${isExpired ? "text-red-600" : "text-gray-600"}`}>
+                          <Calendar className="h-3 w-3" />
+                          {isExpired ? "Scaduto" : new Date(announcement.expiry_date).toLocaleDateString("it-IT")}
                         </span>
-                        {announcement.expiry_date && (
-                          <span className={`inline-flex items-center gap-1 text-xs ${isExpired ? "text-red-400" : "text-gray-400"}`}>
-                            <Calendar className="h-3 w-3" />
-                            {isExpired ? "Scaduto" : new Date(announcement.expiry_date).toLocaleDateString("it-IT")}
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="text-xl font-bold text-white mb-2">{announcement.title}</h3>
-                      <p className="text-gray-300 text-sm mb-3 line-clamp-2">{announcement.content}</p>
-
-                      <div className="flex items-center gap-4 text-xs text-gray-400">
-                        <span>Autore: {announcement.profiles?.full_name || "Sconosciuto"}</span>
-                        <span>•</span>
-                        <span>{new Date(announcement.created_at).toLocaleDateString("it-IT")}</span>
-                        <span>•</span>
-                        <span className="inline-flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          {announcement.view_count} visualizzazioni
-                        </span>
-                      </div>
+                      )}
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => togglePublish(announcement)}
-                        className={`p-2 rounded-lg transition-all ${
-                          announcement.is_published
-                            ? "bg-green-500/20 text-green-300 hover:bg-green-500/30"
-                            : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"
-                        }`}
-                        title={announcement.is_published ? "Pubblicato" : "Bozza"}
-                      >
-                        {announcement.is_published ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                      </button>
+                    <h3 className="text-xl font-bold text-gray-700 mb-2">{announcement.title}</h3>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{announcement.content}</p>
 
-                      <Link
-                        href={`/dashboard/admin/announcements/${announcement.id}/edit`}
-                        className="p-2 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-all"
-                        title="Modifica"
-                      >
-                        <Edit2 className="h-5 w-5" />
-                      </Link>
-
-                      <button
-                        onClick={() => deleteAnnouncement(announcement.id)}
-                        className="p-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all"
-                        title="Elimina"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>Autore: {announcement.profiles?.full_name || "Sconosciuto"}</span>
+                      <span>•</span>
+                      <span>{new Date(announcement.created_at).toLocaleDateString("it-IT")}</span>
+                      <span>•</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {announcement.view_count} visualizzazioni
+                      </span>
                     </div>
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </main>
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => togglePublish(announcement)}
+                      className={`p-2 rounded-lg border transition-all ${
+                        announcement.is_published
+                          ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200"
+                          : "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      title={announcement.is_published ? "Pubblicato" : "Bozza"}
+                    >
+                      {announcement.is_published ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                    </button>
+
+                    <Link
+                      href={`/dashboard/admin/announcements/${announcement.id}/edit`}
+                      className="p-2 rounded-lg border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all"
+                      title="Modifica"
+                    >
+                      <Edit2 className="h-5 w-5" />
+                    </Link>
+
+                    <button
+                      onClick={() => deleteAnnouncement(announcement.id)}
+                      className="p-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+                      title="Elimina"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

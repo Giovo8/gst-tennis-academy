@@ -84,6 +84,16 @@ export default function AdminHeroImagesPage() {
 
   async function handleSave() {
     try {
+      // Validate required fields
+      if (!formData.image_url?.trim()) {
+        alert("L'URL dell'immagine è obbligatorio");
+        return;
+      }
+      if (!formData.alt_text?.trim()) {
+        alert("Il testo alternativo è obbligatorio");
+        return;
+      }
+
       if (editingId) {
         // Update existing
         const { data: { session } } = await supabase.auth.getSession();

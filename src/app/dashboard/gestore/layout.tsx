@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import GestoreLayoutComponent from "@/components/dashboard/GestoreLayout";
 
 export const metadata: Metadata = {
   title: "Gestore Dashboard | GST Tennis Academy",
@@ -10,5 +11,5 @@ export default function GestoreRootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <GestoreLayoutComponent>{children}</GestoreLayoutComponent>;
 }

@@ -81,33 +81,47 @@ export default function GestoreBookingsPage() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      confirmed: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-      pending: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-      cancelled: "bg-red-500/20 text-red-300 border-red-500/30",
+      confirmed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+      pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+      cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
     };
     return styles[status] || styles.pending;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 skeleton rounded-lg w-48" />
+        <div className="h-12 skeleton rounded-lg" />
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-20 skeleton rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Prenotazioni</h1>
-          <p className="text-muted-2">Gestisci le prenotazioni dei campi</p>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Prenotazioni</h1>
+          <p className="text-[var(--foreground-muted)]">Gestisci le prenotazioni dei campi</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-2" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--foreground-muted)]" />
           <input
             type="text"
             placeholder="Cerca per nome, email o campo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-muted-2 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-10 pr-4 py-2.5 text-sm text-[var(--foreground)]"
           />
         </div>
         <div className="flex gap-2">
@@ -117,8 +131,8 @@ export default function GestoreBookingsPage() {
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 filter === f
-                  ? "bg-emerald-500 text-white"
-                  : "bg-white/5 text-muted-2 hover:bg-white/10"
+                  ? "bg-[var(--primary)] text-white"
+                  : "bg-[var(--surface)] border border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--surface-hover)]"
               }`}
             >
               {f === "today" ? "Oggi" : f === "upcoming" ? "Prossime" : "Tutte"}
@@ -128,35 +142,31 @@ export default function GestoreBookingsPage() {
       </div>
 
       {/* Bookings List */}
-      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-          </div>
-        ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-12 text-muted-2">
+      <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+        {filteredBookings.length === 0 ? (
+          <div className="text-center py-12 text-[var(--foreground-muted)]">
             <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>Nessuna prenotazione trovata</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/10">
+          <div className="divide-y divide-[var(--border)]">
             {filteredBookings.map((booking) => (
-              <div key={booking.id} className="p-4 hover:bg-white/5 transition">
+              <div key={booking.id} className="p-4 hover:bg-[var(--surface-hover)] transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-start gap-4">
-                    <div className="rounded-lg bg-emerald-500/20 p-3">
-                      <Calendar className="h-5 w-5 text-emerald-400" />
+                    <div className="rounded-lg bg-[var(--primary)]/10 p-3">
+                      <Calendar className="h-5 w-5 text-[var(--primary)]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-white">
+                        <span className="font-medium text-[var(--foreground)]">
                           {booking.user?.full_name || "Utente"}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs border ${getStatusBadge(booking.status)}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
                           {booking.status}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-2">
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--foreground-muted)]">
                         <span className="flex items-center gap-1">
                           <MapPin className="h-3.5 w-3.5" />
                           {booking.court_id}

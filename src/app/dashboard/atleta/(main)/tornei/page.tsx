@@ -6,12 +6,11 @@ import {
   Trophy,
   Calendar,
   Users,
-  MapPin,
   ChevronRight,
   Loader2,
   Check,
-  Clock,
   Star,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -37,7 +36,7 @@ export default function TournamentsPage() {
   const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"available" | "my">("available");
+  const [activeTab, setActiveTab] = useState<"available" | "my">("my");
 
   useEffect(() => {
     loadTournaments();
@@ -47,36 +46,38 @@ export default function TournamentsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Load all open tournaments
-    const { data: allTournaments } = await supabase
-      .from("tournaments")
-      .select(`
-        *,
-        tournament_participants(count)
-      `)
-      .in("status", ["Aperto", "In Corso"])
-      .order("starts_at", { ascending: true });
+    try {
+      // Load all tournaments using API
+      const res = await fetch('/api/tournaments');
+      const json = await res.json();
+      
+      if (res.ok && json.tournaments) {
+        const allTournaments = json.tournaments;
 
-    // Load user's registered tournaments
-    const { data: registrations } = await supabase
-      .from("tournament_participants")
-      .select("tournament_id")
-      .eq("user_id", user.id);
+        // Load user's registered tournaments
+        const { data: registrations } = await supabase
+          .from("tournament_participants")
+          .select("tournament_id")
+          .eq("user_id", user.id);
 
-    const registeredIds = new Set(registrations?.map(r => r.tournament_id) || []);
+        const registeredIds = new Set(registrations?.map(r => r.tournament_id) || []);
 
-    if (allTournaments) {
-      const processed = allTournaments.map(t => ({
-        ...t,
-        participant_count: t.tournament_participants?.[0]?.count || 0,
-        is_registered: registeredIds.has(t.id),
-      }));
+        // Process tournaments
+        const processed = allTournaments.map((t: any) => ({
+          ...t,
+          participant_count: 0, // Will be calculated separately if needed
+          is_registered: registeredIds.has(t.id),
+          starts_at: t.start_date || t.starts_at, // Support both column names
+        }));
 
-      setTournaments(processed.filter(t => !t.is_registered));
-      setMyTournaments(processed.filter(t => t.is_registered));
+        setTournaments(processed.filter((t: any) => !t.is_registered));
+        setMyTournaments(processed.filter((t: any) => t.is_registered));
+      }
+    } catch (error) {
+      console.error('Error loading tournaments:', error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function registerForTournament(tournamentId: string) {
@@ -114,13 +115,13 @@ export default function TournamentsPage() {
 
   function getStatusBadge(status: string) {
     const styles: Record<string, string> = {
-      Aperto: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-      "In Corso": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-      Concluso: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-      Annullato: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+      Aperto: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      "In Corso": "bg-blue-100 text-blue-700 border-blue-200",
+      Concluso: "bg-gray-100 text-gray-700 border-gray-200",
+      Annullato: "bg-red-100 text-red-700 border-red-200",
     };
     return (
-      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${styles[status] || styles.Aperto}`}>
+      <span className={`px-3 py-1 text-xs font-bold rounded-full border ${styles[status] || styles.Aperto}`}>
         {status}
       </span>
     );
@@ -128,74 +129,74 @@ export default function TournamentsPage() {
 
   function getLevelBadge(level: string) {
     const styles: Record<string, string> = {
-      principiante: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-      intermedio: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-      avanzato: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-      agonistico: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+      principiante: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      intermedio: "bg-amber-50 text-amber-700 border-amber-200",
+      avanzato: "bg-orange-50 text-orange-700 border-orange-200",
+      agonistico: "bg-red-50 text-red-700 border-red-200",
     };
     return (
-      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${styles[level?.toLowerCase()] || "bg-gray-100 text-gray-700"}`}>
+      <span className={`px-3 py-1 text-xs font-bold rounded-full border ${styles[level?.toLowerCase()] || "bg-gray-50 text-gray-700 border-gray-200"}`}>
         {level || "Tutti i livelli"}
       </span>
     );
   }
 
   const TournamentCard = ({ tournament, showRegister = false }: { tournament: Tournament; showRegister?: boolean }) => (
-    <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] overflow-hidden hover:border-[var(--primary)]/30 transition-colors">
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4 mb-3">
-          <div>
-            <h3 className="font-semibold text-[var(--foreground)] text-lg">{tournament.title}</h3>
-            <div className="flex items-center gap-2 mt-1">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-md transition-all">
+      <div className="p-6">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex-1">
+            <h3 className="font-bold text-black text-lg mb-2">{tournament.title}</h3>
+            <div className="flex items-center gap-2 flex-wrap">
               {getStatusBadge(tournament.status)}
               {getLevelBadge(tournament.level)}
             </div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0">
-            <Trophy className="h-6 w-6 text-[var(--primary)]" />
+          <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <Trophy className="h-7 w-7 text-amber-600" />
           </div>
         </div>
 
         {tournament.description && (
-          <p className="text-sm text-[var(--foreground-muted)] mb-4 line-clamp-2">
+          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
             {tournament.description}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
-            <Calendar className="h-4 w-4" />
-            <span>{formatDate(tournament.starts_at)}</span>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2 text-gray-700">
+            <Calendar className="h-4 w-4 text-blue-600" />
+            <span className="font-medium">{formatDate(tournament.starts_at)}</span>
           </div>
-          <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
-            <Users className="h-4 w-4" />
-            <span>{tournament.participant_count || 0}/{tournament.max_participants} iscritti</span>
+          <div className="flex items-center gap-2 text-gray-700">
+            <Users className="h-4 w-4 text-blue-600" />
+            <span className="font-medium">{tournament.participant_count || 0}/{tournament.max_participants} iscritti</span>
           </div>
           {tournament.entry_fee && (
-            <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
-              <span className="text-base">€</span>
-              <span>{tournament.entry_fee} quota</span>
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="text-base font-bold text-emerald-600">€</span>
+              <span className="font-medium">{tournament.entry_fee} quota iscrizione</span>
             </div>
           )}
           {tournament.prize_money && (
-            <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span>€{tournament.prize_money} montepremi</span>
+            <div className="flex items-center gap-2 text-gray-700">
+              <Star className="h-4 w-4 text-amber-500" />
+              <span className="font-medium">€{tournament.prize_money} montepremi</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-5 py-3 bg-[var(--surface-hover)] border-t border-[var(--border)] flex items-center justify-between">
-        <span className="text-xs text-[var(--foreground-muted)]">
-          Formato: {tournament.format?.replace(/_/g, " ") || "Eliminazione diretta"}
+      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-600">
+          {tournament.format?.replace(/_/g, " ") || "Eliminazione diretta"}
         </span>
         
         {showRegister ? (
           <button
             onClick={() => registerForTournament(tournament.id)}
             disabled={registering === tournament.id || (tournament.participant_count || 0) >= tournament.max_participants}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white text-sm font-medium rounded-lg hover:bg-[var(--primary-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {registering === tournament.id ? (
               <>
@@ -213,8 +214,8 @@ export default function TournamentsPage() {
           </button>
         ) : (
           <Link
-            href={`/tornei/${tournament.id}`}
-            className="flex items-center gap-1 text-sm text-[var(--primary)] font-medium hover:underline"
+            href={`/dashboard/atleta/tornei/${tournament.id}`}
+            className="flex items-center gap-1 text-sm text-blue-600 font-semibold hover:text-blue-700 transition-colors"
           >
             Dettagli
             <ChevronRight className="h-4 w-4" />
@@ -226,11 +227,12 @@ export default function TournamentsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-10 skeleton rounded-lg w-48" />
+      <div className="space-y-6 animate-pulse">
+        <div className="h-24 bg-gray-200 rounded-xl" />
+        <div className="h-12 bg-gray-200 rounded-lg w-80" />
         <div className="grid gap-4 md:grid-cols-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-64 skeleton rounded-xl" />
+            <div key={i} className="h-80 bg-gray-200 rounded-xl" />
           ))}
         </div>
       </div>
@@ -240,79 +242,126 @@ export default function TournamentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">Tornei</h1>
-        <p className="text-[var(--foreground-muted)] mt-1">
-          Partecipa ai tornei del circolo
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-black">Tornei</h1>
+          <p className="text-gray-700 mt-1 font-medium">
+            Partecipa ai tornei del circolo e metti alla prova le tue abilità
+          </p>
+        </div>
+        <button
+          onClick={loadTournaments}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Aggiorna
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-50 rounded-lg">
+              <Trophy className="h-5 w-5 text-emerald-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{tournaments.length}</p>
+          </div>
+          <p className="text-sm font-semibold text-gray-700">Tornei Disponibili</p>
+          <p className="text-xs text-gray-600 mt-1">Aperti alle iscrizioni</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Check className="h-5 w-5 text-blue-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{myTournaments.length}</p>
+          </div>
+          <p className="text-sm font-semibold text-gray-700">I Miei Tornei</p>
+          <p className="text-xs text-gray-600 mt-1">Iscrizioni attive</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Users className="h-5 w-5 text-amber-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {tournaments.reduce((acc, t) => acc + (t.participant_count || 0), 0) + myTournaments.reduce((acc, t) => acc + (t.participant_count || 0), 0)}
+            </p>
+          </div>
+          <p className="text-sm font-semibold text-gray-700">Partecipanti Totali</p>
+          <p className="text-xs text-gray-600 mt-1">In tutti i tornei</p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-[var(--surface)] rounded-lg border border-[var(--border)] w-fit">
-        <button
-          onClick={() => setActiveTab("available")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeTab === "available"
-              ? "bg-[var(--primary)] text-white"
-              : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          Disponibili ({tournaments.length})
-        </button>
+      <div className="flex gap-2 p-1 bg-white rounded-lg border border-gray-200 w-fit shadow-sm">
         <button
           onClick={() => setActiveTab("my")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-5 py-2.5 rounded-md text-sm font-bold transition-all ${
             activeTab === "my"
-              ? "bg-[var(--primary)] text-white"
-              : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           }`}
         >
           I Miei Tornei ({myTournaments.length})
         </button>
+        <button
+          onClick={() => setActiveTab("available")}
+          className={`px-5 py-2.5 rounded-md text-sm font-bold transition-all ${
+            activeTab === "available"
+              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          }`}
+        >
+          Disponibili ({tournaments.length})
+        </button>
       </div>
 
       {/* Tournament Grid */}
-      {activeTab === "available" && (
-        tournaments.length === 0 ? (
-          <div className="text-center py-16 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-            <Trophy className="h-16 w-16 text-[var(--foreground-subtle)] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
-              Nessun torneo disponibile
-            </h3>
-            <p className="text-[var(--foreground-muted)]">
-              Nuovi tornei saranno annunciati presto
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {tournaments.map((tournament) => (
-              <TournamentCard key={tournament.id} tournament={tournament} showRegister />
-            ))}
-          </div>
-        )
-      )}
-
       {activeTab === "my" && (
         myTournaments.length === 0 ? (
-          <div className="text-center py-16 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-            <Trophy className="h-16 w-16 text-[var(--foreground-subtle)] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
+          <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <Trophy className="h-20 w-20 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
               Non sei iscritto a nessun torneo
             </h3>
-            <p className="text-[var(--foreground-muted)] mb-4">
+            <p className="text-gray-600 mb-6">
               Iscriviti a un torneo dalla sezione &quot;Disponibili&quot;
             </p>
             <button
               onClick={() => setActiveTab("available")}
-              className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-dark)] transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-medium hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
             >
               Vedi Tornei Disponibili
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             {myTournaments.map((tournament) => (
               <TournamentCard key={tournament.id} tournament={tournament} />
+            ))}
+          </div>
+        )
+      )}
+
+      {activeTab === "available" && (
+        tournaments.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <Trophy className="h-20 w-20 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Nessun torneo disponibile
+            </h3>
+            <p className="text-gray-600">
+              Nuovi tornei saranno annunciati presto
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2">
+            {tournaments.map((tournament) => (
+              <TournamentCard key={tournament.id} tournament={tournament} showRegister />
             ))}
           </div>
         )

@@ -236,17 +236,17 @@ export default function GroupStageView({
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-        <Target className="mx-auto h-12 w-12 text-muted mb-4" />
-        <h3 className="text-lg font-semibold text-white mb-2">Gironi non ancora generati</h3>
-        <p className="text-sm text-muted mb-6">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
+        <Target className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Gironi non ancora generati</h3>
+        <p className="text-sm text-gray-600 mb-6">
           Genera i gironi per iniziare la fase a gruppi del torneo.
         </p>
         {isAdmin && (
           <button
             onClick={handleGenerateGroups}
             disabled={generating}
-            className="rounded-lg bg-accent px-6 py-3 font-semibold text-white hover:bg-accent/90 disabled:opacity-50 inline-flex items-center gap-2"
+            className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-2 shadow-sm"
           >
             <RefreshCw className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
             {generating ? 'Generazione...' : 'Genera Gironi'}
@@ -273,63 +273,63 @@ export default function GroupStageView({
       )}
 
       {/* Tab principale: Partecipanti, Classifica, Calendario */}
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('participants')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors relative ${
             activeTab === 'participants'
-              ? 'text-accent'
-              : 'text-muted hover:text-white'
+              ? 'text-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
           }`}
         >
           <Users className="h-4 w-4" />
           Partecipanti ({participants.length})
           {activeTab === 'participants' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('standings')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors relative ${
             activeTab === 'standings'
-              ? 'text-accent'
-              : 'text-muted hover:text-white'
+              ? 'text-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
           }`}
         >
           <Trophy className="h-4 w-4" />
           Classifica
           {activeTab === 'standings' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('matches')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors relative ${
             activeTab === 'matches'
-              ? 'text-accent'
-              : 'text-muted hover:text-white'
+              ? 'text-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
           }`}
         >
           <Calendar className="h-4 w-4" />
           Calendario
           {activeTab === 'matches' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
           )}
         </button>
       </div>
 
       {/* Tab Partecipanti */}
       {activeTab === 'participants' && (
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-accent" />
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
             Tutti i Partecipanti
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {participants.map((participant) => (
               <div
                 key={participant.id}
-                className="rounded-lg border border-border bg-surface-lighter p-4 flex items-center gap-3"
+                className="rounded-lg border border-gray-200 bg-gray-50 p-4 flex items-center gap-3"
               >
                 {participant.profiles?.avatar_url && (
                   <img
@@ -339,14 +339,14 @@ export default function GroupStageView({
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-white truncate">
+                  <div className="font-semibold text-gray-900 truncate">
                     {participant.profiles?.full_name || 'Sconosciuto'}
                   </div>
-                  <div className="text-xs text-muted truncate">
+                  <div className="text-xs text-gray-600 truncate">
                     {participant.profiles?.email || participant.user_id}
                   </div>
                   {participant.group_id && (
-                    <div className="text-xs text-accent mt-1">
+                    <div className="text-xs text-blue-600 mt-1 font-medium">
                       {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'}
                     </div>
                   )}
@@ -368,8 +368,8 @@ export default function GroupStageView({
                 onClick={() => setSelectedGroup(group.id)}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                   selectedGroup === group.id
-                    ? 'bg-accent text-white'
-                    : 'bg-surface border border-border text-muted hover:text-white'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {group.group_name}
@@ -378,13 +378,13 @@ export default function GroupStageView({
           </div>
 
           {selectedGroup && activeTab === 'standings' && (
-            <div className="rounded-2xl border border-border bg-surface p-6">
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-white flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-accent" />
+                <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-blue-600" />
                   Classifica
                 </h4>
-                <span className="text-xs text-muted">
+                <span className="text-xs text-gray-600">
                   Top {teamsAdvancing} qualificati
                 </span>
               </div>
@@ -406,36 +406,36 @@ export default function GroupStageView({
                       key={participant.id}
                       className={`flex items-center gap-3 rounded-lg p-3 ${
                         isQualified
-                          ? 'bg-accent/10 border border-accent/30'
-                          : 'bg-surface-lighter border border-border'
+                          ? 'bg-emerald-50 border border-emerald-200'
+                          : 'bg-gray-50 border border-gray-200'
                       }`}
                     >
                       <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${
-                        isQualified ? 'bg-accent text-white' : 'bg-surface text-muted'
+                        isQualified ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
                       }`}>
                         {index + 1}
                       </div>
                       
                       <div className="flex-1">
-                        <div className="font-medium text-white text-sm">
+                        <div className="font-medium text-gray-900 text-sm">
                           {participant.profiles?.full_name || 'Sconosciuto'}
                         </div>
-                        <div className="text-xs text-muted">
+                        <div className="text-xs text-gray-600">
                           {stats.matches_played} partite • {stats.matches_won}V - {stats.matches_lost}S
                         </div>
                       </div>
                       
                       <div className="text-right">
-                        <div className="font-bold text-white">{stats.points}</div>
-                        <div className="text-xs text-muted">punti</div>
+                        <div className="font-bold text-gray-900">{stats.points}</div>
+                        <div className="text-xs text-gray-600">punti</div>
                       </div>
                       
                       <div className="text-right hidden sm:block">
-                        <div className="text-sm text-white">
+                        <div className="text-sm text-gray-900">
                           {stats.sets_won - stats.sets_lost > 0 ? '+' : ''}
                           {stats.sets_won - stats.sets_lost}
                         </div>
-                        <div className="text-xs text-muted">diff. set</div>
+                        <div className="text-xs text-gray-600">diff. set</div>
                       </div>
                     </div>
                   );
@@ -445,8 +445,8 @@ export default function GroupStageView({
           )}
 
           {selectedGroup && activeTab === 'matches' && (
-            <div className="rounded-2xl border border-border bg-surface p-6">
-              <h4 className="font-semibold text-white mb-4">Partite</h4>
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <h4 className="font-semibold text-gray-900 mb-4">Partite</h4>
 
               {loading ? (
                 <div className="flex items-center justify-center p-8">

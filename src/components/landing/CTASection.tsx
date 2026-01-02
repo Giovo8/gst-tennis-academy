@@ -21,29 +21,28 @@ export default function CTASection() {
   };
 
   return (
-    <section id="contatti" className="relative overflow-hidden py-16 sm:py-20 md:py-28">
+    <section id="contatti" className="relative overflow-hidden py-16 sm:py-20 md:py-28 bg-gray-50">
       {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 via-white to-blue-50"></div>
       <div className="absolute top-1/4 -left-48 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <div className="inline-block mb-4">
-            <span className="text-xs sm:text-sm uppercase tracking-[0.3em] font-bold bg-gradient-to-r from-cyan-400 to-accent bg-clip-text text-transparent">
+            <span className="text-xs sm:text-sm uppercase tracking-[0.3em] font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
               Parliamone
             </span>
           </div>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 sm:mb-6">
-            <span className="bg-gradient-to-r from-white via-cyan-100 to-white bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
               Siamo qui per te
             </span>
           </h2>
-          <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Hai domande? Vuoi prenotare una lezione o iscriverti a un torneo? 
-            <span className="text-cyan-400 font-semibold"> Contattaci subito!</span>
+            <span className="text-cyan-600 font-semibold"> Contattaci subito!</span>
           </p>
         </div>
 
@@ -57,7 +56,7 @@ export default function CTASection() {
                 href="https://wa.me/393762351777"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] p-6 text-white transition-all hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50"
+                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] p-6 text-white transition-all hover:scale-105 hover:shadow-xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative flex items-center gap-4">
@@ -73,7 +72,7 @@ export default function CTASection() {
 
               <a
                 href="mailto:segreteriatennis.gst@gmail.com"
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500 to-accent p-6 text-white transition-all hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/50"
+                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-6 text-white transition-all hover:scale-105 hover:shadow-xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative flex items-center gap-4">
@@ -91,25 +90,24 @@ export default function CTASection() {
             {/* Info Cards */}
             <div className="space-y-4">
               {/* Location */}
-              <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl p-6 transition-all hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/10">
+              <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:border-cyan-300 hover:shadow-lg">
                 <div className="flex items-start gap-4">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-xl group-hover:blur-2xl transition-all"></div>
-                    <div className="relative rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-400/30 p-3">
-                      <MapPin className="h-6 w-6 text-cyan-300" />
+                    <div className="relative rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3">
+                      <MapPin className="h-6 w-6 text-white" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-300 mb-2">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-600 mb-2">
                       Dove siamo
                     </h3>
-                    <p className="text-lg font-bold text-white mb-1">Via Cassia KM 24300 snc</p>
-                    <p className="text-sm text-gray-400">Formello (Roma), Italia</p>
+                    <p className="text-lg font-bold text-gray-900 mb-1">Via Cassia KM 24300 snc</p>
+                    <p className="text-sm text-gray-600">Formello (Roma), Italia</p>
                     <a 
                       href="https://maps.google.com/?q=Via+Cassia+KM+24300+Formello+Roma"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 font-semibold mt-2 group/link"
+                      className="inline-flex items-center gap-1 text-xs text-cyan-600 hover:text-cyan-700 font-semibold mt-2 group/link"
                     >
                       Apri in Maps
                       <span className="group-hover/link:translate-x-1 transition-transform">→</span>
@@ -119,28 +117,27 @@ export default function CTASection() {
               </div>
 
               {/* Contact Details */}
-              <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl p-6 transition-all hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/10">
+              <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:border-cyan-300 hover:shadow-lg">
                 <div className="flex items-start gap-4">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-xl group-hover:blur-2xl transition-all"></div>
-                    <div className="relative rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-400/30 p-3">
-                      <Phone className="h-6 w-6 text-cyan-300" />
+                    <div className="relative rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3">
+                      <Phone className="h-6 w-6 text-white" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-300 mb-2">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-600 mb-2">
                       Contatti diretti
                     </h3>
                     <a 
                       href="tel:+393762351777" 
-                      className="flex items-center gap-2 text-lg font-bold text-white hover:text-cyan-300 transition-colors mb-2 group/phone"
+                      className="flex items-center gap-2 text-lg font-bold text-gray-900 hover:text-cyan-600 transition-colors mb-2 group/phone"
                     >
                       <Phone className="h-4 w-4 group-hover/phone:animate-bounce" />
                       376 235 1777
                     </a>
                     <a 
                       href="mailto:segreteriatennis.gst@gmail.com" 
-                      className="flex items-center gap-2 text-sm text-gray-400 hover:text-cyan-300 transition-colors break-all group/email"
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-cyan-600 transition-colors break-all group/email"
                     >
                       <Mail className="h-4 w-4 flex-shrink-0 group-hover/email:animate-bounce" />
                       segreteriatennis.gst@gmail.com
@@ -150,23 +147,22 @@ export default function CTASection() {
               </div>
 
               {/* Hours */}
-              <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl p-6 transition-all hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/10">
+              <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:border-cyan-300 hover:shadow-lg">
                 <div className="flex items-start gap-4">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-xl group-hover:blur-2xl transition-all"></div>
-                    <div className="relative rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-400/30 p-3">
-                      <Clock className="h-6 w-6 text-cyan-300" />
+                    <div className="relative rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3">
+                      <Clock className="h-6 w-6 text-white" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-300 mb-2">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-600 mb-2">
                       Orari di apertura
                     </h3>
                     <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold text-white">Lunedì - Sabato</p>
-                      <p className="text-lg font-bold text-cyan-400">7:30 - 22:00</p>
+                      <p className="text-lg font-bold text-gray-900">Lunedì - Sabato</p>
+                      <p className="text-lg font-bold text-cyan-600">7:30 - 22:00</p>
                     </div>
-                    <p className="text-sm text-gray-400 mt-1">Domenica chiuso</p>
+                    <p className="text-sm text-gray-600 mt-1">Domenica chiuso</p>
                   </div>
                 </div>
               </div>
@@ -176,19 +172,19 @@ export default function CTASection() {
           {/* Right Column - Contact Form */}
           <div className="relative">
             <div className="sticky top-8">
-              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-8 shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-8 shadow-lg">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                 
                 <div className="relative">
-                  <h3 className="text-2xl font-bold text-white mb-2">Inviaci un messaggio</h3>
-                  <p className="text-sm text-gray-400 mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Inviaci un messaggio</h3>
+                  <p className="text-sm text-gray-600 mb-6">
                     Compila il form e ti risponderemo entro 24 ore
                   </p>
 
                   <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Name Input */}
                     <div>
-                      <label htmlFor="name" className="block text-sm font-semibold text-gray-300 mb-2">
+                      <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
                         Nome e Cognome
                       </label>
                       <div className="relative">
@@ -199,7 +195,7 @@ export default function CTASection() {
                           required
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-12 py-3.5 text-white placeholder:text-gray-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-12 py-3.5 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
                           placeholder="Mario Rossi"
                         />
                       </div>
@@ -207,7 +203,7 @@ export default function CTASection() {
 
                     {/* Email Input */}
                     <div>
-                      <label htmlFor="email" className="block text-sm font-semibold text-gray-300 mb-2">
+                      <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                         Email
                       </label>
                       <div className="relative">
@@ -218,7 +214,7 @@ export default function CTASection() {
                           required
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-12 py-3.5 text-white placeholder:text-gray-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-12 py-3.5 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
                           placeholder="mario.rossi@email.com"
                         />
                       </div>
@@ -226,7 +222,7 @@ export default function CTASection() {
 
                     {/* Message Textarea */}
                     <div>
-                      <label htmlFor="message" className="block text-sm font-semibold text-gray-300 mb-2">
+                      <label htmlFor="message" className="block text-sm font-semibold text-gray-700 mb-2">
                         Messaggio
                       </label>
                       <div className="relative">
@@ -237,7 +233,7 @@ export default function CTASection() {
                           rows={4}
                           value={formData.message}
                           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-12 py-3.5 text-white placeholder:text-gray-500 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all resize-none"
+                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-12 py-3.5 text-gray-900 placeholder:text-gray-400 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all resize-none"
                           placeholder="Come possiamo aiutarti?"
                         />
                       </div>
@@ -247,7 +243,7 @@ export default function CTASection() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 to-accent p-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 p-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <span className="relative flex items-center justify-center gap-2">
