@@ -58,9 +58,10 @@ export default function Navbar() {
             <Image 
               src="/images/logo-tennis.png" 
               alt="GST Tennis Academy" 
-              width={32} 
-              height={32}
-              className="h-7 w-7 sm:h-9 sm:w-9 flex-shrink-0"
+              width={36} 
+              height={36}
+              priority
+              className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
             />
             <span className="text-base sm:text-lg font-bold text-white truncate">GST Academy</span>
           </Link>

@@ -79,7 +79,7 @@ export default function PublicNavbar() {
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 safe-top">
+    <nav className="bg-white sticky top-0 z-50 border-b border-gray-100 safe-top shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo - Left */}
@@ -87,9 +87,10 @@ export default function PublicNavbar() {
             <Image 
               src="/images/logo-tennis.png" 
               alt="GST Tennis Academy" 
-              width={32} 
-              height={32}
-              className="h-7 w-7 sm:h-9 sm:w-9 flex-shrink-0"
+              width={36} 
+              height={36}
+              priority
+              className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
             />
             <span className="text-base sm:text-lg font-bold text-gray-900 truncate">GST Academy</span>
           </Link>
