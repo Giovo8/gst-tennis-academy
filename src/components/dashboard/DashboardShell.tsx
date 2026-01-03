@@ -195,7 +195,7 @@ export default function DashboardShell({
               height={32}
               className="h-8 w-8"
             />
-            <span className="font-bold text-gray-900">GST Academy</span>
+            <span className="font-bold text-gray-900 text-lg">GST Academy</span>
           </Link>
           
           <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -239,7 +239,7 @@ export default function DashboardShell({
               />
             </div>
             {!sidebarCollapsed && (
-              <span className="font-bold text-gray-900 text-base">GST Academy</span>
+              <span className="font-bold text-gray-900 text-lg">GST Academy</span>
             )}
           </div>
 
@@ -248,7 +248,7 @@ export default function DashboardShell({
             {/* MENU Section */}
             <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
               {!sidebarCollapsed && (
-                <h3 className="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Menu</h3>
+                <h3 className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Menu</h3>
               )}
               <div className="space-y-1">
                 {renderNavItem(dashboardItem)}
@@ -262,7 +262,7 @@ export default function DashboardShell({
             {/* GENERAL Section */}
             <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
               {!sidebarCollapsed && (
-                <h3 className="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">General</h3>
+                <h3 className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">General</h3>
               )}
               <div className="space-y-1">
                 <Link

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, User } from "lucide-react";
+import { Loader2, Linkedin, Twitter, Dribbble } from "lucide-react";
+import Link from "next/link";
 
 type StaffMember = {
   id: string;
@@ -15,23 +16,44 @@ type StaffMember = {
 const defaultStaff: StaffMember[] = [
   {
     id: "default-1",
-    full_name: "Giulia Serra",
-    role: "Head Coach FITP 3° grado",
-    bio: "Specialista tecnica e costruzione pattern di gioco.",
+    full_name: "Marco Rossi",
+    role: "Maestro FIT",
+    bio: "Specializzato in tecnica e tattica. Lavora con giocatori di ogni livello da quindici anni.",
     image_url: null,
   },
   {
     id: "default-2",
-    full_name: "Luca Bernardi",
-    role: "Preparatore atletico",
-    bio: "Condizionamento, forza e prevenzione infortuni.",
+    full_name: "Giulia Bianchi",
+    role: "Istruttrice PTR",
+    bio: "Dedita alla formazione dei giovani talenti. Ha preparato campioni regionali e nazionali.",
     image_url: null,
   },
   {
     id: "default-3",
-    full_name: "Marta Riva",
-    role: "Mental coach",
-    bio: "Gestione pressione, routine pre-gara e focus in match.",
+    full_name: "Andrea Moretti",
+    role: "Maestro FIT",
+    bio: "Esperto di doppio e preparazione atletica. Segue i giocatori agonisti del club.",
+    image_url: null,
+  },
+  {
+    id: "default-4",
+    full_name: "Francesca Gallo",
+    role: "Istruttrice PTR",
+    bio: "Appassionata di tennis per bambini. Crea programmi ludici che sviluppano passione e tecnica.",
+    image_url: null,
+  },
+  {
+    id: "default-5",
+    full_name: "Luca Ferrari",
+    role: "Maestro FIT",
+    bio: "Specializzato in recupero e prevenzione infortuni. Collabora con fisioterapisti del club.",
+    image_url: null,
+  },
+  {
+    id: "default-6",
+    full_name: "Valentina Conti",
+    role: "Istruttrice PTR",
+    bio: "Insegna tennis a tutte le età. Crede che il gioco sia il miglior insegnante di vita.",
     image_url: null,
   },
 ];
@@ -52,7 +74,6 @@ export default function StaffSection() {
       .order("order_index", { ascending: true });
 
     if (error) {
-      // Use default staff on error
       setStaff(defaultStaff);
     } else if (data && data.length > 0) {
       setStaff(data);
@@ -66,60 +87,109 @@ export default function StaffSection() {
     return (
       <section id="staff" className="space-y-6">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--primary)' }} />
         </div>
       </section>
     );
   }
 
   return (
-    <section id="staff" className="max-w-7xl mx-auto px-6 sm:px-8 py-12 sm:py-16 md:py-20">
-      <div className="space-y-10 sm:space-y-12">
-        <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold text-accent mb-4 text-center">
-            Il nostro staff
+    <section id="staff" className="py-16 sm:py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
+            Staff
           </p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text mb-3 sm:mb-4">
-            I nostri professionisti
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+            I nostri maestri
           </h2>
-          <p className="text-sm sm:text-base text-frozen-500 max-w-2xl mx-auto">
-            Un team di esperti dedicato al tuo miglioramento
+          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--foreground)' }}>
+            Professionisti con anni di esperienza nel tennis agonistico e didattico.
           </p>
-
         </div>
 
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {staff.map((member) => (
-          <article key={member.id} className="group rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/40 hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-1 transition-all duration-300">
-            {member.image_url ? (
-              <img
-                src={member.image_url}
-                alt={member.full_name}
-                className="w-full h-48 sm:h-56 md:h-64 object-cover"
-              />
-            ) : (
-              <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-br from-frozen-900/30 to-frozen-800/50 flex items-center justify-center group-hover:from-frozen-900/40 transition-all">
-                <User className="h-16 w-16 sm:h-20 sm:w-20 text-frozen-400/60 group-hover:text-frozen-400 transition-colors" />
+        {/* Staff Grid */}
+        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-16">
+          {staff.map((member) => (
+            <article key={member.id} className="text-center">
+              {/* Avatar */}
+              <div className="flex justify-center mb-4">
+                {member.image_url ? (
+                  <img
+                    src={member.image_url}
+                    alt={member.full_name}
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--background-muted)' }}>
+                    <svg className="w-12 h-12" fill="var(--foreground-muted)" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="p-5 sm:p-6 md:p-7 space-y-3 sm:space-y-4">
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold gradient-text">{member.full_name}</h3>
-                <span className="inline-block mt-2 sm:mt-2.5 rounded-full bg-frozen-500/20 border-2 border-frozen-400/40 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold text-frozen-300">
-                  {member.role}
-                </span>
+
+              {/* Name */}
+              <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--secondary)' }}>
+                {member.full_name}
+              </h3>
+
+              {/* Role */}
+              <p className="text-sm font-medium mb-3" style={{ color: 'var(--foreground-muted)' }}>
+                {member.role}
+              </p>
+
+              {/* Bio */}
+              <p className="text-sm mb-4 px-2" style={{ color: 'var(--foreground)' }}>
+                {member.bio || "Professionista certificato con anni di esperienza."}
+              </p>
+
+              {/* Social Icons */}
+              <div className="flex justify-center gap-3">
+                <a href="#" className="transition-colors" style={{ color: 'var(--foreground-muted)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--foreground-muted)'}>
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a href="#" className="transition-colors" style={{ color: 'var(--foreground-muted)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--foreground-muted)'}>
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="#" className="transition-colors" style={{ color: 'var(--foreground-muted)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--foreground-muted)'}>
+                  <Dribbble className="w-5 h-5" />
+                </a>
               </div>
-              {member.bio && (
-                <p className="text-sm sm:text-base leading-relaxed text-frozen-300">
-                  {member.bio}
-                </p>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Join Team CTA */}
+        <div className="text-center">
+          <h3 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+            Unisciti al team
+          </h3>
+          <p className="text-base mb-6 max-w-2xl mx-auto" style={{ color: 'var(--foreground)' }}>
+            Cerchiamo maestri e istruttori appassionati di tennis e di insegnamento.
+          </p>
+          <Link
+            href="/lavora-con-noi"
+            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all"
+            style={{ 
+              backgroundColor: 'white', 
+              color: 'var(--secondary)',
+              border: '2px solid var(--secondary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.color = 'var(--secondary)';
+            }}
+          >
+            Candidati
+          </Link>
+        </div>
       </div>
     </section>
   );
 }
-

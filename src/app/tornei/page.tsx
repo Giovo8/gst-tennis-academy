@@ -52,49 +52,40 @@ export default function TorneiPage() {
   const getStatusStyle = (status?: string) => {
     switch (status?.toLowerCase()) {
       case 'aperto':
-        return 'bg-frozen-500/20 text-frozen-400 border-frozen-500/30';
+        return 'bg-frozen-50 text-frozen-600 border-frozen-200';
       case 'in corso':
-        return 'bg-frozen-600/20 text-frozen-300 border-frozen-600/30';
+        return 'bg-frozen-100 text-frozen-700 border-frozen-300';
       case 'completato':
       case 'concluso':
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return 'bg-gray-50 text-gray-600 border-gray-200';
       default:
-        return 'bg-frozen-500/20 text-frozen-400 border-frozen-500/30';
+        return 'bg-frozen-50 text-frozen-600 border-frozen-200';
     }
   };
 
   return (
-    <main className="min-h-screen bg-frozen-950">
+    <main className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute left-1/4 top-20 h-72 w-72 rounded-full bg-frozen-500/10 blur-3xl animate-pulse" style={{animationDuration: '4s'}} />
-          <div className="absolute right-1/4 top-10 h-56 w-56 rounded-full bg-frozen-500/10 blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '2s'}} />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-6 sm:px-8 py-12 sm:py-20">
+      <div className="relative">
+        <div className="mx-auto max-w-7xl px-6 sm:px-8 py-12 sm:py-20">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-frozen-500/30 bg-frozen-500/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-frozen-400">
+              <div className="inline-flex items-center gap-2 rounded-full border border-frozen-200 bg-frozen-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-frozen-600">
                 <Trophy className="h-4 w-4" />
-                Tornei GST Academy
+                Competizioni
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">
-                <span className="bg-frozen-200 bg-clip-text text-transparent">
-                  Tornei in Arrivo
-                </span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-frozen-900">
+                Tornei e Campionati
               </h1>
-              <p className="text-lg text-white/60 max-w-xl">
-                Partecipa ai nostri tornei e metti alla prova le tue abilità. 
-                Sfida altri giocatori e scala la classifica!
+              <p className="text-lg text-frozen-600 max-w-xl">
+                Partecipa alle nostre competizioni e metti alla prova le tue abilità
               </p>
             </div>
             
             <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/5">
-                <Trophy className="h-4 w-4 text-frozen-400" />
-                <span className="text-white/70">{tournaments.length} tornei</span>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-frozen-100 bg-white">
+                <Trophy className="h-4 w-4 text-frozen-500" />
+                <span className="text-frozen-600">{tournaments.length} tornei</span>
               </div>
             </div>
           </div>
@@ -105,23 +96,20 @@ export default function TorneiPage() {
       <div className="mx-auto max-w-7xl px-6 sm:px-8 pb-20">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-frozen-500/20 blur-xl animate-pulse" />
-              <Loader2 className="relative w-12 h-12 animate-spin text-frozen-400" />
-            </div>
-            <p className="mt-4 text-white/50 animate-pulse">Caricamento tornei...</p>
+            <Loader2 className="w-12 h-12 animate-spin text-frozen-500" />
+            <p className="mt-4 text-frozen-600">Caricamento tornei...</p>
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-frozen-500/20 bg-frozen-500/10 p-8 text-center">
-            <p className="text-frozen-400">{error}</p>
+          <div className="rounded-xl border border-frozen-200 bg-frozen-50 p-8 text-center">
+            <p className="text-frozen-600">{error}</p>
           </div>
         ) : tournaments.length === 0 ? (
           <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/5 border border-white/10 mb-6">
-              <Trophy className="w-10 h-10 text-white/30" />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-frozen-50 border border-frozen-100 mb-6">
+              <Trophy className="w-10 h-10 text-frozen-500" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Nessun torneo programmato</h3>
-            <p className="text-white/50">Torna presto per scoprire i nuovi tornei!</p>
+            <h3 className="text-xl font-bold text-frozen-900 mb-2">Nessun torneo programmato</h3>
+            <p className="text-frozen-600">Torna presto per scoprire i nuovi tornei!</p>
           </div>
         ) : (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -129,19 +117,16 @@ export default function TorneiPage() {
               <Link
                 key={t.id}
                 href={`/tornei/${t.id}`}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 hover:border-frozen-500/30 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-frozen-500/10"
+                className="group relative overflow-hidden rounded-xl border border-frozen-100 bg-white p-6 shadow-sm shadow-frozen-100 hover:bg-frozen-50 hover:border-frozen-300 transition-all duration-200"
               >
-                {/* Hover gradient effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-frozen-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                
                 <div className="relative">
                   {/* Icon and Status */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-frozen-500/20 to-frozen-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-xl bg-frozen-50 flex items-center justify-center group-hover:bg-frozen-100 transition-colors duration-200">
                       {t.tournament_type === 'campionato' ? (
-                        <Award className="w-6 h-6 text-frozen-400" />
+                        <Award className="w-6 h-6 text-frozen-500" />
                       ) : (
-                        <Trophy className="w-6 h-6 text-frozen-400" />
+                        <Trophy className="w-6 h-6 text-frozen-500" />
                       )}
                     </div>
                     {t.status && (
@@ -152,37 +137,37 @@ export default function TorneiPage() {
                   </div>
 
                   {/* Title and Description */}
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-frozen-300 transition-colors">
+                  <h3 className="text-xl font-bold text-frozen-900 mb-2 group-hover:text-frozen-700 transition-colors">
                     {t.title}
                   </h3>
                   {t.description && (
-                    <p className="text-sm text-white/50 line-clamp-2 mb-4">{t.description}</p>
+                    <p className="text-sm text-frozen-600 line-clamp-2 mb-4">{t.description}</p>
                   )}
 
                   {/* Meta Info */}
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/40">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-frozen-600">
                     {t.start_date && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5">
-                        <Calendar className="h-3.5 w-3.5 text-frozen-400" />
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-frozen-50 border border-frozen-100">
+                        <Calendar className="h-3.5 w-3.5 text-frozen-500" />
                         {new Date(t.start_date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}
                       </div>
                     )}
                     {t.max_participants && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5">
-                        <Users className="h-3.5 w-3.5 text-frozen-400" />
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-frozen-50 border border-frozen-100">
+                        <Users className="h-3.5 w-3.5 text-frozen-500" />
                         {t.max_participants} partecipanti
                       </div>
                     )}
                     {t.category && (
-                      <span className="px-2.5 py-1 rounded-lg bg-frozen-500/10 text-frozen-400">
+                      <span className="px-2.5 py-1 rounded-lg bg-frozen-50 text-frozen-600 border border-frozen-100">
                         {t.category}
                       </span>
                     )}
                   </div>
 
                   {/* Arrow indicator */}
-                  <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                    <ArrowRight className="h-5 w-5 text-frozen-400" />
+                  <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-200">
+                    <ArrowRight className="h-5 w-5 text-frozen-500" />
                   </div>
                 </div>
               </Link>

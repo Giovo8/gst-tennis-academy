@@ -142,7 +142,7 @@ export default function VideosPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6" style={{ color: '#111827' }}>
+      <div className="space-y-6">
         <div className="h-24 bg-gray-200 rounded-xl animate-pulse" />
         <div className="grid grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
@@ -154,57 +154,24 @@ export default function VideosPage() {
   }
 
   return (
-    <div className="space-y-6" style={{ color: '#111827' }}>
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-black mb-2">
-            I Miei Video
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Video
           </h1>
-          <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
-            Video di allenamento e tecnica assegnati dai tuoi maestri
+          <p className="text-sm text-gray-600">
+            Video di allenamento e tecnica
           </p>
         </div>
         <button
           onClick={() => loadVideos()}
-          className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+          className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2"
         >
           <RefreshCw className="h-4 w-4" />
           Ricarica
         </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Video className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Video Totali</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.watched}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Video Visti</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <Clock className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.notWatched}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Da Vedere</p>
-        </div>
       </div>
 
       {/* Search & Filters */}
@@ -217,7 +184,7 @@ export default function VideosPage() {
               placeholder="Cerca video..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900"
             />
           </div>
           
@@ -227,7 +194,7 @@ export default function VideosPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900 bg-white"
               >
                 <option value="all">Tutte le categorie</option>
                 {categories.map((cat) => (
@@ -263,7 +230,7 @@ export default function VideosPage() {
             return (
               <div
                 key={video.id}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-all"
               >
                 {/* Thumbnail */}
                 <div className="relative aspect-video bg-gray-100">
@@ -287,7 +254,7 @@ export default function VideosPage() {
                     className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
                   >
                     <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Play className="h-8 w-8 text-blue-600 ml-1" />
+                      <Play className="h-8 w-8 text-frozen-600 ml-1" />
                     </div>
                   </a>
 
@@ -333,7 +300,7 @@ export default function VideosPage() {
 
                   <div className="flex items-center justify-between gap-3">
                     {video.category && (
-                      <span className="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-700 border border-purple-300">
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-purple-50 text-purple-700">
                         {video.category}
                       </span>
                     )}
@@ -343,7 +310,7 @@ export default function VideosPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => markAsWatched(video.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-frozen-600 bg-frozen-50 rounded-lg hover:bg-frozen-100 transition-all"
                     >
                       Guarda
                       <ExternalLink className="h-3 w-3" />

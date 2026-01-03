@@ -2,23 +2,42 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Trophy, Award, Target } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
 type Tournament = {
   id: string;
   title: string;
+  description?: string;
   start_date?: string;
   max_participants?: number;
   tournament_type?: TournamentType;
   status?: string;
 };
 
+const defaultTournaments: Tournament[] = [
+  {
+    id: "1",
+    title: "Campionato invernale singolare",
+    description: "Categoria open per giocatori di tutti i livelli. Iscrizioni aperte fino al 10 febbraio.",
+    start_date: "2026-02-15",
+    tournament_type: "campionato",
+    status: "upcoming"
+  },
+  {
+    id: "2",
+    title: "Lega sociale doppio misto",
+    description: "Gioca in squadra e conosci altri appassionati. Turni settimanali con cena sociale.",
+    start_date: "2026-02-23",
+    tournament_type: "girone_eliminazione",
+    status: "upcoming"
+  }
+];
+
 export default function TournamentsSection() {
-  const [items, setItems] = useState<Tournament[]>([]);
+  const [items, setItems] = useState<Tournament[]>(defaultTournaments);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | TournamentType>('all');
 
   useEffect(() => {
     let mounted = true;
@@ -26,13 +45,19 @@ export default function TournamentsSection() {
       try {
         const res = await fetch("/api/tournaments?upcoming=true");
         const json = await res.json();
-        if (res.ok) {
+        if (res.ok && json.tournaments && json.tournaments.length > 0) {
           if (mounted) {
-            setItems(json.tournaments ?? []);
+            setItems(json.tournaments);
+          }
+        } else {
+          if (mounted) {
+            setItems(defaultTournaments);
           }
         }
       } catch (err) {
-        // ignore
+        if (mounted) {
+          setItems(defaultTournaments);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -41,177 +66,108 @@ export default function TournamentsSection() {
     return () => { mounted = false; };
   }, []);
 
-  // Filter items based on selected tab
-  const filteredItems = filter === 'all' 
-    ? items 
-    : items.filter(item => item.tournament_type === filter);
-
-  const eliminazioneCount = items.filter(t => t.tournament_type === 'eliminazione_diretta').length;
-  const gironeCount = items.filter(t => t.tournament_type === 'girone_eliminazione').length;
-  const campionatoCount = items.filter(t => t.tournament_type === 'campionato').length;
-
   const getTournamentTypeLabel = (type?: TournamentType) => {
     switch(type) {
-      case 'eliminazione_diretta': return 'Eliminazione Diretta';
-      case 'girone_eliminazione': return 'Girone + Eliminazione';
-      case 'campionato': return 'Campionato';
+      case 'eliminazione_diretta': return 'Torneo';
+      case 'girone_eliminazione': return 'Lega';
+      case 'campionato': return 'Torneo';
       default: return 'Torneo';
     }
   };
 
-  const getTournamentTypeIcon = (type?: TournamentType) => {
-    switch(type) {
-      case 'eliminazione_diretta': return Trophy;
-      case 'girone_eliminazione': return Target;
-      case 'campionato': return Award;
-      default: return Trophy;
-    }
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Data da definire";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('it-IT', { 
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
   };
 
   return (
-    <section id="tornei" className="max-w-7xl mx-auto px-6 sm:px-8 py-12 sm:py-16 md:py-20">
-      <div className="space-y-10 sm:space-y-12">
-        <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-bold text-frozen-600 mb-4">Competizioni</p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-frozen-900 to-frozen-700 bg-clip-text text-transparent mb-3 sm:mb-4">
-            Tornei e Campionati
+    <section id="tornei" className="py-16 sm:py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
+            Competizione
+          </p>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+            Tornei
           </h2>
-          <p className="text-sm sm:text-base text-frozen-600 max-w-2xl mx-auto">
-            Partecipa alle nostre competizioni e metti alla prova le tue abilità
+          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--secondary)' }}>
+            Mettiti alla prova nei nostri tornei e leghe sociali. Vinci premi e costruisci la tua reputazione.
           </p>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex justify-start sm:justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-              filter === 'all'
-                ? 'bg-gradient-to-r from-frozen-500 to-frozen-600 text-white shadow-lg'
-                : 'bg-white text-frozen-700 border border-frozen-200 hover:border-frozen-300 hover:bg-frozen-50'
-            }`}
-          >
-            Tutti ({items.length})
-          </button>
-          <button
-            onClick={() => setFilter('eliminazione_diretta')}
-            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-              filter === 'eliminazione_diretta'
-                ? 'bg-gradient-to-r from-frozen-500 to-frozen-600 text-white shadow-lg'
-                : 'bg-white text-frozen-700 border border-frozen-200 hover:border-frozen-300 hover:bg-frozen-50'
-            }`}
-          >
-            <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
-            Eliminazione ({eliminazioneCount})
-          </button>
-          <button
-            onClick={() => setFilter('girone_eliminazione')}
-            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-              filter === 'girone_eliminazione'
-                ? 'bg-gradient-to-r from-frozen-500 to-frozen-600 text-white shadow-lg'
-                : 'bg-white text-frozen-700 border border-frozen-200 hover:border-frozen-300 hover:bg-frozen-50'
-            }`}
-          >
-            <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-            Gironi ({gironeCount})
-          </button>
-          <button
-            onClick={() => setFilter('campionato')}
-            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-              filter === 'campionato'
-                ? 'bg-gradient-to-r from-frozen-500 to-frozen-600 text-white shadow-lg'
-                : 'bg-white text-frozen-700 border border-frozen-200 hover:border-frozen-300 hover:bg-frozen-50'
-            }`}
-          >
-            <Award className="w-3 h-3 sm:w-4 sm:h-4" />
-            Campionati ({campionatoCount})
-          </button>
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Tournament Cards Grid */}
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 mb-12">
         {loading ? (
-          <div className="col-span-3 flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-frozen-600" />
+          <div className="col-span-2 flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--primary)' }} />
           </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="col-span-3 text-center py-12">
-            <p className="text-sm text-frozen-600">
-              {filter === 'all' 
-                ? 'Nessun torneo imminente.' 
-                : `Nessun torneo di tipo "${getTournamentTypeLabel(filter as TournamentType)}" imminente.`}
+        ) : items.length === 0 ? (
+          <div className="col-span-2 text-center py-12">
+            <p className="text-sm" style={{ color: 'var(--secondary)' }}>
+              Nessun torneo imminente.
             </p>
           </div>
         ) : (
-          filteredItems.slice(0, 6).map(t => {
-            const Icon = getTournamentTypeIcon(t.tournament_type);
+          items.slice(0, 2).map(t => {
             const typeLabel = getTournamentTypeLabel(t.tournament_type);
             
             return (
-              <article 
-                key={t.id} 
-                className="group flex h-full flex-col rounded-xl sm:rounded-2xl border border-frozen-200 bg-white overflow-hidden hover:border-frozen-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2.5 sm:gap-3 flex-1">
-                  {/* Header with icon and type badge */}
-                  <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-500 to-frozen-600 text-white group-hover:scale-110 transition-transform">
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <span className="rounded-full bg-gradient-to-r from-frozen-500/10 to-frozen-600/10 border border-frozen-200 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-frozen-700">
-                        {typeLabel}
-                      </span>
-                    </div>
-                    {t.status && (
-                      <span className={`text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-1.5 rounded-full font-bold ${
-                        t.status === 'Aperto' 
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : t.status === 'In Corso'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : 'bg-frozen-100 text-frozen-700 border border-frozen-200'
-                      }`}>
-                        {t.status}
-                      </span>
-                    )}
+              <article key={t.id} className="flex flex-col">
+                {/* Image */}
+                <div className="relative h-64 rounded-lg overflow-hidden mb-4" style={{ backgroundColor: 'var(--background-muted)' }}>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <svg className="w-16 h-16" fill="none" stroke="var(--foreground-muted)" viewBox="0 0 24 24">
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={1.5} 
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex flex-col gap-2">
+                  {/* Category & Date */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
+                      {typeLabel.toLowerCase()}
+                    </span>
+                    <span className="text-sm" style={{ color: 'var(--foreground)', opacity: 0.6 }}>
+                      {formatDate(t.start_date)}
+                    </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-base sm:text-lg font-bold bg-gradient-to-r from-frozen-900 to-frozen-700 bg-clip-text text-transparent">{t.title}</h3>
+                  <h3 className="text-xl font-bold" style={{ color: 'var(--secondary)' }}>
+                    {t.title}
+                  </h3>
 
-                  {/* Info */}
-                  <div className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
-                    {t.start_date && (
-                      <div className="flex items-center gap-2 sm:gap-3 text-frozen-600">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>{new Date(t.start_date).toLocaleDateString('it-IT', { 
-                          day: 'numeric', 
-                          month: 'long', 
-                          year: 'numeric'
-                        })}</span>
-                      </div>
-                    )}
-                    {t.max_participants && (
-                      <div className="flex items-center gap-2 sm:gap-3 text-frozen-600">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>{t.max_participants} partecipanti</span>
-                      </div>
-                    )}
-                  </div>
+                  {/* Description */}
+                  {t.description && (
+                    <p className="text-base" style={{ color: 'var(--secondary)' }}>
+                      {t.description}
+                    </p>
+                  )}
 
-                  {/* CTA Button */}
-                  <div className="pt-1.5 sm:pt-2 mt-auto">
-                    <Link 
-                      href={`/tornei/${t.id}`} 
-                      className="block w-full text-center rounded-lg sm:rounded-xl bg-gradient-to-r from-frozen-500 to-frozen-600 px-4 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold text-white hover:shadow-lg hover:from-frozen-600 hover:to-frozen-700 transition-all duration-300 group-hover:scale-105"
-                    >
-                      Vedi Dettagli
-                    </Link>
-                  </div>
+                  {/* Read More Link */}
+                  <Link 
+                    href={`/tornei/${t.id}`} 
+                    className="inline-flex items-center gap-2 text-base font-semibold transition-colors mt-1"
+                    style={{ color: 'var(--primary)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                  >
+                    Leggi
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
               </article>
             );
@@ -219,20 +175,28 @@ export default function TournamentsSection() {
         )}
         </div>
 
-        {/* View All Link */}
-        {!loading && filteredItems.length > 6 && (
-          <div className="mt-6 sm:mt-8 text-center">
-            <Link 
-              href="/tornei" 
-              className="inline-flex items-center gap-2 text-xs sm:text-sm text-tournament-primary hover:text-tournament-secondary font-semibold transition-colors"
-            >
-              Vedi tutte le competizioni
-              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        )}
+        {/* View All Button */}
+        <div className="text-center">
+          <Link
+            href="/tornei"
+            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all"
+            style={{ 
+              backgroundColor: 'white', 
+              color: 'var(--secondary)',
+              border: '2px solid var(--secondary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.color = 'var(--secondary)';
+            }}
+          >
+            Vedi tutto
+          </Link>
+        </div>
       </div>
     </section>
   );

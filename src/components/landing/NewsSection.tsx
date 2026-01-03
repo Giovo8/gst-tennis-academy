@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, X, Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 type NewsItem = {
   id: string;
@@ -20,46 +21,60 @@ type NewsItem = {
 const defaultNews: NewsItem[] = [
   {
     id: "default-1",
-    title: "Clinic con coach ATP",
-    category: "eventi",
-    content: "Siamo entusiasti di annunciare una clinic esclusiva con un coach ATP professionista. Durante questa sessione speciale, i partecipanti avranno l'opportunità di lavorare su footwork avanzato e tecniche di anticipo. Ogni sessione include live tracking dei movimenti e video review personalizzata per massimizzare il miglioramento tecnico.",
-    excerpt: "Sessione speciale di footwork e anticipo con live tracking e video review individuale.",
+    title: "Campionato invernale, i vincitori della settimana",
+    category: "Risultati",
+    content: "Rossi e Bianchi dominano il torneo singolare. Gallo e Moretti vincono il doppio misto.",
+    excerpt: "Rossi e Bianchi dominano il torneo singolare. Gallo e Moretti vincono il doppio misto.",
     image_url: null,
     is_published: true,
-    published_at: new Date("2026-01-18").toISOString(),
-    created_at: new Date("2026-01-18").toISOString(),
-    updated_at: new Date("2026-01-18").toISOString(),
+    published_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: "default-2",
-    title: "Torneo U14 - Winter Series",
-    category: "tornei",
-    content: "Il nostro torneo Winter Series U14 è pronto ad accogliere giovani talenti. Con tabelloni sia maschili che femminili, ogni partecipante avrà l'opportunità di competere al massimo livello con live scoring professionale. Il nostro staff tecnico fornirà supporto tattico durante i match per aiutare i giovani atleti a crescere.",
-    excerpt: "Tabelloni maschili e femminili, live scoring e supporto tattico per ogni match.",
+    title: "Nuovi orari estivi a partire da lunedì",
+    category: "Orari",
+    content: "I campi saranno aperti dalle sei del mattino fino alle ventitré di sera. Prenotazioni online.",
+    excerpt: "I campi saranno aperti dalle sei del mattino fino alle ventitré di sera. Prenotazioni online.",
     image_url: null,
     is_published: true,
-    published_at: new Date("2026-02-25").toISOString(),
-    created_at: new Date("2026-02-25").toISOString(),
-    updated_at: new Date("2026-02-25").toISOString(),
+    published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: "default-3",
-    title: "Nuovo campo indoor in resina",
-    category: "generale",
-    content: "Abbiamo inaugurato il nostro nuovo campo indoor con superficie in resina omologata ITF. La struttura dispone di illuminazione professionale e un avanzato sistema di sensori che rileva la velocità della palla in tempo reale, offrendo un'esperienza di gioco all'avanguardia.",
-    excerpt: "Superficie omologata ITF, illuminazione pro e sistema di sensori per rilevare velocità di palla.",
+    title: "Iscrizioni aperte per i corsi estivi per bambini",
+    category: "Lezioni",
+    content: "Tre livelli disponibili. Lezioni due volte a settimana con maestri certificati FITP.",
+    excerpt: "Tre livelli disponibili. Lezioni due volte a settimana con maestri certificati FITP.",
     image_url: null,
     is_published: true,
-    published_at: new Date("2026-03-01").toISOString(),
-    created_at: new Date("2026-03-01").toISOString(),
-    updated_at: new Date("2026-03-01").toISOString(),
+    published_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
+
+function getRelativeTime(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  
+  if (diffInDays === 0) return "Oggi";
+  if (diffInDays === 1) return "1 giorno fa";
+  if (diffInDays < 7) return `${diffInDays} giorni fa`;
+  if (diffInDays < 14) return "1 settimana fa";
+  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} settimane fa`;
+  if (diffInDays < 60) return "1 mese fa";
+  return `${Math.floor(diffInDays / 30)} mesi fa`;
+}
 
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
-  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
   useEffect(() => {
     loadNews();
@@ -75,12 +90,10 @@ export default function NewsSection() {
 
     if (error) {
       console.error("Error loading news:", error);
-      // Usa le news di default se c'è un errore (es. tabella non esiste ancora)
       setNews(defaultNews);
     } else if (data && data.length > 0) {
       setNews(data);
     } else {
-      // Se non ci sono news nel database, usa quelle di default
       setNews(defaultNews);
     }
     setLoading(false);
@@ -91,7 +104,7 @@ export default function NewsSection() {
       <section id="news" className="py-20">
         <div className="container section">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-800" />
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--primary)' }} />
           </div>
         </div>
       </section>
@@ -99,154 +112,106 @@ export default function NewsSection() {
   }
 
   return (
-    <>
-      <section id="news" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
-        <div className="space-y-8 sm:space-y-12">
-          <div className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] font-bold text-frozen-600 mb-3 sm:mb-4 text-center">
-              Ultime News
-            </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-frozen-900 to-frozen-700 bg-clip-text text-transparent mb-3 sm:mb-4">
-              Novità e Aggiornamenti
-            </h2>
-            <p className="text-sm sm:text-base text-frozen-600 max-w-2xl mx-auto">
-              Resta aggiornato su tutte le novità e gli eventi della nostra accademia
-            </p>
-          </div>
+    <section id="news" className="py-16 sm:py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
+            News
+          </p>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+            Storie dal club
+          </h2>
+          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--foreground)' }}>
+            Leggi gli ultimi aggiornamenti, i risultati delle competizioni e gli avvisi importanti.
+          </p>
+        </div>
 
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/* News Grid */}
+        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12">
           {news.map((item) => (
-            <article 
-              key={item.id} 
-              onClick={() => setSelectedNews(item)}
-              className="group flex h-full flex-col rounded-xl border border-frozen-200 bg-white overflow-hidden cursor-pointer hover:border-frozen-600/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              {item.image_url && (
-                <div className="w-full aspect-[16/9] overflow-hidden">
+            <article key={item.id} className="flex flex-col">
+              {/* Image */}
+              <div className="mb-4">
+                {item.image_url ? (
                   <img
                     src={item.image_url}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-48 object-cover rounded-lg"
                   />
-                </div>
-              )}
-              <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4 flex flex-col gap-2 sm:gap-3 flex-1">
-                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
-                  <span className="rounded-full bg-frozen-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-frozen-800">
-                    {item.category}
-                  </span>
-                  <p className="text-xs sm:text-sm text-frozen-500">
-                  {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
+                ) : (
+                  <div className="w-full h-48 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--background-muted)' }}>
+                    <svg className="w-16 h-16" fill="none" stroke="var(--foreground-muted)" viewBox="0 0 24 24">
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={1.5} 
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                      />
+                    </svg>
+                  </div>
+                )}
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-frozen-900 group-hover:text-frozen-600 transition-colors">{item.title}</h3>
-              <p className="text-sm sm:text-base leading-relaxed text-frozen-600">
-                {item.excerpt || item.content.substring(0, 150) + '...'}
+
+              {/* Category & Date */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
+                  {item.category}
+                </span>
+                <span className="text-sm" style={{ color: 'var(--foreground-muted)' }}>
+                  {getRelativeTime(item.published_at || item.created_at)}
+                </span>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--secondary)' }}>
+                {item.title}
+              </h3>
+
+              {/* Excerpt */}
+              <p className="text-base mb-4 flex-grow" style={{ color: 'var(--foreground)' }}>
+                {item.excerpt || item.content.substring(0, 120) + '...'}
               </p>
-            </div>
-          </article>
-        ))}
+
+              {/* Read More Link */}
+              <Link
+                href={`/news/${item.id}`}
+                className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
+                style={{ color: 'var(--secondary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+              >
+                Leggi
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </article>
+          ))}
         </div>
-        </div>
-      </section>
 
-    {/* News Modal */}
-    {selectedNews && (
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pt-safe pb-safe px-safe"
-        onClick={() => setSelectedNews(null)}
-      >
-        {/* Close Button - Outside */}
-        <button
-          onClick={() => setSelectedNews(null)}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-8 md:right-8 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-red-500 hover:scale-110 backdrop-blur-sm border border-white/20 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Chiudi"
-        >
-          <X className="h-5 w-5 sm:h-6 sm:w-6" />
-        </button>
-
-        {/* Navigation Buttons - Outside Card */}
-        {news.length > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const currentIndex = news.findIndex(n => n.id === selectedNews.id);
-                const prevIndex = currentIndex > 0 ? currentIndex - 1 : news.length - 1;
-                setSelectedNews(news[prevIndex]);
-              }}
-              className="absolute left-1 sm:left-2 md:left-4 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-accent hover:scale-110 backdrop-blur-sm border border-white/20"
-              aria-label="News precedente"
-            >
-              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const currentIndex = news.findIndex(n => n.id === selectedNews.id);
-                const nextIndex = currentIndex < news.length - 1 ? currentIndex + 1 : 0;
-                setSelectedNews(news[nextIndex]);
-              }}
-              className="absolute right-1 sm:right-2 md:right-4 rounded-full bg-white/10 p-2 sm:p-3 text-white transition hover:bg-accent hover:scale-110 backdrop-blur-sm border border-white/20"
-              aria-label="News successiva"
-            >
-              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
-          </>
-        )}
-
-        <div 
-          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-gray-900/95 to-accent-dark/30 backdrop-blur-xl p-5 sm:p-6 md:p-8 shadow-2xl shadow-[var(--shadow-glow-strong)]"
-          onClick={(e) => e.stopPropagation()}
-        >
-
-          {selectedNews.image_url && (
-            <div className="w-full aspect-[16/9] overflow-hidden rounded-xl sm:rounded-2xl mb-4 sm:mb-6">
-              <img
-                src={selectedNews.image_url}
-                alt={selectedNews.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
-            <span className="rounded-full bg-accent-20 px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-accent border border-[var(--glass-border)]">
-              {selectedNews.category}
-            </span>
-            <p className="text-[10px] sm:text-xs text-frozen-500">
-              {new Date(selectedNews.published_at || selectedNews.created_at).toLocaleDateString("it-IT", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-
-          <h2 className="text-2xl sm:text-3xl font-bold gradient-text mb-4 sm:mb-6">
-            {selectedNews.title}
-          </h2>
-
-          {selectedNews.excerpt && (
-            <p className="text-base sm:text-lg leading-relaxed text-white mb-4 sm:mb-6 font-medium">
-              {selectedNews.excerpt}
-            </p>
-          )}
-
-          <div className="prose prose-invert max-w-none">
-            <p className="text-sm sm:text-base leading-relaxed text-frozen-300 whitespace-pre-wrap">
-              {selectedNews.content}
-            </p>
-          </div>
+        {/* View All Button */}
+        <div className="text-center">
+          <Link
+            href="/news"
+            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all"
+            style={{ 
+              backgroundColor: 'white', 
+              color: 'var(--secondary)',
+              border: '2px solid var(--secondary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.color = 'var(--secondary)';
+            }}
+          >
+            Vedi tutto
+          </Link>
         </div>
       </div>
-    )}
-    </>
+    </section>
   );
 }
 

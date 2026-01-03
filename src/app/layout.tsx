@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Urbanist } from "next/font/google";
 import "./globals.css";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import { defaultMetadata, generateOrganizationSchema } from "@/lib/seo/metadata";
@@ -8,6 +8,13 @@ import { ThemeProvider } from "@/components/theme";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+});
+
+const urbanist = Urbanist({
+  subsets: ["latin"],
+  variable: "--font-urbanist",
   display: "swap",
   weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
@@ -61,7 +68,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} antialiased font-sans`}>
+      <body className={`${inter.variable} ${urbanist.variable} antialiased font-sans`}>
         <ThemeProvider defaultTheme="system">
           {children}
           <ConditionalFooter />

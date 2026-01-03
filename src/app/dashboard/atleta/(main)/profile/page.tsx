@@ -247,7 +247,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="space-y-6" style={{ color: '#111827' }}>
+      <div className="space-y-6">
         <div className="h-10 bg-gray-200 rounded-lg w-48 animate-pulse" />
         <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
         <div className="h-96 bg-gray-200 rounded-xl animate-pulse" />
@@ -264,18 +264,18 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6" style={{ color: '#111827' }}>
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-black mb-2">Il Mio Profilo</h1>
-        <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Il Mio Profilo</h1>
+        <p className="text-sm text-gray-600">
           Gestisci le tue informazioni personali
         </p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <div className="relative bg-gradient-to-r from-cyan-500 to-blue-600 h-40">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="relative bg-frozen-500 h-40">
           {/* Badge Ruolo */}
           <div className="absolute top-4 right-4">
             <span className="px-4 py-2 text-sm font-bold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-frozen-500 flex items-center justify-center">
                     <span className="text-4xl font-bold text-white">
                       {getInitials(profile.full_name, profile.email)}
                     </span>
@@ -305,7 +305,7 @@ export default function ProfilePage() {
               <button 
                 onClick={() => setShowAvatarModal(true)}
                 disabled={uploadingAvatar}
-                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-frozen-500 text-white hover:bg-frozen-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadingAvatar ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -325,46 +325,46 @@ export default function ProfilePage() {
 
       {/* Account Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 uppercase tracking-wider">
-          <Shield className="h-5 w-5 text-blue-600" />
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Shield className="h-5 w-5 text-frozen-600" />
           Informazioni Account
         </h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Mail className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-frozen-50 rounded-lg">
+              <Mail className="h-5 w-5 text-frozen-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</p>
+              <p className="text-xs font-medium text-gray-500">Email</p>
               <p className="text-sm font-semibold text-gray-900">{profile.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-cyan-50 rounded-lg">
-              <Calendar className="h-5 w-5 text-cyan-600" />
+            <div className="p-2 bg-frozen-50 rounded-lg">
+              <Calendar className="h-5 w-5 text-frozen-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Membro dal</p>
+              <p className="text-xs font-medium text-gray-500">Membro dal</p>
               <p className="text-sm font-semibold text-gray-900">{formatDate(profile.created_at)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <CreditCard className="h-5 w-5 text-emerald-600" />
+            <div className="p-2 bg-frozen-50 rounded-lg">
+              <CreditCard className="h-5 w-5 text-frozen-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Abbonamento</p>
+              <p className="text-xs font-medium text-gray-500">Abbonamento</p>
               <p className="text-sm font-semibold text-gray-900">
                 {profile.subscription_type || "Nessuno"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <User className="h-5 w-5 text-purple-600" />
+            <div className="p-2 bg-frozen-50 rounded-lg">
+              <User className="h-5 w-5 text-frozen-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ruolo</p>
+              <p className="text-xs font-medium text-gray-500">Ruolo</p>
               <p className="text-sm font-semibold text-gray-900">{getRoleLabel(profile.role)}</p>
             </div>
           </div>
@@ -373,14 +373,14 @@ export default function ProfilePage() {
 
       {/* Edit Form */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 uppercase tracking-wider">
-          <User className="h-5 w-5 text-blue-600" />
+        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <User className="h-5 w-5 text-frozen-600" />
           Dati Personali
         </h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Nome Completo
             </label>
             <input
@@ -388,12 +388,12 @@ export default function ProfilePage() {
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               placeholder="Mario Rossi"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Telefono
             </label>
             <input
@@ -401,24 +401,24 @@ export default function ProfilePage() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+39 123 456 7890"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Data di Nascita
             </label>
             <input
               type="date"
               value={formData.birth_date}
               onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Bio
             </label>
             <textarea
@@ -426,14 +426,14 @@ export default function ProfilePage() {
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               rows={3}
               placeholder="Scrivi qualcosa su di te..."
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 resize-none"
             />
           </div>
 
           <button
             onClick={saveProfile}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-bold hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-lg disabled:shadow-none"
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -477,7 +477,7 @@ export default function ProfilePage() {
                 </label>
                 <button
                   onClick={() => document.getElementById('avatar-upload')?.click()}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:from-cyan-600 hover:to-blue-700 transition-all shadow-md"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all"
                 >
                   <Upload className="h-5 w-5" />
                   Scegli File
@@ -515,13 +515,13 @@ export default function ProfilePage() {
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
                     onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
                   />
                   <button
                     onClick={handleAvatarUrl}
                     disabled={!avatarUrl}
-                    className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:from-cyan-600 hover:to-blue-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-3 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <LinkIcon className="h-5 w-5" />
                   </button>

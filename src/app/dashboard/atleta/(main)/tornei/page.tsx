@@ -11,6 +11,7 @@ import {
   Check,
   Star,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -37,6 +38,7 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"available" | "my">("my");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadTournaments();
@@ -115,13 +117,13 @@ export default function TournamentsPage() {
 
   function getStatusBadge(status: string) {
     const styles: Record<string, string> = {
-      Aperto: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      "In Corso": "bg-blue-100 text-blue-700 border-blue-200",
-      Concluso: "bg-gray-100 text-gray-700 border-gray-200",
-      Annullato: "bg-red-100 text-red-700 border-red-200",
+      Aperto: "bg-emerald-50 text-emerald-700",
+      "In Corso": "bg-frozen-50 text-frozen-700",
+      Concluso: "bg-gray-100 text-gray-700",
+      Annullato: "bg-red-50 text-red-700",
     };
     return (
-      <span className={`px-3 py-1 text-xs font-bold rounded-full border ${styles[status] || styles.Aperto}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-md ${styles[status] || styles.Aperto}`}>
         {status}
       </span>
     );
@@ -129,74 +131,78 @@ export default function TournamentsPage() {
 
   function getLevelBadge(level: string) {
     const styles: Record<string, string> = {
-      principiante: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      intermedio: "bg-amber-50 text-amber-700 border-amber-200",
-      avanzato: "bg-orange-50 text-orange-700 border-orange-200",
-      agonistico: "bg-red-50 text-red-700 border-red-200",
+      principiante: "bg-emerald-50 text-emerald-700",
+      intermedio: "bg-amber-50 text-amber-700",
+      avanzato: "bg-orange-50 text-orange-700",
+      agonistico: "bg-red-50 text-red-700",
     };
     return (
-      <span className={`px-3 py-1 text-xs font-bold rounded-full border ${styles[level?.toLowerCase()] || "bg-gray-50 text-gray-700 border-gray-200"}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-md ${styles[level?.toLowerCase()] || "bg-gray-50 text-gray-700"}`}>
         {level || "Tutti i livelli"}
       </span>
     );
   }
 
   const TournamentCard = ({ tournament, showRegister = false }: { tournament: Tournament; showRegister?: boolean }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-md transition-all">
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
+    <div className="bg-white rounded-xl border border-gray-200 hover:border-frozen-300 transition-all overflow-hidden">
+      {/* Header with Icon */}
+      <div className="p-5 pb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1">
-            <h3 className="font-bold text-black text-lg mb-2">{tournament.title}</h3>
+            <h3 className="font-bold text-gray-900 text-xl mb-2">{tournament.title}</h3>
             <div className="flex items-center gap-2 flex-wrap">
               {getStatusBadge(tournament.status)}
               {getLevelBadge(tournament.level)}
             </div>
           </div>
-          <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-            <Trophy className="h-7 w-7 text-amber-600" />
+          <div className="p-3 rounded-xl bg-frozen-50">
+            <Trophy className="h-6 w-6 text-frozen-600" />
           </div>
         </div>
 
+        {/* Description */}
         {tournament.description && (
           <p className="text-sm text-gray-600 mb-4 line-clamp-2">
             {tournament.description}
           </p>
         )}
 
-        <div className="space-y-2 text-sm">
+        {/* Info Grid */}
+        <div className="space-y-2.5">
           <div className="flex items-center gap-2 text-gray-700">
-            <Calendar className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">{formatDate(tournament.starts_at)}</span>
+            <Calendar className="h-4 w-4 text-frozen-600" />
+            <span className="text-sm font-medium">{formatDate(tournament.starts_at)}</span>
           </div>
           <div className="flex items-center gap-2 text-gray-700">
-            <Users className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">{tournament.participant_count || 0}/{tournament.max_participants} iscritti</span>
+            <Users className="h-4 w-4 text-frozen-600" />
+            <span className="text-sm font-medium">{tournament.participant_count || 0}/{tournament.max_participants} iscritti</span>
           </div>
           {tournament.entry_fee && (
             <div className="flex items-center gap-2 text-gray-700">
-              <span className="text-base font-bold text-emerald-600">€</span>
-              <span className="font-medium">{tournament.entry_fee} quota iscrizione</span>
+              <span className="text-sm font-bold text-emerald-600">€</span>
+              <span className="text-sm font-medium">{tournament.entry_fee} quota iscrizione</span>
             </div>
           )}
           {tournament.prize_money && (
             <div className="flex items-center gap-2 text-gray-700">
               <Star className="h-4 w-4 text-amber-500" />
-              <span className="font-medium">€{tournament.prize_money} montepremi</span>
+              <span className="text-sm font-medium">€{tournament.prize_money} montepremi</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-600">
-          {tournament.format?.replace(/_/g, " ") || "Eliminazione diretta"}
+      {/* Footer */}
+      <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <span className="text-xs text-gray-500">
+          {tournament.format?.replace(/_/g, " ") || "eliminazione diretta"}
         </span>
         
         {showRegister ? (
           <button
             onClick={() => registerForTournament(tournament.id)}
             disabled={registering === tournament.id || (tournament.participant_count || 0) >= tournament.max_participants}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="text-sm text-frozen-500 font-semibold hover:text-frozen-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
           >
             {registering === tournament.id ? (
               <>
@@ -207,15 +213,15 @@ export default function TournamentsPage() {
               "Completo"
             ) : (
               <>
-                <Check className="h-4 w-4" />
-                Iscriviti
+                Dettagli
+                <ChevronRight className="h-4 w-4" />
               </>
             )}
           </button>
         ) : (
           <Link
             href={`/dashboard/atleta/tornei/${tournament.id}`}
-            className="flex items-center gap-1 text-sm text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+            className="text-sm text-frozen-500 font-semibold hover:text-frozen-600 transition-colors flex items-center gap-1"
           >
             Dettagli
             <ChevronRight className="h-4 w-4" />
@@ -244,125 +250,133 @@ export default function TournamentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-black">Tornei</h1>
-          <p className="text-gray-700 mt-1 font-medium">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tornei</h1>
+          <p className="text-sm text-gray-600">
             Partecipa ai tornei del circolo e metti alla prova le tue abilità
           </p>
         </div>
         <button
           onClick={loadTournaments}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all"
         >
           <RefreshCw className="h-4 w-4" />
           Aggiorna
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <Trophy className="h-5 w-5 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{tournaments.length}</p>
+      {/* Search & Tabs */}
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cerca per campo o maestro..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900 placeholder:text-gray-500 transition-all"
+            />
           </div>
-          <p className="text-sm font-semibold text-gray-700">Tornei Disponibili</p>
-          <p className="text-xs text-gray-600 mt-1">Aperti alle iscrizioni</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Check className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{myTournaments.length}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setActiveTab("my")}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "my"
+                  ? "bg-frozen-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              I Miei Tornei
+            </button>
+            <button
+              onClick={() => setActiveTab("available")}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "available"
+                  ? "bg-frozen-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Disponibili
+            </button>
           </div>
-          <p className="text-sm font-semibold text-gray-700">I Miei Tornei</p>
-          <p className="text-xs text-gray-600 mt-1">Iscrizioni attive</p>
         </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <Users className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">
-              {tournaments.reduce((acc, t) => acc + (t.participant_count || 0), 0) + myTournaments.reduce((acc, t) => acc + (t.participant_count || 0), 0)}
-            </p>
-          </div>
-          <p className="text-sm font-semibold text-gray-700">Partecipanti Totali</p>
-          <p className="text-xs text-gray-600 mt-1">In tutti i tornei</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-white rounded-lg border border-gray-200 w-fit shadow-sm">
-        <button
-          onClick={() => setActiveTab("my")}
-          className={`px-5 py-2.5 rounded-md text-sm font-bold transition-all ${
-            activeTab === "my"
-              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-          }`}
-        >
-          I Miei Tornei ({myTournaments.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("available")}
-          className={`px-5 py-2.5 rounded-md text-sm font-bold transition-all ${
-            activeTab === "available"
-              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-          }`}
-        >
-          Disponibili ({tournaments.length})
-        </button>
       </div>
 
       {/* Tournament Grid */}
       {activeTab === "my" && (
-        myTournaments.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <Trophy className="h-20 w-20 text-gray-300 mx-auto mb-4" />
+        myTournaments.filter(t => 
+          !searchQuery || 
+          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        ).length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
+            <div className="inline-flex p-4 bg-gray-50 rounded-full mb-4">
+              <Trophy className="h-16 w-16 text-gray-400" />
+            </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Non sei iscritto a nessun torneo
+              {myTournaments.length === 0 ? "Non sei iscritto a nessun torneo" : "Nessun torneo trovato"}
             </h3>
-            <p className="text-gray-600 mb-6">
-              Iscriviti a un torneo dalla sezione &quot;Disponibili&quot;
+            <p className="text-sm text-gray-600 mb-6">
+              {myTournaments.length === 0 
+                ? "Iscriviti a un torneo dalla sezione \"Disponibili\""
+                : "Prova a modificare la ricerca"
+              }
             </p>
-            <button
-              onClick={() => setActiveTab("available")}
-              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-medium hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
-            >
-              Vedi Tornei Disponibili
-            </button>
+            {myTournaments.length === 0 && (
+              <button
+                onClick={() => setActiveTab("available")}
+                className="px-6 py-2.5 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all"
+              >
+                Vedi Tornei Disponibili
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2">
-            {myTournaments.map((tournament) => (
-              <TournamentCard key={tournament.id} tournament={tournament} />
-            ))}
+            {myTournaments
+              .filter(t => 
+                !searchQuery || 
+                t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((tournament) => (
+                <TournamentCard key={tournament.id} tournament={tournament} />
+              ))}
           </div>
         )
       )}
 
       {activeTab === "available" && (
-        tournaments.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <Trophy className="h-20 w-20 text-gray-300 mx-auto mb-4" />
+        tournaments.filter(t => 
+          !searchQuery || 
+          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        ).length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
+            <div className="inline-flex p-4 bg-gray-50 rounded-full mb-4">
+              <Trophy className="h-16 w-16 text-gray-400" />
+            </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Nessun torneo disponibile
+              {tournaments.length === 0 ? "Nessun torneo disponibile" : "Nessun torneo trovato"}
             </h3>
-            <p className="text-gray-600">
-              Nuovi tornei saranno annunciati presto
+            <p className="text-sm text-gray-600">
+              {tournaments.length === 0 
+                ? "Nuovi tornei saranno annunciati presto"
+                : "Prova a modificare la ricerca"
+              }
             </p>
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2">
-            {tournaments.map((tournament) => (
-              <TournamentCard key={tournament.id} tournament={tournament} showRegister />
-            ))}
+            {tournaments
+              .filter(t => 
+                !searchQuery || 
+                t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((tournament) => (
+                <TournamentCard key={tournament.id} tournament={tournament} showRegister />
+              ))}
           </div>
         )
       )}

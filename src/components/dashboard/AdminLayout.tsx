@@ -16,7 +16,6 @@ import {
   Key,
   Newspaper,
   Image,
-  Layers,
   Bell,
   Video,
   Megaphone,
@@ -88,11 +87,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Gestione Utenti",
       href: "/dashboard/admin/users",
       icon: <Users className="h-5 w-5" />,
-    },
-    {
-      label: "Home Corsi",
-      href: "/dashboard/admin/courses",
-      icon: <Layers className="h-5 w-5" />,
     },
     {
       label: "Gestione Video Lezioni",
