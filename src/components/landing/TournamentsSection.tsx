@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -19,17 +19,17 @@ type Tournament = {
 const defaultTournaments: Tournament[] = [
   {
     id: "1",
-    title: "Campionato invernale singolare",
-    description: "Categoria open per giocatori di tutti i livelli. Iscrizioni aperte fino al 10 febbraio.",
-    start_date: "2026-02-15",
-    tournament_type: "campionato",
+    title: "Torneo Sociale di Primavera 2026",
+    description: "Torneo open maschile e femminile. Formula a eliminazione diretta con tabelloni separati. Iscrizioni aperte fino al 20 marzo.",
+    start_date: "2026-04-05",
+    tournament_type: "eliminazione_diretta",
     status: "upcoming"
   },
   {
     id: "2",
-    title: "Lega sociale doppio misto",
-    description: "Gioca in squadra e conosci altri appassionati. Turni settimanali con cena sociale.",
-    start_date: "2026-02-23",
+    title: "Campionato Invernale a Squadre",
+    description: "Competizione a squadre con formula girone all'italiana. Incontri ogni sabato pomeriggio. Aperto a giocatori di tutti i livelli.",
+    start_date: "2026-02-15",
     tournament_type: "girone_eliminazione",
     status: "upcoming"
   }
@@ -46,8 +46,17 @@ export default function TournamentsSection() {
         const res = await fetch("/api/tournaments?upcoming=true");
         const json = await res.json();
         if (res.ok && json.tournaments && json.tournaments.length > 0) {
+          // Filtra tornei validi (con titolo non numerico e descrizione presente)
+          const validTournaments = json.tournaments.filter((t: Tournament) => 
+            t.title && 
+            t.title.length > 10 && 
+            !/^\d+$/.test(t.title) && // Escludi titoli che sono solo numeri
+            t.description && 
+            t.description.length > 20
+          );
+          
           if (mounted) {
-            setItems(json.tournaments);
+            setItems(validTournaments.length > 0 ? validTournaments : defaultTournaments);
           }
         } else {
           if (mounted) {
@@ -90,14 +99,14 @@ export default function TournamentsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
-            Competizione
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-secondary">
+            COMPETIZIONI
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
-            Tornei
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-secondary">
+            Tornei e Campionati
           </h2>
-          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--secondary)' }}>
-            Mettiti alla prova nei nostri tornei e leghe sociali. Vinci premi e costruisci la tua reputazione.
+          <p className="text-base sm:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+            Un calendario ricco di eventi per ogni livello di gioco. Iscriviti ai nostri tornei, sfida i tuoi limiti e dimostra il tuo valore punto su punto
           </p>
         </div>
 
@@ -105,11 +114,11 @@ export default function TournamentsSection() {
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 mb-12">
         {loading ? (
           <div className="col-span-2 flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--primary)' }} />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : items.length === 0 ? (
           <div className="col-span-2 text-center py-12">
-            <p className="text-sm" style={{ color: 'var(--secondary)' }}>
+            <p className="text-sm text-secondary">
               Nessun torneo imminente.
             </p>
           </div>
@@ -120,9 +129,9 @@ export default function TournamentsSection() {
             return (
               <article key={t.id} className="flex flex-col">
                 {/* Image */}
-                <div className="relative h-64 rounded-lg overflow-hidden mb-4" style={{ backgroundColor: 'var(--background-muted)' }}>
+                <div className="relative h-64 rounded-lg overflow-hidden mb-4" style={{backgroundColor: 'var(--secondary)'}}>
                   <div className="w-full h-full flex items-center justify-center">
-                    <svg className="w-16 h-16" fill="none" stroke="var(--foreground-muted)" viewBox="0 0 24 24">
+                    <svg className="w-16 h-16 opacity-30" fill="none" stroke="white" viewBox="0 0 24 24">
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
@@ -137,22 +146,22 @@ export default function TournamentsSection() {
                 <div className="flex flex-col gap-2">
                   {/* Category & Date */}
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
+                    <span className="text-sm font-semibold" style={{color: 'var(--secondary)'}}>
                       {typeLabel.toLowerCase()}
                     </span>
-                    <span className="text-sm" style={{ color: 'var(--foreground)', opacity: 0.6 }}>
+                    <span className="text-sm" style={{color: 'var(--secondary)', opacity: 0.6}}>
                       {formatDate(t.start_date)}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold" style={{ color: 'var(--secondary)' }}>
+                  <h3 className="text-xl font-bold" style={{color: 'var(--secondary)'}}>
                     {t.title}
                   </h3>
 
                   {/* Description */}
                   {t.description && (
-                    <p className="text-base" style={{ color: 'var(--secondary)' }}>
+                    <p className="text-base" style={{color: 'var(--secondary)', opacity: 0.8}}>
                       {t.description}
                     </p>
                   )}
@@ -160,13 +169,10 @@ export default function TournamentsSection() {
                   {/* Read More Link */}
                   <Link 
                     href={`/tornei/${t.id}`} 
-                    className="inline-flex items-center gap-2 text-base font-semibold transition-colors mt-1"
-                    style={{ color: 'var(--primary)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                    className="inline-flex items-center gap-2 text-base font-semibold transition-colors mt-1 hover:opacity-70"
+                    style={{color: 'var(--secondary)'}}
                   >
                     Leggi
-                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </article>
@@ -179,19 +185,10 @@ export default function TournamentsSection() {
         <div className="text-center">
           <Link
             href="/tornei"
-            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all"
-            style={{ 
-              backgroundColor: 'white', 
-              color: 'var(--secondary)',
-              border: '2px solid var(--secondary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--secondary)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.color = 'var(--secondary)';
+            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all hover:opacity-90"
+            style={{
+              backgroundColor: 'var(--secondary)',
+              color: 'white'
             }}
           >
             Vedi tutto

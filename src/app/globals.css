@@ -103,13 +103,13 @@
   --email-card-bg: #ffffff;
   --email-footer-bg: #f9fafb;
   
-  /* Light Mode - Default */
+  /* Light Mode - Default - Frozen Lake Palette */
   --background: #ffffff;
   --background-subtle: #e6f7fe;     /* frozen-50 */
   --background-muted: #cef0fd;      /* frozen-100 */
-  --foreground: #034863;            /* frozen-800 */
-  --foreground-muted: #056c94;      /* frozen-700 */
-  --foreground-subtle: #0690c6;     /* frozen-600 */
+  --foreground: #034863;            /* frozen-800 - Principale (come navbar) */
+  --foreground-muted: #056c94;      /* frozen-700 - Secondario */
+  --foreground-subtle: #0690c6;     /* frozen-600 - Terziario */
   
   /* Surfaces */
   --surface: #ffffff;
@@ -347,33 +347,34 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* Heading Scale */
-h1, .text-h1 {
+/* Removed fixed h1-h6 sizes to allow Tailwind classes to work properly */
+.text-h1 {
   font-size: 2.25rem;   /* 36px */
   line-height: 1.25;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-h2, .text-h2 {
+.text-h2 {
   font-size: 1.875rem;  /* 30px */
   line-height: 1.3;
   font-weight: 700;
   letter-spacing: -0.005em;
 }
 
-h3, .text-h3 {
+.text-h3 {
   font-size: 1.5rem;    /* 24px */
   line-height: 1.35;
   font-weight: 600;
 }
 
-h4, .text-h4 {
+.text-h4 {
   font-size: 1.25rem;   /* 20px */
   line-height: 1.4;
   font-weight: 600;
 }
 
-h5, .text-h5 {
+.text-h5 {
   font-size: 1.125rem;  /* 18px */
   line-height: 1.5;
   font-weight: 600;
@@ -776,6 +777,28 @@ h6, .text-h6 {
 .brand-badge { background-color: var(--primary-100); color: var(--primary-dark); }
 .accent-gradient { background: var(--gradient-primary); color: white; }
 .glass-panel { border: 1px solid var(--border); background: var(--surface); backdrop-filter: blur(8px); }
+
+/* Color utility classes */
+.text-primary { color: var(--primary); }
+.text-primary-dark { color: var(--primary-dark); }
+.text-secondary { color: var(--secondary); }
+.text-secondary-light { color: var(--secondary-light); }
+.text-foreground { color: var(--foreground); }
+.text-foreground-muted { color: var(--foreground-muted); }
+
+.bg-primary { background-color: var(--primary); }
+.bg-secondary { background-color: var(--secondary); }
+.bg-background-muted { background-color: var(--background-muted); }
+
+.border-secondary { border-color: var(--secondary); }
+.border-primary { border-color: var(--primary); }
+
+.hover\:bg-primary:hover { background-color: var(--primary); }
+.hover\:bg-secondary:hover { background-color: var(--secondary); }
+.hover\:bg-secondary-hover:hover { background-color: var(--secondary-hover); }
+.hover\:text-primary:hover { color: var(--primary); }
+.hover\:text-secondary:hover { color: var(--secondary); }
+.hover\:text-white:hover { color: white; }
 
 /* Animazione per drawer laterale */
 @keyframes slide-in-right {

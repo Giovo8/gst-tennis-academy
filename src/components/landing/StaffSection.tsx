@@ -87,7 +87,7 @@ export default function StaffSection() {
     return (
       <section id="staff" className="space-y-6">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--primary)' }} />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       </section>
     );
@@ -98,13 +98,13 @@ export default function StaffSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
-            Staff
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-secondary">
+            STAFF
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-secondary">
             I nostri maestri
           </h2>
-          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--foreground)' }}>
+          <p className="text-base sm:text-lg max-w-3xl mx-auto text-secondary opacity-80">
             Professionisti con anni di esperienza nel tennis agonistico e didattico.
           </p>
         </div>
@@ -122,8 +122,8 @@ export default function StaffSection() {
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--background-muted)' }}>
-                    <svg className="w-12 h-12" fill="var(--foreground-muted)" viewBox="0 0 24 24">
+                  <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
+                    <svg className="w-12 h-12" style={{fill: 'white', opacity: 0.8}} viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                   </div>
@@ -131,29 +131,29 @@ export default function StaffSection() {
               </div>
 
               {/* Name */}
-              <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--secondary)' }}>
+              <h3 className="text-lg font-bold mb-1 text-secondary">
                 {member.full_name}
               </h3>
 
               {/* Role */}
-              <p className="text-sm font-medium mb-3" style={{ color: 'var(--foreground-muted)' }}>
+              <p className="text-sm font-medium mb-3" style={{color: 'var(--secondary)', opacity: 0.7}}>
                 {member.role}
               </p>
 
               {/* Bio */}
-              <p className="text-sm mb-4 px-2" style={{ color: 'var(--foreground)' }}>
+              <p className="text-sm mb-4 px-2 text-secondary opacity-80">
                 {member.bio || "Professionista certificato con anni di esperienza."}
               </p>
 
               {/* Social Icons */}
               <div className="flex justify-center gap-3">
-                <a href="#" className="transition-colors" style={{ color: 'var(--foreground-muted)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--foreground-muted)'}>
+                <a href="#" className="transition-opacity hover:opacity-70" style={{color: 'var(--secondary)'}}>
                   <Linkedin className="w-5 h-5" />
                 </a>
-                <a href="#" className="transition-colors" style={{ color: 'var(--foreground-muted)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--foreground-muted)'}>
+                <a href="#" className="transition-opacity hover:opacity-70" style={{color: 'var(--secondary)'}}>
                   <Twitter className="w-5 h-5" />
                 </a>
-                <a href="#" className="transition-colors" style={{ color: 'var(--foreground-muted)' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--secondary)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--foreground-muted)'}>
+                <a href="#" className="transition-opacity hover:opacity-70" style={{color: 'var(--secondary)'}}>
                   <Dribbble className="w-5 h-5" />
                 </a>
               </div>
@@ -163,27 +163,18 @@ export default function StaffSection() {
 
         {/* Join Team CTA */}
         <div className="text-center">
-          <h3 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+          <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-secondary">
             Unisciti al team
           </h3>
-          <p className="text-base mb-6 max-w-2xl mx-auto" style={{ color: 'var(--foreground)' }}>
+          <p className="text-base mb-6 max-w-2xl mx-auto" style={{color: 'var(--secondary)', opacity: 0.8}}>
             Cerchiamo maestri e istruttori appassionati di tennis e di insegnamento.
           </p>
           <Link
             href="/lavora-con-noi"
-            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all"
-            style={{ 
-              backgroundColor: 'white', 
-              color: 'var(--secondary)',
-              border: '2px solid var(--secondary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--secondary)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.color = 'var(--secondary)';
+            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all hover:opacity-90"
+            style={{
+              backgroundColor: 'var(--secondary)',
+              color: 'white'
             }}
           >
             Candidati

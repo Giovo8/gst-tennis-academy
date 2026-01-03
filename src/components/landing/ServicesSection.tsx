@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Tent, Network, GraduationCap } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 export default function ServicesSection() {
   return (
     <section className="bg-white py-16 sm:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
-            Servizi
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-secondary">
+            SERVIZI
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
-            Tutto quello che serve per giocare bene
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-secondary">
+            L'eccellenza del tennis firmata GST Academy
           </h2>
-          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--foreground)' }}>
-            Tre modi per vivere il tennis al massimo livello. Scegli quello che fa per te e inizia oggi stesso.
+          <p className="text-base sm:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+            Un ecosistema completo dedicato alla tua crescita sportiva. Dalle strutture all'avanguardia alla formazione tecnica: tutto ciò che serve per vivere il tennis da protagonista.
           </p>
         </div>
 
@@ -24,74 +24,47 @@ export default function ServicesSection() {
           {/* Service 1 */}
           <div className="text-center">
             <div className="flex justify-center mb-4">
-              <Tent className="w-16 h-16" strokeWidth={1.5} style={{ color: 'var(--secondary)' }} />
+              <svg className="w-16 h-16 text-secondary" strokeWidth={1.5} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="1" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="12" y1="4" x2="12" y2="20" strokeLinecap="round" />
+                <line x1="3" y1="12" x2="21" y2="12" strokeLinecap="round" strokeDasharray="1 2" />
+              </svg>
             </div>
-            <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--secondary)' }}>
-              Affitto campi professionali
+            <h3 className="text-xl font-bold mb-3 text-secondary">
+              Affitto Campi
             </h3>
-            <p className="text-base" style={{ color: 'var(--foreground)' }}>
-              Terra rossa e sintetico per ogni stile di gioco.
+            <p className="text-base text-secondary opacity-80">
+              Campi in terra rossa e cemento sempre disponibili. Superfici performanti e curate per garantirti il miglior rimbalzo possibile
             </p>
           </div>
 
           {/* Service 2 */}
           <div className="text-center">
             <div className="flex justify-center mb-4">
-              <Network className="w-16 h-16" strokeWidth={1.5} style={{ color: 'var(--secondary)' }} />
+              <svg className="w-16 h-16 text-secondary" strokeWidth={1.5} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v5m-3 0h6M7 11h10M7 11c-1.5 0-3-1.69-3-3.5S5.5 4 7 4h.5M7 11v6a1 1 0 001 1h8a1 1 0 001-1v-6m-9.5-7C7.5 5.31 7 6.82 7 7.5 7 9.31 8.5 11 10 11M17 11h-.5M17 11c1.5 0 3-1.69 3-3.5S18.5 4 17 4h-.5M16.5 4C16.5 5.31 17 6.82 17 7.5c0 1.81-1.5 3.5-3 3.5" />
+              </svg>
             </div>
-            <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--secondary)' }}>
-              Lezioni private con maestri certificati
+            <h3 className="text-xl font-bold mb-3 text-secondary">
+              Tornei e Sfide
             </h3>
-            <p className="text-base" style={{ color: 'var(--foreground)' }}>
-              Migliora il tuo gioco con professionisti qualificati FIT e PTR.
+            <p className="text-base text-secondary opacity-80">
+              Partecipa ai nostri tornei e campionati a squadre. Un calendario ricco di eventi per chi ama l'agonismo e vuole sfidare nuovi avversari.
             </p>
           </div>
 
           {/* Service 3 */}
           <div className="text-center">
             <div className="flex justify-center mb-4">
-              <GraduationCap className="w-16 h-16" strokeWidth={1.5} style={{ color: 'var(--secondary)' }} />
+              <GraduationCap className="w-16 h-16 text-secondary" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--secondary)' }}>
-              Scuola tennis per tutti
+            <h3 className="text-xl font-bold mb-3 text-secondary">
+              Coaching e Scuola Tennis
             </h3>
-            <p className="text-base" style={{ color: 'var(--foreground)' }}>
-              Corsi per bambini, ragazzi e adulti con programmi personalizzati.
+            <p className="text-base text-secondary opacity-80">
+              Lezioni private personalizzate e corsi di gruppo per tutte le età. Migliora il tuo gioco affidandoti all'esperienza dei nostri istruttori qualificati FITP
             </p>
           </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link
-            href="/services"
-            className="px-8 py-3 rounded-md font-semibold text-base transition-all inline-block"
-            style={{ 
-              backgroundColor: 'white', 
-              color: 'var(--secondary)',
-              border: '2px solid var(--secondary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--secondary)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.color = 'var(--secondary)';
-            }}
-          >
-            Esplora
-          </Link>
-          <Link
-            href="/services"
-            className="px-8 py-3 rounded-md font-semibold text-base transition-all inline-block flex items-center gap-2"
-            style={{ color: 'var(--secondary)' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-          >
-            Altro
-            <span>→</span>
-          </Link>
         </div>
       </div>
     </section>

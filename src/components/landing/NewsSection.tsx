@@ -104,7 +104,7 @@ export default function NewsSection() {
       <section id="news" className="py-20">
         <div className="container section">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--primary)' }} />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         </div>
       </section>
@@ -116,13 +116,13 @@ export default function NewsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--secondary)' }}>
+          <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-secondary">
             News
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--secondary)' }}>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-secondary">
             Storie dal club
           </h2>
-          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: 'var(--foreground)' }}>
+          <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{color: 'var(--secondary)', opacity: 0.8}}>
             Leggi gli ultimi aggiornamenti, i risultati delle competizioni e gli avvisi importanti.
           </p>
         </div>
@@ -140,8 +140,8 @@ export default function NewsSection() {
                     className="w-full h-48 object-cover rounded-lg"
                   />
                 ) : (
-                  <div className="w-full h-48 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--background-muted)' }}>
-                    <svg className="w-16 h-16" fill="none" stroke="var(--foreground-muted)" viewBox="0 0 24 24">
+                  <div className="w-full h-48 rounded-lg flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
+                    <svg className="w-16 h-16 opacity-30" fill="none" stroke="white" viewBox="0 0 24 24">
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
@@ -155,31 +155,29 @@ export default function NewsSection() {
 
               {/* Category & Date */}
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
+                <span className="text-sm font-semibold" style={{color: 'var(--secondary)'}}>
                   {item.category}
                 </span>
-                <span className="text-sm" style={{ color: 'var(--foreground-muted)' }}>
+                <span className="text-sm" style={{color: 'var(--secondary)', opacity: 0.6}}>
                   {getRelativeTime(item.published_at || item.created_at)}
                 </span>
               </div>
 
               {/* Title */}
-              <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--secondary)' }}>
+              <h3 className="text-xl font-bold mb-2 text-secondary">
                 {item.title}
               </h3>
 
               {/* Excerpt */}
-              <p className="text-base mb-4 flex-grow" style={{ color: 'var(--foreground)' }}>
+              <p className="text-base mb-4 flex-grow" style={{color: 'var(--secondary)', opacity: 0.8}}>
                 {item.excerpt || item.content.substring(0, 120) + '...'}
               </p>
 
               {/* Read More Link */}
               <Link
                 href={`/news/${item.id}`}
-                className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+                className="inline-flex items-center gap-2 text-base font-semibold transition-opacity hover:opacity-70"
+                style={{color: 'var(--secondary)'}}
               >
                 Leggi
                 <ArrowRight className="w-4 h-4" />
@@ -192,19 +190,10 @@ export default function NewsSection() {
         <div className="text-center">
           <Link
             href="/news"
-            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all"
-            style={{ 
-              backgroundColor: 'white', 
-              color: 'var(--secondary)',
-              border: '2px solid var(--secondary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--secondary)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.color = 'var(--secondary)';
+            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all hover:opacity-90"
+            style={{
+              backgroundColor: 'var(--secondary)',
+              color: 'white'
             }}
           >
             Vedi tutto

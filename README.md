@@ -83,7 +83,18 @@
 - Editor rich text
 - Gestione pubblicazione/bozze
 
-### 🎥 Video Lezioni
+### � Homepage Professionale
+
+- **Landing Page Moderna**: Design responsive e accattivante
+- **10 Sezioni Modulari**: Hero, Servizi, Tornei, Staff, News, CTA
+- **Promo Banner Configurabile**: Admin può personalizzare banner promozionale
+- **Contenuti Dinamici**: Tornei, News e Staff caricati da database
+- **Accessibilità**: Skip links, ARIA labels, keyboard navigation
+- **Performance Ottimizzate**: Lazy loading, fallback data, code splitting
+
+Documentazione: [HOMEPAGE.md](docs/HOMEPAGE.md)
+
+### �🎥 Video Lezioni
 
 - Assegnazione video personalizzati agli atleti
 - Supporto YouTube, Vimeo e video diretti
@@ -102,6 +113,7 @@ La documentazione completa è disponibile nella cartella `docs/`:
 | **[DATABASE.md](docs/DATABASE.md)** | Schema completo database, tabelle, RLS policies, migrazioni, funzioni helper |
 | **[API.md](docs/API.md)** | Documentazione completa API endpoints con esempi |
 | **[FEATURES.md](docs/FEATURES.md)** | Guida completa a tutte le funzionalità del sistema |
+| **[HOMEPAGE.md](docs/HOMEPAGE.md)** | Documentazione dettagliata homepage e componenti landing |
 | **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Guida setup, deployment, variabili ambiente, configurazione |
 
 ---

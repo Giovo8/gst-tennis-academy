@@ -11,53 +11,43 @@ export default function Footer() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
             <img src="/images/logo-tennis.png" alt="GST Academy" className="h-10 w-10" />
-            <span className="text-2xl font-bold" style={{ color: 'var(--secondary)', fontFamily: 'var(--font-urbanist)' }}>GST ACADEMY</span>
+            <span className="text-2xl font-bold" style={{ color: 'var(--secondary)', fontFamily: 'var(--font-urbanist)' }}>GST Academy</span>
           </div>
           
           {/* Navigation Links centered */}
           <nav className="flex flex-wrap items-center justify-center gap-6 mb-6">
             <Link 
               href="/bookings" 
-              className="text-base transition-colors"
+              className="text-base transition-opacity hover:opacity-70"
               style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
             >
               Prenota campo
             </Link>
             <Link 
               href="/services" 
-              className="text-base transition-colors"
+              className="text-base transition-opacity hover:opacity-70"
               style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
             >
               I nostri corsi
             </Link>
             <Link 
               href="/tornei" 
-              className="text-base transition-colors"
+              className="text-base transition-opacity hover:opacity-70"
               style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
             >
               Tornei
             </Link>
             <Link 
               href="#contatti" 
-              className="text-base transition-colors"
+              className="text-base transition-opacity hover:opacity-70"
               style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
             >
               Contattaci
             </Link>
             <Link 
               href="#chi-siamo" 
-              className="text-base transition-colors"
+              className="text-base transition-opacity hover:opacity-70"
               style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
             >
               Chi siamo
             </Link>
@@ -69,16 +59,7 @@ export default function Footer() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg transition-all"
-              style={{ border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+              className="transition-opacity hover:opacity-70"
               aria-label="Facebook"
             >
               <Facebook className="h-5 w-5" style={{ color: 'var(--secondary)' }} />
@@ -87,16 +68,7 @@ export default function Footer() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg transition-all"
-              style={{ border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+              className="transition-opacity hover:opacity-70"
               aria-label="Instagram"
             >
               <Instagram className="h-5 w-5" style={{ color: 'var(--secondary)' }} />
@@ -105,16 +77,7 @@ export default function Footer() {
               href="https://twitter.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg transition-all"
-              style={{ border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+              className="transition-opacity hover:opacity-70"
               aria-label="Twitter"
             >
               <Twitter className="h-5 w-5" style={{ color: 'var(--secondary)' }} />
@@ -123,16 +86,7 @@ export default function Footer() {
               href="https://youtube.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg transition-all"
-              style={{ border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+              className="transition-opacity hover:opacity-70"
               aria-label="YouTube"
             >
               <Youtube className="h-5 w-5" style={{ color: 'var(--secondary)' }} />
@@ -140,40 +94,34 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="pt-6 mt-6" style={{ borderTop: '1px solid var(--border)' }}>
+        {/* Bottom Section */}
+        <div className="pt-6 mt-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             {/* Copyright - Left */}
             <p className="text-sm" style={{ color: 'var(--secondary)' }}>
-              © 2025 Tennis School Booking. Tutti i diritti riservati.
+              © 2025 GST Academy. Tutti i diritti riservati.
             </p>
 
             {/* Bottom Links - Right */}
             <div className="flex flex-wrap gap-4 text-sm">
               <Link 
                 href="/privacy" 
-                className="underline transition-colors"
+                className="underline transition-opacity hover:opacity-70"
                 style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
                 Privacy
               </Link>
               <Link 
                 href="/terms" 
-                className="underline transition-colors"
+                className="underline transition-opacity hover:opacity-70"
                 style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
                 Termini di servizio
               </Link>
               <Link 
                 href="/cookie-policy" 
-                className="underline transition-colors"
+                className="underline transition-opacity hover:opacity-70"
                 style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
                 Impostazioni cookie
               </Link>
