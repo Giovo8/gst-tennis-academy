@@ -47,6 +47,50 @@
   .text-display-sm { font-size: 1.5rem; }
 }
 
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Prevent text overflow */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Optimize touch targets */
+  a, button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  section {
+    scroll-margin-top: 4rem;
+  }
+  
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Improve performance on mobile */
+@media (max-width: 640px) {
+  /* Reduce motion for better performance */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  /* Optimize rendering */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  }
+}
+
 /* Flat Text Effects - No Gradients */
 .text-primary {
   @apply text-frozen-600;

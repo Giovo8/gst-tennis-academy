@@ -95,23 +95,23 @@ export default function TournamentsSection() {
   };
 
   return (
-    <section id="tornei" className="py-16 sm:py-20 bg-white">
+    <section id="tornei" className="py-12 sm:py-16 md:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-secondary">
+        <div className="text-center mb-8 sm:mb-12">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
             COMPETIZIONI
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-secondary">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
             Tornei e Campionati
           </h2>
-          <p className="text-base sm:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80 px-2">
             Un calendario ricco di eventi per ogni livello di gioco. Iscriviti ai nostri tornei, sfida i tuoi limiti e dimostra il tuo valore punto su punto
           </p>
         </div>
 
         {/* Tournament Cards Grid */}
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 mb-12">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 mb-8 sm:mb-12">
         {loading ? (
           <div className="col-span-2 flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -129,9 +129,9 @@ export default function TournamentsSection() {
             return (
               <article key={t.id} className="flex flex-col">
                 {/* Image */}
-                <div className="relative h-64 rounded-lg overflow-hidden mb-4" style={{backgroundColor: 'var(--secondary)'}}>
+                <div className="relative h-48 sm:h-56 md:h-64 rounded-lg overflow-hidden mb-3 sm:mb-4" style={{backgroundColor: 'var(--secondary)'}}>
                   <div className="w-full h-full flex items-center justify-center">
-                    <svg className="w-16 h-16 opacity-30" fill="none" stroke="white" viewBox="0 0 24 24">
+                    <svg className="w-12 h-12 sm:w-16 sm:h-16 opacity-30" fill="none" stroke="white" viewBox="0 0 24 24">
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
@@ -143,25 +143,25 @@ export default function TournamentsSection() {
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1 sm:gap-2">
                   {/* Category & Date */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold" style={{color: 'var(--secondary)'}}>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-xs sm:text-sm font-semibold" style={{color: 'var(--secondary)'}}>
                       {typeLabel.toLowerCase()}
                     </span>
-                    <span className="text-sm" style={{color: 'var(--secondary)', opacity: 0.6}}>
+                    <span className="text-xs sm:text-sm" style={{color: 'var(--secondary)', opacity: 0.6}}>
                       {formatDate(t.start_date)}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold" style={{color: 'var(--secondary)'}}>
+                  <h3 className="text-lg sm:text-xl font-bold" style={{color: 'var(--secondary)'}}>
                     {t.title}
                   </h3>
 
                   {/* Description */}
                   {t.description && (
-                    <p className="text-base" style={{color: 'var(--secondary)', opacity: 0.8}}>
+                    <p className="text-sm sm:text-base" style={{color: 'var(--secondary)', opacity: 0.8}}>
                       {t.description}
                     </p>
                   )}
@@ -169,7 +169,7 @@ export default function TournamentsSection() {
                   {/* Read More Link */}
                   <Link 
                     href={`/tornei/${t.id}`} 
-                    className="inline-flex items-center gap-2 text-base font-semibold transition-colors mt-1 hover:opacity-70"
+                    className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold transition-colors mt-1 hover:opacity-70"
                     style={{color: 'var(--secondary)'}}
                   >
                     Leggi
@@ -185,7 +185,7 @@ export default function TournamentsSection() {
         <div className="text-center">
           <Link
             href="/tornei"
-            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all hover:opacity-90"
+            className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-md font-semibold text-sm sm:text-base transition-all hover:opacity-90"
             style={{
               backgroundColor: 'var(--secondary)',
               color: 'white'

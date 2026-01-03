@@ -94,36 +94,36 @@ export default function StaffSection() {
   }
 
   return (
-    <section id="staff" className="py-16 sm:py-20 bg-white">
+    <section id="staff" className="py-12 sm:py-16 md:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-secondary">
+        <div className="text-center mb-8 sm:mb-12">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
             STAFF
           </p>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-secondary">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
             I nostri maestri
           </h2>
-          <p className="text-base sm:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80 px-2">
             Professionisti con anni di esperienza nel tennis agonistico e didattico.
           </p>
         </div>
 
         {/* Staff Grid */}
-        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-16">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12 sm:mb-16">
           {staff.map((member) => (
             <article key={member.id} className="text-center">
               {/* Avatar */}
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-3 sm:mb-4">
                 {member.image_url ? (
                   <img
                     src={member.image_url}
                     alt={member.full_name}
-                    className="w-24 h-24 rounded-full object-cover"
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
-                    <svg className="w-12 h-12" style={{fill: 'white', opacity: 0.8}} viewBox="0 0 24 24">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
+                    <svg className="w-10 h-10 sm:w-12 sm:h-12" style={{fill: 'white', opacity: 0.8}} viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                   </div>
@@ -131,17 +131,17 @@ export default function StaffSection() {
               </div>
 
               {/* Name */}
-              <h3 className="text-lg font-bold mb-1 text-secondary">
+              <h3 className="text-base sm:text-lg font-bold mb-1 text-secondary">
                 {member.full_name}
               </h3>
 
               {/* Role */}
-              <p className="text-sm font-medium mb-3" style={{color: 'var(--secondary)', opacity: 0.7}}>
+              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3" style={{color: 'var(--secondary)', opacity: 0.7}}>
                 {member.role}
               </p>
 
               {/* Bio */}
-              <p className="text-sm mb-4 px-2 text-secondary opacity-80">
+              <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-2 text-secondary opacity-80">
                 {member.bio || "Professionista certificato con anni di esperienza."}
               </p>
 
@@ -163,15 +163,15 @@ export default function StaffSection() {
 
         {/* Join Team CTA */}
         <div className="text-center">
-          <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-secondary">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-secondary">
             Unisciti al team
           </h3>
-          <p className="text-base mb-6 max-w-2xl mx-auto" style={{color: 'var(--secondary)', opacity: 0.8}}>
+          <p className="text-sm sm:text-base mb-4 sm:mb-6 max-w-2xl mx-auto px-4" style={{color: 'var(--secondary)', opacity: 0.8}}>
             Cerchiamo maestri e istruttori appassionati di tennis e di insegnamento.
           </p>
           <Link
             href="/lavora-con-noi"
-            className="inline-block px-8 py-3 rounded-md font-semibold text-base transition-all hover:opacity-90"
+            className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-md font-semibold text-sm sm:text-base transition-all hover:opacity-90 min-h-[48px] touch-manipulation"
             style={{
               backgroundColor: 'var(--secondary)',
               color: 'white'

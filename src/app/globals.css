@@ -35,6 +35,21 @@
   *:hover {
     transition-duration: 0s !important;
   }
+  
+  /* Improve scrolling performance */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better focus states for touch */
+  button:focus,
+  a:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 }
 
 /* Prevent zoom on input focus (iOS) */
@@ -748,6 +763,24 @@ h6, .text-h6 {
   h1 { font-size: 1.75rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }
+  
+  /* Optimize images for mobile */
+  img {
+    image-rendering: auto;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  
+  /* Reduce padding on sections */
+  section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  
+  /* Better grid layouts on mobile */
+  .grid {
+    gap: 1rem;
+  }
 }
 
 /* Touch targets */
