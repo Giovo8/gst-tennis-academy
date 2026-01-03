@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function ImageWithTextSection() {
   return (
-    <section className="relative w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] overflow-hidden">
+    <section className="relative w-full h-[150px] sm:h-[200px] md:h-[250px] lg:h-[300px] xl:h-[350px] overflow-hidden" style={{ maxHeight: '350px' }}>
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
