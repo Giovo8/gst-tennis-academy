@@ -83,62 +83,75 @@ export default function PublicNavbar() {
     <nav className="bg-white sticky top-0 z-50 safe-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Left Side - Navigation Links */}
-          <div className="hidden lg:flex items-center gap-8">
-            <Link 
-              href="/services" 
-              className="font-semibold transition-colors"
+          {/* Left Side - Mobile Menu Button on mobile, Navigation Links on desktop */}
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="lg:hidden p-2 transition min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
               style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+              aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
             >
-              Corsi
-            </Link>
-            <Link 
-              href="/tornei" 
-              className="font-semibold transition-colors"
-              style={{ color: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-            >
-              Tornei
-            </Link>
-            <div className="relative">
-              <button
-                onClick={() => setIsRatesOpen(!isRatesOpen)}
-                onBlur={() => setTimeout(() => setIsRatesOpen(false), 200)}
-                className="flex items-center gap-1 font-semibold transition-colors"
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+
+            {/* Desktop Navigation Links */}
+            <div className="hidden lg:flex items-center gap-8">
+              <Link 
+                href="/services" 
+                className="font-semibold transition-colors"
                 style={{ color: 'var(--secondary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
-                Tariffe
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {isRatesOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200" style={{ border: '1px solid var(--border)' }}>
-                  <Link
-                    href="/services#prezzi"
-                    className="block px-4 py-2 transition-colors"
-                    style={{ color: 'var(--foreground)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    onClick={() => setIsRatesOpen(false)}
-                  >
-                    Prezzi Corsi
-                  </Link>
-                  <Link
-                    href="/bookings"
-                    className="block px-4 py-2 transition-colors"
-                    style={{ color: 'var(--foreground)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    onClick={() => setIsRatesOpen(false)}
-                  >
-                    Prenota Campo
-                  </Link>
-                </div>
-              )}
+                Corsi
+              </Link>
+              <Link 
+                href="/tornei" 
+                className="font-semibold transition-colors"
+                style={{ color: 'var(--secondary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+              >
+                Tornei
+              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setIsRatesOpen(!isRatesOpen)}
+                  onBlur={() => setTimeout(() => setIsRatesOpen(false), 200)}
+                  className="flex items-center gap-1 font-semibold transition-colors"
+                  style={{ color: 'var(--secondary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+                >
+                  Tariffe
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                {isRatesOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200" style={{ border: '1px solid var(--border)' }}>
+                    <Link
+                      href="/services#prezzi"
+                      className="block px-4 py-2 transition-colors"
+                      style={{ color: 'var(--foreground)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onClick={() => setIsRatesOpen(false)}
+                    >
+                      Prezzi Corsi
+                    </Link>
+                    <Link
+                      href="/bookings"
+                      className="block px-4 py-2 transition-colors"
+                      style={{ color: 'var(--foreground)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onClick={() => setIsRatesOpen(false)}
+                    >
+                      Prenota Campo
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -155,10 +168,10 @@ export default function PublicNavbar() {
           </Link>
 
           {/* Right Side - Area GST Button */}
-          <div className="hidden lg:flex items-center">
+          <div className="flex items-center">
             <Link
               href={getDashboardLink()}
-              className="px-6 py-2.5 rounded-md text-white font-semibold text-sm transition-all shadow-sm"
+              className="px-4 py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all whitespace-nowrap flex items-center justify-center"
               style={{ backgroundColor: 'var(--secondary)' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary-hover)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary)'}
@@ -166,30 +179,18 @@ export default function PublicNavbar() {
               Area GST
             </Link>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden rounded-lg p-2.5 transition min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
-            style={{ color: 'var(--foreground)' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
-          >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="lg:hidden mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
             {/* Navigation Links */}
             <div className="space-y-2 px-2">
               <Link
                 href="/services"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-3 rounded-lg font-medium transition-colors min-h-[48px] touch-manipulation"
-                style={{ color: 'var(--foreground)' }}
+                className="block px-4 py-3 rounded-lg font-semibold transition-colors min-h-[48px] touch-manipulation"
+                style={{ color: 'var(--secondary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
@@ -198,8 +199,8 @@ export default function PublicNavbar() {
               <Link
                 href="/tornei"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-3 rounded-lg font-medium transition-colors min-h-[48px] touch-manipulation"
-                style={{ color: 'var(--foreground)' }}
+                className="block px-4 py-3 rounded-lg font-semibold transition-colors min-h-[48px] touch-manipulation"
+                style={{ color: 'var(--secondary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
@@ -208,26 +209,12 @@ export default function PublicNavbar() {
               <Link
                 href="/services#prezzi"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-3 rounded-lg font-medium transition-colors min-h-[48px] touch-manipulation"
-                style={{ color: 'var(--foreground)' }}
+                className="block px-4 py-3 rounded-lg font-semibold transition-colors min-h-[48px] touch-manipulation"
+                style={{ color: 'var(--secondary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 Tariffe
-              </Link>
-            </div>
-
-            {/* Action Button */}
-            <div className="px-2">
-              <Link
-                href={getDashboardLink()}
-                onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-sm font-semibold text-white shadow-sm min-h-[48px] touch-manipulation w-full transition-all"
-                style={{ backgroundColor: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary)'}
-              >
-                Area GST
               </Link>
             </div>
           </div>

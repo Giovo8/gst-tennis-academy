@@ -20,7 +20,7 @@ export default function Home() {
         {/* Accessibility skip link */}
         <a href="#main-content" className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4">Vai al contenuto</a>
 
-        <div className="flex flex-col" id="main-content">
+        <div className="flex flex-col gap-0" id="main-content">
           <TextHeroSection />
           <ImageOnlySection />
           <ImageWithTextSection />
