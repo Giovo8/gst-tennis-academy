@@ -145,7 +145,7 @@ export default function TournamentsPage() {  const router = useRouter();  const 
           userId: user.id,
           type: "tournament",
           title: "Iscrizione al torneo confermata",
-          message: `Ti sei iscritto con successo al torneo: ${tournament.name}`,
+          message: `Ti sei iscritto con successo al torneo: ${tournament.title}`,
           link: "/dashboard/atleta/tornei",
         });
 
