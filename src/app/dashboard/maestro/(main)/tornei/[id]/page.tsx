@@ -256,7 +256,7 @@ export default function TournamentDetailDashboard() {
   }
 
   const spotsLeft = (tournament.max_participants ?? 0) - currentParticipants;
-  const isCampionato = tournament.tournament_type === 'campionato';
+  const isCampionato = tournament.competition_type === 'campionato';
 
   return (
     <div className="space-y-6">

@@ -36,6 +36,7 @@ interface Tournament {
   max_participants: number;
   status: string;
   format: string;
+  competition_type?: string;
   entry_fee: number | null;
   prize_money: number | null;
   participant_count?: number;
@@ -241,7 +242,7 @@ export default function TournamentsPage() {  const router = useRouter();  const 
           {/* Icona e Titolo */}
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className="p-3 rounded-lg bg-secondary/10 flex-shrink-0">
-              {getTournamentIcon(tournament.tournament_type)}
+              {getTournamentIcon(tournament.competition_type)}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-secondary text-lg mb-1 truncate">{tournament.title}</h3>
@@ -268,10 +269,10 @@ export default function TournamentsPage() {  const router = useRouter();  const 
             </div>
 
             {/* Tipo Competizione */}
-            {tournament.tournament_type && (
+            {tournament.competition_type && (
               <div className="flex items-center gap-2 text-secondary/70 w-40">
-                {getTournamentIconSmall(tournament.tournament_type)}
-                <span className="text-sm font-medium truncate">{getTournamentTypeBadge(tournament.tournament_type)}</span>
+                {getTournamentIconSmall(tournament.competition_type)}
+                <span className="text-sm font-medium truncate">{getTournamentTypeBadge(tournament.competition_type)}</span>
               </div>
             )}
 
@@ -325,10 +326,10 @@ export default function TournamentsPage() {  const router = useRouter();  const 
             <Users className="h-3.5 w-3.5 text-secondary/40" />
             <span className="font-medium">{tournament.participant_count || 0}/{tournament.max_participants}</span>
           </div>
-          {tournament.tournament_type && (
+          {tournament.competition_type && (
             <div className="flex items-center gap-1.5 text-secondary/70">
               <LayoutGrid className="h-3.5 w-3.5 text-secondary/40" />
-              <span className="font-medium">{getTournamentTypeBadge(tournament.tournament_type)}</span>
+              <span className="font-medium">{getTournamentTypeBadge(tournament.competition_type)}</span>
             </div>
           )}
         </div>

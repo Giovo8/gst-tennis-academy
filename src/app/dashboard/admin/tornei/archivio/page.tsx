@@ -188,7 +188,7 @@ export default function ArchivioCompetizioni() {
 
           {/* Data Rows */}
           {filteredTournaments.map((tournament) => {
-            const typeInfo = typeConfig[tournament.tournament_type || 'eliminazione_diretta'];
+            const typeInfo = typeConfig[tournament.competition_type || 'eliminazione_diretta'];
             const statusInfo = statusConfig[tournament.status || 'Completato'] || statusConfig["Completato"];
 
             return (
