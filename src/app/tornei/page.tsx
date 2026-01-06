@@ -6,7 +6,6 @@ import { Trophy, Calendar, Users, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import PublicNavbar from "@/components/layout/PublicNavbar";
-import PromoBanner from "@/components/layout/PromoBanner";
 
 type Tournament = {
   id: string;
