@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2, Send, Dumbbell, Users, CheckCircle } from "lucide-react";
 import PublicNavbar from "@/components/layout/PublicNavbar";
-import PromoBanner from "@/components/layout/PromoBanner";
 
 type RoleOption = "maestro" | "preparatore";
 
