@@ -20,7 +20,7 @@ type Tournament = {
   description?: string;
   start_date?: string;
   max_participants?: number;
-  tournament_type?: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
+  competition_type?: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
   status?: string;
   category?: string;
   surface_type?: string;
