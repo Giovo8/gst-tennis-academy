@@ -130,7 +130,7 @@ export default function GestoreNavbar({
               height={36}
               className="h-9 w-9"
             />
-            <span className="text-lg font-bold text-white">GST Academy</span>
+            <span className="text-lg font-bold text-white">Area GST</span>
           </Link>
 
           {/* Desktop Menu */}

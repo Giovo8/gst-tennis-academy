@@ -9,7 +9,6 @@ import {
   Users, 
   Calendar, 
   FileText, 
-  Settings, 
   Trophy, 
   MessageSquare, 
   Mail,
@@ -84,9 +83,6 @@ export default function AdminNavbar({
       items: [
         { href: "/dashboard/admin/news", label: "News", icon: Newspaper },
         { href: "/dashboard/admin/courses", label: "Corsi", icon: BookOpen },
-        { href: "/dashboard/admin/hero-images", label: "Hero Images", icon: ImageIcon },
-        { href: "/dashboard/admin/hero-content", label: "Hero Content", icon: FileText },
-        { href: "/dashboard/admin/homepage-order", label: "Ordine Homepage", icon: Settings },
       ]
     },
     {
@@ -112,17 +108,6 @@ export default function AdminNavbar({
       label: "Email",
       href: "/dashboard/admin/email",
       icon: Mail,
-    },
-    {
-      id: "settings",
-      label: "Impostazioni",
-      icon: Settings,
-      items: [
-        { href: "/dashboard/admin/subscriptions", label: "Abbonamenti", icon: CreditCard },
-        { href: "/dashboard/admin/staff", label: "Staff", icon: Users },
-        { href: "/dashboard/admin/programs", label: "Programmi", icon: BookOpen },
-        { href: "/dashboard/admin/settings", label: "Generali", icon: Settings },
-      ]
     },
   ];
 
@@ -160,7 +145,7 @@ export default function AdminNavbar({
               height={36}
               className="h-9 w-9"
             />
-            <span className="text-lg font-bold text-white">GST Academy</span>
+            <span className="text-lg font-bold text-white">Area GST</span>
           </Link>
 
           {/* Desktop Menu */}

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
-import { Newspaper, Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
+import { Newspaper, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, Search, Filter, Calendar, X, RefreshCw, Download, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import Link from "next/link";
 
 type News = {
   id: string;
@@ -23,24 +24,18 @@ type News = {
 export default function AdminNewsPage() {
   const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  
-  // Form state
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [summary, setSummary] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [published, setPublished] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const categoryLabels: Record<string, string> = {
     'notizie': 'Notizie',
     'risultati': 'Risultati',
     'eventi': 'Eventi',
     'generale': 'Generale',
-    'tornei': 'Tornei'
+    'tornei': 'Tornei',
+    'orari': 'Orari',
+    'lezioni': 'Lezioni',
+    'novità': 'Novità'
   };
 
   useEffect(() => {
@@ -63,84 +58,15 @@ export default function AdminNewsPage() {
   }
 
   function resetForm() {
-    setTitle("");
-    setCategory("");
-    setSummary("");
-    setImageUrl("");
-    setPublished(true);
-    setEditingId(null);
-    setError(null);
-    setSuccess(null);
+    // Not needed anymore
   }
 
   function editNews(item: News) {
-    setTitle(item.title);
-    setCategory(item.category);
-    setSummary(item.excerpt || item.content);
-    setImageUrl(item.image_url || "");
-    setPublished(item.is_published);
-    setEditingId(item.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Not needed anymore
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setSaving(true);
-
-    if (!title || !category || !summary) {
-      setError("Titolo, categoria e sommario sono obbligatori");
-      setSaving(false);
-      return;
-    }
-
-    try {
-      if (editingId) {
-        // Update existing
-        const { error } = await supabase
-          .from("news")
-          .update({
-            title,
-            category,
-            content: summary,
-            excerpt: summary.substring(0, 200),
-            image_url: imageUrl || null,
-            is_published: published,
-            published_at: published ? new Date().toISOString() : null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingId);
-
-        if (error) throw error;
-        setSuccess("News aggiornata!");
-      } else {
-        // Create new
-        const { data: userData } = await supabase.auth.getUser();
-        const { error } = await supabase
-          .from("news")
-          .insert({
-            title,
-            category,
-            content: summary,
-            excerpt: summary.substring(0, 200),
-            image_url: imageUrl || null,
-            is_published: published,
-            author_id: userData.user?.id,
-            published_at: published ? new Date().toISOString() : null,
-          });
-
-        if (error) throw error;
-        setSuccess("News creata!");
-      }
-
-      resetForm();
-      loadNews();
-    } catch (err: any) {
-      setError(err.message || "Errore durante il salvataggio");
-    } finally {
-      setSaving(false);
-    }
+    // Not needed anymore
   }
 
   async function deleteNews(id: string) {
@@ -151,7 +77,6 @@ export default function AdminNewsPage() {
     if (error) {
       alert("Errore durante l'eliminazione: " + error.message);
     } else {
-      setSuccess("News eliminata!");
       loadNews();
     }
   }
@@ -174,211 +99,234 @@ export default function AdminNewsPage() {
     }
   }
 
+  // Filtri
+  const filteredNews = news.filter((item) => {
+    const matchesSearch = !searchQuery || 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = filterCategory === "all" || item.category === filterCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const stats = {
+    total: news.length,
+    published: news.filter(n => n.is_published).length,
+    draft: news.filter(n => !n.is_published).length
+  };
+
+  function exportToCSV() {
+    const csv = [
+      ["Titolo", "Categoria", "Stato", "Data Pubblicazione", "Data Creazione"].join(","),
+      ...filteredNews.map((item) => [
+        `"${item.title.replace(/"/g, '""')}"`,
+        item.category,
+        item.is_published ? "Pubblicata" : "Bozza",
+        item.published_at ? new Date(item.published_at).toLocaleDateString("it-IT") : "N/A",
+        new Date(item.created_at).toLocaleDateString("it-IT")
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `news-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-700 mb-2">
+            <h1 className="text-3xl font-bold text-secondary mb-2 flex items-center gap-3">
+              <Newspaper className="h-8 w-8" />
               Gestione News
             </h1>
-            <p className="text-gray-600">Crea, modifica ed elimina le news visibili nella homepage</p>
+            <p className="text-secondary/70 font-medium">Crea e gestisci le news visibili sulla piattaforma</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href="/dashboard/admin/news/create"
+              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Crea News
+            </Link>
+            <Link
+              href="/news"
+              target="_blank"
+              className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Visualizza News
+            </Link>
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
-              <Plus className="h-5 w-5 text-blue-600" />
-              {editingId ? "Modifica News" : "Nuova News"}
-            </h2>
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-sm px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-all"
-              >
-                Annulla modifica
-              </button>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <input
-              type="text"
-              placeholder="Titolo *"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="">Seleziona Categoria *</option>
-              <option value="notizie">Notizie</option>
-              <option value="risultati">Risultati</option>
-              <option value="eventi">Eventi</option>
-              <option value="generale">Generale</option>
-              <option value="tornei">Tornei</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <input
-              type="url"
-              placeholder="URL Immagine (opzionale)"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            {imageUrl && (
-              <div className="relative w-full rounded-xl overflow-hidden border border-white/15 bg-surface/50">
-                <div className="aspect-video w-full">
-                  <img
-                    src={imageUrl}
-                    alt="Anteprima"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      target.style.display = 'none';
-                      const parent = target.parentElement;
-                      if (parent) {
-                        parent.innerHTML = '<div class="flex items-center justify-center h-full text-sm text-red-400"><svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>URL immagine non valido</div>';
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <textarea
-            placeholder="Sommario *"
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={4}
-            className="w-full rounded-lg bg-white border border-gray-300 px-4 py-2.5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-
-          <label className="flex items-center gap-2 text-sm text-gray-700 font-semibold">
-            <input
-              type="checkbox"
-              checked={published}
-              onChange={(e) => setPublished(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            Pubblicata
-          </label>
-
-          {error && (
-            <p className="rounded-lg border border-red-300 bg-red-100 px-4 py-3 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-
-          {success && (
-            <p className="rounded-lg border border-green-300 bg-green-100 px-4 py-3 text-sm text-green-700">
-              {success}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-sm"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Salvataggio...
-              </>
-            ) : (
-              <>
-                {editingId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                {editingId ? "Aggiorna" : "Crea News"}
-              </>
-            )}
-          </button>
-        </form>
-
         {/* News List */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-700">Tutte le News ({news.length})</h2>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+              <input
+                type="text"
+                placeholder="Cerca per titolo o contenuto..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setFilterCategory("all")}
+                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                  filterCategory === "all"
+                    ? "text-white bg-secondary hover:opacity-90"
+                    : "bg-white text-secondary/70 hover:bg-secondary/5"
+                }`}
+              >
+                <Filter className="inline-block w-4 h-4 mr-1.5" />
+                Tutte
+              </button>
+              {Object.entries(categoryLabels).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setFilterCategory(value)}
+                  className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                    filterCategory === value
+                      ? "text-white bg-secondary hover:opacity-90"
+                      : "bg-white text-secondary/70 hover:bg-secondary/5"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           
           {loading ? (
-            <div className="flex items-center gap-2 text-gray-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Caricamento...
+            <div className="flex items-center justify-center py-12 bg-white rounded-xl">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-secondary mx-auto mb-3" />
+                <p className="text-secondary/60">Caricamento news...</p>
+              </div>
             </div>
-          ) : news.length === 0 ? (
-            <p className="text-gray-500">Nessuna news presente. Crea la prima!</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {news.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl border border-gray-200 p-5 space-y-3 shadow-sm hover:shadow-md transition-all"
+          ) : filteredNews.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl border border-secondary/10">
+              <Newspaper className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-secondary mb-2">
+                {searchQuery || filterCategory !== "all" 
+                  ? "Nessuna news trovata" 
+                  : "Nessuna news presente"}
+              </h3>
+              <p className="text-secondary/60 mb-4">
+                {searchQuery || filterCategory !== "all"
+                  ? "Prova a modificare i filtri di ricerca"
+                  : "Crea la prima news per iniziare!"}
+              </p>
+              {(searchQuery || filterCategory !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterCategory("all");
+                  }}
+                  className="text-sm text-secondary hover:underline"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold border ${
-                      item.is_published ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 border-gray-300'
-                    }`}>
-                      {categoryLabels[item.category] || item.category}
-                    </span>
-                    <button
-                      onClick={() => togglePublished(item.id, item.is_published)}
-                      className="text-gray-500 hover:text-gray-700"
-                      title={item.is_published ? "Nascondi" : "Pubblica"}
-                    >
-                      {item.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
-
-                  {item.image_url && (
-                    <div className="w-full rounded-lg overflow-hidden bg-gray-100">
-                      <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="w-full h-40 object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+                  Ripristina filtri
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredNews.map((item) => (
+                <article
+                  key={item.id}
+                  className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => window.location.href = `/news/${item.id}`}
+                >
+                  <div className="flex flex-col sm:flex-row gap-4 p-4">
+                    {/* Image */}
+                    <div className="flex-shrink-0 w-full sm:w-48 h-32 overflow-hidden rounded-lg">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) {
+                              const placeholder = parent.querySelector('.placeholder');
+                              if (placeholder) {
+                                (placeholder as HTMLElement).style.display = 'flex';
+                              }
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className={`placeholder w-full h-full flex items-center justify-center bg-secondary/5 ${item.image_url ? 'hidden' : ''}`}>
+                        <svg
+                          className="w-12 h-12 text-secondary/20"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
                     </div>
-                  )}
 
-                  <h3 className="text-base font-semibold text-gray-700">{item.title}</h3>
-                  <p className="text-sm text-gray-500 line-clamp-3">{item.excerpt || item.content}</p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(item.published_at || item.created_at).toLocaleDateString("it-IT", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Category */}
+                      <span className="inline-block text-xs font-semibold text-secondary mb-2">
+                        {categoryLabels[item.category] || item.category}
+                      </span>
 
-                  <div className="flex items-center gap-2 pt-2">
-                    <button
-                      onClick={() => editNews(item)}
-                      className="flex-1 flex items-center justify-center gap-2 p-2 bg-blue-100 text-blue-700 border border-blue-300 rounded-lg hover:bg-blue-200 transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Modifica
-                    </button>
-                    <button
-                      onClick={() => deleteNews(item.id)}
-                      className="flex items-center justify-center gap-2 p-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                      {/* Title */}
+                      <h3 className="text-lg font-bold text-secondary mb-2 hover:opacity-70 transition-opacity line-clamp-2">
+                        {item.title}
+                      </h3>
+
+                      {/* Description */}
+                      <p className="text-sm text-secondary/70 line-clamp-2 mb-3">
+                        {item.excerpt || item.content.substring(0, 150)}
+                      </p>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/dashboard/admin/news/create?id=${item.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 rounded-md bg-secondary/10 hover:bg-secondary/20 text-secondary transition-colors"
+                          title="Modifica"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNews(item.id);
+                          }}
+                          className="p-2 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                          title="Elimina"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           )}

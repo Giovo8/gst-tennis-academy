@@ -19,6 +19,7 @@ import {
   Newspaper,
   ArrowRight,
   AlertCircle,
+  Swords,
 } from "lucide-react";
 
 interface Stats {
@@ -35,6 +36,8 @@ interface Stats {
   newsCount: number;
   announcementsCount: number;
   newUsersThisMonth: number;
+  arenaChallenges: number;
+  arenaPending: number;
 }
 
 export default function AdminDashboard() {
@@ -52,6 +55,8 @@ export default function AdminDashboard() {
     newsCount: 0,
     announcementsCount: 0,
     newUsersThisMonth: 0,
+    arenaChallenges: 0,
+    arenaPending: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
@@ -134,6 +139,17 @@ export default function AdminDashboard() {
         .from("announcements")
         .select("*", { count: "exact", head: true });
 
+      // Arena Challenges
+      const { count: arenaChallengesCount } = await supabase
+        .from("arena_challenges")
+        .select("*", { count: "exact", head: true });
+
+      // Arena Pending Challenges
+      const { count: arenaPendingCount } = await supabase
+        .from("arena_challenges")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+
       // Recent Activity - ultimi 5 booking
       const { data: recentBookings } = await supabase
         .from("bookings")
@@ -155,6 +171,8 @@ export default function AdminDashboard() {
         newsCount: newsCount || 0,
         announcementsCount: announcementsCount || 0,
         newUsersThisMonth: usersCount || 0,
+        arenaChallenges: arenaChallengesCount || 0,
+        arenaPending: arenaPendingCount || 0,
       });
 
       setRecentActivity(recentBookings || []);
@@ -188,7 +206,7 @@ export default function AdminDashboard() {
   const projects = [
     {
       id: "1",
-      title: "Gestione Tornei",
+      title: "Gestione competizioni",
       subtitle: `${stats.activeTournaments} tornei attivi`,
       icon: Trophy,
       color: "blue",
@@ -330,9 +348,84 @@ export default function AdminDashboard() {
           <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.activeTournaments}</h3>
           <p className="text-sm text-gray-600 mb-2">Tornei Attivi</p>
           <div className="flex items-center gap-2 text-xs text-purple-600">
-            <CheckCircle className="h-3 w-3" />
+            <Activity className="h-3 w-3" />
             <span>{stats.totalTournaments} totali</span>
           </div>
+        </Link>
+
+        {/* Arena */}
+        <Link href="/dashboard/admin/arena" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-orange-50 rounded-lg group-hover:bg-orange-100 transition-colors">
+              <Swords className="h-6 w-6 text-orange-600" />
+            </div>
+            {stats.arenaPending > 0 && (
+              <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">
+                {stats.arenaPending}
+              </span>
+            )}
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.arenaChallenges}</h3>
+          <p className="text-sm text-gray-600 mb-2">Sfide Arena</p>
+          <div className="flex items-center gap-2 text-xs text-orange-600">
+            <Clock className="h-3 w-3" />
+            <span>{stats.arenaPending} in attesa</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* News */}
+        <Link href="/dashboard/admin/news" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <Newspaper className="h-6 w-6 text-blue-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.newsCount}</h3>
+          <p className="text-sm text-gray-600">News Pubblicate</p>
+        </Link>
+
+        {/* Announcements */}
+        <Link href="/dashboard/admin/announcements" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition-colors">
+              <Bell className="h-6 w-6 text-yellow-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-yellow-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.announcementsCount}</h3>
+          <p className="text-sm text-gray-600">Annunci Attivi</p>
+        </Link>
+
+        {/* Messages */}
+        <Link href="/dashboard/admin/chat" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-pink-50 rounded-lg group-hover:bg-pink-100 transition-colors">
+              <MessageSquare className="h-6 w-6 text-pink-600" />
+            </div>
+            {stats.unreadMessages > 0 && (
+              <span className="px-2 py-1 bg-pink-100 text-pink-600 text-xs font-bold rounded-full">
+                {stats.unreadMessages}
+              </span>
+            )}
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.unreadMessages}</h3>
+          <p className="text-sm text-gray-600">Messaggi Non Letti</p>
+        </Link>
+
+        {/* Emails */}
+        <Link href="/dashboard/admin/mail-marketing" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+              <Mail className="h-6 w-6 text-green-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.pendingEmails}</h3>
+          <p className="text-sm text-gray-600">Email in Coda</p>
         </Link>
       </div>
 
@@ -468,7 +561,14 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl p-6 text-white">
         <h3 className="text-xl font-bold mb-4">Azioni Rapide</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Link
+            href="/dashboard/admin/arena"
+            className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all text-center"
+          >
+            <Swords className="h-6 w-6 mx-auto mb-2" />
+            <p className="text-sm font-medium">Gestione Arena</p>
+          </Link>
           <Link
             href="/dashboard/admin/users"
             className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all text-center"

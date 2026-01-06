@@ -19,6 +19,15 @@ const nextConfig: NextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/coach/:path*',
+        destination: '/dashboard/maestro/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

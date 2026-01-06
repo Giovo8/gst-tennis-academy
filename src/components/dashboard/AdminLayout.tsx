@@ -12,18 +12,15 @@ import {
   Users,
   MessageSquare,
   Mail,
-  Settings,
+  Send,
   Key,
   Newspaper,
   Image,
   Bell,
   Video,
-  Megaphone,
-  Layout,
-  ImageIcon,
   Briefcase,
   UsersIcon,
-  ListOrdered,
+  Swords,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -71,35 +68,45 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     {
       label: "Dashboard",
       href: "/dashboard/admin",
-      icon: <Home className="h-5 w-5" />,
+      icon: <LayoutGrid className="h-5 w-5" />,
     },
     {
-      label: "Gestione Prenotazioni",
+      label: "Prenotazioni",
       href: "/dashboard/admin/bookings",
       icon: <Calendar className="h-5 w-5" />,
     },
     {
-      label: "Gestione Tornei",
+      label: "Competizioni",
       href: "/dashboard/admin/tornei",
       icon: <Trophy className="h-5 w-5" />,
     },
     {
-      label: "Gestione Utenti",
+      label: "Arena",
+      href: "/dashboard/admin/arena",
+      icon: <Swords className="h-5 w-5" />,
+    },
+    {
+      label: "Utenti",
       href: "/dashboard/admin/users",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      label: "Gestione Video Lezioni",
+      label: "Video Lezioni",
       href: "/dashboard/admin/video-lessons",
       icon: <Video className="h-5 w-5" />,
     },
     {
-      label: "Email",
-      href: "/dashboard/admin/email",
+      label: "Chat",
+      href: "/dashboard/admin/chat",
       icon: <Mail className="h-5 w-5" />,
     },
     {
-      label: "Home News",
+      label: "Mail Marketing",
+      href: "/dashboard/admin/mail-marketing",
+      icon: <Send className="h-5 w-5" />,
+    },
+    {
+      label: "News",
       href: "/dashboard/admin/news",
       icon: <Newspaper className="h-5 w-5" />,
     },
@@ -109,36 +116,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: <Bell className="h-5 w-5" />,
     },
     {
-      label: "Banner Promozionale",
-      href: "/dashboard/admin/promo-banner",
-      icon: <Megaphone className="h-5 w-5" />,
-    },
-    {
-      label: "Disposizione Homepage",
-      href: "/dashboard/admin/homepage-order",
-      icon: <Layout className="h-5 w-5" />,
-    },
-    {
-      label: "Hero Section",
-      href: "/dashboard/admin/hero-content",
-      icon: <ImageIcon className="h-5 w-5" />,
-    },
-    {
-      label: "Hero Immagini",
-      href: "/dashboard/admin/hero-images",
-      icon: <Image className="h-5 w-5" />,
-    },
-    {
-      label: "Home Staff",
+      label: "Staff",
       href: "/dashboard/admin/staff",
       icon: <UsersIcon className="h-5 w-5" />,
     },
-    {
-      label: "Programmi",
-      href: "/dashboard/admin/programs",
-      icon: <ListOrdered className="h-5 w-5" />,
-    },
   ];
+
+  // Sezione primaria in alto nella sidebar (es. voci principali)
+  const primaryNavItems: NavItem[] = navItems.slice(0, 4);
 
   if (loading) {
     return (
@@ -154,6 +139,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <DashboardShell
       navItems={navItems}
+      primaryNavItems={primaryNavItems}
       role={userRole}
       userName={userName}
       userEmail={userEmail}

@@ -225,10 +225,12 @@ function generateEliminationBracket(participants: any[], tournamentId: string) {
     if (!player1 && player2) {
       match.winner_id = player2.id;
       match.match_status = 'completed';
+      match.status = 'completata';
       match.player2_score = 1;
     } else if (player1 && !player2) {
       match.winner_id = player1.id;
       match.match_status = 'completed';
+      match.status = 'completata';
       match.player1_score = 1;
     }
     

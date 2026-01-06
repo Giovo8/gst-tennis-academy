@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
+import { createNotification } from "@/lib/notifications/createNotification";
+import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 
 export async function GET(req: Request) {
   try {
@@ -127,6 +129,34 @@ export async function POST(req: Request) {
       .select();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Notify admins/gestori about new booking
+    if (data && data[0]) {
+      const booking = data[0];
+      const startDate = new Date(booking.start_time).toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      const startTime = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      // Get user name for notification
+      const { data: userProfile } = await supabaseServer
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user_id)
+        .single();
+
+      await notifyAdmins({
+        type: "booking",
+        title: "Nuova prenotazione",
+        message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTime}`,
+        link: "/dashboard/admin/bookings",
+      });
+    }
 
     return NextResponse.json({ booking: data?.[0] ?? null }, { status: 201 });
   } catch (err: unknown) {

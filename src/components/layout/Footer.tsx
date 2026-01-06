@@ -11,7 +11,7 @@ export default function Footer() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
             <img src="/images/logo-tennis.png" alt="GST Academy" className="h-10 w-10" />
-            <span className="text-2xl font-bold" style={{ color: 'var(--secondary)', fontFamily: 'var(--font-urbanist)' }}>GST Academy</span>
+            <span className="text-2xl font-bold" style={{ color: 'var(--secondary)', fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
           </div>
           
           {/* Navigation Links centered */}
@@ -99,7 +99,7 @@ export default function Footer() {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             {/* Copyright - Left */}
             <p className="text-sm" style={{ color: 'var(--secondary)' }}>
-              © 2025 GST Academy. Tutti i diritti riservati.
+              © 2025 Area GST. Tutti i diritti riservati.
             </p>
 
             {/* Bottom Links - Right */}

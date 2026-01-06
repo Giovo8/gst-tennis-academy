@@ -66,10 +66,10 @@ export default function CompetitionView({
       <div className="space-y-6">
         <div className="section-header">
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
+            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-secondary/5 text-secondary">
               Torneo
             </span>
-            <span className="text-sm text-muted-2">Eliminazione Diretta</span>
+            <span className="text-sm text-secondary/70">Eliminazione Diretta</span>
           </div>
         </div>
         
@@ -87,15 +87,6 @@ export default function CompetitionView({
   if (tournament_type === 'campionato') {
     return (
       <div className="space-y-6">
-        <div className="section-header">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
-              Campionato
-            </span>
-            <span className="text-sm text-muted-2">Round-robin (Tutti contro tutti)</span>
-          </div>
-        </div>
-
         <ChampionshipStandingsView 
           tournamentId={tournament.id}
           participants={participants}
@@ -114,10 +105,10 @@ export default function CompetitionView({
         <div className="space-y-5">
           <div className="section-header">
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
+              <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-secondary/5 text-secondary">
                 Torneo
               </span>
-              <span className="text-sm text-muted-2">Fase a Gironi</span>
+              <span className="text-sm text-secondary/70">Fase a Gironi</span>
             </div>
           </div>
 
@@ -145,10 +136,10 @@ export default function CompetitionView({
         <div className="space-y-5">
           <div className="section-header">
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-accent-15 text-accent">
+              <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-secondary/5 text-secondary">
                 Torneo
               </span>
-              <span className="text-sm text-muted-2">Fase ad Eliminazione Diretta</span>
+              <span className="text-sm text-secondary/70">Fase ad Eliminazione Diretta</span>
             </div>
           </div>
 
@@ -160,8 +151,8 @@ export default function CompetitionView({
               roundsData={rounds_data || []}
             />
           ) : (
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 text-center">
-              <p className="text-muted-2">
+            <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+              <p className="text-secondary/70">
                 Il tabellone eliminatorio verrà generato dopo la fase a gironi.
               </p>
             </div>
@@ -172,8 +163,8 @@ export default function CompetitionView({
 
     // Fase iscrizioni o altro
     return (
-      <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-6 text-center">
-        <p className="text-muted-2">
+      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+        <p className="text-secondary/70">
           Il torneo è in fase: {current_phase || 'iscrizioni'}
         </p>
       </div>
@@ -182,24 +173,40 @@ export default function CompetitionView({
 
   // Default fallback
   return (
-    <div className="rounded-2xl border border-[var(--glass-border)] bg-gradient-to-br from-accent-dark/20 to-transparent backdrop-blur-xl p-8 text-center">
-      <p className="text-muted-2 mb-2">Tipo torneo: {tournament_type || 'Non specificato'}</p>
-      <p className="text-sm text-muted-2">
+    <div className="rounded-md border border-gray-200 bg-white p-8 text-center">
+      <p className="text-secondary/70 mb-2">Tipo torneo: {tournament_type || 'Non specificato'}</p>
+      <p className="text-sm text-secondary/70">
         {tournament_type ? 'Il torneo non è ancora stato avviato.' : 'Tipo di torneo non riconosciuto.'}
       </p>
       {participants.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-sm font-semibold text-white mb-4">Partecipanti ({participants.length})</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
-            {participants.map((p: any) => (
-              <div 
-                key={p.id} 
-                className="px-3 py-2 rounded-lg bg-surface border border-[var(--glass-border)] text-sm text-white"
-              >
-                {p.user?.full_name || p.user_id}
-              </div>
-            ))}
-          </div>
+        <div className="mt-6 max-w-2xl mx-auto">
+          <h4 className="text-sm font-semibold text-secondary mb-3">Partecipanti ({participants.length})</h4>
+            <div className="divide-y divide-gray-100 rounded-md bg-white overflow-hidden">
+              {participants.map((participant, index) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center justify-between px-4 py-3 first:rounded-t-md last:rounded-b-md hover:bg-secondary/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 text-xs font-medium text-secondary/60 text-right">
+                      {index + 1}
+                    </div>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/5 text-sm font-medium text-secondary">
+                      {(participant.profiles?.full_name || participant.profiles?.username || '?')
+                        .split(' ')
+                        .map((part) => part[0])
+                        .join('')
+                        .toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-secondary">
+                        {participant.profiles?.full_name || participant.profiles?.username || 'Partecipante'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
         </div>
       )}
     </div>

@@ -85,7 +85,7 @@ export default function GestoreTorneiPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Gestione Tornei</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Gestione competizioni</h1>
           <p className="text-[var(--foreground-muted)]">Visualizza e gestisci i tornei dell&apos;academy</p>
         </div>
         <Link
@@ -131,7 +131,7 @@ export default function GestoreTorneiPage() {
             {tournaments.map((tournament) => (
               <Link
                 key={tournament.id}
-                href={`/dashboard/admin/tornei?t=${tournament.id}`}
+                href={`/dashboard/gestore/tornei/${tournament.id}`}
                 className="block p-4 hover:bg-[var(--surface-hover)] transition-colors group"
               >
                 <div className="flex items-center justify-between">

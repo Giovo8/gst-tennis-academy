@@ -148,7 +148,7 @@ function AdminTorneiPageInner() {
           </div>
           <h1 className="text-4xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-white via-[#7de3ff] to-white bg-clip-text text-transparent">
-              Gestione Tornei
+              Gestione competizioni
             </span>
           </h1>
           <p className="text-sm text-gray-400 max-w-2xl">

@@ -2,7 +2,6 @@
 
 import CTASection from "@/components/landing/CTASection";
 import PublicNavbar from "@/components/layout/PublicNavbar";
-import PromoBanner from "@/components/layout/PromoBanner";
 import TextHeroSection from "@/components/landing/TextHeroSection";
 import ImageOnlySection from "@/components/landing/ImageOnlySection";
 import ImageWithTextSection from "@/components/landing/ImageWithTextSection";
@@ -14,7 +13,6 @@ import TournamentsSection from "@/components/landing/TournamentsSection";
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
-      <PromoBanner />
       <PublicNavbar />
       <main>
         {/* Accessibility skip link */}

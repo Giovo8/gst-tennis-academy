@@ -14,7 +14,8 @@ import {
   AlertCircle,
   XCircle,
   X,
-  Bell
+  Bell,
+  Swords
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,7 +24,7 @@ type Notification = {
   title: string;
   message: string;
   type: string;
-  link: string | null;
+  action_url: string | null;
   is_read: boolean;
   created_at: string;
 };
@@ -39,6 +40,7 @@ const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = 
   tournament: Trophy,
   message: MessageSquare,
   course: Users,
+  arena_challenge: Swords,
   success: CheckCircle,
   info: Info,
   warning: AlertCircle,
@@ -50,6 +52,7 @@ const colorMap: { [key: string]: string } = {
   tournament: "text-primary-light bg-primary/10",
   message: "text-primary-light bg-primary/10",
   course: "text-primary-light bg-primary/10",
+  arena_challenge: "text-orange-400 bg-orange-500/10",
   success: "text-primary-light bg-primary/10",
   info: "text-blue-400 bg-blue-500/10",
   warning: "text-yellow-400 bg-yellow-500/10",
@@ -217,9 +220,9 @@ export default function NotificationPanel({
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      {notification.link ? (
+                      {notification.action_url ? (
                         <Link
-                          href={notification.link}
+                          href={notification.action_url}
                           onClick={() => {
                             markAsRead(notification.id);
                             onClose();

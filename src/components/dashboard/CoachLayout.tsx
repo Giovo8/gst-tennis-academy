@@ -7,11 +7,14 @@ import { supabase } from "@/lib/supabase/client";
 import {
   Home,
   Calendar,
-  Users,
   Video,
   User,
   MessageSquare,
-  ClipboardList,
+  Trophy,
+  Mail,
+  Megaphone,
+  LayoutGrid,
+  Swords,
 } from "lucide-react";
 
 interface CoachLayoutProps {
@@ -55,9 +58,14 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
 
   const navItems: NavItem[] = [
     {
-      label: "Home",
+      label: "Dashboard",
       href: "/dashboard/maestro",
-      icon: <Home className="h-5 w-5" />,
+      icon: <LayoutGrid className="h-5 w-5" />,
+    },
+    {
+      label: "Arena",
+      href: "/dashboard/maestro/arena",
+      icon: <Swords className="h-5 w-5" />,
     },
     {
       label: "Agenda",
@@ -65,9 +73,14 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
       icon: <Calendar className="h-5 w-5" />,
     },
     {
-      label: "I Miei Allievi",
-      href: "/dashboard/maestro/students",
-      icon: <Users className="h-5 w-5" />,
+      label: "Prenotazioni",
+      href: "/dashboard/maestro/bookings",
+      icon: <Calendar className="h-5 w-5" />,
+    },
+    {
+      label: "Competizioni",
+      href: "/dashboard/maestro/tornei",
+      icon: <Trophy className="h-5 w-5" />,
     },
     {
       label: "Video Lab",
@@ -75,9 +88,14 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
       icon: <Video className="h-5 w-5" />,
     },
     {
-      label: "Lezioni",
-      href: "/dashboard/maestro/lessons",
-      icon: <ClipboardList className="h-5 w-5" />,
+      label: "Chat",
+      href: "/dashboard/maestro/mail",
+      icon: <Mail className="h-5 w-5" />,
+    },
+    {
+      label: "Annunci",
+      href: "/dashboard/maestro/annunci",
+      icon: <Megaphone className="h-5 w-5" />,
     },
     {
       label: "Messaggi",

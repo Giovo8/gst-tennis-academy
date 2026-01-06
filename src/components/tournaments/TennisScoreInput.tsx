@@ -143,69 +143,70 @@ export default function TennisScoreInput({
   const setsToWin = Math.ceil(bestOf / 2);
 
   return (
-    <div className="rounded-lg border border-tournament-border/30 bg-tournament-bg/90 p-4 space-y-4">
+    <div className="rounded-md border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
         <div>
-          <h4 className="text-sm font-semibold text-white mb-1">Inserisci Punteggio Tennis</h4>
-          <p className="text-xs text-gray-400">Al meglio dei {bestOf} set (vince con {setsToWin} set)</p>
+          <h4 className="text-lg font-bold text-secondary mb-1">Inserisci Punteggio</h4>
+          <p className="text-sm text-secondary/60">Al meglio di {bestOf} set (vince con {setsToWin} set)</p>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-tournament-primary">
-            {setsWon.p1} - {setsWon.p2}
-          </div>
-          <div className="text-xs text-gray-400">Set vinti</div>
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-secondary">{player1Name}</span>
+          <span className="text-secondary/40 font-semibold">-</span>
+          <span className="font-bold text-secondary">{player2Name}</span>
         </div>
-      </div>
-
-      {/* Players Header */}
-      <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-center pb-2 border-b border-tournament-border/20">
-        <div className="text-sm font-medium text-white truncate">{player1Name}</div>
-        <div className="text-xs text-gray-500 w-16 text-center">Set</div>
-        <div className="text-sm font-medium text-white truncate text-right">{player2Name}</div>
       </div>
 
       {/* Sets */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {sets.map((set, index) => (
-          <div key={index} className="grid grid-cols-[1fr,auto,1fr,auto] gap-2 items-center">
-            {/* Player 1 Score */}
-            <input
-              type="number"
-              value={set.player1_score}
-              onChange={(e) => updateSet(index, 'player1', e.target.value)}
-              className="w-full rounded border border-tournament-border/30 bg-tournament-bg-light px-3 py-2 text-center text-white focus:border-tournament-primary focus:outline-none"
-              min="0"
-              max="99"
-              placeholder="0"
-            />
-
-            {/* Set Label */}
-            <div className="text-xs text-gray-400 w-16 text-center">
-              Set {index + 1}
+          <div key={index} className="bg-secondary/5 rounded-md p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm font-bold text-secondary">Set {index + 1}</div>
+              {sets.length > 1 && (
+                <button
+                  onClick={() => removeSet(index)}
+                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  type="button"
+                  title="Rimuovi set"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Player 1 Score */}
+              <div>
+                <label className="text-xs font-semibold text-secondary/60 uppercase block mb-2">
+                  {player1Name}
+                </label>
+                <input
+                  type="number"
+                  value={set.player1_score}
+                  onChange={(e) => updateSet(index, 'player1', e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  min="0"
+                  max="99"
+                  placeholder="0"
+                />
+              </div>
 
-            {/* Player 2 Score */}
-            <input
-              type="number"
-              value={set.player2_score}
-              onChange={(e) => updateSet(index, 'player2', e.target.value)}
-              className="w-full rounded border border-tournament-border/30 bg-tournament-bg-light px-3 py-2 text-center text-white focus:border-tournament-primary focus:outline-none"
-              min="0"
-              max="99"
-              placeholder="0"
-            />
-
-            {/* Remove button */}
-            {sets.length > 1 && (
-              <button
-                onClick={() => removeSet(index)}
-                className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                type="button"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
+              {/* Player 2 Score */}
+              <div>
+                <label className="text-xs font-semibold text-secondary/60 uppercase block mb-2">
+                  {player2Name}
+                </label>
+                <input
+                  type="number"
+                  value={set.player2_score}
+                  onChange={(e) => updateSet(index, 'player2', e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  min="0"
+                  max="99"
+                  placeholder="0"
+                />
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -214,7 +215,7 @@ export default function TennisScoreInput({
       {sets.length < bestOf && (
         <button
           onClick={addSet}
-          className="w-full rounded-lg border border-dashed border-tournament-border/30 bg-tournament-bg-light/50 px-4 py-2 text-sm text-tournament-primary hover:bg-tournament-bg-light transition-colors flex items-center justify-center gap-2"
+          className="w-full rounded-md border-2 border-dashed border-secondary/30 bg-secondary/5 px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/10 hover:border-secondary/50 transition-all flex items-center justify-center gap-2"
           type="button"
         >
           <Plus className="h-4 w-4" />
@@ -224,17 +225,17 @@ export default function TennisScoreInput({
 
       {/* Error Message */}
       {error && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-sm text-red-400">
+        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-3 pt-2">
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="flex-1 rounded-lg bg-tournament-primary px-4 py-2 text-sm font-semibold text-tournament-bg hover:bg-tournament-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="flex-1 rounded-md bg-secondary px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           <Check className="h-4 w-4" />
           {submitting ? 'Salvataggio...' : 'Salva Punteggio'}
@@ -242,21 +243,11 @@ export default function TennisScoreInput({
         <button
           onClick={onCancel}
           disabled={submitting}
-          className="rounded-lg border border-gray-600 bg-gray-800/50 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          className="rounded-md border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-secondary/70 hover:bg-secondary/5 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
           <X className="h-4 w-4" />
           Annulla
         </button>
-      </div>
-
-      {/* Hint */}
-      <div className="text-xs text-gray-500 space-y-1">
-        <p>💡 Regole tennis:</p>
-        <ul className="list-disc list-inside space-y-0.5 ml-2">
-          <li>Minimo 6 game per vincere un set</li>
-          <li>Vince con 2 game di differenza (es: 6-4, 7-5)</li>
-          <li>Tiebreak a 7 se 6-6 (risultato: 7-6)</li>
-        </ul>
       </div>
     </div>
   );

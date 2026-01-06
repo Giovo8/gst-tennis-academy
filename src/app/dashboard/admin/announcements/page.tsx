@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Plus, Edit2, Trash2, Eye, EyeOff, Pin, Calendar, AlertCircle } from "lucide-react";
+import { MessageSquare, Plus, Edit2, Trash2, Eye, EyeOff, Pin, Calendar, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
@@ -100,13 +100,13 @@ export default function AnnouncementsPage() {
   }
 
   const typeLabels = {
-    announcement: { label: "Generale", color: "bg-blue-100 text-blue-700 border-blue-300" },
-    event: { label: "Evento", color: "bg-purple-100 text-purple-700 border-purple-300" },
-    promotion: { label: "Promozione", color: "bg-green-100 text-green-700 border-green-300" },
-    partner: { label: "Partner", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
-    news: { label: "Notizia", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
-    tournament: { label: "Torneo", color: "bg-orange-100 text-orange-700 border-orange-300" },
-    lesson: { label: "Lezione", color: "bg-pink-100 text-pink-700 border-pink-300" },
+    announcement: { label: "Generale", color: "bg-secondary text-white" },
+    event: { label: "Evento", color: "bg-secondary text-white" },
+    promotion: { label: "Promozione", color: "bg-secondary text-white" },
+    partner: { label: "Partner", color: "bg-secondary text-white" },
+    news: { label: "Notizia", color: "bg-secondary text-white" },
+    tournament: { label: "Torneo", color: "bg-secondary text-white" },
+    lesson: { label: "Lezione", color: "bg-secondary text-white" },
   };
 
   const priorityIcons = {
@@ -118,70 +118,71 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-700 mb-2">Gestione Annunci</h1>
-          <p className="text-gray-600">Gestisci gli annunci visibili nella bacheca</p>
+          <h1 className="text-3xl font-bold text-secondary mb-2">Gestione Annunci</h1>
+          <p className="text-secondary/70 font-medium">Gestisci gli annunci visibili nella bacheca</p>
+        </div>
+        <Link
+          href="/dashboard/admin/announcements/new"
+          className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Nuovo Annuncio
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+              filter === "all"
+                ? "text-white bg-secondary hover:opacity-90"
+                : "bg-white text-secondary/70 hover:bg-secondary/5"
+            }`}
+          >
+            Tutti
+          </button>
+          {Object.entries(typeLabels).map(([key, { label }]) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                filter === key
+                  ? "text-white bg-secondary hover:opacity-90"
+                  : "bg-white text-secondary/70 hover:bg-secondary/5"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-        {/* Actions Bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                filter === "all"
-                  ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
-                  : "bg-white/5 text-gray-300 border border-white/10 hover:border-white/30"
-              }`}
-            >
-              Tutti
-            </button>
-            {Object.entries(typeLabels).map(([key, { label }]) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
-                  filter === key
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-transparent shadow-sm"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {label}
-              </button>
-          ))}
-        </div>
-
-        <Link
-          href="/dashboard/admin/announcements/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white hover:from-cyan-600 hover:to-blue-700 transition-all shadow-sm"
-          >
-            <Plus className="h-5 w-5" />
-            Nuovo Annuncio
-          </Link>
-        </div>
-
       {/* Announcements List */}
       {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Caricamento...</p>
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+          <p className="mt-4 text-secondary/60">Caricamento annunci...</p>
         </div>
       ) : announcements.length === 0 ? (
-        <div className="text-center py-12 rounded-xl border border-gray-200 bg-white shadow-sm">
-          <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">Nessun annuncio trovato</p>
+        <div className="text-center py-20 rounded-md bg-white">
+          <MessageSquare className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+          <h3 className="text-xl font-semibold text-secondary mb-2">Nessun annuncio trovato</h3>
+          <p className="text-secondary/60 mb-4">Prova a modificare i filtri di ricerca</p>
           <Link
             href="/dashboard/admin/announcements/new"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
+            className="inline-flex items-center gap-2 text-secondary hover:opacity-80 font-semibold"
           >
             <Plus className="h-5 w-5" />
             Crea il primo annuncio
           </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {announcements.map((announcement) => {
             const typeInfo = typeLabels[announcement.announcement_type];
             const isExpired = announcement.expiry_date && new Date(announcement.expiry_date) < new Date();
@@ -189,7 +190,7 @@ export default function AnnouncementsPage() {
             return (
               <article
                 key={announcement.id}
-                className={`group rounded-xl border border-gray-200 bg-white p-6 hover:shadow-md transition-all ${
+                className={`bg-white rounded-md p-5 hover:bg-secondary/5 transition-all ${
                   isExpired ? "opacity-50" : ""
                 }`}
               >
@@ -197,29 +198,29 @@ export default function AnnouncementsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3 flex-wrap">
                       {announcement.is_pinned && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 border border-yellow-300 px-2 py-1 text-xs font-bold text-yellow-700">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-secondary/10 px-2 py-1 text-xs font-bold text-secondary">
                           <Pin className="h-3 w-3" />
                           Fissato
                         </span>
                       )}
-                      <span className={`rounded-full border px-3 py-1 text-xs font-bold ${typeInfo.color}`}>
+                      <span className={`rounded-md px-3 py-1 text-xs font-bold ${typeInfo.color}`}>
                         {typeInfo.label}
                       </span>
-                      <span className="text-xs text-gray-600 font-semibold">
+                      <span className="text-xs text-secondary/60 font-semibold">
                         Priorità: {priorityIcons[announcement.priority]}
                       </span>
                       {announcement.expiry_date && (
-                        <span className={`inline-flex items-center gap-1 text-xs ${isExpired ? "text-red-600" : "text-gray-600"}`}>
+                        <span className={`inline-flex items-center gap-1 text-xs ${isExpired ? "text-red-600" : "text-secondary/60"}`}>
                           <Calendar className="h-3 w-3" />
                           {isExpired ? "Scaduto" : new Date(announcement.expiry_date).toLocaleDateString("it-IT")}
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-700 mb-2">{announcement.title}</h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{announcement.content}</p>
+                    <h3 className="text-xl font-bold text-secondary mb-2">{announcement.title}</h3>
+                    <p className="text-secondary/70 text-sm mb-3 line-clamp-2">{announcement.content}</p>
 
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-secondary/50">
                       <span>Autore: {announcement.profiles?.full_name || "Sconosciuto"}</span>
                       <span>•</span>
                       <span>{new Date(announcement.created_at).toLocaleDateString("it-IT")}</span>
@@ -234,10 +235,10 @@ export default function AnnouncementsPage() {
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => togglePublish(announcement)}
-                      className={`p-2 rounded-lg border transition-all ${
+                      className={`p-2 rounded-md transition-all ${
                         announcement.is_published
-                          ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200"
-                          : "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200"
+                          ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                          : "bg-secondary/10 text-secondary/60 hover:bg-secondary/20"
                       }`}
                       title={announcement.is_published ? "Pubblicato" : "Bozza"}
                     >
@@ -246,7 +247,7 @@ export default function AnnouncementsPage() {
 
                     <Link
                       href={`/dashboard/admin/announcements/${announcement.id}/edit`}
-                      className="p-2 rounded-lg border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all"
+                      className="p-2 rounded-md bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all"
                       title="Modifica"
                     >
                       <Edit2 className="h-5 w-5" />
@@ -254,7 +255,7 @@ export default function AnnouncementsPage() {
 
                     <button
                       onClick={() => deleteAnnouncement(announcement.id)}
-                      className="p-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+                      className="p-2 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-all"
                       title="Elimina"
                     >
                       <Trash2 className="h-5 w-5" />

@@ -63,7 +63,7 @@ export default function Navbar() {
               priority
               className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
             />
-            <span className="text-base sm:text-lg font-bold text-white truncate">GST Academy</span>
+            <span className="text-base sm:text-lg font-bold text-white truncate">Area GST</span>
           </Link>
 
           {/* Desktop Menu */}

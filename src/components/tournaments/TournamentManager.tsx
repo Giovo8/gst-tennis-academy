@@ -5,7 +5,7 @@ import { Trophy, Users, Target, Loader2, Trash2 } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
-import ManualEnrollment from './ManualEnrollment';
+import { getAvatarUrl } from '@/lib/utils';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -13,6 +13,9 @@ interface Tournament {
   id: string;
   title: string;
   tournament_type: TournamentType;
+  category?: string;
+  description?: string;
+  start_date?: string;
   max_participants: number;
   num_groups?: number;
   teams_per_group?: number;
@@ -22,16 +25,24 @@ interface Tournament {
   best_of?: number;
 }
 
+interface TournamentManagerMeta {
+  participantsCount: number;
+  maxParticipants: number;
+  currentPhase: string;
+  status: string;
+  tournamentType?: string;
+}
+
 interface TournamentManagerProps {
   tournament: Tournament;
   isAdmin?: boolean;
+  onMetaChange?: (meta: TournamentManagerMeta) => void;
 }
 
-export default function TournamentManager({ tournament, isAdmin = false }: TournamentManagerProps) {
+export default function TournamentManager({ tournament, isAdmin = false, onMetaChange }: TournamentManagerProps) {
   const [participants, setParticipants] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [starting, setStarting] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'bracket'>('overview');
 
   useEffect(() => {
@@ -44,9 +55,14 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
       // Carica partecipanti
       const participantsRes = await fetch(`/api/tournament_participants?tournament_id=${tournament.id}`);
       const participantsData = await participantsRes.json();
-      
+
+      let participantsArray: any[] = [];
+
       if (participantsRes.ok) {
-        setParticipants(participantsData.participants || []);
+        participantsArray = participantsData.participants || [];
+        setParticipants(participantsArray);
+      } else {
+        setParticipants([]);
       }
 
       // Carica gironi se tipo girone_eliminazione
@@ -58,48 +74,21 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
           setGroups(groupsData.groups || []);
         }
       }
+
+      // Aggiorna i metadati per l'header della pagina
+      if (onMetaChange) {
+        onMetaChange({
+          participantsCount: participantsArray.length,
+          maxParticipants: tournament.max_participants,
+          currentPhase: tournament.current_phase,
+          status: tournament.status,
+          tournamentType: tournament.tournament_type,
+        });
+      }
     } catch (error) {
       console.error('Error loading tournament data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStartTournament = async () => {
-    if (!confirm('Sei sicuro di voler avviare il torneo? Non potranno più iscriversi nuovi partecipanti.')) {
-      return;
-    }
-
-    setStarting(true);
-    try {
-      const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        alert('Sessione non valida');
-        return;
-      }
-
-      const res = await fetch(`/api/tournaments/${tournament.id}/start`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        alert(data.message || 'Torneo avviato con successo!');
-        window.location.reload();
-      } else {
-        alert(data.error || 'Errore nell\'avvio del torneo');
-      }
-    } catch (error) {
-      console.error('Error starting tournament:', error);
-      alert('Errore nell\'avvio del torneo');
-    } finally {
-      setStarting(false);
     }
   };
 
@@ -177,22 +166,22 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
         return {
           icon: Trophy,
           name: 'Eliminazione Diretta',
-          color: 'text-red-400',
-          bgColor: 'bg-red-500/10'
+          color: 'text-secondary',
+          bgColor: 'bg-secondary/10'
         };
       case 'girone_eliminazione':
         return {
           icon: Target,
           name: 'Girone + Eliminazione',
-          color: 'text-frozen-400',
-          bgColor: 'bg-frozen-500/10'
+          color: 'text-secondary',
+          bgColor: 'bg-secondary/10'
         };
       case 'campionato':
         return {
           icon: Users,
           name: 'Campionato',
-          color: 'text-green-400',
-          bgColor: 'bg-primary/10'
+          color: 'text-secondary',
+          bgColor: 'bg-secondary/10'
         };
     }
   };
@@ -206,106 +195,59 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
   }
 
   const typeInfo = getTournamentTypeInfo();
-  const Icon = typeInfo.icon;
+
+  const startDateLabel = tournament.start_date
+    ? new Date(tournament.start_date)
+        .toLocaleDateString('it-IT', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+        .replace(/^([a-zàèéìòù])/u, (c) => c.toUpperCase())
+    : null;
+
+  const phaseLabel = tournament.current_phase === 'iscrizioni'
+    ? 'Iscrizioni'
+    : tournament.current_phase === 'gironi'
+    ? 'Gironi'
+    : tournament.current_phase === 'eliminazione'
+    ? 'Eliminazione diretta'
+    : tournament.current_phase === 'campionato'
+    ? 'Campionato'
+    : tournament.current_phase === 'completato'
+    ? 'Completato'
+    : tournament.current_phase;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className={`rounded-lg ${typeInfo.bgColor} p-3`}>
-              <Icon className={`h-6 w-6 ${typeInfo.color}`} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-semibold text-gray-900">{tournament.title}</h3>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  tournament.status === 'Aperto' ? 'bg-frozen-100 text-primary' :
-                  tournament.status === 'In Corso' ? 'bg-frozen-100 text-primary-dark' :
-                  tournament.status === 'Concluso' ? 'bg-gray-100 text-gray-700' :
-                  'bg-gray-100 text-gray-600'
-                }`}>
-                  {tournament.status}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mb-2">{typeInfo.name}</p>
-              <div className="flex items-center gap-4 text-xs text-gray-500">
-                <span>Partecipanti: {participants.length}/{tournament.max_participants}</span>
-                <span>•</span>
-                <span>Fase: {tournament.current_phase}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Azioni Admin */}
-          <div className="flex items-center gap-3">
-            {isAdmin && tournament.current_phase === 'iscrizioni' && (
-              <ManualEnrollment 
-                tournamentId={tournament.id}
-                currentParticipants={participants.length}
-                maxParticipants={tournament.max_participants}
-                onEnrollmentSuccess={loadData}
-              />
-            )}
-            
-            {isAdmin && tournament.current_phase === 'iscrizioni' && participants.length >= 2 && (
-              <button
-                onClick={handleStartTournament}
-                disabled={starting}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50"
-              >
-                {starting ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Avvio...
-                  </span>
-                ) : (
-                  'Avvia Torneo'
-                )}
-              </button>
-            )}
-
-            {isAdmin && (
-              <button
-                onClick={handleDeleteTournament}
-                className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all"
-                title="Elimina torneo"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
+  <div className="space-y-6">
       {/* Tabs per Eliminazione Diretta */}
       {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione' && (
-        <div className="flex gap-2 border-b border-gray-200">
+        <div className="flex gap-2 border-b border-gray-100">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-all relative ${
               activeTab === 'overview'
-                ? 'text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-secondary'
+                : 'text-secondary/70 hover:text-secondary'
             }`}
           >
-            Panoramica
+            <Users className="h-4 w-4" />
+            Partecipanti
             {activeTab === 'overview' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-frozen-600" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
             )}
           </button>
           <button
             onClick={() => setActiveTab('bracket')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-3 text-sm font-semibold transition-all relative ${
               activeTab === 'bracket'
-                ? 'text-frozen-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-secondary'
+                : 'text-secondary/70 hover:text-secondary'
             }`}
           >
             Tabellone
             {activeTab === 'bracket' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-frozen-600" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
             )}
           </button>
         </div>
@@ -313,16 +255,16 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Contenuto in base al tipo e fase */}
       {tournament.current_phase === 'iscrizioni' && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-          <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+          <Users className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
+          <h4 className="text-lg font-semibold text-secondary mb-2">
             Fase Iscrizioni
           </h4>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-secondary/70 mb-4">
             Il torneo accetta ancora iscrizioni. {participants.length} partecipanti su {tournament.max_participants}.
           </p>
           {isAdmin && participants.length >= 2 && (
-            <p className="text-xs text-blue-600 font-medium">
+            <p className="text-xs text-secondary font-medium">
               Puoi avviare il torneo quando sei pronto usando il pulsante in alto
             </p>
           )}
@@ -347,45 +289,60 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
             <>
               {/* Lista Partecipanti */}
               {participants.length > 0 && (
-                <div className="rounded-xl border border-gray-200 bg-white p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-gray-900">
-                      Partecipanti ({participants.length})
-                    </h4>
+                <div className="space-y-3">
+                  {/* Header Row */}
+                  <div className="bg-secondary/[0.03] rounded-md px-5 py-3 border border-gray-200">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 text-center">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                      </div>
+                      <div className="w-48 hidden sm:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {participants.map((participant: any) => (
+
+                  {/* Data Rows */}
+                  {participants.map((participant: any, index: number) => {
+                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+
+                    return (
                       <div
                         key={participant.id}
-                        className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                        className="bg-white rounded-md p-5 hover:shadow-md transition-all"
                       >
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary/10 text-secondary font-bold text-sm">
+                              {index + 1}
+                            </span>
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {participant.profiles?.full_name || participant.user_id || 'Giocatore'}
-                            </p>
-                            {participant.profiles?.email && (
-                              <p className="text-xs text-gray-600 mt-1 truncate">
-                                {participant.profiles.email}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              {participant.seed && (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                                  Testa di serie #{participant.seed}
-                                </span>
-                              )}
-                              {participant.stats?.matches_played > 0 && (
-                                <span className="text-xs text-gray-600">
+                            <div className="text-sm font-semibold text-secondary truncate">
+                              {fullName}
+                            </div>
+                            {participant.stats?.matches_played > 0 && (
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="text-[11px] text-secondary/70">
                                   {participant.stats.matches_won}W - {participant.stats.matches_lost}L
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-48 hidden sm:block">
+                            {participant.profiles?.email && (
+                              <div className="text-xs text-secondary/70 truncate">
+                                {participant.profiles.email}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -410,8 +367,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
           
           {tournament.current_phase === 'eliminazione' && (
             <div className="space-y-6">
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-                <p className="text-sm text-gray-900">
+              <div className="rounded-md bg-secondary/[0.03] border border-gray-200 p-4">
+                <p className="text-sm text-secondary">
                   <strong>Fase Eliminazione:</strong> Le migliori {tournament.teams_advancing} squadre di ogni girone si sfidano
                 </p>
               </div>
@@ -441,54 +398,41 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
 
       {/* Lista Partecipanti - Solo per tipi diversi da campionato, girone_eliminazione e eliminazione_diretta in fase eliminazione */}
       {participants.length > 0 && tournament.tournament_type !== 'campionato' && tournament.tournament_type !== 'girone_eliminazione' && !(tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione') && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-gray-900">
-              Partecipanti ({participants.length})
-            </h4>
-            {isAdmin && tournament.current_phase === 'iscrizioni' && (
-              <ManualEnrollment 
-                tournamentId={tournament.id}
-                currentParticipants={participants.length}
-                maxParticipants={tournament.max_participants}
-                onEnrollmentSuccess={loadData}
-              />
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {participants.map((participant: any) => (
-              <div
-                key={participant.id}
-                className="rounded-lg border border-gray-200 bg-gray-50 p-3"
-              >
-                <div className="flex items-center justify-between gap-3">
+        <div className="rounded-md bg-white p-4 sm:p-6">
+          <div className="divide-y divide-gray-100 bg-white overflow-hidden rounded-md">
+						{participants.map((participant: any, index: number) => {
+              const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+
+						          return (
+                <div
+                  key={participant.id}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/5 transition-colors"
+                >
+                  <div className="w-6 text-xs font-medium text-secondary/60 text-right">
+                    {index + 1}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {participant.profiles?.full_name || participant.user_id || 'Giocatore'}
-                    </p>
+                    <div className="text-sm font-semibold text-secondary truncate">
+                      {fullName}
+                    </div>
                     {participant.profiles?.email && (
-                      <p className="text-xs text-gray-600 mt-1 truncate">
+                      <div className="text-xs text-secondary/70 truncate">
                         {participant.profiles.email}
-                      </p>
+                      </div>
                     )}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {participant.seed && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                          Testa di serie #{participant.seed}
-                        </span>
-                      )}
-                      {participant.stats?.matches_played > 0 && (
-                        <span className="text-xs text-gray-600">
+                    {participant.stats?.matches_played > 0 && (
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-[11px] text-secondary/70">
                           {participant.stats.matches_won}W - {participant.stats.matches_lost}L
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                   {isAdmin && tournament.current_phase === 'iscrizioni' && (
                     <button
                       onClick={() => handleRemoveParticipant(
-                        participant.id, 
-                        participant.profiles?.full_name || participant.user_id || 'Giocatore'
+                        participant.id,
+                        fullName
                       )}
                       className="flex-shrink-0 rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
                       title="Rimuovi partecipante"
@@ -497,8 +441,8 @@ export default function TournamentManager({ tournament, isAdmin = false }: Tourn
                     </button>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

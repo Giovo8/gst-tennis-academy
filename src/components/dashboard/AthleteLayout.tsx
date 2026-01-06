@@ -13,6 +13,9 @@ import {
   Clock,
   CreditCard,
   Megaphone,
+  Mail,
+  LayoutGrid,
+  Swords,
 } from "lucide-react";
 
 interface AthleteLayoutProps {
@@ -27,6 +30,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
   const [loading, setLoading] = useState(true);
   const [pendingBookings, setPendingBookings] = useState(0);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     async function loadUser() {
@@ -65,6 +69,9 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       // Count unread announcements
       await loadUnreadCount(user.id);
 
+      // Count unread messages
+      await loadUnreadMessages();
+
       setLoading(false);
     }
 
@@ -92,6 +99,25 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       }
     }
 
+    async function loadUnreadMessages() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { count, error } = await supabase
+          .from("internal_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("recipient_id", user.id)
+          .eq("is_read", false);
+
+        if (!error) {
+          setUnreadMessages(count || 0);
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento messaggi non letti:", error);
+      }
+    }
+
     // Listen for announcement read events
     const handleAnnouncementRead = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -100,12 +126,19 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       }
     };
 
+    // Listen for message read events
+    const handleMessageRead = async () => {
+      await loadUnreadMessages();
+    };
+
     window.addEventListener('announcementRead', handleAnnouncementRead);
+    window.addEventListener('messageRead', handleMessageRead);
 
     loadUser();
 
     return () => {
       window.removeEventListener('announcementRead', handleAnnouncementRead);
+      window.removeEventListener('messageRead', handleMessageRead);
     };
   }, [router]);
 
@@ -113,7 +146,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
     {
       label: "Dashboard",
       href: "/dashboard/atleta",
-      icon: <Home className="h-5 w-5" />,
+      icon: <LayoutGrid className="h-5 w-5" />,
     },
     {
       label: "Prenotazioni",
@@ -125,6 +158,17 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: "Tornei",
       href: "/dashboard/atleta/tornei",
       icon: <Trophy className="h-5 w-5" />,
+    },
+    {
+      label: "Arena",
+      href: "/dashboard/atleta/arena",
+      icon: <Swords className="h-5 w-5" />,
+    },
+    {
+      label: "Chat",
+      href: "/dashboard/atleta/mail",
+      icon: <Mail className="h-5 w-5" />,
+      badge: unreadMessages > 0 ? unreadMessages : undefined,
     },
     {
       label: "I Miei Video",

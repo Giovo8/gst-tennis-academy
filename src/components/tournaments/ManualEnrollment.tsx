@@ -295,7 +295,7 @@ export default function ManualEnrollment({
       <button
         onClick={() => setShowModal(true)}
         disabled={currentParticipants >= maxParticipants}
-        className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <UserPlus className="h-4 w-4" />
         Iscrivi Atleta

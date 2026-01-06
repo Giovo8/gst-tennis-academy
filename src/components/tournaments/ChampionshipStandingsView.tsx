@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+import { getAvatarUrl } from '@/lib/utils';
 
 interface Participant {
   id: string;
@@ -139,7 +140,7 @@ export default function ChampionshipStandingsView({
 
     // Calculate stats from completed matches
     matches
-      .filter(m => m.status === 'completed' && m.winner_id)
+      .filter(m => (m.status === 'completata' || m.match_status === 'completed') && m.winner_id)
       .forEach(match => {
         const player1Stats = standingsMap.get(match.player1_id);
         const player2Stats = standingsMap.get(match.player2_id);
@@ -281,17 +282,17 @@ export default function ChampionshipStandingsView({
 
   if (matches.length === 0 && !loading) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-        <Calendar className="mx-auto h-12 w-12 text-muted mb-4" />
-        <h3 className="text-lg font-semibold text-white mb-2">Calendario non ancora generato</h3>
-        <p className="text-sm text-muted mb-6">
+      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+        <Calendar className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
+        <h3 className="text-lg font-semibold text-secondary mb-2">Calendario non ancora generato</h3>
+        <p className="text-sm text-secondary/70 mb-6">
           Genera il calendario per iniziare il campionato.
         </p>
         {isAdmin && (
           <button
             onClick={handleGenerateChampionship}
             disabled={generating}
-            className="rounded-lg bg-accent px-6 py-3 font-semibold text-white hover:bg-accent/90 disabled:opacity-50 inline-flex items-center gap-2"
+            className="rounded-md bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
             {generating ? 'Generazione...' : 'Genera Calendario'}
@@ -304,110 +305,129 @@ export default function ChampionshipStandingsView({
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-2 border-b border-gray-100">
         <button
           onClick={() => setActiveTab('participants')}
           className={`px-4 py-3 text-sm font-semibold transition-all relative ${
             activeTab === 'participants'
-              ? 'text-accent'
-              : 'text-muted hover:text-white'
+              ? 'text-secondary'
+              : 'text-secondary/70 hover:text-secondary'
           }`}
         >
           <Users className="h-4 w-4 inline-block mr-2" />
           Partecipanti
           {activeTab === 'participants' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('calendar')}
           className={`px-4 py-3 text-sm font-semibold transition-all relative ${
             activeTab === 'calendar'
-              ? 'text-accent'
-              : 'text-muted hover:text-white'
+              ? 'text-secondary'
+              : 'text-secondary/70 hover:text-secondary'
           }`}
         >
           <Calendar className="h-4 w-4 inline-block mr-2" />
           Calendario
           {activeTab === 'calendar' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('standings')}
           className={`px-4 py-3 text-sm font-semibold transition-all relative ${
             activeTab === 'standings'
-              ? 'text-accent'
-              : 'text-muted hover:text-white'
+              ? 'text-secondary'
+              : 'text-secondary/70 hover:text-secondary'
           }`}
         >
           <Trophy className="h-4 w-4 inline-block mr-2" />
           Classifica
           {activeTab === 'standings' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
           )}
         </button>
       </div>
 
       {/* Tab Content */}
       {activeTab === 'participants' && (
-        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Users className="h-5 w-5 text-accent" />
-            <h3 className="text-lg font-semibold text-white">Partecipanti ({participants.length})</h3>
-          </div>
-
+        <div className="space-y-3">
           {participants.length === 0 ? (
-            <div className="text-center py-8 text-muted">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun partecipante iscritto al momento</p>
+            <div className="bg-white rounded-md p-12 text-center">
+              <Users className="h-16 w-16 mx-auto mb-4 text-secondary/20" />
+              <h3 className="text-xl font-semibold text-secondary mb-2">Nessun partecipante</h3>
+              <p className="text-secondary/60">Nessun atleta iscritto al momento</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {participants.map((participant: any) => (
+            <>
+              {/* Header Row */}
+              <div className="bg-secondary/[0.03] rounded-md px-5 py-3 border border-gray-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 text-center">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                  </div>
+                  <div className="w-48 hidden sm:block">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Rows */}
+              {participants.map((participant: any, index: number) => (
                 <div
                   key={participant.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-surface-secondary border border-border hover:border-accent/30 transition-colors"
+                  className="bg-white rounded-md p-5 hover:shadow-md transition-all"
                 >
-                  {participant.profiles?.avatar_url && (
-                    <img
-                      src={participant.profiles.avatar_url}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white truncate">
-                      {participant.profiles?.full_name || 'Sconosciuto'}
+                  <div className="flex items-center gap-4">
+                    {/* Position */}
+                    <div className="w-12 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary/10 text-secondary font-bold text-sm">
+                        {index + 1}
+                      </span>
                     </div>
-                    <div className="text-xs text-muted truncate">
-                      {participant.profiles?.email || participant.user_id}
+
+                    {/* Player Info */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-secondary truncate">
+                          {participant.profiles?.full_name || 'Sconosciuto'}
+                        </div>
+                        <div className="text-sm text-secondary/60 truncate sm:hidden">
+                          {participant.profiles?.email || participant.user_id}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Email (hidden on mobile) */}
+                    <div className="w-48 hidden sm:block">
+                      <div className="text-sm text-secondary/70 truncate">
+                        {participant.profiles?.email || participant.user_id}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
-            </div>
+            </>
           )}
         </div>
       )}
 
       {activeTab === 'calendar' && (
-        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-accent" />
-              <h3 className="text-lg font-semibold text-white">Calendario Partite</h3>
-            </div>
-
-            {/* Round selector */}
-            {rounds.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto w-full sm:w-auto">
+        <div className="space-y-4">
+          {/* Round selector */}
+          {rounds.length > 0 && (
+            <div className="bg-white rounded-md p-5">
+              <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
                 <button
                   onClick={() => setSelectedRound(null)}
-                  className={`rounded-lg px-3 py-1 text-sm font-semibold transition-all whitespace-nowrap ${
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                     selectedRound === null
-                      ? 'bg-accent text-white'
-                      : 'bg-surface-secondary text-muted hover:text-white'
+                      ? 'bg-secondary text-white'
+                      : 'bg-white border border-gray-200 text-secondary/70 hover:bg-secondary/5'
                   }`}
                 >
                   Tutte
@@ -416,27 +436,28 @@ export default function ChampionshipStandingsView({
                   <button
                     key={round}
                     onClick={() => setSelectedRound(round)}
-                    className={`rounded-lg px-3 py-1 text-sm font-semibold transition-all whitespace-nowrap ${
+                    className={`rounded-md px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                       selectedRound === round
-                        ? 'bg-accent text-white'
-                        : 'bg-surface-secondary text-muted hover:text-white'
+                        ? 'bg-secondary text-white'
+                        : 'bg-white border border-gray-200 text-secondary/70 hover:bg-secondary/5'
                     }`}
                   >
                     Giornata {round}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            <div className="bg-white rounded-md p-12 flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
             </div>
           ) : filteredMatches.length === 0 ? (
-            <div className="text-center py-8 text-muted">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna partita trovata per questa giornata</p>
+            <div className="bg-white rounded-md p-12 text-center">
+              <Calendar className="h-16 w-16 mx-auto mb-4 text-secondary/20" />
+              <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna partita</h3>
+              <p className="text-secondary/60">Nessuna partita trovata per questa giornata</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -455,90 +476,70 @@ export default function ChampionshipStandingsView({
       )}
 
       {activeTab === 'standings' && (
-        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Trophy className="h-5 w-5 text-accent" />
-            <h3 className="text-lg font-semibold text-white">Classifica</h3>
-          </div>
-
+        <div className="space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            <div className="bg-white rounded-md p-12 flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
             </div>
           ) : standings.length === 0 ? (
-            <div className="text-center py-8 text-muted">
-              <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna classifica disponibile. Completa alcune partite per vedere la classifica.</p>
+            <div className="bg-white rounded-md p-12 text-center">
+              <Trophy className="h-16 w-16 mx-auto mb-4 text-secondary/20" />
+              <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna classifica</h3>
+              <p className="text-secondary/60">Completa alcune partite per vedere la classifica</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <div className="min-w-[600px]">
-                {/* Header */}
-                <div className="grid grid-cols-[40px_1fr_80px_80px_100px_100px] gap-4 px-4 py-2 text-xs font-semibold text-muted uppercase border-b border-border">
-                  <div>Pos</div>
-                  <div>Squadra</div>
-                  <div className="text-center">PG</div>
-                  <div className="text-center">Punti</div>
-                  <div className="text-center">Diff. Set</div>
-                  <div className="text-center">Diff. Game</div>
-                </div>
-
-                {/* Standings */}
-                <div className="space-y-2 mt-2">
-                  {standings.map((standing) => (
-                    <div
-                      key={standing.participant.id}
-                      className={`grid grid-cols-[40px_1fr_80px_80px_100px_100px] gap-4 items-center px-4 py-3 rounded-lg transition-colors ${
-                        standing.position <= 3
-                          ? 'bg-accent/10 border border-accent/30'
-                          : 'bg-surface-secondary hover:bg-surface-secondary/80'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                          standing.position === 1 ? 'bg-yellow-500 text-black' :
-                          standing.position === 2 ? 'bg-gray-400 text-black' :
-                          standing.position === 3 ? 'bg-primary-hover text-white' :
-                          'bg-surface text-white'
-                        }`}>
-                          {standing.position}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {standing.participant.profiles?.avatar_url && (
-                          <img
-                            src={standing.participant.profiles.avatar_url}
-                            alt=""
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
-                        )}
-                        <div>
-                          <div className="font-semibold text-white">
-                            {standing.participant.profiles?.full_name || 'Sconosciuto'}
-                          </div>
-                          <div className="text-xs text-muted">
-                            {standing.matchesWon}V - {standing.matchesLost}S
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-center text-white">{standing.matchesPlayed}</div>
-                      <div className="text-center font-bold text-white">{standing.points}</div>
-                      <div className="text-center text-white">
-                        <span className={standing.setsDiff > 0 ? 'text-green-400' : standing.setsDiff < 0 ? 'text-red-400' : ''}>
-                          {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
-                        </span>
-                      </div>
-                      <div className="text-center text-white">
-                        <span className={standing.gamesDiff > 0 ? 'text-green-400' : standing.gamesDiff < 0 ? 'text-red-400' : ''}>
-                          {standing.gamesDiff > 0 ? '+' : ''}{standing.gamesDiff}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            <div className="space-y-3">
+              {/* Header Row */}
+              <div className="bg-secondary/[0.03] rounded-md px-5 py-3 border border-gray-200">
+                <div className="grid grid-cols-[50px_1fr_80px_80px_100px_100px] gap-4 items-center">
+                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Pos</div>
+                  <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">PG</div>
+                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Punti</div>
+                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Diff. Set</div>
+                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Diff. Game</div>
                 </div>
               </div>
+
+
+              {standings.map((standing) => (
+                <div
+                  key={standing.participant.id}
+                  className="bg-white rounded-md p-5 hover:shadow-md transition-all"
+                >
+                  <div className="grid grid-cols-[50px_1fr_80px_80px_100px_100px] gap-4 items-center">
+                    <div className="flex items-center justify-center">
+                      <span className={`font-bold text-sm ${
+                        standing.position === 1 ? 'text-yellow-500' :
+                        standing.position === 2 ? 'text-gray-400' :
+                        standing.position === 3 ? 'text-amber-600' :
+                        'text-secondary'
+                      }`}>
+                        {standing.position}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="font-bold text-secondary">
+                        {standing.participant.profiles?.full_name || 'Sconosciuto'}
+                      </div>
+                    </div>
+
+                    <div className="text-center text-secondary font-semibold">{standing.matchesPlayed}</div>
+                    <div className="text-center text-lg font-semibold text-secondary">{standing.points}</div>
+                    <div className="text-center text-secondary font-semibold">
+                      <span className={standing.setsDiff > 0 ? 'text-emerald-600' : standing.setsDiff < 0 ? 'text-red-600' : 'text-secondary/60'}>
+                        {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
+                      </span>
+                    </div>
+                    <div className="text-center text-secondary font-semibold">
+                      <span className={standing.gamesDiff > 0 ? 'text-emerald-600' : standing.gamesDiff < 0 ? 'text-red-600' : 'text-secondary/60'}>
+                        {standing.gamesDiff > 0 ? '+' : ''}{standing.gamesDiff}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

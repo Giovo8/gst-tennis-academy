@@ -4,12 +4,21 @@ import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import TournamentManager from './TournamentManager';
 
+interface TournamentManagerMeta {
+  participantsCount: number;
+  maxParticipants: number;
+  currentPhase: string;
+  status: string;
+}
+
 interface TournamentManagerWrapperProps {
   tournamentId: string;
   isAdmin?: boolean;
+  viewOnly?: boolean;
+  onMetaChange?: (meta: TournamentManagerMeta) => void;
 }
 
-export default function TournamentManagerWrapper({ tournamentId, isAdmin = true }: TournamentManagerWrapperProps) {
+export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, onMetaChange }: TournamentManagerWrapperProps) {
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,5 +83,11 @@ export default function TournamentManagerWrapper({ tournamentId, isAdmin = true 
     );
   }
 
-  return <TournamentManager tournament={tournament} isAdmin={isAdmin} />;
+  return (
+    <TournamentManager
+      tournament={tournament}
+      isAdmin={isAdmin && !viewOnly}
+      onMetaChange={onMetaChange}
+    />
+  );
 }

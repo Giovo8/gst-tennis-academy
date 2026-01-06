@@ -42,6 +42,7 @@ interface EliminationBracketProps {
   bestOf?: number;
   onMatchUpdate?: () => void;
   onBracketGenerated?: () => void;
+  onDeleteMatches?: () => Promise<void>;
 }
 
 export default function EliminationBracket({
@@ -50,7 +51,8 @@ export default function EliminationBracket({
   participants,
   bestOf = 3,
   onMatchUpdate,
-  onBracketGenerated
+  onBracketGenerated,
+  onDeleteMatches
 }: EliminationBracketProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -219,17 +221,17 @@ export default function EliminationBracket({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
       </div>
     );
   }
 
   if (matches.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-        <Trophy className="mx-auto h-12 w-12 text-muted mb-4" />
-        <h3 className="text-lg font-semibold text-white mb-2">Bracket non ancora generato</h3>
-        <p className="text-sm text-muted mb-6">
+      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+        <Trophy className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
+        <h3 className="text-lg font-semibold text-secondary mb-2">Bracket non ancora generato</h3>
+        <p className="text-sm text-secondary/60 mb-6">
           Hai {participants.length} partecipanti su {maxParticipants} massimi.
           {participants.length >= 2 && ' Puoi generare il bracket.'}
         </p>
@@ -237,7 +239,7 @@ export default function EliminationBracket({
           <button
             onClick={generateBracket}
             disabled={generating}
-            className="rounded-lg bg-accent px-6 py-3 font-semibold text-white hover:bg-accent/90 disabled:opacity-50"
+            className="rounded-md bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {generating ? 'Generazione...' : 'Genera Bracket'}
           </button>
@@ -260,22 +262,6 @@ export default function EliminationBracket({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Tabellone Eliminazione Diretta</h3>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted">{participants.length} partecipanti</span>
-          {isAdmin && matches.length > 0 && (
-            <button
-              onClick={handleDeleteMatches}
-              disabled={deleting}
-              className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
-            >
-              {deleting ? 'Eliminazione...' : 'Rigenera Bracket'}
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Visualizzazione bracket */}
       <div className="overflow-x-auto">
         <div className="flex gap-8 pb-4" style={{ minWidth: 'fit-content' }}>
@@ -283,7 +269,7 @@ export default function EliminationBracket({
             const roundMatches = matchesByRound[roundNum] || [];
             return (
               <div key={roundNum} className="space-y-4" style={{ minWidth: '280px' }}>
-                <h4 className="text-center text-sm font-semibold text-accent">
+                <h4 className="text-center text-sm font-semibold text-secondary">
                   {roundMatches[0]?.round_name || `Round ${roundNum}`}
                 </h4>
                 

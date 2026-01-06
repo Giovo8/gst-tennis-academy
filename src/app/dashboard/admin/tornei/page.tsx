@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { 
   Loader2, 
@@ -12,7 +12,8 @@ import {
   Users as UsersIcon,
   Calendar,
   Filter,
-  Search
+  Search,
+  Archive
 } from "lucide-react";
 import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
@@ -34,6 +35,7 @@ type Tournament = {
 };
 
 function AdminTorneiPageInner() {
+  const router = useRouter();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,16 @@ function AdminTorneiPageInner() {
       const res = await fetch('/api/tournaments');
       let json: any = {};
       try { json = await res.json(); } catch (e) { json = {}; }
-      if (res.ok) setTournaments(json.tournaments ?? []);
+      if (res.ok) {
+        // Filtra via i tornei conclusi/archiviati
+        const activeTournaments = (json.tournaments ?? []).filter(
+          (t: Tournament) => 
+            t.status !== 'Concluso' && 
+            t.status !== 'Completato' && 
+            t.status !== 'Chiuso'
+        );
+        setTournaments(activeTournaments);
+      }
       else setError(json.error || 'Errore caricamento tornei');
     } catch (err: any) {
       setError(err?.message || 'Errore rete');
@@ -85,18 +96,45 @@ function AdminTorneiPageInner() {
   }
 
   const typeConfig: Record<string, { label: string; color: string }> = {
-    eliminazione_diretta: { label: "Eliminazione Diretta", color: "bg-blue-100 text-blue-700 border-blue-300" },
-    girone_eliminazione: { label: "Girone + Eliminazione", color: "bg-purple-100 text-purple-700 border-purple-300" },
-    campionato: { label: "Campionato", color: "bg-pink-100 text-pink-700 border-pink-300" },
+    eliminazione_diretta: {
+      label: "Eliminazione Diretta",
+      color: "bg-secondary text-white",
+    },
+    girone_eliminazione: {
+      label: "Girone + Eliminazione",
+      color: "bg-secondary text-white",
+    },
+    campionato: {
+      label: "Campionato",
+      color: "bg-secondary text-white",
+    },
   };
 
   const statusConfig: Record<string, { label: string; color: string }> = {
-    "Aperto": { label: "Aperto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-    "In Corso": { label: "In Corso", color: "bg-amber-100 text-amber-700 border-amber-300" },
-    "In corso": { label: "In Corso", color: "bg-amber-100 text-amber-700 border-amber-300" },
-    "Completato": { label: "Completato", color: "bg-gray-100 text-gray-700 border-gray-300" },
-    "Concluso": { label: "Concluso", color: "bg-gray-100 text-gray-700 border-gray-300" },
-    "Chiuso": { label: "Chiuso", color: "bg-red-100 text-red-700 border-red-300" },
+    "Aperto": {
+      label: "Aperto",
+      color: "bg-secondary text-white",
+    },
+    "In Corso": {
+      label: "In Corso",
+      color: "bg-secondary text-white",
+    },
+    "In corso": {
+      label: "In Corso",
+      color: "bg-secondary text-white",
+    },
+    "Completato": {
+      label: "Completato",
+      color: "bg-secondary text-white",
+    },
+    "Concluso": {
+      label: "Concluso",
+      color: "bg-secondary text-white",
+    },
+    "Chiuso": {
+      label: "Chiuso",
+      color: "bg-secondary text-white",
+    },
   };
 
   const filteredTournaments = tournaments.filter((t) => {
@@ -109,36 +147,36 @@ function AdminTorneiPageInner() {
     return matchesType && matchesSearch;
   });
 
-  const stats = {
-    total: tournaments.length,
-    aperto: tournaments.filter((t) => t.status === "Aperto").length,
-    inCorso: tournaments.filter((t) => t.status === "In Corso" || t.status === "In corso").length,
-    completato: tournaments.filter((t) => t.status === "Completato" || t.status === "Concluso").length,
-  };
-
   return (
-    <div className="space-y-6" style={{ color: '#111827' }}>
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-700 mb-2">
-            Gestione Tornei
+          <h1 className="text-3xl font-bold text-secondary mb-2">
+            Gestione competizioni
           </h1>
-          <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
-            Crea e gestisci tornei e campionati
+          <p className="text-secondary/70 text-sm md:text-base">
+            Crea e gestisci tornei e campionati della GST Tennis Academy.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all flex items-center gap-2 shadow-sm"
+            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             {showCreateForm ? "Nascondi Form" : "Nuovo Torneo"}
           </button>
           <button
+            onClick={() => router.push('/dashboard/admin/tornei/archivio')}
+            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+          >
+            <Archive className="h-4 w-4" />
+            Archivio
+          </button>
+          <button
             onClick={() => setShowReports(!showReports)}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
           >
             <BarChart3 className="h-4 w-4" />
             Report
@@ -147,58 +185,16 @@ function AdminTorneiPageInner() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <Trophy className="h-5 w-5 text-gray-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
-          </div>
-          <p className="text-sm font-semibold text-gray-600">Totale</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.aperto}</p>
-          </div>
-          <p className="text-sm font-semibold text-gray-600">Aperti</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <Trophy className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.inCorso}</p>
-          </div>
-          <p className="text-sm font-semibold text-gray-600">In Corso</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <Trophy className="h-5 w-5 text-gray-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.completato}</p>
-          </div>
-          <p className="text-sm font-semibold text-gray-600">Completati</p>
-        </div>
-      </div>
-
       {/* Reports */}
       {showReports && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-6">
           <TournamentReports />
         </div>
       )}
 
       {/* Create Form */}
       {showCreateForm && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-6">
           <SimpleTournamentCreator 
             onSuccess={() => {
               setShowCreateForm(false);
@@ -210,27 +206,27 @@ function AdminTorneiPageInner() {
 
       {/* Filters */}
       {!showCreateForm && !showReports && (
-        <>
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
           {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
             <input
               type="text"
               placeholder="Cerca per nome torneo, descrizione o categoria..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
             />
           </div>
 
           {/* Filter Buttons */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2 md:justify-end">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 filterType === "all"
-                  ? "text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-sm"
-                  : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  ? "text-white bg-secondary hover:opacity-90"
+                  : "bg-white text-secondary/70 hover:bg-secondary/5"
               }`}
             >
               <Filter className="inline-block w-4 h-4 mr-1.5" />
@@ -240,17 +236,17 @@ function AdminTorneiPageInner() {
               <button
                 key={type}
                 onClick={() => setFilterType(type as any)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                   filterType === type
-                    ? "text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-sm"
-                    : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    ? "text-white bg-secondary hover:opacity-90"
+                    : "bg-white text-secondary/70 hover:bg-secondary/5"
                 }`}
               >
                 {label}
               </button>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {/* Tournaments List */}
@@ -258,39 +254,39 @@ function AdminTorneiPageInner() {
         <>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-              <p className="mt-4 text-gray-600">Caricamento tornei...</p>
+              <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+              <p className="mt-4 text-secondary/70">Caricamento tornei...</p>
             </div>
           ) : filteredTournaments.length === 0 ? (
-            <div className="text-center py-20 rounded-xl border border-gray-200 bg-white">
-              <Trophy className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessun torneo trovato</h3>
-              <p className="text-gray-600">Crea il tuo primo torneo</p>
+            <div className="text-center py-20 rounded-xl bg-white">
+              <Trophy className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+              <h3 className="text-xl font-semibold text-secondary mb-2">Nessun torneo trovato</h3>
+              <p className="text-secondary/70">Crea il tuo primo torneo</p>
             </div>
           ) : (
             <div className="space-y-3">
               {/* Header Row */}
-              <div className="bg-gray-100 rounded-xl px-5 py-3 border border-gray-200">
+              <div className="bg-secondary/5 rounded-xl px-5 py-3">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-6 flex-1">
                     <div className="w-64">
-                      <div className="text-xs font-bold text-gray-600 uppercase">Nome Torneo</div>
+                      <div className="text-xs font-bold text-secondary/60 uppercase">Nome torneo</div>
                     </div>
                     <div className="w-40">
-                      <div className="text-xs font-bold text-gray-600 uppercase">Tipo</div>
+                      <div className="text-xs font-bold text-secondary/60 uppercase">Tipo</div>
                     </div>
                     <div className="w-32">
-                      <div className="text-xs font-bold text-gray-600 uppercase">Data</div>
+                      <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
                     </div>
                     <div className="w-24">
-                      <div className="text-xs font-bold text-gray-600 uppercase">Partecipanti</div>
+                      <div className="text-xs font-bold text-secondary/60 uppercase">Partecipanti</div>
                     </div>
                     <div className="w-32">
-                      <div className="text-xs font-bold text-gray-600 uppercase">Stato</div>
+                      <div className="text-xs font-bold text-secondary/60 uppercase">Stato</div>
                     </div>
                   </div>
                   <div className="w-36 text-right">
-                    <div className="text-xs font-bold text-gray-600 uppercase">Azioni</div>
+                    <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
                   </div>
                 </div>
               </div>
@@ -303,18 +299,18 @@ function AdminTorneiPageInner() {
                 return (
                   <div
                     key={tournament.id}
-                    onClick={() => setManagingTournamentId(tournament.id)}
-                    className="group bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer"
+                    onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
+                    className="group bg-white rounded-xl p-5 hover:bg-secondary/5 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-6 flex-1">
                         {/* Nome */}
                         <div className="w-64">
-                          <div className="font-bold text-gray-700 truncate">
+                          <div className="font-bold text-secondary truncate">
                             {tournament.title}
                           </div>
                           {tournament.description && (
-                            <div className="text-xs text-gray-500 truncate">
+                            <div className="text-xs text-secondary/60 truncate">
                               {tournament.description}
                             </div>
                           )}
@@ -322,7 +318,7 @@ function AdminTorneiPageInner() {
 
                         {/* Tipo */}
                         <div className="w-40">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md border ${typeInfo.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${typeInfo.color}`}>
                             {typeInfo.label}
                           </span>
                         </div>
@@ -330,7 +326,7 @@ function AdminTorneiPageInner() {
                         {/* Data */}
                         <div className="w-32">
                           {tournament.start_date ? (
-                            <div className="text-sm font-semibold text-gray-700">
+                            <div className="text-sm font-semibold text-secondary">
                               {new Date(tournament.start_date).toLocaleDateString('it-IT', {
                                 day: 'numeric',
                                 month: 'short',
@@ -344,14 +340,14 @@ function AdminTorneiPageInner() {
 
                         {/* Partecipanti */}
                         <div className="w-24">
-                          <div className="text-sm font-semibold text-gray-700">
+                          <div className="text-sm font-semibold text-secondary">
                             {tournament.max_participants || 0}
                           </div>
                         </div>
 
                         {/* Status */}
                         <div className="w-32">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md border ${statusInfo.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${statusInfo.color}`}>
                             {statusInfo.label}
                           </span>
                         </div>
@@ -364,7 +360,7 @@ function AdminTorneiPageInner() {
                             e.stopPropagation();
                             handleDeleteTournament(tournament.id);
                           }}
-                          className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-sm"
+                          className="p-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
                           title="Elimina"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -381,12 +377,12 @@ function AdminTorneiPageInner() {
 
       {/* Pannello di Gestione Torneo */}
       {managingTournamentId && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-xl font-bold text-gray-900">Gestione Torneo</h3>
+            <h3 className="text-xl font-bold text-secondary">Gestione torneo</h3>
             <button
               onClick={() => setManagingTournamentId(null)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-secondary/70 bg-secondary/5 rounded-md hover:bg-secondary/10 transition-colors"
             >
               Chiudi
             </button>
@@ -398,7 +394,7 @@ function AdminTorneiPageInner() {
       {/* Error notification */}
       {error && (
         <div className="fixed bottom-6 right-6 z-50 max-w-md">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg">
+          <div className="bg-red-50 rounded-xl p-4 shadow-md">
             <div className="flex items-start gap-3">
               <div className="text-red-600">⚠️</div>
               <div className="flex-1">

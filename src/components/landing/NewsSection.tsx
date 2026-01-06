@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 type NewsItem = {
@@ -57,24 +57,21 @@ const defaultNews: NewsItem[] = [
   },
 ];
 
-function getRelativeTime(dateString: string): string {
-  const now = new Date();
+function formatNewsDate(dateString: string | undefined): string {
+  if (!dateString) return "";
   const date = new Date(dateString);
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-  
-  if (diffInDays === 0) return "Oggi";
-  if (diffInDays === 1) return "1 giorno fa";
-  if (diffInDays < 7) return `${diffInDays} giorni fa`;
-  if (diffInDays < 14) return "1 settimana fa";
-  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} settimane fa`;
-  if (diffInDays < 60) return "1 mese fa";
-  return `${Math.floor(diffInDays / 30)} mesi fa`;
+  return new Intl.DateTimeFormat("it-IT", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
 
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>("tutte");
 
   useEffect(() => {
     loadNews();
@@ -99,6 +96,14 @@ export default function NewsSection() {
     setLoading(false);
   }
 
+  const categories = Array.from(new Set(news.map((item) => item.category))).filter(
+    (cat) => !!cat
+  );
+
+  const filteredNews = news.filter((item) =>
+    activeCategory === "tutte" ? true : item.category === activeCategory
+  );
+
   if (loading) {
     return (
       <section id="news" className="py-20">
@@ -122,82 +127,123 @@ export default function NewsSection() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
             Storie dal club
           </h2>
-          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-2" style={{color: 'var(--secondary)', opacity: 0.8}}>
+          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-2 text-secondary opacity-80">
             Leggi gli ultimi aggiornamenti, i risultati delle competizioni e gli avvisi importanti.
           </p>
         </div>
 
-        {/* News Grid */}
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12">
-          {news.map((item) => (
-            <article key={item.id} className="flex flex-col">
-              {/* Image */}
-              <div className="mb-3 sm:mb-4">
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-40 sm:h-48 object-cover rounded-lg"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-40 sm:h-48 rounded-lg flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
-                    <svg className="w-12 h-12 sm:w-16 sm:h-16 opacity-30" fill="none" stroke="white" viewBox="0 0 24 24">
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={1.5} 
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-                      />
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              {/* Category & Date */}
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <span className="text-xs sm:text-sm font-semibold" style={{color: 'var(--secondary)'}}>
-                  {item.category}
-                </span>
-                <span className="text-xs sm:text-sm" style={{color: 'var(--secondary)', opacity: 0.6}}>
-                  {getRelativeTime(item.published_at || item.created_at)}
-                </span>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-lg sm:text-xl font-bold mb-2 text-secondary">
-                {item.title}
-              </h3>
-
-              {/* Excerpt */}
-              <p className="text-sm sm:text-base mb-3 sm:mb-4 flex-grow" style={{color: 'var(--secondary)', opacity: 0.8}}>
-                {item.excerpt || item.content.substring(0, 120) + '...'}
-              </p>
-
-              {/* Read More Link */}
-              <Link
-                href={`/news/${item.id}`}
-                className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold transition-opacity hover:opacity-70"
-                style={{color: 'var(--secondary)'}}
-              >
-                Leggi
-                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Link>
-            </article>
+        {/* Filtri categoria */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pb-4 mb-6 sm:mb-8 text-center">
+          <button
+            onClick={() => setActiveCategory("tutte")}
+            className={`text-sm px-3 py-1.5 rounded-sm transition-colors ${
+              activeCategory === "tutte"
+                ? "bg-secondary text-white"
+                : "text-secondary/70 hover:text-secondary"
+            }`}
+          >
+            Tutte
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`text-sm px-3 py-1.5 rounded-sm transition-colors ${
+                activeCategory === category
+                  ? "bg-secondary text-white"
+                  : "text-secondary/70 hover:text-secondary"
+              }`}
+            >
+              {category}
+            </button>
           ))}
         </div>
 
-        {/* View All Button */}
+        {/* Griglia news cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
+          {filteredNews.map((item) => {
+            return (
+              <article
+                key={item.id}
+                className="flex flex-col group"
+              >
+                {/* Immagine / placeholder */}
+                <div className="w-full aspect-[4/3] mb-4 overflow-hidden">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-secondary/5">
+                      <svg
+                        className="w-16 h-16 sm:w-20 sm:h-20 text-secondary/20"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Meta info */}
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs font-semibold text-secondary">
+                    {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+                  </span>
+                </div>
+
+                {/* Titolo */}
+                <h3 className="text-lg sm:text-xl font-bold text-secondary mb-2 group-hover:opacity-80 transition-opacity">
+                  {item.title}
+                </h3>
+
+                {/* Descrizione */}
+                <p className="text-sm text-secondary/70 mb-4 line-clamp-2 flex-grow">
+                  {item.excerpt || `${item.content.substring(0, 120)}...`}
+                </p>
+
+                {/* Link "Read more" */}
+                <Link
+                  href={`/news/${item.id}`}
+                  className="inline-flex items-center text-sm font-semibold text-secondary hover:opacity-70 transition-opacity group/link"
+                >
+                  Leggi tutto
+                  <svg 
+                    className="w-4 h-4 ml-1 transition-transform group-hover/link:translate-x-1" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M9 5l7 7-7 7" 
+                    />
+                  </svg>
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* Pulsante "Vedi tutte" */}
         <div className="text-center">
           <Link
             href="/news"
-            className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-md font-semibold text-sm sm:text-base transition-all hover:opacity-90 min-h-[48px] touch-manipulation"
-            style={{
-              backgroundColor: 'var(--secondary)',
-              color: 'white'
-            }}
+            className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-sm bg-secondary text-white hover:opacity-90 transition-colors"
           >
-            Vedi tutto
+            Vedi tutte le news
           </Link>
         </div>
       </div>

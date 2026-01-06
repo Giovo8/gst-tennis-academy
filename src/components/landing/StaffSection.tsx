@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Linkedin, Twitter, Dribbble } from "lucide-react";
+import { Loader2, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import Link from "next/link";
 
 type StaffMember = {
@@ -11,6 +11,10 @@ type StaffMember = {
   role: string;
   bio: string | null;
   image_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  linkedin_url: string | null;
+  twitter_url: string | null;
 };
 
 const defaultStaff: StaffMember[] = [
@@ -147,15 +151,50 @@ export default function StaffSection() {
 
               {/* Social Icons */}
               <div className="flex justify-center gap-3">
-                <a href="#" className="transition-opacity hover:opacity-70" style={{color: 'var(--secondary)'}}>
-                  <Linkedin className="w-5 h-5" />
-                </a>
-                <a href="#" className="transition-opacity hover:opacity-70" style={{color: 'var(--secondary)'}}>
-                  <Twitter className="w-5 h-5" />
-                </a>
-                <a href="#" className="transition-opacity hover:opacity-70" style={{color: 'var(--secondary)'}}>
-                  <Dribbble className="w-5 h-5" />
-                </a>
+                {member.facebook_url && (
+                  <a 
+                    href={member.facebook_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" 
+                    style={{color: 'var(--secondary)'}}
+                  >
+                    <Facebook className="w-5 h-5" />
+                  </a>
+                )}
+                {member.instagram_url && (
+                  <a 
+                    href={member.instagram_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" 
+                    style={{color: 'var(--secondary)'}}
+                  >
+                    <Instagram className="w-5 h-5" />
+                  </a>
+                )}
+                {member.linkedin_url && (
+                  <a 
+                    href={member.linkedin_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" 
+                    style={{color: 'var(--secondary)'}}
+                  >
+                    <Linkedin className="w-5 h-5" />
+                  </a>
+                )}
+                {member.twitter_url && (
+                  <a 
+                    href={member.twitter_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" 
+                    style={{color: 'var(--secondary)'}}
+                  >
+                    <Twitter className="w-5 h-5" />
+                  </a>
+                )}
               </div>
             </article>
           ))}

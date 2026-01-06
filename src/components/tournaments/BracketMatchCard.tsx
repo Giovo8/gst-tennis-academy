@@ -26,7 +26,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
   };
   
   const matchStatus = match.match_status || match.status || 'scheduled';
-  const isCompleted = matchStatus === 'completed' || matchStatus === 'completata' || matchStatus === 'completato';
+  const isCompleted = matchStatus === 'completed' || matchStatus === 'completata';
   const isPending = matchStatus === 'pending' || (!match.player1 || !match.player2);
 
   // Parse sets from match data
@@ -42,19 +42,19 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
   };
 
   return (
-    <div className={`rounded-lg border overflow-hidden ${
+    <div className={`rounded-lg border border-gray-200 overflow-hidden ${
       isPending 
-        ? 'border-gray-300 bg-gray-50 opacity-60'
-        : 'border-gray-200 bg-white'
+        ? 'bg-secondary/[0.03] opacity-60'
+        : 'bg-white'
     }`}>
       {/* Match Header */}
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-blue-600">
+      <div className="border-b border-gray-200 bg-secondary/[0.03] px-4 py-2 flex items-center justify-between">
+        <span className="text-xs font-semibold text-secondary/80">
           {match.round_name} - Match #{match.match_number}
         </span>
         <div className="flex items-center gap-2">
           {isPending && (
-            <span className="text-xs text-gray-500">In attesa</span>
+            <span className="text-xs text-secondary/60">In attesa</span>
           )}
           {isCompleted && (
             <Trophy className="h-4 w-4 text-yellow-500" />
@@ -62,7 +62,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
           {isAdmin && !isPending && !editing && (
             <button
               onClick={() => setEditing(true)}
-              className="p-1 text-blue-600 hover:text-blue-700 transition-colors"
+              className="p-1 text-secondary hover:text-secondary/80 transition-colors"
               title="Modifica punteggio"
             >
               <Edit2 className="h-3.5 w-3.5" />
@@ -89,23 +89,17 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
           {/* Players */}
           <div className="p-4 space-y-2">
             {/* Player 1 */}
-            <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+            <div className={`flex items-center justify-between p-3 rounded-lg transition-all border ${
               isWinner(match.player1?.id) 
-                ? 'bg-blue-50 ring-2 ring-blue-500' 
-                : 'bg-gray-50'
+                ? 'bg-secondary/[0.08] border-gray-200' 
+                : 'bg-secondary/[0.03] border-transparent'
             }`}>
               <div className="flex items-center gap-2 flex-1">
-                {isWinner(match.player1?.id) && (
-                  <Trophy className="h-4 w-4 text-blue-600" />
-                )}
                 <span className={`text-sm font-medium ${
-                  isWinner(match.player1?.id) ? 'text-gray-900 font-semibold' : 'text-gray-700'
+                  isWinner(match.player1?.id) ? 'text-secondary font-semibold' : 'text-secondary/80'
                 }`}>
                   {getPlayerName(match.player1)}
                 </span>
-                {match.player1?.seed && (
-                  <span className="text-xs text-gray-500">#{match.player1.seed}</span>
-                )}
               </div>
               <div className="flex items-center gap-2">
                 {sets.length > 0 && (
@@ -115,8 +109,8 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                         key={idx}
                         className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
                           set.player1_score > set.player2_score
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-500'
+                            ? 'bg-secondary/[0.08] text-secondary'
+                            : 'text-secondary/60'
                         }`}
                       >
                         {set.player1_score}
@@ -125,7 +119,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                   </div>
                 )}
                 <span className={`text-lg font-bold min-w-[2rem] text-right ${
-                  isWinner(match.player1?.id) ? 'text-blue-600' : 'text-gray-500'
+                  isWinner(match.player1?.id) ? 'text-secondary' : 'text-secondary/60'
                 }`}>
                   {player1SetsWon}
                 </span>
@@ -133,23 +127,17 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
             </div>
 
             {/* Player 2 */}
-            <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+            <div className={`flex items-center justify-between p-3 rounded-lg transition-all border ${
               isWinner(match.player2?.id) 
-                ? 'bg-blue-50 ring-2 ring-blue-500' 
-                : 'bg-gray-50'
+                ? 'bg-secondary/[0.08] border-gray-200' 
+                : 'bg-secondary/[0.03] border-transparent'
             }`}>
               <div className="flex items-center gap-2 flex-1">
-                {isWinner(match.player2?.id) && (
-                  <Trophy className="h-4 w-4 text-blue-600" />
-                )}
                 <span className={`text-sm font-medium ${
-                  isWinner(match.player2?.id) ? 'text-gray-900 font-semibold' : 'text-gray-700'
+                  isWinner(match.player2?.id) ? 'text-secondary font-semibold' : 'text-secondary/80'
                 }`}>
                   {getPlayerName(match.player2)}
                 </span>
-                {match.player2?.seed && (
-                  <span className="text-xs text-gray-500">#{match.player2.seed}</span>
-                )}
               </div>
               <div className="flex items-center gap-2">
                 {sets.length > 0 && (
@@ -159,8 +147,8 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                         key={idx}
                         className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
                           set.player2_score > set.player1_score
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-500'
+                            ? 'bg-secondary/[0.08] text-secondary'
+                            : 'text-secondary/60'
                         }`}
                       >
                         {set.player2_score}
@@ -169,7 +157,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
                   </div>
                 )}
                 <span className={`text-lg font-bold min-w-[2rem] text-right ${
-                  isWinner(match.player2?.id) ? 'text-blue-600' : 'text-gray-500'
+                  isWinner(match.player2?.id) ? 'text-secondary' : 'text-secondary/60'
                 }`}>
                   {player2SetsWon}
                 </span>
@@ -179,7 +167,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
 
           {/* Match Info Footer */}
           {(match.court_number || match.scheduled_time) && (
-            <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 flex items-center justify-between text-xs text-gray-600">
+            <div className="border-t border-gray-200 bg-secondary/5 px-4 py-2 flex items-center justify-between text-xs text-secondary/70">
               {match.court_number && <span>Campo {match.court_number}</span>}
               {match.scheduled_time && (
                 <span>{new Date(match.scheduled_time).toLocaleString('it-IT', { 

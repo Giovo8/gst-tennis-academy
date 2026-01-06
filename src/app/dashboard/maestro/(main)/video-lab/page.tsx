@@ -4,15 +4,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import {
   Video,
-  Plus,
-  Search,
-  User,
+  Play,
   Calendar,
+  User,
   ExternalLink,
-  Trash2,
-  X,
-  Check,
-  Loader2,
+  Search,
+  Filter,
+  RefreshCw,
+  CheckCircle2,
+  Clock,
+  Eye,
 } from "lucide-react";
 
 interface VideoLesson {
@@ -20,127 +21,112 @@ interface VideoLesson {
   title: string;
   description: string | null;
   video_url: string;
+  thumbnail_url: string | null;
   category: string;
   level: string;
+  watched_at: string | null;
+  watch_count: number;
   created_at: string;
-  assignee?: {
+  creator?: {
     full_name: string;
   };
 }
 
-interface Student {
-  id: string;
-  full_name: string;
-  email: string;
-}
-
 export default function VideoLabPage() {
   const [videos, setVideos] = useState<VideoLesson[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    video_url: "",
-    category: "Tecnica",
-    level: "Principiante",
-    assigned_to: "",
-  });
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   useEffect(() => {
-    loadData();
+    loadVideos();
   }, []);
 
-  async function loadData() {
+  async function loadVideos() {
+    console.log("🔍 Caricamento video maestro...");
+    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Load videos created by this coach
-    try {
-      const response = await fetch("/api/video-lessons");
-      const data = await response.json();
-      const myVideos = (data.videos || []).filter((v: any) => v.creator?.email);
-      setVideos(myVideos);
-    } catch {
-      setVideos([]);
+    if (!user) {
+      console.log("❌ Nessun utente loggato");
+      setLoading(false);
+      return;
     }
 
-    // Load students (athletes who have had lessons with this coach)
-    const { data: bookings } = await supabase
-      .from("bookings")
-      .select("user_id")
-      .eq("coach_id", user.id);
+    console.log("👤 User ID:", user.id);
 
-    const uniqueIds = [...new Set(bookings?.map(b => b.user_id) || [])];
+    try {
+      // Carica solo i video assegnati al maestro
+      const { data: videosData } = await supabase
+        .from("video_lessons")
+        .select("*")
+        .eq("assigned_to", user.id)
+        .order("created_at", { ascending: false });
 
-    if (uniqueIds.length > 0) {
-      const { data: studentProfiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", uniqueIds)
-        .eq("role", "atleta");
+      console.log("✅ Video assegnati caricati:", videosData?.length || 0);
+
+      if (!videosData || videosData.length === 0) {
+        console.log("⚠️ Nessun video trovato");
+        setVideos([]);
+        setLoading(false);
+        return;
+      }
+
+      // Aggiungi i dati del creator se necessario
+      const creatorIds = [...new Set(videosData.map(v => v.created_by).filter(Boolean))];
+      let creatorsMap = new Map();
       
-      setStudents(studentProfiles || []);
+      if (creatorIds.length > 0) {
+        const { data: creatorsData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", creatorIds);
+        
+        if (creatorsData) {
+          creatorsMap = new Map(creatorsData.map(c => [c.id, c]));
+        }
+      }
+
+      // Combina i dati
+      const enrichedVideos = videosData.map(video => ({
+        ...video,
+        watched_at: null,
+        watch_count: 0,
+        creator: video.created_by ? creatorsMap.get(video.created_by) : null
+      }));
+
+      console.log("📹 Video con dati creator:", enrichedVideos);
+      setVideos(enrichedVideos);
+    } catch (error) {
+      console.error("❌ Errore generale:", error);
+      setVideos([]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-
+  async function markAsWatched(videoId: string) {
     try {
-      const response = await fetch("/api/video-lessons", {
+      await fetch(`/api/video-lessons/${videoId}/watch`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
       });
-
-      if (response.ok) {
-        setShowModal(false);
-        setFormData({
-          title: "",
-          description: "",
-          video_url: "",
-          category: "Tecnica",
-          level: "Principiante",
-          assigned_to: "",
-        });
-        loadData();
-      }
+      loadVideos();
     } catch {}
-    
-    setSaving(false);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Sei sicuro di voler eliminare questo video?")) return;
-    
-    setDeleting(id);
+  const filteredVideos = videos.filter((video) => {
+    const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      video.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || video.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
-    try {
-      const response = await fetch(`/api/video-lessons?id=${id}`, {
-        method: "DELETE",
-      });
+  const categories = [...new Set(videos.map((v) => v.category).filter(Boolean))];
 
-      if (response.ok) {
-        setVideos(videos.filter(v => v.id !== id));
-      }
-    } catch {}
-    
-    setDeleting(null);
-  }
-
-  const filteredVideos = videos.filter((video) =>
-    video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    video.assignee?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const stats = {
+    total: videos.length,
+    watched: videos.filter(v => v.watched_at).length,
+    notWatched: videos.filter(v => !v.watched_at).length,
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("it-IT", {
@@ -150,16 +136,18 @@ export default function VideoLabPage() {
     });
   };
 
-  const categories = ["Tecnica", "Tattica", "Esercizi", "Match Analysis", "Altro"];
-  const levels = ["Principiante", "Intermedio", "Avanzato", "Agonista"];
+  const getYouTubeId = (url: string) => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    return match ? match[1] : null;
+  };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-10 skeleton rounded-lg w-48" />
-        <div className="grid gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 skeleton rounded-xl" />
+        <div className="h-24 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -169,257 +157,170 @@ export default function VideoLabPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Video Lab</h1>
-          <p className="text-[var(--foreground-muted)] mt-1">
-            Carica e assegna video ai tuoi allievi
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Video Lab
+          </h1>
+          <p className="text-sm text-gray-600">
+            Video di allenamento e tecnica
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-dark)] transition-colors"
+          onClick={() => loadVideos()}
+          className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2"
         >
-          <Plus className="h-5 w-5" />
-          Nuovo Video
+          <RefreshCw className="h-4 w-4" />
+          Ricarica
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--foreground-subtle)]" />
-        <input
-          type="text"
-          placeholder="Cerca video o allievo..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] placeholder:text-[var(--foreground-subtle)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-        />
-      </div>
-
-      {/* Videos List */}
-      {filteredVideos.length === 0 ? (
-        <div className="text-center py-16 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-          <Video className="h-16 w-16 text-[var(--foreground-subtle)] mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
-            {videos.length === 0 ? "Nessun video caricato" : "Nessun risultato"}
-          </h3>
-          <p className="text-[var(--foreground-muted)] mb-4">
-            {videos.length === 0
-              ? "Inizia caricando il tuo primo video"
-              : "Prova con un'altra ricerca"
-            }
-          </p>
-          {videos.length === 0 && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-dark)] transition-colors"
-            >
-              <Plus className="h-5 w-5" />
-              Carica Video
-            </button>
+      {/* Search & Filters */}
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cerca video..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900"
+            />
+          </div>
+          
+          {categories.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900 bg-white"
+              >
+                <option value="all">Tutte le categorie</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
+      </div>
+
+      {/* Videos Grid */}
+      {filteredVideos.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            {videos.length === 0 ? "Nessun video disponibile" : "Nessun risultato"}
+          </h3>
+          <p className="text-gray-600">
+            {videos.length === 0
+              ? "Non ci sono ancora video disponibili"
+              : "Prova a modificare i filtri di ricerca"
+            }
+          </p>
+        </div>
       ) : (
-        <div className="space-y-3">
-          {filteredVideos.map((video) => (
-            <div
-              key={video.id}
-              className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 rounded-lg bg-frozen-500/10 flex items-center justify-center flex-shrink-0">
-                  <Video className="h-6 w-6 text-frozen-500" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVideos.map((video) => {
+            const youtubeId = getYouTubeId(video.video_url);
+            const thumbnailUrl = video.thumbnail_url || 
+              (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
+
+            return (
+              <div
+                key={video.id}
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-all"
+              >
+                {/* Thumbnail */}
+                <div className="relative aspect-video bg-gray-100">
+                  {thumbnailUrl ? (
+                    <img
+                      src={thumbnailUrl}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Video className="h-12 w-12 text-gray-300" />
+                    </div>
+                  )}
+                  
+                  <a
+                    href={video.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => markAsWatched(video.id)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Play className="h-8 w-8 text-frozen-600 ml-1" />
+                    </div>
+                  </a>
+
+                  {video.watched_at && (
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-lg">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Visto
+                    </div>
+                  )}
+
+                  {video.watch_count > 0 && (
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-black/70 text-white text-xs font-medium rounded-lg">
+                      <Eye className="h-3 w-3" />
+                      {video.watch_count}
+                    </div>
+                  )}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-[var(--foreground)] truncate">
+
+                {/* Content */}
+                <div className="p-5">
+                  <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 text-lg">
                     {video.title}
                   </h3>
-                  <div className="flex items-center gap-3 text-sm text-[var(--foreground-muted)] mt-1">
-                    {video.assignee && (
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {video.assignee.full_name}
+                  
+                  {video.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {video.description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+                    {video.creator && (
+                      <span className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" />
+                        {video.creator.full_name}
                       </span>
                     )}
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
                       {formatDate(video.created_at)}
                     </span>
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-                      {video.category}
-                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    {video.category && (
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-purple-50 text-purple-700">
+                        {video.category}
+                      </span>
+                    )}
+
+                    <a
+                      href={video.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => markAsWatched(video.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-frozen-600 bg-frozen-50 rounded-lg hover:bg-frozen-100 transition-all"
+                    >
+                      Guarda
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-4">
-                <a
-                  href={video.video_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-lg hover:bg-[var(--surface-hover)] text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors"
-                >
-                  <ExternalLink className="h-5 w-5" />
-                </a>
-                <button
-                  onClick={() => handleDelete(video.id)}
-                  disabled={deleting === video.id}
-                  className="p-2 rounded-lg hover:bg-frozen-50 dark:hover:bg-frozen-900/20 text-[var(--foreground-muted)] hover:text-frozen-500 transition-colors disabled:opacity-50"
-                >
-                  {deleting === video.id ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-[var(--surface)] rounded-2xl shadow-xl">
-            <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
-              <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                Nuovo Video
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 rounded-lg hover:bg-[var(--surface-hover)] text-[var(--foreground-muted)]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                  Titolo *
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-                  placeholder="Es: Tecnica di rovescio"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                  URL Video *
-                </label>
-                <input
-                  type="url"
-                  value={formData.video_url}
-                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                  required
-                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                  Descrizione
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] resize-none"
-                  placeholder="Note o istruzioni per l'allievo..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                    Categoria
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                    Livello
-                  </label>
-                  <select
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-                  >
-                    {levels.map((lvl) => (
-                      <option key={lvl} value={lvl}>{lvl}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-                  Assegna a *
-                </label>
-                <select
-                  value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                  required
-                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-                >
-                  <option value="">Seleziona allievo...</option>
-                  {students.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.full_name}
-                    </option>
-                  ))}
-                </select>
-                {students.length === 0 && (
-                  <p className="text-xs text-[var(--foreground-subtle)] mt-1">
-                    Nessun allievo trovato. Gli allievi appariranno dopo aver avuto almeno una lezione.
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-hover)] transition-colors"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !formData.assigned_to}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary-dark)] transition-colors disabled:opacity-50"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Salvataggio...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Salva Video
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -54,8 +54,8 @@ export default function Bracket({
   
   if (total === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-        <p className="text-gray-600">
+      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+        <p className="text-secondary/70">
           Nessun partecipante ancora. Il tabellone verrà generato quando ci saranno iscrizioni.
         </p>
       </div>
@@ -128,9 +128,9 @@ export default function Bracket({
             
             return (
               <div key={roundIndex} className="min-w-[160px] md:min-w-[200px]">
-                <div className="mb-3 md:mb-4 sticky top-0 bg-gray-50 border-b border-gray-200 py-2 z-10">
-                  <h4 className="text-xs md:text-sm font-semibold text-gray-900">{roundName}</h4>
-                  <p className="text-xs md:text-sm text-gray-600">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>
+                <div className="mb-3 md:mb-4 sticky top-0 bg-secondary/5 border-b border-gray-200 py-2 z-10">
+                  <h4 className="text-xs md:text-sm font-semibold text-secondary">{roundName}</h4>
+                  <p className="text-xs md:text-sm text-secondary/70">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>
                 </div>
                 
                 <div className="space-y-3 md:space-y-4">
@@ -141,12 +141,12 @@ export default function Bracket({
                     return (
                       <div 
                         key={matchIndex} 
-                        className={`rounded-lg border p-3 md:p-4 transition-all ${
+                        className={`rounded-lg border border-gray-200 p-3 md:p-4 transition-all ${
                           hasBye 
-                            ? 'border-primary/30 bg-blue-50'
+                            ? 'bg-secondary/5'
                             : isFinished
-                            ? 'border-blue-200 bg-blue-50'
-                            : 'border-gray-200 bg-white'
+                            ? 'bg-secondary/5'
+                            : 'bg-white'
                         }`}
                       >
                         <div className="space-y-2">
@@ -154,12 +154,12 @@ export default function Bracket({
                           <div 
                             className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                               match.player1 === 'BYE'
-                                ? 'bg-blue-100 text-primary'
+                                ? 'bg-secondary/5 text-secondary/70'
                                 : match.winner === match.player1
-                                ? 'bg-blue-100 text-blue-700 font-semibold'
+                                ? 'bg-secondary/10 text-secondary font-semibold'
                                 : match.player1 === 'TBD'
-                                ? 'bg-gray-100 text-gray-500 italic'
-                                : 'bg-gray-50 text-gray-900'
+                                ? 'bg-secondary/5 text-secondary/60 italic'
+                                : 'bg-white text-secondary'
                             }`}
                           >
                             <span className="text-xs md:text-sm truncate">{match.player1}</span>
@@ -170,19 +170,19 @@ export default function Bracket({
                           
                           {/* VS divider */}
                           <div className="text-center">
-                            <span className="text-xs md:text-sm text-gray-500 uppercase tracking-wider">vs</span>
+                            <span className="text-xs md:text-sm text-secondary/60 uppercase tracking-wider">vs</span>
                           </div>
                           
                           {/* Player 2 */}
                           <div 
                             className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
                               match.player2 === 'BYE'
-                                ? 'bg-blue-100 text-primary'
+                                ? 'bg-secondary/5 text-secondary/70'
                                 : match.winner === match.player2
-                                ? 'bg-blue-100 text-blue-700 font-semibold'
+                                ? 'bg-secondary/10 text-secondary font-semibold'
                                 : match.player2 === 'TBD'
-                                ? 'bg-gray-100 text-gray-500 italic'
-                                : 'bg-gray-50 text-gray-900'
+                                ? 'bg-secondary/5 text-secondary/60 italic'
+                                : 'bg-white text-secondary'
                             }`}
                           >
                             <span className="text-xs md:text-sm truncate">{match.player2}</span>
@@ -195,14 +195,14 @@ export default function Bracket({
                         {/* Score display if available */}
                         {match.score && (
                           <div className="mt-2 pt-2 border-t border-gray-200 text-center">
-                            <span className="text-xs text-gray-600">{match.score}</span>
+                            <span className="text-xs text-secondary/70">{match.score}</span>
                           </div>
                         )}
                         
                         {/* BYE indicator */}
                         {hasBye && (
-                          <div className="mt-2 pt-2 border-t border-cyan-200 text-center">
-                            <span className="text-xs text-cyan-700">Auto-avanzamento</span>
+                          <div className="mt-2 pt-2 border-t border-gray-200 text-center">
+                            <span className="text-xs text-secondary/70">Auto-avanzamento</span>
                           </div>
                         )}
                       </div>
@@ -216,17 +216,17 @@ export default function Bracket({
       </div>
       
       {/* Legend */}
-      <div className="mt-6 flex flex-wrap gap-4 text-xs text-gray-600">
+      <div className="mt-6 flex flex-wrap gap-4 text-xs text-secondary/70">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div>
+          <div className="w-3 h-3 rounded bg-secondary/10 border border-secondary/20"></div>
           <span>Vincitore</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-100 border border-primary/30"></div>
+          <div className="w-3 h-3 rounded bg-secondary/10 border border-secondary/20"></div>
           <span>BYE (Passaggio automatico)</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-gray-100 border border-gray-200"></div>
+          <div className="w-3 h-3 rounded bg-secondary/5 border border-secondary/10"></div>
           <span>Da determinare</span>
         </div>
       </div>

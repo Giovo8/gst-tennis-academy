@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications/createNotification";
 import {
   MessageSquare,
   Send,
@@ -64,18 +65,43 @@ export default function AdminCommunicationsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("announcements").insert({
-      title,
-      content,
-      type,
-      target_roles: targetRoles.length > 0 ? targetRoles : null,
-      created_by: user.id,
-      is_active: true,
-    });
+    const { data: newAnnouncement, error } = await supabase
+      .from("announcements")
+      .insert({
+        title,
+        content,
+        type,
+        target_roles: targetRoles.length > 0 ? targetRoles : null,
+        created_by: user.id,
+        is_active: true,
+      })
+      .select()
+      .single();
 
     if (error) {
       alert("Errore: " + error.message);
     } else {
+      // Send notifications to all target users
+      const roles = targetRoles.length > 0 ? targetRoles : ["atleta", "maestro", "gestore"];
+      
+      const { data: targetUsers } = await supabase
+        .from("profiles")
+        .select("id")
+        .in("role", roles);
+
+      if (targetUsers && targetUsers.length > 0) {
+        // Send notification to each user via API
+        for (const targetUser of targetUsers) {
+          await createNotification({
+            userId: targetUser.id,
+            type: "announcement",
+            title: "Nuovo annuncio",
+            message: title.substring(0, 100) + (title.length > 100 ? "..." : ""),
+            link: "/annunci",
+          });
+        }
+      }
+
       setTitle("");
       setContent("");
       setType("info");

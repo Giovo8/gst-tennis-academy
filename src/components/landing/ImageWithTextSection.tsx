@@ -26,9 +26,17 @@ export default function ImageWithTextSection() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-6 text-white">
             La tua tennis Academy
           </h2>
-          <p className="text-base sm:text-lg md:text-xl mb-4 sm:mb-10 text-white/90 max-w-2xl mx-auto px-4">
+          <p className="text-base sm:text-lg md:text-xl mb-6 text-white/90 max-w-2xl mx-auto px-4">
             Dove la passione incontra la tecnica. Impianti moderni, lezioni di qualità e tornei che contano.
           </p>
+          
+          {/* CTA Button */}
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-secondary bg-white hover:bg-white/90 transition-colors rounded-lg shadow-lg hover:shadow-xl"
+          >
+            Accedi
+          </Link>
         </div>
       </div>
     </section>

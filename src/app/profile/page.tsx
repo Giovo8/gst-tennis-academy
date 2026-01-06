@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getDestinationForRole, type UserRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabase/client";
-import { User, CreditCard, LogOut, Shield, Mail, Bell } from "lucide-react";
+import { User, LogOut, Shield, Mail, Bell, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 type ProfileData = {
   full_name: string | null;
@@ -101,136 +102,172 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10 bg-frozen-950 text-white">
-      <div className="mx-auto w-full max-w-3xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-6 max-w-4xl">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-2">
-            <User className="inline h-4 w-4 mr-2" />
-            Profilo
-          </p>
-          <h1 className="text-3xl font-semibold text-white">Il tuo Account</h1>
-          <p className="text-sm text-muted">
-            Gestisci i tuoi dati personali e abbonamento
+          {profile && (
+            <Link
+              href={getDestinationForRole(profile.role)}
+              className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
+            >
+              <ArrowLeft className="h-3 w-3 mr-1" />
+              Dashboard
+            </Link>
+          )}
+          <h1 className="text-3xl font-bold text-secondary">Profilo</h1>
+          <p className="text-secondary/70 text-sm mt-1">
+            Gestisci i tuoi dati personali e le preferenze
           </p>
         </div>
-        {profile && (
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-accent/15 px-4 py-2 text-xs font-semibold text-accent flex items-center gap-2">
-              <Shield className="h-3 w-3" />
-              {profile.role.toUpperCase()}
-            </span>
-          </div>
-        )}
       </div>
 
-      <div className="rounded-3xl border border-frozen-500/30 bg-frozen-800/60 p-6">
-        {loading ? (
-          <p className="text-sm text-[#c6d8c9]">Caricamento profilo...</p>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-[#c6d8c9] sm:col-span-2">
-                Nome completo
+      {/* Messages */}
+      {error && (
+        <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-900">Errore</p>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-green-900">Successo</p>
+            <p className="text-sm text-green-700 mt-1">{success}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+          <p className="mt-4 text-secondary/60">Caricamento profilo...</p>
+        </div>
+      ) : (
+        <>
+          {/* Profile Info Card */}
+          <div className="bg-white rounded-xl p-6 space-y-6">
+            {/* Role Badge */}
+            {profile && (
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-secondary/10">
+                    <Shield className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase tracking-wider font-semibold">Ruolo</p>
+                    <p className="text-sm font-bold text-secondary">{profile.role.toUpperCase()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Form Fields */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-secondary mb-2">
+                  Nome completo
+                </label>
                 <input
-                  className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-800/60 px-3 py-2 text-white outline-none focus:border-frozen-400/60"
+                  type="text"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-secondary outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nome e Cognome"
                 />
-              </label>
-              <label className="block text-sm text-[#c6d8c9]">
-                Email
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-secondary mb-2">
+                  Email
+                </label>
                 <input
-                  className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-800/60 px-3 py-2 text-white opacity-70"
+                  type="email"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-secondary/60 outline-none cursor-not-allowed"
                   value={profile?.email ?? ""}
                   readOnly
                 />
-              </label>
-              <label className="block text-sm text-[#c6d8c9]">
-                Abbonamento
+                <p className="text-xs text-secondary/50 mt-1">L'email non può essere modificata</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-secondary mb-2">
+                  Tipo abbonamento
+                </label>
                 <input
-                  className="mt-2 w-full rounded-xl border border-white/15 bg-frozen-800/60 px-3 py-2 text-white outline-none focus:border-frozen-400/60"
+                  type="text"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-secondary outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                   value={subscriptionType}
                   onChange={(e) => setSubscriptionType(e.target.value)}
-                  placeholder="Es. Mensile, Annuale, Clinic Pack"
+                  placeholder="Es. Mensile, Annuale, Base"
                 />
-              </label>
+              </div>
             </div>
+          </div>
 
-            {/* Notification Preferences */}
-            <div className="rounded-2xl border border-frozen-500/20 bg-frozen-500/5 p-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-frozen-500/10 p-2">
-                  <Bell className="h-5 w-5 text-frozen-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-white mb-1">Preferenze Notifiche</h3>
-                  <p className="text-xs text-gray-400 mb-3">
-                    Gestisci come vuoi ricevere le notifiche importanti
-                  </p>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={emailNotificationsEnabled}
-                        onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-frozen-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-frozen-500"></div>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-frozen-400" />
-                        <span className="text-sm font-medium text-white">Notifiche Email</span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Ricevi email per prenotazioni, tornei e messaggi importanti
-                      </p>
-                    </div>
-                  </label>
-                </div>
+          {/* Notification Preferences Card */}
+          <div className="bg-white rounded-xl p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-secondary/10">
+                <Bell className="h-5 w-5 text-secondary" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-secondary mb-1">Preferenze Notifiche</h3>
+                <p className="text-xs text-secondary/60">
+                  Gestisci come vuoi ricevere le notifiche
+                </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold bg-accent text-frozen-950 transition hover:bg-frozen-400 disabled:opacity-60"
-              >
-                {saving ? "Salvataggio..." : "Salva modifiche"}
-              </button>
-              <button
-                onClick={goToDashboard}
-                className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
-              >
-                Vai alla dashboard
-              </button>
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-2 justify-center rounded-full border border-frozen-400/30 px-6 py-3 text-sm font-semibold text-frozen-300 transition hover:border-frozen-400/50 hover:bg-frozen-400/10"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-
-            {error && (
-              <p className="rounded-xl border border-frozen-400/30 bg-frozen-400/10 px-3 py-2 text-sm text-frozen-100">
-                {error}
-              </p>
-            )}
-            {success && (
-              <p className="rounded-xl border border-frozen-400/30 bg-frozen-400/10 px-3 py-2 text-sm text-frozen-100">
-                {success}
-              </p>
-            )}
+            <label className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={emailNotificationsEnabled}
+                  onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-secondary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+              </div>
+              <div className="flex items-center gap-2 flex-1">
+                <Mail className="h-4 w-4 text-secondary" />
+                <div>
+                  <span className="text-sm font-semibold text-secondary block">Notifiche Email</span>
+                  <span className="text-xs text-secondary/60">
+                    Ricevi email per prenotazioni e tornei
+                  </span>
+                </div>
+              </div>
+            </label>
           </div>
-        )}
-      </div>
-      </div>
-    </main>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold bg-secondary text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? "Salvataggio..." : "Salva modifiche"}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 justify-center rounded-lg border border-gray-200 px-6 py-2.5 text-sm font-semibold text-secondary transition hover:bg-gray-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

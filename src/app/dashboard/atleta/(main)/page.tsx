@@ -19,6 +19,7 @@ import {
   Zap,
   Megaphone,
   Bell,
+  Swords,
 } from "lucide-react";
 
 interface Stats {
@@ -440,6 +441,20 @@ export default function AtletaDashboard() {
             </div>
 
             <div className="p-4 space-y-2">
+              <Link
+                href="/dashboard/atleta/arena"
+                className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200 hover:border-orange-300 hover:shadow-md transition-all group"
+              >
+                <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg group-hover:scale-105 transition-transform">
+                  <Swords className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">Arena Sfide</p>
+                  <p className="text-xs text-gray-600">Sfida e scala la classifica</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-orange-400 group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
               <Link
                 href="/dashboard/atleta/bookings/new"
                 className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-frozen-50 hover:border-frozen-300 transition-all group"

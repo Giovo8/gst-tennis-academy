@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { user_id, title, message, type, link } = body;
 
+    console.log("📬 API: Creating notification", { user_id, title, type });
+
     if (!user_id || !title || !message) {
+      console.error("❌ API: Missing required fields");
       return NextResponse.json(
         { error: "user_id, title, and message are required" },
         { status: 400 }
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
         user_id,
         title,
         message,
-        type: type || "info",
+        type: type || "general",
         link: link || null,
         is_read: false,
       })
@@ -69,8 +72,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      console.error("❌ API: Database error", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log("✅ API: Notification created successfully", data.id);
 
     // Check if user has email notifications enabled
     const { data: profile } = await supabase

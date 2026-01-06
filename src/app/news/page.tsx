@@ -1,21 +1,29 @@
-import AdminNewsBoard from "@/components/news/AdminNewsBoard";
+"use client";
 
-export const metadata = {
-  title: "News | GST Tennis Academy",
-};
+import AdminNewsBoard from "@/components/news/AdminNewsBoard";
+import PublicNavbar from "@/components/layout/PublicNavbar";
 
 export default function NewsPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 sm:gap-5 px-4 sm:px-6 py-6 sm:py-10">
-      <div className="space-y-2 sm:space-y-3">
-        <p className="text-xs uppercase tracking-[0.2em] text-frozen-400">News</p>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-white">Aggiornamenti dall&apos;Academy</h1>
-        <p className="text-xs sm:text-sm text-[#c6d8c9]">
-          Pubblica e gestisci i post. Integrazione con backend/DB arriverà in seguito.
-        </p>
-      </div>
-      <AdminNewsBoard />
-    </main>
+    <div className="min-h-screen bg-white">
+      <PublicNavbar />
+      <main className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+          <div className="text-center mb-8 sm:mb-12">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
+              News
+            </p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
+              Aggiornamenti dall&apos;Academy
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+              Tutte le novità, gli eventi e le storie dal nostro circolo tennis.
+            </p>
+          </div>
+          <AdminNewsBoard />
+        </div>
+      </main>
+    </div>
   );
 }
 

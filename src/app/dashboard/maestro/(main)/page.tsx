@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Sparkles,
   Zap,
+  Swords,
 } from "lucide-react";
 
 interface Stats {
@@ -35,13 +36,6 @@ interface Lesson {
   };
 }
 
-interface Student {
-  id: string;
-  full_name: string;
-  email: string;
-  lastLesson?: string;
-}
-
 export default function CoachHomePage() {
   const [stats, setStats] = useState<Stats>({
     todayLessons: 0,
@@ -50,7 +44,6 @@ export default function CoachHomePage() {
     videosShared: 0,
   });
   const [todayLessons, setTodayLessons] = useState<Lesson[]>([]);
-  const [recentStudents, setRecentStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
 
@@ -112,41 +105,20 @@ export default function CoachHomePage() {
       }));
     }
 
-    // Get unique students who have had lessons with this coach
-    const { data: allBookings } = await supabase
-      .from("bookings")
-      .select("user_id")
-      .eq("coach_id", user.id)
-      .neq("status", "cancelled");
-
-    const uniqueStudentIds = [...new Set(allBookings?.map(b => b.user_id) || [])];
-    
-    let students: Student[] = [];
-    if (uniqueStudentIds.length > 0) {
-      const { data: studentProfiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", uniqueStudentIds)
-        .limit(5);
-      
-      students = studentProfiles || [];
-    }
-
     // Count shared videos
     const { count: videosCount } = await supabase
       .from("video_lessons")
       .select("*", { count: "exact", head: true })
-      .eq("created_by", user.id);
+      .eq("coach_id", user.id);
 
     setStats({
       todayLessons: todayCount || 0,
       weekLessons: weekCount || 0,
-      studentsCount: uniqueStudentIds.length,
+      studentsCount: 0,
       videosShared: videosCount || 0,
     });
 
     setTodayLessons(lessonsWithAthletes);
-    setRecentStudents(students);
     setLoading(false);
   }
 
@@ -258,7 +230,24 @@ export default function CoachHomePage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
+        <Link
+          href="/dashboard/maestro/arena"
+          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 hover:shadow-lg transition-all duration-300"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="relative flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-orange-200 transition-all">
+              <Swords className="h-7 w-7 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 text-lg">Arena</h3>
+              <p className="text-sm text-gray-600">Sfida altri giocatori e scala la classifica</p>
+            </div>
+          </div>
+          <ArrowRight className="relative h-5 w-5 text-gray-400 group-hover:text-orange-600 group-hover:translate-x-1 transition-all" />
+        </Link>
+
         <Link
           href="/dashboard/maestro/video-lab"
           className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-red-300 hover:shadow-lg transition-all duration-300"
@@ -358,49 +347,6 @@ export default function CoachHomePage() {
         )}
       </div>
 
-      {/* Recent Students */}
-      {recentStudents.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
-                <Users className="h-5 w-5 text-frozen-600" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-gray-900">I Tuoi Allievi</h2>
-                <p className="text-xs text-gray-600">Allievi seguiti</p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard/maestro/students"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-frozen-600 bg-frozen-50 border border-frozen-200 hover:bg-frozen-100 transition-all"
-            >
-              Vedi tutti
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {recentStudents.map((student) => (
-              <Link
-                key={student.id}
-                href={`/dashboard/maestro/students/${student.id}`}
-                className="p-4 flex items-center justify-between hover:bg-gray-50 transition-all group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg">
-                    {student.full_name?.charAt(0)?.toUpperCase() || "A"}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 group-hover:text-cyan-600 transition-colors">{student.full_name}</p>
-                    <p className="text-sm text-gray-600">{student.email}</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-cyan-600 group-hover:translate-x-1 transition-all" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

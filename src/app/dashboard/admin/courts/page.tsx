@@ -140,70 +140,63 @@ export default function CourtsBlockPage() {
   };
 
   return (
-    <div className="space-y-6" style={{ color: '#111827' }}>
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Link
-          href="/dashboard/admin/bookings"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors mb-4 text-sm font-medium"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Torna a Gestione Prenotazioni
-        </Link>
-        <h1 className="text-3xl font-extrabold text-black mb-2">
-          Blocco Campi
-        </h1>
-        <p className="text-gray-800 font-medium">
-          Blocca fasce orarie su campi specifici per impedire le prenotazioni
-        </p>
+      <div className="flex flex-col gap-2">
+        <div>
+          <Link
+            href="/dashboard/admin/bookings"
+            className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
+          >
+            Prenotazioni
+          </Link>
+          <h1 className="text-3xl font-bold text-secondary">Blocco campi</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Blocca fasce orarie su campi specifici per impedire le prenotazioni.
+          </p>
+        </div>
       </div>
 
       {/* Messages */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <p className="text-sm font-medium">{error}</p>
+        <div className="mt-2">
+          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm font-medium text-red-800">{error}</p>
+          </div>
         </div>
       )}
       
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <p className="text-sm font-medium">{success}</p>
+        <div className="mt-2">
+          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm font-medium text-green-800">{success}</p>
+          </div>
         </div>
       )}
 
       {/* Create Block Form */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Plus className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Crea Nuovo Blocco</h2>
-            <p className="text-sm text-gray-600">Blocca una fascia oraria su un campo</p>
-          </div>
-        </div>
-
+      <div className="bg-white rounded-xl p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           {/* Data */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Data</label>
+            <label className="block text-xs font-semibold text-secondary mb-2">Data</label>
             <input
               type="date"
               value={format(selectedDate, "yyyy-MM-dd")}
               onChange={(e) => setSelectedDate(new Date(e.target.value))}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white rounded-lg text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
             />
           </div>
 
           {/* Campo */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Campo</label>
+            <label className="block text-xs font-semibold text-secondary mb-2">Campo</label>
             <select
               value={selectedCourt}
               onChange={(e) => setSelectedCourt(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white rounded-lg text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/20"
             >
               <option value="">Seleziona campo</option>
               {COURTS.map((court) => (
@@ -214,11 +207,11 @@ export default function CourtsBlockPage() {
 
           {/* Ora Inizio */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Ora Inizio</label>
+            <label className="block text-xs font-semibold text-secondary mb-2">Ora inizio</label>
             <select
               value={selectedStartTime}
               onChange={(e) => setSelectedStartTime(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white rounded-lg text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/20"
             >
               <option value="">Seleziona ora</option>
               {TIME_SLOTS.map((time) => (
@@ -229,11 +222,11 @@ export default function CourtsBlockPage() {
 
           {/* Ora Fine */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Ora Fine</label>
+            <label className="block text-xs font-semibold text-secondary mb-2">Ora fine</label>
             <select
               value={selectedEndTime}
               onChange={(e) => setSelectedEndTime(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white rounded-lg text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/20"
             >
               <option value="">Seleziona ora</option>
               {TIME_SLOTS.map((time) => (
@@ -244,13 +237,13 @@ export default function CourtsBlockPage() {
 
           {/* Motivo */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Motivo (opzionale)</label>
+            <label className="block text-xs font-semibold text-secondary mb-2">Motivo (opzionale)</label>
             <input
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="es. Manutenzione"
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white rounded-lg text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
             />
           </div>
         </div>
@@ -258,7 +251,7 @@ export default function CourtsBlockPage() {
         <button
           onClick={handleCreateBlock}
           disabled={submitting || !selectedCourt || !selectedStartTime || !selectedEndTime}
-          className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-3"
+          className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-3"
         >
           {submitting ? (
             <>
@@ -275,31 +268,31 @@ export default function CourtsBlockPage() {
       </div>
 
       {/* Calendar View */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden">
+        <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-blue-600 uppercase tracking-wider font-semibold mb-1">Vista Settimanale Blocchi</p>
-              <h2 className="text-xl font-bold text-gray-900">
+              <p className="text-xs text-secondary/60 uppercase tracking-wider font-semibold mb-1">Vista settimanale blocchi</p>
+              <h2 className="text-xl font-bold text-secondary">
                 {format(weekDays[0], "d MMM", { locale: it })} - {format(weekDays[6], "d MMM yyyy", { locale: it })}
               </h2>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSelectedDate(addDays(selectedDate, -7))}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 transition-colors"
+                className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setSelectedDate(new Date())}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-secondary bg-secondary/5 rounded-md hover:bg-secondary/10 transition-colors"
               >
                 Oggi
               </button>
               <button
                 onClick={() => setSelectedDate(addDays(selectedDate, 7))}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 transition-colors"
+                className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 rotate-180" />
               </button>
@@ -309,20 +302,20 @@ export default function CourtsBlockPage() {
 
         {loading ? (
           <div className="p-20 flex flex-col items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-            <p className="text-gray-600 font-medium">Caricamento blocchi...</p>
+            <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
+            <p className="text-secondary/70 font-medium">Caricamento blocchi...</p>
           </div>
         ) : (
           <div className="p-6 overflow-x-auto">
             {/* Days Header */}
             <div className="grid grid-cols-8 gap-2 mb-4 min-w-[900px]">
-              <div className="text-xs font-semibold text-gray-600">Campo</div>
+              <div className="text-xs font-semibold text-secondary/60">Campo</div>
               {weekDays.map((day, idx) => (
                 <div key={idx} className="text-center">
-                  <div className={`text-xs font-semibold uppercase ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-600'}`}>
+                  <div className={`text-xs font-semibold uppercase ${isSameDay(day, new Date()) ? 'text-secondary' : 'text-secondary/60'}`}>
                     {format(day, "EEE", { locale: it })}
                   </div>
-                  <div className={`text-sm font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'}`}>
+                  <div className={`text-sm font-bold ${isSameDay(day, new Date()) ? 'text-secondary' : 'text-secondary'}`}>
                     {format(day, "d", { locale: it })}
                   </div>
                 </div>
@@ -333,17 +326,17 @@ export default function CourtsBlockPage() {
             <div className="space-y-2 min-w-[900px]">
               {COURTS.map((court) => (
                 <div key={court} className="grid grid-cols-8 gap-2 items-center">
-                  <div className="text-sm font-bold text-gray-900">{court}</div>
+                  <div className="text-sm font-bold text-secondary">{court}</div>
                   {weekDays.map((day, idx) => {
                     const courtBlocks = getBlocksForDateAndCourt(day, court);
                     return (
-                      <div key={idx} className="min-h-[60px] bg-gray-50 rounded-lg p-2 border border-gray-200">
+                      <div key={idx} className="min-h-[60px] bg-secondary/5 rounded-lg p-2">
                         {courtBlocks.length > 0 ? (
                           <div className="space-y-1">
                             {courtBlocks.map((block) => (
                               <div
                                 key={block.id}
-                                className="bg-red-100 border border-red-300 rounded p-1 group relative"
+                                className="bg-red-100 rounded p-1 group relative"
                               >
                                 <div className="flex items-center justify-between gap-1">
                                   <div className="flex items-center gap-1 text-xs text-red-900 font-medium">
@@ -365,7 +358,7 @@ export default function CourtsBlockPage() {
                             ))}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center h-full text-gray-400">
+                          <div className="flex items-center justify-center h-full text-secondary/20">
                             <CheckCircle className="h-4 w-4" />
                           </div>
                         )}

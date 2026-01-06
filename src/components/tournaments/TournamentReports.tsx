@@ -53,6 +53,7 @@ interface ReportData {
 export default function TournamentReports() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'rankings' | 'tournaments'>('overview');
 
   useEffect(() => {
@@ -62,20 +63,42 @@ export default function TournamentReports() {
   const loadReport = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/tournaments/reports');
       
       if (!response.ok) {
-        throw new Error('Failed to load report');
+        setError('Impossibile caricare il report dei tornei.');
+        setReport(null);
+        return;
       }
 
       const data = await response.json();
       setReport(data.report);
     } catch (error) {
       console.error('Error loading report:', error);
+      setError('Errore durante il caricamento del report dei tornei.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (error && !loading) {
+    return (
+      <div className="rounded-xl bg-red-50 p-6 flex items-start gap-3">
+        <div className="mt-1 h-2 w-2 rounded-full bg-red-500" />
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-red-800">{error}</p>
+          <button
+            type="button"
+            onClick={loadReport}
+            className="inline-flex items-center rounded-lg bg-secondary px-3 py-1 text-xs font-semibold text-white hover:bg-secondary/90"
+          >
+            Riprova
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

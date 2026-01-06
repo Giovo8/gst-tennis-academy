@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
@@ -8,8 +8,8 @@ import {
   Clock,
   Loader2,
   AlertCircle,
-  ArrowLeft,
   CheckCircle,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { addDays, format } from "date-fns";
@@ -23,6 +23,98 @@ interface Coach {
 interface TimeSlot {
   time: string;
   available: boolean;
+}
+
+interface SearchableOption {
+  value: string;
+  label: string;
+}
+
+interface SearchableSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchableOption[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+}
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+}: SearchableSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setOpen(false);
+  };
+
+  const handleToggle = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (!next) {
+        setQuery("");
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+      >
+        <span className={selectedOption ? "" : "text-secondary/40"}>
+          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
+        </span>
+        <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+          <div className="p-2 border-b border-gray-100">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder || "Cerca..."}
+              className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
+            />
+          </div>
+          <div className="max-h-56 overflow-auto py-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-secondary/40">
+                Nessun risultato
+              </div>
+            ) : (
+              filteredOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleSelect(opt.value)}
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-secondary/5 ${
+                    opt.value === value ? "bg-secondary/10 font-semibold" : ""
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
@@ -42,18 +134,18 @@ export default function NewBookingPage() {
   // Form state
   const [bookingType, setBookingType] = useState("campo");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedCourt, setSelectedCourt] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedCourt, setSelectedCourt] = useState(COURTS[0]);
+  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectedCoach, setSelectedCoach] = useState("");
-  const [duration, setDuration] = useState(1);
   const [notes, setNotes] = useState("");
 
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
 
   // Validation
-  const canSubmit = selectedDate && selectedCourt && selectedSlot &&
+  const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
 
   useEffect(() => {
@@ -64,16 +156,16 @@ export default function NewBookingPage() {
     if (selectedDate && selectedCourt) {
       loadAvailableSlots();
     }
-  }, [selectedDate, selectedCourt, duration]);
+  }, [selectedDate, selectedCourt]);
 
   async function loadCoaches() {
-    const { data } = await supabase
+    const { data: coachData } = await supabase
       .from("profiles")
       .select("id, full_name")
       .eq("role", "maestro")
       .order("full_name");
 
-    if (data) setCoaches(data);
+    if (coachData) setCoaches(coachData);
   }
 
   async function loadAvailableSlots() {
@@ -92,7 +184,7 @@ export default function NewBookingPage() {
       .gte("start_time", `${dateStr}T00:00:00`)
       .lte("start_time", `${dateStr}T23:59:59`);
 
-    // Build occupied hours set with duration consideration
+    // Build occupied hours set
     const occupiedHours = new Set<number>();
     
     bookings?.forEach(b => {
@@ -111,15 +203,8 @@ export default function NewBookingPage() {
     for (let hour = 8; hour < 22; hour++) {
       const time = `${hour.toString().padStart(2, "0")}:00`;
       
-      // Check if all hours needed for this duration are available
-      let available = true;
-      const hoursNeeded = Math.ceil(duration);
-      for (let i = 0; i < hoursNeeded; i++) {
-        if (occupiedHours.has(hour + i) || (hour + hoursNeeded) > 22) {
-          available = false;
-          break;
-        }
-      }
+      // Slot disponibile se l'ora non è già occupata
+      let available = !occupiedHours.has(hour);
       
       // If today, check if slot is in the past (1h buffer)
       if (isToday && hour <= now.getHours()) {
@@ -133,8 +218,47 @@ export default function NewBookingPage() {
     setLoadingSlots(false);
   }
 
+  const handleSlotClick = (time: string, available: boolean) => {
+    if (!available) return;
+
+    setSelectedSlots((prev) => {
+      if (prev.includes(time)) {
+        // Deselect
+        return prev.filter((t) => t !== time);
+      } else {
+        // Select consecutive slots
+        const allSlots = slots.map((s) => s.time);
+        const newIndex = allSlots.indexOf(time);
+
+        if (prev.length === 0) {
+          return [time];
+        }
+
+        const existingIndices = prev.map((t) => allSlots.indexOf(t));
+        const minIndex = Math.min(...existingIndices);
+        const maxIndex = Math.max(...existingIndices);
+
+        // If clicking adjacent
+        if (newIndex === minIndex - 1 || newIndex === maxIndex + 1) {
+          return [...prev, time].sort((a, b) => allSlots.indexOf(a) - allSlots.indexOf(b));
+        }
+
+        // Otherwise start fresh
+        return [time];
+      }
+    });
+  };
+
+  const handleDateInputChange = (value: string) => {
+    if (!value) return;
+    const [year, month, day] = value.split("-").map(Number);
+    const newDate = new Date(selectedDate);
+    newDate.setFullYear(year, month - 1, day);
+    setSelectedDate(newDate);
+  };
+
   async function handleSubmit() {
-    if (!selectedDate || !selectedCourt || !selectedSlot) {
+    if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
       setError("Completa tutti i campi obbligatori");
       return;
     }
@@ -151,39 +275,62 @@ export default function NewBookingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Utente non autenticato");
 
-      const [hours, minutes] = selectedSlot.split(":").map(Number);
-      const startTime = new Date(selectedDate);
-      startTime.setHours(hours, minutes, 0, 0);
+      // Recupera il token dell'utente per chiamare l'API protetta
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
 
-      const endTime = new Date(startTime);
-      endTime.setHours(startTime.getHours() + Math.floor(duration));
-      endTime.setMinutes(startTime.getMinutes() + (duration % 1) * 60);
-
-      const bookingData = {
-        user_id: user.id,
-        coach_id: selectedCoach || null,
-        court: selectedCourt,
-        type: bookingType,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        status: "pending",
-        manager_confirmed: false,
-        coach_confirmed: false,
-        notes: notes || null,
-      };
-
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Errore nella creazione della prenotazione");
+      if (!token) {
+        throw new Error("Sessione scaduta, effettua di nuovo il login.");
       }
 
-      setSuccess("Prenotazione creata con successo!");
+      // Create bookings for all selected slots
+      const bookingsToCreate = selectedSlots.map((slotTime) => {
+        const [hours, minutes] = slotTime.split(":").map(Number);
+        const startTime = new Date(selectedDate);
+        startTime.setHours(hours, minutes, 0, 0);
+
+        const endTime = new Date(startTime);
+        endTime.setHours(startTime.getHours() + 1);
+
+        return {
+          user_id: user.id,
+          coach_id: selectedCoach || null,
+          court: selectedCourt,
+          type: bookingType,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          manager_confirmed: false,
+          coach_confirmed: false,
+          notes: notes || null,
+        };
+      });
+
+      // Create all bookings
+      for (const bookingData of bookingsToCreate) {
+        const response = await fetch("/api/bookings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(bookingData),
+        });
+
+        if (!response.ok) {
+          let errorMessage = "Errore nella creazione della prenotazione";
+          try {
+            const errorData = await response.json();
+            errorMessage =
+              errorData.error || errorData.message || errorMessage;
+          } catch {
+            // ignore JSON parse errors and use default message
+          }
+          throw new Error(errorMessage);
+        }
+      }
+
+      setSuccess(`${bookingsToCreate.length} prenotazione/i creata/e con successo!`);
       setTimeout(() => {
         router.push("/dashboard/atleta/bookings");
       }, 1500);
@@ -195,21 +342,18 @@ export default function NewBookingPage() {
   }
 
   return (
-    <div className="space-y-6" style={{ color: '#111827' }}>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <Link
-          href="/dashboard/atleta/bookings"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium w-fit"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Torna alle prenotazioni</span>
-        </Link>
+      <div className="flex flex-col gap-2">
         <div>
-          <h1 className="text-3xl font-extrabold text-black mb-2">
-            Nuova Prenotazione
-          </h1>
-          <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>
+          <Link
+            href="/dashboard/atleta/bookings"
+            className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
+          >
+            Prenotazioni
+          </Link>
+          <h1 className="text-3xl font-bold text-secondary">Nuova Prenotazione</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
             Seleziona giorno, campo e slot. Per le lezioni private scegli il maestro.
           </p>
         </div>
@@ -217,74 +361,65 @@ export default function NewBookingPage() {
 
       {/* Messages */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-red-900">Errore</p>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
+        <div className="mt-2">
+          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-900">Errore</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
           </div>
         </div>
       )}
       
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-green-900">Successo</p>
-            <p className="text-sm text-green-700 mt-1">{success}</p>
+        <div className="mt-2">
+          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-green-900">Successo</p>
+              <p className="text-sm text-green-700 mt-1">{success}</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Main Card */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         
         {/* Header Card con Data */}
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-cyan-50 to-blue-50">
-          <div className="flex items-center justify-between">
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-secondary/10">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-xs text-blue-600 uppercase tracking-wider font-semibold mb-1">Calendario Prenotazioni</p>
-              <h2 className="text-xl font-bold text-gray-900 capitalize">
+              <p className="text-xs text-secondary/70 uppercase tracking-wider font-semibold mb-1">Calendario Prenotazioni</p>
+              <h2 className="text-xl font-bold text-secondary capitalize">
                 {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
               </h2>
             </div>
             
             {/* Navigazione Data */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-                className="p-2 rounded-lg hover:bg-white/60 text-gray-700 transition-all"
-                title="Giorno precedente"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setSelectedDate(new Date())}
-                className="px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-white/60 rounded-lg transition-all"
-              >
-                Oggi
-              </button>
-              <button
-                onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                className="p-2 rounded-lg hover:bg-white/60 text-gray-700 transition-all"
-                title="Giorno successivo"
-              >
-                <ArrowLeft className="h-5 w-5 rotate-180" />
-              </button>
+            <div className="flex items-center gap-3">
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={format(selectedDate, "yyyy-MM-dd")}
+                onChange={(e) => handleDateInputChange(e.target.value)}
+                className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+              />
             </div>
           </div>
         </div>
 
         {/* Filtri */}
         <div className="p-6 border-b border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tipo Prenotazione */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Tipo prenotazione</label>
+              <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Tipo prenotazione</label>
               <select
                 value={bookingType}
                 onChange={(e) => setBookingType(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
               >
                 {BOOKING_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -296,13 +431,12 @@ export default function NewBookingPage() {
 
             {/* Campo */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Campo</label>
+              <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Campo *</label>
               <select
                 value={selectedCourt}
                 onChange={(e) => setSelectedCourt(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
               >
-                <option value="">Seleziona campo</option>
                 {COURTS.map((court) => (
                   <option key={court} value={court}>
                     {court}
@@ -311,49 +445,33 @@ export default function NewBookingPage() {
               </select>
             </div>
 
-            {/* Durata */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Durata</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
-              >
-                <option value={1}>1 ora</option>
-                <option value={1.5}>1.5 ore</option>
-                <option value={2}>2 ore</option>
-              </select>
-            </div>
-
             {/* Maestro se necessario */}
             {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Maestro *</label>
-                <select
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Maestro *</label>
+                <SearchableSelect
                   value={selectedCoach}
-                  onChange={(e) => setSelectedCoach(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
-                >
-                  <option value="">Seleziona maestro</option>
-                  {coaches.map((coach) => (
-                    <option key={coach.id} value={coach.id}>
-                      {coach.full_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedCoach}
+                  options={coaches.map((coach) => ({
+                    value: coach.id,
+                    label: coach.full_name,
+                  }))}
+                  placeholder="Seleziona maestro"
+                  searchPlaceholder="Cerca maestro..."
+                />
               </div>
             )}
           </div>
 
           {/* Note */}
           <div className="mt-4">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Note (opzionale)</label>
+            <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Note (opzionale)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Eventuali note o richieste particolari..."
-              rows={2}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              rows={3}
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
             />
           </div>
         </div>
@@ -362,76 +480,84 @@ export default function NewBookingPage() {
         <div className="p-6">
           {!selectedCourt ? (
             <div className="text-center py-16">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                <Calendar className="h-8 w-8 text-gray-400" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary/10 mb-4">
+                <Calendar className="h-8 w-8 text-secondary/40" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Seleziona un campo</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-bold text-secondary mb-2">Seleziona un campo</h3>
+              <p className="text-sm text-secondary/60">
                 Scegli un campo dal menu sopra per vedere gli slot disponibili
               </p>
             </div>
           ) : loadingSlots ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-              <p className="text-gray-700 font-semibold">Caricamento slot...</p>
+              <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
+              <p className="text-secondary font-semibold">Caricamento slot...</p>
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                  <Clock className="h-5 w-5 text-secondary/60" />
+                  <h3 className="text-sm font-semibold text-secondary/70 uppercase tracking-wider">
                     Slot disponibili
                   </h3>
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-blue-600"></div>
-                    <span className="text-gray-600">Selezionato</span>
+                    <div className="w-3 h-3 rounded bg-secondary"></div>
+                    <span className="text-secondary/70">Selezionato</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded border-2 border-gray-300"></div>
-                    <span className="text-gray-600">Disponibile</span>
+                    <span className="text-secondary/70">Disponibile</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded bg-gray-200"></div>
-                    <span className="text-gray-600">Occupato</span>
+                    <span className="text-secondary/70">Occupato</span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3">
                 {slots.map((slot) => (
                   <button
                     key={slot.time}
-                    onClick={() => slot.available && setSelectedSlot(slot.time)}
+                    onClick={() => handleSlotClick(slot.time, slot.available)}
                     disabled={!slot.available}
-                    className={`relative p-4 rounded-xl border-2 transition-all font-semibold ${
-                      selectedSlot === slot.time
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 border-blue-600 shadow-lg shadow-blue-200"
+                    className={`relative p-4 rounded-lg border-2 transition-all ${
+                      selectedSlots.includes(slot.time)
+                        ? "bg-secondary border-secondary shadow-md"
                         : slot.available
-                        ? "bg-white border-gray-300 hover:border-blue-400 hover:shadow-md"
+                        ? "bg-white border-gray-200 hover:border-secondary/40 hover:shadow-sm"
                         : "bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed"
                     }`}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <Clock className={`h-4 w-4 ${
-                        selectedSlot === slot.time ? "text-white" : slot.available ? "text-gray-600" : "text-gray-400"
+                        selectedSlots.includes(slot.time) ? "text-white" : slot.available ? "text-secondary/60" : "text-gray-400"
                       }`} />
-                      <span className={`text-lg font-bold ${
-                        selectedSlot === slot.time ? "text-white" : slot.available ? "text-gray-900" : "text-gray-400 line-through"
+                      <span className={`text-base font-bold ${
+                        selectedSlots.includes(slot.time) ? "text-white" : slot.available ? "text-secondary" : "text-gray-400 line-through"
                       }`}>
                         {slot.time}
                       </span>
                     </div>
-                    {selectedSlot === slot.time && (
-                      <div className="absolute top-2 right-2">
-                        <CheckCircle className="h-5 w-5 text-white" />
+                    {selectedSlots.includes(slot.time) && (
+                      <div className="absolute top-1.5 right-1.5">
+                        <CheckCircle className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </button>
                 ))}
               </div>
+
+              {selectedSlots.length > 0 && (
+                <div className="mt-6 p-4 bg-secondary/5 rounded-lg border border-secondary/20">
+                  <p className="text-sm font-semibold text-secondary">
+                    {selectedSlots.length} slot selezionato/i: {selectedSlots.sort().join(", ")}
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -441,7 +567,7 @@ export default function NewBookingPage() {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="w-full px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-300 disabled:text-gray-500 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-3 shadow-lg disabled:shadow-none text-base"
+            className="w-full px-6 py-3.5 bg-secondary hover:opacity-90 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-3 shadow-md disabled:shadow-none"
           >
             {submitting ? (
               <>
@@ -456,7 +582,7 @@ export default function NewBookingPage() {
             )}
           </button>
           {!canSubmit && !submitting && (
-            <p className="text-xs text-gray-600 text-center mt-3">
+            <p className="text-xs text-secondary/60 text-center mt-3">
               Completa tutti i campi per procedere
             </p>
           )}

@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import CompetitionView from "@/components/tournaments/CompetitionView";
 import PublicNavbar from "@/components/layout/PublicNavbar";
-import { Trophy, Award, Calendar, Users, Target, Zap, ArrowLeft } from "lucide-react";
+import { Trophy, Award, Calendar, Users, Target, Zap, ArrowLeft, Loader2 } from "lucide-react";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -173,13 +173,14 @@ export default function TournamentDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-frozen-950">
+      <div className="min-h-screen bg-white">
+
         <PublicNavbar />
-        <main className="container mx-auto px-4 py-12">
-          <div className="flex items-center justify-center min-h-[60vh]">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-frozen-400/30 border-t-frozen-400"></div>
-              <p className="mt-4 text-gray-400">Caricamento torneo...</p>
+              <Loader2 className="h-10 w-10 animate-spin text-secondary mx-auto" />
+              <p className="mt-4 text-sm text-secondary/70">Caricamento torneo...</p>
             </div>
           </div>
         </main>
@@ -189,16 +190,16 @@ export default function TournamentDetail() {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-frozen-900 via-frozen-950 to-frozen-900">
+      <div className="min-h-screen bg-white">
         <PublicNavbar />
-        <main className="container mx-auto px-4 py-12">
-          <div className="text-center py-20">
-            <Trophy className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Torneo non trovato</h2>
-            <p className="text-gray-400 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center py-16">
+            <Trophy className="h-16 w-16 text-secondary/40 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-secondary mb-2">Torneo non trovato</h2>
+            <p className="text-sm text-secondary/70 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
             <button
               onClick={() => router.push('/tornei')}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-frozen-400 to-frozen-500 px-6 py-3 text-sm font-bold text-frozen-950 hover:shadow-lg hover:shadow-frozen-400/40 transition-all"
+              className="inline-flex items-center gap-2 rounded-md bg-secondary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               Torna ai Tornei
@@ -229,252 +230,161 @@ export default function TournamentDetail() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Aperto':
-        return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
+        return 'bg-emerald-50 text-emerald-700';
       case 'In Corso':
       case 'In corso':
-        return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
+        return 'bg-amber-50 text-amber-700';
       case 'Completato':
       case 'Concluso':
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
+        return 'bg-secondary/5 text-secondary/70';
       default:
-        return 'bg-frozen-500/10 text-frozen-400 border-frozen-500/30';
+        return 'bg-secondary/5 text-secondary/70';
     }
   };
 
   return (
-    <div className="min-h-screen bg-frozen-950">
+    <div className="min-h-screen bg-white">
       <PublicNavbar />
-      
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-7xl">
-        {/* Back Button */}
-        <button
-          onClick={() => router.push('/tornei')}
-          className="mb-4 sm:mb-6 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors group min-h-[44px]"
-        >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-xs sm:text-sm font-medium">Torna ai Tornei</span>
-        </button>
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
         {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950 to-frozen-900 p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8">
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-frozen-400/5 via-transparent to-frozen-500/5"></div>
-          
-          <div className="relative z-10">
-            {/* Tournament Type Badge */}
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-frozen-400/10 border border-frozen-400/30">
-              {isCampionato ? (
-                <>
-                  <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-frozen-400" />
-                  <span className="text-xs sm:text-sm font-bold text-frozen-400 uppercase tracking-wider">Campionato</span>
-                </>
-              ) : (
-                <>
-                  <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-frozen-400" />
-                  <span className="text-xs sm:text-sm font-bold text-frozen-400 uppercase tracking-wider">Torneo</span>
-                </>
-              )}
-            </div>
+        <div className="mb-8 sm:mb-10 md:mb-12">
+          {/* Tournament Type Badge */}
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-secondary/60 mb-3">
+            {isCampionato ? 'Campionato' : 'Torneo'}
+          </p>
 
-            {/* Title */}
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent leading-tight">
-              {tournament.title}
-            </h1>
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-4 leading-tight">
+            {tournament.title}
+          </h1>
 
-            {/* Tags */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
-              {tournament.status && (
-                <span className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold border ${getStatusColor(tournament.status)}`}>
-                  {tournament.status}
-                </span>
-              )}
-              {tournament.category && (
-                <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
-                  {tournament.category}
-                </span>
-              )}
-              {tournament.level && (
-                <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
-                  {tournament.level}
-                </span>
-              )}
-              <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 text-gray-300 text-xs font-medium border border-white/10">
-                {getTournamentTypeLabel()}
-              </span>
-            </div>
-
-            {/* Description */}
-            {tournament.description && (
-              <p className="text-gray-300 text-sm sm:text-base lg:text-lg leading-relaxed max-w-3xl">
-                {tournament.description}
-              </p>
+          {/* Meta Info */}
+          <div className="flex flex-wrap items-center gap-2 text-xs text-secondary/60 mb-6">
+            {tournament.category && (
+              <span>{tournament.category}</span>
+            )}
+            {tournament.status && (
+              <>
+                <span>•</span>
+                <span>{tournament.status}</span>
+              </>
+            )}
+            {tournament.level && (
+              <>
+                <span>•</span>
+                <span>{tournament.level}</span>
+              </>
             )}
           </div>
+
+          {/* Description */}
+          {tournament.description && (
+            <p className="text-base sm:text-lg text-secondary/80 leading-relaxed max-w-3xl">
+              {tournament.description}
+            </p>
+          )}
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 sm:mb-10 md:mb-12">
           {/* Date Card */}
           {tournament.start_date && (
-            <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6">
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-400/20 to-frozen-500/20 p-2.5 sm:p-3 ring-1 ring-frozen-400/30">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Inizio</p>
-                  <p className="text-white text-base sm:text-lg font-semibold leading-tight">
-                    {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
-                      day: 'numeric', 
-                      month: 'long', 
-                      year: 'numeric'
-                    })}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(tournament.start_date).toLocaleTimeString('it-IT', { 
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
+            <div className="border-l-4 border-secondary pl-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Data Inizio</p>
+              <p className="text-xl font-bold text-secondary">
+                {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
+                  day: 'numeric', 
+                  month: 'long'
+                })}
+              </p>
+              <p className="text-sm text-secondary/70 mt-1">
+                {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
+                  year: 'numeric'
+                })} ore {new Date(tournament.start_date).toLocaleTimeString('it-IT', { 
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
             </div>
           )}
 
           {/* Participants Card */}
-          <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6">
-            <div className="flex items-start gap-3">
-              <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-400/20 to-frozen-500/20 p-2.5 sm:p-3 ring-1 ring-frozen-400/30">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Partecipanti</p>
-                <p className="text-lg sm:text-xl font-bold text-white leading-tight">
-                  {currentParticipants}<span className="text-gray-400">/{tournament.max_participants}</span>
-                </p>
-                {spotsLeft > 0 ? (
-                  <p className="text-xs text-frozen-400 mt-0.5">{spotsLeft} posti disponibili</p>
-                ) : (
-                  <p className="text-xs text-frozen-500 mt-0.5">Tutto esaurito</p>
-                )}
-              </div>
-            </div>
+          <div className="border-l-4 border-secondary pl-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Partecipanti</p>
+            <p className="text-xl font-bold text-secondary">
+              {currentParticipants} / {tournament.max_participants}
+            </p>
+            <p className="text-sm text-secondary/70 mt-1">
+              {spotsLeft > 0 ? `${spotsLeft} posti disponibili` : 'Tutto esaurito'}
+            </p>
           </div>
 
           {/* Format Card */}
           {tournament.best_of && (
-            <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6">
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg sm:rounded-xl bg-gradient-to-br from-frozen-400/20 to-frozen-500/20 p-2.5 sm:p-3 ring-1 ring-frozen-400/30">
-                  <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-frozen-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Formato Match</p>
-                  <p className="text-lg sm:text-xl font-bold text-white leading-tight">
-                    Best of {tournament.best_of}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {tournament.best_of === 3 ? 'Al meglio di 3 set' : tournament.best_of === 5 ? 'Al meglio di 5 set' : 'Set personalizzati'}
-                  </p>
-                </div>
-              </div>
+            <div className="border-l-4 border-secondary pl-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Formato</p>
+              <p className="text-xl font-bold text-secondary">
+                Best of {tournament.best_of}
+              </p>
+              <p className="text-sm text-secondary/70 mt-1">
+                {tournament.best_of === 3 ? 'Al meglio di 3 set' : tournament.best_of === 5 ? 'Al meglio di 5 set' : 'Set personalizzati'}
+              </p>
             </div>
           )}
         </div>
 
         {/* Action Section */}
-        <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/80 to-frozen-900/80 backdrop-blur-sm p-4 sm:p-6 mb-4 sm:mb-6 lg:mb-8">
-          {isManager ? (
+        <div className="mb-8 sm:mb-10 md:mb-12">
+          {!isManager && (
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Gestione Competizione</h3>
-              <button 
-                onClick={() => router.push(profile?.role === 'admin' ? '/dashboard/admin/tornei' : '/dashboard/gestore/tornei')} 
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-tournament-primary to-tournament-secondary px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-tournament-bg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95 min-h-[44px] w-full sm:w-auto"
-              >
-                <Target className="h-4 w-4" />
-                Gestisci Competizione
-              </button>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Iscrizione</h3>
               {joined ? (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-frozen-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-frozen-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-frozen-400 font-bold">Sei già iscritto a questo torneo</p>
-                    <p className="text-sm text-gray-400 mt-0.5">Controlla la dashboard per gli aggiornamenti</p>
-                  </div>
+                <div className="bg-secondary/5 p-6 rounded">
+                  <p className="text-lg font-bold text-secondary mb-2">✓ Sei iscritto a questo torneo</p>
+                  <p className="text-sm text-secondary/70">Controlla la dashboard per gli aggiornamenti e il tabellone</p>
                 </div>
               ) : spotsLeft <= 0 ? (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-frozen-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-frozen-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-frozen-400 font-bold">Iscrizioni chiuse - Sold Out</p>
-                    <p className="text-sm text-gray-400 mt-0.5">Tutti i posti sono stati occupati</p>
-                  </div>
+                <div className="bg-secondary/5 p-6 rounded">
+                  <p className="text-lg font-bold text-secondary mb-2">Iscrizioni chiuse</p>
+                  <p className="text-sm text-secondary/70">Tutti i posti sono stati occupati</p>
                 </div>
               ) : (
                 <div>
+                  <h3 className="text-xl font-bold text-secondary mb-4">Partecipa al torneo</h3>
                   <button 
                     onClick={handleJoin} 
                     disabled={actionLoading} 
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-tournament-primary to-tournament-secondary px-6 sm:px-8 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-tournament-bg shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold bg-secondary text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                   >
                     {actionLoading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-tournament-bg/30 border-t-tournament-bg rounded-full animate-spin"></div>
-                        Iscrivendo...
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Iscrizione in corso...
                       </>
                     ) : (
-                      <>
-                        <Trophy className="h-4 w-4" />
-                        Iscriviti Ora
-                      </>
+                      'Iscriviti Ora'
                     )}
                   </button>
                   
                   {profile?.role === 'maestro' && (
-                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
-                      <p className="text-xs sm:text-sm text-gray-300">
-                        <span className="font-semibold text-frozen-400">Sei un maestro?</span> Puoi iscrivere i tuoi atleti dalla{' '}
-                        <button 
-                          onClick={() => router.push('/dashboard/maestro')} 
-                          className="underline text-frozen-400 hover:text-frozen-300 transition-colors font-semibold"
-                        >
-                          Dashboard Maestro
-                        </button>
-                      </p>
-                    </div>
+                    <p className="mt-4 text-sm text-secondary/70">
+                      <span className="font-semibold text-secondary">Nota per maestri:</span> Puoi iscrivere i tuoi atleti dalla{' '}
+                      <button 
+                        onClick={() => router.push('/dashboard/maestro')} 
+                        className="underline hover:no-underline text-secondary font-semibold"
+                      >
+                        Dashboard
+                      </button>
+                    </p>
                   )}
                 </div>
               )}
             </div>
           )}
-
-          {error && (
-            <div className="mt-3 sm:mt-4 flex items-start gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-frozen-500/10 border border-frozen-500/30">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-frozen-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p className="text-frozen-400 text-sm sm:text-base font-semibold">Errore</p>
-                <p className="text-xs sm:text-sm text-gray-300 mt-0.5">{error}</p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Competition View Section */}
-        <div className="rounded-xl sm:rounded-2xl border border-frozen-400/20 bg-gradient-to-br from-frozen-950/60 to-frozen-900/60 backdrop-blur-sm p-4 sm:p-6">
+        <div>
           <CompetitionView 
             tournament={tournament}
             participants={participantsList}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Ticket, Loader2, Copy, CheckCircle2, XCircle, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 
 type InviteCode = {
   id: string;
@@ -90,10 +91,10 @@ export default function InviteCodesPage() {
   }
 
   const roleLabels: Record<string, { label: string; color: string }> = {
-    admin: { label: "Admin", color: "bg-purple-100 text-purple-700 border-purple-300" },
-    gestore: { label: "Gestore", color: "bg-blue-100 text-blue-700 border-blue-300" },
-    maestro: { label: "Maestro", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
-    atleta: { label: "Atleta", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+    admin: { label: "Admin", color: "bg-secondary text-white border-0" },
+    gestore: { label: "Gestore", color: "bg-secondary text-white border-0" },
+    maestro: { label: "Maestro", color: "bg-secondary text-white border-0" },
+    atleta: { label: "Atleta", color: "bg-secondary text-white border-0" },
   };
 
   const stats = {
@@ -103,53 +104,31 @@ export default function InviteCodesPage() {
   };
 
   return (
-    <div className="space-y-6" style={{ color: '#111827' }}>
-      <div className="max-w-7xl">
-        <h1 className="text-3xl font-extrabold text-gray-700 mb-2">
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <Link 
+          href="/dashboard/admin/users"
+          className="text-xs font-bold text-secondary/60 uppercase tracking-wider hover:text-secondary transition-colors inline-block mb-2"
+        >
+          Gestione Utenti
+        </Link>
+        <h1 className="text-3xl font-bold text-secondary mb-2">
           Codici Invito
         </h1>
-        <p className="text-gray-800 font-medium" style={{ color: '#1f2937' }}>Gestisci i codici di invito per nuovi utenti</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Ticket className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Totali</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.available}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Disponibili</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-50 rounded-lg">
-              <XCircle className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-700">{stats.used}</p>
-          </div>
-          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Utilizzati</p>
-        </div>
+        <p className="text-secondary/70 font-medium">
+          Gestisci i codici di invito per registrare nuovi utenti sulla piattaforma
+        </p>
       </div>
 
       {/* Generate New Code */}
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-700 mb-4">Genera nuovo codice</h2>
+      <div className="bg-white rounded-xl p-6">
+        <h2 className="text-xl font-bold text-secondary mb-4">Genera nuovo codice</h2>
         <div className="flex flex-wrap items-center gap-4">
           <select
             value={newCodeRole}
             onChange={(e) => setNewCodeRole(e.target.value)}
-            className="px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2.5 rounded-md bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
           >
             <option value="atleta">Atleta</option>
             <option value="maestro">Maestro</option>
@@ -159,7 +138,7 @@ export default function InviteCodesPage() {
           <button
             onClick={generateCode}
             disabled={generating}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 font-semibold transition-all disabled:opacity-50 shadow-sm"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-md text-white bg-secondary hover:opacity-90 font-semibold transition-all disabled:opacity-50"
           >
             {generating ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -174,14 +153,14 @@ export default function InviteCodesPage() {
       {/* Codes List */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-          <p className="mt-4 text-gray-600">Caricamento codici...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+          <p className="mt-4 text-secondary/60">Caricamento codici...</p>
         </div>
       ) : codes.length === 0 ? (
-        <div className="text-center py-20 rounded-xl border border-gray-200 bg-white">
-          <Ticket className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessun codice</h3>
-          <p className="text-gray-600">Genera il primo codice invito</p>
+        <div className="text-center py-20 rounded-md bg-white">
+          <Ticket className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+          <h3 className="text-xl font-semibold text-secondary mb-2">Nessun codice</h3>
+          <p className="text-secondary/60">Genera il primo codice invito</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -190,61 +169,61 @@ export default function InviteCodesPage() {
             return (
               <div
                 key={code.id}
-                className={`group rounded-xl border p-5 transition-all ${
+                className={`group rounded-md p-5 transition-all ${
                   code.used
-                    ? "border-gray-200 bg-gray-50 opacity-60"
-                    : "border-gray-200 bg-white hover:shadow-lg hover:border-blue-300"
+                    ? "bg-secondary/5 opacity-60"
+                    : "bg-white hover:bg-secondary/5"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      code.used ? "bg-gray-100" : "bg-blue-50"
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      code.used ? "bg-secondary/5" : "bg-secondary/10"
                     }`}>
                       <Ticket className={`h-6 w-6 ${
-                        code.used ? "text-gray-400" : "text-blue-600"
+                        code.used ? "text-secondary/30" : "text-secondary"
                       }`} />
                     </div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <code className={`text-sm font-mono font-semibold ${
-                          code.used ? "text-gray-400 line-through" : "text-gray-700"
+                        <code className={`text-sm font-mono font-bold ${
+                          code.used ? "text-secondary/40 line-through" : "text-secondary"
                         }`}>
                           {code.code}
                         </code>
                         {!code.used && (
                           <button
                             onClick={() => copyToClipboard(code.code, code.id)}
-                            className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors"
+                            className="p-1.5 rounded-md bg-secondary/10 hover:bg-secondary/20 transition-colors"
                             title="Copia link di invito"
                           >
                             {copiedId === code.id ? (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                             ) : (
-                              <Copy className="w-4 h-4 text-blue-600" />
+                              <Copy className="w-4 h-4 text-secondary" />
                             )}
                           </button>
                         )}
                       </div>
                       {!code.used && (
-                        <div className="text-xs text-blue-600 font-medium mb-1">
+                        <div className="text-xs text-secondary/70 font-medium mb-1">
                           {getInviteLink(code.code)}
                         </div>
                       )}
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-secondary/50">
                         {new Date(code.created_at).toLocaleDateString("it-IT")}
                         {code.used && " • Utilizzato"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1.5 rounded-md text-xs font-bold border ${roleInfo.color}`}>
+                    <span className={`px-3 py-1.5 rounded-md text-xs font-bold ${roleInfo.color}`}>
                       {roleInfo.label}
                     </span>
                     {!code.used && (
                       <button
                         onClick={() => deleteCode(code.id)}
-                        className="p-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors opacity-0 group-hover:opacity-100"
+                        className="p-2 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

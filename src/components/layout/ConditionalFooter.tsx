@@ -6,10 +6,11 @@ import Footer from "./Footer";
 export default function ConditionalFooter() {
   const pathname = usePathname();
   
-  // Non mostrare il footer nelle pagine dashboard
+  // Non mostrare il footer nelle pagine dashboard e login
   const isDashboard = pathname?.startsWith("/dashboard");
+  const isLogin = pathname?.startsWith("/login");
   
-  if (isDashboard) {
+  if (isDashboard || isLogin) {
     return null;
   }
   

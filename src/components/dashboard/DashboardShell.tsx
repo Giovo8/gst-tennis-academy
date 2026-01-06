@@ -9,15 +9,15 @@ import {
   X,
   LogOut,
   ChevronDown,
-  Bell,
   Home,
   Search,
-  Settings,
   ChevronLeft,
   ChevronRight,
   User,
+  LayoutGrid,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import NotificationsDropdown from "@/components/notifications/NotificationsDropdown";
 import { type UserRole } from "@/lib/roles";
 
 export interface NavItem {
@@ -35,13 +35,14 @@ interface DashboardShellProps {
   userName?: string;
   userEmail?: string;
   userAvatar?: string;
+  primaryNavItems?: NavItem[];
 }
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-frozen-600",
-  gestore: "bg-frozen-600",
-  maestro: "bg-frozen-500",
-  atleta: "bg-frozen-500",
+  admin: "bg-secondary",
+  gestore: "bg-secondary",
+  maestro: "bg-secondary",
+  atleta: "bg-secondary",
 };
 
 export default function DashboardShell({
@@ -51,33 +52,35 @@ export default function DashboardShell({
   userName,
   userEmail,
   userAvatar,
+  primaryNavItems,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  useEffect(() => {
-    loadNotifications();
-  }, []);
-
-  async function loadNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-      setNotificationCount(count || 0);
-    }
-  }
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<NavItem[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+
+  // Search handler
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const allItems = primaryNavItems ? [...primaryNavItems, ...navItems] : navItems;
+      const results = allItems.filter(item => 
+        item.label.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(results);
+      setShowSearchResults(true);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [searchQuery, navItems, primaryNavItems]);
 
   const toggleExpanded = (label: string) => {
     setExpandedItems((prev) =>
@@ -89,19 +92,38 @@ export default function DashboardShell({
 
   const isActive = (href: string) => {
     // Dashboard principale - deve essere esattamente uguale
-    if (href === "/dashboard/admin" || href === "/dashboard/atleta" || href === "/dashboard/maestro" || href === "/dashboard/gestore") {
+    if (
+      href === "/dashboard/admin" ||
+      href === "/dashboard/atleta" ||
+      href === "/dashboard/maestro" ||
+      href === "/dashboard/gestore"
+    ) {
       return pathname === href;
     }
     // Evidenzia "Gestione Utenti" anche per invite-codes
-    if (href === "/dashboard/admin/users" && pathname.startsWith("/dashboard/admin/invite-codes")) {
+    if (
+      href === "/dashboard/admin/users" &&
+      pathname.startsWith("/dashboard/admin/invite-codes")
+    ) {
       return true;
     }
     return pathname.startsWith(href);
   };
 
-  // Primo item = Dashboard, resto sotto linea separatrice
+  const hasPrimarySection = !!primaryNavItems && primaryNavItems.length > 0;
+
+  // Primo item = Dashboard, resto sotto linea separatrice (layout legacy senza sezione primaria)
   const dashboardItem = navItems[0];
   const otherItems = navItems.slice(1);
+
+  // Quando esiste una sezione primaria, evitiamo di duplicare le voci nel menu principale
+  const primaryHrefSet = hasPrimarySection
+    ? new Set(primaryNavItems!.map((item) => item.href))
+    : null;
+
+  const menuItemsWithPrimary = hasPrimarySection
+    ? navItems.filter((item) => !primaryHrefSet!.has(item.href))
+    : [];
 
   const renderNavItem = (item: NavItem, depth = 0) => {
     const active = isActive(item.href);
@@ -113,10 +135,10 @@ export default function DashboardShell({
         <div key={item.label}>
           <button
             onClick={() => toggleExpanded(item.label)}
-            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className="text-gray-500">{item.icon}</span>
+              <span className="text-secondary/60">{item.icon}</span>
               <span className="text-sm font-medium">{item.label}</span>
             </div>
             <ChevronDown
@@ -141,27 +163,27 @@ export default function DashboardShell({
         onClick={() => setSidebarOpen(false)}
         title={sidebarCollapsed ? item.label : undefined}
         className={`
-          relative flex items-center rounded-xl
+          relative flex items-center rounded-md
           transition-colors duration-200
           ${sidebarCollapsed ? "p-3 justify-center" : "px-3 py-2.5 gap-3"}
           ${
             active
-              ? "bg-frozen-500 text-white shadow-sm"
-              : "text-gray-600 hover:bg-gray-50"
+              ? "bg-secondary text-white"
+              : "text-secondary/70 hover:bg-secondary/5"
           }
         `}
       >
-        <span className={`${active ? "text-white" : "text-gray-500"} flex-shrink-0`}>
+        <span className={`${active ? "text-white" : "text-secondary/60"} flex-shrink-0`}>
           {item.icon}
         </span>
         {!sidebarCollapsed && (
           <>
             <span className="text-sm font-medium flex-1">{item.label}</span>
             {item.badge && item.badge > 0 && (
-              <span className={`px-2.5 py-1 text-xs font-bold rounded-lg min-w-[28px] text-center shadow-sm ${
+              <span className={`px-2.5 py-1 text-xs font-bold rounded-md min-w-[28px] text-center ${
                 active 
-                  ? "bg-white text-frozen-600" 
-                  : "bg-frozen-500 text-white"
+                  ? "bg-white text-secondary" 
+                  : "bg-secondary text-white"
               }`}>
                 {item.badge > 99 ? "99+" : item.badge}
               </span>
@@ -169,7 +191,7 @@ export default function DashboardShell({
           </>
         )}
         {sidebarCollapsed && item.badge && item.badge > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-frozen-500 rounded-full shadow-md ring-2 ring-white" />
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary rounded-full ring-2 ring-white" />
         )}
       </Link>
     );
@@ -195,15 +217,10 @@ export default function DashboardShell({
               height={32}
               className="h-8 w-8"
             />
-            <span className="font-bold text-gray-900 text-lg">GST Academy</span>
+            <span className="font-bold text-gray-900 text-2xl" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
           </Link>
           
-          <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <Bell className="h-5 w-5 text-gray-600" />
-            {notificationCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            )}
-          </button>
+          <NotificationsDropdown />
         </div>
       </header>
 
@@ -219,7 +236,7 @@ export default function DashboardShell({
       <aside
         className={`
           fixed top-0 left-0 z-50 h-screen
-          bg-white border-r border-gray-200 shadow-sm
+          bg-white
           transform transition-all duration-300 ease-in-out
           lg:translate-x-0
           ${sidebarCollapsed ? "w-[70px]" : "w-[260px]"}
@@ -228,7 +245,7 @@ export default function DashboardShell({
       >
         <div className="flex flex-col h-full">
           {/* Logo Section */}
-          <div className={`p-6 border-b border-gray-200 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"}`}>
+          <Link href="/" className={`p-6 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} hover:opacity-80 transition-opacity`}>
             <div className="flex-shrink-0">
               <Image
                 src="/images/logo-tennis.png"
@@ -239,36 +256,50 @@ export default function DashboardShell({
               />
             </div>
             {!sidebarCollapsed && (
-              <span className="font-bold text-gray-900 text-lg">GST Academy</span>
+              <span className="font-bold text-secondary text-2xl" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
             )}
-          </div>
+          </Link>
 
           {/* Navigation */}
           <nav className={`flex-1 ${sidebarCollapsed ? "px-2 py-4" : "px-4 py-6"} space-y-6 overflow-y-auto`}>
-            {/* MENU Section */}
+            {/* Dashboard sempre per primo (senza intestazione) */}
             <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
-              {!sidebarCollapsed && (
-                <h3 className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Menu</h3>
-              )}
               <div className="space-y-1">
                 {renderNavItem(dashboardItem)}
-                {otherItems.slice(0, -2).map((item) => renderNavItem(item))}
               </div>
             </div>
 
-            {/* Separatore quando collassata */}
-            {sidebarCollapsed && <div className="border-t border-gray-200 mx-2" />}
+            {/* GESTIONE Section - tutte le altre voci */}
+            <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
+              {!sidebarCollapsed && (
+                <h3 className="px-3 text-[10px] font-semibold text-secondary/40 uppercase tracking-wider mb-3">Gestione</h3>
+              )}
+              <div className="space-y-1">
+                {hasPrimarySection ? (
+                  <>
+                    {/* Prima le primaryNavItems escluso il dashboard */}
+                    {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => renderNavItem(item))}
+                    {/* Poi le altre voci non presenti in primaryNavItems */}
+                    {menuItemsWithPrimary.map((item) => renderNavItem(item))}
+                  </>
+                ) : (
+                  <>
+                    {otherItems.slice(0, -2).map((item) => renderNavItem(item))}
+                  </>
+                )}
+              </div>
+            </div>
 
             {/* GENERAL Section */}
             <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
               {!sidebarCollapsed && (
-                <h3 className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">General</h3>
+                <h3 className="px-3 text-[10px] font-semibold text-secondary/40 uppercase tracking-wider mb-3">General</h3>
               )}
               <div className="space-y-1">
                 <Link
                   href="/"
                   title={sidebarCollapsed ? "Home" : undefined}
-                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-xl text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
+                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
                 >
                   <Home className="h-5 w-5" />
                   {!sidebarCollapsed && <span className="text-sm font-medium">Home</span>}
@@ -276,23 +307,15 @@ export default function DashboardShell({
                 <Link
                   href={`/dashboard/${role}/profile`}
                   title={sidebarCollapsed ? "Profilo" : undefined}
-                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-xl text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
+                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
                 >
                   <User className="h-5 w-5" />
                   {!sidebarCollapsed && <span className="text-sm font-medium">Profilo</span>}
                 </Link>
-                <Link
-                  href="/dashboard/admin/settings"
-                  title={sidebarCollapsed ? "Impostazioni" : undefined}
-                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-xl text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
-                >
-                  <Settings className="h-5 w-5" />
-                  {!sidebarCollapsed && <span className="text-sm font-medium">Impostazioni</span>}
-                </Link>
                 <button
                   onClick={handleLogout}
                   title={sidebarCollapsed ? "Logout" : undefined}
-                  className={`w-full flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-xl text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
+                  className={`w-full flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
                 >
                   <LogOut className="h-5 w-5" />
                   {!sidebarCollapsed && <span className="text-sm font-medium">Logout</span>}
@@ -301,68 +324,95 @@ export default function DashboardShell({
             </div>
           </nav>
 
-          {/* User Info Footer */}
-          <div className={`${sidebarCollapsed ? "p-3" : "p-4"} border-t border-gray-200 space-y-3`}>
-            {/* Toggle Button */}
+          {/* Footer: only collapse/expand button, profilo spostato nella top bar */}
+          <div className={`${sidebarCollapsed ? "p-3" : "p-4"}`}>
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-full flex items-center justify-center p-2 rounded-xl hover:bg-gray-100 transition-colors"
+              className="w-full flex items-center justify-center p-2 rounded-md hover:bg-secondary/5 transition-colors"
               title={sidebarCollapsed ? "Espandi sidebar" : "Riduci sidebar"}
             >
               {sidebarCollapsed ? (
-                <ChevronRight className="h-5 w-5 text-gray-600" />
+                <ChevronRight className="h-5 w-5 text-secondary/60" />
               ) : (
-                <ChevronLeft className="h-5 w-5 text-gray-600" />
+                <ChevronLeft className="h-5 w-5 text-secondary/60" />
               )}
             </button>
-            
-            {/* User Info */}
-            {sidebarCollapsed ? (
-              <div className="flex justify-center">
-                <div 
-                  className="w-10 h-10 rounded-full shadow-md ring-2 ring-gray-100 overflow-hidden"
-                  title={userName || "User"}
-                >
-                  {userAvatar ? (
-                    <img
-                      src={userAvatar}
-                      alt={userName || "User"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className={`w-full h-full ${roleColors[role]} flex items-center justify-center text-white font-bold text-sm`}>
-                      {userName?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-frozen-50 border border-frozen-100">
-                <div className="w-10 h-10 rounded-full shadow-md ring-2 ring-white overflow-hidden flex-shrink-0">
-                  {userAvatar ? (
-                    <img
-                      src={userAvatar}
-                      alt={userName || "User"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className={`w-full h-full ${roleColors[role]} flex items-center justify-center text-white font-bold text-sm`}>
-                      {userName?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">{userName || "User"}</p>
-                  <p className="text-xs font-medium text-gray-600 truncate">{userEmail}</p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className={`pt-16 lg:pt-0 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]"}` }>
+        {/* Top bar desktop */}
+        <div className="hidden lg:flex items-center justify-between px-8 py-4 bg-white">
+          {/* Search */}
+          <div className="flex-1 max-w-2xl mr-6 relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cerca in dashboard..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery && setShowSearchResults(true)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                className="w-full pl-9 pr-3 py-2.5 rounded-md border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary/50"
+              />
+            </div>
+            
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+                <div className="p-2">
+                  {searchResults.map((item, idx) => (
+                    <Link
+                      key={idx}
+                      href={item.href}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setShowSearchResults(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="text-secondary/70">{item.icon}</div>
+                      <span className="text-sm font-medium text-gray-900">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {showSearchResults && searchQuery && searchResults.length === 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+                <p className="text-sm text-gray-500 text-center">Nessun risultato trovato</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right actions: notifications + account */}
+          <div className="flex items-center gap-4">
+            <NotificationsDropdown />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold">
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt={userName || "User"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-gray-900 leading-tight">{userName || "User"}</span>
+                <span className="text-xs text-gray-500 leading-tight">{userEmail}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Page content */}
         <div className="p-6 lg:p-8">
           {children}
         </div>
