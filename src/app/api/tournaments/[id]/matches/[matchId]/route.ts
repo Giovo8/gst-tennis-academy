@@ -380,7 +380,7 @@ async function advanceWinnerToNextRound(
       .order("match_number", { ascending: true });
     
     // Trova la posizione del match corrente nel suo round (0-indexed)
-    const positionInRound = currentRoundMatches?.findIndex(m => m.match_number === currentMatchNumber) ?? -1;
+    const positionInRound = currentRoundMatches?.findIndex((m: { match_number: number }) => m.match_number === currentMatchNumber) ?? -1;
     
     if (positionInRound === -1) {
       console.error('❌ Could not find current match position');
