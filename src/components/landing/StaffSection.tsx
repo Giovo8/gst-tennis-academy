@@ -24,6 +24,10 @@ const defaultStaff: StaffMember[] = [
     role: "Maestro FIT",
     bio: "Specializzato in tecnica e tattica. Lavora con giocatori di ogni livello da quindici anni.",
     image_url: null,
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    twitter_url: null,
   },
   {
     id: "default-2",
@@ -31,6 +35,10 @@ const defaultStaff: StaffMember[] = [
     role: "Istruttrice PTR",
     bio: "Dedita alla formazione dei giovani talenti. Ha preparato campioni regionali e nazionali.",
     image_url: null,
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    twitter_url: null,
   },
   {
     id: "default-3",
@@ -38,6 +46,10 @@ const defaultStaff: StaffMember[] = [
     role: "Maestro FIT",
     bio: "Esperto di doppio e preparazione atletica. Segue i giocatori agonisti del club.",
     image_url: null,
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    twitter_url: null,
   },
   {
     id: "default-4",
@@ -45,6 +57,10 @@ const defaultStaff: StaffMember[] = [
     role: "Istruttrice PTR",
     bio: "Appassionata di tennis per bambini. Crea programmi ludici che sviluppano passione e tecnica.",
     image_url: null,
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    twitter_url: null,
   },
   {
     id: "default-5",
@@ -52,6 +68,10 @@ const defaultStaff: StaffMember[] = [
     role: "Maestro FIT",
     bio: "Specializzato in recupero e prevenzione infortuni. Collabora con fisioterapisti del club.",
     image_url: null,
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    twitter_url: null,
   },
   {
     id: "default-6",
@@ -59,6 +79,10 @@ const defaultStaff: StaffMember[] = [
     role: "Istruttrice PTR",
     bio: "Insegna tennis a tutte le età. Crede che il gioco sia il miglior insegnante di vita.",
     image_url: null,
+    facebook_url: null,
+    instagram_url: null,
+    linkedin_url: null,
+    twitter_url: null,
   },
 ];
 
