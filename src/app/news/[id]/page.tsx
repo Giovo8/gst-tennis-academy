@@ -238,7 +238,6 @@ export default function NewsDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <PromoBanner />
         <PublicNavbar />
         <main className="bg-white">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-20">
