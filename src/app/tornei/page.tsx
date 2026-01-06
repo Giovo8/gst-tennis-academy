@@ -19,6 +19,7 @@ type Tournament = {
   max_participants?: number;
   status?: string;
   tournament_type?: string;
+  competition_type?: string;
 };
 
 type FilterKey = "all" | "open" | "running" | "closed";

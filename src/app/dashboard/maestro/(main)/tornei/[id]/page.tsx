@@ -24,6 +24,7 @@ type Tournament = {
   max_participants?: number;
   status?: string;
   tournament_type?: TournamentType;
+  competition_type?: TournamentType;
   best_of?: number;
   rounds_data?: any[];
   groups_data?: any[];
