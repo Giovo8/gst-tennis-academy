@@ -140,7 +140,7 @@ export default function ChampionshipStandingsView({
 
     // Calculate stats from completed matches
     matches
-      .filter(m => (m.status === 'completata' || m.match_status === 'completed') && m.winner_id)
+      .filter(m => m.status === 'completata' && m.winner_id)
       .forEach(match => {
         const player1Stats = standingsMap.get(match.player1_id);
         const player2Stats = standingsMap.get(match.player2_id);

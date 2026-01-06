@@ -194,7 +194,7 @@ export default function CompetitionView({
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/5 text-sm font-medium text-secondary">
                       {(participant.profiles?.full_name || participant.profiles?.username || '?')
                         .split(' ')
-                        .map((part) => part[0])
+                        .map((part: string) => part[0])
                         .join('')
                         .toUpperCase()}
                     </div>
