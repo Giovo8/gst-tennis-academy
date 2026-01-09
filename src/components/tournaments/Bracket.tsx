@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 type RawParticipant = any;
 
 interface BracketProps {

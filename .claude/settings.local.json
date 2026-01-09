@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(del:*)",
+      "Bash(for file in src/components/tournaments/BracketMatchCard.tsx src/components/tournaments/ChampionshipStandings.tsx src/components/tournaments/ChampionshipStandingsView.tsx src/components/tournaments/CompetitionView.tsx src/components/tournaments/EliminationBracketView.tsx src/components/tournaments/GroupStageView.tsx src/components/tournaments/ManualEnrollment.tsx src/components/tournaments/SimpleTournamentCreator.tsx src/components/tournaments/TennisScoreInput.tsx src/components/tournaments/TournamentManager.tsx src/components/tournaments/TournamentManagerWrapper.tsx src/components/tournaments/TournamentStats.tsx)",
+      "Bash(do head -5 \"$file\")",
+      "Bash(done)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git checkout:*)",
+      "Bash(ls:*)",
+      "Bash(npm run dev:*)"
+    ]
+  }
+}

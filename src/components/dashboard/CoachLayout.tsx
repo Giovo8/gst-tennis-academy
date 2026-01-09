@@ -25,6 +25,7 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
   const router = useRouter();
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [userAvatar, setUserAvatar] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, role")
+        .select("full_name, role, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -50,6 +51,7 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
       }
 
       setUserName(profile.full_name || "Maestro");
+      setUserAvatar(profile.avatar_url || "");
       setLoading(false);
     }
 
@@ -111,10 +113,10 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 font-medium">Caricamento dashboard...</p>
+          <div className="w-14 h-14 border-4 border-secondary border-t-transparent rounded-full animate-spin" />
+          <p className="font-medium" style={{ color: 'var(--foreground-muted)' }}>Caricamento dashboard...</p>
         </div>
       </div>
     );
@@ -126,6 +128,7 @@ export default function CoachLayout({ children }: CoachLayoutProps) {
       role="maestro"
       userName={userName}
       userEmail={userEmail}
+      userAvatar={userAvatar}
     >
       {children}
     </DashboardShell>

@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     const userIds = (data || []).map((r: any) => r.user_id).filter(Boolean);
     let profilesMap = new Map();
     if (userIds.length > 0) {
-      const { data: profiles } = await supabaseServer.from('profiles').select('id, full_name, email').in('id', userIds);
+      const { data: profiles } = await supabaseServer.from('profiles').select('id, full_name, email, avatar_url, phone').in('id', userIds);
       (profiles || []).forEach((p: any) => profilesMap.set(p.id, p));
     }
 

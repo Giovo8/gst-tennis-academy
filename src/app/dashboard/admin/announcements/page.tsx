@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Plus, Edit2, Trash2, Eye, EyeOff, Pin, Calendar, Loader2 } from "lucide-react";
+import { MessageSquare, Plus, Edit2, Trash2, Eye, EyeOff, Pin, Calendar, Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
@@ -24,6 +24,7 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadAnnouncements();
@@ -116,21 +117,50 @@ export default function AnnouncementsPage() {
     urgent: "●●●●",
   };
 
+  // Filter announcements based on search query
+  const filteredAnnouncements = announcements.filter((announcement) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      announcement.title.toLowerCase().includes(query) ||
+      announcement.content.toLowerCase().includes(query) ||
+      announcement.profiles?.full_name.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-2">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Gestione Annunci</h1>
-          <p className="text-secondary/70 font-medium">Gestisci gli annunci visibili nella bacheca</p>
+          <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+            GESTIONE ANNUNCI
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-secondary">Gestione Annunci</h1>
+              <p className="text-gray-600 font-medium mt-1">Gestisci gli annunci visibili nella bacheca</p>
+            </div>
+            <Link
+              href="/dashboard/admin/announcements/new"
+              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nuovo Annuncio
+            </Link>
+          </div>
         </div>
-        <Link
-          href="/dashboard/admin/announcements/new"
-          className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Nuovo Annuncio
-        </Link>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Cerca per titolo, contenuto o autore..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+        />
       </div>
 
       {/* Filters */}
@@ -141,7 +171,7 @@ export default function AnnouncementsPage() {
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
               filter === "all"
                 ? "text-white bg-secondary hover:opacity-90"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
+                : "bg-white text-gray-600 hover:bg-gray-100"
             }`}
           >
             Tutti
@@ -153,7 +183,7 @@ export default function AnnouncementsPage() {
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 filter === key
                   ? "text-white bg-secondary hover:opacity-90"
-                  : "bg-white text-secondary/70 hover:bg-secondary/5"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
               }`}
             >
               {label}
@@ -166,103 +196,82 @@ export default function AnnouncementsPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
-          <p className="mt-4 text-secondary/60">Caricamento annunci...</p>
+          <p className="mt-4 text-gray-600">Caricamento annunci...</p>
         </div>
-      ) : announcements.length === 0 ? (
-        <div className="text-center py-20 rounded-md bg-white">
-          <MessageSquare className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
-          <h3 className="text-xl font-semibold text-secondary mb-2">Nessun annuncio trovato</h3>
-          <p className="text-secondary/60 mb-4">Prova a modificare i filtri di ricerca</p>
-          <Link
-            href="/dashboard/admin/announcements/new"
-            className="inline-flex items-center gap-2 text-secondary hover:opacity-80 font-semibold"
-          >
-            <Plus className="h-5 w-5" />
-            Crea il primo annuncio
-          </Link>
+      ) : filteredAnnouncements.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-secondary">
+            {searchQuery ? "Nessun risultato trovato" : "Nessun annuncio trovato"}
+          </h3>
+          <p className="text-gray-600 mt-1 mb-4">
+            {searchQuery ? "Prova a modificare la ricerca" : "Prova a modificare i filtri di ricerca"}
+          </p>
+          {!searchQuery && (
+            <Link
+              href="/dashboard/admin/announcements/new"
+              className="inline-flex items-center gap-2 text-secondary hover:opacity-80 font-semibold"
+            >
+              <Plus className="h-5 w-5" />
+              Crea il primo annuncio
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {announcements.map((announcement) => {
+          {filteredAnnouncements.map((announcement) => {
             const typeInfo = typeLabels[announcement.announcement_type];
             const isExpired = announcement.expiry_date && new Date(announcement.expiry_date) < new Date();
 
             return (
-              <article
+              <Link
                 key={announcement.id}
-                className={`bg-white rounded-md p-5 hover:bg-secondary/5 transition-all ${
+                href={`/dashboard/admin/announcements/new?id=${announcement.id}`}
+                className={`block bg-white rounded-xl border-l-4 border-secondary shadow-md p-6 hover:bg-gray-100 transition-all cursor-pointer ${
                   isExpired ? "opacity-50" : ""
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3 flex-wrap">
-                      {announcement.is_pinned && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-secondary/10 px-2 py-1 text-xs font-bold text-secondary">
-                          <Pin className="h-3 w-3" />
-                          Fissato
-                        </span>
-                      )}
-                      <span className={`rounded-md px-3 py-1 text-xs font-bold ${typeInfo.color}`}>
-                        {typeInfo.label}
-                      </span>
-                      <span className="text-xs text-secondary/60 font-semibold">
-                        Priorità: {priorityIcons[announcement.priority]}
-                      </span>
-                      {announcement.expiry_date && (
-                        <span className={`inline-flex items-center gap-1 text-xs ${isExpired ? "text-red-600" : "text-secondary/60"}`}>
-                          <Calendar className="h-3 w-3" />
-                          {isExpired ? "Scaduto" : new Date(announcement.expiry_date).toLocaleDateString("it-IT")}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="text-xl font-bold text-secondary mb-2">{announcement.title}</h3>
-                    <p className="text-secondary/70 text-sm mb-3 line-clamp-2">{announcement.content}</p>
-
-                    <div className="flex items-center gap-4 text-xs text-secondary/50">
-                      <span>Autore: {announcement.profiles?.full_name || "Sconosciuto"}</span>
-                      <span>•</span>
-                      <span>{new Date(announcement.created_at).toLocaleDateString("it-IT")}</span>
-                      <span>•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {announcement.view_count} visualizzazioni
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => togglePublish(announcement)}
-                      className={`p-2 rounded-md transition-all ${
-                        announcement.is_published
-                          ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
-                          : "bg-secondary/10 text-secondary/60 hover:bg-secondary/20"
-                      }`}
-                      title={announcement.is_published ? "Pubblicato" : "Bozza"}
-                    >
-                      {announcement.is_published ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                    </button>
-
-                    <Link
-                      href={`/dashboard/admin/announcements/${announcement.id}/edit`}
-                      className="p-2 rounded-md bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all"
-                      title="Modifica"
-                    >
-                      <Edit2 className="h-5 w-5" />
-                    </Link>
-
-                    <button
-                      onClick={() => deleteAnnouncement(announcement.id)}
-                      className="p-2 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-all"
-                      title="Elimina"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </div>
+                <div className="flex items-start gap-3 mb-3 flex-wrap">
+                  {announcement.is_pinned && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-secondary/10 px-2 py-1 text-xs font-bold text-secondary">
+                      <Pin className="h-3 w-3" />
+                      Fissato
+                    </span>
+                  )}
+                  <span className={`rounded-md px-3 py-1 text-xs font-bold ${typeInfo.color}`}>
+                    {typeInfo.label}
+                  </span>
+                  <span className="text-xs text-secondary/60 font-semibold">
+                    Priorità: {priorityIcons[announcement.priority]}
+                  </span>
+                  {announcement.expiry_date && (
+                    <span className={`inline-flex items-center gap-1 text-xs ${isExpired ? "text-red-600" : "text-secondary/60"}`}>
+                      <Calendar className="h-3 w-3" />
+                      {isExpired ? "Scaduto" : new Date(announcement.expiry_date).toLocaleDateString("it-IT")}
+                    </span>
+                  )}
                 </div>
-              </article>
+
+                <h3 className="text-xl font-bold text-secondary mb-2">{announcement.title}</h3>
+                <p className="text-secondary/70 text-sm mb-3 line-clamp-2">{announcement.content}</p>
+
+                <div className="flex items-center gap-4 text-xs text-secondary/50">
+                  <span>Autore: {announcement.profiles?.full_name || "Sconosciuto"}</span>
+                  <span>•</span>
+                  <span>{new Date(announcement.created_at).toLocaleDateString("it-IT")}</span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    {announcement.view_count} visualizzazioni
+                  </span>
+                  {!announcement.is_published && (
+                    <>
+                      <span>•</span>
+                      <span className="text-orange-600 font-semibold">Bozza</span>
+                    </>
+                  )}
+                </div>
+              </Link>
             );
           })}
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy, Users, Target, TrendingUp, Calendar, Award } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 

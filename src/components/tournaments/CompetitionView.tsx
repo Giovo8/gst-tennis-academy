@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Bracket from './Bracket';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
 import GroupStageView from './GroupStageView';
@@ -179,34 +179,44 @@ export default function CompetitionView({
         {tournament_type ? 'Il torneo non è ancora stato avviato.' : 'Tipo di torneo non riconosciuto.'}
       </p>
       {participants.length > 0 && (
-        <div className="mt-6 max-w-2xl mx-auto">
+        <div className="mt-6 max-w-2xl mx-auto space-y-3">
           <h4 className="text-sm font-semibold text-secondary mb-3">Partecipanti ({participants.length})</h4>
-            <div className="divide-y divide-gray-100 rounded-md bg-white overflow-hidden">
-              {participants.map((participant, index) => (
-                <div
-                  key={participant.id}
-                  className="flex items-center justify-between px-4 py-3 first:rounded-t-md last:rounded-b-md hover:bg-secondary/5 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 text-xs font-medium text-secondary/60 text-right">
-                      {index + 1}
-                    </div>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/5 text-sm font-medium text-secondary">
-                      {(participant.profiles?.full_name || participant.profiles?.username || '?')
-                        .split(' ')
-                        .map((part: string) => part[0])
-                        .join('')
-                        .toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-secondary">
-                        {participant.profiles?.full_name || participant.profiles?.username || 'Partecipante'}
-                      </p>
-                    </div>
+          {participants.map((participant, index) => {
+            const fullName = participant.profiles?.full_name || participant.profiles?.username || 'Partecipante';
+            const avatarUrl = participant.profiles?.avatar_url;
+            const initials = fullName
+              .split(' ')
+              .filter((part: string) => part.length > 0)
+              .slice(0, 2)
+              .map((part: string) => part[0]?.toUpperCase())
+              .join('');
+
+            return (
+              <div
+                key={participant.id}
+                className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={fullName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{initials || 'U'}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-secondary truncate">
+                      {fullName}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

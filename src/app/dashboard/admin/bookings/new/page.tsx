@@ -13,7 +13,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
-import { addDays, format } from "date-fns";
+import { addDays, format, isToday } from "date-fns";
 import { it } from "date-fns/locale";
 
 interface Coach {
@@ -80,7 +80,7 @@ function SearchableSelect({
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
       >
         <span className={selectedOption ? "" : "text-secondary/40"}>
           {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
@@ -109,7 +109,7 @@ function SearchableSelect({
                   key={opt.value}
                   type="button"
                   onClick={() => handleSelect(opt.value)}
-                  className={`w-full px-3 py-2 text-left text-sm hover:bg-secondary/5 ${
+                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-secondary/5 ${
                     opt.value === value ? "bg-secondary/10 font-semibold" : ""
                   }`}
                 >
@@ -126,9 +126,9 @@ function SearchableSelect({
 
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
 const BOOKING_TYPES = [
-  { value: "campo", label: "Campo Libero", icon: "🎾" },
+  { value: "campo", label: "Campo", icon: "🎾" },
   { value: "lezione_privata", label: "Lezione Privata", icon: "👤" },
-  { value: "lezione_gruppo", label: "Lezione Gruppo", icon: "👥" },
+  { value: "lezione_gruppo", label: "Lezione Privata di Gruppo", icon: "👥" },
 ];
 
 export default function NewAdminBookingPage() {
@@ -151,6 +151,7 @@ export default function NewAdminBookingPage() {
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
 
   // Validation
@@ -197,40 +198,162 @@ export default function NewAdminBookingPage() {
     // Get existing bookings for this court and date
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("start_time, end_time")
+      .select("id, user_id, coach_id, start_time, end_time, type, status, manager_confirmed, coach_confirmed")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
       .gte("start_time", `${dateStr}T00:00:00`)
       .lte("start_time", `${dateStr}T23:59:59`);
 
-    // Build occupied hours set
-    const occupiedHours = new Set<number>();
+    // Get court blocks for this court and date
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: courtBlocks } = await supabase
+      .from("court_blocks")
+      .select("id, start_time, end_time, reason")
+      .eq("court_id", selectedCourt)
+      .gte("start_time", startOfDay.toISOString())
+      .lte("start_time", endOfDay.toISOString());
+
+    // Fetch profiles for bookings
+    const userIds = [...new Set([
+      ...(bookings?.map(b => b.user_id) || []),
+      ...(bookings?.map(b => b.coach_id).filter(Boolean) || [])
+    ])];
+
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", userIds);
+
+    const profilesMap = new Map(
+      profilesData?.map(p => [p.id, p]) || []
+    );
+
+    const enrichedBookings = bookings?.map(booking => ({
+      ...booking,
+      user_profile: profilesMap.get(booking.user_id) || null,
+      coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null
+    })) || [];
+
+    // Add court blocks as fake bookings for visualization
+    const blocksAsBookings = courtBlocks?.map(block => ({
+      id: block.id,
+      start_time: block.start_time,
+      end_time: block.end_time,
+      type: "blocco",
+      status: "blocked",
+      user_profile: null,
+      coach_profile: null,
+      reason: block.reason,
+      isBlock: true
+    })) || [];
+
+    // Merge consecutive bookings of the same person
+    const mergeConsecutiveBookings = (bookings: any[]) => {
+      if (bookings.length === 0) return [];
+      
+      // Sort by start time
+      const sorted = [...bookings].sort((a, b) => 
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+      );
+      
+      const merged: any[] = [];
+      let current = sorted[0];
+      
+      for (let i = 1; i < sorted.length; i++) {
+        const next = sorted[i];
+        
+        // Check if same user, same type, and consecutive times
+        const currentEnd = new Date(current.end_time);
+        const nextStart = new Date(next.start_time);
+        const sameUser = current.user_id === next.user_id;
+        const sameType = current.type === next.type;
+        const consecutive = currentEnd.getTime() === nextStart.getTime();
+        
+        if (sameUser && sameType && consecutive && !current.isBlock && !next.isBlock) {
+          // Merge: extend current end time
+          current = {
+            ...current,
+            end_time: next.end_time
+          };
+        } else {
+          // Not mergeable, push current and move to next
+          merged.push(current);
+          current = next;
+        }
+      }
+      
+      // Push the last one
+      merged.push(current);
+      return merged;
+    };
+
+    const allItems = [...enrichedBookings, ...blocksAsBookings];
+    const mergedItems = mergeConsecutiveBookings(allItems);
+
+    setExistingBookings(mergedItems);
+
+    // Build occupied half-hour slots set (bookings + court blocks)
+    const occupiedSlots = new Set<string>();
     
+    // Mark slots occupied by bookings
     bookings?.forEach(b => {
-      const start = new Date(b.start_time).getHours();
-      const end = new Date(b.end_time).getHours();
-      for (let h = start; h < end; h++) {
-        occupiedHours.add(h);
+      const start = new Date(b.start_time);
+      const end = new Date(b.end_time);
+      
+      // Mark all 30-minute slots as occupied
+      let current = new Date(start);
+      while (current < end) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        occupiedSlots.add(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
       }
     });
 
-    // Generate slots (8:00 - 22:00)
+    // Mark slots occupied by court blocks
+    courtBlocks?.forEach(block => {
+      const start = new Date(block.start_time);
+      const end = new Date(block.end_time);
+      
+      // Mark all 30-minute slots as occupied
+      let current = new Date(start);
+      while (current < end) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        occupiedSlots.add(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+    });
+
+    // Generate slots every 30 minutes (07:00 - 22:00)
     const generatedSlots: TimeSlot[] = [];
     const now = new Date();
     const isToday = selectedDate.toDateString() === now.toDateString();
 
-    for (let hour = 8; hour < 22; hour++) {
-      const time = `${hour.toString().padStart(2, "0")}:00`;
-      
-      // Slot disponibile se l'ora non è già occupata
-      let available = !occupiedHours.has(hour);
-      
-      // If today, check if slot is in the past (1h buffer)
-      if (isToday && hour <= now.getHours()) {
-        available = false;
-      }
+    for (let hour = 7; hour <= 22; hour++) {
+      for (let minute of [0, 30]) {
+        if (hour === 22 && minute === 30) break;
+        
+        const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+        
+        // Slot disponibile se non è già occupato
+        let available = !occupiedSlots.has(time);
+        
+        // If today, check if slot is in the past
+        if (isToday) {
+          const slotTime = new Date(selectedDate);
+          slotTime.setHours(hour, minute, 0, 0);
+          if (slotTime <= now) {
+            available = false;
+          }
+        }
 
-      generatedSlots.push({ time, available });
+        generatedSlots.push({ time, available });
+      }
     }
 
     setSlots(generatedSlots);
@@ -260,14 +383,25 @@ export default function NewAdminBookingPage() {
         throw new Error("Sessione scaduta, effettua di nuovo il login.");
       }
 
-      const orderedSlots = [...selectedSlots].sort();
+      const orderedSlots = [...selectedSlots].sort((a, b) => {
+        const [hA, mA] = a.split(":").map(Number);
+        const [hB, mB] = b.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
       const [hours, minutes] = orderedSlots[0].split(":").map(Number);
       const startTime = new Date(selectedDate);
       startTime.setHours(hours, minutes, 0, 0);
 
       const endTime = new Date(startTime);
-      const durationHours = orderedSlots.length; // ogni slot dura 1 ora
-      endTime.setHours(startTime.getHours() + durationHours);
+      const durationMinutes = orderedSlots.length * 30; // ogni slot dura 30 minuti
+      endTime.setMinutes(startTime.getMinutes() + durationMinutes);
+
+      console.log("📅 Creazione prenotazione:", {
+        slots: orderedSlots,
+        start: startTime.toISOString(),
+        end: endTime.toISOString(),
+        duration: durationMinutes + " minuti"
+      });
 
       const bookingData = {
         user_id: selectedAthlete,
@@ -314,16 +448,14 @@ export default function NewAdminBookingPage() {
     }
   }
 
-  // Slot "di base" per mostrare sempre il calendario orario anche senza campo selezionato
-  const baseSlots: TimeSlot[] = Array.from({ length: 14 }, (_, i) => {
-    const hour = 8 + i; // dalle 8:00 alle 21:00
-    return {
-      time: `${hour.toString().padStart(2, "0")}:00`,
-      available: true,
-    };
-  });
-
-  const displaySlots = selectedCourt ? slots : baseSlots;
+  // Genera slot ogni mezz'ora dalle 07:00 alle 22:00 per la logica
+  const TIME_SLOTS = [];
+  for (let hour = 7; hour <= 22; hour++) {
+    TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:00`);
+    if (hour < 22) {
+      TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
+    }
+  }
 
   // Gestione selezione multipla di slot consecutivi
   const toggleSlotSelection = (time: string, available: boolean) => {
@@ -340,19 +472,32 @@ export default function NewAdminBookingPage() {
         return [time];
       }
 
-      const allSlots = [...prev, time].sort();
+      const allSlots = [...prev, time].sort((a, b) => {
+        const [hA, mA] = a.split(":").map(Number);
+        const [hB, mB] = b.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
 
-      // consenti solo blocchi consecutivi, altrimenti resetta sulla nuova scelta
+      // verifica se sono consecutivi (ogni slot è 30 minuti)
       for (let i = 1; i < allSlots.length; i++) {
-        const [hPrev] = allSlots[i - 1].split(":").map(Number);
-        const [hCurr] = allSlots[i].split(":").map(Number);
-        if (hCurr - hPrev !== 1) {
-          return [time];
+        const [hPrev, mPrev] = allSlots[i - 1].split(":").map(Number);
+        const [hCurr, mCurr] = allSlots[i].split(":").map(Number);
+        const prevMinutes = hPrev * 60 + mPrev;
+        const currMinutes = hCurr * 60 + mCurr;
+        if (currMinutes - prevMinutes !== 30) {
+          return [time]; // non consecutivi, resetta
         }
       }
 
       return allSlots;
     });
+  };
+
+  // Verifica disponibilità slot
+  const isSlotAvailable = (time: string): boolean => {
+    if (!selectedCourt) return true;
+    const slot = slots.find(s => s.time === time);
+    return slot ? slot.available : false;
   };
 
   const handleDateInputChange = (value: string) => {
@@ -368,12 +513,16 @@ export default function NewAdminBookingPage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div>
-          <Link
-            href="/dashboard/admin/bookings"
-            className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-          >
-            Prenotazioni
-          </Link>
+          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+            <Link
+              href="/dashboard/admin/bookings"
+              className="hover:text-secondary/80 transition-colors"
+            >
+              Prenotazioni
+            </Link>
+            <span className="mx-2">›</span>
+            <span>Crea Prenotazione</span>
+          </div>
           <h1 className="text-3xl font-bold text-secondary">Crea prenotazione</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
             Seleziona giorno, campo e slot.
@@ -409,51 +558,50 @@ export default function NewAdminBookingPage() {
       {/* Main Content */}
       <div className="py-4">
         <div className="space-y-6">
-          {/* Area Principale - Data, Campo, Dettagli e Slot */}
-          <div className="bg-white rounded-xl p-6 space-y-6">
-            {/* Selettore Data */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-secondary/60 uppercase tracking-wider font-semibold mb-1">Seleziona Data</p>
-                <h2 className="text-xl font-bold text-secondary capitalize">
-                  {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
-                </h2>
-              </div>
-              {/* Navigazione Data */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-                  className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
-                >
-                  <span className="text-lg font-semibold">&lt;</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (dateInputRef.current) {
-                      dateInputRef.current.click();
-                    }
-                  }}
-                  className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
-                >
-                  <Calendar className="h-5 w-5" />
-                </button>
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  value={format(selectedDate, "yyyy-MM-dd")}
-                  onChange={(e) => handleDateInputChange(e.target.value)}
-                  className="sr-only"
-                />
-                <button
-                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                  className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
-                >
-                  <span className="text-lg font-semibold">&gt;</span>
-                </button>
-              </div>
+          {/* Selettore Data */}
+          <div className="rounded-lg p-4 flex items-center justify-between transition-all bg-secondary">
+            <button
+              onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+              className="p-2 rounded-md transition-colors hover:bg-white/10"
+            >
+              <span className="text-lg font-semibold text-white">&lt;</span>
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (dateInputRef.current) {
+                    dateInputRef.current.showPicker();
+                  }
+                }}
+                className="p-2 rounded-md transition-colors hover:bg-white/10"
+                title="Scegli data"
+              >
+                <Calendar className="h-5 w-5 text-white" />
+              </button>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={format(selectedDate, "yyyy-MM-dd")}
+                onChange={(e) => handleDateInputChange(e.target.value)}
+                className="absolute opacity-0 pointer-events-none"
+              />
+              <h2 className="text-lg font-bold capitalize text-white">
+                {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+              </h2>
             </div>
 
+            <button
+              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              className="p-2 rounded-md transition-colors hover:bg-white/10"
+            >
+              <span className="text-lg font-semibold text-white">&gt;</span>
+            </button>
+          </div>
+
+          {/* Area Principale - Campo, Dettagli e Slot */}
+          <div className="bg-white rounded-xl p-6 space-y-6">
             {/* Slot Orari + Campo + Dettagli */}
             <div className="space-y-4">
               {loadingSlots ? (
@@ -463,121 +611,283 @@ export default function NewAdminBookingPage() {
                 </div>
               ) : (
                 <>
-                  {/* Dettagli prenotazione compatti */}
-                  <div className="grid gap-4 md:grid-cols-2 mt-4">
+                  {/* Titolo form */}
+                  <div className="mb-6">
+                    <h2 className="text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+                  </div>
+
+                  {/* Dettagli prenotazione - stile form moderno */}
+                  <div className="space-y-6 mt-6">
                     {/* Atleta */}
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-secondary mb-2">Atleta *</label>
-                      <SearchableSelect
-                        value={selectedAthlete}
-                        onChange={setSelectedAthlete}
-                        options={athletes.map((athlete) => ({
-                          value: athlete.id,
-                          label: athlete.email
-                            ? `${athlete.full_name} (${athlete.email})`
-                            : athlete.full_name,
-                        }))}
-                        placeholder="Seleziona atleta"
-                        searchPlaceholder="Cerca per nome o email"
-                      />
+                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta *</label>
+                      <div className="flex-1">
+                        <SearchableSelect
+                          value={selectedAthlete}
+                          onChange={setSelectedAthlete}
+                          options={athletes.map((athlete) => ({
+                            value: athlete.id,
+                            label: athlete.email
+                              ? `${athlete.full_name} (${athlete.email})`
+                              : athlete.full_name,
+                          }))}
+                          placeholder="Seleziona atleta"
+                          searchPlaceholder="Cerca per nome o email"
+                        />
+                      </div>
                     </div>
 
                     {/* Tipo prenotazione */}
-                    <div className="md:col-span-1">
-                      <label className="block text-sm font-semibold text-secondary mb-2">Tipo prenotazione *</label>
-                      <select
-                        value={bookingType}
-                        onChange={(e) => setBookingType(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                      >
-                        <option value="">Seleziona tipo</option>
+                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
+                      <div className="flex-1 flex gap-3">
                         {BOOKING_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
+                          <button
+                            key={type.value}
+                            type="button"
+                            onClick={() => setBookingType(type.value)}
+                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                              bookingType === type.value
+                                ? 'bg-secondary text-white border-secondary'
+                                : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                            }`}
+                          >
                             {type.label}
-                          </option>
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
 
                     {/* Campo */}
-                    <div className="md:col-span-1">
-                      <label className="block text-sm font-semibold text-secondary mb-2">Campo *</label>
-                      <select
-                        value={selectedCourt}
-                        onChange={(e) => setSelectedCourt(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                      >
+                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                      <div className="flex-1 flex gap-3">
                         {COURTS.map((court) => (
-                          <option key={court} value={court}>
+                          <button
+                            key={court}
+                            type="button"
+                            onClick={() => setSelectedCourt(court)}
+                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                              selectedCourt === court
+                                ? 'bg-secondary text-white border-secondary'
+                                : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                            }`}
+                          >
                             {court}
-                          </option>
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
 
                     {/* Maestro se necessario */}
                     {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-secondary mb-2">Maestro *</label>
-                        <SearchableSelect
-                          value={selectedCoach}
-                          onChange={setSelectedCoach}
-                          options={coaches.map((coach) => ({
-                            value: coach.id,
-                            label: coach.full_name,
-                          }))}
-                          placeholder="Seleziona maestro"
-                          searchPlaceholder="Cerca maestro"
-                        />
+                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
+                        <div className="flex-1">
+                          <SearchableSelect
+                            value={selectedCoach}
+                            onChange={setSelectedCoach}
+                            options={coaches.map((coach) => ({
+                              value: coach.id,
+                              label: coach.full_name,
+                            }))}
+                            placeholder="Seleziona maestro"
+                            searchPlaceholder="Cerca maestro"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Note */}
+                    {selectedAthlete && (
+                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+                        <div className="flex-1">
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Eventuali note..."
+                            rows={3}
+                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Note, se serve */}
-                  {selectedAthlete && (
-                    <div>
-                      <label className="block text-sm font-semibold text-secondary mb-2">Note</label>
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Eventuali note..."
-                        rows={3}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
-                      />
-                    </div>
-                  )}
+                  <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
+                  
+                  {/* Timeline orizzontale stile bookings */}
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div style={{ minWidth: '1280px' }}>
+                      {/* Header con orari */}
+                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
+                        {Array.from({ length: 16 }, (_, i) => {
+                          const hour = 7 + i;
+                          return (
+                            <div
+                              key={hour}
+                              className="p-3 text-center font-bold text-secondary text-xs flex items-center justify-center"
+                            >
+                              {hour.toString().padStart(2, '0')}:00
+                            </div>
+                          );
+                        })}
+                      </div>
 
-                  <p className="text-sm font-semibold text-secondary mt-4">Orari disponibili</p>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-3">
-                    {displaySlots.map((slot) => (
-                      <button
-                        key={slot.time}
-                        onClick={() => toggleSlotSelection(slot.time, slot.available)}
-                        disabled={!slot.available}
-                        className={`relative p-4 rounded-md border border-gray-200 transition-all h-20 flex items-center justify-center ${
-                          selectedSlots.includes(slot.time)
-                            ? "bg-secondary"
-                            : slot.available
-                            ? "bg-secondary/5 hover:bg-secondary/10 hover:scale-105"
-                            : "bg-secondary/5 opacity-40 cursor-not-allowed"
-                        }`}
-                      >
-                        <div className="text-center">
-                            <span className={`text-xl font-bold block ${
-                            selectedSlots.includes(slot.time)
-                              ? "text-white"
-                              : slot.available
-                              ? "text-secondary"
-                              : "text-secondary/40"
-                          }`}>
-                            {slot.time}
-                          </span>
-                          {!slot.available && (
-                            <span className="text-[10px] text-secondary/40 font-medium">Occupato</span>
-                          )}
-                        </div>
-                      </button>
-                    ))}
+                      {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
+                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                        {/* Prenotazioni esistenti come blocchi sovrapposti */}
+                        {existingBookings.map((booking) => {
+                          const start = new Date(booking.start_time);
+                          const end = new Date(booking.end_time);
+                          const startHour = start.getHours();
+                          const startMinute = start.getMinutes();
+                          const endHour = end.getHours();
+                          const endMinute = end.getMinutes();
+                          
+                          // Calcola posizione e larghezza
+                          const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
+                          const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
+                          const duration = endSlot - startSlot;
+                          
+                          const getBookingStyle = () => {
+                            if (booking.isBlock) {
+                              return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
+                            }
+                            if (booking.status === "cancelled") {
+                              return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
+                            }
+                            switch (booking.type) {
+                              case "lezione_privata":
+                              case "lezione_gruppo":
+                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
+                              case "campo":
+                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
+                              case "arena":
+                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
+                              default:
+                                return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
+                            }
+                          };
+                          
+                          const getBookingLabel = () => {
+                            if (booking.isBlock) return booking.reason || "CAMPO BLOCCATO";
+                            if (booking.type === "lezione_privata") return "Lezione Privata";
+                            if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
+                            if (booking.type === "arena") return "Match Arena";
+                            return "Campo";
+                          };
+                          
+                          const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+                          const isBlock = booking.isBlock;
+                          
+                          return (
+                            <div
+                              key={booking.id}
+                              onClick={() => router.push(isBlock ? `/dashboard/admin/courts/${booking.id}` : `/dashboard/admin/bookings/${booking.id}`)}
+                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{
+                                ...getBookingStyle(),
+                                left: `${(startSlot / 32) * 100}%`,
+                                width: `${(duration / 32) * 100}%`,
+                                top: '4px',
+                                bottom: '4px'
+                              }}
+                            >
+                              {isBlock ? (
+                                <>
+                                  <div className="truncate leading-tight uppercase tracking-wider">
+                                    CAMPO BLOCCATO
+                                  </div>
+                                  <div className="text-white/90 text-[10px] mt-1 leading-tight">
+                                    {booking.reason || "Blocco campo"}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="truncate leading-tight">
+                                    {booking.user_profile?.full_name || "Sconosciuto"}
+                                  </div>
+                                  {isLesson && booking.coach_profile && (
+                                    <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
+                                      {booking.coach_profile.full_name}
+                                    </div>
+                                  )}
+                                  <div className="text-white/90 text-[10px] mt-1 uppercase tracking-wide leading-tight">
+                                    {getBookingLabel()}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                        
+                        {/* Slot cliccabili */}
+                        {Array.from({ length: 16 }, (_, hourIndex) => {
+                          const hour = 7 + hourIndex;
+                          const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                          const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
+                          const available1 = isSlotAvailable(time1);
+                          const available2 = time2 ? isSlotAvailable(time2) : false;
+                          const isSelected1 = selectedSlots.includes(time1);
+                          const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
+                          
+                          // Per l'ultima colonna (22:00) mostra solo un'area
+                          if (!time2) {
+                            return (
+                              <div
+                                key={hour}
+                                className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
+                                  isSelected1
+                                    ? 'bg-secondary hover:bg-secondary/90'
+                                    : available1
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
+                                }`}
+                                onClick={() => toggleSlotSelection(time1, available1)}
+                                title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                              >
+                                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                              {/* Prima metà (:00) - sinistra */}
+                              <div
+                                className={`flex-1 relative transition-colors cursor-pointer ${
+                                  isSelected1
+                                    ? 'bg-secondary hover:bg-secondary/90'
+                                    : available1
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
+                                }`}
+                                onClick={() => toggleSlotSelection(time1, available1)}
+                                title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                              />
+                              
+                              {/* Seconda metà (:30) - destra */}
+                              <div
+                                className={`flex-1 relative transition-colors cursor-pointer ${
+                                  isSelected2
+                                    ? 'bg-secondary hover:bg-secondary/90'
+                                    : available2
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
+                                }`}
+                                onClick={() => toggleSlotSelection(time2, available2)}
+                                title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                              />
+                              
+                              {/* Tacchetta centrale */}
+                              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </>
               )}

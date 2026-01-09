@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Trophy, Users, Calendar } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trophy, Users, Calendar, RotateCw } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 
 interface Participant {
@@ -132,7 +132,7 @@ export default function EliminationBracket({
   };
 
   const generateBracket = async () => {
-    if (!confirm('Sei sicuro di voler generare il bracket? Assicurati che tutti i partecipanti siano iscritti.')) {
+    if (!confirm('Sei sicuro di voler rigenerare il bracket? Questa operazione eliminerà tutti i match esistenti e i risultati.')) {
       return;
     }
     

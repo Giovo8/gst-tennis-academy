@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Trophy, Users, Target, Loader2, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trophy, Users, Target, Loader2, Trash2, Calendar } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
@@ -20,7 +20,7 @@ interface Tournament {
   num_groups?: number;
   teams_per_group?: number;
   teams_advancing?: number;
-  current_phase: string;
+  current_phase: 'iscrizioni' | 'gironi' | 'eliminazione' | 'campionato' | 'completato' | string;
   status: string;
   best_of?: number;
 }
@@ -43,7 +43,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
   const [participants, setParticipants] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bracket'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bracket' | 'groups' | 'calendar' | 'standings'>('overview');
 
   useEffect(() => {
     loadData();
@@ -206,7 +206,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
         .replace(/^([a-zàèéìòù])/u, (c) => c.toUpperCase())
     : null;
 
-  const phaseLabel = tournament.current_phase === 'iscrizioni'
+  const phaseLabel = (tournament.current_phase as string) === 'iscrizioni'
     ? 'Iscrizioni'
     : tournament.current_phase === 'gironi'
     ? 'Gironi'
@@ -220,69 +220,43 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
 
   return (
   <div className="space-y-6">
-      {/* Tabs per Eliminazione Diretta */}
-      {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione' && (
-        <div className="flex gap-2 border-b border-gray-100">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-all relative ${
-              activeTab === 'overview'
-                ? 'text-secondary'
-                : 'text-secondary/70 hover:text-secondary'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            Partecipanti
-            {activeTab === 'overview' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('bracket')}
-            className={`px-4 py-3 text-sm font-semibold transition-all relative ${
-              activeTab === 'bracket'
-                ? 'text-secondary'
-                : 'text-secondary/70 hover:text-secondary'
-            }`}
-          >
-            Tabellone
-            {activeTab === 'bracket' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
-            )}
-          </button>
-        </div>
-      )}
-
       {/* Contenuto in base al tipo e fase */}
-      {tournament.current_phase === 'iscrizioni' && (
-        <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
-          <Users className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
-          <h4 className="text-lg font-semibold text-secondary mb-2">
-            Fase Iscrizioni
-          </h4>
-          <p className="text-sm text-secondary/70 mb-4">
-            Il torneo accetta ancora iscrizioni. {participants.length} partecipanti su {tournament.max_participants}.
-          </p>
-          {isAdmin && participants.length >= 2 && (
-            <p className="text-xs text-secondary font-medium">
-              Puoi avviare il torneo quando sei pronto usando il pulsante in alto
-            </p>
-          )}
-        </div>
+      {(tournament.current_phase as string) === 'iscrizioni' && (
+        <div className="hidden"></div>
       )}
 
       {/* Eliminazione Diretta */}
-      {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione' && (
+      {tournament.tournament_type === 'eliminazione_diretta' && (tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && (
         <>
           {activeTab === 'bracket' && (
-            <EliminationBracketView
-              tournamentId={tournament.id}
-              maxParticipants={tournament.max_participants}
-              participants={participants}
-              bestOf={tournament.best_of || 3}
-              onMatchUpdate={loadData}
-              onBracketGenerated={() => setActiveTab('bracket')}
-            />
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-secondary">Tabellone Eliminazione</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('overview')}
+                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span className="text-sm font-medium">Partecipanti</span>
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    <span className="text-sm font-medium">Tabellone</span>
+                  </button>
+                </div>
+              </div>
+              <EliminationBracketView
+                tournamentId={tournament.id}
+                maxParticipants={tournament.max_participants}
+                participants={participants}
+                bestOf={tournament.best_of || 3}
+                onMatchUpdate={loadData}
+                onBracketGenerated={() => setActiveTab('bracket')}
+              />
+            </>
           )}
           
           {activeTab === 'overview' && (
@@ -290,55 +264,115 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               {/* Lista Partecipanti */}
               {participants.length > 0 && (
                 <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
+                    {tournament.current_phase && (tournament.current_phase as string) !== 'iscrizioni' && (
+                      <div className="flex gap-2">
+                        <button
+                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span className="text-sm font-medium">Partecipanti</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('bracket')}
+                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        >
+                          <Trophy className="h-4 w-4" />
+                          <span className="text-sm font-medium">Tabellone</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   {/* Header Row */}
-                  <div className="bg-secondary/[0.03] rounded-md px-5 py-3 border border-gray-200">
+                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 text-center">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
                         <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
                       </div>
                       <div className="flex-1">
                         <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
                       </div>
-                      <div className="w-48 hidden sm:block">
+                      <div className="w-48 hidden md:block">
                         <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
                       </div>
+                      <div className="w-32 hidden lg:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                      </div>
+                      {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                        <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                          <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Data Rows */}
                   {participants.map((participant: any, index: number) => {
                     const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
 
                     return (
                       <div
                         key={participant.id}
-                        className="bg-white rounded-md p-5 hover:shadow-md transition-all"
+                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-12 text-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary/10 text-secondary font-bold text-sm">
-                              {index + 1}
-                            </span>
+                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-secondary truncate">
+                          <div className="flex-1">
+                            <div className="font-bold text-secondary">
                               {fullName}
                             </div>
                             {participant.stats?.matches_played > 0 && (
-                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                <span className="text-[11px] text-secondary/70">
-                                  {participant.stats.matches_won}W - {participant.stats.matches_lost}L
-                                </span>
+                              <div className="text-xs text-secondary/60 mt-0.5">
+                                {participant.stats.matches_won}W - {participant.stats.matches_lost}L
                               </div>
                             )}
                           </div>
-                          <div className="w-48 hidden sm:block">
-                            {participant.profiles?.email && (
-                              <div className="text-xs text-secondary/70 truncate">
+                          <div className="w-48 hidden md:block">
+                            {participant.profiles?.email ? (
+                              <div className="text-sm text-secondary/70 truncate">
                                 {participant.profiles.email}
                               </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
                             )}
                           </div>
+                          <div className="w-32 hidden lg:block">
+                            {participant.profiles?.phone ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.phone}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                          {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                            <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                              <button
+                                onClick={() => handleRemoveParticipant(
+                                  participant.id,
+                                  fullName
+                                )}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                title="Rimuovi partecipante"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -353,24 +387,292 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
       {/* Girone + Eliminazione */}
       {tournament.tournament_type === 'girone_eliminazione' && (
         <>
-          {tournament.current_phase === 'gironi' && (
-            <GroupStageView
-              tournamentId={tournament.id}
-              groups={groups}
-              participants={participants}
-              bestOf={tournament.best_of || 3}
-              teamsAdvancing={tournament.teams_advancing || 2}
-              onMatchUpdate={loadData}
-              isAdmin={isAdmin}
-            />
+          {tournament.current_phase === 'gironi' && activeTab === 'overview' && (
+            <>
+              {/* Lista Partecipanti fase gironi */}
+              {participants.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm font-medium">Partecipanti</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('groups')}
+                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      >
+                        <Target className="h-4 w-4" />
+                        <span className="text-sm font-medium">Gironi</span>
+                      </button>
+                    </div>
+                  </div>
+                  {/* Header Row */}
+                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                      </div>
+                      <div className="w-48 hidden md:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                      </div>
+                      <div className="w-32 hidden lg:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Data Rows */}
+                  {participants.map((participant: any, index: number) => {
+                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
+
+                    return (
+                      <div
+                        key={participant.id}
+                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-bold text-secondary">
+                              {fullName}
+                            </div>
+                            {participant.group_id && (
+                              <div className="text-xs text-secondary/60 mt-0.5">
+                                {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-48 hidden md:block">
+                            {participant.profiles?.email ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.email}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            {participant.profiles?.phone ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.phone}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
           
-          {tournament.current_phase === 'eliminazione' && (
+          {(tournament.current_phase === 'gironi' || tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && activeTab === 'groups' && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-secondary">Gironi</h2>
+                {participants.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setActiveTab('overview')}
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm font-medium">Partecipanti</span>
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                    >
+                      <Target className="h-4 w-4" />
+                      <span className="text-sm font-medium">Gironi</span>
+                    </button>
+                    {(tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && (
+                      <button
+                        onClick={() => setActiveTab('bracket')}
+                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      >
+                        <Trophy className="h-4 w-4" />
+                        <span className="text-sm font-medium">Tabellone</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <GroupStageView
+                tournamentId={tournament.id}
+                groups={groups}
+                participants={participants}
+                bestOf={tournament.best_of || 3}
+                teamsAdvancing={tournament.teams_advancing || 2}
+                onMatchUpdate={loadData}
+                isAdmin={isAdmin}
+              />
+            </>
+          )}
+          
+          {(tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && activeTab === 'overview' && (
+            <>
+              {/* Lista Partecipanti fase eliminazione */}
+              {participants.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-secondary">Partecipanti</h2>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm font-medium">Partecipanti</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('groups')}
+                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      >
+                        <Target className="h-4 w-4" />
+                        <span className="text-sm font-medium">Gironi</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('bracket')}
+                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      >
+                        <Trophy className="h-4 w-4" />
+                        <span className="text-sm font-medium">Tabellone</span>
+                      </button>
+                    </div>
+                  </div>
+                  {/* Header Row */}
+                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                      </div>
+                      <div className="w-48 hidden md:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                      </div>
+                      <div className="w-32 hidden lg:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Data Rows - Tutti i partecipanti */}
+                  {participants.map((participant: any, index: number) => {
+                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
+
+                    return (
+                      <div
+                        key={participant.id}
+                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-bold text-secondary">
+                              {fullName}
+                            </div>
+                            {participant.group_id && (
+                              <div className="text-xs text-secondary/60 mt-0.5">
+                                {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'} - {
+                                  participant.group_position && participant.group_position <= (tournament.teams_advancing || 2)
+                                    ? `Posizione ${participant.group_position}`
+                                    : 'Non Qualificato'
+                                }
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-48 hidden md:block">
+                            {participant.profiles?.email ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.email}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            {participant.profiles?.phone ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.phone}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+          
+          {(tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && activeTab === 'bracket' && (
             <div className="space-y-6">
-              <div className="rounded-md bg-secondary/[0.03] border border-gray-200 p-4">
-                <p className="text-sm text-secondary">
-                  <strong>Fase Eliminazione:</strong> Le migliori {tournament.teams_advancing} squadre di ogni girone si sfidano
-                </p>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-secondary">Tabellone Eliminazione</h2>
+                {participants.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setActiveTab('overview')}
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm font-medium">Partecipanti</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('groups')}
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    >
+                      <Target className="h-4 w-4" />
+                      <span className="text-sm font-medium">Gironi</span>
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                    >
+                      <Trophy className="h-4 w-4" />
+                      <span className="text-sm font-medium">Tabellone</span>
+                    </button>
+                  </div>
+                )}
               </div>
               
               <EliminationBracketView
@@ -387,63 +689,370 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
 
       {/* Campionato */}
       {tournament.tournament_type === 'campionato' && (
-        <ChampionshipStandingsView 
-          tournamentId={tournament.id}
-          participants={participants}
-          bestOf={tournament.best_of || 3}
-          onMatchUpdate={loadData}
-          isAdmin={isAdmin}
-        />
+        <>
+          {activeTab === 'overview' && (
+            <>
+              {/* Lista Partecipanti */}
+              {participants.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
+                    {tournament.current_phase && (tournament.current_phase as string) !== 'iscrizioni' && (
+                      <div className="flex gap-2">
+                        <button
+                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span className="text-sm font-medium">Partecipanti</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('calendar')}
+                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          <span className="text-sm font-medium">Calendario</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('standings')}
+                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        >
+                          <Trophy className="h-4 w-4" />
+                          <span className="text-sm font-medium">Classifica</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Header Row */}
+                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                      </div>
+                      <div className="w-48 hidden md:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                      </div>
+                      <div className="w-32 hidden lg:block">
+                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                      </div>
+                      {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                        <div className="w-10 flex-shrink-0"></div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Data Rows */}
+                  {participants.map((participant: any, index: number) => {
+                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
+
+                    return (
+                      <div
+                        key={participant.id}
+                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-bold text-secondary">
+                              {fullName}
+                            </div>
+                          </div>
+                          <div className="w-48 hidden md:block">
+                            {participant.profiles?.email ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.email}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            {participant.profiles?.phone ? (
+                              <div className="text-sm text-secondary/70 truncate">
+                                {participant.profiles.phone}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-secondary/40">-</div>
+                            )}
+                          </div>
+                          {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                            <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                              <button
+                                onClick={() => handleRemoveParticipant(
+                                  participant.id,
+                                  fullName
+                                )}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                title="Rimuovi partecipante"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'standings' && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-secondary">Classifica Campionato</h2>
+                {participants.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setActiveTab('overview')}
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm font-medium">Partecipanti</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('calendar')}
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm font-medium">Calendario</span>
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                    >
+                      <Trophy className="h-4 w-4" />
+                      <span className="text-sm font-medium">Classifica</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <ChampionshipStandingsView 
+                tournamentId={tournament.id}
+                participants={participants}
+                bestOf={tournament.best_of || 3}
+                onMatchUpdate={loadData}
+                isAdmin={isAdmin}
+                defaultView="standings"
+                hideInternalTabs={true}
+              />
+            </>
+          )}
+
+          {activeTab === 'calendar' && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-secondary">Calendario Partite</h2>
+            {participants.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="text-sm font-medium">Partecipanti</span>
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm font-medium">Calendario</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('standings')}
+                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                >
+                  <Trophy className="h-4 w-4" />
+                  <span className="text-sm font-medium">Classifica</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <ChampionshipStandingsView 
+            tournamentId={tournament.id}
+            participants={participants}
+            bestOf={tournament.best_of || 3}
+            onMatchUpdate={loadData}
+            isAdmin={isAdmin}
+            defaultView="calendar"
+            hideInternalTabs={true}
+          />
+            </>
+          )}
+        </>
       )}
 
-      {/* Lista Partecipanti - Solo per tipi diversi da campionato, girone_eliminazione e eliminazione_diretta in fase eliminazione */}
-      {participants.length > 0 && tournament.tournament_type !== 'campionato' && tournament.tournament_type !== 'girone_eliminazione' && !(tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase === 'eliminazione') && (
-        <div className="rounded-md bg-white p-4 sm:p-6">
-          <div className="divide-y divide-gray-100 bg-white overflow-hidden rounded-md">
-						{participants.map((participant: any, index: number) => {
-              const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
-
-						          return (
-                <div
-                  key={participant.id}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/5 transition-colors"
+      {/* Lista Partecipanti - Solo per fase iscrizioni o tornei che non hanno tab speciali */}
+      {participants.length > 0 && 
+       (tournament.current_phase as string) === 'iscrizioni' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
+            <div className="flex gap-2">
+              {/* Tab Partecipanti - sempre per primo */}
+              <button
+                className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+              >
+                <Users className="h-4 w-4" />
+                <span className="text-sm font-medium">Partecipanti</span>
+              </button>
+              
+              {/* Tab specifici per tipo torneo */}
+              {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase !== 'iscrizioni' && (
+                <button
+                  onClick={() => setActiveTab('bracket')}
+                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
-                  <div className="w-6 text-xs font-medium text-secondary/60 text-right">
-                    {index + 1}
+                  <Trophy className="h-4 w-4" />
+                  <span className="text-sm font-medium">Tabellone</span>
+                </button>
+              )}
+              {tournament.tournament_type === 'girone_eliminazione' && tournament.current_phase === 'gironi' && (
+                <button
+                  onClick={() => setActiveTab('groups')}
+                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                >
+                  <Target className="h-4 w-4" />
+                  <span className="text-sm font-medium">Gironi</span>
+                </button>
+              )}
+              {tournament.tournament_type === 'girone_eliminazione' && tournament.current_phase === 'eliminazione' && (
+                <button
+                  onClick={() => setActiveTab('bracket')}
+                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                >
+                  <Trophy className="h-4 w-4" />
+                  <span className="text-sm font-medium">Tabellone</span>
+                </button>
+              )}
+              {tournament.tournament_type === 'campionato' && (
+                <>
+                  <button
+                    onClick={() => setActiveTab('calendar')}
+                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-sm font-medium">Calendario</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('standings')}
+                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    <span className="text-sm font-medium">Classifica</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          {/* Header Row */}
+          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+            <div className="flex items-center gap-4">
+              <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+              </div>
+              <div className="flex-1">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+              </div>
+              <div className="w-48 hidden md:block">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+              </div>
+              <div className="w-32 hidden lg:block">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+              </div>
+              {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                  <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Data Rows */}
+          {participants.map((participant: any, index: number) => {
+            const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+            const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
+
+            return (
+              <div
+                key={participant.id}
+                className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-secondary truncate">
+                  <div className="flex-1">
+                    <div className="font-bold text-secondary">
                       {fullName}
                     </div>
-                    {participant.profiles?.email && (
-                      <div className="text-xs text-secondary/70 truncate">
-                        {participant.profiles.email}
-                      </div>
-                    )}
                     {participant.stats?.matches_played > 0 && (
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-[11px] text-secondary/70">
-                          {participant.stats.matches_won}W - {participant.stats.matches_lost}L
-                        </span>
+                      <div className="text-xs text-secondary/60 mt-0.5">
+                        {participant.stats.matches_won}W - {participant.stats.matches_lost}L
                       </div>
                     )}
                   </div>
-                  {isAdmin && tournament.current_phase === 'iscrizioni' && (
-                    <button
-                      onClick={() => handleRemoveParticipant(
-                        participant.id,
-                        fullName
-                      )}
-                      className="flex-shrink-0 rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
-                      title="Rimuovi partecipante"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                  <div className="w-48 hidden md:block">
+                    {participant.profiles?.email ? (
+                      <div className="text-sm text-secondary/70 truncate">
+                        {participant.profiles.email}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-secondary/40">-</div>
+                    )}
+                  </div>
+                  <div className="w-32 hidden lg:block">
+                    {participant.profiles?.phone ? (
+                      <div className="text-sm text-secondary/70 truncate">
+                        {participant.profiles.phone}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-secondary/40">-</div>
+                    )}
+                  </div>
+                  {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                      <button
+                        onClick={() => handleRemoveParticipant(
+                          participant.id,
+                          fullName
+                        )}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Rimuovi partecipante"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

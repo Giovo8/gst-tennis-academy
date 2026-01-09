@@ -16,6 +16,9 @@ import {
   Upload,
   Link as LinkIcon,
   X,
+  MapPin,
+  FileText,
+  Trophy,
 } from "lucide-react";
 
 interface Profile {
@@ -25,14 +28,30 @@ interface Profile {
   role: string;
   subscription_type: string | null;
   phone?: string | null;
-  birth_date?: string | null;
+  date_of_birth?: string | null;
   avatar_url?: string | null;
   bio?: string | null;
   created_at: string;
+  metadata?: {
+    birth_city?: string;
+    fiscal_code?: string;
+    address?: string;
+    city?: string;
+    province?: string;
+    postal_code?: string;
+  };
+}
+
+interface ArenaStats {
+  points: number;
+  level: string;
+  wins: number;
+  losses: number;
 }
 
 export default function AdminProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [arenaStats, setArenaStats] = useState<ArenaStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,7 +62,13 @@ export default function AdminProfilePage() {
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
-    birth_date: "",
+    date_of_birth: "",
+    birth_city: "",
+    fiscal_code: "",
+    address: "",
+    city: "",
+    province: "",
+    postal_code: "",
     bio: "",
   });
 
@@ -62,13 +87,31 @@ export default function AdminProfilePage() {
       .single();
 
     if (!error && data) {
+      const metadata = data.metadata || {};
       setProfile(data);
       setFormData({
         full_name: data.full_name || "",
         phone: data.phone || "",
-        birth_date: data.birth_date || "",
+        date_of_birth: data.date_of_birth || "",
+        birth_city: metadata.birth_city || "",
+        fiscal_code: metadata.fiscal_code || "",
+        address: metadata.address || "",
+        city: metadata.city || "",
+        province: metadata.province || "",
+        postal_code: metadata.postal_code || "",
         bio: data.bio || "",
       });
+    }
+
+    // Load arena stats
+    const { data: statsData } = await supabase
+      .from("arena_stats")
+      .select("points, level, wins, losses")
+      .eq("user_id", user.id)
+      .single();
+
+    if (statsData) {
+      setArenaStats(statsData);
     }
 
     setLoading(false);
@@ -79,18 +122,29 @@ export default function AdminProfilePage() {
     
     setSaving(true);
 
+    const metadata = {
+      ...(profile.metadata || {}),
+      birth_city: formData.birth_city || undefined,
+      fiscal_code: formData.fiscal_code || undefined,
+      address: formData.address || undefined,
+      city: formData.city || undefined,
+      province: formData.province || undefined,
+      postal_code: formData.postal_code || undefined,
+    };
+
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: formData.full_name || null,
         phone: formData.phone || null,
-        birth_date: formData.birth_date || null,
+        date_of_birth: formData.date_of_birth || null,
         bio: formData.bio || null,
+        metadata,
       })
       .eq("id", profile.id);
 
     if (!error) {
-      setProfile({ ...profile, ...formData });
+      setProfile({ ...profile, ...formData, metadata });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
@@ -216,6 +270,28 @@ export default function AdminProfilePage() {
     });
   }
 
+  function getRankLabel(level: string) {
+    const labels: Record<string, string> = {
+      bronze: "Bronzo",
+      silver: "Argento",
+      gold: "Oro",
+      platinum: "Platino",
+      diamond: "Diamante",
+    };
+    return labels[level] || level;
+  }
+
+  function getRankColor(level: string) {
+    const colors: Record<string, string> = {
+      bronze: "bg-orange-100 text-orange-700 border-orange-200",
+      silver: "bg-gray-100 text-gray-700 border-gray-300",
+      gold: "bg-yellow-100 text-yellow-700 border-yellow-300",
+      platinum: "bg-cyan-100 text-cyan-700 border-cyan-300",
+      diamond: "bg-blue-100 text-blue-700 border-blue-300",
+    };
+    return colors[level] || "bg-gray-100 text-gray-700 border-gray-200";
+  }
+
   function getRoleLabel(role: string) {
     const labels: Record<string, string> = {
       atleta: "Atleta",
@@ -255,190 +331,358 @@ export default function AdminProfilePage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Il Mio Profilo</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-3xl font-bold text-secondary mb-2">Il Mio Profilo</h1>
+        <p className="text-sm text-secondary/70">
           Gestisci le tue informazioni personali
         </p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="relative bg-secondary h-40">
-          <div className="absolute top-4 right-4">
-            <span className="px-4 py-2 text-sm font-bold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
+      <div className={`bg-white rounded-xl border border-gray-200 border-l-4 p-6 ${
+        profile.role === "admin" ? "border-l-red-500" :
+        profile.role === "gestore" ? "border-l-purple-500" :
+        profile.role === "maestro" ? "border-l-blue-500" :
+        "border-l-secondary"
+      }`}>
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name || "Avatar"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-3xl font-bold text-white">
+                  {getInitials(profile.full_name, profile.email)}
+                </span>
+              )}
+            </div>
+            <button 
+              onClick={() => setShowAvatarModal(true)}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-2 -right-2 p-2 rounded-lg bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {uploadingAvatar ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-secondary mb-1">
+              {profile.full_name || "Nome non impostato"}
+            </h2>
+            <p className="text-secondary/70 text-sm font-medium mb-2">{profile.email}</p>
+            <span className="inline-block px-3 py-1 text-xs font-bold rounded-lg bg-secondary/10 text-secondary border border-secondary/20">
               {getRoleLabel(profile.role)}
             </span>
           </div>
         </div>
-        
-        <div className="px-6 pb-6 -mt-16">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name || "Avatar"}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white">
-                      {getInitials(profile.full_name, profile.email)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button 
-                onClick={() => setShowAvatarModal(true)}
-                disabled={uploadingAvatar}
-                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {uploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">
-              {profile.full_name || "Nome non impostato"}
-            </h2>
-            <p className="text-gray-600 font-medium">{profile.email}</p>
-          </div>
-        </div>
       </div>
 
-      {/* Account Info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-secondary" />
-          Informazioni Account
-        </h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <Mail className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Email</p>
-              <p className="text-sm font-semibold text-gray-900">{profile.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <Calendar className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Membro dal</p>
-              <p className="text-sm font-semibold text-gray-900">{formatDate(profile.created_at)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <CreditCard className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Abbonamento</p>
-              <p className="text-sm font-semibold text-gray-900">
-                {profile.subscription_type || "Nessuno"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <User className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Ruolo</p>
-              <p className="text-sm font-semibold text-gray-900">{getRoleLabel(profile.role)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Edit Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <User className="h-5 w-5 text-secondary" />
-          Dati Personali
+      {/* Sezione 1: Dati Anagrafici */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-bold text-secondary mb-6 pb-4 border-b border-gray-200 flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Dati Anagrafici
         </h3>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-6">
+          {/* Nome Completo */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Nome Completo
             </label>
-            <input
-              type="text"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              placeholder="Mario Rossi"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
-            />
+            <div className="flex-1">
+              <input
+                type="text"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="Mario Rossi"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* Email */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Email
+            </label>
+            <div className="flex-1">
+              <input
+                type="email"
+                value={profile.email}
+                disabled
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-secondary/70 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* Telefono */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Telefono
             </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="+39 123 456 7890"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
-            />
+            <div className="flex-1">
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+39 123 456 7890"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* Data di Nascita */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Data di Nascita
             </label>
-            <input
-              type="date"
-              value={formData.birth_date}
-              onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
-            />
+            <div className="flex-1">
+              <input
+                type="date"
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bio
+          {/* Città di Nascita */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Città di Nascita
             </label>
-            <textarea
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              rows={3}
-              placeholder="Scrivi qualcosa su di te..."
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary resize-none"
-            />
+            <div className="flex-1">
+              <input
+                type="text"
+                value={formData.birth_city}
+                onChange={(e) => setFormData({ ...formData, birth_city: e.target.value })}
+                placeholder="Roma"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+            </div>
           </div>
 
-          <button
-            onClick={saveProfile}
-            disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Salvataggio...
-              </>
-            ) : saved ? (
-              <>
-                <Check className="h-5 w-5" />
-                Salvato!
-              </>
-            ) : (
-              <>
-                <Save className="h-5 w-5" />
-                Salva Modifiche
-              </>
-            )}
-          </button>
+          {/* Codice Fiscale */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Codice Fiscale
+            </label>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={formData.fiscal_code}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase().slice(0, 16);
+                  setFormData({ ...formData, fiscal_code: value });
+                }}
+                placeholder="RSSMRA80A01H501Z"
+                maxLength={16}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary uppercase"
+              />
+            </div>
+          </div>
+
+          {/* Indirizzo */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Indirizzo
+            </label>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Via Roma 123"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+            </div>
+          </div>
+
+          {/* Città, Provincia, CAP */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Città, Provincia, CAP
+            </label>
+            <div className="flex-1 flex gap-3">
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="Roma"
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+              <input
+                type="text"
+                value={formData.province}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase().slice(0, 2);
+                  setFormData({ ...formData, province: value });
+                }}
+                placeholder="RM"
+                maxLength={2}
+                className="w-20 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary uppercase text-center"
+              />
+              <input
+                type="text"
+                value={formData.postal_code}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 5);
+                  setFormData({ ...formData, postal_code: value });
+                }}
+                placeholder="00100"
+                maxLength={5}
+                className="w-28 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+              />
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="flex items-start gap-4">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Note
+            </label>
+            <div className="flex-1">
+              <textarea
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                rows={3}
+                placeholder="Note aggiuntive..."
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Pulsante Salva */}
+          <div className="pt-4">
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : saved ? (
+                <>
+                  <Check className="h-5 w-5" />
+                  Salvato!
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5" />
+                  Salva Modifiche
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sezione 2: Info Sistema */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-bold text-secondary mb-6 pb-4 border-b border-gray-200 flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          Info Sistema
+        </h3>
+
+        <div className="space-y-6">
+          {/* ID Utente */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              ID Utente
+            </label>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={profile.id}
+                disabled
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-secondary/70 cursor-not-allowed font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Data Registrazione */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Data Registrazione
+            </label>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={formatDate(profile.created_at)}
+                disabled
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-secondary/70 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* Ruolo */}
+          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Ruolo
+            </label>
+            <div className="flex-1">
+              <div className="px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-secondary/70 font-medium">
+                {getRoleLabel(profile.role)}
+              </div>
+            </div>
+          </div>
+
+          {/* Arena Stats */}
+          {arenaStats && (
+            <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
+              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Statistiche Arena
+              </label>
+              <div className="flex-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Trophy className="h-4 w-4 text-secondary" />
+                      <span className="text-xs font-medium text-secondary/70">Rank</span>
+                    </div>
+                    <span className={`inline-block px-3 py-1 text-sm font-bold rounded-lg border ${getRankColor(arenaStats.level)}`}>
+                      {getRankLabel(arenaStats.level)}
+                    </span>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="text-xs font-medium text-secondary/70 mb-1">Punti</div>
+                    <div className="text-2xl font-bold text-secondary">{arenaStats.points}</div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="text-xs font-medium text-secondary/70 mb-1">Vittorie</div>
+                    <div className="text-2xl font-bold text-green-600">{arenaStats.wins}</div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="text-xs font-medium text-secondary/70 mb-1">Sconfitte</div>
+                    <div className="text-2xl font-bold text-red-600">{arenaStats.losses}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tipo Abbonamento */}
+          <div className="flex items-start gap-4">
+            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              Tipo Abbonamento
+            </label>
+            <div className="flex-1">
+              <div className="px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-secondary/70 font-medium">
+                {profile.subscription_type || "Nessuno"}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -223,49 +223,52 @@
 }
 
 /* =================================
-   DARK MODE
+   DARK MODE - Full Black Background
    ================================= */
 .dark {
-  --background: #011923;        /* frozen-950 */
-  --background-subtle: #022431; /* frozen-900 */
-  --background-muted: #034863;  /* frozen-800 */
-  --foreground: #e6f7fe;        /* frozen-50 */
-  --foreground-muted: #6bd2fa;  /* frozen-300 */
-  --foreground-subtle: #39c3f9; /* frozen-400 */
-  
-  --surface: #022431;
-  --surface-elevated: #034863;
-  --surface-hover: #056c94;
-  
-  --border: #056c94;            /* frozen-700 */
-  --border-light: #034863;      /* frozen-800 */
-  --border-strong: #0690c6;     /* frozen-600 */
-  
-  --shadow-xs: 0 1px 2px 0 rgb(8 179 247 / 0.2);
-  --shadow-sm: 0 1px 3px 0 rgb(8 179 247 / 0.3), 0 1px 2px 0 rgb(8 179 247 / 0.2);
-  --shadow-md: 0 4px 6px -1px rgb(8 179 247 / 0.3), 0 2px 4px -1px rgb(8 179 247 / 0.2);
+  --background: #000000;        /* Pure black background */
+  --background-subtle: #0a0a0a; /* Very dark gray for subtle surfaces */
+  --background-muted: #141414;  /* Dark gray for muted areas */
+  --foreground: #ffffff;        /* Pure white text */
+  --foreground-muted: #e0e0e0;  /* Light gray for secondary text */
+  --foreground-subtle: #b0b0b0; /* Medium gray for subtle text */
+
+  --surface: #0a0a0a;           /* Very dark surface */
+  --surface-elevated: #1a1a1a;  /* Slightly elevated surface */
+  --surface-hover: #242424;     /* Hover state surface */
+
+  --border: #2a2a2a;            /* Dark border */
+  --border-light: #1a1a1a;      /* Subtle border */
+  --border-strong: #3a3a3a;     /* Strong border */
+
+  /* Light cyan shadows for depth */
+  --shadow-xs: 0 1px 2px 0 rgb(8 179 247 / 0.15);
+  --shadow-sm: 0 1px 3px 0 rgb(8 179 247 / 0.2), 0 1px 2px 0 rgb(8 179 247 / 0.15);
+  --shadow-md: 0 4px 6px -1px rgb(8 179 247 / 0.25), 0 2px 4px -1px rgb(8 179 247 / 0.15);
   --shadow-lg: 0 10px 15px -3px rgb(8 179 247 / 0.3), 0 4px 6px -2px rgb(8 179 247 / 0.2);
-  --shadow-xl: 0 20px 25px -5px rgb(8 179 247 / 0.4), 0 10px 10px -5px rgb(8 179 247 / 0.2);
-  --shadow-2xl: 0 25px 50px -12px rgb(8 179 247 / 0.5);
-  
-  --success-bg: rgba(5, 150, 105, 0.15);
-  --success-border: rgba(5, 150, 105, 0.3);
-  --warning-bg: rgba(217, 119, 6, 0.15);
-  --warning-border: rgba(217, 119, 6, 0.3);
-  --error-bg: rgba(220, 38, 38, 0.15);
-  --error-border: rgba(220, 38, 38, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(8 179 247 / 0.35), 0 10px 10px -5px rgb(8 179 247 / 0.2);
+  --shadow-2xl: 0 25px 50px -12px rgb(8 179 247 / 0.4);
+
+  /* Status colors with light backgrounds for contrast */
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.3);
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-border: rgba(245, 158, 11, 0.3);
+  --error-bg: rgba(239, 68, 68, 0.15);
+  --error-border: rgba(239, 68, 68, 0.3);
   --info-bg: rgba(8, 179, 247, 0.15);
   --info-border: rgba(8, 179, 247, 0.3);
-  
-  --glass-bg: rgba(1, 25, 35, 0.8);
-  --glass-border: rgba(8, 179, 247, 0.2);
-  --shadow-glow: 0 0 20px rgba(8, 179, 247, 0.25);
-  --shadow-glow-strong: 0 0 30px rgba(8, 179, 247, 0.4);
-  
-  /* Tournament colors in dark mode */
-  --tournament-border: rgba(8, 179, 247, 0.3);
-  --tournament-bg-card: rgba(5, 108, 148, 0.6);
-  --tournament-bg-table: rgba(3, 72, 99, 0.4);
+
+  /* Glass effect with black background */
+  --glass-bg: rgba(0, 0, 0, 0.8);
+  --glass-border: rgba(8, 179, 247, 0.25);
+  --shadow-glow: 0 0 20px rgba(8, 179, 247, 0.3);
+  --shadow-glow-strong: 0 0 30px rgba(8, 179, 247, 0.5);
+
+  /* Tournament colors in dark mode with light accents */
+  --tournament-border: rgba(8, 179, 247, 0.35);
+  --tournament-bg-card: rgba(26, 26, 26, 0.9);
+  --tournament-bg-table: rgba(20, 20, 20, 0.8);
 }
 
 @theme inline {
@@ -591,6 +594,16 @@ h6, .text-h6 {
   background: var(--foreground-subtle);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Gradient utilities */
 .gradient-primary {
   background: var(--gradient-primary);
@@ -847,6 +860,43 @@ h6, .text-h6 {
   animation: slide-in-right 0.3s ease-out;
 }
 
+/* Dark Mode Utility Classes */
+.dark .bg-gray-50 {
+  background-color: var(--surface) !important;
+}
 
+.dark .bg-gray-100 {
+  background-color: var(--surface-elevated) !important;
+}
 
+.dark .bg-white {
+  background-color: var(--surface) !important;
+}
 
+.dark .text-gray-600 {
+  color: var(--foreground-muted) !important;
+}
+
+.dark .text-gray-700 {
+  color: var(--foreground-muted) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--foreground) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--border) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-strong) !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--surface-elevated) !important;
+}

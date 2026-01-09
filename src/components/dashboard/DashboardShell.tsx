@@ -15,10 +15,11 @@ import {
   ChevronRight,
   User,
   LayoutGrid,
+  Bell,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
 import NotificationsDropdown from "@/components/notifications/NotificationsDropdown";
 import { type UserRole } from "@/lib/roles";
+import { handleLogout } from "@/lib/auth/logout";
 
 export interface NavItem {
   label: string;
@@ -61,11 +62,13 @@ export default function DashboardShell({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<NavItem[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  }
+  // Force remove dark class on mount to ensure light mode
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    localStorage.removeItem('darkMode');
+  }, []);
 
   // Search handler
   useEffect(() => {
@@ -104,6 +107,13 @@ export default function DashboardShell({
     if (
       href === "/dashboard/admin/users" &&
       pathname.startsWith("/dashboard/admin/invite-codes")
+    ) {
+      return true;
+    }
+    // Evidenzia "Prenotazioni" anche per courts (blocco campi)
+    if (
+      href === "/dashboard/admin/bookings" &&
+      pathname.startsWith("/dashboard/admin/courts")
     ) {
       return true;
     }
@@ -169,11 +179,11 @@ export default function DashboardShell({
           ${
             active
               ? "bg-secondary text-white"
-              : "text-secondary/70 hover:bg-secondary/5"
+              : "text-gray-600 hover:bg-gray-100"
           }
         `}
       >
-        <span className={`${active ? "text-white" : "text-secondary/60"} flex-shrink-0`}>
+        <span className={`${active ? "text-white" : "text-gray-600"} flex-shrink-0`}>
           {item.icon}
         </span>
         {!sidebarCollapsed && (
@@ -236,7 +246,7 @@ export default function DashboardShell({
       <aside
         className={`
           fixed top-0 left-0 z-50 h-screen
-          bg-white
+          bg-white border-r border-gray-200 shadow-lg
           transform transition-all duration-300 ease-in-out
           lg:translate-x-0
           ${sidebarCollapsed ? "w-[70px]" : "w-[260px]"}
@@ -256,167 +266,179 @@ export default function DashboardShell({
               />
             </div>
             {!sidebarCollapsed && (
-              <span className="font-bold text-secondary text-2xl" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
+              <span className="font-bold text-secondary text-3xl tracking-tight" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
             )}
           </Link>
 
           {/* Navigation */}
-          <nav className={`flex-1 ${sidebarCollapsed ? "px-2 py-4" : "px-4 py-6"} space-y-6 overflow-y-auto`}>
+          <nav className={`flex-1 ${sidebarCollapsed ? "px-2 py-4" : "px-4 py-6"} overflow-y-auto`}>
             {/* Dashboard sempre per primo (senza intestazione) */}
-            <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
-              <div className="space-y-1">
-                {renderNavItem(dashboardItem)}
-              </div>
+            <div className="space-y-1">
+              {renderNavItem(dashboardItem)}
             </div>
 
-            {/* GESTIONE Section - tutte le altre voci */}
-            <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
-              {!sidebarCollapsed && (
-                <h3 className="px-3 text-[10px] font-semibold text-secondary/40 uppercase tracking-wider mb-3">Gestione</h3>
+            {/* Altre voci del menu */}
+            <div className="space-y-1 mt-1">
+              {hasPrimarySection ? (
+                <>
+                  {/* Prima le primaryNavItems escluso il dashboard */}
+                  {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => renderNavItem(item))}
+                  {/* Poi le altre voci non presenti in primaryNavItems */}
+                  {menuItemsWithPrimary.map((item) => renderNavItem(item))}
+                </>
+              ) : (
+                <>
+                  {otherItems.slice(0, -2).map((item) => renderNavItem(item))}
+                </>
               )}
-              <div className="space-y-1">
-                {hasPrimarySection ? (
-                  <>
-                    {/* Prima le primaryNavItems escluso il dashboard */}
-                    {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => renderNavItem(item))}
-                    {/* Poi le altre voci non presenti in primaryNavItems */}
-                    {menuItemsWithPrimary.map((item) => renderNavItem(item))}
-                  </>
-                ) : (
-                  <>
-                    {otherItems.slice(0, -2).map((item) => renderNavItem(item))}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* GENERAL Section */}
-            <div className={sidebarCollapsed ? "space-y-1" : "space-y-2"}>
-              {!sidebarCollapsed && (
-                <h3 className="px-3 text-[10px] font-semibold text-secondary/40 uppercase tracking-wider mb-3">General</h3>
-              )}
-              <div className="space-y-1">
-                <Link
-                  href="/"
-                  title={sidebarCollapsed ? "Home" : undefined}
-                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
-                >
-                  <Home className="h-5 w-5" />
-                  {!sidebarCollapsed && <span className="text-sm font-medium">Home</span>}
-                </Link>
-                <Link
-                  href={`/dashboard/${role}/profile`}
-                  title={sidebarCollapsed ? "Profilo" : undefined}
-                  className={`flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
-                >
-                  <User className="h-5 w-5" />
-                  {!sidebarCollapsed && <span className="text-sm font-medium">Profilo</span>}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  title={sidebarCollapsed ? "Logout" : undefined}
-                  className={`w-full flex items-center gap-3 ${sidebarCollapsed ? "p-3" : "px-3 py-2.5"} rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors ${sidebarCollapsed ? "justify-center" : ""}`}
-                >
-                  <LogOut className="h-5 w-5" />
-                  {!sidebarCollapsed && <span className="text-sm font-medium">Logout</span>}
-                </button>
-              </div>
             </div>
           </nav>
 
-          {/* Footer: only collapse/expand button, profilo spostato nella top bar */}
-          <div className={`${sidebarCollapsed ? "p-3" : "p-4"}`}>
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-full flex items-center justify-center p-2 rounded-md hover:bg-secondary/5 transition-colors"
-              title={sidebarCollapsed ? "Espandi sidebar" : "Riduci sidebar"}
+          {/* Footer: notifiche, profilo, logout, dark mode e collapse */}
+          <div className={`${sidebarCollapsed ? "p-3" : "p-4"} space-y-3`}>
+            {/* Cerca, Notifiche, Dark Mode, Logout e Collapse */}
+            <div className={`flex items-center ${sidebarCollapsed ? "flex-col gap-2" : "justify-center gap-2"}`}>
+              {/* Search */}
+              <button
+                onClick={() => setShowSearchModal(true)}
+                title="Cerca"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Search className="h-5 w-5 text-gray-600" />
+              </button>
+              
+              {/* Notifiche */}
+              <NotificationsDropdown />
+
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                title="Esci"
+                className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="h-5 w-5 text-gray-600 hover:text-red-600" />
+              </button>
+
+              {/* Collapse/Expand - ultimo */}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title={sidebarCollapsed ? "Espandi menu" : "Riduci menu"}
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronLeft className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+            </div>
+
+            {/* Profilo Utente - cliccabile */}
+            <Link
+              href={`/dashboard/${role}/profile`}
+              title={sidebarCollapsed ? "Profilo" : undefined}
+              className="block"
             >
-              {sidebarCollapsed ? (
-                <ChevronRight className="h-5 w-5 text-secondary/60" />
+              {!sidebarCollapsed ? (
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/5 transition-colors cursor-pointer">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt={userName || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-sm font-semibold text-secondary leading-tight truncate">{userName || "User"}</span>
+                    <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
+                  </div>
+                </div>
               ) : (
-                <ChevronLeft className="h-5 w-5 text-secondary/60" />
+                <div className="flex justify-center">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold hover:ring-2 hover:ring-secondary/20 transition-all">
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt={userName || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
+            </Link>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className={`pt-16 lg:pt-0 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]"}` }>
-        {/* Top bar desktop */}
-        <div className="hidden lg:flex items-center justify-between px-8 py-4 bg-white">
-          {/* Search */}
-          <div className="flex-1 max-w-2xl mr-6 relative">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Cerca in dashboard..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => searchQuery && setShowSearchResults(true)}
-                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-md border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary/50"
-              />
-            </div>
-            
-            {/* Search Results Dropdown */}
-            {showSearchResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
-                <div className="p-2">
-                  {searchResults.map((item, idx) => (
-                    <Link
-                      key={idx}
-                      href={item.href}
-                      onClick={() => {
-                        setSearchQuery("");
-                        setShowSearchResults(false);
-                      }}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="text-secondary/70">{item.icon}</div>
-                      <span className="text-sm font-medium text-gray-900">{item.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {showSearchResults && searchQuery && searchResults.length === 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
-                <p className="text-sm text-gray-500 text-center">Nessun risultato trovato</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right actions: notifications + account */}
-          <div className="flex items-center gap-4">
-            <NotificationsDropdown />
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold">
-                {userAvatar ? (
-                  <img
-                    src={userAvatar}
-                    alt={userName || "User"}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-900 leading-tight">{userName || "User"}</span>
-                <span className="text-xs text-gray-500 leading-tight">{userEmail}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <main className={`pt-16 lg:pt-0 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]"}`}>
         {/* Page content */}
         <div className="p-6 lg:p-8">
           {children}
         </div>
       </main>
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-start justify-center pt-20 px-4"
+          onClick={() => setShowSearchModal(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+                <input
+                  type="text"
+                  placeholder="Cerca in dashboard..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                  className="w-full pl-12 pr-4 py-3.5 rounded-lg border border-gray-200 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                />
+              </div>
+
+              {/* Search Results */}
+              {searchQuery && (
+                <div className="mt-4 max-h-96 overflow-y-auto">
+                  {searchResults.length > 0 ? (
+                    <div className="space-y-1">
+                      {searchResults.map((item, idx) => (
+                        <Link
+                          key={idx}
+                          href={item.href}
+                          onClick={() => {
+                            setSearchQuery("");
+                            setShowSearchModal(false);
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-secondary/5 transition-colors"
+                        >
+                          <div className="text-secondary/70">{item.icon}</div>
+                          <span className="text-sm font-medium text-secondary">{item.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center">
+                      <p className="text-sm text-secondary/60">Nessun risultato trovato</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

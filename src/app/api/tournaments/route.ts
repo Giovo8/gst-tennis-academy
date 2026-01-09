@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getErrorMessage } from "@/lib/types/errors";
+import type { RoundData, GroupData, GroupStanding } from "@/lib/types/tournament";
 
 type CompetitionType = 'torneo' | 'campionato';
 type CompetitionFormat = 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
 
 interface TournamentBody {
   title: string;
-  start_date: string; // Use start_date (actual DB column)
-  end_date?: string;  // Use end_date (actual DB column)
+  start_date: string;
+  end_date?: string;
   max_participants: number;
   status: string;
   competition_type?: CompetitionType;
   format?: CompetitionFormat;
-  rounds_data?: any[];
-  groups_data?: any[];
-  standings?: any[];
-  [key: string]: any;
+  rounds_data?: RoundData[];
+  groups_data?: GroupData[];
+  standings?: GroupStanding[];
 }
 
 async function getUserProfileFromRequest(req: Request) {
@@ -91,10 +92,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    return NextResponse.json({ tournaments: data || [] });
-  } catch (err: any) {
-    console.error('[tournaments GET] catch error:', err);
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+    // Aggiungi il conteggio dei partecipanti per ogni torneo
+    const tournamentsWithCounts = await Promise.all(
+      (data || []).map(async (tournament) => {
+        const { count } = await supabaseServer
+          .from("tournament_participants")
+          .select("id", { count: "exact", head: true })
+          .eq("tournament_id", tournament.id);
+        return { ...tournament, current_participants: count ?? 0 };
+      })
+    );
+    
+    return NextResponse.json({ tournaments: tournamentsWithCounts });
+  } catch (error) {
+    console.error('[tournaments GET] catch error:', error);
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -145,9 +157,9 @@ export async function POST(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ tournament: data?.[0] }, { status: 201 });
-  } catch (err: any) {
-    console.error('[tournaments POST] error:', err);
-    return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500 });
+  } catch (error) {
+    console.error('[tournaments POST] error:', error);
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -171,8 +183,8 @@ export async function PUT(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ tournament: data?.[0] });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -190,7 +202,7 @@ export async function DELETE(req: Request) {
     const { error } = await supabaseServer.from("tournaments").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

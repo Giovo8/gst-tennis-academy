@@ -5,26 +5,45 @@ export async function GET() {
   try {
     const supabase = supabaseServer;
 
-    // Get all tournaments with participants
+    // Get all tournaments
     const { data: tournaments, error: tournamentsError } = await supabase
       .from('tournaments')
-      .select(`
-        *,
-        participants:tournament_participants(
-          id,
-          user_id,
-          status,
-          profiles(id, full_name, avatar_url)
-        )
-      `);
+      .select('*');
 
     if (tournamentsError) {
       console.error('Error fetching tournaments:', tournamentsError);
       return NextResponse.json(
-        { error: 'Errore nel recupero dei tornei' },
+        { error: 'Errore nel recupero dei tornei', details: tournamentsError.message },
         { status: 500 }
       );
     }
+
+    // Get all participants
+    const { data: allParticipants, error: participantsError } = await supabase
+      .from('tournament_participants')
+      .select('*');
+
+    if (participantsError) {
+      console.error('Error fetching participants:', participantsError);
+      return NextResponse.json(
+        { error: 'Errore nel recupero dei partecipanti', details: participantsError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get all profiles for participants
+    const userIds = [...new Set(allParticipants?.map(p => p.user_id) || [])];
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
+    // Create a map of profiles for quick lookup
+    const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
     // Get all matches
     const { data: matches, error: matchesError } = await supabase
@@ -34,7 +53,7 @@ export async function GET() {
     if (matchesError) {
       console.error('Error fetching matches:', matchesError);
       return NextResponse.json(
-        { error: 'Errore nel recupero dei match' },
+        { error: 'Errore nel recupero dei match', details: matchesError.message },
         { status: 500 }
       );
     }
@@ -55,17 +74,13 @@ export async function GET() {
       win_rate: number;
     }>();
 
-    // Get all participants with their user info
-    const { data: allParticipants } = await supabase
-      .from('tournament_participants')
-      .select('*, profiles(id, full_name, avatar_url)');
-
-    // Initialize player stats
+    // Initialize player stats from participants
     allParticipants?.forEach(participant => {
       if (!playerStats.has(participant.user_id)) {
+        const profile = profilesMap.get(participant.user_id);
         playerStats.set(participant.user_id, {
           player_id: participant.user_id,
-          player_name: participant.profiles?.full_name || 'Unknown',
+          player_name: profile?.full_name || 'Sconosciuto',
           tournaments_played: 0,
           tournaments_won: 0,
           matches_played: 0,
@@ -81,26 +96,33 @@ export async function GET() {
     });
 
     // Count tournaments per player
-    tournaments?.forEach(tournament => {
-      tournament.participants?.forEach((p: any) => {
-        const stats = playerStats.get(p.user_id);
-        if (stats) {
-          stats.tournaments_played++;
-        }
-      });
+    const tournamentsPerPlayer = new Map<string, Set<string>>();
+    allParticipants?.forEach(participant => {
+      if (!tournamentsPerPlayer.has(participant.user_id)) {
+        tournamentsPerPlayer.set(participant.user_id, new Set());
+      }
+      tournamentsPerPlayer.get(participant.user_id)?.add(participant.tournament_id);
+    });
+
+    tournamentsPerPlayer.forEach((tournamentIds, userId) => {
+      const stats = playerStats.get(userId);
+      if (stats) {
+        stats.tournaments_played = tournamentIds.size;
+      }
     });
 
     // Process matches for statistics
     matches?.forEach(match => {
-      if (match.status !== 'completed' || !match.winner_id) return;
+      // Check if match is completed (can be 'completed' or 'completata')
+      if ((match.status !== 'completed' && match.status !== 'completata' && match.match_status !== 'completata') || !match.winner_id) return;
 
-      const player1Stats = allParticipants?.find(p => p.id === match.player1_id);
-      const player2Stats = allParticipants?.find(p => p.id === match.player2_id);
+      const player1Participant = allParticipants?.find(p => p.id === match.player1_id);
+      const player2Participant = allParticipants?.find(p => p.id === match.player2_id);
 
-      if (!player1Stats || !player2Stats) return;
+      if (!player1Participant || !player2Participant) return;
 
-      const p1 = playerStats.get(player1Stats.user_id);
-      const p2 = playerStats.get(player2Stats.user_id);
+      const p1 = playerStats.get(player1Participant.user_id);
+      const p2 = playerStats.get(player2Participant.user_id);
 
       if (!p1 || !p2) return;
 
@@ -112,27 +134,32 @@ export async function GET() {
       if (match.winner_id === match.player1_id) {
         p1.matches_won++;
         p2.matches_lost++;
-      } else {
+      } else if (match.winner_id === match.player2_id) {
         p2.matches_won++;
         p1.matches_lost++;
       }
 
       // Count sets and games
       const sets = match.sets || [];
-      sets.forEach((set: any) => {
-        p1.games_won += set.player1_score || 0;
-        p1.games_lost += set.player2_score || 0;
-        p2.games_won += set.player2_score || 0;
-        p2.games_lost += set.player1_score || 0;
+      if (Array.isArray(sets)) {
+        sets.forEach((set: any) => {
+          const p1Score = set.player1_score || 0;
+          const p2Score = set.player2_score || 0;
+          
+          p1.games_won += p1Score;
+          p1.games_lost += p2Score;
+          p2.games_won += p2Score;
+          p2.games_lost += p1Score;
 
-        if (set.player1_score > set.player2_score) {
-          p1.sets_won++;
-          p2.sets_lost++;
-        } else {
-          p2.sets_won++;
-          p1.sets_lost++;
-        }
-      });
+          if (p1Score > p2Score) {
+            p1.sets_won++;
+            p2.sets_lost++;
+          } else if (p2Score > p1Score) {
+            p2.sets_won++;
+            p1.sets_lost++;
+          }
+        });
+      }
     });
 
     // Calculate win rates and tournament wins
@@ -144,9 +171,15 @@ export async function GET() {
       // Count tournament wins
       tournaments?.forEach(tournament => {
         if (tournament.status === 'Completato' || tournament.status === 'Concluso') {
-          // Find winner from completed matches
-          const tournamentMatches = matches?.filter(m => m.tournament_id === tournament.id && m.status === 'completed');
-          const finalMatch = tournamentMatches?.find(m => m.round?.includes('final') || m.round === 'finale');
+          // Find winner from completed matches - look for final matches
+          const tournamentMatches = matches?.filter(m => m.tournament_id === tournament.id && 
+            (m.status === 'completed' || m.status === 'completata' || m.match_status === 'completata'));
+          
+          // Try to find final match
+          const finalMatch = tournamentMatches?.find(m => {
+            const roundName = (m.round_name || m.round || '').toLowerCase();
+            return roundName.includes('final') || roundName.includes('finale');
+          });
           
           if (finalMatch && finalMatch.winner_id) {
             const winnerParticipant = allParticipants?.find(p => p.id === finalMatch.winner_id);
@@ -175,7 +208,10 @@ export async function GET() {
     // Tournament statistics
     const tournamentStats = tournaments?.map(tournament => {
       const tournamentMatches = matches?.filter(m => m.tournament_id === tournament.id) || [];
-      const completedMatches = tournamentMatches.filter(m => m.status === 'completed');
+      const completedMatches = tournamentMatches.filter(m => 
+        m.status === 'completed' || m.status === 'completata' || m.match_status === 'completata'
+      );
+      const tournamentParticipants = allParticipants?.filter(p => p.tournament_id === tournament.id) || [];
       
       return {
         id: tournament.id,
@@ -183,19 +219,24 @@ export async function GET() {
         tournament_type: tournament.tournament_type,
         status: tournament.status,
         start_date: tournament.start_date,
-        participants_count: tournament.participants?.length || 0,
+        participants_count: tournamentParticipants.length,
         matches_total: tournamentMatches.length,
         matches_completed: completedMatches.length,
         completion_rate: tournamentMatches.length > 0 
           ? (completedMatches.length / tournamentMatches.length) * 100 
           : 0
       };
-    });
+    }) || [];
 
     // Overall statistics
     const totalMatches = matches?.length || 0;
-    const completedMatches = matches?.filter(m => m.status === 'completed').length || 0;
-    const totalSets = matches?.reduce((sum, m) => sum + (m.sets?.length || 0), 0) || 0;
+    const completedMatches = matches?.filter(m => 
+      m.status === 'completed' || m.status === 'completata' || m.match_status === 'completata'
+    ).length || 0;
+    const totalSets = matches?.reduce((sum, m) => {
+      const sets = m.sets || [];
+      return sum + (Array.isArray(sets) ? sets.length : 0);
+    }, 0) || 0;
     
     const report = {
       overview: {
@@ -224,10 +265,10 @@ export async function GET() {
 
     return NextResponse.json({ report });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating report:', error);
     return NextResponse.json(
-      { error: 'Errore interno del server' },
+      { error: 'Errore interno del server', details: error?.message },
       { status: 500 }
     );
   }

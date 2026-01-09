@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trophy, TrendingUp, Calendar, RefreshCw, Users, List, Grid3x3 } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { getAvatarUrl } from '@/lib/utils';
 
@@ -54,6 +54,8 @@ interface ChampionshipStandingsViewProps {
   bestOf: number;
   onMatchUpdate?: () => void;
   isAdmin?: boolean;
+  defaultView?: TabType;
+  hideInternalTabs?: boolean;
 }
 
 export default function ChampionshipStandingsView({
@@ -61,12 +63,15 @@ export default function ChampionshipStandingsView({
   participants,
   bestOf = 3,
   onMatchUpdate,
-  isAdmin = false
+  isAdmin = false,
+  defaultView = 'participants',
+  hideInternalTabs = false
 }: ChampionshipStandingsViewProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('participants');
+  const [activeTab, setActiveTab] = useState<TabType>(defaultView);
   const [matches, setMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -305,50 +310,46 @@ export default function ChampionshipStandingsView({
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-gray-100">
-        <button
-          onClick={() => setActiveTab('participants')}
-          className={`px-4 py-3 text-sm font-semibold transition-all relative ${
-            activeTab === 'participants'
-              ? 'text-secondary'
-              : 'text-secondary/70 hover:text-secondary'
-          }`}
-        >
-          <Users className="h-4 w-4 inline-block mr-2" />
-          Partecipanti
-          {activeTab === 'participants' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('calendar')}
-          className={`px-4 py-3 text-sm font-semibold transition-all relative ${
-            activeTab === 'calendar'
-              ? 'text-secondary'
-              : 'text-secondary/70 hover:text-secondary'
-          }`}
-        >
-          <Calendar className="h-4 w-4 inline-block mr-2" />
-          Calendario
-          {activeTab === 'calendar' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('standings')}
-          className={`px-4 py-3 text-sm font-semibold transition-all relative ${
-            activeTab === 'standings'
-              ? 'text-secondary'
-              : 'text-secondary/70 hover:text-secondary'
-          }`}
-        >
-          <Trophy className="h-4 w-4 inline-block mr-2" />
-          Classifica
-          {activeTab === 'standings' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
-          )}
-        </button>
-      </div>
+      {!hideInternalTabs && (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-secondary">Dettagli Campionato</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('participants')}
+              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                activeTab === 'participants'
+                  ? 'border border-secondary bg-secondary text-white'
+                  : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              <span className="text-sm font-medium">Partecipanti</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                activeTab === 'calendar'
+                  ? 'border border-secondary bg-secondary text-white'
+                  : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm font-medium">Calendario</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('standings')}
+              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                activeTab === 'standings'
+                  ? 'border border-secondary bg-secondary text-white'
+                  : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+              }`}
+            >
+              <Trophy className="h-4 w-4" />
+              <span className="text-sm font-medium">Classifica</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tab Content */}
       {activeTab === 'participants' && (
@@ -362,55 +363,66 @@ export default function ChampionshipStandingsView({
           ) : (
             <>
               {/* Header Row */}
-              <div className="bg-secondary/[0.03] rounded-md px-5 py-3 border border-gray-200">
+              <div className="bg-white rounded-lg px-5 py-3 mb-3">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 text-center">
+                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
                     <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
                   </div>
                   <div className="flex-1">
                     <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
                   </div>
-                  <div className="w-48 hidden sm:block">
+                  <div className="w-48 hidden md:block">
                     <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
                   </div>
                 </div>
               </div>
 
               {/* Data Rows */}
-              {participants.map((participant: any, index: number) => (
-                <div
-                  key={participant.id}
-                  className="bg-white rounded-md p-5 hover:shadow-md transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Position */}
-                    <div className="w-12 text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary/10 text-secondary font-bold text-sm">
-                        {index + 1}
-                      </span>
-                    </div>
+              {participants.map((participant: any, index: number) => {
+                const fullName = participant.profiles?.full_name || 'Sconosciuto';
+                const avatarUrl = participant.profiles?.avatar_url;
 
-                    {/* Player Info */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                return (
+                  <div
+                    key={participant.id}
+                    className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Avatar */}
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={fullName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{fullName?.charAt(0)?.toUpperCase() || 'U'}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Player Info */}
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-secondary truncate">
-                          {participant.profiles?.full_name || 'Sconosciuto'}
+                          {fullName}
                         </div>
-                        <div className="text-sm text-secondary/60 truncate sm:hidden">
+                        <div className="text-xs text-secondary/60 truncate md:hidden">
+                          {participant.profiles?.email || participant.user_id}
+                        </div>
+                      </div>
+
+                      {/* Email (hidden on mobile) */}
+                      <div className="w-48 hidden md:block">
+                        <div className="text-sm text-secondary/70 truncate">
                           {participant.profiles?.email || participant.user_id}
                         </div>
                       </div>
                     </div>
-
-                    {/* Email (hidden on mobile) */}
-                    <div className="w-48 hidden sm:block">
-                      <div className="text-sm text-secondary/70 truncate">
-                        {participant.profiles?.email || participant.user_id}
-                      </div>
-                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </>
           )}
         </div>
@@ -418,16 +430,17 @@ export default function ChampionshipStandingsView({
 
       {activeTab === 'calendar' && (
         <div className="space-y-4">
-          {/* Round selector */}
+          {/* Round selector and view toggle */}
           {rounds.length > 0 && (
-            <div className="bg-white rounded-md p-5">
-              <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+            <div className="flex items-center justify-between gap-4">
+              {/* Round selector on left */}
+              <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedRound(null)}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
                     selectedRound === null
-                      ? 'bg-secondary text-white'
-                      : 'bg-white border border-gray-200 text-secondary/70 hover:bg-secondary/5'
+                      ? 'border border-secondary bg-secondary text-white'
+                      : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
                   }`}
                 >
                   Tutte
@@ -436,15 +449,43 @@ export default function ChampionshipStandingsView({
                   <button
                     key={round}
                     onClick={() => setSelectedRound(round)}
-                    className={`rounded-md px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+                    className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
                       selectedRound === round
-                        ? 'bg-secondary text-white'
-                        : 'bg-white border border-gray-200 text-secondary/70 hover:bg-secondary/5'
+                        ? 'border border-secondary bg-secondary text-white'
+                        : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
                     }`}
                   >
                     Giornata {round}
                   </button>
                 ))}
+              </div>
+
+              {/* View toggle on right */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                    viewMode === 'list'
+                      ? 'border border-secondary bg-secondary text-white'
+                      : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                  }`}
+                  title="Vista Lista"
+                >
+                  <List className="h-4 w-4" />
+                  <span className="text-sm font-medium">Lista</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                    viewMode === 'grid'
+                      ? 'border border-secondary bg-secondary text-white'
+                      : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                  }`}
+                  title="Vista Griglia"
+                >
+                  <Grid3x3 className="h-4 w-4" />
+                  <span className="text-sm font-medium">Griglia</span>
+                </button>
               </div>
             </div>
           )}
@@ -460,7 +501,7 @@ export default function ChampionshipStandingsView({
               <p className="text-secondary/60">Nessuna partita trovata per questa giornata</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
               {filteredMatches.map(match => (
                 <BracketMatchCard
                   key={match.id}
@@ -488,11 +529,12 @@ export default function ChampionshipStandingsView({
               <p className="text-secondary/60">Completa alcune partite per vedere la classifica</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <>
               {/* Header Row */}
-              <div className="bg-secondary/[0.03] rounded-md px-5 py-3 border border-gray-200">
-                <div className="grid grid-cols-[50px_1fr_80px_80px_100px_100px] gap-4 items-center">
+              <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                <div className="grid grid-cols-[50px_40px_1fr_80px_80px_100px_100px] gap-4 items-center">
                   <div className="text-xs font-bold text-secondary/60 uppercase text-center">Pos</div>
+                  <div className="text-xs font-bold text-transparent uppercase text-center">#</div>
                   <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
                   <div className="text-xs font-bold text-secondary/60 uppercase text-center">PG</div>
                   <div className="text-xs font-bold text-secondary/60 uppercase text-center">Punti</div>
@@ -501,46 +543,65 @@ export default function ChampionshipStandingsView({
                 </div>
               </div>
 
-
-              {standings.map((standing) => (
-                <div
-                  key={standing.participant.id}
-                  className="bg-white rounded-md p-5 hover:shadow-md transition-all"
-                >
-                  <div className="grid grid-cols-[50px_1fr_80px_80px_100px_100px] gap-4 items-center">
-                    <div className="flex items-center justify-center">
-                      <span className={`font-bold text-sm ${
-                        standing.position === 1 ? 'text-yellow-500' :
-                        standing.position === 2 ? 'text-gray-400' :
-                        standing.position === 3 ? 'text-amber-600' :
-                        'text-secondary'
-                      }`}>
-                        {standing.position}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="font-bold text-secondary">
-                        {standing.participant.profiles?.full_name || 'Sconosciuto'}
+              {/* Data Rows */}
+              {standings.map((standing) => {
+                const avatarUrl = standing.participant.profiles?.avatar_url;
+                const fullName = standing.participant.profiles?.full_name || 'Sconosciuto';
+                
+                return (
+                  <div
+                    key={standing.participant.id}
+                    className={`bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 ${
+                      standing.position === 1 ? 'border-yellow-500' :
+                      standing.position === 2 ? 'border-gray-400' :
+                      standing.position === 3 ? 'border-amber-600' :
+                      'border-secondary'
+                    }`}
+                  >
+                    <div className="grid grid-cols-[50px_40px_1fr_80px_80px_100px_100px] gap-4 items-center">
+                      <div className="flex items-center justify-center">
+                        <span className="font-bold text-base text-secondary">
+                          {standing.position}
+                        </span>
                       </div>
-                    </div>
 
-                    <div className="text-center text-secondary font-semibold">{standing.matchesPlayed}</div>
-                    <div className="text-center text-lg font-semibold text-secondary">{standing.points}</div>
-                    <div className="text-center text-secondary font-semibold">
+                      <div className="flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={fullName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{fullName.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="font-bold text-secondary">
+                          {fullName}
+                        </div>
+                      </div>
+
+                    <div className="text-center text-sm font-semibold text-secondary">{standing.matchesPlayed}</div>
+                    <div className="text-center text-sm font-semibold text-secondary">{standing.points}</div>
+                    <div className="text-center text-sm font-semibold">
                       <span className={standing.setsDiff > 0 ? 'text-emerald-600' : standing.setsDiff < 0 ? 'text-red-600' : 'text-secondary/60'}>
                         {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
                       </span>
                     </div>
-                    <div className="text-center text-secondary font-semibold">
+                    <div className="text-center text-sm font-semibold">
                       <span className={standing.gamesDiff > 0 ? 'text-emerald-600' : standing.gamesDiff < 0 ? 'text-red-600' : 'text-secondary/60'}>
                         {standing.gamesDiff > 0 ? '+' : ''}{standing.gamesDiff}
                       </span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                );
+              })}
+            </>
           )}
         </div>
       )}

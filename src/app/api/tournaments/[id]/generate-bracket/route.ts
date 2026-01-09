@@ -104,20 +104,25 @@ export async function POST(
       );
     }
     
-    // Verifica che non esistano già match
+    // Elimina match esistenti se presenti (permetti rigenerazione)
     const { count: existingMatches } = await supabaseServer
       .from("tournament_matches")
       .select("*", { count: "exact", head: true })
       .eq("tournament_id", tournamentId);
     
     if (existingMatches && existingMatches > 0) {
-      return NextResponse.json(
-        { 
-          error: "Il bracket è già stato generato. Elimina i match esistenti prima di rigenerarlo.",
-          existing_matches: existingMatches
-        },
-        { status: 400 }
-      );
+      // Elimina i match esistenti prima di rigenerare
+      const { error: deleteError } = await supabaseServer
+        .from("tournament_matches")
+        .delete()
+        .eq("tournament_id", tournamentId);
+      
+      if (deleteError) {
+        return NextResponse.json(
+          { error: "Errore nell'eliminazione dei match esistenti: " + deleteError.message },
+          { status: 500 }
+        );
+      }
     }
     
     // Genera il bracket
@@ -136,6 +141,9 @@ export async function POST(
         { status: 500 }
       );
     }
+    
+    // Propaga automaticamente i vincitori dei BYE ai turni successivi
+    await propagateByes(tournamentId, insertedMatches || []);
     
     return NextResponse.json({
       message: "Bracket generato con successo!",
@@ -267,4 +275,96 @@ function generateEliminationBracket(participants: any[], tournamentId: string) {
   }
   
   return matches;
+}
+
+/**
+ * Propaga automaticamente i vincitori dei BYE ai turni successivi
+ */
+async function propagateByes(tournamentId: string, matches: any[]) {
+  let hasChanges = true;
+  let iteration = 0;
+  const maxIterations = 10; // Previeni loop infiniti
+  
+  while (hasChanges && iteration < maxIterations) {
+    hasChanges = false;
+    iteration++;
+    
+    // Ricarica tutti i match aggiornati
+    const { data: currentMatches } = await supabaseServer
+      .from("tournament_matches")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("round_number", { ascending: true })
+      .order("match_number", { ascending: true });
+    
+    if (!currentMatches) continue;
+    
+    // Organizza per round
+    const matchesByRound: Record<number, any[]> = {};
+    currentMatches.forEach(match => {
+      if (!matchesByRound[match.round_number]) {
+        matchesByRound[match.round_number] = [];
+      }
+      matchesByRound[match.round_number].push(match);
+    });
+    
+    // Processa ogni round
+    for (const roundNum of Object.keys(matchesByRound).map(Number).sort((a, b) => a - b)) {
+      const roundMatches = matchesByRound[roundNum];
+      
+      for (let matchIndex = 0; matchIndex < roundMatches.length; matchIndex++) {
+        const match = roundMatches[matchIndex];
+        
+        // Se il match ha un vincitore e il turno successivo esiste
+        if (match.winner_id && matchesByRound[roundNum + 1]) {
+          const nextRoundMatches = matchesByRound[roundNum + 1];
+          const nextMatchIndex = Math.floor(matchIndex / 2);
+          const nextMatch = nextRoundMatches[nextMatchIndex];
+          
+          if (nextMatch) {
+            // Determina se il vincitore va come player1 o player2
+            const isPlayer1 = matchIndex % 2 === 0;
+            const playerField = isPlayer1 ? 'player1_id' : 'player2_id';
+            
+            // Se il campo è vuoto, aggiorna
+            if (!nextMatch[playerField]) {
+              await supabaseServer
+                .from("tournament_matches")
+                .update({ [playerField]: match.winner_id })
+                .eq("id", nextMatch.id);
+              
+              hasChanges = true;
+            }
+          }
+        }
+      }
+    }
+    
+    // Secondo passaggio: controlla se ci sono match con un solo giocatore (BYE automatico)
+    for (const roundNum of Object.keys(matchesByRound).map(Number).sort((a, b) => a - b)) {
+      const roundMatches = matchesByRound[roundNum];
+      
+      for (const match of roundMatches) {
+        // Se il match ha esattamente un giocatore e non ha ancora un vincitore
+        if (!match.winner_id && 
+            ((match.player1_id && !match.player2_id) || (!match.player1_id && match.player2_id))) {
+          
+          const winnerId = match.player1_id || match.player2_id;
+          const winnerField = match.player1_id ? 'player1_score' : 'player2_score';
+          
+          await supabaseServer
+            .from("tournament_matches")
+            .update({ 
+              winner_id: winnerId,
+              match_status: 'completed',
+              status: 'completata',
+              [winnerField]: 1
+            })
+            .eq("id", match.id);
+          
+          hasChanges = true;
+        }
+      }
+    }
+  }
 }

@@ -138,10 +138,25 @@ export async function POST(
         );
       }
       
+      // Genera automaticamente il bracket
+      try {
+        const generateRes = await fetch(`${req.url.split('/start')[0]}/generate-bracket`, {
+          method: 'POST',
+          headers: req.headers
+        });
+        
+        if (!generateRes.ok) {
+          const errorData = await generateRes.json();
+          console.error('Error auto-generating bracket:', errorData);
+        }
+      } catch (genError) {
+        console.error('Error calling generate-bracket:', genError);
+      }
+      
       return NextResponse.json({
-        message: "Torneo avviato! Ora puoi generare il bracket.",
+        message: "Torneo avviato! Bracket generato automaticamente.",
         tournament_type: 'eliminazione_diretta',
-        next_step: 'generate_bracket'
+        bracket_auto_generated: true
       });
     }
     
@@ -275,10 +290,11 @@ export async function POST(
     }
     
     if (tournament.tournament_type === 'campionato') {
-      // Aggiorna fase (per campionato non c'è una fase specifica, rimane 'iscrizioni' ma status diventa 'In Corso')
+      // Aggiorna fase a campionato e status a In Corso
       const { error: updateError } = await supabaseServer
         .from("tournaments")
         .update({ 
+          current_phase: 'campionato',
           status: 'In Corso'
         })
         .eq("id", tournamentId);

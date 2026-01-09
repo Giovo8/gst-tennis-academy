@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
-import { Newspaper, Plus, Pencil, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Newspaper, Plus, Pencil, Loader2, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -26,6 +26,7 @@ export default function CreateNewsPage() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [summary, setSummary] = useState("");
@@ -132,6 +133,32 @@ export default function CreateNewsPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!editId) return;
+    
+    const confirmed = confirm("Sei sicuro di voler eliminare questa news? Questa azione non può essere annullata.");
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase
+        .from("news")
+        .delete()
+        .eq("id", editId);
+
+      if (error) throw error;
+
+      setSuccess("News eliminata con successo!");
+      setTimeout(() => router.push("/dashboard/admin/news"), 1000);
+    } catch (err: any) {
+      setError(err.message || "Errore durante l'eliminazione");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (loading) {
     return (
       <AuthGuard allowedRoles={["admin", "gestore"]}>
@@ -151,16 +178,13 @@ export default function CreateNewsPage() {
         {/* Header */}
         <div className="flex flex-col gap-2">
           <div>
-            <Link
-              href="/dashboard/admin/news"
-              className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-            >
-              Gestione News
-            </Link>
+            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+              GESTIONE NEWS › {editId ? "MODIFICA" : "CREA"} NEWS
+            </div>
             <h1 className="text-3xl font-bold text-secondary">
               {editId ? "Modifica News" : "Crea nuova news"}
             </h1>
-            <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            <p className="text-gray-600 text-sm mt-1 max-w-2xl">
               {editId ? "Modifica i dettagli della news" : "Compila i campi per creare una nuova news"}
             </p>
           </div>
@@ -169,7 +193,7 @@ export default function CreateNewsPage() {
         {/* Messages */}
         {error && (
           <div className="mt-2">
-            <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+            <div className="bg-red-50 rounded-xl border border-red-200 p-4 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-red-900">Errore</p>
@@ -181,7 +205,7 @@ export default function CreateNewsPage() {
         
         {success && (
           <div className="mt-2">
-            <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+            <div className="bg-green-50 rounded-xl border border-green-200 p-4 flex items-start gap-3">
               <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-green-900">Successo</p>
@@ -193,33 +217,38 @@ export default function CreateNewsPage() {
 
         {/* Main Content */}
         <div className="py-4">
-          <div className="space-y-6">
-            {/* Form Card */}
-            <div className="bg-white rounded-xl p-6 space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Titolo e Categoria */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-semibold text-secondary mb-2">
-                      Titolo *
-                    </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni News</h2>
+              
+              <div className="space-y-6">
+                {/* Titolo */}
+                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Titolo <span className="text-red-600">*</span>
+                  </label>
+                  <div className="flex-1">
                     <input
                       type="text"
                       placeholder="Es. Torneo di Primavera 2026"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-secondary mb-2">
-                      Categoria *
-                    </label>
+                </div>
+
+                {/* Categoria */}
+                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Categoria <span className="text-red-600">*</span>
+                  </label>
+                  <div className="flex-1">
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                       required
                     >
                       <option value="">Seleziona categoria</option>
@@ -231,73 +260,100 @@ export default function CreateNewsPage() {
                 </div>
 
                 {/* URL Immagine */}
-                <div>
-                  <label className="block text-sm font-semibold text-secondary mb-2">URL Immagine</label>
-                  <input
-                    type="url"
-                    placeholder="https://esempio.com/immagine.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
-                  {imageUrl && (
-                    <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 bg-secondary/5 mt-3">
-                      <div className="aspect-video w-full">
-                        <img
-                          src={imageUrl}
-                          alt="Anteprima"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = '<div class="flex items-center justify-center h-full text-sm text-red-600"><svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>URL immagine non valido</div>';
-                            }
-                          }}
-                        />
+                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
+                  <div className="flex-1">
+                    <input
+                      type="url"
+                      placeholder="https://esempio.com/immagine.jpg"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    />
+                    {imageUrl && (
+                      <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 bg-secondary/5 mt-3">
+                        <div className="aspect-video w-full">
+                          <img
+                            src={imageUrl}
+                            alt="Anteprima"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = '<div class="flex items-center justify-center h-full text-sm text-red-600">URL immagine non valido</div>';
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Contenuto */}
-                <div>
-                  <label className="block text-sm font-semibold text-secondary mb-2">
-                    Contenuto *
+                <div className="flex items-start gap-8">
+                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                    Contenuto <span className="text-red-600">*</span>
                   </label>
-                  <textarea
-                    placeholder="Scrivi il contenuto della news..."
-                    value={summary}
-                    onChange={(e) => setSummary(e.target.value)}
-                    rows={8}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
-                    required
-                  />
-                  <p className="text-xs text-secondary/50 mt-1">{summary.length} caratteri</p>
+                  <div className="flex-1">
+                    <textarea
+                      placeholder="Scrivi il contenuto della news..."
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      rows={8}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                      required
+                    />
+                    <p className="text-xs text-secondary/50 mt-1">{summary.length} caratteri</p>
+                  </div>
                 </div>
-              </form>
+              </div>
             </div>
 
-            {/* Bottone Conferma */}
-            <button
-              onClick={handleSubmit}
-              disabled={!title || !category || !summary || saving}
-              className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Salvataggio...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5" />
-                  <span>{editId ? "Aggiorna News" : "Crea News"}</span>
-                </>
+            {/* Bottoni Azione */}
+            <div className="flex items-center justify-between gap-4">
+              {editId && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting || saving}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Eliminazione...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-5 w-5" />
+                      <span>Elimina</span>
+                    </>
+                  )}
+                </button>
               )}
-            </button>
-          </div>
+              
+              <button
+                type="submit"
+                disabled={!title || !category || !summary || saving || deleting}
+                className="ml-auto px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Salvataggio...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-5 w-5" />
+                    <span>{editId ? "Aggiorna News" : "Crea News"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Bottom Spacer */}

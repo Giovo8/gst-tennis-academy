@@ -21,6 +21,8 @@ import {
   Briefcase,
   UsersIcon,
   Swords,
+  FileText,
+  Activity,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -31,6 +33,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [userAvatar, setUserAvatar] = useState<string>("");
   const [userRole, setUserRole] = useState<"admin" | "gestore">("admin");
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +50,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, role")
+        .select("full_name, role, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -57,6 +60,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       }
 
       setUserName(profile.full_name || "Admin");
+      setUserAvatar(profile.avatar_url || "");
       setUserRole(profile.role as "admin" | "gestore");
       setLoading(false);
     }
@@ -120,6 +124,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: "/dashboard/admin/staff",
       icon: <UsersIcon className="h-5 w-5" />,
     },
+    {
+      label: "Candidature",
+      href: "/dashboard/admin/job-applications",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      label: "Log Piattaforma",
+      href: "/dashboard/admin/platform-logs",
+      icon: <Activity className="h-5 w-5" />,
+    },
   ];
 
   // Sezione primaria in alto nella sidebar (es. voci principali)
@@ -127,10 +141,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 font-medium">Caricamento dashboard...</p>
+          <div className="w-14 h-14 border-4 border-secondary border-t-transparent rounded-full animate-spin" />
+          <p className="font-medium" style={{ color: 'var(--foreground-muted)' }}>Caricamento dashboard...</p>
         </div>
       </div>
     );
@@ -143,6 +157,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       role={userRole}
       userName={userName}
       userEmail={userEmail}
+      userAvatar={userAvatar}
     >
       {children}
     </DashboardShell>

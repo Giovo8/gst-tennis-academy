@@ -184,12 +184,35 @@ export default function NewBookingPage() {
       .gte("start_time", `${dateStr}T00:00:00`)
       .lte("start_time", `${dateStr}T23:59:59`);
 
-    // Build occupied hours set
+    // Get court blocks for this court and date
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: courtBlocks } = await supabase
+      .from("court_blocks")
+      .select("start_time, end_time")
+      .eq("court_id", selectedCourt)
+      .gte("start_time", startOfDay.toISOString())
+      .lte("start_time", endOfDay.toISOString());
+
+    // Build occupied hours set (bookings + court blocks)
     const occupiedHours = new Set<number>();
     
+    // Mark hours occupied by bookings
     bookings?.forEach(b => {
       const start = new Date(b.start_time).getHours();
       const end = new Date(b.end_time).getHours();
+      for (let h = start; h < end; h++) {
+        occupiedHours.add(h);
+      }
+    });
+
+    // Mark hours occupied by court blocks
+    courtBlocks?.forEach(block => {
+      const start = new Date(block.start_time).getHours();
+      const end = new Date(block.end_time).getHours();
       for (let h = start; h < end; h++) {
         occupiedHours.add(h);
       }

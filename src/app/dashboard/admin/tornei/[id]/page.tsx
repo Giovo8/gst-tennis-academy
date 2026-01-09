@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Trash2, PlayCircle, Trophy } from "lucide-react";
+import { Loader2, Trash2, PlayCircle, Trophy, Target, Users as UsersIcon, RotateCw } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import ManualEnrollment from "@/components/tournaments/ManualEnrollment";
@@ -15,6 +15,8 @@ function AdminTournamentDetailInner() {
   const [starting, setStarting] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [regeneratingBracket, setRegeneratingBracket] = useState(false);
+  const [regeneratingCalendar, setRegeneratingCalendar] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -71,11 +73,9 @@ function AdminTournamentDetailInner() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-secondary mx-auto" />
-          <p className="mt-4 text-sm text-secondary/70">Caricamento torneo...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+        <p className="mt-4 text-secondary/60">Caricamento...</p>
       </div>
     );
   }
@@ -221,12 +221,55 @@ function AdminTournamentDetailInner() {
     }
   };
 
+  const handleCompleteTournament = async () => {
+    if (!id || typeof id !== "string") return;
+
+    if (!confirm('Sei sicuro di voler concludere il torneo?\n\nQuesta azione segnerà il torneo come completato.')) {
+      return;
+    }
+
+    try {
+      setCompleting(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (!token) {
+        alert('Sessione non valida');
+        return;
+      }
+
+      const res = await fetch(`/api/tournaments/${id}/complete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message || 'Torneo concluso con successo!');
+        setReloadKey((prev) => prev + 1);
+      } else {
+        alert(data.error || 'Errore nella conclusione del torneo');
+      }
+    } catch (error) {
+      console.error('Error completing tournament:', error);
+      alert('Errore nella conclusione del torneo');
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const handleRegenerateBracket = async () => {
     if (!id || typeof id !== "string") return;
 
     if (
       !confirm(
-        "⚠️ ATTENZIONE: Sei sicuro di voler eliminare tutti i match del bracket?\n\nQuesta azione eliminerà tutti i risultati e dovrai rigenerare il bracket."
+        "Sei sicuro di voler rigenerare il bracket? Questa operazione eliminerà tutti i match e i risultati esistenti."
       )
     ) {
       return;
@@ -245,8 +288,9 @@ function AdminTournamentDetailInner() {
         return;
       }
 
-      const res = await fetch(`/api/tournaments/${id}/delete-matches`, {
-        method: "DELETE",
+      // Chiama direttamente generate-bracket che elimina e rigenera automaticamente
+      const res = await fetch(`/api/tournaments/${id}/generate-bracket`, {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -255,38 +299,151 @@ function AdminTournamentDetailInner() {
       const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        alert(data?.message || "Match eliminati con successo!");
+        alert(data?.message || "Bracket rigenerato con successo!");
         setReloadKey((prev) => prev + 1);
       } else {
-        alert(data?.error || "Errore nell'eliminazione dei match");
+        alert(data?.error || "Errore nella rigenerazione del bracket");
       }
     } catch (error) {
-      console.error("Error deleting matches", error);
-      alert("Errore nell'eliminazione dei match");
+      console.error("Error regenerating bracket", error);
+      alert("Errore nella rigenerazione del bracket");
     } finally {
       setRegeneratingBracket(false);
     }
   };
 
+  const handleRegenerateCalendar = async () => {
+    if (!id || typeof id !== "string") return;
+
+    if (
+      !confirm(
+        "Sei sicuro di voler rigenerare il calendario? Questa operazione eliminerà tutti i match e i risultati esistenti."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setRegeneratingCalendar(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (!token) {
+        alert("Sessione non valida");
+        return;
+      }
+
+      // Prima elimina i match esistenti
+      const deleteRes = await fetch(`/api/tournaments/${id}/delete-matches`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!deleteRes.ok) {
+        const deleteData = await deleteRes.json().catch(() => null);
+        alert(deleteData?.error || "Errore nell'eliminazione dei match");
+        return;
+      }
+
+      // Poi genera il nuovo calendario
+      const res = await fetch(`/api/tournaments/${id}/generate-championship`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok) {
+        alert(data?.message || "Calendario rigenerato con successo!");
+        setReloadKey((prev) => prev + 1);
+      } else {
+        alert(data?.error || "Errore nella rigenerazione del calendario");
+      }
+    } catch (error) {
+      console.error("Error regenerating calendar", error);
+      alert("Errore nella rigenerazione del calendario");
+    } finally {
+      setRegeneratingCalendar(false);
+    }
+  };
+
+  // Determina icona in base al tipo
+  function getTournamentIcon() {
+    const tournamentType = tournament?.tournament_type || tournament?.competition_type;
+    if (tournamentType === 'eliminazione_diretta') {
+      return Trophy;
+    } else if (tournamentType === 'girone_eliminazione') {
+      return Target;
+    } else if (tournamentType === 'campionato') {
+      return UsersIcon;
+    }
+    return Trophy;
+  }
+
+  const TournamentIcon = getTournamentIcon();
+
+  // Determina colore bordo in base allo stato
+  function getStatusBorderColor() {
+    if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") {
+      return "border-gray-500";
+    } else if (tournament?.status === "In Corso" || tournament?.status === "In corso") {
+      return "border-secondary";
+    } else if (tournament?.status === "Aperto") {
+      // Rosso se posti esauriti, verde altrimenti
+      if (meta && meta.participantsCount >= (tournament?.max_participants || 0)) {
+        return "border-red-500";
+      }
+      return "border-emerald-500";
+    } else {
+      return "border-secondary";
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Breadcrumb */}
+      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+        <Link
+          href="/dashboard/admin/tornei"
+          className="hover:text-secondary/80 transition-colors"
+        >
+          Gestione Competizioni
+        </Link>
+        <span className="mx-2">›</span>
+        <span>Dettagli Torneo</span>
+      </div>
+
+      {/* Header con titolo e descrizione */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            href="/dashboard/admin/tornei"
-            className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-          >
-            Gestione competizioni
-          </Link>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Gestione torneo</h1>
+          <h1 className="text-3xl font-bold text-secondary mb-2">
+            Dettagli Competizione
+          </h1>
           <p className="text-secondary/70 font-medium">
-            Visualizza calendario, partecipanti e risultati del torneo selezionato.
+            Visualizza e gestisci i dettagli della competizione
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleDeleteTournament}
+            disabled={deleting}
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Elimina Torneo"
+          >
+            {deleting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Trash2 className="h-5 w-5" />
+            )}
+          </button>
 
-        <div className="flex flex-wrap items-center gap-3 justify-end">
-          {/* Azioni disponibili solo in fase iscrizioni */}
           {meta && meta.currentPhase === "iscrizioni" && (
             <>
               <ManualEnrollment
@@ -294,7 +451,6 @@ function AdminTournamentDetailInner() {
                 currentParticipants={meta.participantsCount}
                 maxParticipants={meta.maxParticipants}
                 onEnrollmentSuccess={() => {
-                  // Forza il ricaricamento del manager per aggiornare iscritti, fase e stato
                   setReloadKey((prev) => prev + 1);
                 }}
               />
@@ -302,183 +458,214 @@ function AdminTournamentDetailInner() {
               <button
                 onClick={handleStartTournament}
                 disabled={starting || meta.participantsCount < 2}
-                className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Avvia torneo"
               >
                 {starting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Avvio...</span>
-                  </>
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <>
-                    <PlayCircle className="h-4 w-4" />
-                    <span>Avvia torneo</span>
-                  </>
+                  <PlayCircle className="h-5 w-5" />
                 )}
               </button>
             </>
           )}
 
-          {/* Bottone Avanza Fase Eliminatoria per tornei girone+eliminazione */}
           {meta && meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "gironi" && (
             <button
               onClick={handleAdvanceToKnockout}
               disabled={advancing}
-              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Avanza Fase Eliminatoria"
             >
               {advancing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Avanzamento...</span>
-                </>
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <>
-                  <Trophy className="h-4 w-4" />
-                  <span>Avanza Fase Eliminatoria</span>
-                </>
+                <Trophy className="h-5 w-5" />
               )}
             </button>
           )}
-          {/* Bottone Rigenera Bracket per tornei in fase eliminazione */}
+
           {meta && (meta.tournamentType === "eliminazione_diretta" || 
                     (meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "eliminazione")) && (
-            <button
-              onClick={handleRegenerateBracket}
-              disabled={regeneratingBracket}
-              className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
-            >
-              {regeneratingBracket ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Eliminazione...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4" />
-                  <span>Rigenera Bracket</span>
-                </>
-              )}
-            </button>
+            <>
+              <button
+                onClick={handleRegenerateBracket}
+                disabled={regeneratingBracket}
+                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Rigenera Bracket"
+              >
+                {regeneratingBracket ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <RotateCw className="h-5 w-5" />
+                )}
+              </button>
+              <button
+                onClick={handleCompleteTournament}
+                disabled={completing}
+                className="p-2.5 text-white bg-green-600 rounded-md hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Concludi Torneo"
+              >
+                {completing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Trophy className="h-5 w-5" />
+                )}
+              </button>
+            </>
           )}
-          <button
-            onClick={handleDeleteTournament}
-            disabled={deleting}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
-          >
-            {deleting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Eliminazione...</span>
-              </>
-            ) : (
-              <>
-                <Trash2 className="h-4 w-4" />
-                <span>Elimina torneo</span>
-              </>
-            )}
-          </button>
+
+          {meta && meta.tournamentType === "campionato" && (meta.currentPhase === "campionato" || meta.currentPhase === "completato") && meta.status !== "Concluso" && (
+            <>
+              <button
+                onClick={handleRegenerateCalendar}
+                disabled={regeneratingCalendar}
+                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Rigenera Calendario"
+              >
+                {regeneratingCalendar ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <RotateCw className="h-5 w-5" />
+                )}
+              </button>
+              <button
+                onClick={handleCompleteTournament}
+                disabled={completing}
+                className="p-2.5 text-white bg-green-600 rounded-md hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Concludi Campionato"
+              >
+                {completing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Trophy className="h-5 w-5" />
+                )}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Tournament Info Header - Similar to public page */}
+      {/* Header con info torneo */}
       {tournament && (
-        <div className="bg-white rounded-md p-6 hover:shadow-md transition-all">
-          {/* Hero Header */}
-          <div className="mb-8">
-            {/* Tournament Type Badge */}
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-secondary/60 mb-3">
-              {isCampionato ? 'Campionato' : 'Torneo'}
-            </p>
-
-            {/* Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-4 leading-tight">
-              {tournament.title}
-            </h1>
-
-            {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-secondary/60 mb-6">
-              {tournament.category && (
-                <span>{tournament.category}</span>
-              )}
-              {tournament.status && (
-                <>
-                  <span>•</span>
-                  <span>{tournament.status}</span>
-                </>
-              )}
-              {tournament.level && (
-                <>
-                  <span>•</span>
-                  <span>{tournament.level}</span>
-                </>
-              )}
+        <div className={`bg-white rounded-xl border-l-4 ${getStatusBorderColor()} p-6`}>
+          <div className="flex items-start gap-6">
+            <TournamentIcon className="h-8 w-8 text-secondary flex-shrink-0" strokeWidth={2.5} />
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-secondary">{tournament.title}</h1>
             </div>
-
-            {/* ID */}
-            <p className="text-sm text-secondary/70 mb-4">
-              {tournament.id}
-            </p>
-
-            {/* Description */}
-            {tournament.description && (
-              <p className="text-base sm:text-lg text-secondary/80 leading-relaxed max-w-3xl">
-                {tournament.description}
-              </p>
-            )}
           </div>
+        </div>
+      )}
 
-          {/* Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Date Card */}
-            {tournament.start_date && (
-              <div className="border-l-4 border-secondary pl-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Data Inizio</p>
-                <p className="text-xl font-bold text-secondary">
-                  {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
-                    day: 'numeric', 
-                    month: 'long'
-                  })}
-                </p>
-                <p className="text-sm text-secondary/70 mt-1">
-                  {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
-                    year: 'numeric'
-                  })} ore {new Date(tournament.start_date).toLocaleTimeString('it-IT', { 
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
+      {/* Dettagli torneo */}
+      {tournament && (
+        <div className="bg-white rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
+          
+          <div className="space-y-6">
+            {/* Descrizione */}
+            {tournament.description && (
+              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.description}</p>
+                </div>
               </div>
             )}
 
-            {/* Participants Card */}
-            <div className="border-l-4 border-secondary pl-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Partecipanti</p>
-              <p className="text-xl font-bold text-secondary">
-                {meta?.participantsCount ?? 0} / {tournament.max_participants}
-              </p>
-              <p className="text-sm text-secondary/70 mt-1">
-                {spotsLeft > 0 ? `${spotsLeft} posti disponibili` : 'Tutto esaurito'}
-              </p>
+            {/* Data Inizio */}
+            {tournament.start_date && (
+              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {new Date(tournament.start_date).toLocaleDateString("it-IT", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tipo */}
+            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {isCampionato ? 'Campionato' : 
+                   (tournament.tournament_type === 'girone_eliminazione' || tournament.competition_type === 'girone_eliminazione') ? 'Girone + Eliminazione' :
+                   'Eliminazione Diretta'}
+                </p>
+              </div>
             </div>
 
-            {/* Format Card */}
-            {tournament.best_of && (
-              <div className="border-l-4 border-secondary pl-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Formato</p>
-                <p className="text-xl font-bold text-secondary">
-                  Best of {tournament.best_of}
+            {/* Stato */}
+            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
+              </div>
+            </div>
+
+            {/* Fase Corrente */}
+            {meta && (
+              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Fase corrente</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold capitalize">{meta.currentPhase}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Partecipanti */}
+            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {meta?.participantsCount ?? 0} / {tournament.max_participants}
                 </p>
-                <p className="text-sm text-secondary/70 mt-1">
-                  {tournament.best_of === 3 ? 'Al meglio di 3 set' : tournament.best_of === 5 ? 'Al meglio di 5 set' : 'Set personalizzati'}
-                </p>
+                {spotsLeft > 0 && (
+                  <p className="text-sm text-secondary/70 mt-1">
+                    {spotsLeft} {spotsLeft === 1 ? 'posto disponibile' : 'posti disponibili'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Categoria */}
+            {tournament.category && (
+              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.category}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Formato Partita */}
+            {tournament.match_format && (
+              <div className="flex items-start gap-8">
+                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">
+                    {tournament.match_format === 'best_of_3' ? 'Al meglio di 3 set' :
+                     tournament.match_format === 'best_of_5' ? 'Al meglio di 5 set' :
+                     tournament.match_format === 'best_of_1' ? '1 set unico' :
+                     tournament.match_format}
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Main content */}
-      <div className="bg-white rounded-md p-6 hover:shadow-md transition-all">
+      {/* Main content - TournamentManager con i tab */}
+      <div className="bg-white rounded-xl p-6">
         <TournamentManagerWrapper
           key={reloadKey}
           tournamentId={id}
@@ -494,8 +681,9 @@ export default function AdminTournamentDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+          <p className="mt-4 text-secondary/60">Caricamento...</p>
         </div>
       }
     >

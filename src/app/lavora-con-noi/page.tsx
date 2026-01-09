@@ -29,6 +29,7 @@ export default function WorkWithUsPage() {
       role,
       message,
       cv_url: cvUrl,
+      status: "pending",
     });
 
     if (insertError) {

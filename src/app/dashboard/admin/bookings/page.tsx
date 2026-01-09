@@ -23,7 +23,16 @@ import {
   MapPin,
   RefreshCw,
   Shield,
+  List,
+  LayoutGrid,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Users,
+  Trophy,
+  Circle,
 } from "lucide-react";
+import BookingsTimeline from "@/components/admin/BookingsTimeline";
 
 type Booking = {
   id: string;
@@ -38,8 +47,8 @@ type Booking = {
   coach_confirmed: boolean;
   notes: string | null;
   created_at: string;
-  user_profile?: { full_name: string; email: string } | null;
-  coach_profile?: { full_name: string; email: string } | null;
+  user_profile?: { full_name: string; email: string; phone?: string } | null;
+  coach_profile?: { full_name: string; email: string; phone?: string } | null;
 };
 type BookingsPageProps = {
   mode?: "default" | "history";
@@ -50,6 +59,9 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
+  const [sortBy, setSortBy] = useState<"date" | "court" | "type" | "status" | "athlete" | "coach" | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     loadBookings();
@@ -95,7 +107,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, phone")
         .in("id", userIds);
 
       if (profilesError) {
@@ -257,6 +269,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     campo: { label: "Campo", color: "bg-secondary text-white" },
     lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
     lezione_gruppo: { label: "Lezione Gruppo", color: "bg-secondary text-white" },
+    arena: { label: "Match Arena", color: "bg-secondary text-white" },
   };
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
@@ -273,7 +286,58 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       ? bookings
       : bookings.filter((booking) => new Date(booking.start_time) >= startOfToday);
 
-  const filteredBookings = baseBookings.filter((booking) => {
+  // Merge consecutive bookings of the same user on the same court
+  const mergeConsecutiveBookings = (bookings: Booking[]): Booking[] => {
+    if (bookings.length === 0) return [];
+    
+    // Sort by start time, court, and user
+    const sorted = [...bookings].sort((a, b) => {
+      const courtCompare = a.court.localeCompare(b.court);
+      if (courtCompare !== 0) return courtCompare;
+      
+      const userCompare = a.user_id.localeCompare(b.user_id);
+      if (userCompare !== 0) return userCompare;
+      
+      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    });
+    
+    const merged: Booking[] = [];
+    let current = sorted[0];
+    
+    for (let i = 1; i < sorted.length; i++) {
+      const next = sorted[i];
+      
+      // Check if same user, same court, same type, and consecutive times
+      const currentEnd = new Date(current.end_time);
+      const nextStart = new Date(next.start_time);
+      const sameUser = current.user_id === next.user_id;
+      const sameCourt = current.court === next.court;
+      const sameType = current.type === next.type;
+      const sameCoach = current.coach_id === next.coach_id;
+      const sameStatus = current.status === next.status;
+      const consecutive = currentEnd.getTime() === nextStart.getTime();
+      
+      if (sameUser && sameCourt && sameType && sameCoach && sameStatus && consecutive) {
+        // Merge: extend current end time, keep first booking ID
+        current = {
+          ...current,
+          end_time: next.end_time
+        };
+      } else {
+        // Not mergeable, push current and move to next
+        merged.push(current);
+        current = next;
+      }
+    }
+    
+    // Push the last one
+    merged.push(current);
+    return merged;
+  };
+
+  const mergedBaseBookings = mergeConsecutiveBookings(baseBookings);
+
+  const filteredBookings = mergedBaseBookings.filter((booking) => {
     const matchesStatus = filter === "all" || booking.status === filter;
     const matchesSearch =
       !search ||
@@ -284,21 +348,67 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     return matchesStatus && matchesSearch;
   });
 
+  // Sorting logic
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    if (!sortBy) return 0;
+
+    let comparison = 0;
+    switch (sortBy) {
+      case "date":
+        comparison = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+        break;
+      case "court":
+        comparison = a.court.localeCompare(b.court);
+        break;
+      case "type":
+        comparison = a.type.localeCompare(b.type);
+        break;
+      case "status":
+        comparison = a.status.localeCompare(b.status);
+        break;
+      case "athlete":
+        const athleteA = a.user_profile?.full_name || "";
+        const athleteB = b.user_profile?.full_name || "";
+        comparison = athleteA.localeCompare(athleteB);
+        break;
+      case "coach":
+        const coachA = a.coach_profile?.full_name || "";
+        const coachB = b.coach_profile?.full_name || "";
+        comparison = coachA.localeCompare(coachB);
+        break;
+    }
+    
+    return sortOrder === "asc" ? comparison : -comparison;
+  });
+
+  const handleSort = (column: "date" | "court" | "type" | "status" | "athlete" | "coach") => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
+
   const stats = {
-    total: baseBookings.length,
-    confirmed: baseBookings.filter((b) => b.status === "confirmed").length,
-    pending: baseBookings.filter((b) => b.status === "pending" || !b.manager_confirmed).length,
-    cancelled: baseBookings.filter((b) => b.status === "cancelled").length,
-    needsApproval: baseBookings.filter((b) => !b.manager_confirmed && b.status !== "cancelled").length,
+    total: mergedBaseBookings.length,
+    confirmed: mergedBaseBookings.filter((b) => b.status === "confirmed").length,
+    pending: mergedBaseBookings.filter((b) => b.status === "pending" || !b.manager_confirmed).length,
+    cancelled: mergedBaseBookings.filter((b) => b.status === "cancelled").length,
+    needsApproval: mergedBaseBookings.filter((b) => !b.manager_confirmed && b.status !== "cancelled").length,
   };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString("it-IT", {
+    const formatted = date.toLocaleDateString("it-IT", {
       weekday: "short",
       day: "numeric",
       month: "short",
     });
+    // Capitalize first letter of weekday and month
+    return formatted.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
   };
 
   const formatTime = (dateStr: string) => {
@@ -312,12 +422,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           {mode === "history" && (
-            <Link
-              href="/dashboard/admin/bookings"
-              className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-            >
-              Prenotazioni
-            </Link>
+            <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+              <Link
+                href="/dashboard/admin/bookings"
+                className="hover:text-secondary/80 transition-colors"
+              >
+                Prenotazioni
+              </Link>
+              <span className="mx-2">›</span>
+              <span>Storico</span>
+            </div>
           )}
           <h1 className="text-3xl font-bold text-secondary mb-2">
             {mode === "history" ? "Storico prenotazioni" : "Gestione Prenotazioni"}
@@ -340,35 +454,35 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               </Link>
               <Link
                 href="/dashboard/admin/bookings/storico"
-                className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+                title="Storico"
               >
-                <Clock className="h-4 w-4" />
-                Storico
+                <Clock className="h-5 w-5" />
               </Link>
             </>
           )}
           {mode !== "history" && (
             <Link
               href="/dashboard/admin/courts"
-              className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+              className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+              title="Blocco Campi"
             >
-              <Shield className="h-4 w-4" />
-              Blocco Campi
+              <Shield className="h-5 w-5" />
             </Link>
           )}
           <button
             onClick={() => loadBookings()}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Ricarica"
           >
-            <RefreshCw className="h-4 w-4" />
-            Ricarica
+            <RefreshCw className="h-5 w-5" />
           </button>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Esporta CSV"
           >
-            <Download className="h-4 w-4" />
-            Esporta CSV
+            <Download className="h-5 w-5" />
           </button>
         </div>
       </div>
@@ -385,36 +499,37 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        {/* View Mode Toggle */}
+        <div className="flex gap-1 bg-white rounded-md p-1">
           <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-              filter === "all"
-                ? "text-white bg-secondary hover:opacity-90"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
+            onClick={() => setViewMode("list")}
+            className={`px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              viewMode === "list"
+                ? "bg-secondary text-white"
+                : "text-secondary/60 hover:text-secondary"
             }`}
           >
-            <Filter className="inline-block w-4 h-4 mr-1.5" />
-            Tutte
+            <List className="h-3.5 w-3.5" />
+            Lista
           </button>
-          {Object.entries(statusConfig).map(([status, { label }]) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                filter === status
-                  ? "text-white bg-secondary hover:opacity-90"
-                  : "bg-white text-secondary/70 hover:bg-secondary/5"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          <button
+            onClick={() => setViewMode("timeline")}
+            className={`px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              viewMode === "timeline"
+                ? "bg-secondary text-white"
+                : "text-secondary/60 hover:text-secondary"
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Timeline
+          </button>
         </div>
       </div>
 
-      {/* Bookings List */}
-      {loading ? (
+      {/* Bookings List or Timeline */}
+      {viewMode === "timeline" ? (
+        <BookingsTimeline />
+      ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
           <p className="mt-4 text-secondary/60">Caricamento prenotazioni...</p>
@@ -428,82 +543,161 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       ) : (
         <div className="space-y-3">
           {/* Header Row */}
-          <div className="bg-secondary/5 rounded-md px-5 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-6 flex-1">
-                <div className="w-28">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Data e Orario</div>
+          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                  <button
+                    onClick={() => handleSort("type")}
+                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
+                  >
+                    #
+                    {sortBy === "type" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
-                <div className="w-24">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Campo</div>
+                <div className="w-24 flex-shrink-0">
+                  <button
+                    onClick={() => handleSort("date")}
+                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
+                  >
+                    Data
+                    {sortBy === "date" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
-                <div className="w-32">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Tipo</div>
+                <div className="w-28 flex-shrink-0">
+                  <div className="text-xs font-bold text-secondary/60 uppercase">Orario</div>
                 </div>
-                <div className="w-56">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                <div className="w-32 flex-shrink-0">
+                  <button
+                    onClick={() => handleSort("court")}
+                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
+                  >
+                    Campo
+                    {sortBy === "court" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
-                <div className="w-48">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Maestro</div>
+                <div className="w-40 flex-shrink-0">
+                  <button
+                    onClick={() => handleSort("athlete")}
+                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
+                  >
+                    Atleta
+                    {sortBy === "athlete" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
-                <div className="w-32">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Stato</div>
+                <div className="w-28 flex-shrink-0">
+                  <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
                 </div>
-              </div>
-              <div className="w-36 text-right">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+                <div className="w-52 flex-shrink-0">
+                  <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                </div>
+                <div className="w-40 flex-shrink-0">
+                  <button
+                    onClick={() => handleSort("coach")}
+                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
+                  >
+                    Maestro
+                    {sortBy === "coach" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Data Rows */}
-          {filteredBookings.map((booking) => {
+          {sortedBookings.map((booking) => {
             const status = statusConfig[booking.status] || statusConfig.pending;
             const StatusIcon = status.icon;
             const bookingType = typeConfig[booking.type] || typeConfig.campo;
+            
+            // Determina il colore del bordo in base allo stato
+            let borderStyle = {};
+            const needsApproval = !booking.manager_confirmed && booking.status !== "cancelled";
+            
+            if (booking.status === "cancelled") {
+              borderStyle = { borderLeftColor: "#ef4444" }; // rosso - annullata
+            } else if (needsApproval) {
+              borderStyle = { borderLeftColor: "#f59e0b" }; // amber - da approvare
+            } else {
+              borderStyle = { borderLeftColor: "#10b981" }; // emerald - confermata
+            }
 
             return (
-              <div
+              <Link
                 key={booking.id}
-                className="bg-white rounded-md p-5 hover:shadow-md transition-all"
+                href={`/dashboard/admin/bookings/${booking.id}`}
+                className="bg-white rounded-md p-5 hover:shadow-md transition-all block cursor-pointer border-l-4"
+                style={borderStyle}
               >
-                <div className="flex items-center justify-between gap-4">
-                  {/* Info principale - Grid con larghezze fisse */}
-                  <div className="flex items-center gap-6 flex-1">
-                    {/* Data e Ora */}
-                    <div className="w-28">
-                      <div className="font-bold text-secondary text-sm mb-0.5">
+                <div className="flex items-center gap-4 flex-1">
+                    {/* Simbolo Tipo */}
+                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                      {booking.type === "lezione_privata" && (
+                        <User className="h-5 w-5 text-secondary" strokeWidth={2} />
+                      )}
+                      {booking.type === "lezione_gruppo" && (
+                        <Users className="h-5 w-5 text-secondary" strokeWidth={2} />
+                      )}
+                      {booking.type === "campo" && (
+                        <Circle className="h-5 w-5 text-secondary" strokeWidth={2} />
+                      )}
+                      {booking.type === "arena" && (
+                        <Trophy className="h-5 w-5 text-secondary" strokeWidth={2} />
+                      )}
+                    </div>
+
+                    {/* Data */}
+                    <div className="w-24 flex-shrink-0">
+                      <div className="font-bold text-secondary text-sm">
                         {formatDate(booking.start_time)}
                       </div>
-                      <div className="text-xs text-secondary/60">
+                    </div>
+
+                    {/* Orario */}
+                    <div className="w-28 flex-shrink-0">
+                      <div className="text-sm text-secondary/80">
                         {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
                       </div>
                     </div>
 
                     {/* Campo */}
-                    <div className="w-24">
+                    <div className="w-32 flex-shrink-0">
                       <div className="font-bold text-secondary">{booking.court}</div>
                     </div>
 
-                    {/* Tipo */}
-                    <div className="w-32">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${bookingType.color}`}>
-                        {bookingType.label}
-                      </span>
-                    </div>
-
-                    {/* Atleta */}
-                    <div className="w-56">
+                    {/* Nome Atleta */}
+                    <div className="w-40 flex-shrink-0">
                       <div className="font-semibold text-secondary truncate">
                         {booking.user_profile?.full_name || "Nome non disponibile"}
                       </div>
-                      <div className="text-xs text-secondary/50 truncate">
-                        {booking.user_profile?.email || ""}
+                    </div>
+
+                    {/* Telefono Atleta */}
+                    <div className="w-28 flex-shrink-0">
+                      <div className="text-sm text-secondary/70 truncate">
+                        {booking.user_profile?.phone || "-"}
                       </div>
                     </div>
 
-                    {/* Maestro - sempre visibile con larghezza fissa */}
-                    <div className="w-48">
+                    {/* Email Atleta */}
+                    <div className="w-52 flex-shrink-0">
+                      <div className="text-sm text-secondary/70 truncate">
+                        {booking.user_profile?.email || "-"}
+                      </div>
+                    </div>
+
+                    {/* Maestro */}
+                    <div className="w-40 flex-shrink-0">
                       {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") ? (
                         <div className="font-semibold text-secondary truncate">
                           {booking.coach_profile?.full_name || "Non assegnato"}
@@ -512,61 +706,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                         <div className="text-sm text-secondary/30">-</div>
                       )}
                     </div>
-
-                    {/* Status */}
-                    <div className="w-32">
-                      {!booking.manager_confirmed && booking.status !== "cancelled" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md bg-amber-500 text-white">
-                          <AlertCircle className="h-3 w-3" />
-                          Da Approvare
-                        </span>
-                      ) : (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${status.color}`}>
-                          <StatusIcon className="h-3 w-3" />
-                          {status.label}
-                        </span>
-                      )}
-                    </div>
                   </div>
-
-                  {/* Azioni - sempre nella stessa posizione */}
-                  <div className="flex gap-2 w-36 justify-end">{!booking.manager_confirmed && booking.status !== "cancelled" && (
-                      <>
-                        <button
-                          onClick={() => confirmBooking(booking.id)}
-                          className="p-2 bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100 transition-colors"
-                          title="Approva"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => rejectBooking(booking.id)}
-                          className="p-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
-                          title="Rifiuta"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </>
-                    )}
-                    {booking.status !== "cancelled" && (
-                      <Link
-                        href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
-                        className="p-2 bg-secondary/10 text-secondary rounded-md hover:bg-secondary/20 transition-colors"
-                        title="Modifica prenotazione"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => deleteBooking(booking.id)}
-                      className="p-2 bg-secondary/5 text-secondary/70 rounded-md hover:bg-secondary/10 transition-colors"
-                      title="Elimina"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              </Link>
             );
           })}
         </div>

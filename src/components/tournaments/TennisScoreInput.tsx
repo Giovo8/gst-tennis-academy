@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Check, X, Plus, Trash2 } from 'lucide-react';
 
 interface Set {
@@ -143,111 +143,129 @@ export default function TennisScoreInput({
   const setsToWin = Math.ceil(bestOf / 2);
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
+    <div className="rounded-md border border-gray-200 bg-white overflow-hidden shadow-md hover:shadow-lg transition-shadow">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-        <div>
-          <h4 className="text-lg font-bold text-secondary mb-1">Inserisci Punteggio</h4>
-          <p className="text-sm text-secondary/60">Al meglio di {bestOf} set (vince con {setsToWin} set)</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-secondary">{player1Name}</span>
-          <span className="text-secondary/40 font-semibold">-</span>
-          <span className="font-bold text-secondary">{player2Name}</span>
+      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-bold text-secondary">Inserisci Punteggio</h4>
+            <p className="text-xs text-secondary/60 mt-0.5">Al meglio di {bestOf} set (vince con {setsToWin} set)</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="bg-secondary/10 px-3 py-1.5 rounded-md">
+              <span className="text-lg font-bold text-secondary">{setsWon.p1}</span>
+            </div>
+            <span className="text-secondary/40 font-semibold">-</span>
+            <div className="bg-secondary/10 px-3 py-1.5 rounded-md">
+              <span className="text-lg font-bold text-secondary">{setsWon.p2}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Sets */}
-      <div className="space-y-3">
-        {sets.map((set, index) => (
-          <div key={index} className="bg-secondary/5 rounded-md p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm font-bold text-secondary">Set {index + 1}</div>
-              {sets.length > 1 && (
-                <button
-                  onClick={() => removeSet(index)}
-                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                  type="button"
-                  title="Rimuovi set"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Player 1 Score */}
-              <div>
-                <label className="text-xs font-semibold text-secondary/60 uppercase block mb-2">
-                  {player1Name}
-                </label>
+      <div className="p-5 space-y-4">
+        {sets.map((set, index) => {
+          const isPlayer1Winning = set.player1_score > set.player2_score;
+          const isPlayer2Winning = set.player2_score > set.player1_score;
+          
+          return (
+            <div key={index} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-bold text-secondary">Set {index + 1}</div>
+                {sets.length > 1 && (
+                  <button
+                    onClick={() => removeSet(index)}
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    type="button"
+                    title="Rimuovi set"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Player 1 Row */}
+              <div className={`flex items-center gap-3 px-5 py-4 rounded-md border-l-4 transition-all ${
+                isPlayer1Winning 
+                  ? 'border-secondary bg-secondary/5' 
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-secondary">{player1Name}</div>
+                </div>
                 <input
                   type="number"
                   value={set.player1_score}
                   onChange={(e) => updateSet(index, 'player1', e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-20 rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
                   min="0"
                   max="99"
                   placeholder="0"
                 />
               </div>
 
-              {/* Player 2 Score */}
-              <div>
-                <label className="text-xs font-semibold text-secondary/60 uppercase block mb-2">
-                  {player2Name}
-                </label>
+              {/* Player 2 Row */}
+              <div className={`flex items-center gap-3 px-5 py-4 rounded-md border-l-4 transition-all ${
+                isPlayer2Winning 
+                  ? 'border-secondary bg-secondary/5' 
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-secondary">{player2Name}</div>
+                </div>
                 <input
                   type="number"
                   value={set.player2_score}
                   onChange={(e) => updateSet(index, 'player2', e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-20 rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
                   min="0"
                   max="99"
                   placeholder="0"
                 />
               </div>
             </div>
+          );
+        })}
+
+        {/* Add Set Button */}
+        {sets.length < bestOf && (
+          <button
+            onClick={addSet}
+            className="w-full rounded-md border-2 border-dashed border-secondary/30 bg-white px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/5 hover:border-secondary/50 transition-all flex items-center justify-center gap-2"
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+            Aggiungi Set
+          </button>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Add Set Button */}
-      {sets.length < bestOf && (
-        <button
-          onClick={addSet}
-          className="w-full rounded-md border-2 border-dashed border-secondary/30 bg-secondary/5 px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/10 hover:border-secondary/50 transition-all flex items-center justify-center gap-2"
-          type="button"
-        >
-          <Plus className="h-4 w-4" />
-          Aggiungi Set
-        </button>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
-          {error}
+        {/* Actions */}
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 rounded-md bg-secondary px-5 py-3 text-sm font-semibold text-white hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Check className="h-4 w-4" />
+            {submitting ? 'Salvataggio...' : 'Salva Punteggio'}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            className="rounded-md border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-secondary hover:bg-gray-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            Annulla
+          </button>
         </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="flex-1 rounded-md bg-secondary px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-        >
-          <Check className="h-4 w-4" />
-          {submitting ? 'Salvataggio...' : 'Salva Punteggio'}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={submitting}
-          className="rounded-md border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-secondary/70 hover:bg-secondary/5 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-        >
-          <X className="h-4 w-4" />
-          Annulla
-        </button>
       </div>
     </div>
   );

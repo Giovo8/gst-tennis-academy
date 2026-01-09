@@ -10,7 +10,8 @@ import {
   Calendar,
   Users as UsersIcon,
   Search,
-  Eye
+  Eye,
+  Target
 } from "lucide-react";
 import Link from "next/link";
 
@@ -20,6 +21,7 @@ type Tournament = {
   description?: string;
   start_date?: string;
   max_participants?: number;
+  current_participants?: number;
   competition_type?: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
   status?: string;
   category?: string;
@@ -105,16 +107,21 @@ export default function ArchivioCompetizioni() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+        <Link
+          href="/dashboard/admin/tornei"
+          className="hover:text-secondary/80 transition-colors"
+        >
+          Gestione Competizioni
+        </Link>
+        <span className="mx-2">›</span>
+        <span className="text-secondary">Archivio</span>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            href="/dashboard/admin/tornei"
-            className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3 mr-1" />
-            Gestione competizioni
-          </Link>
           <h1 className="text-3xl font-bold text-secondary mb-2">
             Archivio Competizioni
           </h1>
@@ -161,80 +168,82 @@ export default function ArchivioCompetizioni() {
       ) : (
         <div className="space-y-3">
           {/* Header Row */}
-          <div className="bg-secondary/5 rounded-xl px-5 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-6 flex-1">
-                <div className="w-64">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Nome torneo</div>
-                </div>
-                <div className="w-40">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Tipo</div>
-                </div>
-                <div className="w-32">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
-                </div>
-                <div className="w-24">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Partecipanti</div>
-                </div>
-                <div className="w-32">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Stato</div>
-                </div>
+          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+            <div className="flex items-center gap-4">
+              <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
               </div>
-              <div className="w-36 text-right">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+              <div className="flex-1">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Nome torneo</div>
+              </div>
+              <div className="w-32 flex-shrink-0 text-center">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
+              </div>
+              <div className="w-24 flex-shrink-0 text-center">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Partecipanti</div>
               </div>
             </div>
           </div>
 
           {/* Data Rows */}
           {filteredTournaments.map((tournament) => {
-            const typeInfo = typeConfig[tournament.competition_type || 'eliminazione_diretta'];
             const statusInfo = statusConfig[tournament.status || 'Completato'] || statusConfig["Completato"];
+            
+            // Determina il colore del bordo in base allo stato
+            let borderColor = "#6b7280"; // gray - default completato/concluso
+            if (tournament.status === "Completato" || tournament.status === "Concluso") {
+              borderColor = "#6b7280"; // gray - completato/concluso
+            } else if (tournament.status === "Chiuso") {
+              borderColor = "#ef4444"; // red - chiuso
+            }
 
             return (
               <div
                 key={tournament.id}
-                className="bg-white rounded-xl px-5 py-4 hover:shadow-md transition-all border border-gray-200"
+                onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
+                className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all cursor-pointer border-l-4"
+                style={{ borderLeftColor: borderColor }}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-6 flex-1">
-                    <div className="w-64">
-                      <h3 className="font-bold text-secondary">{tournament.title}</h3>
-                      {tournament.description && (
-                        <p className="text-xs text-secondary/60 mt-0.5">{tournament.description}</p>
-                      )}
-                    </div>
-                    <div className="w-40">
-                      <span className={`inline-block px-3 py-1 rounded-md text-xs font-semibold border ${typeInfo.color}`}>
-                        {typeInfo.label}
-                      </span>
-                    </div>
-                    <div className="w-32">
-                      <div className="text-sm text-secondary/70">
-                        {tournament.start_date 
-                          ? new Date(tournament.start_date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
-                          : '-'}
-                      </div>
-                    </div>
-                    <div className="w-24 text-center">
-                      <div className="text-sm font-semibold text-secondary">
-                        {tournament.max_participants || '-'}
-                      </div>
-                    </div>
-                    <div className="w-32">
-                      <span className={`inline-block px-3 py-1 rounded-md text-xs font-semibold border ${statusInfo.color}`}>
-                        {statusInfo.label}
-                      </span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                    {(tournament.competition_type === 'eliminazione_diretta') && (
+                      <Trophy className="h-5 w-5 text-secondary/60" />
+                    )}
+                    {(tournament.competition_type === 'girone_eliminazione') && (
+                      <Target className="h-5 w-5 text-secondary/60" />
+                    )}
+                    {(tournament.competition_type === 'campionato') && (
+                      <UsersIcon className="h-5 w-5 text-secondary/60" />
+                    )}
+                  </div>
+                  
+                  {/* Nome */}
+                  <div className="flex-1">
+                    <div className="font-bold text-secondary">
+                      {tournament.title}
                     </div>
                   </div>
-                  <div className="w-36 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
-                      className="p-2 rounded-md text-secondary/70 hover:bg-secondary/10 transition-all"
-                      title="Visualizza"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
+
+                  {/* Data */}
+                  <div className="w-32 flex-shrink-0 text-center">
+                    {tournament.start_date ? (
+                      <div className="text-sm font-semibold text-secondary">
+                        {new Date(tournament.start_date).toLocaleDateString('it-IT', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-secondary/40">-</div>
+                    )}
+                  </div>
+
+                  {/* Partecipanti */}
+                  <div className="w-24 flex-shrink-0 text-center">
+                    <div className="text-sm font-semibold text-secondary">
+                      {tournament.current_participants || 0}/{tournament.max_participants || 0}
+                    </div>
                   </div>
                 </div>
               </div>

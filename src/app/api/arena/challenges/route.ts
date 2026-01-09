@@ -41,8 +41,28 @@ export async function GET(req: Request) {
 
       const { data: profiles } = await supabaseServer
         .from("profiles")
-        .select("id, full_name, avatar_url")
+        .select("id, full_name, avatar_url, email, phone")
         .in("id", userIds);
+
+      // Fetch arena stats separately
+      const { data: arenaStats } = await supabaseServer
+        .from("arena_stats")
+        .select("user_id, ranking, points, level")
+        .in("user_id", userIds);
+
+      // Combine profiles with arena stats
+      const enrichedProfiles = profiles?.map(profile => {
+        const stats = arenaStats?.find(s => s.user_id === profile.id);
+        return {
+          id: profile.id,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          email: profile.email,
+          phone: profile.phone,
+          arena_rank: stats?.level || null,
+          arena_points: stats?.points || null,
+        };
+      });
 
       // Fetch booking if exists
       let booking = null;
@@ -58,10 +78,10 @@ export async function GET(req: Request) {
       // Enrich challenge with related data
       const enrichedChallenge = {
         ...challenge,
-        challenger: profiles?.find(p => p.id === challenge.challenger_id),
-        opponent: profiles?.find(p => p.id === challenge.opponent_id),
-        my_partner: profiles?.find(p => p.id === challenge.my_partner_id),
-        opponent_partner: profiles?.find(p => p.id === challenge.opponent_partner_id),
+        challenger: enrichedProfiles?.find(p => p.id === challenge.challenger_id),
+        opponent: enrichedProfiles?.find(p => p.id === challenge.opponent_id),
+        my_partner: enrichedProfiles?.find(p => p.id === challenge.my_partner_id),
+        opponent_partner: enrichedProfiles?.find(p => p.id === challenge.opponent_partner_id),
         booking,
       };
 
@@ -101,8 +121,28 @@ export async function GET(req: Request) {
       // Fetch profiles
       const { data: profiles } = await supabaseServer
         .from("profiles")
-        .select("id, full_name, avatar_url")
+        .select("id, full_name, avatar_url, email, phone")
         .in("id", userIds);
+
+      // Fetch arena stats separately
+      const { data: arenaStats } = await supabaseServer
+        .from("arena_stats")
+        .select("user_id, ranking, points, level")
+        .in("user_id", userIds);
+
+      // Combine profiles with arena stats
+      const enrichedProfiles = profiles?.map(profile => {
+        const stats = arenaStats?.find(s => s.user_id === profile.id);
+        return {
+          id: profile.id,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          email: profile.email,
+          phone: profile.phone,
+          arena_rank: stats?.level || null,
+          arena_points: stats?.points || null,
+        };
+      });
 
       // Fetch bookings
       const { data: bookings } = bookingIds.length > 0
@@ -115,8 +155,8 @@ export async function GET(req: Request) {
       // Attach related data
       const enrichedChallenges = data.map(challenge => ({
         ...challenge,
-        challenger: profiles?.find(p => p.id === challenge.challenger_id),
-        opponent: profiles?.find(p => p.id === challenge.opponent_id),
+        challenger: enrichedProfiles?.find(p => p.id === challenge.challenger_id),
+        opponent: enrichedProfiles?.find(p => p.id === challenge.opponent_id),
         booking: bookings?.find(b => b.id === challenge.booking_id),
       }));
 

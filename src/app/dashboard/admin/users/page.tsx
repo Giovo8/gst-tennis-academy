@@ -20,15 +20,6 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [newUser, setNewUser] = useState({
-    email: "",
-    password: "",
-    full_name: "",
-    phone: "",
-    role: "atleta" as "admin" | "gestore" | "maestro" | "atleta"
-  });
 
   useEffect(() => {
     loadUsers();
@@ -48,61 +39,6 @@ export default function UsersPage() {
       console.error("Error loading users:", error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function createUser() {
-    if (!newUser.email || !newUser.password || !newUser.full_name) {
-      alert("Compila tutti i campi obbligatori");
-      return;
-    }
-
-    setCreating(true);
-    try {
-      // Crea l'utente con Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.full_name,
-            phone: newUser.phone,
-            role: newUser.role
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Aggiorna il profilo con il ruolo
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            full_name: newUser.full_name,
-            phone: newUser.phone,
-            role: newUser.role
-          })
-          .eq("id", authData.user.id);
-
-        if (profileError) throw profileError;
-      }
-
-      alert("Utente creato con successo!");
-      setShowCreateForm(false);
-      setNewUser({
-        email: "",
-        password: "",
-        full_name: "",
-        phone: "",
-        role: "atleta"
-      });
-      loadUsers();
-    } catch (error: any) {
-      console.error("Error creating user:", error);
-      alert(error.message || "Errore durante la creazione dell'utente");
-    } finally {
-      setCreating(false);
     }
   }
 
@@ -164,13 +100,13 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
+          <Link
+            href="/dashboard/admin/users/new"
             className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
           >
             <UserPlus className="h-4 w-4" />
-            {showCreateForm ? "Nascondi Form" : "Crea Utente"}
-          </button>
+            Crea Utente
+          </Link>
           <Link
             href="/dashboard/admin/invite-codes"
             className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
@@ -180,93 +116,6 @@ export default function UsersPage() {
           </Link>
         </div>
       </div>
-
-      {/* Create Form */}
-      {showCreateForm && (
-        <div className="bg-white rounded-xl p-6">
-          <h2 className="text-xl font-bold text-secondary mb-4">Crea Nuovo Utente</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Email *</label>
-              <input
-                type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                placeholder="email@esempio.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Password *</label>
-              <input
-                type="password"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                placeholder="Minimo 6 caratteri"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Nome Completo *</label>
-              <input
-                type="text"
-                value={newUser.full_name}
-                onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                placeholder="Mario Rossi"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Telefono</label>
-              <input
-                type="tel"
-                value={newUser.phone}
-                onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                placeholder="+39 123 456 7890"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Ruolo *</label>
-              <select
-                value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
-                className="w-full px-4 py-2.5 rounded-md bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              >
-                <option value="atleta">Atleta</option>
-                <option value="maestro">Maestro</option>
-                <option value="gestore">Gestore</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={createUser}
-              disabled={creating}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
-            >
-              {creating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creazione...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4" />
-                  Crea Utente
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowCreateForm(false)}
-              className="px-6 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all"
-            >
-              Annulla
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
@@ -322,18 +171,21 @@ export default function UsersPage() {
       ) : (
         <div className="space-y-3">
           {/* Header Row */}
-          <div className="bg-secondary/5 rounded-md px-5 py-3">
-            <div className="flex items-center gap-6">
-              <div className="w-64">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Utente</div>
+          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+            <div className="flex items-center gap-4">
+              <div className="w-12 flex-shrink-0 flex justify-center">
+                <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
               </div>
-              <div className="w-56">
+              <div className="w-48 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Nome</div>
+              </div>
+              <div className="w-56 flex-shrink-0 flex justify-center">
                 <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
               </div>
-              <div className="w-40">
+              <div className="w-32 flex-shrink-0 flex justify-center">
                 <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
               </div>
-              <div className="w-32">
+              <div className="w-28 flex-shrink-0 flex justify-center">
                 <div className="text-xs font-bold text-secondary/60 uppercase">Ruolo</div>
               </div>
             </div>
@@ -343,16 +195,30 @@ export default function UsersPage() {
           {filteredUsers.map((user) => {
             const roleInfo = roleLabels[user.role];
             const Icon = roleInfo.icon;
+            
+            // Determina il colore del bordo in base al ruolo usando colori scuri
+            let borderColor = "#0690c6"; // frozen-600 - default
+            if (user.role === "admin") {
+              borderColor = "#dc2626"; // red-600 - rosso scuro per admin
+            } else if (user.role === "gestore") {
+              borderColor = "#d97706"; // amber-600 - arancione scuro per gestore
+            } else if (user.role === "maestro") {
+              borderColor = "#059669"; // emerald-600 - verde scuro per maestro
+            } else if (user.role === "atleta") {
+              borderColor = "#0690c6"; // frozen-600 - blu scuro per atleta
+            }
+
             return (
               <Link
                 key={user.id}
                 href={`/dashboard/admin/users/modifica?id=${user.id}`}
-                className="block bg-white rounded-md p-5 hover:bg-secondary/5 transition-all cursor-pointer"
+                className="bg-white rounded-md p-5 hover:shadow-md transition-all block cursor-pointer border-l-4"
+                style={{ borderLeftColor: borderColor }}
               >
-                <div className="flex items-center gap-6">
-                    {/* Nome e Avatar */}
-                    <div className="flex items-center gap-4 w-64">
-                      <div className={`w-12 h-12 rounded-lg ${roleInfo.color} flex items-center justify-center text-lg font-bold border flex-shrink-0 overflow-hidden`}>
+                <div className="flex items-center gap-4">
+                    {/* Avatar */}
+                    <div className="w-12 flex-shrink-0 flex justify-center">
+                      <div className={`w-12 h-12 rounded-lg ${roleInfo.color} flex items-center justify-center text-lg font-bold border overflow-hidden`}>
                         {user.avatar_url ? (
                           <img 
                             src={user.avatar_url} 
@@ -363,33 +229,34 @@ export default function UsersPage() {
                           <span>{user.full_name?.charAt(0)?.toUpperCase() || "U"}</span>
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base font-bold text-secondary truncate">
-                          {user.full_name || "Nome non impostato"}
-                        </h3>
-                      </div>
+                    </div>
+
+                    {/* Nome */}
+                    <div className="w-48 flex-shrink-0">
+                      <h3 className="text-sm font-bold text-secondary truncate">
+                        {user.full_name || "Nome non impostato"}
+                      </h3>
                     </div>
 
                     {/* Email */}
-                    <div className="w-56">
-                      <p className="text-sm font-semibold text-secondary truncate">{user.email}</p>
+                    <div className="w-56 flex-shrink-0 flex justify-center">
+                      <p className="text-sm text-secondary/70 truncate">{user.email}</p>
                     </div>
 
                     {/* Telefono */}
-                    <div className="w-40">
+                    <div className="w-32 flex-shrink-0 flex justify-center">
                       {user.phone ? (
-                        <p className="text-sm font-semibold text-secondary truncate">{user.phone}</p>
+                        <p className="text-sm text-secondary/70 truncate">{user.phone}</p>
                       ) : (
                         <p className="text-sm text-secondary/30">-</p>
                       )}
                     </div>
 
                     {/* Ruolo */}
-                    <div className="w-32">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${roleInfo.color} whitespace-nowrap`}>
-                        <Icon className="w-3 h-3" />
-                        {roleInfo.label}
-                      </span>
+                    <div className="w-28 flex-shrink-0 flex justify-center">
+                      <div className={`w-10 h-10 rounded-lg ${roleInfo.color} flex items-center justify-center`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
                     </div>
                   </div>
               </Link>

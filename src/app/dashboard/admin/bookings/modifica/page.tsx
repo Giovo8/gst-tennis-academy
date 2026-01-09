@@ -28,6 +28,20 @@ interface TimeSlot {
   available: boolean;
 }
 
+interface ExistingBooking {
+  id: string;
+  start_time: string;
+  end_time: string;
+  type: string;
+  status: string;
+  user_id?: string;
+  coach_id?: string;
+  user_profile?: { full_name: string | null } | null;
+  coach_profile?: { full_name: string | null } | null;
+  isBlock?: boolean;
+  reason?: string;
+}
+
 interface SearchableOption {
   value: string;
   label: string;
@@ -151,6 +165,7 @@ export default function AdminEditBookingPage() {
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
+  const [existingBookings, setExistingBookings] = useState<ExistingBooking[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -201,13 +216,24 @@ export default function AdminEditBookingPage() {
         setSelectedCoach(data.coach_id || "");
         setSelectedDate(new Date(data.start_time));
 
-        // Pre-compila gli slot selezionati a partire da start_time / end_time
+        // Pre-compila gli slot selezionati a partire da start_time / end_time (ogni 30 min)
         const existingStart = new Date(data.start_time);
         const existingEnd = new Date(data.end_time);
+        console.log("📅 Prenotazione caricata:", {
+          id: data.id,
+          start: existingStart.toISOString(),
+          end: existingEnd.toISOString(),
+          duration: (existingEnd.getTime() - existingStart.getTime()) / (1000 * 60) + " minuti"
+        });
         const initialSlots: string[] = [];
-        for (let h = existingStart.getHours(); h < existingEnd.getHours(); h++) {
-          initialSlots.push(`${h.toString().padStart(2, "0")}:00`);
+        let current = new Date(existingStart);
+        while (current < existingEnd) {
+          const hours = current.getHours().toString().padStart(2, "0");
+          const minutes = current.getMinutes().toString().padStart(2, "0");
+          initialSlots.push(`${hours}:${minutes}`);
+          current.setMinutes(current.getMinutes() + 30);
         }
+        console.log("🕐 Slot selezionati:", initialSlots);
         setSelectedSlots(initialSlots);
 
         setNotes(data.notes || "");
@@ -246,45 +272,120 @@ export default function AdminEditBookingPage() {
       try {
         const dateStr = selectedDate.toISOString().split("T")[0];
 
+        // Get existing bookings for this court and date
         const { data: bookingsData } = await supabase
           .from("bookings")
-          .select("id, start_time, end_time, status")
+          .select("id, start_time, end_time, status, type, user_id, coach_id")
           .eq("court", selectedCourt)
           .neq("status", "cancelled")
           .gte("start_time", `${dateStr}T00:00:00`)
           .lte("start_time", `${dateStr}T23:59:59`);
 
-        const occupiedHours = new Set<number>();
+        // Get court blocks for this court and date
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
 
-        bookingsData?.forEach((b: any) => {
+        const { data: blocksData } = await supabase
+          .from("court_blocks")
+          .select("id, start_time, end_time, reason")
+          .eq("court_id", selectedCourt)
+          .gte("start_time", startOfDay.toISOString())
+          .lte("start_time", endOfDay.toISOString());
+
+        // Fetch profiles for bookings
+        const userIds = [...new Set([
+          ...(bookingsData?.map(b => b.user_id) || []),
+          ...(bookingsData?.map(b => b.coach_id).filter(Boolean) || [])
+        ])];
+
+        let profilesMap = new Map();
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", userIds);
+
+          profilesData?.forEach(profile => {
+            profilesMap.set(profile.id, profile);
+          });
+        }
+
+        // Enrich bookings with profiles
+        const enrichedBookings = bookingsData?.map((b: any) => ({
+          id: b.id,
+          start_time: b.start_time,
+          end_time: b.end_time,
+          type: b.type,
+          status: b.status,
+          user_id: b.user_id,
+          coach_id: b.coach_id,
+          user_profile: b.user_id ? profilesMap.get(b.user_id) : undefined,
+          coach_profile: b.coach_id ? profilesMap.get(b.coach_id) : undefined,
+        })) || [];
+
+        // Add court blocks as fake bookings for visualization
+        const blocksAsBookings = blocksData?.map((block: any) => ({
+          id: block.id,
+          start_time: block.start_time,
+          end_time: block.end_time,
+          type: "blocco",
+          status: "blocked",
+          user_profile: null,
+          coach_profile: null,
+          reason: block.reason,
+          isBlock: true
+        })) || [];
+
+        const allBookings: ExistingBooking[] = [...enrichedBookings, ...blocksAsBookings];
+
+        setExistingBookings(allBookings);
+
+        const occupiedSlots = new Set<string>();
+
+        // Mark slots occupied by bookings and blocks
+        allBookings.forEach((b) => {
           // Ignora la prenotazione che stiamo modificando
-          if (b.id === bookingId) return;
-          const start = new Date(b.start_time).getHours();
-          const end = new Date(b.end_time).getHours();
-          for (let h = start; h < end; h++) {
-            occupiedHours.add(h);
+          if (b.id === bookingId && !b.isBlock) return;
+
+          const start = new Date(b.start_time);
+          const end = new Date(b.end_time);
+
+          let current = new Date(start);
+          while (current < end) {
+            const hours = current.getHours().toString().padStart(2, "0");
+            const minutes = current.getMinutes().toString().padStart(2, "0");
+            occupiedSlots.add(`${hours}:${minutes}`);
+            current.setMinutes(current.getMinutes() + 30);
           }
         });
 
+        // Generate slots every 30 minutes (07:00 - 22:00)
         const generatedSlots: TimeSlot[] = [];
         const now = new Date();
         const isToday = selectedDate.toDateString() === now.toDateString();
 
-        for (let hour = 8; hour < 22; hour++) {
-          const time = `${hour.toString().padStart(2, "0")}:00`;
-          let available = !occupiedHours.has(hour);
+        for (let hour = 7; hour <= 22; hour++) {
+          for (let minute of [0, 30]) {
+            if (hour === 22 && minute === 30) break;
 
-          // Gli slot già selezionati per questa prenotazione rimangono sempre disponibili
-          if (selectedSlots.includes(time)) {
-            available = true;
+            const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+
+            // Slot disponibile se non è già occupato
+            let available = !occupiedSlots.has(time);
+
+            // If today, check if slot is in the past
+            if (isToday) {
+              const slotTime = new Date(selectedDate);
+              slotTime.setHours(hour, minute, 0, 0);
+              if (slotTime <= now) {
+                available = false;
+              }
+            }
+
+            generatedSlots.push({ time, available });
           }
-
-          // Se è oggi, i tempi passati (non selezionati) non sono prenotabili
-          if (isToday && hour <= now.getHours() && !selectedSlots.includes(time)) {
-            available = false;
-          }
-
-          generatedSlots.push({ time, available });
         }
 
         setSlots(generatedSlots);
@@ -295,6 +396,51 @@ export default function AdminEditBookingPage() {
 
     void loadSlots();
   }, [bookingId, selectedDate, selectedCourt]);
+
+  // Verifica disponibilità slot
+  const isSlotAvailable = (time: string): boolean => {
+    if (!selectedCourt) return true;
+    const slot = slots.find(s => s.time === time);
+    // Gli slot selezionati sono sempre disponibili
+    if (selectedSlots.includes(time)) return true;
+    return slot ? slot.available : false;
+  };
+
+  // Gestione selezione multipla di slot consecutivi
+  const toggleSlotSelection = (time: string, available: boolean) => {
+    if (!available) return;
+
+    setSelectedSlots((prev) => {
+      // se già selezionato, deseleziona
+      if (prev.includes(time)) {
+        return prev.filter((t) => t !== time);
+      }
+
+      // prima selezione
+      if (prev.length === 0) {
+        return [time];
+      }
+
+      const allSlots = [...prev, time].sort((a, b) => {
+        const [hA, mA] = a.split(":").map(Number);
+        const [hB, mB] = b.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
+
+      // verifica se sono consecutivi (ogni slot è 30 minuti)
+      for (let i = 1; i < allSlots.length; i++) {
+        const [hPrev, mPrev] = allSlots[i - 1].split(":").map(Number);
+        const [hCurr, mCurr] = allSlots[i].split(":").map(Number);
+        const prevMinutes = hPrev * 60 + mPrev;
+        const currMinutes = hCurr * 60 + mCurr;
+        if (currMinutes - prevMinutes !== 30) {
+          return [time]; // non consecutivi, resetta
+        }
+      }
+
+      return allSlots;
+    });
+  };
 
   async function handleSave() {
     if (!bookingId) return;
@@ -307,14 +453,18 @@ export default function AdminEditBookingPage() {
         throw new Error("Seleziona giorno, campo e almeno uno slot orario");
       }
 
-      const orderedSlots = [...selectedSlots].sort();
+      const orderedSlots = [...selectedSlots].sort((a, b) => {
+        const [hA, mA] = a.split(":").map(Number);
+        const [hB, mB] = b.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
       const [hours, minutes] = orderedSlots[0].split(":").map(Number);
       const startDate = new Date(selectedDate);
       startDate.setHours(hours, minutes, 0, 0);
 
       const endDate = new Date(startDate);
-      const durationHours = orderedSlots.length;
-      endDate.setHours(startDate.getHours() + durationHours);
+      const durationMinutes = orderedSlots.length * 30; // ogni slot dura 30 minuti
+      endDate.setMinutes(startDate.getMinutes() + durationMinutes);
 
       const { error } = await supabase
         .from("bookings")
@@ -364,35 +514,45 @@ export default function AdminEditBookingPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <Link
-          href="/dashboard/admin/bookings"
-          className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-        >
-          Prenotazioni
-        </Link>
-        <h1 className="text-3xl font-bold text-secondary">Modifica prenotazione</h1>
-        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-          Aggiorna giorno, campo, orari e note della prenotazione selezionata.
-        </p>
+        <div>
+          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+            <Link
+              href="/dashboard/admin/bookings"
+              className="hover:text-secondary/80 transition-colors"
+            >
+              Prenotazioni
+            </Link>
+            <span className="mx-2">›</span>
+            <span>Modifica Prenotazione</span>
+          </div>
+          <h1 className="text-3xl font-bold text-secondary">Modifica prenotazione</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Seleziona giorno, campo e slot.
+          </p>
+        </div>
       </div>
 
-      {/* Messaggi */}
+      {/* Messages */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-red-900">Errore</p>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
+        <div className="mt-2">
+          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-900">Errore</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
           </div>
         </div>
       )}
 
       {success && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-emerald-900">Successo</p>
-            <p className="text-sm text-emerald-700 mt-1">{success}</p>
+        <div className="mt-2">
+          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-green-900">Successo</p>
+              <p className="text-sm text-green-700 mt-1">{success}</p>
+            </div>
           </div>
         </div>
       )}
@@ -402,40 +562,11 @@ export default function AdminEditBookingPage() {
           <Loader2 className="h-6 w-6 animate-spin text-secondary" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
-          {/* Info Atleta */}
-          {booking && (
-            <div>
-              <p className="text-xs text-secondary/60 uppercase tracking-wider font-semibold mb-1">
-                Atleta
-              </p>
-              <h2 className="text-xl font-bold text-secondary flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
-                <span>{booking.user_profile?.full_name || "Nome non disponibile"}</span>
-                {booking.user_profile?.email && (
-                  <span
-                    className="font-normal text-secondary/80"
-                    style={{ fontFamily: "var(--font-inter)" }}
-                  >
-                    {" - "}
-                    {booking.user_profile.email}
-                  </span>
-                )}
-              </h2>
-            </div>
-          )}
-
-          {/* Selettore Data */}
-          {selectedDate && (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-secondary/60 uppercase tracking-wider font-semibold mb-1">
-                  Seleziona Data
-                </p>
-                <h2 className="text-xl font-bold text-secondary capitalize">
-                  {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
+        <div className="py-4">
+          <div className="space-y-6">
+            {/* Selettore Data */}
+            {selectedDate && (
+              <div className="rounded-lg p-4 flex items-center justify-between transition-all bg-secondary">
                 <button
                   type="button"
                   onClick={() => {
@@ -443,36 +574,44 @@ export default function AdminEditBookingPage() {
                     setSelectedDate(addDays(selectedDate, -1));
                     setSelectedSlots([]);
                   }}
-                  className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
+                  className="p-2 rounded-md transition-colors hover:bg-white/10"
                 >
-                  <span className="text-lg font-semibold">&lt;</span>
+                  <span className="text-lg font-semibold text-white">&lt;</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (dateInputRef.current) {
-                      dateInputRef.current.click();
-                    }
-                  }}
-                  className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
-                >
-                  <Calendar className="h-5 w-5" />
-                </button>
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  value={format(selectedDate, "yyyy-MM-dd")}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (!value) return;
-                    const [year, month, day] = value.split("-").map(Number);
-                    const newDate = new Date(selectedDate);
-                    newDate.setFullYear(year, month - 1, day);
-                    setSelectedDate(newDate);
-                    setSelectedSlots([]);
-                  }}
-                  className="sr-only"
-                />
+                
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (dateInputRef.current) {
+                        dateInputRef.current.click();
+                      }
+                    }}
+                    className="p-2 rounded-md transition-colors hover:bg-white/10"
+                    title="Scegli data"
+                  >
+                    <Calendar className="h-5 w-5 text-white" />
+                  </button>
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    value={format(selectedDate, "yyyy-MM-dd")}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (!value) return;
+                      const [year, month, day] = value.split("-").map(Number);
+                      const newDate = new Date(selectedDate);
+                      newDate.setFullYear(year, month - 1, day);
+                      setSelectedDate(newDate);
+                      setSelectedSlots([]);
+                    }}
+                    className="absolute opacity-0 pointer-events-none"
+                  />
+                  <h2 className="text-lg font-bold capitalize text-white">
+                    {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+                  </h2>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -480,183 +619,335 @@ export default function AdminEditBookingPage() {
                     setSelectedDate(addDays(selectedDate, 1));
                     setSelectedSlots([]);
                   }}
-                  className="p-2 rounded-md bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors"
+                  className="p-2 rounded-md transition-colors hover:bg-white/10"
                 >
-                  <span className="text-lg font-semibold">&gt;</span>
+                  <span className="text-lg font-semibold text-white">&gt;</span>
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* Tipo prenotazione + Campo + Maestro */}
-          <div className="grid gap-4 md:grid-cols-3 mt-2">
-            {/* Tipo prenotazione */}
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Tipo prenotazione *</label>
-              <select
-                value={bookingType}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setBookingType(value);
-                  if (value === "campo") {
-                    setSelectedCoach("");
-                  }
-                }}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-              >
-                {BOOKING_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Campo */}
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-2">Campo *</label>
-              <select
-                value={selectedCourt}
-                onChange={(e) => {
-                  setSelectedCourt(e.target.value);
-                  setSelectedSlots([]);
-                }}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-              >
-                {COURTS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Maestro (quando necessario) */}
-            {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-              <div>
-                <label className="block text-sm font-semibold text-secondary mb-2">Maestro *</label>
-                <SearchableSelect
-                  value={selectedCoach}
-                  onChange={setSelectedCoach}
-                  options={coaches.map((coach) => ({
-                    value: coach.id,
-                    label: coach.full_name,
-                  }))}
-                  placeholder="Seleziona maestro"
-                  searchPlaceholder="Cerca maestro"
-                />
-              </div>
             )}
-          </div>
 
-          {/* Note */}
-          <div className="mt-2">
-            <label className="block text-sm font-semibold text-secondary mb-2">Note</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Aggiungi note opzionali..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
-            />
-          </div>
-
-          {/* Griglia slot orari */}
-          <div className="space-y-3 mt-2">
-            <p className="text-sm font-semibold text-secondary">Orari disponibili</p>
-            {loadingSlots ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="h-10 w-10 animate-spin text-secondary mb-3" />
-                <p className="text-secondary font-semibold">Caricamento slot...</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-3">
-                {slots.map((slot) => (
-                  <button
-                    key={slot.time}
-                    type="button"
-                    onClick={() => {
-                      if (!slot.available) return;
-                      setSelectedSlots((prev) => {
-                        if (prev.includes(slot.time)) {
-                          return prev.filter((t) => t !== slot.time);
-                        }
-
-                        if (prev.length === 0) {
-                          return [slot.time];
-                        }
-
-                        const allSlots = [...prev, slot.time].sort();
-                        for (let i = 1; i < allSlots.length; i++) {
-                          const [hPrev] = allSlots[i - 1].split(":").map(Number);
-                          const [hCurr] = allSlots[i].split(":").map(Number);
-                          if (hCurr - hPrev !== 1) {
-                            return [slot.time];
-                          }
-                        }
-
-                        return allSlots;
-                      });
-                    }}
-                    disabled={!slot.available}
-                    className={`relative p-4 rounded-md border border-gray-200 transition-all h-20 flex items-center justify-center ${
-                      selectedSlots.includes(slot.time)
-                        ? "bg-secondary"
-                        : slot.available
-                        ? "bg-secondary/5 hover:bg-secondary/10 hover:scale-105"
-                        : "bg-secondary/5 opacity-40 cursor-not-allowed"
-                    }`}
-                  >
-                    <div className="text-center">
-                      <span
-                        className={`text-xl font-bold block ${
-                          selectedSlots.includes(slot.time)
-                            ? "text-white"
-                            : slot.available
-                            ? "text-secondary"
-                            : "text-secondary/40"
-                        }`}
-                      >
-                        {slot.time}
-                      </span>
-                      {!slot.available && !selectedSlots.includes(slot.time) && (
-                        <span className="text-[10px] text-secondary/40 font-medium">
-                          Occupato
-                        </span>
-                      )}
+            {/* Area Principale */}
+            <div className="bg-white rounded-xl p-6 space-y-6">
+              <div className="space-y-4">
+                {loadingSlots ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
+                    <p className="text-secondary font-semibold">Caricamento slot...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Titolo form */}
+                    <div className="mb-6">
+                      <h2 className="text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
                     </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Footer */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard/admin/bookings")}
-              className="px-6 py-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-colors font-medium"
-            >
-              Annulla
-            </button>
+                    {/* Dettagli prenotazione - stile form moderno */}
+                    <div className="space-y-6 mt-6">
+                      {/* Atleta (read-only) */}
+                      {booking && (
+                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
+                          <div className="flex-1">
+                            <div className="text-secondary font-semibold">
+                              {booking.user_profile?.full_name || "Nome non disponibile"}
+                              {booking.user_profile?.email && (
+                                <span className="text-secondary/60 font-normal ml-2">
+                                  ({booking.user_profile.email})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tipo prenotazione */}
+                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
+                        <div className="flex-1 flex gap-3">
+                          {BOOKING_TYPES.map((type) => (
+                            <button
+                              key={type.value}
+                              type="button"
+                              onClick={() => {
+                                setBookingType(type.value);
+                                if (type.value === "campo") {
+                                  setSelectedCoach("");
+                                }
+                              }}
+                              className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                                bookingType === type.value
+                                  ? 'bg-secondary text-white border-secondary'
+                                  : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                              }`}
+                            >
+                              {type.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Campo */}
+                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                        <div className="flex-1 flex gap-3">
+                          {COURTS.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCourt(c);
+                                setSelectedSlots([]);
+                              }}
+                              className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                                selectedCourt === c
+                                  ? 'bg-secondary text-white border-secondary'
+                                  : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                              }`}
+                            >
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Maestro se necessario */}
+                      {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
+                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
+                          <div className="flex-1">
+                            <SearchableSelect
+                              value={selectedCoach}
+                              onChange={setSelectedCoach}
+                              options={coaches.map((coach) => ({
+                                value: coach.id,
+                                label: coach.full_name,
+                              }))}
+                              placeholder="Seleziona maestro"
+                              searchPlaceholder="Cerca maestro"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Note */}
+                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
+                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+                        <div className="flex-1">
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Eventuali note..."
+                            rows={3}
+                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
+                    
+                    {/* Timeline orizzontale stile bookings */}
+                    <div className="overflow-x-auto scrollbar-hide">
+                      <div style={{ minWidth: '1280px' }}>
+                        {/* Header con orari */}
+                        <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
+                          {Array.from({ length: 16 }, (_, i) => {
+                            const hour = 7 + i;
+                            return (
+                              <div
+                                key={hour}
+                                className="p-3 text-center font-bold text-secondary text-xs flex items-center justify-center"
+                              >
+                                {hour.toString().padStart(2, '0')}:00
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
+                        <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                          {/* Prenotazioni esistenti come blocchi sovrapposti */}
+                          {existingBookings.map((booking) => {
+                            // Ignora la prenotazione che stiamo modificando
+                            if (booking.id === bookingId && !booking.isBlock) return null;
+
+                            const start = new Date(booking.start_time);
+                            const end = new Date(booking.end_time);
+                            const startHour = start.getHours();
+                            const startMinute = start.getMinutes();
+                            const endHour = end.getHours();
+                            const endMinute = end.getMinutes();
+                            
+                            // Calcola posizione e larghezza
+                            const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
+                            const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
+                            const duration = endSlot - startSlot;
+                            
+                            const getBookingStyle = () => {
+                              if (booking.isBlock) {
+                                return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
+                              }
+                              if (booking.status === "cancelled") {
+                                return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
+                              }
+                              switch (booking.type) {
+                                case "lezione_privata":
+                                case "lezione_gruppo":
+                                  return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
+                                case "campo":
+                                  return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
+                                case "arena":
+                                  return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
+                                default:
+                                  return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
+                              }
+                            };
+                            
+                            const getBookingLabel = () => {
+                              if (booking.isBlock) return booking.reason || "CAMPO BLOCCATO";
+                              if (booking.type === "lezione_privata") return "Lezione Privata";
+                              if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
+                              if (booking.type === "arena") return "Match Arena";
+                              return "Campo";
+                            };
+                            
+                            const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+                            const isBlock = booking.isBlock;
+                            
+                            return (
+                              <div
+                                key={booking.id}
+                                onClick={() => router.push(isBlock ? `/dashboard/admin/courts/${booking.id}` : `/dashboard/admin/bookings/${booking.id}`)}
+                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                                style={{
+                                  ...getBookingStyle(),
+                                  left: `${(startSlot / 32) * 100}%`,
+                                  width: `${(duration / 32) * 100}%`,
+                                  top: '4px',
+                                  bottom: '4px'
+                                }}
+                              >
+                                {isBlock ? (
+                                  <>
+                                    <div className="truncate leading-tight uppercase tracking-wider">
+                                      CAMPO BLOCCATO
+                                    </div>
+                                    <div className="text-white/90 text-[10px] mt-1 leading-tight">
+                                      {booking.reason || "Blocco campo"}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="truncate leading-tight">
+                                      {booking.user_profile?.full_name || "Sconosciuto"}
+                                    </div>
+                                    {isLesson && booking.coach_profile && (
+                                      <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
+                                        {booking.coach_profile.full_name}
+                                      </div>
+                                    )}
+                                    <div className="text-white/90 text-[10px] mt-1 uppercase tracking-wide leading-tight">
+                                      {getBookingLabel()}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Slot cliccabili */}
+                          {Array.from({ length: 16 }, (_, hourIndex) => {
+                            const hour = 7 + hourIndex;
+                            const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                            const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
+                            const available1 = isSlotAvailable(time1);
+                            const available2 = time2 ? isSlotAvailable(time2) : false;
+                            const isSelected1 = selectedSlots.includes(time1);
+                            const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
+                            
+                            // Per l'ultima colonna (22:00) mostra solo un'area
+                            if (!time2) {
+                              return (
+                                <div
+                                  key={hour}
+                                  className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
+                                    isSelected1
+                                      ? 'bg-secondary hover:bg-secondary/90'
+                                      : available1
+                                      ? 'bg-white hover:bg-emerald-50/40'
+                                      : 'bg-gray-100 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => toggleSlotSelection(time1, available1)}
+                                  title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                                >
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                                {/* Prima metà (:00) - sinistra */}
+                                <div
+                                  className={`flex-1 relative transition-colors cursor-pointer ${
+                                    isSelected1
+                                      ? 'bg-secondary hover:bg-secondary/90'
+                                      : available1
+                                      ? 'bg-white hover:bg-emerald-50/40'
+                                      : 'bg-gray-100 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => toggleSlotSelection(time1, available1)}
+                                  title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                                />
+                                
+                                {/* Seconda metà (:30) - destra */}
+                                <div
+                                  className={`flex-1 relative transition-colors cursor-pointer ${
+                                    isSelected2
+                                      ? 'bg-secondary hover:bg-secondary/90'
+                                      : available2
+                                      ? 'bg-white hover:bg-emerald-50/40'
+                                      : 'bg-gray-100 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => toggleSlotSelection(time2, available2)}
+                                  title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                                />
+                                
+                                {/* Tacchetta centrale */}
+                                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Bottone Salva */}
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="px-6 py-2.5 text-white bg-secondary rounded-md hover:opacity-90 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+              className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
             >
               {saving ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Salvataggio...
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Salvataggio...</span>
                 </>
               ) : (
-                "Salva Modifiche"
+                <span>Salva Modifiche</span>
               )}
             </button>
           </div>
         </div>
       )}
+
+      {/* Bottom Spacer */}
+      <div className="h-8" />
     </div>
   );
 }

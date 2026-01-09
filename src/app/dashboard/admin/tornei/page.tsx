@@ -11,14 +11,13 @@ import {
   BarChart3,
   Users as UsersIcon,
   Calendar,
-  Filter,
   Search,
-  Archive
+  Archive,
+  Target
 } from "lucide-react";
-import SimpleTournamentCreator from "@/components/tournaments/SimpleTournamentCreator";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import TournamentStats from "@/components/tournaments/TournamentStats";
-import TournamentReports from "@/components/tournaments/TournamentReports";
+import Link from "next/link";
 
 type Tournament = {
   id: string;
@@ -26,6 +25,7 @@ type Tournament = {
   description?: string;
   start_date?: string;
   max_participants?: number;
+  current_participants?: number;
   tournament_type?: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
   competition_type?: 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
   status?: string;
@@ -40,10 +40,8 @@ function AdminTorneiPageInner() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [managingTournamentId, setManagingTournamentId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
-  const [showReports, setShowReports] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -139,7 +137,7 @@ function AdminTorneiPageInner() {
   };
 
   const filteredTournaments = tournaments.filter((t) => {
-    const matchesType = filterType === 'all' || t.tournament_type === filterType;
+    const matchesType = filterType === 'all' || t.tournament_type === filterType || t.competition_type === filterType;
     const matchesSearch = 
       !search ||
       t.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -151,69 +149,46 @@ function AdminTorneiPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Gestione competizioni
-          </h1>
-          <p className="text-secondary/70 text-sm md:text-base">
-            Crea e gestisci tornei e campionati della GST Tennis Academy.
+          <h1 className="text-3xl font-bold text-secondary">Gestione Competizioni</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Visualizza, crea e gestisci tornei e campionati della GST Tennis Academy
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
+            onClick={() => router.push('/dashboard/admin/tornei/new')}
             className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            {showCreateForm ? "Nascondi Form" : "Nuovo Torneo"}
+            Nuovo Torneo
           </button>
           <button
             onClick={() => router.push('/dashboard/admin/tornei/archivio')}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Archivio"
           >
-            <Archive className="h-4 w-4" />
-            Archivio
+            <Archive className="h-5 w-5" />
           </button>
-          <button
-            onClick={() => setShowReports(!showReports)}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+          <Link
+            href="/dashboard/admin/tornei/report"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all inline-flex items-center justify-center"
+            title="Report"
           >
-            <BarChart3 className="h-4 w-4" />
-            Report
-          </button>
+            <BarChart3 className="h-5 w-5" />
+          </Link>
         </div>
       </div>
 
-      {/* Stats */}
-      {/* Reports */}
-      {showReports && (
-        <div className="bg-white rounded-xl p-6">
-          <TournamentReports />
-        </div>
-      )}
-
-      {/* Create Form */}
-      {showCreateForm && (
-        <div className="bg-white rounded-xl p-6">
-          <SimpleTournamentCreator 
-            onSuccess={() => {
-              setShowCreateForm(false);
-              load();
-            }}
-          />
-        </div>
-      )}
-
       {/* Filters */}
-      {!showCreateForm && !showReports && (
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           {/* Search Bar */}
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative flex-1 min-w-[250px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
             <input
               type="text"
-              placeholder="Cerca per nome torneo, descrizione o categoria..."
+              placeholder="Cerca per nome, descrizione o categoria..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
@@ -221,38 +196,35 @@ function AdminTorneiPageInner() {
           </div>
 
           {/* Filter Buttons */}
-          <div className="flex flex-wrap gap-2 md:justify-end">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 filterType === "all"
-                  ? "text-white bg-secondary hover:opacity-90"
+                  ? "text-white bg-secondary"
                   : "bg-white text-secondary/70 hover:bg-secondary/5"
               }`}
             >
-              <Filter className="inline-block w-4 h-4 mr-1.5" />
               Tutti
             </button>
             {Object.entries(typeConfig).map(([type, { label }]) => (
               <button
                 key={type}
                 onClick={() => setFilterType(type as any)}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                   filterType === type
-                    ? "text-white bg-secondary hover:opacity-90"
+                    ? "text-white bg-secondary"
                     : "bg-white text-secondary/70 hover:bg-secondary/5"
                 }`}
               >
                 {label}
               </button>
-            ))}
+            ))}  
           </div>
         </div>
-      )}
 
       {/* Tournaments List */}
-      {!showCreateForm && !showReports && (
-        <>
+      <>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-10 h-10 animate-spin text-secondary" />
@@ -267,105 +239,89 @@ function AdminTorneiPageInner() {
           ) : (
             <div className="space-y-3">
               {/* Header Row */}
-              <div className="bg-secondary/5 rounded-xl px-5 py-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-6 flex-1">
-                    <div className="w-64">
-                      <div className="text-xs font-bold text-secondary/60 uppercase">Nome torneo</div>
-                    </div>
-                    <div className="w-40">
-                      <div className="text-xs font-bold text-secondary/60 uppercase">Tipo</div>
-                    </div>
-                    <div className="w-32">
-                      <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
-                    </div>
-                    <div className="w-24">
-                      <div className="text-xs font-bold text-secondary/60 uppercase">Partecipanti</div>
-                    </div>
-                    <div className="w-32">
-                      <div className="text-xs font-bold text-secondary/60 uppercase">Stato</div>
-                    </div>
+              <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
                   </div>
-                  <div className="w-36 text-right">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+                  <div className="flex-1">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">Nome Torneo</div>
+                  </div>
+                  <div className="w-32 flex-shrink-0 text-center">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
+                  </div>
+                  <div className="w-24 flex-shrink-0 text-center">
+                    <div className="text-xs font-bold text-secondary/60 uppercase">Partecipanti</div>
                   </div>
                 </div>
               </div>
 
               {/* Data Rows */}
               {filteredTournaments.map((tournament) => {
-                const typeInfo = typeConfig[tournament.competition_type || 'eliminazione_diretta'] || typeConfig['eliminazione_diretta'];
                 const statusInfo = statusConfig[tournament.status || 'Aperto'] || statusConfig["Aperto"];
+                
+                // Determina il colore del bordo in base allo stato
+                let borderColor = "#034863"; // secondary - default
+                if (tournament.status === "Aperto") {
+                  // Rosso se posti esauriti, verde altrimenti
+                  if ((tournament.current_participants || 0) >= (tournament.max_participants || 0)) {
+                    borderColor = "#ef4444"; // red - posti esauriti
+                  } else {
+                    borderColor = "#10b981"; // emerald - aperto/fase iscrizione
+                  }
+                } else if (tournament.status === "In Corso" || tournament.status === "In corso") {
+                  borderColor = "#034863"; // secondary (blu del bottone Nuovo Torneo) - in corso
+                } else if (tournament.status === "Completato" || tournament.status === "Concluso" || tournament.status === "Chiuso") {
+                  borderColor = "#6b7280"; // gray - completato/concluso/chiuso
+                }
 
                 return (
                   <div
                     key={tournament.id}
                     onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
-                    className="group bg-white rounded-xl p-5 hover:bg-secondary/5 transition-colors cursor-pointer"
+                    className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all cursor-pointer border-l-4"
+                    style={{ borderLeftColor: borderColor }}
                   >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-6 flex-1">
-                        {/* Nome */}
-                        <div className="w-64">
-                          <div className="font-bold text-secondary truncate">
-                            {tournament.title}
-                          </div>
-                          {tournament.description && (
-                            <div className="text-xs text-secondary/60 truncate">
-                              {tournament.description}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Tipo */}
-                        <div className="w-40">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${typeInfo.color}`}>
-                            {typeInfo.label}
-                          </span>
-                        </div>
-
-                        {/* Data */}
-                        <div className="w-32">
-                          {tournament.start_date ? (
-                            <div className="text-sm font-semibold text-secondary">
-                              {new Date(tournament.start_date).toLocaleDateString('it-IT', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-gray-400">-</div>
-                          )}
-                        </div>
-
-                        {/* Partecipanti */}
-                        <div className="w-24">
-                          <div className="text-sm font-semibold text-secondary">
-                            {tournament.max_participants || 0}
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div className="w-32">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md ${statusInfo.color}`}>
-                            {statusInfo.label}
-                          </span>
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                        {(tournament.tournament_type === 'eliminazione_diretta' || tournament.competition_type === 'eliminazione_diretta') && (
+                          <Trophy className="h-5 w-5 text-secondary/60" />
+                        )}
+                        {(tournament.tournament_type === 'girone_eliminazione' || tournament.competition_type === 'girone_eliminazione') && (
+                          <Target className="h-5 w-5 text-secondary/60" />
+                        )}
+                        {(tournament.tournament_type === 'campionato' || tournament.competition_type === 'campionato') && (
+                          <UsersIcon className="h-5 w-5 text-secondary/60" />
+                        )}
+                      </div>
+                      
+                      {/* Nome */}
+                      <div className="flex-1">
+                        <div className="font-bold text-secondary">
+                          {tournament.title}
                         </div>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2 w-36 justify-end">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteTournament(tournament.id);
-                          }}
-                          className="p-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      {/* Data */}
+                      <div className="w-32 flex-shrink-0 text-center">
+                        {tournament.start_date ? (
+                          <div className="text-sm font-semibold text-secondary">
+                            {new Date(tournament.start_date).toLocaleDateString('it-IT', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-secondary/40">-</div>
+                        )}
+                      </div>
+
+                      {/* Partecipanti */}
+                      <div className="w-24 flex-shrink-0 text-center">
+                        <div className="text-sm font-semibold text-secondary">
+                          {tournament.current_participants || 0}/{tournament.max_participants || 0}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -374,7 +330,6 @@ function AdminTorneiPageInner() {
             </div>
           )}
         </>
-      )}
 
       {/* Pannello di Gestione Torneo */}
       {managingTournamentId && (

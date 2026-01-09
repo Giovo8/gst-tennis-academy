@@ -140,116 +140,107 @@ export default function AdminNewsPage() {
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-2">
           <div>
-            <h1 className="text-3xl font-bold text-secondary mb-2 flex items-center gap-3">
-              <Newspaper className="h-8 w-8" />
-              Gestione News
-            </h1>
-            <p className="text-secondary/70 font-medium">Crea e gestisci le news visibili sulla piattaforma</p>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <Link
-              href="/dashboard/admin/news/create"
-              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Crea News
-            </Link>
-            <Link
-              href="/news"
-              target="_blank"
-              className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Visualizza News
-            </Link>
+            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+              GESTIONE NEWS
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-secondary">Gestione News</h1>
+                <p className="text-gray-600 font-medium mt-1">Crea e gestisci le news visibili sulla piattaforma</p>
+              </div>
+              <Link
+                href="/dashboard/admin/news/create"
+                className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Crea News
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* News List */}
         <div className="space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cerca per titolo o contenuto..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+            />
+          </div>
+
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[250px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-              <input
-                type="text"
-                placeholder="Cerca per titolo o contenuto..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setFilterCategory("all")}
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                filterCategory === "all"
+                  ? "text-white bg-secondary hover:opacity-90"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Tutte
+            </button>
+            {Object.entries(categoryLabels).map(([value, label]) => (
               <button
-                onClick={() => setFilterCategory("all")}
+                key={value}
+                onClick={() => setFilterCategory(value)}
                 className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                  filterCategory === "all"
+                  filterCategory === value
                     ? "text-white bg-secondary hover:opacity-90"
-                    : "bg-white text-secondary/70 hover:bg-secondary/5"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
                 }`}
               >
-                <Filter className="inline-block w-4 h-4 mr-1.5" />
-                Tutte
+                {label}
               </button>
-              {Object.entries(categoryLabels).map(([value, label]) => (
-                <button
-                  key={value}
-                  onClick={() => setFilterCategory(value)}
-                  className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                    filterCategory === value
-                      ? "text-white bg-secondary hover:opacity-90"
-                      : "bg-white text-secondary/70 hover:bg-secondary/5"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
           
           {loading ? (
-            <div className="flex items-center justify-center py-12 bg-white rounded-xl">
+            <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-secondary mx-auto mb-3" />
-                <p className="text-secondary/60">Caricamento news...</p>
+                <Loader2 className="h-10 w-10 animate-spin text-secondary mx-auto mb-3" />
+                <p className="text-gray-600">Caricamento news...</p>
               </div>
             </div>
           ) : filteredNews.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-secondary/10">
-              <Newspaper className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-secondary mb-2">
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+              <Newspaper className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-secondary">
                 {searchQuery || filterCategory !== "all" 
                   ? "Nessuna news trovata" 
                   : "Nessuna news presente"}
               </h3>
-              <p className="text-secondary/60 mb-4">
+              <p className="text-gray-600 mt-1 mb-4">
                 {searchQuery || filterCategory !== "all"
                   ? "Prova a modificare i filtri di ricerca"
                   : "Crea la prima news per iniziare!"}
               </p>
-              {(searchQuery || filterCategory !== "all") && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setFilterCategory("all");
-                  }}
-                  className="text-sm text-secondary hover:underline"
+              {!(searchQuery || filterCategory !== "all") && (
+                <Link
+                  href="/dashboard/admin/news/create"
+                  className="inline-flex items-center gap-2 text-secondary hover:opacity-80 font-semibold"
                 >
-                  Ripristina filtri
-                </button>
+                  <Plus className="h-5 w-5" />
+                  Crea la prima news
+                </Link>
               )}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredNews.map((item) => (
-                <article
+                <Link
                   key={item.id}
-                  className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => window.location.href = `/news/${item.id}`}
+                  href={`/dashboard/admin/news/create?id=${item.id}`}
+                  className="block bg-white rounded-xl border-l-4 border-secondary shadow-md hover:bg-gray-100 transition-all"
                 >
-                  <div className="flex flex-col sm:flex-row gap-4 p-4">
+                  <div className="flex flex-col sm:flex-row gap-4 p-6">
                     {/* Image */}
                     <div className="flex-shrink-0 w-full sm:w-48 h-32 overflow-hidden rounded-lg">
                       {item.image_url ? (
@@ -299,34 +290,23 @@ export default function AdminNewsPage() {
                       </h3>
 
                       {/* Description */}
-                      <p className="text-sm text-secondary/70 line-clamp-2 mb-3">
+                      <p className="text-sm text-gray-600 line-clamp-2">
                         {item.excerpt || item.content.substring(0, 150)}
                       </p>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/dashboard/admin/news/create?id=${item.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 rounded-md bg-secondary/10 hover:bg-secondary/20 text-secondary transition-colors"
-                          title="Modifica"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNews(item.id);
-                          }}
-                          className="p-2 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      {/* Status indicator */}
+                      <div className="flex items-center gap-4 text-xs text-secondary/50 mt-2">
+                        <span>{new Date(item.created_at).toLocaleDateString("it-IT")}</span>
+                        {!item.is_published && (
+                          <>
+                            <span>•</span>
+                            <span className="text-orange-600 font-semibold">Bozza</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}
