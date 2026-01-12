@@ -48,7 +48,7 @@ export function TimeTracker({ initialTime = 0, onTimeUpdate }: TimeTrackerProps)
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/90 to-emerald-800/90 border border-emerald-400/30 p-6 text-white backdrop-blur-sm">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/90 to-emerald-800/90 border border-emerald-400/30 p-4 sm:p-6 text-white backdrop-blur-sm">
       {/* Decorative Wave Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute right-0 top-0 h-full w-1/2">
@@ -68,14 +68,14 @@ export function TimeTracker({ initialTime = 0, onTimeUpdate }: TimeTrackerProps)
       <div className="relative z-10">
         <h3 className="mb-4 text-sm font-medium text-white/80">Time Tracker</h3>
         
-        <div className="mb-6">
-          <div className="text-5xl font-bold tracking-tight">{formatTime(time)}</div>
+        <div className="mb-4 sm:mb-6">
+          <div className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">{formatTime(time)}</div>
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={handleToggle}
-            className="flex-1 rounded-xl bg-white/20 px-4 py-2.5 font-medium backdrop-blur-sm transition-all hover:bg-white/30 flex items-center justify-center gap-2"
+            className="flex-1 rounded-xl bg-white/20 px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base font-medium backdrop-blur-sm transition-all hover:bg-white/30 flex items-center justify-center gap-2"
           >
             {isRunning ? (
               <>
@@ -92,7 +92,7 @@ export function TimeTracker({ initialTime = 0, onTimeUpdate }: TimeTrackerProps)
           
           <button
             onClick={handleReset}
-            className="rounded-xl bg-red-500/20 px-4 py-2.5 backdrop-blur-sm transition-all hover:bg-red-500/30 flex items-center justify-center"
+            className="rounded-xl bg-red-500/20 px-3 sm:px-4 py-2 sm:py-2.5 backdrop-blur-sm transition-all hover:bg-red-500/30 flex items-center justify-center"
             title="Reset"
           >
             <Square className="h-4 w-4" />

@@ -177,7 +177,7 @@ export default function ChallengePage() {
         <p className="text-gray-500">Sfida non trovata</p>
         <button
           onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-frozen-500 text-white rounded-lg hover:bg-frozen-600"
+          className="mt-4 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary"
         >
           Torna indietro
         </button>
@@ -278,15 +278,15 @@ export default function ChallengePage() {
           {/* Players */}
           <div>
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-frozen-500" />
+              <Users className="h-5 w-5 text-secondary" />
               Giocatori
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Challenger */}
-              <div className="p-4 bg-frozen-50 rounded-lg border border-frozen-200">
-                <p className="text-xs font-medium text-frozen-600 mb-2">SFIDANTE</p>
+              <div className="p-4 bg-secondary/5 rounded-lg border border-secondary/20">
+                <p className="text-xs font-medium text-secondary mb-2">SFIDANTE</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-frozen-100 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
                     {challenge.challenger?.avatar_url ? (
                       <img
                         src={challenge.challenger.avatar_url}
@@ -294,7 +294,7 @@ export default function ChallengePage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="font-bold text-frozen-700 text-lg">
+                      <span className="font-bold text-secondary text-lg">
                         {challenge.challenger?.full_name?.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -302,15 +302,15 @@ export default function ChallengePage() {
                   <div>
                     <p className="font-bold text-gray-900">{challenge.challenger?.full_name}</p>
                     {isChallenger && (
-                      <span className="text-xs text-frozen-600 font-medium">(Tu)</span>
+                      <span className="text-xs text-secondary font-medium">(Tu)</span>
                     )}
                   </div>
                 </div>
                 {challenge.match_type === "doubles" && challenge.my_partner && (
-                  <div className="mt-3 pt-3 border-t border-frozen-200">
-                    <p className="text-xs font-medium text-frozen-600 mb-2">PARTNER</p>
+                  <div className="mt-3 pt-3 border-t border-secondary/20">
+                    <p className="text-xs font-medium text-secondary mb-2">PARTNER</p>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-frozen-100 flex items-center justify-center overflow-hidden">
+                      <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
                         {challenge.my_partner?.avatar_url ? (
                           <img
                             src={challenge.my_partner.avatar_url}
@@ -318,7 +318,7 @@ export default function ChallengePage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="font-bold text-frozen-700 text-sm">
+                          <span className="font-bold text-secondary text-sm">
                             {challenge.my_partner?.full_name?.charAt(0).toUpperCase()}
                           </span>
                         )}
@@ -597,7 +597,7 @@ export default function ChallengePage() {
             <div className="flex gap-3 pt-4 border-t">
               <button
                 onClick={() => setShowResultModal(true)}
-                className="flex-1 px-6 py-3 bg-frozen-500 text-white font-semibold rounded-lg hover:bg-frozen-600 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-secondary transition-colors flex items-center justify-center gap-2"
               >
                 <Trophy className="h-5 w-5" />
                 Inserisci Risultato
@@ -649,7 +649,7 @@ export default function ChallengePage() {
                     onClick={() => setSelectedWinner(challenge.challenger_id)}
                     className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
                       selectedWinner === challenge.challenger_id
-                        ? "border-frozen-500 bg-frozen-50"
+                        ? "border-secondary bg-secondary/5"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -662,7 +662,7 @@ export default function ChallengePage() {
                     onClick={() => setSelectedWinner(challenge.opponent_id)}
                     className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
                       selectedWinner === challenge.opponent_id
-                        ? "border-frozen-500 bg-frozen-50"
+                        ? "border-secondary bg-secondary/5"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -687,7 +687,7 @@ export default function ChallengePage() {
                   value={score}
                   onChange={(e) => setScore(e.target.value)}
                   placeholder="es: 6-4, 6-3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
                 />
               </div>
 
@@ -706,7 +706,7 @@ export default function ChallengePage() {
                 <button
                   onClick={handleSubmitResult}
                   disabled={!selectedWinner}
-                  className="flex-1 px-4 py-2 text-white bg-frozen-500 rounded-lg hover:bg-frozen-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 text-white bg-secondary rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Conferma
                 </button>

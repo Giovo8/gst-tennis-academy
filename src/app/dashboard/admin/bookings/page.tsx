@@ -454,7 +454,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               </Link>
               <Link
                 href="/dashboard/admin/bookings/storico"
-                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
                 title="Storico"
               >
                 <Clock className="h-5 w-5" />
@@ -464,7 +464,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           {mode !== "history" && (
             <Link
               href="/dashboard/admin/courts"
-              className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
               title="Blocco Campi"
             >
               <Shield className="h-5 w-5" />
@@ -472,14 +472,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           )}
           <button
             onClick={() => loadBookings()}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
             title="Ricarica"
           >
             <RefreshCw className="h-5 w-5" />
           </button>
           <button
             onClick={exportToCSV}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
             title="Esporta CSV"
           >
             <Download className="h-5 w-5" />
@@ -496,17 +496,17 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             placeholder="Cerca per nome atleta, maestro, email o campo..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
           />
         </div>
         {/* View Mode Toggle */}
-        <div className="flex gap-1 bg-white rounded-md p-1">
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1">
           <button
             onClick={() => setViewMode("list")}
             className={`px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center gap-1.5 ${
               viewMode === "list"
                 ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary"
+                : "text-secondary/60 hover:text-secondary border border-gray-200"
             }`}
           >
             <List className="h-3.5 w-3.5" />
@@ -517,7 +517,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             className={`px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center gap-1.5 ${
               viewMode === "timeline"
                 ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary"
+                : "text-secondary/60 hover:text-secondary border border-gray-200"
             }`}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
@@ -528,7 +528,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       {/* Bookings List or Timeline */}
       {viewMode === "timeline" ? (
-        <BookingsTimeline />
+        <BookingsTimeline bookings={sortedBookings} loading={loading} />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
@@ -543,73 +543,71 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       ) : (
         <div className="space-y-3">
           {/* Header Row */}
-          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-4 flex-1">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <button
-                    onClick={() => handleSort("type")}
-                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                  >
-                    #
-                    {sortBy === "type" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="w-24 flex-shrink-0">
-                  <button
-                    onClick={() => handleSort("date")}
-                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                  >
-                    Data
-                    {sortBy === "date" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="w-28 flex-shrink-0">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Orario</div>
-                </div>
-                <div className="w-32 flex-shrink-0">
-                  <button
-                    onClick={() => handleSort("court")}
-                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                  >
-                    Campo
-                    {sortBy === "court" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="w-40 flex-shrink-0">
-                  <button
-                    onClick={() => handleSort("athlete")}
-                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                  >
-                    Atleta
-                    {sortBy === "athlete" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="w-28 flex-shrink-0">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
-                </div>
-                <div className="w-52 flex-shrink-0">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
-                </div>
-                <div className="w-40 flex-shrink-0">
-                  <button
-                    onClick={() => handleSort("coach")}
-                    className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                  >
-                    Maestro
-                    {sortBy === "coach" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
+              <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                <button
+                  onClick={() => handleSort("type")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  #
+                  {sortBy === "type" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="w-24 flex-shrink-0">
+                <button
+                  onClick={() => handleSort("date")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Data
+                  {sortBy === "date" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="w-20 flex-shrink-0 text-center">
+                <div className="text-xs font-bold text-white/80 uppercase">Orario</div>
+              </div>
+              <div className="w-32 flex-shrink-0 text-center">
+                <button
+                  onClick={() => handleSort("court")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                >
+                  Campo
+                  {sortBy === "court" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="w-40 flex-shrink-0 text-center">
+                <button
+                  onClick={() => handleSort("athlete")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                >
+                  Atleta
+                  {sortBy === "athlete" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="w-28 flex-shrink-0 text-center">
+                <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+              </div>
+              <div className="w-52 flex-shrink-0 text-center">
+                <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+              </div>
+              <div className="w-40 flex-shrink-0 text-center">
+                <button
+                  onClick={() => handleSort("coach")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                >
+                  Maestro
+                  {sortBy === "coach" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -636,23 +634,23 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <Link
                 key={booking.id}
                 href={`/dashboard/admin/bookings/${booking.id}`}
-                className="bg-white rounded-md p-5 hover:shadow-md transition-all block cursor-pointer border-l-4"
+                className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all block cursor-pointer border-l-4"
                 style={borderStyle}
               >
-                <div className="flex items-center gap-4 flex-1">
+                <div className="flex items-center gap-4">
                     {/* Simbolo Tipo */}
                     <div className="w-10 flex-shrink-0 flex items-center justify-center">
                       {booking.type === "lezione_privata" && (
-                        <User className="h-5 w-5 text-secondary" strokeWidth={2} />
+                        <User className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
                       {booking.type === "lezione_gruppo" && (
-                        <Users className="h-5 w-5 text-secondary" strokeWidth={2} />
+                        <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
                       {booking.type === "campo" && (
-                        <Circle className="h-5 w-5 text-secondary" strokeWidth={2} />
+                        <Circle className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
                       {booking.type === "arena" && (
-                        <Trophy className="h-5 w-5 text-secondary" strokeWidth={2} />
+                        <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
                     </div>
 
@@ -664,40 +662,40 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     </div>
 
                     {/* Orario */}
-                    <div className="w-28 flex-shrink-0">
-                      <div className="text-sm text-secondary/80">
-                        {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                    <div className="w-20 flex-shrink-0 text-center">
+                      <div className="text-sm font-semibold text-secondary">
+                        {formatTime(booking.start_time)}
                       </div>
                     </div>
 
                     {/* Campo */}
-                    <div className="w-32 flex-shrink-0">
+                    <div className="w-32 flex-shrink-0 text-center">
                       <div className="font-bold text-secondary">{booking.court}</div>
                     </div>
 
                     {/* Nome Atleta */}
-                    <div className="w-40 flex-shrink-0">
+                    <div className="w-40 flex-shrink-0 text-center">
                       <div className="font-semibold text-secondary truncate">
                         {booking.user_profile?.full_name || "Nome non disponibile"}
                       </div>
                     </div>
 
                     {/* Telefono Atleta */}
-                    <div className="w-28 flex-shrink-0">
+                    <div className="w-28 flex-shrink-0 text-center">
                       <div className="text-sm text-secondary/70 truncate">
                         {booking.user_profile?.phone || "-"}
                       </div>
                     </div>
 
                     {/* Email Atleta */}
-                    <div className="w-52 flex-shrink-0">
+                    <div className="w-52 flex-shrink-0 text-center">
                       <div className="text-sm text-secondary/70 truncate">
                         {booking.user_profile?.email || "-"}
                       </div>
                     </div>
 
                     {/* Maestro */}
-                    <div className="w-40 flex-shrink-0">
+                    <div className="w-40 flex-shrink-0 text-center">
                       {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") ? (
                         <div className="font-semibold text-secondary truncate">
                           {booking.coach_profile?.full_name || "Non assegnato"}

@@ -169,24 +169,17 @@ export default function AtletaDashboard() {
       {/* Modern Header */}
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-secondary mb-2">
             Bentornato, {userName}
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-secondary/70 font-medium">
             Ecco il riepilogo della tua attività
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <Link
-            href="/dashboard/atleta/(main)/subscription"
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all"
-          >
-            <CreditCard className="h-4 w-4" />
-            Gestisci Abbonamento
-          </Link>
-          <Link
             href="/dashboard/atleta/bookings/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-frozen-500 rounded-xl hover:bg-frozen-600 transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all"
           >
             <Plus className="h-4 w-4" />
             Prenota Campo
@@ -194,83 +187,67 @@ export default function AtletaDashboard() {
         </div>
       </div>
 
-      {/* Modern Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="relative bg-white rounded-xl p-6 border border-gray-200 overflow-hidden group hover:border-gray-300 transition-all">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-frozen-50 rounded-full -mr-10 -mt-10 opacity-50" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2.5 bg-frozen-50 rounded-lg">
-                <CreditCard className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs font-medium text-gray-500 px-2 py-1 rounded-md">
-                Disponibili
-              </span>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Link href="/dashboard/atleta/(main)/subscription" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-cyan-50 rounded-lg group-hover:bg-cyan-100 transition-colors">
+              <CreditCard className="h-6 w-6 text-cyan-600" />
             </div>
-            <div className="space-y-1">
-              <p className="text-3xl font-bold text-gray-900">{stats.creditsAvailable}</p>
-              <p className="text-sm font-medium text-gray-600">Crediti</p>
-              <p className="text-xs text-gray-500">{stats.weeklyCredits} crediti/settimana</p>
-            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-cyan-600 transition-colors" />
           </div>
-        </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.creditsAvailable}</h3>
+          <p className="text-sm text-gray-600 mb-2">Crediti Disponibili</p>
+          <div className="flex items-center gap-2 text-xs text-cyan-600">
+            <TrendingUp className="h-3 w-3" />
+            <span>{stats.weeklyCredits} crediti/settimana</span>
+          </div>
+        </Link>
 
-        <div className="relative bg-white rounded-xl p-6 border border-gray-200 overflow-hidden group hover:border-gray-300 transition-all">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-frozen-50 rounded-full -mr-10 -mt-10 opacity-50" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2.5 bg-frozen-50 rounded-lg">
-                <Calendar className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs font-medium text-gray-500 px-2 py-1 rounded-md">
-                In arrivo
-              </span>
+        <Link href="/dashboard/atleta/bookings" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <Calendar className="h-6 w-6 text-blue-600" />
             </div>
-            <div className="space-y-1">
-              <p className="text-3xl font-bold text-gray-900">{stats.upcomingBookings}</p>
-              <p className="text-sm font-medium text-gray-600">Prenotazioni</p>
-              <p className="text-xs text-gray-500">Prossime sessioni</p>
-            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
           </div>
-        </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.upcomingBookings}</h3>
+          <p className="text-sm text-gray-600 mb-2">Prenotazioni</p>
+          <div className="flex items-center gap-2 text-xs text-blue-600">
+            <Clock className="h-3 w-3" />
+            <span>Prossime sessioni</span>
+          </div>
+        </Link>
 
-        <div className="relative bg-white rounded-xl p-6 border border-gray-200 overflow-hidden group hover:border-gray-300 transition-all">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-frozen-50 rounded-full -mr-10 -mt-10 opacity-50" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2.5 bg-frozen-50 rounded-lg">
-                <Trophy className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs font-medium text-gray-500 px-2 py-1 rounded-md">
-                Attivi
-              </span>
+        <Link href="/dashboard/atleta/tornei" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors">
+              <Trophy className="h-6 w-6 text-purple-600" />
             </div>
-            <div className="space-y-1">
-              <p className="text-3xl font-bold text-gray-900">{stats.activeTournaments}</p>
-              <p className="text-sm font-medium text-gray-600">Tornei</p>
-              <p className="text-xs text-gray-500">In competizione</p>
-            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
           </div>
-        </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.activeTournaments}</h3>
+          <p className="text-sm text-gray-600 mb-2">Tornei Attivi</p>
+          <div className="flex items-center gap-2 text-xs text-purple-600">
+            <Trophy className="h-3 w-3" />
+            <span>In competizione</span>
+          </div>
+        </Link>
 
-        <div className="relative bg-white rounded-xl p-6 border border-gray-200 overflow-hidden group hover:border-gray-300 transition-all">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-frozen-50 rounded-full -mr-10 -mt-10 opacity-50" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2.5 bg-frozen-50 rounded-lg">
-                <Video className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs font-medium text-gray-500 px-2 py-1 rounded-md">
-                Questo mese
-              </span>
+        <Link href="/dashboard/atleta/videos" className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+              <Video className="h-6 w-6 text-green-600" />
             </div>
-            <div className="space-y-1">
-              <p className="text-3xl font-bold text-gray-900">{stats.completedLessons}</p>
-              <p className="text-sm font-medium text-gray-600">Video</p>
-              <p className="text-xs text-gray-500">Lezioni completate</p>
-            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
           </div>
-        </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.completedLessons}</h3>
+          <p className="text-sm text-gray-600 mb-2">Video Disponibili</p>
+          <div className="flex items-center gap-2 text-xs text-green-600">
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Lezioni completate</span>
+          </div>
+        </Link>
       </div>
 
       {/* Main Content Grid */}
@@ -280,12 +257,12 @@ export default function AtletaDashboard() {
           <div className="px-6 py-5 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-frozen-600" />
+                <Calendar className="h-5 w-5 text-secondary" />
                 Prossime Prenotazioni
               </h2>
               <Link
                 href="/dashboard/atleta/bookings"
-                className="text-sm font-semibold text-frozen-500 hover:text-frozen-600 flex items-center gap-1 transition-colors"
+                className="text-sm font-semibold text-secondary hover:opacity-80 flex items-center gap-1 transition-colors"
               >
                 Vedi tutte
                 <ArrowRight className="h-4 w-4" />
@@ -303,7 +280,7 @@ export default function AtletaDashboard() {
                 <p className="text-sm text-gray-600 mb-6">Prenota un campo per iniziare ad allenarti</p>
                 <Link
                   href="/dashboard/atleta/bookings/new"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-frozen-500 rounded-xl hover:bg-frozen-600 transition-all"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all"
                 >
                   <Plus className="h-4 w-4" />
                   Prenota Ora
@@ -314,17 +291,17 @@ export default function AtletaDashboard() {
                 {nextBookings.map((booking, index) => (
                   <div
                     key={booking.id}
-                    className="relative p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-frozen-300 hover:bg-frozen-50/30 transition-all group"
+                    className="relative p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-secondary/30 hover:bg-blue-50/30 transition-all group"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 p-2 bg-frozen-500 rounded-lg">
+                      <div className="flex-shrink-0 p-2 bg-secondary rounded-lg">
                         <Calendar className="h-5 w-5 text-white" />
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h3 className="font-bold text-gray-900">{booking.court}</h3>
-                          <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-frozen-50 text-frozen-700 rounded-md whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-secondary/10 text-secondary rounded-md whitespace-nowrap">
                             {booking.type}
                           </span>
                         </div>
@@ -353,12 +330,12 @@ export default function AtletaDashboard() {
             <div className="px-6 py-5 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-frozen-600" />
+                  <Bell className="h-5 w-5 text-yellow-600" />
                   Annunci
                 </h2>
                 <Link
                   href="/dashboard/atleta/annunci"
-                  className="text-sm font-semibold text-frozen-500 hover:text-frozen-600 flex items-center gap-1 transition-colors"
+                  className="text-sm font-semibold text-secondary hover:opacity-80 flex items-center gap-1 transition-colors"
                 >
                   Tutti
                   <ArrowRight className="h-4 w-4" />
@@ -381,17 +358,17 @@ export default function AtletaDashboard() {
                     <Link
                       key={announcement.id}
                       href="/dashboard/atleta/annunci"
-                      className="block p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-frozen-300 hover:bg-frozen-50/30 transition-all group relative"
+                      className="block p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-yellow-300 hover:bg-yellow-50/30 transition-all group relative"
                     >
                       {announcement.is_pinned && (
-                        <div className="absolute top-3 right-3 w-2 h-2 bg-frozen-500 rounded-full" />
+                        <div className="absolute top-3 right-3 w-2 h-2 bg-yellow-500 rounded-full" />
                       )}
-                      
+
                       <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 p-1.5 bg-frozen-50 rounded-md">
-                          <Megaphone className="h-4 w-4 text-frozen-600" />
+                        <div className="flex-shrink-0 p-1.5 bg-yellow-50 rounded-md">
+                          <Megaphone className="h-4 w-4 text-yellow-600" />
                         </div>
-                        <h3 className="flex-1 font-bold text-gray-900 text-sm line-clamp-2 group-hover:text-frozen-600 transition-colors">
+                        <h3 className="flex-1 font-bold text-gray-900 text-sm line-clamp-2 group-hover:text-yellow-600 transition-colors">
                           {announcement.title}
                         </h3>
                       </div>
@@ -403,7 +380,7 @@ export default function AtletaDashboard() {
                       <div className="flex items-center justify-between ml-9">
                         {announcement.profiles?.full_name && (
                           <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <div className="w-6 h-6 rounded-full bg-frozen-50 flex items-center justify-center text-frozen-700 font-semibold text-xs">
+                            <div className="w-6 h-6 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-semibold text-xs">
                               {announcement.profiles.full_name.charAt(0)}
                             </div>
                             <span className="font-medium">{announcement.profiles.full_name}</span>
@@ -435,7 +412,7 @@ export default function AtletaDashboard() {
           <div className="bg-white rounded-xl border border-gray-200">
             <div className="px-6 py-5 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Zap className="h-5 w-5 text-frozen-600" />
+                <Zap className="h-5 w-5 text-secondary" />
                 Azioni Rapide
               </h2>
             </div>
@@ -457,44 +434,44 @@ export default function AtletaDashboard() {
 
               <Link
                 href="/dashboard/atleta/bookings/new"
-                className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-frozen-50 hover:border-frozen-300 transition-all group"
+                className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-all group"
               >
-                <div className="p-2 bg-frozen-500 rounded-lg group-hover:scale-105 transition-transform">
+                <div className="p-2 bg-secondary rounded-lg group-hover:scale-105 transition-transform">
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-gray-900 text-sm">Prenota Campo</p>
                   <p className="text-xs text-gray-600">Nuovo allenamento</p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-frozen-500 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-secondary group-hover:translate-x-0.5 transition-all" />
               </Link>
 
               <Link
                 href="/dashboard/atleta/tornei"
-                className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-frozen-50 hover:border-frozen-300 transition-all group"
+                className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition-all group"
               >
-                <div className="p-2 bg-frozen-500 rounded-lg group-hover:scale-105 transition-transform">
+                <div className="p-2 bg-purple-600 rounded-lg group-hover:scale-105 transition-transform">
                   <Trophy className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-gray-900 text-sm">Iscriviti a Torneo</p>
                   <p className="text-xs text-gray-600">Competizioni disponibili</p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-frozen-500 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all" />
               </Link>
 
               <Link
                 href="/dashboard/atleta/videos"
-                className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-frozen-50 hover:border-frozen-300 transition-all group"
+                className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-all group"
               >
-                <div className="p-2 bg-frozen-500 rounded-lg group-hover:scale-105 transition-transform">
+                <div className="p-2 bg-green-600 rounded-lg group-hover:scale-105 transition-transform">
                   <Video className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-gray-900 text-sm">Video Lezioni</p>
                   <p className="text-xs text-gray-600">Migliora la tecnica</p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-frozen-500 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>
           </div>

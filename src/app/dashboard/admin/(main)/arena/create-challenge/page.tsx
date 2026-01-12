@@ -180,143 +180,168 @@ export default function CreateChallengePage() {
   }
 
   async function loadAvailableSlots() {
+    if (!selectedDate || !selectedCourt) return;
+
     setLoadingSlots(true);
-    try {
-      const dateStr = format(selectedDate, "yyyy-MM-dd");
-      const response = await fetch(
-        `/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(selectedCourt)}`
-      );
 
-      if (response.ok) {
-        const data = await response.json();
-        setSlots(data.slots || []);
-      } else {
-        // Se fallisce, genera slot base dalle 7:00 alle 22:00
-        generateDefaultSlots();
+    const dateStr = selectedDate.toISOString().split("T")[0];
+
+    // Get existing bookings for this court and date
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("id, user_id, coach_id, start_time, end_time, type, status, manager_confirmed, coach_confirmed")
+      .eq("court", selectedCourt)
+      .neq("status", "cancelled")
+      .gte("start_time", `${dateStr}T00:00:00`)
+      .lte("start_time", `${dateStr}T23:59:59`);
+
+    // Get court blocks for this court and date
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: courtBlocks } = await supabase
+      .from("court_blocks")
+      .select("id, start_time, end_time, reason")
+      .eq("court_id", selectedCourt)
+      .gte("start_time", startOfDay.toISOString())
+      .lte("start_time", endOfDay.toISOString());
+
+    // Fetch profiles for bookings
+    const userIds = [...new Set([
+      ...(bookings?.map(b => b.user_id) || []),
+      ...(bookings?.map(b => b.coach_id).filter(Boolean) || [])
+    ])];
+
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", userIds);
+
+    const profilesMap = new Map(
+      profilesData?.map(p => [p.id, p]) || []
+    );
+
+    const enrichedBookings = bookings?.map(booking => ({
+      ...booking,
+      user_profile: profilesMap.get(booking.user_id) || null,
+      coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null
+    })) || [];
+
+    // Add court blocks as fake bookings for visualization
+    const blocksAsBookings = courtBlocks?.map(block => ({
+      id: block.id,
+      start_time: block.start_time,
+      end_time: block.end_time,
+      type: "blocco",
+      status: "blocked",
+      user_profile: null,
+      coach_profile: null,
+      reason: block.reason,
+      isBlock: true
+    })) || [];
+
+    const allItems = [...enrichedBookings, ...blocksAsBookings];
+    setExistingBookings(allItems);
+
+    // Build occupied half-hour slots set (bookings + court blocks)
+    const occupiedSlots = new Set<string>();
+
+    // Mark slots occupied by bookings
+    bookings?.forEach(b => {
+      const start = new Date(b.start_time);
+      const end = new Date(b.end_time);
+
+      // Mark all 30-minute slots as occupied
+      let current = new Date(start);
+      while (current < end) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        occupiedSlots.add(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
       }
+    });
 
-      // Carica anche le prenotazioni esistenti
-      await loadExistingBookings();
-    } catch (error) {
-      console.error("Error loading slots:", error);
-      // Se fallisce, genera slot base
-      generateDefaultSlots();
-    } finally {
-      setLoadingSlots(false);
+    // Mark slots occupied by court blocks
+    courtBlocks?.forEach(block => {
+      const start = new Date(block.start_time);
+      const end = new Date(block.end_time);
+
+      // Mark all 30-minute slots as occupied
+      let current = new Date(start);
+      while (current < end) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        occupiedSlots.add(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+    });
+
+    // Generate slots every 30 minutes (07:00 - 22:00)
+    const generatedSlots: { time: string; available: boolean }[] = [];
+    const now = new Date();
+    const isToday = selectedDate.toDateString() === now.toDateString();
+
+    for (let hour = 7; hour <= 22; hour++) {
+      for (let minute of [0, 30]) {
+        if (hour === 22 && minute === 30) break;
+
+        const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+
+        // Slot disponibile se non è già occupato
+        let available = !occupiedSlots.has(time);
+
+        // If today, check if slot is in the past
+        if (isToday) {
+          const slotTime = new Date(selectedDate);
+          slotTime.setHours(hour, minute, 0, 0);
+          if (slotTime <= now) {
+            available = false;
+          }
+        }
+
+        generatedSlots.push({ time, available });
+      }
     }
+
+    setSlots(generatedSlots);
+    setLoadingSlots(false);
   }
 
-  async function loadExistingBookings() {
-    try {
-      const dateStr = format(selectedDate, "yyyy-MM-dd");
-      
-      // Get existing bookings for this court and date
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("id, user_id, coach_id, start_time, end_time, type, status, manager_confirmed, coach_confirmed")
-        .eq("court", selectedCourt)
-        .neq("status", "cancelled")
-        .gte("start_time", `${dateStr}T00:00:00`)
-        .lte("start_time", `${dateStr}T23:59:59`);
-
-      // Get court blocks for this court and date
-      const startOfDay = new Date(selectedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(selectedDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const { data: courtBlocks } = await supabase
-        .from("court_blocks")
-        .select("id, start_time, end_time, reason")
-        .eq("court_id", selectedCourt)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString());
-
-      // Fetch profiles for bookings
-      const userIds = [...new Set([
-        ...(bookings?.map(b => b.user_id) || []),
-        ...(bookings?.map(b => b.coach_id).filter(Boolean) || [])
-      ])];
-
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds);
-
-      const profilesMap = new Map(
-        profilesData?.map(p => [p.id, p]) || []
-      );
-
-      const enrichedBookings = bookings?.map(booking => ({
-        ...booking,
-        user_profile: profilesMap.get(booking.user_id) || null,
-        coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null
-      })) || [];
-
-      // Add court blocks as fake bookings for visualization
-      const blocksAsBookings = courtBlocks?.map(block => ({
-        id: block.id,
-        start_time: block.start_time,
-        end_time: block.end_time,
-        type: "blocco",
-        status: "blocked",
-        user_profile: null,
-        coach_profile: null,
-        reason: block.reason,
-        isBlock: true
-      })) || [];
-
-      const allBookings = [...enrichedBookings, ...blocksAsBookings];
-      setExistingBookings(allBookings);
-
-      // Marca gli slot occupati come non disponibili
-      setSlots(prevSlots => prevSlots.map(slot => {
-        const isOccupied = allBookings.some(booking => {
-          const start = new Date(booking.start_time);
-          const end = new Date(booking.end_time);
-          const [slotHour, slotMinute] = slot.time.split(':').map(Number);
-          const slotDate = new Date(selectedDate);
-          slotDate.setHours(slotHour, slotMinute, 0, 0);
-          
-          return slotDate >= start && slotDate < end;
-        });
-        
-        return {
-          ...slot,
-          available: !isOccupied && slot.available
-        };
-      }));
-    } catch (error) {
-      console.error("Error loading existing bookings:", error);
-      setExistingBookings([]);
-    }
-  }
-
-  function generateDefaultSlots() {
-    const timeSlots = [];
-    for (let hour = 7; hour <= 21; hour++) {
-      timeSlots.push({
-        time: `${hour.toString().padStart(2, "0")}:00`,
-        available: true,
-      });
-      timeSlots.push({
-        time: `${hour.toString().padStart(2, "0")}:30`,
-        available: true,
-      });
-    }
-    timeSlots.push({ time: "22:00", available: true });
-    setSlots(timeSlots);
-  }
 
   function handleSlotClick(time: string, available: boolean) {
     if (!available) return;
 
     setSelectedSlots((prev) => {
+      // se già selezionato, deseleziona
       if (prev.includes(time)) {
         return prev.filter((t) => t !== time);
-      } else {
-        return [...prev, time].sort();
       }
+
+      // prima selezione
+      if (prev.length === 0) {
+        return [time];
+      }
+
+      const allSlots = [...prev, time].sort((a, b) => {
+        const [hA, mA] = a.split(":").map(Number);
+        const [hB, mB] = b.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
+
+      // verifica se sono consecutivi (ogni slot è 30 minuti)
+      for (let i = 1; i < allSlots.length; i++) {
+        const [hPrev, mPrev] = allSlots[i - 1].split(":").map(Number);
+        const [hCurr, mCurr] = allSlots[i].split(":").map(Number);
+        const prevMinutes = hPrev * 60 + mPrev;
+        const currMinutes = hCurr * 60 + mCurr;
+        if (currMinutes - prevMinutes !== 30) {
+          return [time]; // non consecutivi, resetta
+        }
+      }
+
+      return allSlots;
     });
   }
 
@@ -599,8 +624,8 @@ export default function CreateChallengePage() {
                   {/* Dettagli sfida - stile form moderno */}
                   <div className="space-y-6 mt-6">
                     {/* Sfidante */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={challenger}
@@ -613,8 +638,8 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Sfidato */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={opponent}
@@ -627,8 +652,8 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Tipo Match */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
                       <div className="flex-1 flex gap-3">
                         {MATCH_TYPES.map((type) => (
                           <button
@@ -650,8 +675,8 @@ export default function CreateChallengePage() {
                     {/* Partners se doppio */}
                     {matchType === "doubles" && (
                       <>
-                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
+                        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                          <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={myPartner}
@@ -663,8 +688,8 @@ export default function CreateChallengePage() {
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
+                        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                          <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={opponentPartner}
@@ -679,8 +704,8 @@ export default function CreateChallengePage() {
                     )}
 
                     {/* Tipo Sfida */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
                       <div className="flex-1 flex gap-3">
                         {CHALLENGE_TYPES.map((type) => (
                           <button
@@ -700,8 +725,8 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Formato Match */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
                       <div className="flex-1 flex gap-3">
                         {MATCH_FORMATS.map((format) => (
                           <button
@@ -721,8 +746,8 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Campo */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
                       <div className="flex-1 flex gap-3 flex-wrap">
                         {COURTS.map((court) => (
                           <button
@@ -746,15 +771,15 @@ export default function CreateChallengePage() {
                   
                   {/* Timeline orizzontale stile bookings */}
                   <div className="overflow-x-auto scrollbar-hide">
-                    <div style={{ minWidth: '1280px' }}>
+                    <div style={{ minWidth: 'min(100%, 1280px)' }} className="md:min-w-[1280px]">
                       {/* Header con orari */}
-                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
+                      <div className="grid grid-cols-[repeat(16,_minmax(60px,_1fr))] md:grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
                         {Array.from({ length: 16 }, (_, i) => {
                           const hour = 7 + i;
                           return (
                             <div
                               key={hour}
-                              className="p-3 text-center font-bold text-secondary text-xs flex items-center justify-center"
+                              className="p-1.5 sm:p-2 md:p-3 text-center font-bold text-secondary text-[10px] sm:text-xs flex items-center justify-center"
                             >
                               {hour.toString().padStart(2, '0')}:00
                             </div>
@@ -763,7 +788,7 @@ export default function CreateChallengePage() {
                       </div>
 
                       {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
-                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                      <div className="grid grid-cols-[repeat(16,_minmax(60px,_1fr))] md:grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
                         {/* Prenotazioni esistenti come blocchi sovrapposti */}
                         {existingBookings.map((booking) => {
                           const start = new Date(booking.start_time);
@@ -854,8 +879,10 @@ export default function CreateChallengePage() {
                           const hour = 7 + hourIndex;
                           const time1 = `${hour.toString().padStart(2, '0')}:00`;
                           const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
-                          const available1 = slots.find(s => s.time === time1)?.available ?? true;
-                          const available2 = time2 ? (slots.find(s => s.time === time2)?.available ?? true) : false;
+                          const slot1 = slots.find(s => s.time === time1);
+                          const slot2 = time2 ? slots.find(s => s.time === time2) : null;
+                          const available1 = slot1 ? slot1.available : false;
+                          const available2 = slot2 ? slot2.available : false;
                           const isSelected1 = selectedSlots.includes(time1);
                           const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
                           
@@ -864,66 +891,49 @@ export default function CreateChallengePage() {
                             return (
                               <div
                                 key={hour}
-                                className={`border-r border-gray-200 relative transition-all ${
+                                className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
                                   isSelected1
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
+                                    ? 'bg-secondary hover:bg-secondary/90'
                                     : available1
-                                    ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
-                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
                                 }`}
                                 onClick={() => handleSlotClick(time1, available1)}
                                 title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
                               >
                                 <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
-                                {isSelected1 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                                  </div>
-                                )}
                               </div>
                             );
                           }
-                          
+
                           return (
                             <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
                               {/* Prima metà (:00) - sinistra */}
                               <div
-                                className={`flex-1 relative transition-all ${
+                                className={`flex-1 relative transition-colors cursor-pointer ${
                                   isSelected1
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
+                                    ? 'bg-secondary hover:bg-secondary/90'
                                     : available1
-                                    ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
-                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
                                 }`}
                                 onClick={() => handleSlotClick(time1, available1)}
                                 title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                              >
-                                {isSelected1 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                                  </div>
-                                )}
-                              </div>
-                              
+                              />
+
                               {/* Seconda metà (:30) - destra */}
                               <div
-                                className={`flex-1 relative transition-all ${
+                                className={`flex-1 relative transition-colors cursor-pointer ${
                                   isSelected2
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
+                                    ? 'bg-secondary hover:bg-secondary/90'
                                     : available2
-                                    ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
-                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
+                                    ? 'bg-white hover:bg-emerald-50/40'
+                                    : 'bg-gray-100 cursor-not-allowed'
                                 }`}
                                 onClick={() => handleSlotClick(time2, available2)}
                                 title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                              >
-                                {isSelected2 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                                  </div>
-                                )}
-                              </div>
-                              
+                              />
+
                               {/* Tacchetta centrale */}
                               <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                             </div>

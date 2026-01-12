@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { logActivityServer } from "@/lib/activity/logActivity";
 
 async function getUserProfileFromRequest(req: Request) {
   const authHeader = (req as any).headers?.get?.("authorization") ?? null;
@@ -101,6 +102,23 @@ export async function POST(req: Request) {
     if (error) {
       // unique violation or other
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Log activity
+    if (data && data[0]) {
+      await logActivityServer({
+        userId: user_id,
+        action: "tournament.join",
+        entityType: "tournament",
+        entityId: tournament_id,
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+        metadata: {
+          participantId: data[0].id,
+          registeredBy: profile.id,
+          registeredByName: profile.full_name,
+        },
+      });
     }
 
     return NextResponse.json({ participant: data?.[0] }, { status: 201 });

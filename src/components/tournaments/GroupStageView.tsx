@@ -402,14 +402,14 @@ export default function GroupStageView({
       {/* Classifica per girone */}
       {activeTab === 'standings' && selectedGroup && (
         <div className="space-y-4">{/* Header */}
-              <div className="bg-white rounded-lg px-5 py-3">
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Pos</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase"></div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">PG</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Punti</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Diff. Set</div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Pos</div>
+                  <div className="text-xs font-bold text-white/80 uppercase"></div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">PG</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Set</div>
                 </div>
               </div>
 
@@ -436,17 +436,18 @@ export default function GroupStageView({
                     .map((part: string) => part[0]?.toUpperCase())
                     .join('');
 
-                  let borderColor = 'border-gray-200';
+                  let borderLeftColor = '#0f4c7c'; // secondary default
                   if (isQualified) {
-                    if (index === 0) borderColor = 'border-yellow-500';
-                    else if (index === 1) borderColor = 'border-gray-400';
-                    else if (index === 2) borderColor = 'border-amber-600';
+                    if (index === 0) borderLeftColor = '#eab308'; // oro
+                    else if (index === 1) borderLeftColor = '#9ca3af'; // argento
+                    else if (index === 2) borderLeftColor = '#f97316'; // bronzo
                   }
 
                   return (
                     <div
                       key={participant.id}
-                      className={`bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 ${borderColor}`}
+                      className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                      style={{ borderLeftColor }}
                     >
                       <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
                         <div className="text-lg font-bold text-secondary text-center">

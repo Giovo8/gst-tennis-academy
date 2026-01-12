@@ -222,8 +222,8 @@ export default function NewAnnouncementPage() {
             
             <div className="space-y-6">
               {/* Title */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Titolo <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1">
@@ -239,8 +239,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Content */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Contenuto <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1">
@@ -255,8 +255,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Type */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Tipo Annuncio <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1 flex flex-wrap gap-3">
@@ -278,8 +278,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Priority */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Priorità</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Priorità</label>
                 <div className="flex-1 flex gap-3">
                   {priorityOptions.map((option) => (
                     <button
@@ -299,8 +299,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Visibility */}
-              <div className="flex items-start gap-8">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Visibilità</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Visibilità</label>
                 <div className="flex-1 flex flex-wrap gap-3">
                   {visibilityOptions.map((option) => (
                     <button
@@ -326,8 +326,8 @@ export default function NewAnnouncementPage() {
             
             <div className="space-y-6">
               {/* Image URL */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
                 <div className="flex-1">
                   <input
                     type="url"
@@ -340,8 +340,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Link URL */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Link</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Link</label>
                 <div className="flex-1">
                   <input
                     type="url"
@@ -354,8 +354,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Link Text */}
-              <div className="flex items-start gap-8">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Testo Link</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Testo Link</label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -374,8 +374,8 @@ export default function NewAnnouncementPage() {
             
             <div className="space-y-6">
               {/* Expiry Date */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Scadenza</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Scadenza</label>
                 <div className="flex-1">
                   <input
                     type="date"
@@ -387,8 +387,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Options */}
-              <div className="flex items-start gap-8">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Opzioni</label>
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Opzioni</label>
                 <div className="flex-1 flex gap-6">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input

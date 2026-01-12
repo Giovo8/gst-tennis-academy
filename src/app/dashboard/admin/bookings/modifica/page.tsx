@@ -627,7 +627,7 @@ export default function AdminEditBookingPage() {
             )}
 
             {/* Area Principale */}
-            <div className="bg-white rounded-xl p-6 space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
               <div className="space-y-4">
                 {loadingSlots ? (
                   <div className="flex flex-col items-center justify-center py-20">

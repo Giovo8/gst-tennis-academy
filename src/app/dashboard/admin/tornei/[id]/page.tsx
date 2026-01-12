@@ -57,28 +57,7 @@ function AdminTournamentDetailInner() {
     ? (tournament.max_participants ?? 0) - meta.participantsCount 
     : 0;
 
-  if (!id || typeof id !== "string") {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-red-600">ID torneo non valido.</p>
-        <Link
-          href="/dashboard/admin/tornei"
-          className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-        >
-          Torna ai tornei
-        </Link>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
-        <p className="mt-4 text-secondary/60">Caricamento...</p>
-      </div>
-    );
-  }
+  const hasValidId = id && typeof id === "string";
 
   const handleDeleteTournament = async () => {
     if (
@@ -420,8 +399,22 @@ function AdminTournamentDetailInner() {
         <span>Dettagli Torneo</span>
       </div>
 
+      {!hasValidId && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <p className="text-sm text-red-600">ID torneo non valido.</p>
+        </div>
+      )}
+
+      {hasValidId && loading && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+          <p className="mt-4 text-secondary/60">Caricamento...</p>
+        </div>
+      )}
+
       {/* Header con titolo e descrizione */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {hasValidId && !loading && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-secondary mb-2">
             Dettagli Competizione
@@ -434,7 +427,7 @@ function AdminTournamentDetailInner() {
           <button
             onClick={handleDeleteTournament}
             disabled={deleting}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="Elimina Torneo"
           >
             {deleting ? (
@@ -458,7 +451,7 @@ function AdminTournamentDetailInner() {
               <button
                 onClick={handleStartTournament}
                 disabled={starting || meta.participantsCount < 2}
-                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Avvia torneo"
               >
                 {starting ? (
@@ -474,7 +467,7 @@ function AdminTournamentDetailInner() {
             <button
               onClick={handleAdvanceToKnockout}
               disabled={advancing}
-              className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Avanza Fase Eliminatoria"
             >
               {advancing ? (
@@ -491,7 +484,7 @@ function AdminTournamentDetailInner() {
               <button
                 onClick={handleRegenerateBracket}
                 disabled={regeneratingBracket}
-                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Rigenera Bracket"
               >
                 {regeneratingBracket ? (
@@ -520,7 +513,7 @@ function AdminTournamentDetailInner() {
               <button
                 onClick={handleRegenerateCalendar}
                 disabled={regeneratingCalendar}
-                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Rigenera Calendario"
               >
                 {regeneratingCalendar ? (
@@ -544,23 +537,33 @@ function AdminTournamentDetailInner() {
             </>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Header con info torneo */}
-      {tournament && (
-        <div className={`bg-white rounded-xl border-l-4 ${getStatusBorderColor()} p-6`}>
+      {hasValidId && !loading && tournament && (
+        <div
+          className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
+          style={{ borderLeftColor: (() => {
+            if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280"; // gray-500
+            if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#0ea5e9"; // secondary
+            if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#ef4444"; // rosso
+            if (tournament?.status === "Aperto") return "#10b981"; // emerald
+            return "#0ea5e9"; // secondary
+          })() }}
+        >
           <div className="flex items-start gap-6">
-            <TournamentIcon className="h-8 w-8 text-secondary flex-shrink-0" strokeWidth={2.5} />
+            <TournamentIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-secondary">{tournament.title}</h1>
+              <h1 className="text-2xl font-bold text-white">{tournament.title}</h1>
             </div>
           </div>
         </div>
       )}
 
       {/* Dettagli torneo */}
-      {tournament && (
-        <div className="bg-white rounded-xl p-6">
+      {hasValidId && !loading && tournament && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
           
           <div className="space-y-6">
@@ -664,15 +667,17 @@ function AdminTournamentDetailInner() {
         </div>
       )}
 
-      {/* Main content - TournamentManager con i tab */}
-      <div className="bg-white rounded-xl p-6">
-        <TournamentManagerWrapper
-          key={reloadKey}
-          tournamentId={id}
-          isAdmin={true}
-          onMetaChange={setMeta}
-        />
-      </div>
+      {/* Main content - TournamentManager con i tab - SEMPRE VISIBILE */}
+      {hasValidId && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <TournamentManagerWrapper
+            key={reloadKey}
+            tournamentId={id}
+            isAdmin={true}
+            onMetaChange={setMeta}
+          />
+        </div>
+      )}
     </div>
   );
 }

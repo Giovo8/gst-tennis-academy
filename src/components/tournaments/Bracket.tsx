@@ -120,12 +120,12 @@ export default function Bracket({
   return (
     <div className="mt-6">
       <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex gap-4 md:gap-8 min-w-max">
+        <div className="flex gap-3 sm:gap-4 md:gap-8 min-w-max">
           {rounds.map((round, roundIndex) => {
             const roundName = getRoundName(roundIndex, rounds.length);
-            
+
             return (
-              <div key={roundIndex} className="min-w-[160px] md:min-w-[200px]">
+              <div key={roundIndex} className="min-w-[140px] sm:min-w-[160px] md:min-w-[200px]">
                 <div className="mb-3 md:mb-4 sticky top-0 bg-secondary/5 border-b border-gray-200 py-2 z-10">
                   <h4 className="text-xs md:text-sm font-semibold text-secondary">{roundName}</h4>
                   <p className="text-xs md:text-sm text-secondary/70">{round.length} {round.length === 1 ? 'match' : 'matches'}</p>

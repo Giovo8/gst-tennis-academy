@@ -50,7 +50,7 @@ export default function CTASection() {
       </div>
 
       {/* Bottom Section - Full Width Image */}
-      <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] mt-8 sm:mt-12">
+      <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] mt-8 sm:mt-12 md:mt-16">
         <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] xl:h-[700px] relative overflow-hidden">
           <img
             src="/images/3.jpeg"

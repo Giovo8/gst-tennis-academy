@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { logActivityServer } from "@/lib/activity/logActivity";
 
 // Initialize Resend for email sending
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -50,11 +51,14 @@ export async function POST(request: NextRequest) {
       apiKeyPresent: !!process.env.RESEND_API_KEY,
     });
 
+    // Determine the from address
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
     // Send emails to all recipients
     const emailPromises = recipientEmails.map(async (email: string) => {
       try {
         const result = await resend.emails.send({
-          from: "GST Academy <noreply@gst.com>",
+          from: fromAddress,
           to: email,
           subject: subject,
           html: `
@@ -79,10 +83,10 @@ export async function POST(request: NextRequest) {
           `,
         });
         console.log(`✅ Email sent successfully to ${email}`, result);
-        return { email, status: "sent" };
-      } catch (error) {
+        return { email, status: "sent", result };
+      } catch (error: any) {
         console.error(`❌ Failed to send email to ${email}:`, error);
-        return { email, status: "failed", error: String(error) };
+        return { email, status: "failed", error: error?.message || String(error) };
       }
     });
 
@@ -91,11 +95,23 @@ export async function POST(request: NextRequest) {
     const failedCount = results.filter(r => r.status === "failed").length;
 
     console.log(`📊 Email campaign results: ${successCount} sent, ${failedCount} failed`);
-    
-    // Log any failures
+
+    // Log any failures with details
     if (failedCount > 0) {
       const failures = results.filter(r => r.status === "failed");
-      console.error("❌ Failed emails:", failures);
+      console.error("❌ Failed emails details:", JSON.stringify(failures, null, 2));
+    }
+
+    // If all emails failed, return error with details
+    if (successCount === 0 && failedCount > 0) {
+      const firstError = results.find(r => r.status === "failed")?.error;
+      return NextResponse.json(
+        {
+          error: `Invio fallito: ${firstError || "Errore sconosciuto"}`,
+          details: results.slice(0, 5) // First 5 failures
+        },
+        { status: 500 }
+      );
     }
 
     // Save campaign to database
@@ -124,9 +140,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log activity
+    if (userId) {
+      await logActivityServer({
+        userId,
+        action: "email.campaign.create",
+        entityType: "email_campaign",
+        entityId: campaign.id,
+        ipAddress: request.headers.get("x-forwarded-for") || undefined,
+        userAgent: request.headers.get("user-agent") || undefined,
+        metadata: {
+          campaignName,
+          recipientCount: recipientEmails.length,
+          successCount,
+          failedCount,
+          recipientType,
+        },
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      message: failedCount > 0 
+      message: failedCount > 0
         ? `Email inviata a ${successCount} destinatari (${failedCount} fallite)`
         : `Email inviata con successo a ${successCount} destinatari`,
       campaignId: campaign.id,

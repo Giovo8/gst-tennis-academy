@@ -364,24 +364,24 @@ export default function TournamentsPage() {  const router = useRouter();  const 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveTab("archive")}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Storico"
           >
-            <Archive className="h-4 w-4" />
-            Storico
+            <Archive className="h-5 w-5" />
           </button>
           <button
             onClick={() => setActiveTab("stats")}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Statistiche"
           >
-            <BarChart3 className="h-4 w-4" />
-            Statistiche
+            <BarChart3 className="h-5 w-5" />
           </button>
           <button
             onClick={loadTournaments}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Ricarica"
           >
-            <RefreshCw className="h-4 w-4" />
-            Aggiorna
+            <RefreshCw className="h-5 w-5" />
           </button>
         </div>
       </div>

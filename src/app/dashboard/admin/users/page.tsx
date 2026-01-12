@@ -171,22 +171,22 @@ export default function UsersPage() {
       ) : (
         <div className="space-y-3">
           {/* Header Row */}
-          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
             <div className="flex items-center gap-4">
               <div className="w-12 flex-shrink-0 flex justify-center">
-                <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                <div className="text-xs font-bold text-white/80 uppercase">#</div>
               </div>
               <div className="w-48 flex-shrink-0">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Nome</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
               </div>
               <div className="w-56 flex-shrink-0 flex justify-center">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Email</div>
               </div>
               <div className="w-32 flex-shrink-0 flex justify-center">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
               </div>
               <div className="w-28 flex-shrink-0 flex justify-center">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Ruolo</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
               </div>
             </div>
           </div>
@@ -212,7 +212,7 @@ export default function UsersPage() {
               <Link
                 key={user.id}
                 href={`/dashboard/admin/users/modifica?id=${user.id}`}
-                className="bg-white rounded-md p-5 hover:shadow-md transition-all block cursor-pointer border-l-4"
+                className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all block cursor-pointer border-l-4"
                 style={{ borderLeftColor: borderColor }}
               >
                 <div className="flex items-center gap-4">

@@ -6,6 +6,7 @@ import { FormEvent, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { getDestinationForRole, type UserRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/activity/logActivity";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -65,6 +66,15 @@ export default function LoginClient() {
         await supabase.auth.signOut();
         throw new Error("Profilo non configurato. Contatta l'amministratore.");
       }
+
+      // Log login activity
+      await logActivity({
+        action: "user.login",
+        metadata: {
+          role: profile.role,
+          fullName: profile.full_name,
+        },
+      });
 
       // 3. Reindirizza alla pagina richiesta o alla dashboard del ruolo
       const destination = redirectPath || getDestinationForRole(profile.role as UserRole);

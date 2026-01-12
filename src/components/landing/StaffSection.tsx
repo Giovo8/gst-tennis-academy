@@ -113,8 +113,8 @@ export default function StaffSection() {
 
   if (loading) {
     return (
-      <section id="staff" className="space-y-6">
-        <div className="flex items-center justify-center py-12">
+      <section id="staff" className="space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-center py-8 sm:py-12">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       </section>
@@ -138,7 +138,7 @@ export default function StaffSection() {
         </div>
 
         {/* Staff Grid */}
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12 sm:mb-16">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
           {staff.map((member) => (
             <article key={member.id} className="text-center">
               {/* Avatar */}
@@ -174,7 +174,7 @@ export default function StaffSection() {
               </p>
 
               {/* Social Icons */}
-              <div className="flex justify-center gap-3">
+              <div className="flex justify-center gap-2 sm:gap-3">
                 {member.facebook_url && (
                   <a 
                     href={member.facebook_url} 

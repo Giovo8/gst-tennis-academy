@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     // Get all users that can be enrolled in tournaments
     const { data: users, error } = await supabaseServer
       .from('profiles')
-      .select('id, full_name, email, role')
+      .select('id, full_name, email, role, avatar_url')
       .not('role', 'is', null)
       .order('full_name', { ascending: true, nullsFirst: false });
 

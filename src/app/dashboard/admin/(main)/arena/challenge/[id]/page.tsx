@@ -352,8 +352,8 @@ export default function AdminChallengeDetailPage() {
       <div className="bg-white rounded-xl p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli Match</h2>
         <div className="space-y-6">
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
                 {getStatusLabel(challenge.status)}
@@ -361,8 +361,8 @@ export default function AdminChallengeDetailPage() {
             </div>
           </div>
           {challenge.match_type && (
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo Match</label>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo Match</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {challenge.match_type === "singles" ? "Singolo" : "Doppio"}
@@ -371,8 +371,8 @@ export default function AdminChallengeDetailPage() {
             </div>
           )}
           {challenge.match_format && (
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato</label>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.match_format}</p>
               </div>
@@ -380,7 +380,7 @@ export default function AdminChallengeDetailPage() {
           )}
           {challenge.challenge_type && (
             <div className="flex items-start gap-8">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo Sfida</label>
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo Sfida</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {challenge.challenge_type === "ranked" ? "Classificata" : "Amichevole"}
@@ -392,7 +392,7 @@ export default function AdminChallengeDetailPage() {
 
         {challenge.winner_id && (
           <div className="mt-6 flex items-start gap-8 pt-6 border-t border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Vincitore</label>
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Vincitore</label>
             <div className="flex-1">
               <p className="text-secondary font-bold">
                 {challenge.winner_id === challenge.challenger_id
@@ -571,8 +571,8 @@ export default function AdminChallengeDetailPage() {
           <h2 className="text-lg font-semibold text-secondary mb-6">Prenotazione Campo</h2>
 
           <div className="space-y-6">
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data</label>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
@@ -583,8 +583,8 @@ export default function AdminChallengeDetailPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
               <div className="flex-1">
                 <p className="text-secondary/70">
                   {new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
@@ -600,7 +600,7 @@ export default function AdminChallengeDetailPage() {
               </div>
             </div>
             <div className="flex items-start gap-8">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{challenge.booking.court}</p>
               </div>

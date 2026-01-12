@@ -115,7 +115,7 @@ export default function ChooseOpponentPage() {
           Torna all'Arena
         </button>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-          <div className="p-2 bg-frozen-500 rounded-xl">
+          <div className="p-2 bg-secondary rounded-xl">
             <Users className="h-8 w-8 text-white" />
           </div>
           Scegli il tuo Avversario
@@ -134,7 +134,7 @@ export default function ChooseOpponentPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cerca per nome o email..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
           />
         </div>
         <div className="mt-3 text-sm text-gray-600">
@@ -145,7 +145,7 @@ export default function ChooseOpponentPage() {
       {/* Players List */}
       {loading ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-frozen-500 mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin text-secondary mx-auto mb-4" />
           <p className="text-gray-600">Caricamento atleti...</p>
         </div>
       ) : filteredPlayers.length === 0 ? (
@@ -160,10 +160,10 @@ export default function ChooseOpponentPage() {
             <button
               key={player.id}
               onClick={() => handleSelectOpponent(player.id)}
-              className="bg-white rounded-xl border-2 p-4 text-left transition-all hover:shadow-lg border-gray-200 hover:border-frozen-500 hover:bg-frozen-50"
+              className="bg-white rounded-xl border-2 p-4 text-left transition-all hover:shadow-lg border-gray-200 hover:border-secondary hover:bg-secondary/5"
             >
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-frozen-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {player.avatar_url ? (
                     <img
                       src={player.avatar_url}
@@ -171,7 +171,7 @@ export default function ChooseOpponentPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-xl font-bold text-frozen-700">
+                    <span className="text-xl font-bold text-secondary">
                       {player.full_name.charAt(0).toUpperCase()}
                     </span>
                   )}

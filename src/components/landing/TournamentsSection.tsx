@@ -173,7 +173,7 @@ export default function TournamentsSection() {
             Al momento non ci sono tornei imminenti.
           </div>
         ) : (
-          <div className="space-y-4 sm:space-y-5 mb-8 sm:mb-10">
+          <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8 md:mb-10">
             {filteredItems.map((tournament) => {
               const typeLabel = getTournamentTypeLabel(tournament.tournament_type);
               const statusInfo = getStatusInfo(tournament.status);
@@ -185,14 +185,14 @@ export default function TournamentsSection() {
               return (
                 <article
                   key={tournament.id}
-                  className="bg-secondary/5 rounded-md px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6"
+                  className="bg-secondary/5 rounded-md px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 md:gap-6"
                 >
                   {/* Colonna data */}
                   <div className="flex flex-col items-center justify-center sm:w-32">
                     <p className="text-xs font-semibold uppercase text-secondary/50 text-center">
                       {weekday}
                     </p>
-                    <p className="text-3xl sm:text-4xl font-bold text-secondary leading-none text-center">
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary leading-none text-center">
                       {day}
                     </p>
                     <p className="text-xs text-secondary/60 mt-1 text-center">

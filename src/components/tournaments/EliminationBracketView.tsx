@@ -220,7 +220,7 @@ export default function EliminationBracket({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
+      <div className="flex items-center justify-center p-6 sm:p-8 md:p-12">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
       </div>
     );
@@ -264,11 +264,11 @@ export default function EliminationBracket({
     <div className="space-y-6">
       {/* Visualizzazione bracket */}
       <div className="overflow-x-auto">
-        <div className="flex gap-8 pb-4" style={{ minWidth: 'fit-content' }}>
+        <div className="flex gap-4 sm:gap-6 md:gap-8 pb-4" style={{ minWidth: 'fit-content' }}>
           {rounds.map(roundNum => {
             const roundMatches = matchesByRound[roundNum] || [];
             return (
-              <div key={roundNum} className="space-y-4" style={{ minWidth: '280px' }}>
+              <div key={roundNum} className="space-y-3 sm:space-y-4" style={{ minWidth: '240px' }}>
                 <h4 className="text-center text-sm font-semibold text-secondary">
                   {roundMatches[0]?.round_name || `Round ${roundNum}`}
                 </h4>

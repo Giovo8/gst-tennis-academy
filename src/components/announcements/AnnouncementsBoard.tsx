@@ -199,19 +199,19 @@ export default function AnnouncementsBoard() {
 
       {/* Announcements Grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-14 h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-cyan-500/20" />
-            <p className="text-gray-600 font-medium">Caricamento annunci...</p>
+        <div className="flex items-center justify-center py-12 sm:py-16 md:py-20">
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-cyan-500/20" />
+            <p className="text-gray-600 font-medium text-sm sm:text-base">Caricamento annunci...</p>
           </div>
         </div>
       ) : filteredAnnouncements.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 md:p-12 text-center">
+          <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
             Nessun annuncio disponibile
           </h3>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             {filterType === "all" 
               ? "Non ci sono annunci al momento"
               : "Nessun annuncio di questo tipo"}

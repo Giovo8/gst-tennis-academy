@@ -48,21 +48,21 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
         : 'bg-white border-gray-200'
     }`}>
       {/* Match Header */}
-      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between">
-        <span className="text-sm font-bold text-secondary">
+      <div className="border-b border-secondary bg-secondary px-5 py-3 flex items-center justify-between">
+        <span className="text-sm font-bold text-white">
           {match.round_name} - Match #{match.match_number}
         </span>
         <div className="flex items-center gap-2">
           {isPending && (
-            <span className="text-xs text-secondary/60 font-medium">In attesa</span>
+            <span className="text-xs text-white/70 font-medium">In attesa</span>
           )}
           {isCompleted && (
-            <Trophy className="h-4 w-4 text-yellow-500" />
+            <Trophy className="h-4 w-4 text-yellow-400" />
           )}
           {isAdmin && !isPending && !editing && (
             <button
               onClick={() => setEditing(true)}
-              className="p-1.5 text-secondary/60 hover:text-secondary hover:bg-secondary/5 rounded transition-colors"
+              className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded transition-colors"
               title="Modifica punteggio"
             >
               <Edit2 className="h-4 w-4" />

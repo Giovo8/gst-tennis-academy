@@ -385,8 +385,8 @@ export default function CourtBlockDetailPage() {
         
         <div className="space-y-6">
           {/* Campo */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
             <div className="flex-1">
               <div className="flex flex-wrap gap-2">
                 {COURTS.map((court) => (
@@ -408,8 +408,8 @@ export default function CourtBlockDetailPage() {
           </div>
 
           {/* Tipo blocco */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo blocco *</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo blocco *</label>
             <div className="flex-1">
               <div className="flex flex-wrap gap-2">
                 {BLOCK_TYPES.map((type) => (
@@ -431,8 +431,8 @@ export default function CourtBlockDetailPage() {
           </div>
 
           {/* Giorni settimana */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana *</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana *</label>
             <div className="flex-1">
               <div className="flex flex-wrap gap-2">
                 {WEEK_DAYS.map((day) => (
@@ -457,8 +457,8 @@ export default function CourtBlockDetailPage() {
           </div>
 
           {/* Orario Inizio */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario inizio *</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario inizio *</label>
             <div className="flex-1">
               <select
                 value={startTime}
@@ -473,8 +473,8 @@ export default function CourtBlockDetailPage() {
           </div>
 
           {/* Orario Fine */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario fine *</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario fine *</label>
             <div className="flex-1">
               <select
                 value={endTime}
@@ -489,8 +489,8 @@ export default function CourtBlockDetailPage() {
           </div>
 
           {/* Note */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
             <div className="flex-1">
               <textarea
                 value={notes}

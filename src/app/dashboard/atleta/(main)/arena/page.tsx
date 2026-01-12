@@ -321,20 +321,20 @@ export default function ArenaPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <div className="p-2 bg-frozen-500 rounded-xl">
+            <h1 className="text-3xl font-bold text-secondary mb-2 flex items-center gap-3">
+              <div className="p-2 bg-secondary rounded-xl">
                 <Swords className="h-8 w-8 text-white" />
               </div>
               Arena
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-secondary/70 font-medium">
               Sfida altri atleti, scala la classifica e raggiungi la vetta
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/dashboard/atleta/arena/choose-opponent")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-frozen-500 rounded-xl hover:bg-frozen-600 transition-all shadow-lg shadow-frozen-500/20"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-secondary rounded-xl hover:bg-secondary transition-all shadow-lg shadow-secondary/20"
             >
               <Swords className="h-4 w-4" />
               Lancia Sfida
@@ -343,8 +343,8 @@ export default function ArenaPage() {
               onClick={() => setActiveTab("statistiche")}
               className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                 activeTab === "statistiche"
-                  ? "text-white bg-frozen-500 shadow-lg shadow-frozen-500/20"
-                  : "text-gray-700 bg-white border border-gray-200 hover:border-frozen-300"
+                  ? "text-white bg-secondary shadow-lg shadow-secondary/20"
+                  : "text-gray-700 bg-white border border-gray-200 hover:border-secondary/30"
               }`}
             >
               <BarChart3 className="h-4 w-4" />
@@ -354,8 +354,8 @@ export default function ArenaPage() {
               onClick={() => setActiveTab("info")}
               className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                 activeTab === "info"
-                  ? "text-white bg-frozen-500 shadow-lg shadow-frozen-500/20"
-                  : "text-gray-700 bg-white border border-gray-200 hover:border-frozen-300"
+                  ? "text-white bg-secondary shadow-lg shadow-secondary/20"
+                  : "text-gray-700 bg-white border border-gray-200 hover:border-secondary/30"
               }`}
             >
               <Shield className="h-4 w-4" />
@@ -365,11 +365,11 @@ export default function ArenaPage() {
         </div>
 
         {/* Level Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-frozen-500 to-frozen-600 rounded-xl text-white w-fit shadow-lg shadow-frozen-500/20">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-secondary to-secondary rounded-xl text-white w-fit shadow-lg shadow-secondary/20">
           {getLevelIcon(stats.level)}
           <span className="font-bold">Livello {stats.level}</span>
-          <span className="text-frozen-100">•</span>
-          <span className="text-frozen-100">{stats.points} punti</span>
+          <span className="text-white/90">•</span>
+          <span className="text-white/90">{stats.points} punti</span>
         </div>
       </div>
 
@@ -380,7 +380,7 @@ export default function ArenaPage() {
         <div className="bg-white rounded-xl border border-gray-200">
           <div className="px-6 py-5 border-b border-gray-200">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Swords className="h-5 w-5 text-frozen-600" />
+              <Swords className="h-5 w-5 text-secondary" />
               Sfide
             </h2>
           </div>
@@ -412,9 +412,9 @@ export default function ArenaPage() {
                       <div
                         key={challenge.id}
                         onClick={() => router.push(`/dashboard/atleta/arena/challenge/${challenge.id}`)}
-                        className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-frozen-300 hover:bg-frozen-50/30 transition-all group cursor-pointer"
+                        className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-secondary/30 hover:bg-secondary/5/30 transition-all group cursor-pointer"
                       >
-                        <div className="w-10 h-10 rounded-full bg-frozen-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                           {opponent?.avatar_url ? (
                             <img
                               src={opponent.avatar_url}
@@ -422,7 +422,7 @@ export default function ArenaPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="font-bold text-frozen-700">
+                            <span className="font-bold text-secondary">
                               {opponent?.full_name?.charAt(0).toUpperCase()}
                             </span>
                           )}
@@ -530,7 +530,7 @@ export default function ArenaPage() {
                           {challenge.status === "accepted" && !challenge.booking_id && (
                             <button
                               onClick={() => handleBookMatch(challenge)}
-                              className="px-3 py-2 bg-frozen-500 text-white text-xs font-medium rounded-lg hover:bg-frozen-600 transition-colors"
+                              className="px-3 py-2 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary transition-colors"
                             >
                               Prenota Campo
                             </button>
@@ -570,7 +570,7 @@ export default function ArenaPage() {
                   onClick={() => setSelectedRank(rank)}
                   className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                     selectedRank === rank
-                      ? "bg-frozen-500 text-white shadow-md"
+                      ? "bg-secondary text-white shadow-md"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -612,7 +612,7 @@ export default function ArenaPage() {
                       entry.ranking <= 3
                         ? "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200"
                         : isCurrentUser
-                        ? "bg-frozen-50 border-frozen-300 ring-2 ring-frozen-200"
+                        ? "bg-secondary/5 border-secondary/30 ring-2 ring-secondary/20"
                         : "bg-gray-50 border-gray-200 hover:border-gray-300"
                     }`}
                     onClick={() => !isCurrentUser && handleViewProfile(entry)}
@@ -631,7 +631,7 @@ export default function ArenaPage() {
                       {displayPosition}
                     </div>
 
-                    <div className="w-10 h-10 rounded-full bg-frozen-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                       {entry.avatar ? (
                         <img
                           src={entry.avatar}
@@ -639,7 +639,7 @@ export default function ArenaPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="font-bold text-frozen-700">
+                        <span className="font-bold text-secondary">
                           {entry.name?.charAt(0).toUpperCase() || "?"}
                         </span>
                       )}
@@ -649,7 +649,7 @@ export default function ArenaPage() {
                       <p className="font-bold text-gray-900 text-sm truncate">
                         {entry.name || "Giocatore"}
                         {isCurrentUser && (
-                          <span className="ml-2 text-xs font-medium text-frozen-600">(Tu)</span>
+                          <span className="ml-2 text-xs font-medium text-secondary">(Tu)</span>
                         )}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -680,7 +680,7 @@ export default function ArenaPage() {
                             e.stopPropagation();
                             handleChallengePlayer(entry);
                           }}
-                          className="p-2 bg-frozen-500 text-white rounded-lg hover:bg-frozen-600 transition-colors"
+                          className="p-2 bg-secondary text-white rounded-lg hover:bg-secondary transition-colors"
                           title="Lancia sfida"
                         >
                           <Swords className="h-3.5 w-3.5" />
@@ -726,7 +726,7 @@ export default function ArenaPage() {
                 onClick={() => setSelectedRank(rank)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                   selectedRank === rank
-                    ? "bg-frozen-500 text-white shadow-md"
+                    ? "bg-secondary text-white shadow-md"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -763,7 +763,7 @@ export default function ArenaPage() {
                     key={entry.userId}
                     className={`flex items-center gap-4 p-4 rounded-lg transition-all ${
                       isCurrentUser
-                        ? "bg-gradient-to-r from-frozen-50 to-blue-50 border-2 border-frozen-300"
+                        ? "bg-gradient-to-r from-secondary/5 to-blue-50 border-2 border-secondary/30"
                         : "bg-gray-50 hover:bg-gray-100"
                     }`}
                   >
@@ -791,12 +791,12 @@ export default function ArenaPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <p
                           className={`font-semibold truncate ${
-                            isCurrentUser ? "text-frozen-700" : "text-gray-900"
+                            isCurrentUser ? "text-secondary" : "text-gray-900"
                           }`}
                         >
                           {entry.name}
                           {isCurrentUser && (
-                            <span className="ml-2 text-xs font-normal text-frozen-600">
+                            <span className="ml-2 text-xs font-normal text-secondary">
                               (Tu)
                             </span>
                           )}
@@ -831,7 +831,7 @@ export default function ArenaPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleChallengePlayer(entry)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-frozen-500 rounded-lg hover:bg-frozen-600 transition-colors"
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary transition-colors"
                         >
                           Sfida
                         </button>
@@ -856,7 +856,7 @@ export default function ArenaPage() {
       {activeTab === "info" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Shield className="h-6 w-6 text-frozen-500" />
+            <Shield className="h-6 w-6 text-secondary" />
             Come funziona l'Arena
           </h2>
           
@@ -864,12 +864,12 @@ export default function ArenaPage() {
             {/* Sistema di Punteggio */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Target className="h-5 w-5 text-frozen-500" />
+                <Target className="h-5 w-5 text-secondary" />
                 Sistema di Punteggio (Tennis)
               </h3>
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <p className="text-sm text-gray-700">
-                  <strong className="text-frozen-600">Vittoria:</strong> +50 punti
+                  <strong className="text-secondary">Vittoria:</strong> +50 punti
                 </p>
                 <p className="text-sm text-gray-700">
                   <strong className="text-red-600">Sconfitta:</strong> -20 punti (minimo 0)
@@ -916,8 +916,8 @@ export default function ArenaPage() {
                 Tipi di Sfida
               </h3>
               <div className="space-y-2">
-                <div className="bg-frozen-50 rounded-lg p-3">
-                  <p className="font-medium text-frozen-700">⚔️ Sfida Diretta</p>
+                <div className="bg-secondary/5 rounded-lg p-3">
+                  <p className="font-medium text-secondary">⚔️ Sfida Diretta</p>
                   <p className="text-sm text-gray-600">Sfida un giocatore specifico 1 contro 1</p>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">
@@ -934,19 +934,19 @@ export default function ArenaPage() {
               </h3>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
-                  <span className="text-frozen-500 mt-0.5">•</span>
+                  <span className="text-secondary mt-0.5">•</span>
                   <span>Le sfide devono essere confermate dall'avversario</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-frozen-500 mt-0.5">•</span>
+                  <span className="text-secondary mt-0.5">•</span>
                   <span>Ogni sfida richiede la prenotazione di un campo</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-frozen-500 mt-0.5">•</span>
+                  <span className="text-secondary mt-0.5">•</span>
                   <span>Il risultato deve essere inserito entro 24 ore dalla sfida</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-frozen-500 mt-0.5">•</span>
+                  <span className="text-secondary mt-0.5">•</span>
                   <span>In caso di controversie, contattare lo staff</span>
                 </li>
               </ul>
@@ -959,7 +959,7 @@ export default function ArenaPage() {
       {activeTab === "statistiche" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-frozen-500" />
+            <BarChart3 className="h-6 w-6 text-secondary" />
             Le Tue Statistiche
           </h2>
           
@@ -1003,12 +1003,12 @@ export default function ArenaPage() {
             </div>
 
             {/* Total Points */}
-            <div className="p-6 bg-gradient-to-br from-frozen-50 to-blue-50 rounded-xl border border-frozen-200">
+            <div className="p-6 bg-gradient-to-br from-secondary/5 to-blue-50 rounded-xl border border-secondary/20">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-frozen-500 rounded-lg">
+                <div className="p-3 bg-secondary rounded-lg">
                   <Star className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-3xl font-bold text-frozen-600">
+                <span className="text-3xl font-bold text-secondary">
                   {stats.points}
                 </span>
               </div>
@@ -1083,7 +1083,7 @@ export default function ArenaPage() {
       )}
 
       {/* Progress Section */}
-      <div className="bg-gradient-to-br from-frozen-500 to-frozen-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-br from-secondary to-secondary rounded-xl p-6 text-white">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
@@ -1091,7 +1091,7 @@ export default function ArenaPage() {
             </div>
             <div>
               <h3 className="text-xl font-bold mb-1">Continua così!</h3>
-              <p className="text-frozen-100 text-sm">
+              <p className="text-white/90 text-sm">
                 {stats.level === "Diamante"
                   ? "Hai raggiunto il massimo livello!"
                   : `Sei a ${getPointsToNextLevel(stats.points, stats.level)} punti dal livello successivo`}
@@ -1102,7 +1102,7 @@ export default function ArenaPage() {
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-2xl font-bold">{stats.points}</p>
-                <p className="text-frozen-100 text-xs">
+                <p className="text-white/90 text-xs">
                   / {getNextLevelPoints(stats.level)} punti
                 </p>
               </div>

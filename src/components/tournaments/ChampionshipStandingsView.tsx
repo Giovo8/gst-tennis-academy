@@ -363,16 +363,16 @@ export default function ChampionshipStandingsView({
           ) : (
             <>
               {/* Header Row */}
-              <div className="bg-white rounded-lg px-5 py-3 mb-3">
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="flex items-center gap-4">
                   <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">#</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                   </div>
                   <div className="w-48 hidden md:block">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Email</div>
                   </div>
                 </div>
               </div>
@@ -385,7 +385,8 @@ export default function ChampionshipStandingsView({
                 return (
                   <div
                     key={participant.id}
-                    className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                    className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                    style={{ borderLeftColor: "#0f4c7c" }}
                   >
                     <div className="flex items-center gap-4">
                       {/* Avatar */}
@@ -531,15 +532,15 @@ export default function ChampionshipStandingsView({
           ) : (
             <>
               {/* Header Row */}
-              <div className="bg-white rounded-lg px-5 py-3 mb-3">
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="grid grid-cols-[50px_40px_1fr_80px_80px_100px_100px] gap-4 items-center">
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Pos</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Pos</div>
                   <div className="text-xs font-bold text-transparent uppercase text-center">#</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">PG</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Punti</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Diff. Set</div>
-                  <div className="text-xs font-bold text-secondary/60 uppercase text-center">Diff. Game</div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">PG</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Set</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Game</div>
                 </div>
               </div>
 
@@ -551,12 +552,13 @@ export default function ChampionshipStandingsView({
                 return (
                   <div
                     key={standing.participant.id}
-                    className={`bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 ${
-                      standing.position === 1 ? 'border-yellow-500' :
-                      standing.position === 2 ? 'border-gray-400' :
-                      standing.position === 3 ? 'border-amber-600' :
-                      'border-secondary'
-                    }`}
+                    className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                    style={{ borderLeftColor:
+                      standing.position === 1 ? '#eab308' :
+                      standing.position === 2 ? '#9ca3af' :
+                      standing.position === 3 ? '#f97316' :
+                      '#0f4c7c'
+                    }}
                   >
                     <div className="grid grid-cols-[50px_40px_1fr_80px_80px_100px_100px] gap-4 items-center">
                       <div className="flex items-center justify-center">

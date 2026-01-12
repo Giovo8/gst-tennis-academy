@@ -158,19 +158,19 @@ export default function VideosPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-secondary mb-2">
             Video
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-secondary/70 font-medium">
             Video di allenamento e tecnica
           </p>
         </div>
         <button
           onClick={() => loadVideos()}
-          className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2"
+          className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+          title="Ricarica"
         >
-          <RefreshCw className="h-4 w-4" />
-          Ricarica
+          <RefreshCw className="h-5 w-5" />
         </button>
       </div>
 
@@ -184,7 +184,7 @@ export default function VideosPage() {
               placeholder="Cerca video..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-secondary/20 focus:border-secondary text-gray-900"
             />
           </div>
           
@@ -194,7 +194,7 @@ export default function VideosPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 text-gray-900 bg-white"
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-secondary/20 focus:border-secondary text-gray-900 bg-white"
               >
                 <option value="all">Tutte le categorie</option>
                 {categories.map((cat) => (
@@ -254,7 +254,7 @@ export default function VideosPage() {
                     className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
                   >
                     <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Play className="h-8 w-8 text-frozen-600 ml-1" />
+                      <Play className="h-8 w-8 text-secondary ml-1" />
                     </div>
                   </a>
 
@@ -310,7 +310,7 @@ export default function VideosPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => markAsWatched(video.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-frozen-600 bg-frozen-50 rounded-lg hover:bg-frozen-100 transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary bg-secondary/10 rounded-lg hover:bg-secondary/20 transition-all"
                     >
                       Guarda
                       <ExternalLink className="h-3 w-3" />

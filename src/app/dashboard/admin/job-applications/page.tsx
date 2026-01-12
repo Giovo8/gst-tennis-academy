@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import Link from "next/link";
 import {
   FileText,
   Mail,
@@ -14,6 +15,11 @@ import {
   Dumbbell,
   Search,
   Loader2,
+  ArrowUp,
+  ArrowDown,
+  RefreshCw,
+  Download,
+  Plus,
 } from "lucide-react";
 
 interface JobApplication {
@@ -32,6 +38,8 @@ export default function JobApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "reviewed" | "accepted" | "rejected">("all");
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "name" | "role" | "status" | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     loadApplications();
@@ -50,32 +58,6 @@ export default function JobApplicationsPage() {
     setLoading(false);
   }
 
-  async function updateStatus(id: string, status: JobApplication["status"]) {
-    const { error } = await supabase
-      .from("recruitment_applications")
-      .update({ status })
-      .eq("id", id);
-
-    if (!error) {
-      setApplications(prev =>
-        prev.map(app => app.id === id ? { ...app, status } : app)
-      );
-    }
-  }
-
-  async function deleteApplication(id: string) {
-    if (!confirm("Sei sicuro di voler eliminare questa candidatura?")) return;
-
-    const { error } = await supabase
-      .from("recruitment_applications")
-      .delete()
-      .eq("id", id);
-
-    if (!error) {
-      setApplications(prev => prev.filter(app => app.id !== id));
-    }
-  }
-
   const filteredApplications = applications.filter(app => {
     const matchesFilter = filter === "all" || app.status === filter;
     const matchesSearch = search === "" ||
@@ -83,6 +65,68 @@ export default function JobApplicationsPage() {
       app.email.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Sorting logic
+  const sortedApplications = [...filteredApplications].sort((a, b) => {
+    if (!sortBy) return 0;
+
+    let comparison = 0;
+    switch (sortBy) {
+      case "date":
+        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        break;
+      case "name":
+        comparison = a.full_name.localeCompare(b.full_name);
+        break;
+      case "role":
+        comparison = a.role.localeCompare(b.role);
+        break;
+      case "status":
+        const statusOrder = { pending: 1, reviewed: 2, accepted: 3, rejected: 4 };
+        comparison = statusOrder[a.status] - statusOrder[b.status];
+        break;
+    }
+
+    return sortOrder === "asc" ? comparison : -comparison;
+  });
+
+  const handleSort = (column: "date" | "name" | "role" | "status") => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  function exportToCSV() {
+    const csv = [
+      ["Data", "Nome", "Email", "Ruolo", "Stato"].join(","),
+      ...sortedApplications.map((a) => [
+        formatDate(a.created_at),
+        `"${a.full_name.replace(/"/g, '""')}"`,
+        a.email,
+        a.role === "maestro" ? "Maestro" : "Preparatore",
+        a.status === "pending" ? "In Attesa" : a.status === "reviewed" ? "Revisionata" : a.status === "accepted" ? "Accettata" : "Rifiutata",
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `candidature-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  }
 
   const stats = {
     total: applications.length,
@@ -93,233 +137,210 @@ export default function JobApplicationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-secondary">Candidature Lavoro</h1>
-          <p className="text-secondary/60 text-sm mt-1">
+          <h1 className="text-3xl font-bold text-secondary mb-2">Candidature Lavoro</h1>
+          <p className="text-secondary/70 font-medium">
             Gestisci le candidature ricevute dalla pagina "Lavora con noi"
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadApplications()}
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Ricarica"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </button>
+          <button
+            onClick={exportToCSV}
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Esporta CSV"
+          >
+            <Download className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* ...existing code... */}
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[250px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-          <input
-            type="text"
-            placeholder="Cerca per nome o email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-          />
-        </div>
-
-        {/* Filter buttons */}
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              filter === "all"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Tutte
-          </button>
-          <button
-            onClick={() => setFilter("pending")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              filter === "pending"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            In Attesa
-          </button>
-          <button
-            onClick={() => setFilter("reviewed")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              filter === "reviewed"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Revisionate
-          </button>
-          <button
-            onClick={() => setFilter("accepted")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              filter === "accepted"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Accettate
-          </button>
-          <button
-            onClick={() => setFilter("rejected")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              filter === "rejected"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Rifiutate
-          </button>
-        </div>
+      {/* Search */}
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+        <input
+          type="text"
+          placeholder="Cerca per nome o email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+        />
       </div>
 
       {/* Applications List */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="h-12 w-12 text-secondary/40 animate-spin" />
+          <Loader2 className="w-10 h-10 animate-spin text-secondary" />
           <p className="mt-4 text-secondary/60">Caricamento candidature...</p>
         </div>
-      ) : filteredApplications.length === 0 ? (
-        <div className="bg-white rounded-lg p-12 text-center">
-          <FileText className="h-12 w-12 text-secondary/40 mx-auto mb-4" />
-          <p className="text-secondary/70">Nessuna candidatura trovata</p>
+      ) : sortedApplications.length === 0 ? (
+        <div className="text-center py-20 rounded-md bg-white">
+          <FileText className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+          <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna candidatura trovata</h3>
+          <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredApplications.map((app) => (
-            <div key={app.id} className="bg-white rounded-lg p-6 shadow-sm border border-secondary/10">
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left: Application Info */}
-                <div className="flex-1 space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-secondary">{app.full_name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Mail className="h-4 w-4 text-secondary/60" />
-                        <a href={`mailto:${app.email}`} className="text-sm text-secondary/70 hover:text-secondary">
-                          {app.email}
-                        </a>
-                      </div>
-                    </div>
+        <div className="space-y-3">
+          {/* Header Row */}
+          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+            <div className="flex items-center gap-4">
+              <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                <button
+                  onClick={() => handleSort("role")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  #
+                  {sortBy === "role" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="w-28 flex-shrink-0">
+                <button
+                  onClick={() => handleSort("date")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Data
+                  {sortBy === "date" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="w-48 flex-shrink-0">
+                <button
+                  onClick={() => handleSort("name")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Nome
+                  {sortBy === "name" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+              </div>
+              <div className="w-32 flex-shrink-0 text-center">
+                <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
+              </div>
+              <div className="w-32 flex-shrink-0 text-center">
+                <button
+                  onClick={() => handleSort("status")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                >
+                  Stato
+                  {sortBy === "status" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
 
-                    {/* Role Badge */}
-                    <div className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
+          {/* Data Rows */}
+          {sortedApplications.map((app) => {
+            // Colore bordo sinistro basato sullo status
+            let borderStyle = {};
+            if (app.status === "rejected") {
+              borderStyle = { borderLeftColor: "#ef4444" }; // red
+            } else if (app.status === "pending") {
+              borderStyle = { borderLeftColor: "#f59e0b" }; // amber
+            } else if (app.status === "reviewed") {
+              borderStyle = { borderLeftColor: "#3b82f6" }; // blue
+            } else if (app.status === "accepted") {
+              borderStyle = { borderLeftColor: "#10b981" }; // green
+            }
+
+            return (
+              <Link
+                key={app.id}
+                href={`/dashboard/admin/job-applications/${app.id}`}
+                className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all block cursor-pointer border-l-4"
+                style={borderStyle}
+              >
+                <div className="flex items-center gap-4">
+                  {/* Icon Ruolo */}
+                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                    {app.role === "maestro" ? (
+                      <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                    ) : (
+                      <Dumbbell className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                    )}
+                  </div>
+
+                  {/* Data */}
+                  <div className="w-28 flex-shrink-0">
+                    <div className="font-bold text-secondary text-sm">
+                      {formatDate(app.created_at)}
+                    </div>
+                  </div>
+
+                  {/* Nome */}
+                  <div className="w-48 flex-shrink-0">
+                    <div className="font-bold text-secondary text-sm truncate">
+                      {app.full_name}
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-secondary/70 truncate flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-secondary/40 flex-shrink-0" />
+                      {app.email}
+                    </div>
+                  </div>
+
+                  {/* Ruolo */}
+                  <div className="w-32 flex-shrink-0 text-center">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${
                       app.role === "maestro"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-purple-100 text-purple-700"
                     }`}>
-                      {app.role === "maestro" ? (
-                        <>
-                          <Users className="h-3.5 w-3.5" />
-                          Maestro
-                        </>
-                      ) : (
-                        <>
-                          <Dumbbell className="h-3.5 w-3.5" />
-                          Preparatore
-                        </>
-                      )}
-                    </div>
+                      {app.role === "maestro" ? "Maestro" : "Preparatore"}
+                    </span>
                   </div>
 
-                  {/* Message */}
-                  {app.message && (
-                    <div className="bg-secondary/5 rounded-lg p-4">
-                      <p className="text-sm text-secondary/80 leading-relaxed">{app.message}</p>
-                    </div>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center gap-4 text-xs text-secondary/60">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5" />
-                      {new Date(app.created_at).toLocaleDateString("it-IT", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </div>
-                    {app.cv_url && (
-                      <a
-                        href={app.cv_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-secondary hover:text-secondary/80 font-medium"
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        Visualizza CV
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                  {/* Stato */}
+                  <div className="w-32 flex-shrink-0 text-center">
+                    {app.status === "pending" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-700">
+                        <Clock className="h-3 w-3" />
+                        In Attesa
+                      </span>
+                    )}
+                    {app.status === "reviewed" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700">
+                        <FileText className="h-3 w-3" />
+                        Revision.
+                      </span>
+                    )}
+                    {app.status === "accepted" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
+                        <CheckCircle className="h-3 w-3" />
+                        Accettata
+                      </span>
+                    )}
+                    {app.status === "rejected" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700">
+                        <XCircle className="h-3 w-3" />
+                        Rifiutata
+                      </span>
                     )}
                   </div>
                 </div>
-
-                {/* Right: Actions */}
-                <div className="lg:w-48 flex flex-col gap-2">
-                  {/* Status Badge */}
-                  <div className={`px-3 py-2 rounded-lg text-xs font-semibold text-center ${
-                    app.status === "pending"
-                      ? "bg-amber-100 text-amber-700"
-                      : app.status === "reviewed"
-                      ? "bg-blue-100 text-blue-700"
-                      : app.status === "accepted"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}>
-                    {app.status === "pending" && "In Attesa"}
-                    {app.status === "reviewed" && "Revisionata"}
-                    {app.status === "accepted" && "Accettata"}
-                    {app.status === "rejected" && "Rifiutata"}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <button
-                    onClick={() => updateStatus(app.id, "reviewed")}
-                    className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                      app.status === "reviewed"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-blue-700 hover:bg-blue-50 border border-blue-200"
-                    }`}
-                  >
-                    <Clock className="h-3 w-3" />
-                    Revisiona
-                  </button>
-                  <button
-                    onClick={() => updateStatus(app.id, "accepted")}
-                    className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                      app.status === "accepted"
-                        ? "bg-green-500 text-white"
-                        : "bg-white text-green-700 hover:bg-green-50 border border-green-200"
-                    }`}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    Accetta
-                  </button>
-                  <button
-                    onClick={() => updateStatus(app.id, "rejected")}
-                    className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                      app.status === "rejected"
-                        ? "bg-red-500 text-white"
-                        : "bg-white text-red-700 hover:bg-red-50 border border-red-200"
-                    }`}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    Rifiuta
-                  </button>
-                  <button
-                    onClick={() => deleteApplication(app.id)}
-                    className="w-full px-3 py-2 rounded-lg text-xs font-medium bg-white text-red-700 hover:bg-red-50 border border-red-200 transition-all flex items-center justify-center gap-1"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Elimina
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

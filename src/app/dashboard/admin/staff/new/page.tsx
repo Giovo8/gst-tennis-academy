@@ -201,8 +201,8 @@ export default function NewStaffPage() {
             
             <div className="space-y-6">
               {/* Nome Completo */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Nome Completo <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1">
@@ -218,8 +218,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* Ruolo */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Ruolo <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1">
@@ -235,8 +235,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* Bio */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Biografia
                 </label>
                 <div className="flex-1">
@@ -251,8 +251,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* URL Immagine */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   URL Immagine
                 </label>
                 <div className="flex-1">
@@ -286,8 +286,8 @@ export default function NewStaffPage() {
             
             <div className="space-y-6">
               {/* Facebook */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Facebook
                 </label>
                 <div className="flex-1">
@@ -302,8 +302,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* Instagram */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Instagram
                 </label>
                 <div className="flex-1">
@@ -318,8 +318,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* LinkedIn */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   LinkedIn
                 </label>
                 <div className="flex-1">
@@ -334,8 +334,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* Twitter */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Twitter
                 </label>
                 <div className="flex-1">
@@ -357,8 +357,8 @@ export default function NewStaffPage() {
             
             <div className="space-y-6">
               {/* Ordine */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Ordine di visualizzazione
                 </label>
                 <div className="flex-1">
@@ -372,8 +372,8 @@ export default function NewStaffPage() {
               </div>
 
               {/* Stato */}
-              <div className="flex items-start gap-8">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
+                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Stato
                 </label>
                 <div className="flex-1">

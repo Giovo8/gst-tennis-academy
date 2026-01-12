@@ -143,11 +143,11 @@ export default function VideoLabPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-24 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-3 gap-4">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="h-20 sm:h-24 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
+            <div key={i} className="h-20 sm:h-24 bg-gray-200 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -209,8 +209,8 @@ export default function VideoLabPage() {
 
       {/* Videos Grid */}
       {filteredVideos.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+        <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 md:p-12 text-center">
+          <Video className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-2">
             {videos.length === 0 ? "Nessun video disponibile" : "Nessun risultato"}
           </h3>

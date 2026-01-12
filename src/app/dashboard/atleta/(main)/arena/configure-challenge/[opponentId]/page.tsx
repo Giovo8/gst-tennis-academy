@@ -505,7 +505,7 @@ export default function ConfigureChallengePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-frozen-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-secondary" />
       </div>
     );
   }
@@ -530,7 +530,7 @@ export default function ConfigureChallengePage() {
           Torna alla scelta avversario
         </button>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-          <div className="p-2 bg-frozen-500 rounded-xl">
+          <div className="p-2 bg-secondary rounded-xl">
             <Swords className="h-8 w-8 text-white" />
           </div>
           Configura la Sfida
@@ -562,9 +562,9 @@ export default function ConfigureChallengePage() {
       )}
 
       {/* Opponent Card */}
-      <div className="bg-gradient-to-r from-frozen-50 to-blue-50 rounded-xl border-2 border-frozen-200 p-6">
+      <div className="bg-gradient-to-r from-secondary/5 to-blue-50 rounded-xl border-2 border-secondary/20 p-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-frozen-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
             {opponent.avatar_url ? (
               <img
                 src={opponent.avatar_url}
@@ -572,13 +572,13 @@ export default function ConfigureChallengePage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-2xl font-bold text-frozen-600">
+              <span className="text-2xl font-bold text-secondary">
                 {opponent.full_name.charAt(0).toUpperCase()}
               </span>
             )}
           </div>
           <div>
-            <p className="text-sm text-frozen-600 font-semibold">Avversario</p>
+            <p className="text-sm text-secondary font-semibold">Avversario</p>
             <h3 className="text-xl font-bold text-gray-900">{opponent.full_name}</h3>
             <p className="text-sm text-gray-600">{opponent.email}</p>
           </div>
@@ -600,12 +600,12 @@ export default function ConfigureChallengePage() {
                 onClick={() => setChallengeType(type.value)}
                 className={`p-4 rounded-xl border-2 transition-all text-left ${
                   challengeType === type.value
-                    ? "border-frozen-500 bg-frozen-50"
+                    ? "border-secondary bg-secondary/5"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div className={challengeType === type.value ? "text-frozen-600" : "text-gray-600"}>
+                  <div className={challengeType === type.value ? "text-secondary" : "text-gray-600"}>
                     {type.icon}
                   </div>
                   <div className="font-medium text-gray-900">{type.label}</div>
@@ -628,7 +628,7 @@ export default function ConfigureChallengePage() {
                 onClick={() => setMatchType(type.value)}
                 className={`p-4 rounded-xl border-2 transition-all text-left ${
                   matchType === type.value
-                    ? "border-frozen-500 bg-frozen-50"
+                    ? "border-secondary bg-secondary/5"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -652,7 +652,7 @@ export default function ConfigureChallengePage() {
                 <select
                   value={myPartner}
                   onChange={(e) => setMyPartner(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
                 >
                   <option value="">Seleziona compagno</option>
                   {availablePartners
@@ -671,7 +671,7 @@ export default function ConfigureChallengePage() {
                 <select
                   value={opponentPartner}
                   onChange={(e) => setOpponentPartner(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
                 >
                   <option value="">Seleziona compagno</option>
                   {availablePartners
@@ -703,7 +703,7 @@ export default function ConfigureChallengePage() {
                 onClick={() => setMatchFormat(format.value)}
                 className={`p-4 rounded-xl border-2 transition-all ${
                   matchFormat === format.value
-                    ? "border-frozen-500 bg-frozen-50"
+                    ? "border-secondary bg-secondary/5"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -831,8 +831,8 @@ export default function ConfigureChallengePage() {
               </div>
 
               {selectedSlots.length > 0 && (
-                <div className="mt-4 p-4 bg-frozen-50 rounded-lg border border-frozen-200">
-                  <div className="flex items-center gap-2 text-sm text-frozen-900">
+                <div className="mt-4 p-4 bg-secondary/5 rounded-lg border border-secondary/20">
+                  <div className="flex items-center gap-2 text-sm text-secondary">
                     <Info className="h-4 w-4 flex-shrink-0" />
                     <span>
                       Match programmato: <strong>{selectedSlots[0]}</strong> su <strong>{selectedCourt}</strong> ({selectedSlots.length}h)
@@ -856,7 +856,7 @@ export default function ConfigureChallengePage() {
             placeholder="Aggiungi un messaggio alla tua sfida (verrà creata una chat)..."
             rows={4}
             maxLength={500}
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 resize-none"
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary resize-none"
           />
           <p className="text-xs text-gray-500 mt-2">{message.length}/500 caratteri</p>
         </div>
@@ -875,7 +875,7 @@ export default function ConfigureChallengePage() {
           <button
             onClick={handleSubmit}
             disabled={sending || !canSubmit}
-            className="flex-1 px-6 py-3 text-sm font-semibold text-white bg-frozen-500 rounded-lg hover:bg-frozen-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {sending ? (
               <>

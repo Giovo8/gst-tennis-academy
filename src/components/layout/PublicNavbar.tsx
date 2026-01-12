@@ -96,7 +96,7 @@ export default function PublicNavbar() {
             </button>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center gap-8">
+            <div className="hidden lg:flex items-center gap-6 xl:gap-8">
               <Link 
                 href="/services" 
                 className="font-semibold transition-colors"
@@ -183,7 +183,7 @@ export default function PublicNavbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
+          <div className="lg:hidden mt-2 pt-3 sm:pt-4 space-y-2 sm:space-y-3 pb-3 sm:pb-4 animate-in slide-in-from-top duration-300">
             {/* Navigation Links */}
             <div className="space-y-2 px-2">
               <Link

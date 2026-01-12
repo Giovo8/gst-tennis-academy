@@ -241,12 +241,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           {mode === "history" && (
-            <Link
-              href="/dashboard/atleta/bookings"
-              className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1 hover:text-secondary/80 transition-colors"
-            >
-              Prenotazioni
-            </Link>
+            <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+              <Link
+                href="/dashboard/atleta/bookings"
+                className="hover:text-secondary/80 transition-colors"
+              >
+                Prenotazioni
+              </Link>
+              <span className="mx-2">›</span>
+              <span>Storico</span>
+            </div>
           )}
           <h1 className="text-3xl font-bold text-secondary mb-2">
             {mode === "history" ? "Storico prenotazioni" : "Le mie Prenotazioni"}
@@ -261,18 +265,18 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           {mode !== "history" && (
             <Link
               href="/dashboard/atleta/bookings/storico"
-              className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+              className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+              title="Storico"
             >
-              <Clock className="h-4 w-4" />
-              Storico
+              <Clock className="h-5 w-5" />
             </Link>
           )}
           <button
             onClick={() => loadBookings()}
-            className="px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white rounded-md hover:bg-secondary/5 transition-all flex items-center gap-2"
+            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            title="Ricarica"
           >
-            <RefreshCw className="h-4 w-4" />
-            Ricarica
+            <RefreshCw className="h-5 w-5" />
           </button>
           {mode !== "history" && (
             <Link
@@ -337,7 +341,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           <Calendar className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna prenotazione trovata</h3>
           <p className="text-secondary/60 mb-6">
-            {search || filter !== "all" 
+            {search || filter !== "all"
               ? "Prova a modificare i filtri di ricerca"
               : "Prenota il tuo primo campo per iniziare"}
           </p>
@@ -353,47 +357,87 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         </div>
       ) : (
         <div className="space-y-3">
+          {/* Header Row */}
+          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+            <div className="flex items-center gap-4">
+              <div className="w-28 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
+              </div>
+              <div className="w-32 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Orario</div>
+              </div>
+              <div className="w-28 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Campo</div>
+              </div>
+              <div className="w-36 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Tipo</div>
+              </div>
+              <div className="w-40 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Maestro</div>
+              </div>
+              <div className="w-32 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Stato</div>
+              </div>
+              <div className="w-24 flex-shrink-0">
+                <div className="text-xs font-bold text-secondary/60 uppercase">Conferme</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Data Rows */}
           {filteredBookings.map((booking) => {
             const StatusIcon = statusConfig[booking.status]?.icon || Clock;
             const isPast = new Date(booking.start_time) < new Date();
             const canCancel = booking.status !== "cancelled" && !isPast;
 
+            // Determina il colore del bordo in base allo stato
+            let borderStyle = {};
+            if (booking.status === "cancelled") {
+              borderStyle = { borderLeftColor: "#ef4444" }; // rosso - annullata
+            } else if (!booking.manager_confirmed) {
+              borderStyle = { borderLeftColor: "#f59e0b" }; // amber - da approvare
+            } else {
+              borderStyle = { borderLeftColor: "#10b981" }; // emerald - confermata
+            }
+
             return (
               <div
                 key={booking.id}
-                className="bg-white rounded-md p-5 hover:shadow-md transition-all"
+                className="bg-white rounded-md p-5 hover:shadow-md transition-all border-l-4"
+                style={borderStyle}
               >
-                <div className="flex items-center justify-between gap-4">
-                  {/* Data e Orario */}
-                  <div className="flex items-center gap-3 w-32 flex-shrink-0">
-                    <Calendar className="h-5 w-5 text-secondary/40" />
-                    <div>
-                      <div className="text-sm font-semibold text-secondary">
-                        {formatDate(booking.start_time)}
-                      </div>
-                      <div className="text-xs text-secondary/60">
-                        {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
-                      </div>
+                <div className="flex items-center gap-4">
+                  {/* Data */}
+                  <div className="w-28 flex-shrink-0">
+                    <div className="font-bold text-secondary text-sm">
+                      {formatDate(booking.start_time)}
+                    </div>
+                  </div>
+
+                  {/* Orario */}
+                  <div className="w-32 flex-shrink-0">
+                    <div className="text-sm text-secondary/80">
+                      {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
                     </div>
                   </div>
 
                   {/* Campo */}
-                  <div className="w-24 flex-shrink-0">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-secondary/10 text-secondary">
-                      {booking.court}
-                    </span>
+                  <div className="w-28 flex-shrink-0">
+                    <div className="font-bold text-secondary">{booking.court}</div>
                   </div>
 
                   {/* Tipo */}
-                  <div className="w-32 flex-shrink-0">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${typeConfig[booking.type]?.color || typeConfig.campo.color}`}>
+                  <div className="w-36 flex-shrink-0">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-secondary/10 text-secondary">
                       {typeConfig[booking.type]?.label || booking.type}
                     </span>
                   </div>
 
                   {/* Maestro */}
-                  <div className="w-40 text-sm text-secondary/70 flex-shrink-0">
-                    {booking.coach?.full_name || "—"}
+                  <div className="w-40 flex-shrink-0">
+                    <div className="text-sm text-secondary/70 truncate">
+                      {booking.coach?.full_name || "—"}
+                    </div>
                   </div>
 
                   {/* Stato */}
@@ -405,7 +449,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                   </div>
 
                   {/* Conferme */}
-                  <div className="flex items-center gap-2 w-20 flex-shrink-0">
+                  <div className="flex items-center gap-2 w-24 flex-shrink-0">
                     <div title="Manager">
                       {booking.manager_confirmed ? (
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -425,7 +469,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                   </div>
 
                   {/* Azioni */}
-                  <div className="flex items-center justify-end gap-2 w-28 flex-shrink-0">
+                  <div className="flex items-center justify-end gap-2 flex-1">
                     {canCancel && (
                       <button
                         onClick={() => cancelBooking(booking.id)}

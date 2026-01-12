@@ -285,23 +285,23 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     )}
                   </div>
                   {/* Header Row */}
-                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                  <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                     <div className="flex items-center gap-4">
                       <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">#</div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
                       </div>
                       <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
                       </div>
                       {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                         <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                          <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+                          <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
                         </div>
                       )}
                     </div>
@@ -315,7 +315,8 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     return (
                       <div
                         key={participant.id}
-                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                        style={{ borderLeftColor: "#0f4c7c" }}
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
@@ -335,11 +336,6 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                             <div className="font-bold text-secondary">
                               {fullName}
                             </div>
-                            {participant.stats?.matches_played > 0 && (
-                              <div className="text-xs text-secondary/60 mt-0.5">
-                                {participant.stats.matches_won}W - {participant.stats.matches_lost}L
-                              </div>
-                            )}
                           </div>
                           <div className="w-48 hidden md:block">
                             {participant.profiles?.email ? (
@@ -411,19 +407,19 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     </div>
                   </div>
                   {/* Header Row */}
-                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                  <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                     <div className="flex items-center gap-4">
                       <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">#</div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
                       </div>
                       <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
                       </div>
                     </div>
                   </div>
@@ -436,7 +432,8 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     return (
                       <div
                         key={participant.id}
-                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                        style={{ borderLeftColor: "#0f4c7c" }}
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
@@ -563,19 +560,19 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     </div>
                   </div>
                   {/* Header Row */}
-                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                  <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                     <div className="flex items-center gap-4">
                       <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">#</div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
                       </div>
                       <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
                       </div>
                     </div>
                   </div>
@@ -588,7 +585,8 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     return (
                       <div
                         key={participant.id}
-                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                        style={{ borderLeftColor: "#0f4c7c" }}
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
@@ -723,22 +721,24 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     )}
                   </div>
                   {/* Header Row */}
-                  <div className="bg-white rounded-lg px-5 py-3 mb-3">
+                  <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                     <div className="flex items-center gap-4">
                       <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">#</div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
                       </div>
                       <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
                       </div>
                       {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
-                        <div className="w-10 flex-shrink-0"></div>
+                        <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                          <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -751,7 +751,8 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                     return (
                       <div
                         key={participant.id}
-                        className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                        style={{ borderLeftColor: "#0f4c7c" }}
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
@@ -897,9 +898,10 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
         </>
       )}
 
-      {/* Lista Partecipanti - Solo per fase iscrizioni o tornei che non hanno tab speciali */}
-      {participants.length > 0 && 
-       (tournament.current_phase as string) === 'iscrizioni' && (
+      {/* Lista Partecipanti - Solo per fase iscrizioni di tornei eliminazione_diretta e girone_eliminazione */}
+      {participants.length > 0 &&
+       (tournament.current_phase as string) === 'iscrizioni' &&
+       tournament.tournament_type !== 'campionato' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
@@ -961,23 +963,23 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
             </div>
           </div>
           {/* Header Row */}
-          <div className="bg-white rounded-lg px-5 py-3 mb-3">
+          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
             <div className="flex items-center gap-4">
               <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                <div className="text-xs font-bold text-white/80 uppercase">#</div>
               </div>
               <div className="flex-1">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Atleta</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
               </div>
               <div className="w-48 hidden md:block">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Email</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Email</div>
               </div>
               <div className="w-32 hidden lg:block">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Telefono</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
               </div>
               {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                 <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-secondary/60 uppercase">Azioni</div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
                 </div>
               )}
             </div>

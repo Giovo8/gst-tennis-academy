@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { getCourts } from "@/lib/courts/getCourts";
+import { DEFAULT_COURTS } from "@/lib/courts/constants";
 
 type Booking = {
   id: string;
@@ -17,15 +19,19 @@ type Booking = {
   manager_confirmed: boolean;
   coach_confirmed: boolean;
   notes: string | null;
-  user_profile?: { full_name: string; email: string } | null;
-  coach_profile?: { full_name: string; email: string } | null;
+  user_profile?: { full_name: string; email: string; phone?: string } | null;
+  coach_profile?: { full_name: string; email: string; phone?: string } | null;
   isBlock?: boolean;
   reason?: string;
 };
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
+type BookingsTimelineProps = {
+  bookings: Booking[];
+  loading: boolean;
+};
+
 const TIME_SLOTS = [
-  "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", 
+  "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
   "13:00", "14:00", "15:00", "16:00", "17:00", "18:00",
   "19:00", "20:00", "21:00", "22:00"
 ];
@@ -37,39 +43,47 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline() {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
+  const [blocksLoading, setBlocksLoading] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
+  const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
+  const [courtsLoading, setCourtsLoading] = useState(true);
 
+  // Load courts from database on mount
   useEffect(() => {
-    loadBookingsForDate();
+    loadCourtsFromDB();
+  }, []);
+
+  // Load court blocks for the selected date
+  useEffect(() => {
+    loadCourtBlocks();
   }, [selectedDate]);
 
-  async function loadBookingsForDate() {
-    setLoading(true);
+  async function loadCourtsFromDB() {
+    setCourtsLoading(true);
+    try {
+      const courtsData = await getCourts();
+      setCourts(courtsData);
+    } catch (error) {
+      console.error("Error loading courts:", error);
+      // Keep default fallback courts
+    } finally {
+      setCourtsLoading(false);
+    }
+  }
+
+  async function loadCourtBlocks() {
+    setBlocksLoading(true);
     try {
       const startOfDay = new Date(selectedDate);
       startOfDay.setHours(0, 0, 0, 0);
-      
+
       const endOfDay = new Date(selectedDate);
       endOfDay.setHours(23, 59, 59, 999);
-
-      // Fetch bookings for the selected date
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from("bookings")
-        .select("*")
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString())
-        .order("start_time", { ascending: true });
-
-      if (bookingsError) {
-        console.error("Error loading bookings:", bookingsError);
-        setLoading(false);
-        return;
-      }
 
       // Fetch court blocks for the selected date
       const { data: blocksData } = await supabase
@@ -78,34 +92,6 @@ export default function BookingsTimeline() {
         .gte("start_time", startOfDay.toISOString())
         .lte("start_time", endOfDay.toISOString())
         .order("start_time", { ascending: true });
-
-      if (!bookingsData && !blocksData) {
-        setBookings([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch profiles
-      const userIds = [...new Set([
-        ...(bookingsData?.map(b => b.user_id) || []),
-        ...(bookingsData?.map(b => b.coach_id).filter(Boolean) || [])
-      ])];
-
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds);
-
-      const profilesMap = new Map(
-        profilesData?.map(p => [p.id, p]) || []
-      );
-
-      const enrichedBookings = bookingsData?.map(booking => ({
-        ...booking,
-        user_profile: profilesMap.get(booking.user_id) || null,
-        coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null,
-        isBlock: false
-      })) || [];
 
       // Convert blocks to booking-like format for timeline display
       const blockEntries: Booking[] = blocksData?.map(block => ({
@@ -126,32 +112,101 @@ export default function BookingsTimeline() {
         coach_profile: null
       })) || [];
 
-      // Merge bookings and blocks
-      const allEntries = [...enrichedBookings, ...blockEntries].sort(
-        (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-      );
-
-      setBookings(allEntries);
+      setCourtBlocks(blockEntries);
     } catch (error) {
-      console.error("Error loading bookings:", error);
+      console.error("Error loading court blocks:", error);
     } finally {
-      setLoading(false);
+      setBlocksLoading(false);
     }
   }
+
+  // Filter bookings for the selected date and merge with court blocks
+  const bookingsForSelectedDate = useMemo(() => {
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const filteredBookings = allBookings.filter(booking => {
+      const bookingDate = new Date(booking.start_time);
+      return bookingDate >= startOfDay && bookingDate <= endOfDay;
+    });
+
+    // Merge bookings and blocks
+    const allEntries = [...filteredBookings, ...courtBlocks].sort(
+      (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    );
+
+    return allEntries;
+  }, [allBookings, selectedDate, courtBlocks]);
+
+  const loading = parentLoading || blocksLoading || courtsLoading;
 
   function changeDate(days: number) {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + days);
     setSelectedDate(newDate);
+    setSelectedSlots([]); // Reset selection when changing date
   }
 
   function goToToday() {
     setSelectedDate(new Date());
+    setSelectedSlots([]);
   }
 
   function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newDate = new Date(e.target.value + 'T12:00:00');
     setSelectedDate(newDate);
+    setSelectedSlots([]);
+  }
+
+  function toggleSlotSelection(court: string, time: string) {
+    setSelectedSlots(prev => {
+      const key = `${court}-${time}`;
+      const exists = prev.find(s => `${s.court}-${s.time}` === key);
+      if (exists) {
+        return prev.filter(s => `${s.court}-${s.time}` !== key);
+      } else {
+        return [...prev, { court, time }];
+      }
+    });
+  }
+
+  function handleBookSlots() {
+    if (selectedSlots.length === 0) return;
+
+    // Sort slots by time to get the earliest
+    const sortedSlots = [...selectedSlots].sort((a, b) => {
+      const timeA = a.time.split(':').map(Number);
+      const timeB = b.time.split(':').map(Number);
+      return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+    });
+
+    const firstSlot = sortedSlots[0];
+    const dateStr = selectedDate.toISOString().split('T')[0];
+
+    // Get all selected times for the same court as the first slot
+    const allTimes = sortedSlots
+      .filter(s => s.court === firstSlot.court)
+      .map(s => s.time);
+
+    console.log('🚀 Navigazione verso new booking con parametri:', {
+      court: firstSlot.court,
+      date: dateStr,
+      times: allTimes,
+      selectedSlots: selectedSlots
+    });
+
+    // Navigate to new booking page with pre-filled data
+    // Pass all selected times as comma-separated values
+    const params = new URLSearchParams({
+      court: firstSlot.court,
+      date: dateStr,
+      times: allTimes.join(',')
+    });
+
+    router.push(`/dashboard/admin/bookings/new?${params.toString()}`);
   }
 
   function openDatePicker() {
@@ -161,10 +216,10 @@ export default function BookingsTimeline() {
   // Build a map of time slots for each court
   const courtTimeline = useMemo(() => {
     const timeline: Record<string, TimeSlotInfo[]> = {};
-    
-    COURTS.forEach(court => {
+
+    courts.forEach(court => {
       // Get bookings for this court and sort by start time
-      const courtBookings = bookings
+      const courtBookings = bookingsForSelectedDate
         .filter(b => b.court === court)
         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
       
@@ -244,7 +299,7 @@ export default function BookingsTimeline() {
     });
     
     return timeline;
-  }, [bookings]);
+  }, [bookingsForSelectedDate, courts]);
 
   function getBookingColor(booking: Booking): string {
     if (booking.status === "cancelled") {
@@ -302,8 +357,8 @@ export default function BookingsTimeline() {
   return (
     <div className="space-y-4">
       {/* Date Navigation */}
-      <div className={`rounded-lg p-4 flex items-center justify-between transition-all ${
-        isToday() ? 'bg-secondary' : 'bg-white'
+      <div className={`rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all ${
+        isToday() ? 'bg-secondary' : 'bg-white border border-gray-200'
       }`}>
         <button
           onClick={() => changeDate(-1)}
@@ -331,7 +386,7 @@ export default function BookingsTimeline() {
             value={selectedDate.toISOString().split('T')[0]}
             className="absolute opacity-0 pointer-events-none"
           />
-          <h2 className={`text-lg font-bold capitalize ${
+          <h2 className={`text-sm sm:text-base md:text-lg font-bold capitalize ${
             isToday() ? 'text-white' : 'text-secondary'
           }`}>
             {formatDateHeader()}
@@ -350,22 +405,22 @@ export default function BookingsTimeline() {
 
       {/* Timeline Grid */}
       {loading ? (
-        <div className="bg-white rounded-lg p-12 text-center">
+        <div className="bg-white rounded-lg p-4 sm:p-6 md:p-12 text-center">
           <p className="text-secondary/60">Caricamento timeline...</p>
         </div>
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto scrollbar-hide">
-            <div className="min-w-[1400px]">
+            <div className="min-w-[800px] md:min-w-[1400px]">
               {/* Header Row with Time Slots */}
-              <div className="grid grid-cols-[180px_repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
-                <div className="p-4 flex items-center justify-center">
-                  <span className="font-bold text-secondary uppercase tracking-wide text-[11px]">Campo</span>
+              <div className="grid grid-cols-[120px_repeat(16,_minmax(60px,_1fr))] md:grid-cols-[180px_repeat(16,_minmax(80px,_1fr))] bg-secondary border border-secondary rounded-lg mb-3">
+                <div className="p-2 sm:p-3 md:p-4 flex items-center justify-center">
+                  <span className="font-bold text-white uppercase tracking-wide text-[10px] sm:text-[11px]">Campo</span>
                 </div>
                 {TIME_SLOTS.map((time) => (
                   <div
                     key={time}
-                    className="p-3 text-center font-bold text-secondary text-xs flex items-center justify-center"
+                    className="p-1.5 sm:p-2 md:p-3 text-center font-bold text-white text-[10px] sm:text-xs flex items-center justify-center"
                   >
                     {time}
                   </div>
@@ -374,17 +429,17 @@ export default function BookingsTimeline() {
 
               {/* Court Rows */}
               <div className="space-y-3">
-              {COURTS.map((court) => {
+              {courts.map((court) => {
                 const slots = courtTimeline[court] || [];
                 
                 return (
                   <div
                     key={court}
-                    className="grid grid-cols-[180px_repeat(16,_minmax(80px,_1fr))] hover:bg-gray-50/50 transition-colors bg-white rounded-lg"
+                    className="grid grid-cols-[120px_repeat(16,_minmax(60px,_1fr))] md:grid-cols-[180px_repeat(16,_minmax(80px,_1fr))] hover:bg-gray-50/50 transition-colors bg-white border border-gray-200 rounded-lg"
                     style={{ minHeight: "70px" }}
                   >
                     {/* Court Name */}
-                    <div className="p-4 bg-white font-bold text-secondary text-sm flex items-center justify-center border-r border-gray-200">
+                    <div className="p-2 sm:p-3 md:p-4 bg-white font-bold text-secondary text-xs sm:text-sm flex items-center justify-center border-r border-gray-200">
                       {court}
                     </div>
 
@@ -419,7 +474,7 @@ export default function BookingsTimeline() {
                                   router.push(`/dashboard/admin/bookings/${slot.booking.id}`);
                                 }
                               }}
-                              className="relative p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 hover:scale-[1.02] transition-all cursor-pointer active:scale-95 z-10"
+                              className="relative p-1.5 sm:p-2 md:p-2.5 text-white text-[10px] sm:text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 hover:scale-[1.02] transition-all cursor-pointer active:scale-95 z-10"
                               style={bookingStyle}
                               title={`Clicca per vedere i dettagli${slot.booking.isBlock ? '' : ` - ${slot.booking.user_profile?.full_name}`}`}
                             >
@@ -455,12 +510,34 @@ export default function BookingsTimeline() {
                         );
                       }
 
-                      // Empty slot
+                      // Empty slot - diviso in due metà da 30 minuti
+                      const timeSlot = TIME_SLOTS[index];
+                      const [hour] = timeSlot.split(":").map(Number);
+                      const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                      const time2 = `${hour.toString().padStart(2, '0')}:30`;
+                      const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
+                      const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
+
                       return (
                         <div
                           key={`${court}-${index}`}
-                          className="bg-white hover:bg-emerald-50/40 transition-colors cursor-pointer border-r border-gray-200 last:border-r-0 relative"
+                          className="border-r border-gray-200 last:border-r-0 relative flex"
                         >
+                          {/* Prima metà - :00 */}
+                          <div
+                            onClick={() => toggleSlotSelection(court, time1)}
+                            className={`flex-1 transition-colors cursor-pointer ${
+                              isSelected1 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
+                            }`}
+                          />
+                          {/* Seconda metà - :30 */}
+                          <div
+                            onClick={() => toggleSlotSelection(court, time2)}
+                            className={`flex-1 transition-colors cursor-pointer ${
+                              isSelected2 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
+                            }`}
+                          />
+                          {/* Tacchetta centrale */}
                           <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                         </div>
                       );
@@ -471,6 +548,19 @@ export default function BookingsTimeline() {
               </div>
             </div>
           </div>
+
+          {/* Book Button */}
+          {selectedSlots.length > 0 && (
+            <div className="mt-4 sm:mt-6">
+              <button
+                onClick={handleBookSlots}
+                className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+              >
+                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                Prenota Campo ({selectedSlots.length} slot selezionat{selectedSlots.length === 1 ? 'o' : 'i'})
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

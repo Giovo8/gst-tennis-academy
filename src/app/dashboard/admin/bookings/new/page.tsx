@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -15,6 +15,8 @@ import {
 import Link from "next/link";
 import { addDays, format, isToday } from "date-fns";
 import { it } from "date-fns/locale";
+import { getCourts } from "@/lib/courts/getCourts";
+import { DEFAULT_COURTS } from "@/lib/courts/constants";
 
 interface Coach {
   id: string;
@@ -124,26 +126,28 @@ function SearchableSelect({
   );
 }
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", icon: "🎾" },
   { value: "lezione_privata", label: "Lezione Privata", icon: "👤" },
   { value: "lezione_gruppo", label: "Lezione Privata di Gruppo", icon: "👥" },
 ];
 
-export default function NewAdminBookingPage() {
+function NewAdminBookingPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
+  const [courtsLoading, setCourtsLoading] = useState(true);
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
   const [selectedAthlete, setSelectedAthlete] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedCourt, setSelectedCourt] = useState(COURTS[0]);
+  const [selectedCourt, setSelectedCourt] = useState("");
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectedCoach, setSelectedCoach] = useState("");
   const [notes, setNotes] = useState("");
@@ -153,46 +157,138 @@ export default function NewAdminBookingPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingSlotsSelection = useRef<string[]>([]);
+  const urlParamsApplied = useRef<boolean>(false);
 
   // Validation
   const canSubmit = selectedAthlete && selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
 
+  // Load courts and users on mount
   useEffect(() => {
-    loadUsers();
+    loadCourtsAndUsers();
   }, []);
+
+  // Apply URL parameters after courts are loaded
+  useEffect(() => {
+    if (courtsLoading || urlParamsApplied.current) return;
+
+    const courtParam = searchParams.get('court');
+    const dateParam = searchParams.get('date');
+    const timesParam = searchParams.get('times');
+
+    // Only apply if there are URL parameters to apply
+    if (!courtParam && !dateParam && !timesParam) {
+      // No URL params, just set default court
+      if (courts.length > 0 && !selectedCourt) {
+        setSelectedCourt(courts[0]);
+      }
+      return;
+    }
+
+    if (courtParam && courts.includes(courtParam)) {
+      setSelectedCourt(courtParam);
+    } else if (courts.length > 0 && !selectedCourt) {
+      setSelectedCourt(courts[0]);
+    }
+
+    if (dateParam) {
+      const parsedDate = new Date(dateParam + 'T12:00:00');
+      if (!isNaN(parsedDate.getTime())) {
+        setSelectedDate(parsedDate);
+      }
+    }
+
+    if (timesParam) {
+      const times = timesParam.split(',').filter(Boolean);
+      pendingSlotsSelection.current = times;
+    }
+
+    urlParamsApplied.current = true;
+  }, [courtsLoading, courts, searchParams]);
 
   useEffect(() => {
     if (selectedDate && selectedCourt) {
+      // Reset selected slots when date or court changes (unless we have pending slots from URL)
+      if (pendingSlotsSelection.current.length === 0) {
+        setSelectedSlots([]);
+      }
       loadAvailableSlots();
     }
   }, [selectedDate, selectedCourt]);
 
-  async function loadUsers() {
-    // Load coaches
-    const { data: coachData } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("role", "maestro")
-      .order("full_name");
+  // Apply pending slots selection after slots are loaded
+  useEffect(() => {
+    // Only proceed if we have pending slots
+    if (pendingSlotsSelection.current.length === 0) return;
 
-    if (coachData) setCoaches(coachData);
+    // Wait for slots to finish loading
+    if (loadingSlots) return;
 
-    // Load athletes
-    const { data: athleteData } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .eq("role", "atleta")
-      .order("full_name");
+    // Must have slots loaded to proceed
+    if (slots.length === 0) return;
 
-    if (athleteData) setAthletes(athleteData);
+    // Filter only available slots
+    const slotsToSelect = pendingSlotsSelection.current;
+    const availableSlots = slotsToSelect.filter(time => {
+      const slot = slots.find(s => s.time === time);
+      return slot && slot.available;
+    });
+
+    // Clear pending slots after attempting selection
+    pendingSlotsSelection.current = [];
+
+    if (availableSlots.length > 0) {
+      setSelectedSlots(availableSlots);
+
+      // Remove URL parameters after successfully applying the slots
+      setTimeout(() => {
+        router.replace('/dashboard/admin/bookings/new', { scroll: false });
+      }, 100);
+    }
+  }, [slots, loadingSlots, router]);
+
+  async function loadCourtsAndUsers() {
+    setCourtsLoading(true);
+    try {
+      // Load courts
+      const courtsData = await getCourts();
+      setCourts(courtsData);
+
+      // Set first court as default
+      if (courtsData.length > 0 && !selectedCourt) {
+        setSelectedCourt(courtsData[0]);
+      }
+
+      // Load coaches
+      const { data: coachData } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "maestro")
+        .order("full_name");
+
+      if (coachData) setCoaches(coachData);
+
+      // Load athletes
+      const { data: athleteData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("role", "atleta")
+        .order("full_name");
+
+      if (athleteData) setAthletes(athleteData);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setCourtsLoading(false);
+    }
   }
 
   async function loadAvailableSlots() {
     if (!selectedDate || !selectedCourt) return;
 
     setLoadingSlots(true);
-    
+
     const dateStr = selectedDate.toISOString().split("T")[0];
 
     // Get existing bookings for this court and date
@@ -601,7 +697,7 @@ export default function NewAdminBookingPage() {
           </div>
 
           {/* Area Principale - Campo, Dettagli e Slot */}
-          <div className="bg-white rounded-xl p-6 space-y-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
             {/* Slot Orari + Campo + Dettagli */}
             <div className="space-y-4">
               {loadingSlots ? (
@@ -661,21 +757,28 @@ export default function NewAdminBookingPage() {
                     {/* Campo */}
                     <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
                       <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
-                      <div className="flex-1 flex gap-3">
-                        {COURTS.map((court) => (
-                          <button
-                            key={court}
-                            type="button"
-                            onClick={() => setSelectedCourt(court)}
-                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
-                              selectedCourt === court
-                                ? 'bg-secondary text-white border-secondary'
-                                : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                            }`}
-                          >
-                            {court}
-                          </button>
-                        ))}
+                      <div className="flex-1 flex flex-wrap gap-3">
+                        {courtsLoading ? (
+                          <div className="flex items-center gap-2 text-secondary/60">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm">Caricamento campi...</span>
+                          </div>
+                        ) : (
+                          courts.map((court) => (
+                            <button
+                              key={court}
+                              type="button"
+                              onClick={() => setSelectedCourt(court)}
+                              className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                                selectedCourt === court
+                                  ? 'bg-secondary text-white border-secondary'
+                                  : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                              }`}
+                            >
+                              {court}
+                            </button>
+                          ))
+                        )}
                       </div>
                     </div>
 
@@ -917,5 +1020,17 @@ export default function NewAdminBookingPage() {
       {/* Bottom Spacer */}
       <div className="h-8" />
     </div>
+  );
+}
+
+export default function NewAdminBookingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    }>
+      <NewAdminBookingPageInner />
+    </Suspense>
   );
 }

@@ -383,17 +383,26 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Header con info prenotazione */}
-      <div className={`bg-white rounded-xl border-l-4 ${getStatusBorderColor()} p-6`}>
+      <div
+        className={
+          `bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4`
+        }
+        style={{ borderLeftColor: (() => {
+          if (booking.status === "cancelled") return "#ef4444"; // rosso
+          if (!booking.manager_confirmed && booking.status !== "cancelled") return "#f59e0b"; // amber
+          return "#10b981"; // emerald
+        })() }}
+      >
         <div className="flex items-start gap-6">
-          <BookingIcon className="h-8 w-8 text-secondary flex-shrink-0" strokeWidth={2.5} />
+          <BookingIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-secondary">{booking.court}</h1>
+            <h1 className="text-2xl font-bold text-white">{booking.court}</h1>
           </div>
         </div>
       </div>
 
       {/* Dettagli prenotazione */}
-      <div className="bg-white rounded-xl p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli prenotazione</h2>
         
         <div className="space-y-6">
@@ -544,57 +553,6 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Maestro */}
-          {isLesson && (
-            <>
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">
-                    {booking.coach_profile?.full_name || "Non assegnato"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Email Maestro */}
-              {booking.coach_profile?.email && (
-                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email Maestro</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{booking.coach_profile.email}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Telefono Maestro */}
-              {booking.coach_profile?.phone && (
-                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono Maestro</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{booking.coach_profile.phone}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Conferma Maestro</label>
-                <div className="flex-1">
-                  {booking.coach_confirmed ? (
-                    <span className="text-emerald-600 font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="h-5 w-5" />
-                      Confermata
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                      <Clock className="h-5 w-5" />
-                      In attesa
-                    </span>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-
           {/* Data creazione */}
           <div className="flex items-start gap-8">
             <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Creata il</label>
@@ -615,7 +573,7 @@ export default function BookingDetailPage() {
 
       {/* Note */}
       {booking.notes && (
-        <div className="bg-white rounded-xl p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-secondary mb-4">Note</h2>
           <p className="text-secondary/70">{booking.notes}</p>
         </div>

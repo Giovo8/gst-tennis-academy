@@ -246,7 +246,7 @@ export default function DashboardShell({
       <aside
         className={`
           fixed top-0 left-0 z-50 h-screen
-          bg-white border-r border-gray-200 shadow-lg
+          bg-white border-r border-gray-200
           transform transition-all duration-300 ease-in-out
           lg:translate-x-0
           ${sidebarCollapsed ? "w-[70px]" : "w-[260px]"}
@@ -294,44 +294,77 @@ export default function DashboardShell({
             </div>
           </nav>
 
-          {/* Footer: notifiche, profilo, logout, dark mode e collapse */}
+          {/* Footer: azioni e profilo */}
           <div className={`${sidebarCollapsed ? "p-3" : "p-4"} space-y-3`}>
-            {/* Cerca, Notifiche, Dark Mode, Logout e Collapse */}
-            <div className={`flex items-center ${sidebarCollapsed ? "flex-col gap-2" : "justify-center gap-2"}`}>
-              {/* Search */}
-              <button
-                onClick={() => setShowSearchModal(true)}
-                title="Cerca"
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Search className="h-5 w-5 text-gray-600" />
-              </button>
-              
-              {/* Notifiche */}
-              <NotificationsDropdown />
+            {/* Azioni: Cerca, Notifiche, Logout e Collapse */}
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-2 pl-2">
+                {/* Search */}
+                <button
+                  onClick={() => setShowSearchModal(true)}
+                  title="Cerca"
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <Search className="h-5 w-5 text-gray-600" />
+                </button>
 
-              {/* Logout */}
-              <button
-                onClick={handleLogout}
-                title="Esci"
-                className="p-2 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="h-5 w-5 text-gray-600 hover:text-red-600" />
-              </button>
+                {/* Notifiche */}
+                <NotificationsDropdown />
 
-              {/* Collapse/Expand - ultimo */}
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                title={sidebarCollapsed ? "Espandi menu" : "Riduci menu"}
-              >
-                {sidebarCollapsed ? (
-                  <ChevronRight className="h-5 w-5 text-gray-600" />
-                ) : (
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  title="Esci"
+                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="h-5 w-5 text-gray-600 hover:text-red-600" />
+                </button>
+
+                {/* Collapse/Expand */}
+                <button
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Riduci menu"
+                >
                   <ChevronLeft className="h-5 w-5 text-gray-600" />
-                )}
-              </button>
-            </div>
+                </button>
+              </div>
+            )}
+
+            {/* Azioni in modalità collapsed */}
+            {sidebarCollapsed && (
+              <div className="flex flex-col gap-2">
+                {/* Search */}
+                <button
+                  onClick={() => setShowSearchModal(true)}
+                  title="Cerca"
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <Search className="h-5 w-5 text-gray-600" />
+                </button>
+
+                {/* Notifiche */}
+                <NotificationsDropdown />
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  title="Esci"
+                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="h-5 w-5 text-gray-600 hover:text-red-600" />
+                </button>
+
+                {/* Collapse/Expand */}
+                <button
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Espandi menu"
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-600" />
+                </button>
+              </div>
+            )}
 
             {/* Profilo Utente - cliccabile */}
             <Link

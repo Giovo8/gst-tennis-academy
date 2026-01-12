@@ -106,9 +106,9 @@ export default function NewsSection() {
 
   if (loading) {
     return (
-      <section id="news" className="py-20">
+      <section id="news" className="py-12 sm:py-16 md:py-20">
         <div className="container section">
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-8 sm:py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function NewsSection() {
         </div>
 
         {/* Filtri categoria */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pb-4 mb-6 sm:mb-8 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pb-3 sm:pb-4 mb-6 sm:mb-8 text-center">
           <button
             onClick={() => setActiveCategory("tutte")}
             className={`text-sm px-3 py-1.5 rounded-sm transition-colors ${

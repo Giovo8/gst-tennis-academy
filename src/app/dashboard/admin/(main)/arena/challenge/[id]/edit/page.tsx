@@ -623,8 +623,8 @@ export default function AdminEditChallengePage() {
 
                   <div className="space-y-6 mt-6">
                     {/* Sfidante */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={challenger}
@@ -637,8 +637,8 @@ export default function AdminEditChallengePage() {
                     </div>
 
                     {/* Sfidato */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={opponent}
@@ -651,8 +651,8 @@ export default function AdminEditChallengePage() {
                     </div>
 
                     {/* Tipo Match */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
                       <div className="flex-1 flex gap-3">
                         {MATCH_TYPES.map((type) => (
                           <button
@@ -674,8 +674,8 @@ export default function AdminEditChallengePage() {
                     {/* Partners se doppio */}
                     {matchType === "doubles" && (
                       <>
-                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
+                        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                          <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={myPartner}
@@ -687,8 +687,8 @@ export default function AdminEditChallengePage() {
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
+                        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                          <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={opponentPartner}
@@ -703,8 +703,8 @@ export default function AdminEditChallengePage() {
                     )}
 
                     {/* Tipo Sfida */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
                       <div className="flex-1 flex gap-3">
                         {CHALLENGE_TYPES.map((type) => (
                           <button
@@ -724,8 +724,8 @@ export default function AdminEditChallengePage() {
                     </div>
 
                     {/* Formato Match */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
                       <div className="flex-1 flex gap-3">
                         {MATCH_FORMATS.map((format) => (
                           <button
@@ -745,8 +745,8 @@ export default function AdminEditChallengePage() {
                     </div>
 
                     {/* Campo */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
                       <div className="flex-1 flex gap-3 flex-wrap">
                         {COURTS.map((court) => (
                           <button

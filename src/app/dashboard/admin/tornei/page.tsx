@@ -166,14 +166,14 @@ function AdminTorneiPageInner() {
           </button>
           <button
             onClick={() => router.push('/dashboard/admin/tornei/archivio')}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
             title="Archivio"
           >
             <Archive className="h-5 w-5" />
           </button>
           <Link
             href="/dashboard/admin/tornei/report"
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all inline-flex items-center justify-center"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all inline-flex items-center justify-center"
             title="Report"
           >
             <BarChart3 className="h-5 w-5" />
@@ -191,7 +191,7 @@ function AdminTorneiPageInner() {
               placeholder="Cerca per nome, descrizione o categoria..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
             />
           </div>
 
@@ -202,7 +202,7 @@ function AdminTorneiPageInner() {
               className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 filterType === "all"
                   ? "text-white bg-secondary"
-                  : "bg-white text-secondary/70 hover:bg-secondary/5"
+                  : "bg-white text-secondary/70 hover:bg-secondary/5 border border-gray-200"
               }`}
             >
               Tutti
@@ -214,7 +214,7 @@ function AdminTorneiPageInner() {
                 className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                   filterType === type
                     ? "text-white bg-secondary"
-                    : "bg-white text-secondary/70 hover:bg-secondary/5"
+                    : "bg-white text-secondary/70 hover:bg-secondary/5 border border-gray-200"
                 }`}
               >
                 {label}
@@ -239,19 +239,19 @@ function AdminTorneiPageInner() {
           ) : (
             <div className="space-y-3">
               {/* Header Row */}
-              <div className="bg-white rounded-lg px-5 py-3 mb-3">
+              <div className="bg-secondary border border-secondary rounded-lg px-5 py-3 mb-3">
                 <div className="flex items-center gap-4">
                   <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">#</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">#</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">Nome Torneo</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Nome Torneo</div>
                   </div>
                   <div className="w-32 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">Data</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Data</div>
                   </div>
                   <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-secondary/60 uppercase">Partecipanti</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Partecipanti</div>
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ function AdminTorneiPageInner() {
                   <div
                     key={tournament.id}
                     onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
-                    className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all cursor-pointer border-l-4"
+                    className="bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
                     style={{ borderLeftColor: borderColor }}
                   >
                     <div className="flex items-center gap-4">

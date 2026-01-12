@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { createNotification } from "@/lib/notifications/createNotification";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
+import { logActivityServer } from "@/lib/activity/logActivity";
 
 export async function GET(req: Request) {
   try {
@@ -155,6 +156,23 @@ export async function POST(req: Request) {
         title: "Nuova prenotazione",
         message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTime}`,
         link: "/dashboard/admin/bookings",
+      });
+
+      // Log activity
+      await logActivityServer({
+        userId: user_id,
+        action: "booking.create",
+        entityType: "booking",
+        entityId: booking.id,
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+        metadata: {
+          court: booking.court,
+          type: booking.type,
+          startTime: booking.start_time,
+          endTime: booking.end_time,
+          status: booking.status,
+        },
       });
     }
 

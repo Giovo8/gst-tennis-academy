@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { UserPlus, Search, X, Loader2, Check } from 'lucide-react';
+import { getAvatarUrl } from '@/lib/utils';
 
 interface ManualEnrollmentProps {
   tournamentId: string;
@@ -16,6 +17,7 @@ interface User {
   full_name: string;
   email: string;
   role: string;
+  avatar_url?: string;
 }
 
 export default function ManualEnrollment({ 
@@ -174,24 +176,12 @@ export default function ManualEnrollment({
         }
       }}
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-6 bg-gray-50">
+        <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-2.5">
-                  <UserPlus className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Iscrivi Atleti al Torneo</h3>
-                  <p className="text-xs text-gray-600">
-                    Posti disponibili: {maxParticipants - currentParticipants} su {maxParticipants}
-                  </p>
-                  {selectedUserIds.size > 0 && (
-                    <p className="text-xs text-blue-600 mt-1 font-medium">
-                      {selectedUserIds.size} atleta/i selezionato/i
-                    </p>
-                  )}
-                </div>
+                <UserPlus className="h-6 w-6 text-white" />
+                <h3 className="text-lg font-bold text-white">Iscrivi Atleti al Torneo</h3>
               </div>
               <button
                 onClick={() => {
@@ -199,65 +189,83 @@ export default function ManualEnrollment({
                   setSelectedUserIds(new Set());
                   setSearchQuery('');
                 }}
-                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Search */}
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-6 border-b border-gray-200 bg-gray-50">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
                 <input
                   type="text"
                   placeholder="Cerca per nome o email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
             </div>
 
             {/* User List */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <Loader2 className="h-8 w-8 animate-spin text-secondary" />
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">Nessun atleta trovato</p>
+                  <p className="text-secondary/60">Nessun atleta trovato</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {filteredUsers.map((user) => {
                     const isSelected = selectedUserIds.has(user.id);
+                    const fullName = user.full_name || 'Senza nome';
+                    const avatarUrl = user.avatar_url ? getAvatarUrl(user.avatar_url) : null;
+
                     return (
                       <div
                         key={user.id}
                         onClick={() => toggleUserSelection(user.id)}
-                        className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all ${
+                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'
+                            ? 'border-secondary bg-secondary/5 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-secondary/50 hover:shadow-sm'
                         }`}
                       >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-500'
-                              : 'border-gray-300'
-                          }`}>
-                            {isSelected && <Check className="h-3 w-3 text-white" />}
-                          </div>
+                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'border-secondary bg-secondary'
+                            : 'border-gray-300'
+                        }`}>
+                          {isSelected && <Check className="h-3 w-3 text-white" />}
+                        </div>
+
+                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={fullName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{fullName.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 flex items-center gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 text-base truncate">{user.full_name || 'Senza nome'}</p>
-                            <p className="text-sm text-gray-600 truncate">{user.email}</p>
-                            <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 font-medium">
-                              {user.role}
-                            </span>
+                            <p className="font-semibold text-secondary text-sm truncate">{fullName}</p>
                           </div>
+                          <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
+                            <p className="text-xs text-secondary/70 truncate">{user.email}</p>
+                          </div>
+                          <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium">
+                            atleta
+                          </span>
                         </div>
                       </div>
                     );
@@ -267,11 +275,11 @@ export default function ManualEnrollment({
             </div>
 
             {/* Footer con bottone iscrizione multipla */}
-            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-gray-50">
+            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
               <button
                 onClick={handleEnrollSelected}
                 disabled={enrolling || selectedUserIds.size === 0}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {enrolling ? (
                   <>
