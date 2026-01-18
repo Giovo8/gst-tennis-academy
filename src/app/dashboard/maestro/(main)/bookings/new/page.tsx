@@ -117,7 +117,7 @@ function SearchableSelect({
   );
 }
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
+const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo Libero", icon: "🎾" },
   { value: "lezione_privata", label: "Lezione Privata", icon: "👤" },

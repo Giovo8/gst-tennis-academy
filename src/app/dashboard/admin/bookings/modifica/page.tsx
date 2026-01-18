@@ -137,10 +137,6 @@ const COURTS = [
   "Campo 2",
   "Campo 3",
   "Campo 4",
-  "Campo 5",
-  "Campo 6",
-  "Campo 7",
-  "Campo 8",
 ];
 
 const BOOKING_TYPES = [
@@ -514,22 +510,20 @@ export default function AdminEditBookingPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-            <Link
-              href="/dashboard/admin/bookings"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Prenotazioni
-            </Link>
-            <span className="mx-2">›</span>
-            <span>Modifica Prenotazione</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Modifica prenotazione</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Seleziona giorno, campo e slot.
-          </p>
-        </div>
+        <p className="breadcrumb text-secondary/60">
+          <Link
+            href="/dashboard/admin/bookings"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Prenotazioni
+          </Link>
+          <span className="mx-2">›</span>
+          <span>Modifica Prenotazione</span>
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica prenotazione</h1>
+        <p className="text-secondary/70 text-sm max-w-2xl">
+          Seleziona giorno, campo e slot.
+        </p>
       </div>
 
       {/* Messages */}
@@ -566,7 +560,7 @@ export default function AdminEditBookingPage() {
           <div className="space-y-6">
             {/* Selettore Data */}
             {selectedDate && (
-              <div className="rounded-lg p-4 flex items-center justify-between transition-all bg-secondary">
+              <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
                 <button
                   type="button"
                   onClick={() => {
@@ -579,7 +573,7 @@ export default function AdminEditBookingPage() {
                   <span className="text-lg font-semibold text-white">&lt;</span>
                 </button>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -607,8 +601,9 @@ export default function AdminEditBookingPage() {
                     }}
                     className="absolute opacity-0 pointer-events-none"
                   />
-                  <h2 className="text-lg font-bold capitalize text-white">
-                    {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+                  <h2 className="text-base sm:text-lg font-bold capitalize text-white">
+                    <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
+                    <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
                   </h2>
                 </div>
 
@@ -645,8 +640,8 @@ export default function AdminEditBookingPage() {
                     <div className="space-y-6 mt-6">
                       {/* Atleta (read-only) */}
                       {booking && (
-                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
                           <div className="flex-1">
                             <div className="text-secondary font-semibold">
                               {booking.user_profile?.full_name || "Nome non disponibile"}
@@ -661,9 +656,9 @@ export default function AdminEditBookingPage() {
                       )}
 
                       {/* Tipo prenotazione */}
-                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
-                        <div className="flex-1 flex gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
+                        <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                           {BOOKING_TYPES.map((type) => (
                             <button
                               key={type.value}
@@ -674,7 +669,7 @@ export default function AdminEditBookingPage() {
                                   setSelectedCoach("");
                                 }
                               }}
-                              className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                              className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                                 bookingType === type.value
                                   ? 'bg-secondary text-white border-secondary'
                                   : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -687,9 +682,9 @@ export default function AdminEditBookingPage() {
                       </div>
 
                       {/* Campo */}
-                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
-                        <div className="flex-1 flex gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                        <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
                           {COURTS.map((c) => (
                             <button
                               key={c}
@@ -698,7 +693,7 @@ export default function AdminEditBookingPage() {
                                 setSelectedCourt(c);
                                 setSelectedSlots([]);
                               }}
-                              className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                              className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                                 selectedCourt === c
                                   ? 'bg-secondary text-white border-secondary'
                                   : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -712,8 +707,8 @@ export default function AdminEditBookingPage() {
 
                       {/* Maestro se necessario */}
                       {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-                        <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                          <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={selectedCoach}
@@ -730,8 +725,8 @@ export default function AdminEditBookingPage() {
                       )}
 
                       {/* Note */}
-                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
                         <div className="flex-1">
                           <textarea
                             value={notes}
@@ -750,13 +745,13 @@ export default function AdminEditBookingPage() {
                     <div className="overflow-x-auto scrollbar-hide">
                       <div style={{ minWidth: '1280px' }}>
                         {/* Header con orari */}
-                        <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
+                        <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
                           {Array.from({ length: 16 }, (_, i) => {
                             const hour = 7 + i;
                             return (
                               <div
                                 key={hour}
-                                className="p-3 text-center font-bold text-secondary text-xs flex items-center justify-center"
+                                className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
                               >
                                 {hour.toString().padStart(2, '0')}:00
                               </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -13,10 +14,12 @@ import {
   RefreshCw,
   User,
   Users,
-  Circle,
   Trophy,
   List,
   LayoutGrid,
+  Pencil,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
@@ -46,6 +49,7 @@ type BookingsPageProps = {
 };
 
 export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -94,10 +98,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       .eq("user_id", user.id);
 
     // In modalità default mostra solo dal giorno corrente in avanti
+    // In modalità history mostra solo prenotazioni passate
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (mode === "default") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       query = query.gte("start_time", today.toISOString());
+    } else if (mode === "history") {
+      query = query.lt("start_time", today.toISOString());
     }
 
     const { data: bookingsData, error: bookingsError } = await query
@@ -167,12 +175,32 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     }
   }
 
+  async function requestCancellation(id: string) {
+    if (!confirm("Vuoi richiedere la cancellazione di questa prenotazione? La segreteria dovrà approvarla.")) return;
+
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "cancellation_requested" })
+      .eq("id", id);
+
+    if (!error) {
+      loadBookings();
+    } else {
+      alert("Errore durante la richiesta di cancellazione");
+    }
+  }
+
   function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString("it-IT", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+    const date = new Date(dateString);
+    const weekday = date.toLocaleDateString("it-IT", { weekday: "short" });
+    const day = date.getDate();
+    const month = date.toLocaleDateString("it-IT", { month: "short" });
+
+    // Capitalizza prima lettera di giorno e mese
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+
+    return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
   }
 
   function formatTime(dateString: string) {
@@ -192,6 +220,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     confirmed: { label: "Confermata", color: "bg-secondary text-white", icon: CheckCircle2 },
     pending: { label: "In attesa", color: "bg-secondary text-white", icon: Clock },
     cancelled: { label: "Annullata", color: "bg-secondary text-white", icon: XCircle },
+    cancellation_requested: { label: "Richiesta cancellazione", color: "bg-secondary text-white", icon: AlertCircle },
   };
 
   const filteredBookings = bookings
@@ -283,11 +312,20 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               : "Visualizza e gestisci le tue prenotazioni dei campi da oggi in avanti"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+          {mode !== "history" && (
+            <Link
+              href="/dashboard/atleta/bookings/new"
+              className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nuova Prenotazione
+            </Link>
+          )}
           {mode !== "history" && (
             <Link
               href="/dashboard/atleta/bookings/storico"
-              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
+              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
               title="Storico"
             >
               <Clock className="h-5 w-5" />
@@ -295,40 +333,21 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           )}
           <button
             onClick={() => loadBookings()}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
             title="Ricarica"
           >
             <RefreshCw className="h-5 w-5" />
           </button>
-          {mode !== "history" && (
-            <Link
-              href="/dashboard/atleta/bookings/new"
-              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nuova Prenotazione
-            </Link>
-          )}
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[250px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-          <input
-            type="text"
-            placeholder="Cerca per campo o maestro..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-          />
-        </div>
+      <div className="flex flex-col gap-3">
         {/* View Mode Toggle */}
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1">
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center gap-1.5 ${
+            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
               viewMode === "list"
                 ? "bg-secondary text-white"
                 : "text-secondary/60 hover:text-secondary border border-gray-200"
@@ -339,7 +358,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           </button>
           <button
             onClick={() => setViewMode("timeline")}
-            className={`px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center gap-1.5 ${
+            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
               viewMode === "timeline"
                 ? "bg-secondary text-white"
                 : "text-secondary/60 hover:text-secondary border border-gray-200"
@@ -349,11 +368,23 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             Timeline
           </button>
         </div>
+        {viewMode === "list" && (
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+            <input
+              type="text"
+              placeholder="Cerca per campo o maestro..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            />
+          </div>
+        )}
       </div>
 
       {/* Bookings List or Timeline */}
       {viewMode === "timeline" ? (
-        <BookingsTimeline bookings={filteredBookings} loading={loading} />
+        <BookingsTimeline bookings={filteredBookings} loading={loading} basePath="/dashboard/atleta" />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
@@ -379,60 +410,62 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="space-y-3 min-w-[580px]">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          <div className="space-y-3 min-w-[900px]">
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-4 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-3">
-                <div className="w-8 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-20 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-                </div>
-                <div className="w-14 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
-                </div>
-                <div className="w-20 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
-                </div>
-                <div className="flex-1 min-w-[80px] text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
-                </div>
-                <div className="w-14 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
-                </div>
-                <div className="w-10 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase"></div>
-                </div>
+              <div className="grid grid-cols-[40px_80px_56px_80px_1fr_56px_64px] items-center gap-4">
+                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
               </div>
             </div>
 
             {/* Data Rows */}
             {filteredBookings.map((booking) => {
               const isPast = new Date(booking.start_time) < new Date();
-              const canCancel = booking.status !== "cancelled" && !isPast;
+              const isConfirmed = booking.manager_confirmed;
+              const isCancelled = booking.status === "cancelled";
+              const isCancellationRequested = booking.status === "cancellation_requested";
+              const canCancel = !isCancelled && !isCancellationRequested && !isPast && !isConfirmed;
+              const canEdit = canCancel;
+              const canRequestCancellation = isConfirmed && !isPast && !isCancelled && !isCancellationRequested;
 
-              // Determina il colore del bordo in base allo stato
+              // Determina il colore del bordo in base allo stato (palette frozen-lake)
               let borderStyle = {};
-              if (booking.status === "cancelled") {
-                borderStyle = { borderLeftColor: "#ef4444" }; // rosso - annullata
+              let statusColor = "";
+              if (booking.status === "cancelled" || booking.status === "cancellation_requested") {
+                borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
+                statusColor = "#022431";
               } else if (!booking.manager_confirmed) {
-                borderStyle = { borderLeftColor: "#f59e0b" }; // amber - da approvare
+                borderStyle = { borderLeftColor: "#056c94" }; // frozen-700 - in attesa
+                statusColor = "#056c94";
               } else {
-                borderStyle = { borderLeftColor: "#10b981" }; // emerald - confermata
+                borderStyle = { borderLeftColor: "#08b3f7" }; // frozen-500 - confermata
+                statusColor = "#08b3f7";
               }
 
               return (
-                <Link
+                <div
                   key={booking.id}
-                  href={`/dashboard/atleta/bookings/${booking.id}`}
-                  className="block bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                   style={borderStyle}
                 >
-                  <div className="flex items-center gap-3">
+                  <Link
+                    href={`/dashboard/atleta/bookings/${booking.id}`}
+                    className="grid grid-cols-[40px_80px_56px_80px_1fr_56px_64px] items-center gap-4 no-underline"
+                  >
                     {/* Simbolo Tipo */}
-                    <div className="w-8 flex-shrink-0 flex items-center justify-center">
+                    <div className="flex items-center justify-center">
                       {booking.type === "lezione_privata" && (
                         <User className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
@@ -440,7 +473,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                         <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
                       {booking.type === "campo" && (
-                        <Circle className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       )}
                       {booking.type === "arena" && (
                         <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />
@@ -448,26 +481,20 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     </div>
 
                     {/* Data */}
-                    <div className="w-20 flex-shrink-0">
-                      <div className="font-bold text-secondary text-sm">
-                        {formatDate(booking.start_time)}
-                      </div>
+                    <div className="font-bold text-secondary text-sm">
+                      {formatDate(booking.start_time)}
                     </div>
 
                     {/* Orario */}
-                    <div className="w-14 flex-shrink-0 text-center">
-                      <div className="text-sm font-semibold text-secondary">
-                        {formatTime(booking.start_time)}
-                      </div>
+                    <div className="text-sm font-semibold text-secondary">
+                      {formatTime(booking.start_time)}
                     </div>
 
                     {/* Campo */}
-                    <div className="w-20 flex-shrink-0 text-center">
-                      <div className="font-bold text-secondary text-sm">{booking.court}</div>
-                    </div>
+                    <div className="font-bold text-secondary text-sm">{booking.court}</div>
 
                     {/* Maestro */}
-                    <div className="flex-1 min-w-[80px] text-center">
+                    <div>
                       {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") ? (
                         <div className="font-semibold text-secondary truncate text-sm">
                           {booking.coach?.full_name || "N/A"}
@@ -477,44 +504,67 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                       )}
                     </div>
 
-                    {/* Conferme */}
-                    <div className="flex items-center justify-center gap-1 w-14 flex-shrink-0">
-                      <div title="Manager">
-                        {booking.manager_confirmed ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Clock className="h-4 w-4 text-orange-600" />
-                        )}
-                      </div>
-                      {booking.coach_id && (
-                        <div title="Maestro">
-                          {booking.coach_confirmed ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Clock className="h-4 w-4 text-orange-600" />
-                          )}
-                        </div>
+                    {/* Stato */}
+                    <div className="flex items-center justify-center gap-1">
+                      {booking.status === "cancelled" ? (
+                        <XCircle className="h-4 w-4" style={{ color: statusColor }} />
+                      ) : booking.status === "cancellation_requested" ? (
+                        <AlertCircle className="h-4 w-4" style={{ color: statusColor }} />
+                      ) : booking.manager_confirmed ? (
+                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
+                      ) : (
+                        <Clock className="h-4 w-4" style={{ color: statusColor }} />
                       )}
                     </div>
 
                     {/* Azioni */}
-                    <div className="flex items-center justify-center w-10 flex-shrink-0">
+                    <div className="flex items-center justify-center gap-0.5">
+                      {canEdit && (
+                        <Link
+                          href={`/dashboard/atleta/bookings/${booking.id}/edit`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none"
+                          title="Modifica prenotazione"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                      )}
                       {canCancel && (
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             cancelBooking(booking.id);
                           }}
-                          className="p-1 text-red-700 bg-red-50 rounded hover:bg-red-100 transition-all"
-                          title="Annulla"
+                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#022431] transition-all focus:outline-none border-0 bg-transparent"
+                          title="Annulla prenotazione"
                         >
-                          <XCircle className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
+                      {canRequestCancellation && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            requestCancellation(booking.id);
+                          }}
+                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#056c94] transition-all focus:outline-none border-0 bg-transparent"
+                          title="Richiedi cancellazione"
+                        >
+                          <AlertCircle className="h-4 w-4" />
+                        </button>
+                      )}
+                      {isCancellationRequested && (
+                        <span className="inline-flex items-center justify-center p-1.5 text-[#056c94]" title="Cancellazione in attesa di approvazione">
+                          <Clock className="h-4 w-4" />
+                        </span>
+                      )}
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               );
             })}
           </div>

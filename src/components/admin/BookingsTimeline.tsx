@@ -28,6 +28,7 @@ type Booking = {
 type BookingsTimelineProps = {
   bookings: Booking[];
   loading: boolean;
+  basePath?: string; // Optional base path for navigation (default: /dashboard/admin)
 };
 
 const TIME_SLOTS = [
@@ -43,7 +44,7 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin" }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
@@ -206,7 +207,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       times: allTimes.join(',')
     });
 
-    router.push(`/dashboard/admin/bookings/new?${params.toString()}`);
+    router.push(`${basePath}/bookings/new?${params.toString()}`);
   }
 
   function openDatePicker() {
@@ -479,9 +480,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               key={booking.id}
                               onClick={() => {
                                 if (booking.isBlock) {
-                                  router.push(`/dashboard/admin/courts/${booking.id}`);
+                                  router.push(`${basePath}/courts/${booking.id}`);
                                 } else {
-                                  router.push(`/dashboard/admin/bookings/${booking.id}`);
+                                  router.push(`${basePath}/bookings/${booking.id}`);
                                 }
                               }}
                               className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 hover:scale-[1.02] transition-all cursor-pointer active:scale-95"
@@ -534,6 +535,25 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
                         const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
 
+                        // Check if slots are occupied
+                        const isOccupied1 = bookingsForSelectedDate.some(b => {
+                          if (b.court !== court) return false;
+                          const bookingStart = new Date(b.start_time);
+                          const bookingEnd = new Date(b.end_time);
+                          const slotTime = new Date(selectedDate);
+                          slotTime.setHours(hour, 0, 0, 0);
+                          return slotTime >= bookingStart && slotTime < bookingEnd;
+                        });
+
+                        const isOccupied2 = bookingsForSelectedDate.some(b => {
+                          if (b.court !== court) return false;
+                          const bookingStart = new Date(b.start_time);
+                          const bookingEnd = new Date(b.end_time);
+                          const slotTime = new Date(selectedDate);
+                          slotTime.setHours(hour, 30, 0, 0);
+                          return slotTime >= bookingStart && slotTime < bookingEnd;
+                        });
+
                         return (
                           <div
                             key={`${court}-${hour}`}
@@ -541,16 +561,24 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                           >
                             {/* Prima metà - :00 */}
                             <div
-                              onClick={() => toggleSlotSelection(court, time1)}
-                              className={`flex-1 transition-colors cursor-pointer ${
-                                isSelected1 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
+                              onClick={() => !isOccupied1 && toggleSlotSelection(court, time1)}
+                              className={`flex-1 transition-colors ${
+                                isOccupied1
+                                  ? 'bg-gray-100 cursor-not-allowed'
+                                  : isSelected1
+                                  ? 'bg-secondary cursor-pointer'
+                                  : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
                               }`}
                             />
                             {/* Seconda metà - :30 */}
                             <div
-                              onClick={() => toggleSlotSelection(court, time2)}
-                              className={`flex-1 transition-colors cursor-pointer ${
-                                isSelected2 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
+                              onClick={() => !isOccupied2 && toggleSlotSelection(court, time2)}
+                              className={`flex-1 transition-colors ${
+                                isOccupied2
+                                  ? 'bg-gray-100 cursor-not-allowed'
+                                  : isSelected2
+                                  ? 'bg-secondary cursor-pointer'
+                                  : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
                               }`}
                             />
                             {/* Tacchetta centrale */}

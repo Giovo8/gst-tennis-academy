@@ -251,7 +251,7 @@ export default function BookingDetailPage() {
   function getBookingStyle() {
     if (!booking) {
       return {
-        icon: Circle,
+        icon: Calendar,
         borderColor: "border-gray-400",
         bgColor: "bg-gray-400",
         iconColor: "text-gray-400",
@@ -280,7 +280,7 @@ export default function BookingDetailPage() {
       };
     } else {
       return {
-        icon: Circle,
+        icon: Calendar,
         borderColor: "border-frozen-lake-700",
         bgColor: "bg-frozen-lake-700",
         iconColor: "text-frozen-lake-700",
@@ -306,80 +306,20 @@ export default function BookingDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-        <Link
-          href="/dashboard/admin/bookings"
-          className="hover:text-secondary/80 transition-colors"
-        >
-          Prenotazioni
-        </Link>
-        <span className="mx-2">›</span>
+      <p className="breadcrumb text-secondary/60">
+        <Link href="/dashboard/admin/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+        {" › "}
         <span>Dettagli Prenotazione</span>
-      </div>
+      </p>
 
       {/* Header con titolo e descrizione */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Dettagli Prenotazione
-          </h1>
-          <p className="text-secondary/70 font-medium">
-            Visualizza e gestisci i dettagli della prenotazione
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={deleteBooking}
-            disabled={actionLoading}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Elimina Prenotazione"
-          >
-            {actionLoading && deleting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Trash2 className="h-5 w-5" />
-            )}
-          </button>
-
-          {needsApproval && (
-            <>
-              <button
-                onClick={rejectBooking}
-                disabled={actionLoading}
-                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Rifiuta"
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <XCircle className="h-5 w-5" />
-                )}
-              </button>
-              <button
-                onClick={confirmBooking}
-                disabled={actionLoading}
-                className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Conferma"
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5" />
-                )}
-              </button>
-            </>
-          )}
-          
-          {booking.status !== "cancelled" && (
-            <Link
-              href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
-              className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
-              title="Modifica"
-            >
-              <Edit className="h-5 w-5" />
-            </Link>
-          )}
-        </div>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-secondary">
+          Dettagli Prenotazione
+        </h1>
+        <p className="text-secondary/70 font-medium">
+          Visualizza e gestisci i dettagli della prenotazione
+        </p>
       </div>
 
       {/* Header con info prenotazione */}
@@ -388,15 +328,15 @@ export default function BookingDetailPage() {
           `bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4`
         }
         style={{ borderLeftColor: (() => {
-          if (booking.status === "cancelled") return "#ef4444"; // rosso
-          if (!booking.manager_confirmed && booking.status !== "cancelled") return "#f59e0b"; // amber
-          return "#10b981"; // emerald
+          if (booking.status === "cancelled" || booking.status === "cancellation_requested") return "#022431"; // frozen-900
+          if (!booking.manager_confirmed && booking.status !== "cancelled") return "#056c94"; // frozen-700
+          return "#08b3f7"; // frozen-500
         })() }}
       >
         <div className="flex items-start gap-6">
           <BookingIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{booking.court}</h1>
+            <h1 className="text-2xl font-bold text-white">{bookingType.label}</h1>
           </div>
         </div>
       </div>
@@ -407,8 +347,8 @@ export default function BookingDetailPage() {
         
         <div className="space-y-6">
           {/* Data */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
                 {new Date(booking.start_time).toLocaleDateString("it-IT", {
@@ -416,14 +356,22 @@ export default function BookingDetailPage() {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
-                })}
+                }).split(' ').map((part, i) => (i === 0 || i === 2) ? part.charAt(0).toUpperCase() + part.slice(1) : part).join(' ')}
               </p>
             </div>
           </div>
 
+          {/* Campo */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+            <div className="flex-1">
+              <p className="text-secondary font-semibold">{booking.court}</p>
+            </div>
+          </div>
+
           {/* Orario */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
                 {new Date(booking.start_time).toLocaleTimeString("it-IT", {
@@ -439,27 +387,9 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Tipo e Stato */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{bookingType.label}</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
-            <div className="flex-1">
-              <span className="flex items-center gap-2 text-secondary font-semibold">
-                <StatusIcon className="h-5 w-5" />
-                {status.label}
-              </span>
-            </div>
-          </div>
-
           {/* Atleta */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
                 {booking.user_profile?.full_name || "Nome non disponibile"}
@@ -468,16 +398,16 @@ export default function BookingDetailPage() {
           </div>
 
           {/* Email Atleta */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
             <div className="flex-1">
               <p className="text-secondary/70">{booking.user_profile?.email || "Non disponibile"}</p>
             </div>
           </div>
 
           {/* Telefono Atleta */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
             <div className="flex-1">
               <p className="text-secondary/70">{booking.user_profile?.phone || "Non disponibile"}</p>
             </div>
@@ -486,8 +416,8 @@ export default function BookingDetailPage() {
           {/* Maestro - visibile solo per lezioni */}
           {isLesson && (
             <>
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {booking.coach_profile?.full_name || "Non assegnato"}
@@ -497,8 +427,8 @@ export default function BookingDetailPage() {
 
               {/* Email Maestro */}
               {booking.coach_profile?.email && (
-                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email Maestro</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email Maestro</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{booking.coach_profile.email}</p>
                   </div>
@@ -507,55 +437,19 @@ export default function BookingDetailPage() {
 
               {/* Telefono Maestro */}
               {booking.coach_profile?.phone && (
-                <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                  <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono Maestro</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono Maestro</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{booking.coach_profile.phone}</p>
                   </div>
                 </div>
               )}
-
-              {/* Conferma Maestro */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Conferma Maestro</label>
-                <div className="flex-1">
-                  {booking.coach_confirmed ? (
-                    <span className="text-emerald-600 font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="h-5 w-5" />
-                      Confermata
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                      <Clock className="h-5 w-5" />
-                      In attesa
-                    </span>
-                  )}
-                </div>
-              </div>
             </>
           )}
 
-          {/* Conferma Manager */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Conferma Manager</label>
-            <div className="flex-1">
-              {booking.manager_confirmed ? (
-                <span className="text-emerald-600 font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Confermata
-                </span>
-              ) : (
-                <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                  <Clock className="h-5 w-5" />
-                  In attesa
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* Data creazione */}
-          <div className="flex items-start gap-8">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Creata il</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creata il</label>
             <div className="flex-1">
               <p className="text-secondary/70">
                 {new Date(booking.created_at).toLocaleDateString("it-IT", {
@@ -571,6 +465,62 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
+      {/* Stato Prenotazione */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-secondary mb-6">Stato Prenotazione</h2>
+        
+        <div className="space-y-6">
+          {/* Conferma Manager */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Conferma Manager</label>
+            <div className="flex-1">
+              {booking.manager_confirmed ? (
+                <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Confermata
+                </span>
+              ) : (
+                <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
+                  <Clock className="h-5 w-5" />
+                  In attesa
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Conferma Maestro - visibile solo per lezioni */}
+          {isLesson && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Conferma Maestro</label>
+              <div className="flex-1">
+                {booking.coach_confirmed ? (
+                  <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Confermata
+                  </span>
+                ) : (
+                  <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
+                    <Clock className="h-5 w-5" />
+                    In attesa
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Stato Generale */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato Generale</label>
+            <div className="flex-1">
+              <span className="flex items-center gap-2 text-secondary font-semibold">
+                <StatusIcon className="h-5 w-5" />
+                {status.label}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Note */}
       {booking.notes && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -578,6 +528,61 @@ export default function BookingDetailPage() {
           <p className="text-secondary/70">{booking.notes}</p>
         </div>
       )}
+
+      {/* Pulsanti azioni */}
+      <div className="flex flex-wrap gap-3">
+          {booking.status !== "cancelled" && (
+            <Link
+              href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+            >
+              <Edit className="h-5 w-5" />
+              Modifica
+            </Link>
+          )}
+
+          {needsApproval && (
+            <>
+              <button
+                onClick={confirmBooking}
+                disabled={actionLoading}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#08b3f7] rounded-lg hover:bg-[#08b3f7]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5" />
+                )}
+                Conferma
+              </button>
+              <button
+                onClick={rejectBooking}
+                disabled={actionLoading}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg hover:bg-[#056c94]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <XCircle className="h-5 w-5" />
+                )}
+                Rifiuta
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={deleteBooking}
+            disabled={actionLoading}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading && deleting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Trash2 className="h-5 w-5" />
+            )}
+            Elimina
+          </button>
+      </div>
     </div>
   );
 }

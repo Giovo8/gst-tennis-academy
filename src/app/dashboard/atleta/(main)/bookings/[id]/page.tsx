@@ -14,7 +14,7 @@ import {
   Users,
   Circle,
   Trophy,
-  ArrowLeft,
+  AlertCircle,
 } from "lucide-react";
 
 type Booking = {
@@ -124,6 +124,31 @@ export default function BookingDetailPage() {
     }
   }
 
+  async function requestCancellation() {
+    if (!booking) return;
+    if (!confirm("Vuoi richiedere la cancellazione di questa prenotazione? La segreteria dovrà approvarla.")) return;
+
+    setActionLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancellation_requested" })
+        .eq("id", booking.id);
+
+      if (!error) {
+        loadBooking();
+      } else {
+        alert("Errore durante la richiesta di cancellazione");
+      }
+    } catch (error) {
+      console.error("Errore:", error);
+      alert("Errore durante la richiesta di cancellazione");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const typeConfig: Record<string, { label: string }> = {
     campo: { label: "Campo" },
     lezione_privata: { label: "Lezione Privata" },
@@ -142,6 +167,7 @@ export default function BookingDetailPage() {
     },
     pending: { label: "In attesa", color: "text-amber-600", icon: Clock },
     cancelled: { label: "Annullata", color: "text-red-600", icon: XCircle },
+    cancellation_requested: { label: "Richiesta cancellazione", color: "text-orange-600", icon: AlertCircle },
   };
 
   if (loading) {
@@ -163,7 +189,11 @@ export default function BookingDetailPage() {
   const isLesson =
     booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
   const isPast = new Date(booking.start_time) < new Date();
-  const canCancel = booking.status !== "cancelled" && !isPast;
+  const isCancelled = booking.status === "cancelled";
+  const isCancellationRequested = booking.status === "cancellation_requested";
+  const isConfirmed = booking.manager_confirmed;
+  const canCancel = !isCancelled && !isCancellationRequested && !isPast && !isConfirmed;
+  const canRequestCancellation = isConfirmed && !isPast && !isCancelled && !isCancellationRequested;
 
   // Determina icona in base al tipo
   function getBookingIcon() {
@@ -176,67 +206,33 @@ export default function BookingDetailPage() {
 
   const BookingIcon = getBookingIcon();
 
-  // Determina colore bordo in base allo stato
-  function getStatusBorderColor() {
-    if (!booking) return "#9ca3af";
-    if (booking.status === "cancelled") return "#ef4444";
-    if (!booking.manager_confirmed) return "#f59e0b";
-    return "#10b981";
-  }
-
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-        <Link
-          href="/dashboard/atleta/bookings"
-          className="hover:text-secondary/80 transition-colors"
-        >
-          Prenotazioni
-        </Link>
-        <span className="mx-2">›</span>
-        <span>Dettagli</span>
-      </div>
+      <p className="breadcrumb text-secondary/60">
+        <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+        {" › "}
+        <span>Dettagli Prenotazione</span>
+      </p>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Dettagli Prenotazione
-          </h1>
-          <p className="text-secondary/70 font-medium">
-            Visualizza i dettagli della tua prenotazione
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/atleta/bookings"
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Torna alla lista"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          {canCancel && (
-            <button
-              onClick={cancelBooking}
-              disabled={actionLoading}
-              className="px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-all flex items-center gap-2 disabled:opacity-50"
-            >
-              {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <XCircle className="h-4 w-4" />
-              )}
-              Annulla Prenotazione
-            </button>
-          )}
-        </div>
+      {/* Header con titolo e descrizione */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-secondary">
+          Dettagli Prenotazione
+        </h1>
+        <p className="text-secondary/70 font-medium">
+          Visualizza i dettagli della tua prenotazione
+        </p>
       </div>
 
       {/* Header con info prenotazione */}
       <div
         className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: getStatusBorderColor() }}
+        style={{ borderLeftColor: (() => {
+          if (booking.status === "cancelled" || booking.status === "cancellation_requested") return "#022431";
+          if (!booking.manager_confirmed && booking.status !== "cancelled") return "#056c94";
+          return "#08b3f7";
+        })() }}
       >
         <div className="flex items-start gap-6">
           <BookingIcon
@@ -244,8 +240,7 @@ export default function BookingDetailPage() {
             strokeWidth={2.5}
           />
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white">{booking.court}</h2>
-            <p className="text-white/70 mt-1">{bookingType.label}</p>
+            <h2 className="text-2xl font-bold text-white">{bookingType.label}</h2>
           </div>
         </div>
       </div>
@@ -258,8 +253,8 @@ export default function BookingDetailPage() {
 
         <div className="space-y-6">
           {/* Data */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Data
             </label>
             <div className="flex-1">
@@ -269,14 +264,24 @@ export default function BookingDetailPage() {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
-                })}
+                }).split(' ').map((part, i) => (i === 0 || i === 2) ? part.charAt(0).toUpperCase() + part.slice(1) : part).join(' ')}
               </p>
             </div>
           </div>
 
+          {/* Campo */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Campo
+            </label>
+            <div className="flex-1">
+              <p className="text-secondary font-semibold">{booking.court}</p>
+            </div>
+          </div>
+
           {/* Orario */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Orario
             </label>
             <div className="flex-1">
@@ -294,80 +299,23 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Stato */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Stato
-            </label>
-            <div className="flex-1">
-              <span
-                className={`flex items-center gap-2 font-semibold ${status.color}`}
-              >
-                <StatusIcon className="h-5 w-5" />
-                {status.label}
-              </span>
-            </div>
-          </div>
-
           {/* Maestro - visibile solo per lezioni */}
           {isLesson && (
-            <>
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Maestro
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">
-                    {booking.coach_profile?.full_name || "Non assegnato"}
-                  </p>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Maestro
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {booking.coach_profile?.full_name || "Non assegnato"}
+                </p>
               </div>
-
-              {/* Conferma Maestro */}
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Conferma Maestro
-                </label>
-                <div className="flex-1">
-                  {booking.coach_confirmed ? (
-                    <span className="text-emerald-600 font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="h-5 w-5" />
-                      Confermata
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                      <Clock className="h-5 w-5" />
-                      In attesa
-                    </span>
-                  )}
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
-          {/* Conferma Manager */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Conferma Segreteria
-            </label>
-            <div className="flex-1">
-              {booking.manager_confirmed ? (
-                <span className="text-emerald-600 font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Confermata
-                </span>
-              ) : (
-                <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                  <Clock className="h-5 w-5" />
-                  In attesa di approvazione
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* Data creazione */}
-          <div className="flex items-start gap-8">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Creata il
             </label>
             <div className="flex-1">
@@ -385,6 +333,68 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
+      {/* Stato Prenotazione */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-secondary mb-6">Stato Prenotazione</h2>
+        
+        <div className="space-y-6">
+          {/* Conferma Segreteria */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Conferma Segreteria
+            </label>
+            <div className="flex-1">
+              {booking.manager_confirmed ? (
+                <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Confermata
+                </span>
+              ) : (
+                <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
+                  <Clock className="h-5 w-5" />
+                  In attesa di approvazione
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Conferma Maestro - visibile solo per lezioni */}
+          {isLesson && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Conferma Maestro
+              </label>
+              <div className="flex-1">
+                {booking.coach_confirmed ? (
+                  <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Confermata
+                  </span>
+                ) : (
+                  <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
+                    <Clock className="h-5 w-5" />
+                    In attesa
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Stato Generale */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Stato Generale
+            </label>
+            <div className="flex-1">
+              <span className="flex items-center gap-2 text-secondary font-semibold">
+                <StatusIcon className="h-5 w-5" />
+                {status.label}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Note */}
       {booking.notes && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -392,6 +402,44 @@ export default function BookingDetailPage() {
           <p className="text-secondary/70">{booking.notes}</p>
         </div>
       )}
+
+      {/* Pulsanti azioni */}
+      <div className="flex flex-wrap gap-3">
+        {canCancel && (
+          <button
+            onClick={cancelBooking}
+            disabled={actionLoading}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <XCircle className="h-5 w-5" />
+            )}
+            Annulla Prenotazione
+          </button>
+        )}
+        {canRequestCancellation && (
+          <button
+            onClick={requestCancellation}
+            disabled={actionLoading}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg hover:bg-[#056c94]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
+            Richiedi Annullamento Prenotazione
+          </button>
+        )}
+        {isCancellationRequested && (
+          <span className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg font-medium">
+            <Clock className="h-5 w-5" />
+            Cancellazione in attesa
+          </span>
+        )}
+      </div>
     </div>
   );
 }

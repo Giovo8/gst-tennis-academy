@@ -607,23 +607,16 @@ function NewAdminBookingPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-            <Link
-              href="/dashboard/admin/bookings"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Prenotazioni
-            </Link>
-            <span className="mx-2">›</span>
-            <span>Crea Prenotazione</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Crea prenotazione</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Seleziona giorno, campo e slot.
-          </p>
-        </div>
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/admin/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+          {" › "}
+          <span>Crea Prenotazione</span>
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea prenotazione</h1>
+        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+          Seleziona giorno, campo e slot.
+        </p>
       </div>
 
       {/* Messages */}
@@ -655,15 +648,15 @@ function NewAdminBookingPageInner() {
       <div className="py-4">
         <div className="space-y-6">
           {/* Selettore Data */}
-          <div className="rounded-lg p-4 flex items-center justify-between transition-all bg-secondary">
+          <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
             <button
               onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-              className="p-2 rounded-md transition-colors hover:bg-white/10"
+              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -671,7 +664,7 @@ function NewAdminBookingPageInner() {
                     dateInputRef.current.showPicker();
                   }
                 }}
-                className="p-2 rounded-md transition-colors hover:bg-white/10"
+                className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
                 <Calendar className="h-5 w-5 text-white" />
@@ -683,14 +676,15 @@ function NewAdminBookingPageInner() {
                 onChange={(e) => handleDateInputChange(e.target.value)}
                 className="absolute opacity-0 pointer-events-none"
               />
-              <h2 className="text-lg font-bold capitalize text-white">
-                {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+              <h2 className="text-base sm:text-lg font-bold capitalize text-white">
+                <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
+                <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
               </h2>
             </div>
 
             <button
               onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-              className="p-2 rounded-md transition-colors hover:bg-white/10"
+              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>
@@ -715,8 +709,8 @@ function NewAdminBookingPageInner() {
                   {/* Dettagli prenotazione - stile form moderno */}
                   <div className="space-y-6 mt-6">
                     {/* Atleta */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta *</label>
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={selectedAthlete}
@@ -734,15 +728,15 @@ function NewAdminBookingPageInner() {
                     </div>
 
                     {/* Tipo prenotazione */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
-                      <div className="flex-1 flex gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
+                      <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                         {BOOKING_TYPES.map((type) => (
                           <button
                             key={type.value}
                             type="button"
                             onClick={() => setBookingType(type.value)}
-                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               bookingType === type.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -755,9 +749,9 @@ function NewAdminBookingPageInner() {
                     </div>
 
                     {/* Campo */}
-                    <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                      <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
-                      <div className="flex-1 flex flex-wrap gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                      <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
                         {courtsLoading ? (
                           <div className="flex items-center gap-2 text-secondary/60">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -769,7 +763,7 @@ function NewAdminBookingPageInner() {
                               key={court}
                               type="button"
                               onClick={() => setSelectedCourt(court)}
-                              className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                              className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                                 selectedCourt === court
                                   ? 'bg-secondary text-white border-secondary'
                                   : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -784,8 +778,8 @@ function NewAdminBookingPageInner() {
 
                     {/* Maestro se necessario */}
                     {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
                         <div className="flex-1">
                           <SearchableSelect
                             value={selectedCoach}
@@ -803,8 +797,8 @@ function NewAdminBookingPageInner() {
 
                     {/* Note */}
                     {selectedAthlete && (
-                      <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                        <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
                         <div className="flex-1">
                           <textarea
                             value={notes}

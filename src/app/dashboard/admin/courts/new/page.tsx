@@ -10,11 +10,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
+const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
 const BLOCK_TYPES = [
   { value: "corsi_tennis", label: "Corsi Tennis" },
   { value: "manutenzione", label: "Manutenzione" },
   { value: "evento", label: "Evento" },
+  { value: "altro", label: "Altro" },
 ];
 const WEEK_DAYS = [
   { value: 1, label: "Lun" },
@@ -145,22 +146,15 @@ export default function NewCourtBlockPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-            <Link
-              href="/dashboard/admin/courts"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Blocco Campi
-            </Link>
-            <span className="mx-2">›</span>
-            <span>Crea Blocco</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Crea blocco campo</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Blocca uno o più campi per un periodo di tempo.
-          </p>
-        </div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/admin/courts">Blocco Campi</Link>
+          <span className="mx-2">›</span>
+          <span>Crea Blocco</span>
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea blocco campo</h1>
+        <p className="text-secondary/70 text-sm max-w-2xl">
+          Blocca uno o più campi per un periodo di tempo.
+        </p>
       </div>
 
       {/* Messages */}
@@ -183,161 +177,150 @@ export default function NewCourtBlockPage() {
       )}
 
       {/* Create Block Form */}
-      <div className="bg-white rounded-xl shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-200">
         <div className="p-6">
+          <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli blocco</h2>
+        
           <div className="space-y-6">
-            {/* Campo */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2">
-                  {COURTS.map((court) => (
-                    <button
-                      key={court}
-                      type="button"
-                      onClick={() => setSelectedCourt(court)}
-                      className={`px-5 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
-                        selectedCourt === court
-                          ? 'bg-secondary text-white border-secondary'
-                          : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
-                      }`}
-                    >
-                      {court}
-                    </button>
-                  ))}
+          {/* Campo */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                {COURTS.map((court) => (
+                  <button
+                    key={court}
+                    type="button"
+                    onClick={() => setSelectedCourt(court)}
+                    className={`px-5 py-2 text-sm text-left font-medium rounded-lg border-2 transition-all ${
+                      selectedCourt === court
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
+                    }`}
+                  >
+                    {court}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Tipo Blocco */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo blocco</label>
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                {BLOCK_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setBlockType(type.value)}
+                    className={`px-5 py-2 text-sm text-left font-medium rounded-lg border-2 transition-all ${
+                      blockType === type.value
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Periodo */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Periodo</label>
+            <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-secondary/60 mb-2">Data inizio</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-secondary/60 mb-2">Data fine</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Tipo Blocco */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo blocco</label>
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2">
-                  {BLOCK_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setBlockType(type.value)}
-                      className={`px-5 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
-                        blockType === type.value
-                          ? 'bg-secondary text-white border-secondary'
-                          : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
+          {/* Giorni settimana */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                {WEEK_DAYS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleWeekDay(day.value)}
+                    className={`px-4 py-2 text-sm text-left font-medium rounded-lg border-2 transition-all ${
+                      selectedWeekDays.includes(day.value)
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
+                    }`}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Orario */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+            <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-secondary/60 mb-2">Orario inizio</label>
+                  <select
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  >
+                    {TIME_SLOTS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-            </div>
-
-            {/* Data Inizio */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
-              <div className="flex-1">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                />
-              </div>
-            </div>
-
-            {/* Data Fine */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
-              <div className="flex-1">
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  min={startDate}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                />
-              </div>
-            </div>
-
-            {/* Giorni settimana */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2">
-                  {WEEK_DAYS.map((day) => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleWeekDay(day.value)}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
-                        selectedWeekDays.includes(day.value)
-                          ? 'bg-secondary text-white border-secondary'
-                          : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-xs text-secondary/60 mb-2">Orario fine</label>
+                  <select
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  >
+                    {TIME_SLOTS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
                 </div>
-                <p className="text-xs text-secondary/60 mt-2">
-                  {selectedWeekDays.length === 7 ? "Tutti i giorni" : selectedWeekDays.length === 0 ? "Nessun giorno selezionato" : `${selectedWeekDays.length} giorno/i selezionato/i`}
-                </p>
-              </div>
-            </div>
-
-            {/* Orario Inizio */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario inizio</label>
-              <div className="flex-1">
-                <select
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                >
-                  {TIME_SLOTS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Orario Fine */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario fine</label>
-              <div className="flex-1">
-                <select
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                >
-                  {TIME_SLOTS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Note aggiuntive */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note aggiuntive</label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="es. Campionato regionale (opzionale)"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                />
               </div>
             </div>
           </div>
         </div>
+        </div>
+      </div>
 
-        <button
-          onClick={handleCreateBlock}
-          disabled={submitting || !selectedCourt || !blockType || !startDate || !endDate || selectedWeekDays.length === 0}
-          className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
-        >
+      {/* Pulsante Crea Blocco */}
+      <button
+        onClick={handleCreateBlock}
+        disabled={submitting || !selectedCourt || !blockType || !startDate || !endDate || selectedWeekDays.length === 0}
+        className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
+      >
           {submitting ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -350,7 +333,6 @@ export default function NewCourtBlockPage() {
             </>
           )}
         </button>
-      </div>
     </div>
   );
 }

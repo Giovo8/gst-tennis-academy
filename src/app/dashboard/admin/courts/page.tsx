@@ -209,9 +209,9 @@ export default function CourtsBlockPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4">
         <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+          <p className="breadcrumb text-secondary/60">
             <Link
               href="/dashboard/admin/bookings"
               className="hover:text-secondary/80 transition-colors"
@@ -220,28 +220,19 @@ export default function CourtsBlockPage() {
             </Link>
             <span className="mx-2">›</span>
             <span>Blocco Campi</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Blocco campi</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Blocco campi</h1>
+          <p className="text-secondary/70 text-sm max-w-2xl">
             Gestisci i blocchi sui campi per impedire le prenotazioni.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard/admin/courts/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary hover:opacity-90 text-white text-sm font-medium rounded-md transition-opacity"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Crea Blocco</span>
-          </Link>
-          <button
-            onClick={() => loadBlocks()}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Ricarica"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </button>
-        </div>
+        <Link
+          href="/dashboard/admin/courts/new"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-secondary hover:opacity-90 text-white text-sm font-medium rounded-md transition-opacity"
+        >
+          <Plus className="h-5 w-5" />
+          <span>Crea Blocco</span>
+        </Link>
       </div>
 
       {/* Lista blocchi */}
@@ -266,41 +257,38 @@ export default function CourtsBlockPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`.overflow-x-auto::-webkit-scrollbar { display: none; }`}</style>
+          <div className="space-y-3 min-w-[900px]">
           {/* Header Row */}
-          <div className="bg-white rounded-lg px-5 py-3 mb-3">
-            <div className="flex items-center gap-4">
-              <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-secondary/60" />
+          <div className="bg-secondary rounded-lg px-4 sm:px-5 py-3 mb-3 border border-secondary">
+            <div className="grid grid-cols-[40px_100px_80px_60px_80px_60px_80px_1fr] gap-4 items-center">
+              <div className="flex items-center justify-center">
+                <Shield className="h-4 w-4 text-white/80" />
               </div>
-              <div className="w-32 flex-shrink-0">
-                <button
-                  onClick={() => handleSort("court")}
-                  className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                >
-                  Campo
-                  {sortBy === "court" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-28 flex-shrink-0">
-                <button
-                  onClick={() => handleSort("date")}
-                  className="text-xs font-bold text-secondary/60 uppercase hover:text-secondary transition-colors flex items-center gap-1"
-                >
-                  Data Inizio
-                  {sortBy === "date" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-28 flex-shrink-0">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Data Fine</div>
-              </div>
-              <div className="flex-1">
-                <div className="text-xs font-bold text-secondary/60 uppercase">Motivo</div>
-              </div>
+              <button
+                onClick={() => handleSort("court")}
+                className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+              >
+                Campo
+                {sortBy === "court" && (
+                  sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                )}
+              </button>
+              <button
+                onClick={() => handleSort("date")}
+                className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+              >
+                Data Inizio
+                {sortBy === "date" && (
+                  sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                )}
+              </button>
+              <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Data Fine</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Durata</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Motivo</div>
             </div>
           </div>
 
@@ -317,58 +305,61 @@ export default function CourtsBlockPage() {
             const startTime = format(firstDate, "HH:mm");
             const endTime = format(lastDate, "HH:mm");
             
+            // Calcola durata in giorni
+            const durationMs = new Date(block.end_time).getTime() - new Date(block.start_time).getTime();
+            const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+            
             return (
               <div key={block.id}>
                 {/* Blocco principale - CLICCABILE */}
                 <div
                   onClick={() => router.push(`/dashboard/admin/courts/${block.id}`)}
-                  className={`bg-white rounded-md p-5 ${blockStyle.bgHover} hover:shadow-lg transition-all border-l-4 ${blockStyle.borderColor} cursor-pointer`}
+                  className={`bg-white rounded-md px-4 py-3 ${blockStyle.bgHover} transition-all border-l-4 ${blockStyle.borderColor} cursor-pointer`}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="grid grid-cols-[40px_100px_80px_60px_80px_60px_80px_1fr] gap-4 items-center">
                     {/* Icona */}
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                    <div className="flex items-center justify-center">
                       <BlockIcon className={`h-5 w-5 ${blockStyle.iconColor}`} strokeWidth={2} />
                     </div>
 
                     {/* Campo */}
-                    <div className="w-32 flex-shrink-0">
-                      <div className="font-bold text-secondary">{block.court_id}</div>
-                    </div>
+                    <div className="font-bold text-secondary">{block.court_id}</div>
 
                     {/* Data Inizio */}
-                    <div className="w-28 flex-shrink-0">
-                      <div className="font-bold text-secondary text-sm">
-                        {formatDate(block.start_time)}
-                      </div>
-                      <div className="text-xs text-secondary/60 mt-0.5">
-                        {startTime}
-                      </div>
+                    <div className="font-bold text-secondary text-sm">
+                      {formatDate(block.start_time)}
+                    </div>
+
+                    {/* Ora Inizio */}
+                    <div className="text-sm text-secondary/70">
+                      {startTime}
                     </div>
 
                     {/* Data Fine */}
-                    <div className="w-28 flex-shrink-0">
-                      <div className="font-bold text-secondary text-sm">
-                        {formatDate(block.end_time)}
-                      </div>
-                      <div className="text-xs text-secondary/60 mt-0.5">
-                        {endTime}
-                      </div>
+                    <div className="font-bold text-secondary text-sm">
+                      {formatDate(block.end_time)}
+                    </div>
+
+                    {/* Ora Fine */}
+                    <div className="text-sm text-secondary/70">
+                      {endTime}
+                    </div>
+
+                    {/* Durata */}
+                    <div className="text-sm text-secondary/70">
+                      {durationDays} {durationDays === 1 ? "giorno" : "giorni"}
                     </div>
 
                     {/* Motivo */}
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-secondary">
-                        {block.reason || "Blocco campo"}
-                      </div>
-                      <div className="text-xs text-secondary/60 mt-0.5">
-                        {block.blockIds.length} {block.blockIds.length === 1 ? "giorno" : "giorni"}
-                      </div>
+                    <div className="text-sm font-medium text-secondary">
+                      {block.reason || "Blocco campo"}
                     </div>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
         </div>
       )}
     </div>

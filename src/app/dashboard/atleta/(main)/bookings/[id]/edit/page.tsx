@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { addDays, format } from "date-fns";
@@ -125,15 +126,19 @@ const BOOKING_TYPES = [
   { value: "lezione_gruppo", label: "Lezione Gruppo", shortLabel: "Gruppo", icon: "👥" },
 ];
 
-function NewBookingPageInner() {
+export default function EditBookingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
+  const bookingId = params?.id as string;
+
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  const [originalBooking, setOriginalBooking] = useState<any>(null);
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
@@ -148,104 +153,88 @@ function NewBookingPageInner() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingSlotsSelection = useRef<string[]>([]);
-  const urlParamsApplied = useRef<boolean>(false);
 
   // Validation
   const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
 
   useEffect(() => {
-    loadCourtsAndCoaches();
-  }, []);
-
-  // Apply URL parameters after courts are loaded
-  useEffect(() => {
-    if (courtsLoading || urlParamsApplied.current) return;
-
-    const courtParam = searchParams.get('court');
-    const dateParam = searchParams.get('date');
-    const timesParam = searchParams.get('times');
-
-    // Only apply if there are URL parameters to apply
-    if (!courtParam && !dateParam && !timesParam) {
-      // No URL params, just set default court
-      if (courts.length > 0 && !selectedCourt) {
-        setSelectedCourt(courts[0]);
-      }
-      return;
-    }
-
-    if (courtParam && courts.includes(courtParam)) {
-      setSelectedCourt(courtParam);
-    } else if (courts.length > 0 && !selectedCourt) {
-      setSelectedCourt(courts[0]);
-    }
-
-    if (dateParam) {
-      const parsedDate = new Date(dateParam + 'T12:00:00');
-      if (!isNaN(parsedDate.getTime())) {
-        setSelectedDate(parsedDate);
-      }
-    }
-
-    if (timesParam) {
-      const times = timesParam.split(',').filter(Boolean);
-      pendingSlotsSelection.current = times;
-    }
-
-    urlParamsApplied.current = true;
-  }, [courtsLoading, courts, searchParams]);
+    loadInitialData();
+  }, [bookingId]);
 
   useEffect(() => {
-    if (selectedDate && selectedCourt) {
-      // Reset selected slots when date or court changes (unless we have pending slots from URL)
-      if (pendingSlotsSelection.current.length === 0) {
-        setSelectedSlots([]);
-      }
+    if (selectedDate && selectedCourt && !loading) {
       loadAvailableSlots();
     }
-  }, [selectedDate, selectedCourt]);
+  }, [selectedDate, selectedCourt, loading]);
 
-  // Apply pending slots selection after slots are loaded
-  useEffect(() => {
-    // Only proceed if we have pending slots
-    if (pendingSlotsSelection.current.length === 0) return;
-
-    // Wait for slots to finish loading
-    if (loadingSlots) return;
-
-    // Must have slots loaded to proceed
-    if (slots.length === 0) return;
-
-    // Filter only available slots
-    const slotsToSelect = pendingSlotsSelection.current;
-    const availableSlots = slotsToSelect.filter(time => {
-      const slot = slots.find(s => s.time === time);
-      return slot && slot.available;
-    });
-
-    // Clear pending slots after attempting selection
-    pendingSlotsSelection.current = [];
-
-    if (availableSlots.length > 0) {
-      setSelectedSlots(availableSlots);
-
-      // Remove URL parameters after successfully applying the slots
-      setTimeout(() => {
-        router.replace('/dashboard/atleta/bookings/new', { scroll: false });
-      }, 100);
-    }
-  }, [slots, loadingSlots, router]);
-
-  async function loadCourtsAndCoaches() {
-    setCourtsLoading(true);
+  async function loadInitialData() {
+    setLoading(true);
     try {
-      // Load courts
+      // Verifica utente
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      // Carica prenotazione esistente
+      const { data: bookingData, error: bookingError } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("id", bookingId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (bookingError || !bookingData) {
+        setError("Prenotazione non trovata");
+        router.push("/dashboard/atleta/bookings");
+        return;
+      }
+
+      // Verifica che la prenotazione sia modificabile
+      const isPast = new Date(bookingData.start_time) < new Date();
+      if (bookingData.status === "cancelled" || isPast) {
+        setError("Questa prenotazione non può essere modificata");
+        router.push("/dashboard/atleta/bookings");
+        return;
+      }
+
+      // Non si può modificare una prenotazione già confermata
+      if (bookingData.manager_confirmed) {
+        setError("Non puoi modificare una prenotazione già confermata dalla segreteria");
+        router.push("/dashboard/atleta/bookings");
+        return;
+      }
+
+      setOriginalBooking(bookingData);
+
+      // Popola il form con i dati esistenti
+      setBookingType(bookingData.type);
+      setSelectedCourt(bookingData.court);
+      setSelectedCoach(bookingData.coach_id || "");
+      setNotes(bookingData.notes || "");
+
+      // Estrai data e slot dalla prenotazione esistente
+      const startTime = new Date(bookingData.start_time);
+      const endTime = new Date(bookingData.end_time);
+      setSelectedDate(startTime);
+
+      // Calcola gli slot selezionati
+      const slotsFromBooking: string[] = [];
+      let current = new Date(startTime);
+      while (current < endTime) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        slotsFromBooking.push(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+      setSelectedSlots(slotsFromBooking);
+
+      // Carica campi e maestri
       const courtsData = await getCourts();
       setCourts(courtsData);
 
-      // Load coaches
       const { data: coachData } = await supabase
         .from("profiles")
         .select("id, full_name")
@@ -253,10 +242,13 @@ function NewBookingPageInner() {
         .order("full_name");
 
       if (coachData) setCoaches(coachData);
-    } catch (error) {
-      console.error("Error loading data:", error);
+
+    } catch (err) {
+      console.error("Error loading data:", err);
+      setError("Errore nel caricamento dei dati");
     } finally {
       setCourtsLoading(false);
+      setLoading(false);
     }
   }
 
@@ -267,12 +259,13 @@ function NewBookingPageInner() {
 
     const dateStr = selectedDate.toISOString().split("T")[0];
 
-    // Get existing bookings for this court and date
+    // Get existing bookings for this court and date (excluding current booking)
     const { data: bookings } = await supabase
       .from("bookings")
       .select("id, user_id, coach_id, start_time, end_time, type, status")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
+      .neq("id", bookingId) // Escludi la prenotazione corrente
       .gte("start_time", `${dateStr}T00:00:00`)
       .lte("start_time", `${dateStr}T23:59:59`);
 
@@ -311,7 +304,7 @@ function NewBookingPageInner() {
     // Build occupied half-hour slots set
     const occupiedSlots = new Set<string>();
 
-    // Mark slots occupied by bookings
+    // Mark slots occupied by bookings (excluding current)
     bookings?.forEach(b => {
       const start = new Date(b.start_time);
       const end = new Date(b.end_time);
@@ -415,6 +408,7 @@ function NewBookingPageInner() {
     const newDate = new Date(selectedDate);
     newDate.setFullYear(year, month - 1, day);
     setSelectedDate(newDate);
+    setSelectedSlots([]); // Reset slot quando cambia la data
   };
 
   async function handleSubmit() {
@@ -435,13 +429,6 @@ function NewBookingPageInner() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Utente non autenticato");
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      if (!token) {
-        throw new Error("Sessione scaduta, effettua di nuovo il login.");
-      }
-
       const orderedSlots = [...selectedSlots].sort((a, b) => {
         const [hA, mA] = a.split(":").map(Number);
         const [hB, mB] = b.split(":").map(Number);
@@ -455,63 +442,70 @@ function NewBookingPageInner() {
       const durationMinutes = orderedSlots.length * 30;
       endTime.setMinutes(startTime.getMinutes() + durationMinutes);
 
-      const bookingData = {
-        user_id: user.id,
+      const updateData = {
         coach_id: selectedCoach || null,
         court: selectedCourt,
         type: bookingType,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: "pending",
+        notes: notes || null,
+        // Reset conferme quando la prenotazione viene modificata
         manager_confirmed: false,
         coach_confirmed: false,
-        notes: notes || null,
       };
 
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(bookingData),
-      });
+      const { error: updateError } = await supabase
+        .from("bookings")
+        .update(updateData)
+        .eq("id", bookingId)
+        .eq("user_id", user.id);
 
-      if (!response.ok) {
-        let errorMessage = "Errore nella creazione della prenotazione";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // ignore
-        }
-        throw new Error(errorMessage);
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
-      setSuccess("Prenotazione creata con successo! In attesa di conferma.");
+      setSuccess("Prenotazione modificata con successo! In attesa di nuova conferma.");
       setTimeout(() => {
         router.push("/dashboard/atleta/bookings");
       }, 1500);
     } catch (err: any) {
-      setError(err.message || "Errore nella creazione della prenotazione");
+      setError(err.message || "Errore nella modifica della prenotazione");
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+        <p className="mt-4 text-secondary/60">Caricamento...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-          {" › "}
-          <span>Nuova Prenotazione</span>
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Nuova Prenotazione</h1>
-        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-          Seleziona giorno, campo e slot. Per le lezioni private scegli il maestro.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p className="breadcrumb text-secondary/60">
+            <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+            {" › "}
+            <span>Modifica</span>
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica Prenotazione</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Modifica i dettagli della tua prenotazione. Le conferme verranno resettate.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/atleta/bookings"
+          className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all self-start"
+          title="Torna alla lista"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
       </div>
 
       {/* Messages */}
@@ -545,7 +539,10 @@ function NewBookingPageInner() {
           {/* Selettore Data */}
           <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
             <button
-              onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+              onClick={() => {
+                setSelectedDate(addDays(selectedDate, -1));
+                setSelectedSlots([]);
+              }}
               className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
@@ -578,7 +575,10 @@ function NewBookingPageInner() {
             </div>
 
             <button
-              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              onClick={() => {
+                setSelectedDate(addDays(selectedDate, 1));
+                setSelectedSlots([]);
+              }}
               className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
@@ -604,13 +604,13 @@ function NewBookingPageInner() {
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
-                    <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <div className="flex-1 flex gap-2 sm:gap-3">
                       {BOOKING_TYPES.map((type) => (
                         <button
                           key={type.value}
                           type="button"
                           onClick={() => setBookingType(type.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                          className={`px-3 sm:px-5 py-2 text-sm rounded-lg border transition-all ${
                             bookingType === type.value
                               ? 'bg-secondary text-white border-secondary'
                               : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -626,7 +626,7 @@ function NewBookingPageInner() {
                   {/* Campo */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
-                    <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                    <div className="flex-1 flex flex-wrap gap-2 sm:gap-3">
                       {courtsLoading ? (
                         <div className="flex items-center gap-2 text-secondary/60">
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -637,8 +637,11 @@ function NewBookingPageInner() {
                           <button
                             key={court}
                             type="button"
-                            onClick={() => setSelectedCourt(court)}
-                            className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            onClick={() => {
+                              setSelectedCourt(court);
+                              setSelectedSlots([]);
+                            }}
+                            className={`px-4 sm:px-5 py-2 text-sm rounded-lg border transition-all ${
                               selectedCourt === court
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -825,12 +828,12 @@ function NewBookingPageInner() {
             {submitting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Creazione...</span>
+                <span>Salvataggio...</span>
               </>
             ) : (
               <>
                 <CheckCircle className="h-5 w-5" />
-                <span>Conferma Prenotazione</span>
+                <span>Salva Modifiche</span>
               </>
             )}
           </button>
@@ -840,17 +843,5 @@ function NewBookingPageInner() {
       {/* Bottom Spacer */}
       <div className="h-8" />
     </div>
-  );
-}
-
-export default function NewBookingPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
-      </div>
-    }>
-      <NewBookingPageInner />
-    </Suspense>
   );
 }
