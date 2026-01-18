@@ -16,10 +16,7 @@ export async function GET(req: Request) {
       // Get specific user stats
       const { data, error } = await supabaseServer
         .from("arena_stats")
-        .select(`
-          *,
-          profile:profiles(id, full_name, avatar_url)
-        `)
+        .select("*")
         .eq("user_id", userId)
         .single();
 
@@ -29,10 +26,7 @@ export async function GET(req: Request) {
           const { data: newStats, error: createError } = await supabaseServer
             .from("arena_stats")
             .insert([{ user_id: userId }])
-            .select(`
-              *,
-              profile:profiles(id, full_name, avatar_url)
-            `)
+            .select("*")
             .single();
 
           if (createError) {
@@ -40,14 +34,28 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: createError.message }, { status: 500 });
           }
 
-          return NextResponse.json({ stats: newStats });
+          // Fetch profile separately
+          const { data: profile } = await supabaseServer
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .eq("id", userId)
+            .single();
+
+          return NextResponse.json({ stats: { ...newStats, profile } });
         }
 
         console.error("Error fetching stats:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ stats: data });
+      // Fetch profile separately
+      const { data: profile } = await supabaseServer
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .eq("id", userId)
+        .single();
+
+      return NextResponse.json({ stats: { ...data, profile } });
     } else {
       // Get leaderboard
       const { data, error } = await supabaseServer

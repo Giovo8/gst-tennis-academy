@@ -17,14 +17,13 @@ type VideoLesson = {
   thumbnail_url: string | null;
   duration_minutes: number | null;
   created_by: string | null;
-  assigned_to: string | null;
   category: string;
   level: string;
   is_active: boolean;
   watched_at: string | null;
   watch_count: number;
   created_at: string;
-  assigned_user?: { full_name: string; email: string } | null;
+  assigned_users?: { full_name: string; email: string }[];
   creator?: { full_name: string; email: string } | null;
 };
 
@@ -65,31 +64,36 @@ export default function VideoLessonsPage() {
 
       // Load user data separately
       if (data && data.length > 0) {
-        const userIds = [...new Set([
-          ...data.map((v) => v.assigned_to).filter(Boolean),
-          ...data.map((v) => v.created_by).filter(Boolean),
-        ])];
+        // Load assignments with user profiles
+        const { data: assignments } = await supabase
+          .from("video_assignments")
+          .select("video_id, user_id")
+          .in("video_id", data.map((v) => v.id));
 
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, full_name, email")
-            .in("id", userIds);
+        // Get unique user IDs from assignments
+        const assignedUserIds = [...new Set(assignments?.map((a) => a.user_id).filter(Boolean) || [])];
 
-          const videosWithUsers = data.map((video) => ({
-            ...video,
-            assigned_user: video.assigned_to
-              ? profiles?.find((p) => p.id === video.assigned_to)
-              : null,
-            creator: video.created_by
-              ? profiles?.find((p) => p.id === video.created_by)
-              : null,
-          }));
+        // Load all user profiles (both creators and assigned users)
+        const creatorIds = [...new Set(data.map((v) => v.created_by).filter(Boolean))];
+        const allUserIds = [...new Set([...creatorIds, ...assignedUserIds])];
 
-          setVideos(videosWithUsers);
-        } else {
-          setVideos(data);
-        }
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", allUserIds);
+
+        const videosWithUsers = data.map((video) => ({
+          ...video,
+          assigned_users: assignments
+            ?.filter((a: any) => a.video_id === video.id)
+            .map((a: any) => profiles?.find((p) => p.id === a.user_id))
+            .filter(Boolean) || [],
+          creator: video.created_by
+            ? profiles?.find((p) => p.id === video.created_by)
+            : null,
+        }));
+
+        setVideos(videosWithUsers);
       } else {
         setVideos(data || []);
       }
@@ -105,7 +109,7 @@ export default function VideoLessonsPage() {
       !search ||
       video.title.toLowerCase().includes(search.toLowerCase()) ||
       video.description?.toLowerCase().includes(search.toLowerCase()) ||
-      video.assigned_user?.full_name?.toLowerCase().includes(search.toLowerCase());
+      video.assigned_users?.some((u) => u.full_name?.toLowerCase().includes(search.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
@@ -134,46 +138,16 @@ export default function VideoLessonsPage() {
           </Link>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Cerca per titolo, descrizione o utente..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 flex-wrap mt-4">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${ 
-                filter === "all"
-                  ? "text-white bg-secondary"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Tutti
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setFilter(cat.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filter === cat.value
-                    ? "text-white bg-secondary"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cerca per titolo, descrizione o utente..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+          />
         </div>
 
         {/* Videos List */}
@@ -202,93 +176,105 @@ export default function VideoLessonsPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredVideos.map((video) => (
-              <div
-                key={video.id}
-                onClick={() => router.push(`/dashboard/admin/video-lessons/new?id=${video.id}`)}
-                className="rounded-xl border-l-4 border-secondary shadow-md p-6 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Thumbnail */}
-                  {video.thumbnail_url && (
-                    <div className="w-40 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                      <img
-                        src={video.thumbnail_url}
-                        alt={video.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
+          <div className="space-y-3">
+            {filteredVideos.map((video) => {
+              // Estrae l'ID del video YouTube dall'URL
+              const getYouTubeVideoId = (url: string) => {
+                const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+                return match ? match[1] : null;
+              };
+              const videoId = getYouTubeVideoId(video.video_url);
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className="text-lg font-semibold text-secondary">{video.title}</h3>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <a
-                          href={video.video_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 bg-secondary/10 text-secondary rounded-lg hover:bg-secondary/20 transition-colors"
-                          title="Guarda video"
-                        >
-                          <Play className="h-4 w-4" />
-                        </a>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/dashboard/admin/video-lessons/new?id=${video.id}`);
-                          }}
-                          className="p-2 bg-secondary/10 text-secondary rounded-lg hover:bg-secondary/20 transition-colors"
-                          title="Modifica"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                      </div>
+              return (
+                <div
+                  key={video.id}
+                  onClick={() => router.push(`/dashboard/admin/video-lessons/new?id=${video.id}`)}
+                  className="block bg-white rounded-xl border-l-4 border-secondary shadow-md hover:bg-gray-50 transition-all cursor-pointer"
+                >
+                  <div className="flex flex-col sm:flex-row gap-4 p-6">
+                    {/* Video Preview */}
+                    <div
+                      className="flex-shrink-0 w-full sm:w-48 h-32 overflow-hidden rounded-lg bg-gray-100"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {videoId ? (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${videoId}`}
+                          title={video.title}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : video.thumbnail_url ? (
+                        <img
+                          src={video.thumbnail_url}
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-secondary/5">
+                          <Video className="w-12 h-12 text-secondary/20" />
+                        </div>
+                      )}
                     </div>
 
-                    {video.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {video.description}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="px-3 py-1 rounded-md text-xs font-semibold bg-secondary/10 text-secondary">
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Category */}
+                      <span className="inline-block text-xs font-semibold text-secondary mb-2">
                         {categories.find((c) => c.value === video.category)?.label}
                       </span>
-                      <span className="px-3 py-1 rounded-md text-xs font-semibold bg-secondary/10 text-secondary">
-                        {levels.find((l) => l.value === video.level)?.label}
-                      </span>
-                      {video.duration_minutes && (
-                        <span className="text-xs text-gray-600 flex items-center gap-1">
-                          <Video className="h-3.5 w-3.5" />
-                          {video.duration_minutes} min
-                        </span>
+
+                      {/* Title */}
+                      <h3 className="text-lg font-bold text-secondary mb-2 hover:opacity-70 transition-opacity line-clamp-2">
+                        {video.title}
+                      </h3>
+
+                      {/* Description */}
+                      {video.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                          {video.description}
+                        </p>
                       )}
-                      {video.assigned_user && (
-                        <span className="text-xs text-gray-600 flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          {video.assigned_user.full_name}
+
+                      {/* Meta info */}
+                      <div className="flex items-center gap-4 text-xs text-secondary/50 mt-2">
+                        <span className="flex items-center gap-1">
+                          {levels.find((l) => l.value === video.level)?.label}
                         </span>
-                      )}
-                      {video.watch_count > 0 && (
-                        <span className="text-xs text-secondary font-medium flex items-center gap-1">
-                          <Play className="h-3.5 w-3.5" />
-                          {video.watch_count} visualizzazioni
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-500 flex items-center gap-1 ml-auto">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(video.created_at), "dd MMM yyyy", { locale: it })}
-                      </span>
+                        {video.duration_minutes && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              {video.duration_minutes} min
+                            </span>
+                          </>
+                        )}
+                        {video.assigned_users && video.assigned_users.length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3.5 w-3.5" />
+                              {video.assigned_users.length === 1
+                                ? video.assigned_users[0].full_name
+                                : `${video.assigned_users.length} utenti`}
+                            </span>
+                          </>
+                        )}
+                        {video.watch_count > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="text-secondary font-semibold">
+                              {video.watch_count} visualizzazioni
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

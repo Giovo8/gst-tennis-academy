@@ -791,7 +791,7 @@ h6, .text-h6 {
   }
   
   /* Better grid layouts on mobile */
-  .grid {
+  .grid:not(.timeline-grid) {
     gap: 1rem;
   }
 }
@@ -899,4 +899,14 @@ h6, .text-h6 {
 
 .dark .hover\:bg-gray-50:hover {
   background-color: var(--surface-elevated) !important;
+}
+
+/* Breadcrumb styling */
+.breadcrumb {
+  display: inline;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
 }

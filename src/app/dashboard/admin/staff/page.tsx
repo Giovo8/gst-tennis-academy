@@ -273,11 +273,13 @@ export default function AdminStaffPage() {
                       <img
                         src={member.image_url}
                         alt={member.full_name}
-                        className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
+                        className="h-12 w-12 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/10 border-2 border-gray-200">
-                        <User className="h-6 w-6 text-secondary/40" />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary text-white">
+                        <span className="font-bold text-lg">
+                          {member.full_name.charAt(0).toUpperCase()}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -310,17 +312,9 @@ export default function AdminStaffPage() {
 
                   {/* Stato */}
                   <div className="w-24 flex-shrink-0 text-center">
-                    {member.active ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Attivo
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700">
-                        <XCircle className="h-3 w-3" />
-                        Inattivo
-                      </span>
-                    )}
+                    <span className="text-sm font-bold text-secondary">
+                      {member.active ? "Attivo" : "Inattivo"}
+                    </span>
                   </div>
                 </div>
               </Link>

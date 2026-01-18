@@ -10,7 +10,7 @@ export default function TextHeroSection() {
   const handleBookingClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       router.push('/login?redirect=/dashboard/bookings');
       return;
@@ -24,7 +24,7 @@ export default function TextHeroSection() {
       .single();
 
     const role = profile?.role || 'atleta';
-    
+
     if (role === 'admin') {
       router.push('/dashboard/admin/bookings');
     } else if (role === 'gestore') {
@@ -37,7 +37,7 @@ export default function TextHeroSection() {
   const handleTournamentClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       router.push('/login?redirect=/dashboard/tornei');
       return;
@@ -51,7 +51,7 @@ export default function TextHeroSection() {
       .single();
 
     const role = profile?.role || 'atleta';
-    
+
     if (role === 'admin') {
       router.push('/dashboard/admin/tornei');
     } else if (role === 'gestore') {
@@ -62,27 +62,27 @@ export default function TextHeroSection() {
   };
 
   return (
-    <section className="bg-white pt-8 sm:pt-12 md:pt-16 lg:pt-20 pb-4 sm:pb-6 md:pb-8">
+    <section className="bg-white pt-4 sm:pt-6 md:pt-8 pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center flex flex-col items-center justify-center">
-          <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl 2xl:text-[10rem] font-extrabold mb-3 sm:mb-4 md:mb-6 text-secondary leading-tight">
+          <h1 className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-extrabold mb-4 sm:mb-6 text-secondary leading-tight whitespace-nowrap">
             GST Academy
           </h1>
-          <p className="text-sm sm:text-base md:text-lg mb-5 sm:mb-6 md:mb-8 max-w-2xl mx-auto font-medium text-secondary/90 px-3 sm:px-4 leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto font-medium text-secondary px-2">
             Campo professionale, maestri certificati e una comunità che ti sprona a vincere. Prenota subito e scopri perché siamo il club preferito della città.
           </p>
-          
+
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-md sm:max-w-none px-2 sm:px-0">
+          <div className="flex flex-col sm:flex-row gap-4 mb-8 sm:mb-10 md:mb-12">
             <button
               onClick={handleBookingClick}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-white bg-secondary hover:bg-secondary/90 transition-all rounded-lg shadow-sm hover:shadow-md"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white bg-secondary hover:bg-secondary/90 transition-colors rounded-lg"
             >
               Prenota un campo
             </button>
             <button
               onClick={handleTournamentClick}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-secondary bg-white hover:bg-gray-50 transition-all rounded-lg border-2 border-secondary shadow-sm hover:shadow-md"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-secondary bg-white hover:bg-gray-50 transition-colors rounded-lg border-2 border-secondary"
             >
               Iscriviti ad un torneo
             </button>

@@ -8,6 +8,8 @@ import {
   Trash2,
   AlertCircle,
   Edit,
+  Shield,
+  Star,
 } from "lucide-react";
 
 interface Challenge {
@@ -81,12 +83,23 @@ export default function AdminChallengeDetailPage() {
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showScoreForm, setShowScoreForm] = useState(false);
+  const [winnerId, setWinnerId] = useState("");
+  const [score, setScore] = useState("");
+  const [savingScore, setSavingScore] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadChallengeDetails();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (challenge) {
+      setWinnerId(challenge.winner_id || "");
+      setScore(challenge.score || "");
+    }
+  }, [challenge]);
 
   async function loadChallengeDetails() {
     try {
@@ -137,12 +150,25 @@ export default function AdminChallengeDetailPage() {
   async function handleConfirmBooking() {
     if (!challenge?.booking_id) return;
 
+    // Controlla se la data è passata
+    if (challenge.booking?.start_time) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const bookingDate = new Date(challenge.booking.start_time);
+      const bookingDay = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
+
+      if (bookingDay < today) {
+        alert("❌ Non puoi confermare una prenotazione con data passata. La sfida è stata spostata nello storico.");
+        return;
+      }
+    }
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      const response = await fetch(`/api/bookings/${challenge.booking_id}`, {
-        method: "PATCH",
+      const response = await fetch(`/api/bookings?id=${challenge.booking_id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -155,10 +181,53 @@ export default function AdminChallengeDetailPage() {
       if (response.ok) {
         loadChallengeDetails();
         alert("✅ Prenotazione confermata!");
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Errore: ${errorData.error || "Impossibile confermare la prenotazione"}`);
       }
     } catch (error) {
       console.error("Error confirming booking:", error);
       alert("❌ Errore nella conferma della prenotazione");
+    }
+  }
+
+  async function handleSaveScore() {
+    if (!winnerId) {
+      alert("Seleziona il vincitore");
+      return;
+    }
+
+    if (!score.trim()) {
+      alert("Inserisci il punteggio");
+      return;
+    }
+
+    try {
+      setSavingScore(true);
+
+      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          winner_id: winnerId,
+          score: score.trim(),
+          status: "completed",
+        }),
+      });
+
+      if (response.ok) {
+        alert("✅ Punteggio salvato con successo!");
+        setShowScoreForm(false);
+        loadChallengeDetails();
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Errore: ${errorData.error || "Impossibile salvare il punteggio"}`);
+      }
+    } catch (error) {
+      console.error("Error saving score:", error);
+      alert("❌ Errore nel salvataggio del punteggio");
+    } finally {
+      setSavingScore(false);
     }
   }
 
@@ -250,13 +319,37 @@ export default function AdminChallengeDetailPage() {
         </div>
       </div>
 
+      {/* Challenge Type Header */}
+      <div
+        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
+        style={{ borderLeftColor: (() => {
+          if (challenge.status === "completed") return "#10b981"; // verde
+          if (challenge.status === "pending") return "#f59e0b"; // amber
+          if (challenge.status === "accepted") return "#3b82f6"; // blu
+          if (challenge.status === "declined" || challenge.status === "cancelled") return "#ef4444"; // rosso
+          return "#8b5cf6"; // viola per controproposta
+        })() }}
+      >
+        <div className="flex items-start gap-6">
+          {challenge.challenge_type === "ranked" ? (
+            <Shield className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+          ) : (
+            <Star className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+          )}
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-white">
+              {challenge.challenge_type === "ranked" ? "Sfida Classificata" : "Sfida Amichevole"}
+            </h2>
+          </div>
+        </div>
+      </div>
+
       {/* Players */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Giocatori</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Challenger */}
-          <div className="p-4 border-l-4 border-secondary rounded-md bg-white">
-            <p className="text-xs font-medium text-secondary/60 mb-2">SFIDANTE</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Challenger */}
+        <div className="bg-white rounded-xl p-6 border border-gray-100">
+          <h3 className="text-lg font-semibold text-secondary mb-4">Sfidante</h3>
+          <div className="p-4 border border-gray-100 border-l-4 border-l-secondary rounded-md bg-white mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-lg bg-secondary text-white flex items-center justify-center overflow-hidden">
                 {challenge.challenger?.avatar_url ? (
@@ -300,9 +393,72 @@ export default function AdminChallengeDetailPage() {
             )}
           </div>
 
-          {/* Opponent */}
-          <div className="p-4 border-l-4 border-secondary/40 rounded-md bg-white">
-            <p className="text-xs font-medium text-secondary/60 mb-2">SFIDATO</p>
+          {/* Info Sfidante */}
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+              <div className="flex-1">
+                <p className="text-secondary/70">{challenge.challenger?.email || "N/A"}</p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+              <div className="flex-1">
+                <p className="text-secondary/70">{challenge.challenger?.phone || "N/A"}</p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{challenge.challenger?.arena_rank || "N/A"}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-8">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+              <div className="flex-1">
+                <p className="text-secondary/70">{challenge.challenger?.arena_points ?? "N/A"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Partner Sfidante */}
+          {challenge.match_type === "doubles" && challenge.my_partner && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-xs font-medium text-secondary/60 uppercase mb-6">Info Partner</p>
+              <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{challenge.my_partner.email || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{challenge.my_partner.phone || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+                  <div className="flex-1">
+                    <p className="text-secondary font-semibold">{challenge.my_partner.arena_rank || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-8">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{challenge.my_partner.arena_points ?? "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Opponent */}
+        <div className="bg-white rounded-xl p-6 border border-gray-100">
+          <h3 className="text-lg font-semibold text-secondary mb-4">Avversario</h3>
+          <div className="p-4 border border-gray-100 border-l-4 border-l-secondary/40 rounded-md bg-white mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-lg bg-secondary text-white flex items-center justify-center overflow-hidden">
                 {challenge.opponent?.avatar_url ? (
@@ -345,6 +501,67 @@ export default function AdminChallengeDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Info Avversario */}
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+              <div className="flex-1">
+                <p className="text-secondary/70">{challenge.opponent?.email || "N/A"}</p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+              <div className="flex-1">
+                <p className="text-secondary/70">{challenge.opponent?.phone || "N/A"}</p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{challenge.opponent?.arena_rank || "N/A"}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-8">
+              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+              <div className="flex-1">
+                <p className="text-secondary/70">{challenge.opponent?.arena_points ?? "N/A"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Partner Avversario */}
+          {challenge.match_type === "doubles" && challenge.opponent_partner && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-xs font-medium text-secondary/60 uppercase mb-6">Info Partner</p>
+              <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{challenge.opponent_partner.email || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{challenge.opponent_partner.phone || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+                  <div className="flex-1">
+                    <p className="text-secondary font-semibold">{challenge.opponent_partner.arena_rank || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-8">
+                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+                  <div className="flex-1">
+                    <p className="text-secondary/70">{challenge.opponent_partner.arena_points ?? "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -390,179 +607,190 @@ export default function AdminChallengeDetailPage() {
           )}
         </div>
 
-        {challenge.winner_id && (
-          <div className="mt-6 flex items-start gap-8 pt-6 border-t border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Vincitore</label>
-            <div className="flex-1">
-              <p className="text-secondary font-bold">
-                {challenge.winner_id === challenge.challenger_id
-                  ? challenge.challenger?.full_name
-                  : challenge.opponent?.full_name}
-              </p>
-              {challenge.score && (
-                <p className="text-sm text-secondary/70 mt-1">Score: {challenge.score}</p>
+        {challenge.winner_id && !showScoreForm && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-start gap-8 mb-4">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Vincitore</label>
+              <div className="flex-1">
+                <p className="text-secondary font-bold">
+                  {challenge.winner_id === challenge.challenger_id
+                    ? challenge.challenger?.full_name
+                    : challenge.opponent?.full_name}
+                </p>
+                {challenge.score && (
+                  <p className="text-sm text-secondary/70 mt-1">Score: {challenge.score}</p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowScoreForm(true)}
+              className="px-4 py-2 text-sm font-medium text-secondary bg-white border border-secondary rounded-md hover:bg-secondary hover:text-white transition-all"
+            >
+              Modifica Risultato
+            </button>
+          </div>
+        )}
+
+        {(challenge.status === "accepted" || challenge.status === "completed") && !challenge.winner_id && !showScoreForm && (() => {
+          // Controlla se la data del match è passata
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          let isDatePassed = false;
+
+          if (challenge.booking?.start_time) {
+            const challengeDate = new Date(challenge.booking.start_time);
+            const challengeDay = new Date(challengeDate.getFullYear(), challengeDate.getMonth(), challengeDate.getDate());
+            isDatePassed = challengeDay < today;
+          }
+
+          return (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              {isDatePassed && challenge.status !== "completed" && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ La data del match è passata. La sfida verrà spostata nello storico.
+                  </p>
+                </div>
               )}
+              <button
+                onClick={() => setShowScoreForm(true)}
+                className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+              >
+                <Check className="h-4 w-4" />
+                Inserisci Risultato
+              </button>
+            </div>
+          );
+        })()}
+
+        {showScoreForm && (
+          <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
+            <h3 className="text-md font-semibold text-secondary">Risultato Match</h3>
+
+            {/* Selettore Vincitore */}
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Vincitore *
+              </label>
+              <div className="flex-1 space-y-3">
+                {/* Team Sfidante */}
+                <button
+                  type="button"
+                  onClick={() => setWinnerId(challenge.challenger_id)}
+                  className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                    winnerId === challenge.challenger_id
+                      ? "border-secondary bg-secondary/5"
+                      : "border-gray-200 hover:border-secondary/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      winnerId === challenge.challenger_id
+                        ? "border-secondary bg-secondary"
+                        : "border-gray-300"
+                    }`}>
+                      {winnerId === challenge.challenger_id && (
+                        <Check className="h-3 w-3 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-secondary">
+                        {challenge.challenger?.full_name}
+                        {challenge.match_type === "doubles" && challenge.my_partner && (
+                          <span className="font-normal"> / {challenge.my_partner.full_name}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-secondary/60">Sfidante</p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Team Sfidato */}
+                <button
+                  type="button"
+                  onClick={() => setWinnerId(challenge.opponent_id)}
+                  className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                    winnerId === challenge.opponent_id
+                      ? "border-secondary bg-secondary/5"
+                      : "border-gray-200 hover:border-secondary/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      winnerId === challenge.opponent_id
+                        ? "border-secondary bg-secondary"
+                        : "border-gray-300"
+                    }`}>
+                      {winnerId === challenge.opponent_id && (
+                        <Check className="h-3 w-3 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-secondary">
+                        {challenge.opponent?.full_name}
+                        {challenge.match_type === "doubles" && challenge.opponent_partner && (
+                          <span className="font-normal"> / {challenge.opponent_partner.full_name}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-secondary/60">Sfidato</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Campo Score */}
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                Punteggio *
+              </label>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={score}
+                  onChange={(e) => setScore(e.target.value)}
+                  placeholder="es: 6-4, 6-3"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary"
+                />
+                <p className="text-xs text-secondary/60 mt-2">
+                  Inserisci il punteggio nel formato: 6-4, 6-3 oppure 6-4, 3-6, 6-2
+                </p>
+              </div>
+            </div>
+
+            {/* Bottoni Azione */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSaveScore}
+                disabled={savingScore || !winnerId || !score.trim()}
+                className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+              >
+                {savingScore ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Salva Risultato
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setShowScoreForm(false);
+                  setWinnerId(challenge.winner_id || "");
+                  setScore(challenge.score || "");
+                }}
+                disabled={savingScore}
+                className="px-4 py-2.5 text-sm font-medium text-secondary bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Annulla
+              </button>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Info Giocatori */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Info Giocatori</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Sfidante */}
-          <div className="space-y-6">
-            <div>
-              <p className="text-xs font-medium text-secondary/60 uppercase mb-3">Sfidante</p>
-              <div className="space-y-4">
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome</label>
-                  <div className="flex-1">
-                    <p className="text-secondary font-semibold">{challenge.challenger?.full_name || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{challenge.challenger?.email || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{challenge.challenger?.phone || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
-                  <div className="flex-1">
-                    <p className="text-secondary font-semibold">{challenge.challenger?.arena_rank || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{challenge.challenger?.arena_points ?? "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {challenge.match_type === "doubles" && challenge.my_partner && (
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs font-medium text-secondary/60 uppercase mb-3">Partner Sfidante</p>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome</label>
-                    <div className="flex-1">
-                      <p className="text-secondary font-semibold">{challenge.my_partner.full_name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
-                    <div className="flex-1">
-                      <p className="text-secondary/70">{challenge.my_partner.email || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
-                    <div className="flex-1">
-                      <p className="text-secondary/70">{challenge.my_partner.phone || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
-                    <div className="flex-1">
-                      <p className="text-secondary font-semibold">{challenge.my_partner.arena_rank || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
-                    <div className="flex-1">
-                      <p className="text-secondary/70">{challenge.my_partner.arena_points ?? "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sfidato */}
-          <div className="space-y-6">
-            <div>
-              <p className="text-xs font-medium text-secondary/60 uppercase mb-3">Sfidato</p>
-              <div className="space-y-4">
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome</label>
-                  <div className="flex-1">
-                    <p className="text-secondary font-semibold">{challenge.opponent?.full_name || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{challenge.opponent?.email || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{challenge.opponent?.phone || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
-                  <div className="flex-1">
-                    <p className="text-secondary font-semibold">{challenge.opponent?.arena_rank || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{challenge.opponent?.arena_points ?? "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {challenge.match_type === "doubles" && challenge.opponent_partner && (
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs font-medium text-secondary/60 uppercase mb-3">Partner Sfidato</p>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome</label>
-                    <div className="flex-1">
-                      <p className="text-secondary font-semibold">{challenge.opponent_partner.full_name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
-                    <div className="flex-1">
-                      <p className="text-secondary/70">{challenge.opponent_partner.email || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
-                    <div className="flex-1">
-                      <p className="text-secondary/70">{challenge.opponent_partner.phone || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
-                    <div className="flex-1">
-                      <p className="text-secondary font-semibold">{challenge.opponent_partner.arena_rank || "N/A"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-8">
-                    <label className="w-32 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
-                    <div className="flex-1">
-                      <p className="text-secondary/70">{challenge.opponent_partner.arena_points ?? "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Booking Info */}
@@ -599,10 +827,18 @@ export default function AdminChallengeDetailPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-8">
+            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
               <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{challenge.booking.court}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-8">
+              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {challenge.booking.manager_confirmed === true ? "Confermata" : "In attesa di conferma"}
+                </p>
               </div>
             </div>
           </div>

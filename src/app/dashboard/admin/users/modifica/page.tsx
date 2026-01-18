@@ -386,15 +386,18 @@ export default function ModificaUtentePage() {
       </div>
 
       {/* Avatar Card */}
-      <div className={`bg-white rounded-xl border border-gray-200 border-l-4 p-6 ${
-        formData.role === "admin" ? "border-l-red-500" :
-        formData.role === "gestore" ? "border-l-purple-500" :
-        formData.role === "maestro" ? "border-l-blue-500" :
-        "border-l-secondary"
-      }`}>
-        <div className="flex items-center gap-6">
+      <div
+        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
+        style={{ borderLeftColor: (() => {
+          if (formData.role === "admin") return "#ef4444"; // red
+          if (formData.role === "gestore") return "#a855f7"; // purple
+          if (formData.role === "maestro") return "#3b82f6"; // blue
+          return "#034863"; // secondary
+        })() }}
+      >
+        <div className="flex items-start gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden">
               {user.avatar_url ? (
                 <img
                   src={user.avatar_url}
@@ -407,11 +410,11 @@ export default function ModificaUtentePage() {
                 </span>
               )}
             </div>
-            <button 
+            <button
               type="button"
               onClick={() => setShowAvatarModal(true)}
               disabled={uploadingAvatar}
-              className="absolute -bottom-2 -right-2 p-2 rounded-lg bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="absolute -bottom-2 -right-2 p-2 rounded-lg bg-white text-secondary hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {uploadingAvatar ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -420,13 +423,13 @@ export default function ModificaUtentePage() {
               )}
             </button>
           </div>
-          
+
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-secondary mb-1">
+            <h2 className="text-2xl font-bold text-white mb-1">
               {user.full_name || "Nome non impostato"}
             </h2>
-            <p className="text-secondary/70 text-sm font-medium mb-2">{user.email}</p>
-            <span className="inline-block px-3 py-1 text-xs font-bold rounded-lg bg-secondary/10 text-secondary border border-secondary/20">
+            <p className="text-white/70 text-sm font-medium mb-2">{user.email}</p>
+            <span className="inline-block px-3 py-1 text-xs font-bold rounded-lg bg-white/20 text-white border border-white/30">
               {roleLabels[formData.role].label}
             </span>
           </div>

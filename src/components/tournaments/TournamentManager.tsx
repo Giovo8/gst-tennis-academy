@@ -232,19 +232,19 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
             <>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-secondary">Tabellone Eliminazione</h2>
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2">
                   <button
                     onClick={() => setActiveTab('overview')}
-                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                   >
                     <Users className="h-4 w-4" />
-                    <span className="text-sm font-medium">Partecipanti</span>
+                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                   </button>
                   <button
-                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                    className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                   >
                     <Trophy className="h-4 w-4" />
-                    <span className="text-sm font-medium">Tabellone</span>
+                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                   </button>
                 </div>
               </div>
@@ -267,19 +267,19 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
                     {tournament.current_phase && (tournament.current_phase as string) !== 'iscrizioni' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 sm:gap-2">
                         <button
-                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                         >
                           <Users className="h-4 w-4" />
-                          <span className="text-sm font-medium">Partecipanti</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                         </button>
                         <button
                           onClick={() => setActiveTab('bracket')}
-                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                         >
                           <Trophy className="h-4 w-4" />
-                          <span className="text-sm font-medium">Tabellone</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                         </button>
                       </div>
                     )}
@@ -390,19 +390,19 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2">
                       <button
-                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                       >
                         <Users className="h-4 w-4" />
-                        <span className="text-sm font-medium">Partecipanti</span>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('groups')}
-                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Target className="h-4 w-4" />
-                        <span className="text-sm font-medium">Gironi</span>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                       </button>
                     </div>
                   </div>
@@ -491,27 +491,27 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-secondary">Gironi</h2>
                 {participants.length > 0 && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2">
                     <button
                       onClick={() => setActiveTab('overview')}
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Users className="h-4 w-4" />
-                      <span className="text-sm font-medium">Partecipanti</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                     </button>
                     <button
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                     >
                       <Target className="h-4 w-4" />
-                      <span className="text-sm font-medium">Gironi</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                     </button>
                     {(tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && (
                       <button
                         onClick={() => setActiveTab('bracket')}
-                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Trophy className="h-4 w-4" />
-                        <span className="text-sm font-medium">Tabellone</span>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                       </button>
                     )}
                   </div>
@@ -536,26 +536,26 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-secondary">Partecipanti</h2>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2">
                       <button
-                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                       >
                         <Users className="h-4 w-4" />
-                        <span className="text-sm font-medium">Partecipanti</span>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('groups')}
-                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Target className="h-4 w-4" />
-                        <span className="text-sm font-medium">Gironi</span>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('bracket')}
-                        className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Trophy className="h-4 w-4" />
-                        <span className="text-sm font-medium">Tabellone</span>
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                       </button>
                     </div>
                   </div>
@@ -648,26 +648,26 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-secondary">Tabellone Eliminazione</h2>
                 {participants.length > 0 && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2">
                     <button
                       onClick={() => setActiveTab('overview')}
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Users className="h-4 w-4" />
-                      <span className="text-sm font-medium">Partecipanti</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                     </button>
                     <button
                       onClick={() => setActiveTab('groups')}
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Target className="h-4 w-4" />
-                      <span className="text-sm font-medium">Gironi</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                     </button>
                     <button
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                     >
                       <Trophy className="h-4 w-4" />
-                      <span className="text-sm font-medium">Tabellone</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                     </button>
                   </div>
                 )}
@@ -696,26 +696,26 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
                     {tournament.current_phase && (tournament.current_phase as string) !== 'iscrizioni' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 sm:gap-2">
                         <button
-                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                         >
                           <Users className="h-4 w-4" />
-                          <span className="text-sm font-medium">Partecipanti</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                         </button>
                         <button
                           onClick={() => setActiveTab('calendar')}
-                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                         >
                           <Calendar className="h-4 w-4" />
-                          <span className="text-sm font-medium">Calendario</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Calendario</span>
                         </button>
                         <button
                           onClick={() => setActiveTab('standings')}
-                          className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                         >
                           <Trophy className="h-4 w-4" />
-                          <span className="text-sm font-medium">Classifica</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Classifica</span>
                         </button>
                       </div>
                     )}
@@ -819,26 +819,26 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-secondary">Classifica Campionato</h2>
                 {participants.length > 0 && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2">
                     <button
                       onClick={() => setActiveTab('overview')}
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Users className="h-4 w-4" />
-                      <span className="text-sm font-medium">Partecipanti</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                     </button>
                     <button
                       onClick={() => setActiveTab('calendar')}
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Calendar className="h-4 w-4" />
-                      <span className="text-sm font-medium">Calendario</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Calendario</span>
                     </button>
                     <button
-                      className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                     >
                       <Trophy className="h-4 w-4" />
-                      <span className="text-sm font-medium">Classifica</span>
+                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Classifica</span>
                     </button>
                   </div>
                 )}
@@ -860,26 +860,26 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-secondary">Calendario Partite</h2>
             {participants.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Users className="h-4 w-4" />
-                  <span className="text-sm font-medium">Partecipanti</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                 </button>
                 <button
-                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                 >
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm font-medium">Calendario</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Calendario</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('standings')}
-                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Trophy className="h-4 w-4" />
-                  <span className="text-sm font-medium">Classifica</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Classifica</span>
                 </button>
               </div>
             )}
@@ -905,60 +905,42 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2">
               {/* Tab Partecipanti - sempre per primo */}
               <button
-                className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-secondary bg-secondary text-white"
+                className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
               >
                 <Users className="h-4 w-4" />
-                <span className="text-sm font-medium">Partecipanti</span>
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
               </button>
               
               {/* Tab specifici per tipo torneo */}
               {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase !== 'iscrizioni' && (
                 <button
                   onClick={() => setActiveTab('bracket')}
-                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Trophy className="h-4 w-4" />
-                  <span className="text-sm font-medium">Tabellone</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                 </button>
               )}
               {tournament.tournament_type === 'girone_eliminazione' && tournament.current_phase === 'gironi' && (
                 <button
                   onClick={() => setActiveTab('groups')}
-                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Target className="h-4 w-4" />
-                  <span className="text-sm font-medium">Gironi</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                 </button>
               )}
               {tournament.tournament_type === 'girone_eliminazione' && tournament.current_phase === 'eliminazione' && (
                 <button
                   onClick={() => setActiveTab('bracket')}
-                  className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Trophy className="h-4 w-4" />
-                  <span className="text-sm font-medium">Tabellone</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
                 </button>
-              )}
-              {tournament.tournament_type === 'campionato' && (
-                <>
-                  <button
-                    onClick={() => setActiveTab('calendar')}
-                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-sm font-medium">Calendario</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('standings')}
-                    className="px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
-                  >
-                    <Trophy className="h-4 w-4" />
-                    <span className="text-sm font-medium">Classifica</span>
-                  </button>
-                </>
               )}
             </div>
           </div>

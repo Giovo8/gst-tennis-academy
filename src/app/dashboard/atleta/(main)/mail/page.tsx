@@ -3,14 +3,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
-import { 
-  Mail, 
-  Search, 
-  X, 
+import {
+  Mail,
+  Search,
+  X,
   User,
   Send,
   ArrowLeft,
-  MoreVertical
+  MoreVertical,
+  Plus,
+  Users,
+  Settings,
+  LogOut,
+  Check
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
@@ -18,7 +23,8 @@ import { it } from "date-fns/locale";
 interface Message {
   id: string;
   sender_id: string;
-  recipient_id: string;
+  recipient_id: string | null;
+  group_id: string | null;
   subject: string;
   content: string;
   is_read: boolean;
@@ -28,7 +34,28 @@ interface Message {
     full_name: string;
     avatar_url: string | null;
   };
-  recipient: {
+  recipient?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface ChatGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  created_by: string;
+  created_at: string;
+  members?: GroupMember[];
+}
+
+interface GroupMember {
+  id: string;
+  user_id: string;
+  role: "admin" | "member";
+  profile: {
     id: string;
     full_name: string;
     avatar_url: string | null;
@@ -36,13 +63,20 @@ interface Message {
 }
 
 interface Conversation {
-  userId: string;
-  userName: string;
-  userAvatar: string | null;
+  id: string;
+  type: "direct" | "group";
+  name: string;
+  avatar: string | null;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
   messages: Message[];
+  // For direct chats
+  userId?: string;
+  // For group chats
+  groupId?: string;
+  group?: ChatGroup;
+  memberCount?: number;
 }
 
 interface UserProfile {
@@ -53,19 +87,27 @@ interface UserProfile {
   role: string;
 }
 
+type ModalType = "newChat" | "newGroup" | "groupSettings" | null;
+
 export default function AtletaMailPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [showNewChat, setShowNewChat] = useState(false);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [messageInput, setMessageInput] = useState("");
-  
+
   // New chat state
   const [userSearch, setUserSearch] = useState("");
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [sending, setSending] = useState(false);
+
+  // New group state
+  const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<UserProfile[]>([]);
+  const [creatingGroup, setCreatingGroup] = useState(false);
 
   useEffect(() => {
     loadConversations();
@@ -77,17 +119,15 @@ export default function AtletaMailPage() {
       if (!user) return;
 
       const channel = supabase
-        .channel("new_messages")
+        .channel("new_messages_atleta")
         .on(
           "postgres_changes",
           {
             event: "INSERT",
             schema: "public",
             table: "internal_messages",
-            filter: `recipient_id=eq.${user.id}`,
           },
           () => {
-            // Reload conversations when new message arrives
             loadConversations();
           }
         )
@@ -115,25 +155,70 @@ export default function AtletaMailPage() {
 
       setCurrentUserId(user.id);
 
-      const { data: allMessages, error } = await supabase
+      // Load direct messages - try without group_id filter first (backwards compatibility)
+      let directMessages: any[] = [];
+      let directError: any = null;
+
+      // First try with group_id filter (new schema)
+      const result = await supabase
         .from("internal_messages")
         .select(`
           *,
           sender:sender_id(id, full_name, avatar_url),
           recipient:recipient_id(id, full_name, avatar_url)
         `)
+        .is("group_id", null)
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
 
-      if (error || !allMessages) {
-        console.error("Error loading messages:", error);
-        return;
+      if (result.error && result.error.message.includes("group_id")) {
+        // Fallback: group_id column doesn't exist yet, load all messages
+        const fallbackResult = await supabase
+          .from("internal_messages")
+          .select(`
+            *,
+            sender:sender_id(id, full_name, avatar_url),
+            recipient:recipient_id(id, full_name, avatar_url)
+          `)
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+          .order("created_at", { ascending: false });
+
+        directMessages = fallbackResult.data || [];
+        directError = fallbackResult.error;
+      } else {
+        directMessages = result.data || [];
+        directError = result.error;
       }
-      
-      // Group messages by conversation partner
+
+      if (directError?.message && directError.message.length > 0) {
+        console.error("Error loading direct messages:", directError.message);
+      }
+
+      // Load groups via API
+      let userGroups: any[] = [];
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const res = await fetch('/api/chat-groups', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+          if (res.ok) {
+            userGroups = await res.json();
+          }
+        }
+      } catch (e) {
+        // API not available yet, ignore
+        console.log("Chat groups API not available yet");
+      }
+
+      // Process direct conversations
       const conversationMap = new Map<string, Message[]>();
-      
-      allMessages.forEach((msg) => {
+
+      (directMessages || []).forEach((msg) => {
+        if (!msg.recipient_id) return;
         const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
         if (!conversationMap.has(partnerId)) {
           conversationMap.set(partnerId, []);
@@ -141,8 +226,7 @@ export default function AtletaMailPage() {
         conversationMap.get(partnerId)!.push(msg);
       });
 
-      // Create conversation objects
-      const convs: Conversation[] = [];
+      const directConvs: Conversation[] = [];
       conversationMap.forEach((messages, partnerId) => {
         const sortedMessages = messages.sort(
           (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -153,10 +237,12 @@ export default function AtletaMailPage() {
           (m) => m.recipient_id === user.id && !m.is_read
         ).length;
 
-        convs.push({
+        directConvs.push({
+          id: `direct-${partnerId}`,
+          type: "direct",
           userId: partnerId,
-          userName: partner.full_name,
-          userAvatar: partner.avatar_url,
+          name: partner?.full_name || "Utente",
+          avatar: partner?.avatar_url || null,
           lastMessage: lastMessage.content,
           lastMessageTime: lastMessage.created_at,
           unreadCount,
@@ -164,12 +250,55 @@ export default function AtletaMailPage() {
         });
       });
 
-      // Sort by last message time
-      convs.sort(
+      // Process group conversations
+      const groupConvs: Conversation[] = [];
+
+      for (const group of (userGroups || [])) {
+        if (!group) continue;
+
+        // Get group messages via API
+        let groupMessages: Message[] = [];
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const res = await fetch(`/api/chat-groups/${group.id}/messages`, {
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`
+              }
+            });
+            if (res.ok) {
+              groupMessages = await res.json();
+            }
+          }
+        } catch (e) {
+          console.log("Could not load group messages");
+        }
+
+        const messages = groupMessages || [];
+        const lastMessage = messages[messages.length - 1];
+        const memberCount = group.members?.length || 0;
+
+        groupConvs.push({
+          id: `group-${group.id}`,
+          type: "group",
+          groupId: group.id,
+          group: group as ChatGroup,
+          name: group.name,
+          avatar: group.avatar_url,
+          lastMessage: lastMessage?.content || "Nessun messaggio",
+          lastMessageTime: lastMessage?.created_at || group.created_at,
+          unreadCount: 0,
+          messages,
+          memberCount,
+        });
+      }
+
+      // Combine and sort all conversations
+      const allConvs = [...directConvs, ...groupConvs].sort(
         (a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
       );
 
-      setConversations(convs);
+      setConversations(allConvs);
     } catch (error) {
       console.error("Errore nel caricamento delle conversazioni:", error);
     } finally {
@@ -194,7 +323,6 @@ export default function AtletaMailPage() {
         return;
       }
 
-      console.log("Search results:", data);
       setSearchResults(data || []);
     } catch (error) {
       console.error("Errore nella ricerca utenti:", error);
@@ -207,43 +335,73 @@ export default function AtletaMailPage() {
     setSending(true);
     const messageContent = messageInput.trim();
     setMessageInput("");
-    
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!user || !session?.access_token) return;
 
-      const { data, error } = await supabase
-        .from("internal_messages")
-        .insert({
+      let data: any = null;
+      let error: any = null;
+
+      if (selectedConversation.type === "group" && selectedConversation.groupId) {
+        // Send group message via API
+        const res = await fetch(`/api/chat-groups/${selectedConversation.groupId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ content: messageContent })
+        });
+
+        if (res.ok) {
+          data = await res.json();
+        } else {
+          const errorData = await res.json();
+          error = errorData;
+        }
+      } else {
+        // Send direct message via supabase
+        const insertData = {
           sender_id: user.id,
           recipient_id: selectedConversation.userId,
           subject: "Chat",
           content: messageContent,
-        })
-        .select(`
-          *,
-          sender:sender_id(id, full_name, avatar_url),
-          recipient:recipient_id(id, full_name, avatar_url)
-        `)
-        .single();
+        };
 
-      if (!error && data) {
-        // Create notification for recipient
-        const { data: senderProfile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
+        const result = await supabase
+          .from("internal_messages")
+          .insert(insertData)
+          .select(`
+            *,
+            sender:sender_id(id, full_name, avatar_url),
+            recipient:recipient_id(id, full_name, avatar_url)
+          `)
           .single();
 
-        await createNotification({
-          userId: selectedConversation.userId,
-          type: "message",
-          title: `Nuovo messaggio da ${senderProfile?.full_name || "un utente"}`,
-          message: messageContent.substring(0, 100) + (messageContent.length > 100 ? "..." : ""),
-          link: "/dashboard/atleta/mail",
-        });
+        data = result.data;
+        error = result.error;
 
-        // Update immediately with optimistic UI
+        // Send notification for direct messages
+        if (!error && data && selectedConversation.userId) {
+          const { data: senderProfile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .single();
+
+          await createNotification({
+            userId: selectedConversation.userId,
+            type: "message",
+            title: `Nuovo messaggio da ${senderProfile?.full_name || "un utente"}`,
+            message: messageContent.substring(0, 100) + (messageContent.length > 100 ? "..." : ""),
+            link: "/dashboard/atleta/mail",
+          });
+        }
+      }
+
+      if (data) {
         const updatedConversation = {
           ...selectedConversation,
           messages: [...selectedConversation.messages, data],
@@ -251,39 +409,44 @@ export default function AtletaMailPage() {
           lastMessageTime: data.created_at,
         };
         setSelectedConversation(updatedConversation);
-        
-        // Update conversations list
+
         setConversations((prev) => {
-          const filtered = prev.filter((c) => c.userId !== selectedConversation.userId);
+          const filtered = prev.filter((c) => c.id !== selectedConversation.id);
           return [updatedConversation, ...filtered];
         });
-        
+
         window.dispatchEvent(new Event('messageRead'));
       } else {
-        console.error("Error sending message:", error);
-        setMessageInput(messageContent); // Restore message on error
+        const errorMsg = error?.message || error?.error;
+        if (errorMsg) {
+          console.error("Error sending message:", errorMsg);
+        }
+        setMessageInput(messageContent);
       }
     } catch (error) {
       console.error("Errore:", error);
+      setMessageInput(messageContent);
     } finally {
       setSending(false);
     }
   }
 
-  async function startNewChat(user: UserProfile) {
-    // Check if conversation already exists
-    const existingConv = conversations.find((c) => c.userId === user.id);
+  async function startNewChat(userProfile: UserProfile) {
+    const existingConv = conversations.find(
+      (c) => c.type === "direct" && c.userId === userProfile.id
+    );
     if (existingConv) {
       setSelectedConversation(existingConv);
-      setShowNewChat(false);
+      closeModal();
       return;
     }
 
-    // Create new empty conversation
     const newConv: Conversation = {
-      userId: user.id,
-      userName: user.full_name,
-      userAvatar: user.avatar_url,
+      id: `direct-${userProfile.id}`,
+      type: "direct",
+      userId: userProfile.id,
+      name: userProfile.full_name,
+      avatar: userProfile.avatar_url,
       lastMessage: "",
       lastMessageTime: new Date().toISOString(),
       unreadCount: 0,
@@ -291,45 +454,153 @@ export default function AtletaMailPage() {
     };
 
     setSelectedConversation(newConv);
-    setShowNewChat(false);
+    closeModal();
   }
 
   async function markMessagesAsRead(conversation: Conversation) {
+    if (conversation.type !== "direct") return;
+
     const unreadMessages = conversation.messages.filter(
       (m) => m.recipient_id === currentUserId && !m.is_read
     );
 
-    if (unreadMessages.length > 0) {
-      const messageIds = unreadMessages.map(m => m.id);
-      
-      await supabase
-        .from("internal_messages")
-        .update({ is_read: true })
-        .in("id", messageIds);
+    if (unreadMessages.length === 0) return;
 
-      window.dispatchEvent(new Event('messageRead'));
+    const messageIds = unreadMessages.map((m) => m.id);
+    await supabase
+      .from("internal_messages")
+      .update({ is_read: true })
+      .in("id", messageIds);
+
+    conversation.unreadCount = 0;
+    window.dispatchEvent(new Event('messageRead'));
+  }
+
+  async function selectConversation(conv: Conversation) {
+    setSelectedConversation(conv);
+    await markMessagesAsRead(conv);
+  }
+
+  function closeModal() {
+    setActiveModal(null);
+    setUserSearch("");
+    setSearchResults([]);
+    setGroupName("");
+    setGroupDescription("");
+    setSelectedMembers([]);
+  }
+
+  function toggleMemberSelection(userProfile: UserProfile) {
+    setSelectedMembers((prev) => {
+      const isSelected = prev.some((m) => m.id === userProfile.id);
+      if (isSelected) {
+        return prev.filter((m) => m.id !== userProfile.id);
+      }
+      return [...prev, userProfile];
+    });
+  }
+
+  async function createGroup() {
+    if (!groupName.trim() || selectedMembers.length === 0) return;
+
+    setCreatingGroup(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert("Sessione non valida");
+        return;
+      }
+
+      const res = await fetch('/api/chat-groups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          name: groupName.trim(),
+          description: groupDescription.trim() || null,
+          member_ids: selectedMembers.map(m => m.id)
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error creating group:", errorData);
+        if (errorData.error?.includes("does not exist")) {
+          alert("La funzionalità gruppi non è ancora disponibile. Esegui la migration del database.");
+        } else {
+          alert(errorData.error || "Errore nella creazione del gruppo");
+        }
+        return;
+      }
+
+      const group = await res.json();
+
+      await loadConversations();
+
+      const newGroupConv: Conversation = {
+        id: `group-${group.id}`,
+        type: "group",
+        groupId: group.id,
+        group: group as ChatGroup,
+        name: group.name,
+        avatar: null,
+        lastMessage: "Gruppo creato",
+        lastMessageTime: group.created_at,
+        unreadCount: 0,
+        messages: [],
+        memberCount: selectedMembers.length + 1,
+      };
+
+      setSelectedConversation(newGroupConv);
+      closeModal();
+    } catch (error) {
+      console.error("Errore nella creazione del gruppo:", error);
+      alert("Errore nella creazione del gruppo");
+    } finally {
+      setCreatingGroup(false);
     }
   }
 
-  function handleSelectConversation(conversation: Conversation) {
-    setSelectedConversation(conversation);
-    markMessagesAsRead(conversation);
+  async function leaveGroup() {
+    if (!selectedConversation?.groupId) return;
+
+    if (!confirm("Sei sicuro di voler abbandonare questo gruppo?")) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert("Sessione non valida");
+        return;
+      }
+
+      const res = await fetch(`/api/chat-groups/${selectedConversation.groupId}/members`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error leaving group:", errorData);
+        alert(errorData.error || "Errore nell'abbandonare il gruppo");
+        return;
+      }
+
+      setSelectedConversation(null);
+      closeModal();
+      await loadConversations();
+    } catch (error) {
+      console.error("Errore:", error);
+      alert("Errore nell'abbandonare il gruppo");
+    }
   }
 
-  const filteredConversations = conversations.filter((c) =>
-    c.userName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = conversations.filter((conv) =>
+    conv.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-secondary/20 border-t-secondary"></div>
-          <p className="mt-4 text-secondary/70">Caricamento chat...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -337,171 +608,225 @@ export default function AtletaMailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-secondary mb-2">Chat</h1>
-          <p className="text-secondary/70 font-medium">Messaggi con altri utenti</p>
+          <p className="text-secondary/70 font-medium">
+            Messaggi con coach e altri atleti
+          </p>
         </div>
-        <button
-          onClick={() => setShowNewChat(true)}
-          className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all"
-        >
-          Nuova Chat
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveModal("newChat")}
+            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nuova Chat
+          </button>
+          <button
+            onClick={() => setActiveModal("newGroup")}
+            className="px-4 py-2.5 text-sm font-medium text-secondary bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Nuovo Gruppo
+          </button>
+        </div>
       </div>
 
-      {/* Chat Interface */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden" style={{ height: "calc(100vh - 250px)" }}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
-          {/* Conversations List */}
-          <div className="border-r border-gray-200 flex flex-col h-full lg:col-span-1">
-            {/* Search Header */}
+      {/* Chat Container */}
+      <div className="h-[calc(100vh-16rem)] flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex h-full">
+          {/* Sidebar - Lista conversazioni */}
+          <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+            {/* Search */}
             <div className="p-4 border-b border-gray-200">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-secondary/40" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Cerca conversazioni..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary text-sm"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
             </div>
 
-            {/* Conversations */}
+            {/* Conversations List */}
             <div className="flex-1 overflow-y-auto">
-              {filteredConversations.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <Mail className="h-12 w-12 text-secondary/20 mx-auto mb-3" />
-                  <p className="text-sm text-secondary/70">Nessuna conversazione</p>
+              {loading ? (
+                <div className="p-8 text-center text-gray-500">Caricamento...</div>
+              ) : filteredConversations.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Mail className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">Nessuna conversazione</p>
+                  <button
+                    onClick={() => setActiveModal("newChat")}
+                    className="mt-3 text-sm text-secondary hover:underline"
+                  >
+                    Inizia una nuova chat
+                  </button>
                 </div>
               ) : (
-                <div>
-                  {filteredConversations.map((conv) => (
-                    <button
-                      key={conv.userId}
-                      onClick={() => handleSelectConversation(conv)}
-                      className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 transition-all border-b border-gray-100 ${
-                        selectedConversation?.userId === conv.userId ? "bg-secondary/5" : ""
-                      }`}
-                    >
-                      {conv.userAvatar ? (
-                        <img
-                          src={conv.userAvatar}
-                          alt={conv.userName}
-                          className="h-12 w-12 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                          <User className="h-6 w-6 text-secondary" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0 text-left">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-semibold text-secondary truncate">
-                            {conv.userName}
-                          </p>
-                          <span className="text-xs text-secondary/60 flex-shrink-0 ml-2">
+                filteredConversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => selectConversation(conv)}
+                    className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
+                      selectedConversation?.id === conv.id ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 relative">
+                        {conv.type === "group" ? (
+                          <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-secondary" />
+                          </div>
+                        ) : conv.avatar ? (
+                          <img
+                            src={conv.avatar}
+                            alt={conv.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                            <User className="h-6 w-6 text-gray-500" />
+                          </div>
+                        )}
+                        {conv.unreadCount > 0 && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                            {conv.unreadCount}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between mb-1">
+                          <h3 className={`font-semibold text-sm truncate ${conv.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                            {conv.name}
+                          </h3>
+                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
                             {formatDistanceToNow(new Date(conv.lastMessageTime), {
-                              addSuffix: false,
+                              addSuffix: true,
                               locale: it,
                             })}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-secondary/70 truncate">
+                        <div className="flex items-center gap-1">
+                          {conv.type === "group" && (
+                            <span className="text-xs text-secondary/60">{conv.memberCount} membri · </span>
+                          )}
+                          <p className={`text-sm truncate flex-1 ${conv.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
                             {conv.lastMessage || "Inizia una conversazione"}
                           </p>
-                          {conv.unreadCount > 0 && (
-                            <span className="flex-shrink-0 ml-2 bg-secondary text-white text-xs px-2 py-0.5 rounded-full">
-                              {conv.unreadCount}
-                            </span>
-                          )}
                         </div>
                       </div>
-                    </button>
-                  ))}
-                </div>
+                    </div>
+                  </button>
+                ))
               )}
             </div>
           </div>
 
-          {/* Chat Area */}
-          <div className="lg:col-span-2 flex flex-col h-full">
-            {selectedConversation ? (
+          {/* Main Chat Area */}
+          <div className={`flex-1 flex flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
+            {!selectedConversation ? (
+              <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <Mail className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">Seleziona una conversazione per iniziare</p>
+                </div>
+              </div>
+            ) : (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setSelectedConversation(null)}
-                      className="lg:hidden p-2 hover:bg-gray-200 rounded-full"
-                    >
-                      <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    {selectedConversation.userAvatar ? (
-                      <img
-                        src={selectedConversation.userAvatar}
-                        alt={selectedConversation.userName}
-                        className="h-10 w-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-secondary" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-secondary">{selectedConversation.userName}</p>
-                      <p className="text-xs text-secondary/60">Online</p>
+                <div className="p-4 border-b border-gray-200 bg-white flex items-center gap-3">
+                  <button
+                    onClick={() => setSelectedConversation(null)}
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+
+                  {selectedConversation.type === "group" ? (
+                    <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-secondary" />
                     </div>
+                  ) : selectedConversation.avatar ? (
+                    <img
+                      src={selectedConversation.avatar}
+                      alt={selectedConversation.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User className="h-5 w-5 text-gray-500" />
+                    </div>
+                  )}
+
+                  <div className="flex-1">
+                    <h2 className="font-semibold text-gray-900">{selectedConversation.name}</h2>
+                    {selectedConversation.type === "group" && (
+                      <p className="text-xs text-gray-500">{selectedConversation.memberCount} membri</p>
+                    )}
                   </div>
-                  <button className="p-2 hover:bg-gray-200 rounded-full">
-                    <MoreVertical className="h-5 w-5 text-secondary/70" />
+
+                  {selectedConversation.type === "group" && (
+                    <button
+                      onClick={() => setActiveModal("groupSettings")}
+                      className="p-2 hover:bg-gray-100 rounded-lg"
+                    >
+                      <Settings className="h-5 w-5 text-gray-600" />
+                    </button>
+                  )}
+
+                  <button className="p-2 hover:bg-gray-100 rounded-lg">
+                    <MoreVertical className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+                <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
                   {selectedConversation.messages.length === 0 ? (
-                    <div className="text-center py-12">
-                      <p className="text-sm text-secondary/70">Nessun messaggio ancora</p>
-                      <p className="text-xs text-secondary/50 mt-1">Invia un messaggio per iniziare</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-sm">Nessun messaggio. Inizia la conversazione!</p>
                     </div>
                   ) : (
                     selectedConversation.messages.map((msg) => {
                       const isOwn = msg.sender_id === currentUserId;
                       return (
-                        <div
-                          key={msg.id}
-                          className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
-                        >
-                          {!isOwn && (
-                            selectedConversation.userAvatar ? (
-                              <img
-                                src={selectedConversation.userAvatar}
-                                alt={selectedConversation.userName}
-                                className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="h-8 w-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                                <User className="h-4 w-4 text-secondary" />
-                              </div>
-                            )
+                        <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                          {!isOwn && selectedConversation.type === "group" && (
+                            <div className="flex-shrink-0 mr-2">
+                              {msg.sender?.avatar_url ? (
+                                <img
+                                  src={msg.sender.avatar_url}
+                                  alt={msg.sender.full_name}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-gray-500" />
+                                </div>
+                              )}
+                            </div>
                           )}
-                          <div className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
+                          <div className={`max-w-[70%] ${isOwn ? "text-right" : "text-left"}`}>
+                            {!isOwn && selectedConversation.type === "group" && (
+                              <p className="text-xs text-gray-600 mb-1 px-1">{msg.sender?.full_name}</p>
+                            )}
                             <div
-                              className={`px-4 py-2 rounded-2xl ${
+                              className={`inline-block rounded-2xl px-4 py-2 text-left ${
                                 isOwn
                                   ? "bg-secondary text-white rounded-br-sm"
-                                  : "bg-white text-secondary border border-gray-200 rounded-bl-sm"
+                                  : "bg-white border border-gray-200 rounded-bl-sm"
                               }`}
+                              style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
                             >
-                              <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                             </div>
-                            <span className="text-xs text-secondary/50 mt-1 px-2">
-                              {new Date(msg.created_at).toLocaleTimeString("it-IT", {
-                                hour: "2-digit",
-                                minute: "2-digit",
+                            <p className={`text-xs text-gray-500 mt-1 px-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatDistanceToNow(new Date(msg.created_at), {
+                                addSuffix: true,
+                                locale: it,
                               })}
-                            </span>
+                            </p>
                           </div>
                         </div>
                       );
@@ -510,11 +835,10 @@ export default function AtletaMailPage() {
                 </div>
 
                 {/* Message Input */}
-                <div className="p-4 border-t border-gray-200 bg-white">
-                  <div className="flex items-center gap-3">
+                <div className="p-4 bg-white border-t border-gray-200">
+                  <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Scrivi un messaggio..."
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={(e) => {
@@ -523,96 +847,337 @@ export default function AtletaMailPage() {
                           handleSendMessage();
                         }
                       }}
-                      className="flex-1 px-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                      placeholder="Scrivi un messaggio..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                      disabled={sending}
                     />
                     <button
                       onClick={handleSendMessage}
-                      disabled={sending || !messageInput.trim()}
-                      className="p-3 bg-secondary text-white rounded-full hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!messageInput.trim() || sending}
+                      className="p-3 bg-secondary text-white rounded-full hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
               </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center bg-white">
-                <div className="text-center">
-                  <Mail className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-secondary mb-2">Seleziona una chat</h3>
-                  <p className="text-sm text-secondary/70">
-                    Scegli una conversazione dalla lista o iniziane una nuova
-                  </p>
-                </div>
-              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* New Chat Modal */}
-      {showNewChat && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="border-b px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-secondary">Nuova Chat</h3>
+      {activeModal === "newChat" && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <Plus className="h-6 w-6 text-white" />
+                <h3 className="text-lg font-bold text-white">Nuova Chat</h3>
+              </div>
               <button
-                onClick={() => {
-                  setShowNewChat(false);
-                  setUserSearch("");
-                }}
-                className="p-2 hover:bg-gray-100 rounded-md"
+                onClick={closeModal}
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-secondary/40" />
+            {/* Search */}
+            <div className="p-6 border-b border-gray-200 bg-gray-50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
                 <input
                   type="text"
-                  placeholder="Cerca utente..."
+                  placeholder="Cerca per nome o email..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  autoFocus
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                  className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
+            </div>
 
-              <div className="max-h-96 overflow-y-auto">
-                {searchResults.length === 0 ? (
-                  <p className="text-center text-sm text-secondary/70 py-8">
-                    {userSearch ? "Nessun utente trovato" : "Inizia a digitare per cercare"}
+            {/* User List */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+              {searchResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-secondary/60">
+                    {userSearch.length > 1
+                      ? "Nessun utente trovato"
+                      : "Cerca un utente per iniziare"}
                   </p>
-                ) : (
-                  <div className="space-y-2">
-                    {searchResults.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => startNewChat(user)}
-                        className="w-full flex items-center gap-3 p-3 hover:bg-secondary/5 rounded-md transition-all"
-                      >
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map((user) => (
+                    <div
+                      key={user.id}
+                      onClick={() => startNewChat(user)}
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 cursor-pointer transition-all hover:border-secondary/50 hover:shadow-sm"
+                    >
+                      <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
                         {user.avatar_url ? (
                           <img
                             src={user.avatar_url}
                             alt={user.full_name}
-                            className="h-10 w-10 rounded-full object-cover"
+                            className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-secondary" />
-                          </div>
+                          <span>{user.full_name.charAt(0).toUpperCase()}</span>
                         )}
-                        <div className="flex-1 text-left">
-                          <p className="text-sm font-medium text-secondary">{user.full_name}</p>
-                          <p className="text-xs text-secondary/60">{user.email}</p>
+                      </div>
+                      <div className="flex-1 min-w-0 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-secondary text-sm truncate">{user.full_name}</p>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
+                          <p className="text-xs text-secondary/70 truncate">{user.email}</p>
+                        </div>
+                        <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium capitalize">
+                          {user.role}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Group Modal */}
+      {activeModal === "newGroup" && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <Users className="h-6 w-6 text-white" />
+                <h3 className="text-lg font-bold text-white">Nuovo Gruppo</h3>
               </div>
+              <button
+                onClick={closeModal}
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Group Info */}
+            <div className="p-6 border-b border-gray-200 bg-white space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-2">
+                  Nome del gruppo *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Es. Team Agonisti"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-2">
+                  Descrizione (opzionale)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Breve descrizione del gruppo"
+                  value={groupDescription}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+            </div>
+
+            {/* Search Members */}
+            <div className="p-6 border-b border-gray-200 bg-gray-50">
+              <label className="block text-sm font-medium text-secondary mb-2">
+                Aggiungi membri ({selectedMembers.length} selezionati)
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+                <input
+                  type="text"
+                  placeholder="Cerca per nome o email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+
+              {/* Selected members chips */}
+              {selectedMembers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {selectedMembers.map((member) => (
+                    <span
+                      key={member.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-white rounded-full text-xs font-medium"
+                    >
+                      {member.full_name}
+                      <button
+                        onClick={() => toggleMemberSelection(member)}
+                        className="hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* User List */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50 max-h-60">
+              {searchResults.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-secondary/60">
+                    {userSearch.length > 1
+                      ? "Nessun utente trovato"
+                      : "Cerca utenti da aggiungere"}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map((user) => {
+                    const isSelected = selectedMembers.some((m) => m.id === user.id);
+                    return (
+                      <div
+                        key={user.id}
+                        onClick={() => toggleMemberSelection(user)}
+                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-secondary bg-secondary/5 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-secondary/50 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'border-secondary bg-secondary'
+                            : 'border-gray-300'
+                        }`}>
+                          {isSelected && <Check className="h-3 w-3 text-white" />}
+                        </div>
+
+                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{user.full_name.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-secondary text-sm truncate">{user.full_name}</p>
+                          </div>
+                          <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
+                            <p className="text-xs text-secondary/70 truncate">{user.email}</p>
+                          </div>
+                          <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium capitalize">
+                            {user.role}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
+              <button
+                onClick={createGroup}
+                disabled={!groupName.trim() || selectedMembers.length === 0 || creatingGroup}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {creatingGroup ? (
+                  <>
+                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creazione in corso...
+                  </>
+                ) : (
+                  <>
+                    <Users className="h-5 w-5" />
+                    Crea Gruppo {selectedMembers.length > 0 && `(${selectedMembers.length} membri)`}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Settings Modal */}
+      {activeModal === "groupSettings" && selectedConversation?.type === "group" && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+        >
+          <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <Settings className="h-6 w-6 text-white" />
+                <h3 className="text-lg font-bold text-white">Impostazioni Gruppo</h3>
+              </div>
+              <button
+                onClick={closeModal}
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Group Info */}
+            <div className="p-6 bg-gray-50">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-xl bg-secondary/10 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-secondary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-secondary">{selectedConversation.name}</h3>
+                  <p className="text-sm text-secondary/70">{selectedConversation.memberCount} membri</p>
+                </div>
+              </div>
+
+              {selectedConversation.group?.description && (
+                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                  <h4 className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-2">Descrizione</h4>
+                  <p className="text-sm text-secondary">{selectedConversation.group.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
+              <button
+                onClick={leaveGroup}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-red-50 border border-red-200 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-100 transition-all"
+              >
+                <LogOut className="h-5 w-5" />
+                Abbandona Gruppo
+              </button>
             </div>
           </div>
         </div>

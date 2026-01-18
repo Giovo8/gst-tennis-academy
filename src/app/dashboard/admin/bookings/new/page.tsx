@@ -824,13 +824,13 @@ function NewAdminBookingPageInner() {
                   <div className="overflow-x-auto scrollbar-hide">
                     <div style={{ minWidth: '1280px' }}>
                       {/* Header con orari */}
-                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
+                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
                         {Array.from({ length: 16 }, (_, i) => {
                           const hour = 7 + i;
                           return (
                             <div
                               key={hour}
-                              className="p-3 text-center font-bold text-secondary text-xs flex items-center justify-center"
+                              className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
                             >
                               {hour.toString().padStart(2, '0')}:00
                             </div>
@@ -839,7 +839,7 @@ function NewAdminBookingPageInner() {
                       </div>
 
                       {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
-                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
                         {/* Prenotazioni esistenti come blocchi sovrapposti */}
                         {existingBookings.map((booking) => {
                           const start = new Date(booking.start_time);

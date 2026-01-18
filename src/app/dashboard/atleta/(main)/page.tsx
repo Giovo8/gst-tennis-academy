@@ -333,13 +333,6 @@ export default function AtletaDashboard() {
                   <Bell className="h-5 w-5 text-yellow-600" />
                   Annunci
                 </h2>
-                <Link
-                  href="/dashboard/atleta/annunci"
-                  className="text-sm font-semibold text-secondary hover:opacity-80 flex items-center gap-1 transition-colors"
-                >
-                  Tutti
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
               </div>
             </div>
 
@@ -355,10 +348,9 @@ export default function AtletaDashboard() {
               ) : (
                 <div className="space-y-3">
                   {recentAnnouncements.map((announcement) => (
-                    <Link
+                    <div
                       key={announcement.id}
-                      href="/dashboard/atleta/annunci"
-                      className="block p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-yellow-300 hover:bg-yellow-50/30 transition-all group relative"
+                      className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-yellow-300 hover:bg-yellow-50/30 transition-all group relative"
                     >
                       {announcement.is_pinned && (
                         <div className="absolute top-3 right-3 w-2 h-2 bg-yellow-500 rounded-full" />
@@ -401,7 +393,7 @@ export default function AtletaDashboard() {
                           </span>
                         </div>
                       )}
-                    </Link>
+                    </div>
                   ))}
                 </div>
               )}

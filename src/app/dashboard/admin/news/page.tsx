@@ -174,33 +174,6 @@ export default function AdminNewsPage() {
               className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
             />
           </div>
-
-          {/* Filters */}
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setFilterCategory("all")}
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                filterCategory === "all"
-                  ? "text-white bg-secondary hover:opacity-90"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Tutte
-            </button>
-            {Object.entries(categoryLabels).map(([value, label]) => (
-              <button
-                key={value}
-                onClick={() => setFilterCategory(value)}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                  filterCategory === value
-                    ? "text-white bg-secondary hover:opacity-90"
-                    : "bg-white text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
           
           {loading ? (
             <div className="flex items-center justify-center py-20">

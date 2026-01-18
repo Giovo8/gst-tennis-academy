@@ -463,6 +463,28 @@ export async function PATCH(req: Request) {
   }
 }
 
+// PUT - Update challenge (alias for PATCH)
+export async function PUT(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const challengeIdFromQuery = searchParams.get("challenge_id");
+
+  const body = await req.json();
+
+  // Se challenge_id è nella query string, aggiungilo al body
+  if (challengeIdFromQuery && !body.challenge_id) {
+    body.challenge_id = challengeIdFromQuery;
+  }
+
+  // Crea una nuova Request con il body aggiornato per chiamare PATCH
+  const newReq = new Request(req.url, {
+    method: 'PATCH',
+    headers: req.headers,
+    body: JSON.stringify(body),
+  });
+
+  return PATCH(newReq);
+}
+
 // DELETE - Cancel challenge
 export async function DELETE(req: Request) {
   try {

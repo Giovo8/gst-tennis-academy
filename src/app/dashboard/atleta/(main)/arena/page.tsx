@@ -318,58 +318,50 @@ export default function ArenaPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-secondary mb-2 flex items-center gap-3">
-              <div className="p-2 bg-secondary rounded-xl">
-                <Swords className="h-8 w-8 text-white" />
-              </div>
-              Arena
-            </h1>
-            <p className="text-secondary/70 font-medium">
-              Sfida altri atleti, scala la classifica e raggiungi la vetta
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push("/dashboard/atleta/arena/choose-opponent")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-secondary rounded-xl hover:bg-secondary transition-all shadow-lg shadow-secondary/20"
-            >
-              <Swords className="h-4 w-4" />
-              Lancia Sfida
-            </button>
-            <button
-              onClick={() => setActiveTab("statistiche")}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
-                activeTab === "statistiche"
-                  ? "text-white bg-secondary shadow-lg shadow-secondary/20"
-                  : "text-gray-700 bg-white border border-gray-200 hover:border-secondary/30"
-              }`}
-            >
-              <BarChart3 className="h-4 w-4" />
-              Statistiche
-            </button>
-            <button
-              onClick={() => setActiveTab("info")}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
-                activeTab === "info"
-                  ? "text-white bg-secondary shadow-lg shadow-secondary/20"
-                  : "text-gray-700 bg-white border border-gray-200 hover:border-secondary/30"
-              }`}
-            >
-              <Shield className="h-4 w-4" />
-              Info
-            </button>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-secondary">Arena</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Sfida altri atleti, scala la classifica e raggiungi la vetta
+          </p>
+          {/* Level Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-md text-white text-sm mt-3">
+            {getLevelIcon(stats.level)}
+            <span className="font-bold">Livello {stats.level}</span>
+            <span className="text-white/90">•</span>
+            <span className="text-white/90">{stats.points} punti</span>
           </div>
         </div>
-
-        {/* Level Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-secondary to-secondary rounded-xl text-white w-fit shadow-lg shadow-secondary/20">
-          {getLevelIcon(stats.level)}
-          <span className="font-bold">Livello {stats.level}</span>
-          <span className="text-white/90">•</span>
-          <span className="text-white/90">{stats.points} punti</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/dashboard/atleta/arena/choose-opponent")}
+            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+          >
+            <Swords className="h-4 w-4" />
+            Lancia Sfida
+          </button>
+          <button
+            onClick={() => setActiveTab("statistiche")}
+            className={`px-4 py-2.5 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${
+              activeTab === "statistiche"
+                ? "text-white bg-secondary shadow-lg"
+                : "text-secondary bg-white border border-gray-300 hover:border-secondary"
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Statistiche
+          </button>
+          <button
+            onClick={() => setActiveTab("info")}
+            className={`px-4 py-2.5 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${
+              activeTab === "info"
+                ? "text-white bg-secondary shadow-lg"
+                : "text-secondary bg-white border border-gray-300 hover:border-secondary"
+            }`}
+          >
+            <Shield className="h-4 w-4" />
+            Info
+          </button>
         </div>
       </div>
 
@@ -377,29 +369,47 @@ export default function ArenaPage() {
       {activeTab === "sfide" && (
       <div className="space-y-6">
         {/* Sfide */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Swords className="h-5 w-5 text-secondary" />
-              Sfide
-            </h2>
-          </div>
-          <div className="p-6">
-              {(() => {
-                console.log("Total challenges in state:", challenges.length);
-                console.log("Challenges:", challenges);
-                return null;
-              })()}
+        <div className="bg-white rounded-lg p-6">
               {challenges.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3">
-                    <Swords className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <p className="text-gray-600 font-medium mb-1">Nessuna sfida</p>
-                  <p className="text-sm text-gray-500">Lancia una sfida per iniziare</p>
+                <div className="text-center py-20 rounded-xl bg-white">
+                  <Swords className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+                  <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna sfida trovata</h3>
+                  <p className="text-secondary/70">Lancia una sfida per iniziare</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+                  <div className="space-y-3 min-w-[800px]">
+                  {/* Header Row */}
+                  <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 flex-shrink-0">
+                        <div className="text-xs font-bold text-white/80 uppercase"></div>
+                      </div>
+                      <div className="w-40 flex-shrink-0">
+                        <div className="text-xs font-bold text-white/80 uppercase">Avversario</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-bold text-white/80 uppercase">Dettagli</div>
+                      </div>
+                      <div className="w-24 flex-shrink-0 text-center">
+                        <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+                      </div>
+                      <div className="w-20 flex-shrink-0 text-center">
+                        <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+                      </div>
+                      <div className="w-24 flex-shrink-0 text-center">
+                        <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
+                      </div>
+                      <div className="w-28 flex-shrink-0 text-center">
+                        <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
+                      </div>
+                      <div className="w-24 flex-shrink-0 text-center">
+                        <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Data Rows */}
                   {challenges.map((challenge) => {
                     const isChallenger = challenge.challenger_id === userId;
                     const opponent = isChallenger ? challenge.opponent : challenge.challenger;
@@ -408,548 +418,478 @@ export default function ArenaPage() {
                     const canRespond = !isChallenger && isPending;
                     const needsConfirmation = isChallenger && isCounterProposal;
 
+                    // Determina colore bordo in base allo stato
+                    let borderStyle = {};
+                    if (challenge.status === "completed") {
+                      borderStyle = { borderLeftColor: "#10b981" }; // verde
+                    } else if (challenge.status === "pending") {
+                      borderStyle = { borderLeftColor: "#f59e0b" }; // amber
+                    } else if (challenge.status === "accepted") {
+                      borderStyle = { borderLeftColor: "#3b82f6" }; // blu
+                    } else if (challenge.status === "declined" || challenge.status === "cancelled") {
+                      borderStyle = { borderLeftColor: "#ef4444" }; // rosso
+                    } else {
+                      borderStyle = { borderLeftColor: "#8b5cf6" }; // viola per controproposta
+                    }
+
+                    const getStatusLabel = (status: string) => {
+                      const labels: Record<string, string> = {
+                        pending: "In Attesa",
+                        accepted: "Accettata",
+                        declined: "Rifiutata",
+                        completed: "Completata",
+                        cancelled: "Cancellata",
+                        counter_proposal: "Controproposta",
+                      };
+                      return labels[status] || status;
+                    };
+
                     return (
                       <div
                         key={challenge.id}
                         onClick={() => router.push(`/dashboard/atleta/arena/challenge/${challenge.id}`)}
-                        className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-secondary/30 hover:bg-secondary/5/30 transition-all group cursor-pointer"
+                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4"
+                        style={borderStyle}
                       >
-                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {opponent?.avatar_url ? (
-                            <img
-                              src={opponent.avatar_url}
-                              alt={opponent.full_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="font-bold text-secondary">
-                              {opponent?.full_name?.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
+                        <div className="flex items-center gap-4">
+                          {/* Avatar Avversario */}
+                          <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                            {opponent?.avatar_url ? (
+                              <img
+                                src={opponent.avatar_url}
+                                alt={opponent.full_name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span>{opponent?.full_name?.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-bold text-gray-900 truncate">
-                              {isChallenger ? "Hai sfidato" : "Sei stato sfidato da"}{" "}
+                          {/* Nome Avversario */}
+                          <div className="w-40 flex-shrink-0">
+                            <div className="font-bold text-secondary text-sm truncate">
                               {opponent?.full_name}
-                            </p>
+                            </div>
+                            <div className="text-xs text-secondary/60">
+                              {isChallenger ? "Hai sfidato" : "Ti ha sfidato"}
+                            </div>
+                          </div>
+
+                          {/* Dettagli */}
+                          <div className="flex-1 overflow-hidden">
+                            <div className="flex flex-wrap gap-1">
                             {needsConfirmation && (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 bg-orange-100 text-orange-700 animate-pulse">
-                                ⚠️ Da confermare
+                              <span className="text-xs px-2 py-0.5 rounded font-medium bg-orange-100 text-orange-700 whitespace-nowrap">
+                                Da confermare
                               </span>
                             )}
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                                challenge.status === "accepted"
-                                  ? "bg-green-100 text-green-700"
-                                  : challenge.status === "pending" || challenge.status === "counter_proposal"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : challenge.status === "completed"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {challenge.status === "accepted"
-                                ? "Accettata"
-                                : challenge.status === "pending"
-                                ? "In attesa"
-                                : challenge.status === "counter_proposal"
-                                ? "Modificata"
-                                : challenge.status === "completed"
-                                ? "Completata"
-                                : "Rifiutata"}
+                            {!challenge.booking?.manager_confirmed && challenge.booking && (
+                              <span className="text-xs px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-700 whitespace-nowrap">
+                                Attesa gestore
+                              </span>
+                            )}
+                            </div>
+                          </div>
+
+                          {/* Data */}
+                          <div className="w-24 flex-shrink-0 text-center">
+                            <span className="text-xs text-secondary/60">
+                              {challenge.booking
+                                ? new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })
+                                : "-"}
                             </span>
                           </div>
 
-                          {challenge.message && (
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-1">
-                              "{challenge.message}"
-                            </p>
-                          )}
+                          {/* Ora */}
+                          <div className="w-20 flex-shrink-0 text-center">
+                            <span className="text-xs text-secondary/60">
+                              {challenge.booking
+                                ? new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "-"}
+                            </span>
+                          </div>
 
-                          {challenge.booking && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-3 text-sm text-gray-600">
-                                <div className="flex items-center gap-1.5">
-                                  <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                                  <span>
-                                    {new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
-                                      day: "numeric",
-                                      month: "short",
-                                    })}
-                                  </span>
-                                </div>
-                                <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1.5">
-                                  <Clock className="h-3.5 w-3.5 text-gray-400" />
-                                  <span>
-                                    {new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </span>
-                                </div>
-                                <span className="text-gray-300">•</span>
-                                <span>{challenge.booking.court}</span>
-                              </div>
-                              {!challenge.booking.manager_confirmed && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
-                                    <svg className="mr-1 h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                    </svg>
-                                    In attesa conferma gestore
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                          {/* Campo */}
+                          <div className="w-24 flex-shrink-0 text-center">
+                            <span className="text-xs text-secondary/60">
+                              {challenge.booking?.court || "-"}
+                            </span>
+                          </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {canRespond && (
-                            <>
+                          {/* Stato */}
+                          <div className="w-28 flex-shrink-0 text-center">
+                            <span className="text-xs text-secondary/60">
+                              {getStatusLabel(challenge.status)}
+                            </span>
+                          </div>
+
+                          {/* Azioni */}
+                          <div className="w-24 flex-shrink-0 flex items-center justify-center gap-1">
+                            {canRespond && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleChallengeAction(challenge.id, "accept");
+                                  }}
+                                  className="p-2 text-green-600 hover:bg-green-50 rounded-md transition-all"
+                                  title="Accetta"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleChallengeAction(challenge.id, "decline");
+                                  }}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-all"
+                                  title="Rifiuta"
+                                >
+                                  <XIcon className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+
+                            {challenge.status === "accepted" && !challenge.booking_id && (
                               <button
-                                onClick={() => handleChallengeAction(challenge.id, "accept")}
-                                className="p-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-                                title="Accetta sfida"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBookMatch(challenge);
+                                }}
+                                className="px-2 py-1 bg-secondary text-white text-xs font-medium rounded-md hover:opacity-90 transition-colors"
                               >
-                                <Check className="h-4 w-4" />
+                                Prenota
                               </button>
-                              <button
-                                onClick={() => handleChallengeAction(challenge.id, "decline")}
-                                className="p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
-                                title="Rifiuta sfida"
-                              >
-                                <XIcon className="h-4 w-4" />
-                              </button>
-                            </>
-                          )}
+                            )}
 
-                          {challenge.status === "accepted" && !challenge.booking_id && (
                             <button
-                              onClick={() => handleBookMatch(challenge)}
-                              className="px-3 py-2 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/dashboard/atleta/mail?recipient=${opponent?.id}`);
+                              }}
+                              className="p-2 text-secondary/70 hover:bg-secondary/5 rounded-md transition-all"
+                              title="Messaggio"
                             >
-                              Prenota Campo
+                              <MessageSquare className="h-4 w-4" />
                             </button>
-                          )}
-
-                          <button
-                            onClick={() => router.push(`/dashboard/atleta/mail?recipient=${opponent?.id}`)}
-                            className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-                            title="Invia messaggio"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </button>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+                </div>
               )}
             </div>
-          </div>
 
         {/* Leaderboard */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-600" />
-              Classifica
-            </h2>
-          </div>
-          
+        <div className="bg-white rounded-lg p-6">
           {/* Rank Filter */}
-          <div className="px-6 pt-4 pb-2">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {["Tutti", "Bronzo", "Argento", "Oro", "Platino", "Diamante"].map((rank) => (
-                <button
-                  key={rank}
-                  onClick={() => setSelectedRank(rank)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-                    selectedRank === rank
-                      ? "bg-secondary text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {rank === "Tutti" ? "🏆 Tutti" : 
-                   rank === "Bronzo" ? "🥉 Bronzo" :
-                   rank === "Argento" ? "🥈 Argento" :
-                   rank === "Oro" ? "🥇 Oro" :
-                   rank === "Platino" ? "💎 Platino" : "💠 Diamante"}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="p-6">
-            {(() => {
-              const filteredLeaderboard = selectedRank === "Tutti" 
-                ? leaderboard 
-                : leaderboard.filter(entry => entry.level === selectedRank);
-              
-              return filteredLeaderboard.length === 0 ? (
-                <div className="text-center py-12">
-                  <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">
-                    {selectedRank === "Tutti" 
-                      ? "Nessun giocatore in classifica" 
-                      : `Nessun giocatore nel livello ${selectedRank}`}
-                  </p>
-                </div>
-              ) : (
-            <div className="space-y-3">
-              {filteredLeaderboard.map((entry, index) => {
-                const isCurrentUser = entry.userId === userId;
-                const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
-
-                return (
-                  <div
-                    key={entry.userId}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${
-                      entry.ranking <= 3
-                        ? "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200"
-                        : isCurrentUser
-                        ? "bg-secondary/5 border-secondary/30 ring-2 ring-secondary/20"
-                        : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() => !isCurrentUser && handleViewProfile(entry)}
-                  >
-                    <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0 ${
-                        displayPosition === 1
-                          ? "bg-yellow-500 text-white"
-                          : displayPosition === 2
-                          ? "bg-gray-400 text-white"
-                          : displayPosition === 3
-                          ? "bg-orange-500 text-white"
-                          : "bg-white text-gray-600 border border-gray-200"
-                      }`}
-                    >
-                      {displayPosition}
-                    </div>
-
-                    <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {entry.avatar ? (
-                        <img
-                          src={entry.avatar}
-                          alt={entry.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="font-bold text-secondary">
-                          {entry.name?.charAt(0).toUpperCase() || "?"}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm truncate">
-                        {entry.name || "Giocatore"}
-                        {isCurrentUser && (
-                          <span className="ml-2 text-xs font-medium text-secondary">(Tu)</span>
-                        )}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-600">
-                          {entry.wins}W - {entry.losses}L
-                        </span>
-                        {selectedRank === "Tutti" && (
-                          <span
-                            className={`text-xs px-1.5 py-0.5 rounded-full font-medium border ${getLevelColor(
-                              entry.level
-                            )}`}
-                          >
-                            {entry.level}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-gray-900">{entry.points}</p>
-                      <p className="text-xs text-gray-500">punti</p>
-                    </div>
-
-                    {!isCurrentUser && (
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleChallengePlayer(entry);
-                          }}
-                          className="p-2 bg-secondary text-white rounded-lg hover:bg-secondary transition-colors"
-                          title="Lancia sfida"
-                        >
-                          <Swords className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewProfile(entry);
-                          }}
-                          className="p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                          title="Vedi profilo"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* Classifica Tab */}
-      {activeTab === "classifica" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-amber-500" />
-              Classifica Arena
-            </h2>
-          </div>
-
-          {/* Rank Filter */}
-          <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
             {["Tutti", "Bronzo", "Argento", "Oro", "Platino", "Diamante"].map((rank) => (
               <button
                 key={rank}
                 onClick={() => setSelectedRank(rank)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                className={`px-4 py-2 rounded-md font-medium text-sm whitespace-nowrap transition-all ${
                   selectedRank === rank
-                    ? "bg-secondary text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-secondary text-white"
+                    : "bg-white border border-gray-300 text-secondary hover:border-secondary"
                 }`}
               >
-                {rank === "Tutti" ? "🏆 Tutti" : 
-                 rank === "Bronzo" ? "🥉 Bronzo" :
-                 rank === "Argento" ? "🥈 Argento" :
-                 rank === "Oro" ? "🥇 Oro" :
-                 rank === "Platino" ? "💎 Platino" : "💠 Diamante"}
+                {rank === "Tutti" ? "Tutti" :
+                 rank === "Bronzo" ? "Bronzo" :
+                 rank === "Argento" ? "Argento" :
+                 rank === "Oro" ? "Oro" :
+                 rank === "Platino" ? "Platino" : "Diamante"}
               </button>
             ))}
           </div>
-          
+
           {(() => {
-            const filteredLeaderboard = selectedRank === "Tutti" 
-              ? leaderboard 
+            const filteredLeaderboard = selectedRank === "Tutti"
+              ? leaderboard
               : leaderboard.filter(entry => entry.level === selectedRank);
-            
+
             return filteredLeaderboard.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">
-                  {selectedRank === "Tutti" 
-                    ? "Nessun giocatore in classifica" 
+              <div className="text-center py-20 rounded-xl bg-white">
+                <Trophy className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+                <h3 className="text-xl font-semibold text-secondary mb-2">Nessun giocatore in classifica</h3>
+                <p className="text-secondary/70">
+                  {selectedRank === "Tutti"
+                    ? "Non ci sono ancora giocatori"
                     : `Nessun giocatore nel livello ${selectedRank}`}
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+                <div className="space-y-3 min-w-[700px]">
+                {/* Header Row */}
+                <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">#</div>
+                    </div>
+                    <div className="w-10 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
+                    </div>
+                    <div className="w-20 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">Livello</div>
+                    </div>
+                    <div className="w-16 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">V</div>
+                    </div>
+                    <div className="w-16 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">S</div>
+                    </div>
+                    <div className="w-20 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">Punti</div>
+                    </div>
+                    <div className="w-24 flex-shrink-0 text-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Data Rows */}
                 {filteredLeaderboard.map((entry, index) => {
                   const isCurrentUser = entry.userId === userId;
                   const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
-                return (
-                  <div
-                    key={entry.userId}
-                    className={`flex items-center gap-4 p-4 rounded-lg transition-all ${
-                      isCurrentUser
-                        ? "bg-gradient-to-r from-secondary/5 to-blue-50 border-2 border-secondary/30"
-                        : "bg-gray-50 hover:bg-gray-100"
-                    }`}
-                  >
-                    <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">
-                      {index < 3 ? (
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                            index === 0
-                              ? "bg-gradient-to-br from-yellow-400 to-amber-500"
-                              : index === 1
-                              ? "bg-gradient-to-br from-gray-300 to-gray-400"
-                              : "bg-gradient-to-br from-orange-400 to-orange-500"
-                          }`}
-                        >
-                          {displayPosition}
-                        </div>
-                      ) : (
-                        <span className="text-2xl font-bold text-gray-400">
-                          {displayPosition}
-                        </span>
-                      )}
-                    </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p
-                          className={`font-semibold truncate ${
-                            isCurrentUser ? "text-secondary" : "text-gray-900"
-                          }`}
-                        >
-                          {entry.name}
-                          {isCurrentUser && (
-                            <span className="ml-2 text-xs font-normal text-secondary">
-                              (Tu)
-                            </span>
-                          )}
-                        </p>
-                        {selectedRank === "Tutti" && (
-                          <span
-                            className={`px-2 py-0.5 text-xs font-medium rounded-full ${getLevelColor(
-                              entry.level
-                            )}`}
+                  // Determina colore bordo in base alla posizione
+                  let borderStyle = {};
+                  if (displayPosition === 1) {
+                    borderStyle = { borderLeftColor: "#eab308" }; // oro
+                  } else if (displayPosition === 2) {
+                    borderStyle = { borderLeftColor: "#9ca3af" }; // argento
+                  } else if (displayPosition === 3) {
+                    borderStyle = { borderLeftColor: "#f97316" }; // bronzo
+                  } else if (isCurrentUser) {
+                    borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary per utente corrente
+                  } else {
+                    borderStyle = { borderLeftColor: "#e5e7eb" }; // grigio default
+                  }
+
+                  return (
+                    <div
+                      key={entry.userId}
+                      onClick={() => !isCurrentUser && handleViewProfile(entry)}
+                      className={`bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4 ${
+                        isCurrentUser ? "bg-secondary/5" : ""
+                      }`}
+                      style={borderStyle}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Posizione */}
+                        <div className="w-10 flex-shrink-0 text-center">
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mx-auto ${
+                              displayPosition === 1
+                                ? "bg-yellow-500 text-white"
+                                : displayPosition === 2
+                                ? "bg-gray-400 text-white"
+                                : displayPosition === 3
+                                ? "bg-orange-500 text-white"
+                                : "bg-gray-100 text-secondary"
+                            }`}
                           >
-                            {entry.level}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Trophy className="h-4 w-4" />
-                          {entry.points} punti
-                        </span>
-                        <span>
-                          {entry.wins}V - {entry.losses}S
-                        </span>
-                        {entry.winRate !== undefined && (
-                          <span className="text-xs">
-                            {entry.winRate.toFixed(0)}% vittorie
-                          </span>
-                        )}
+                            {displayPosition}
+                          </div>
+                        </div>
+
+                        {/* Avatar */}
+                        <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                          {entry.avatar ? (
+                            <img
+                              src={entry.avatar}
+                              alt={entry.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{entry.name?.charAt(0).toUpperCase() || "?"}</span>
+                          )}
+                        </div>
+
+                        {/* Nome Giocatore */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-secondary text-sm truncate">
+                            {entry.name || "Giocatore"}
+                            {isCurrentUser && (
+                              <span className="ml-2 text-xs font-medium text-secondary/60">(Tu)</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Livello */}
+                        <div className="w-20 flex-shrink-0 text-center">
+                          <span className="text-xs text-secondary/60">{entry.level}</span>
+                        </div>
+
+                        {/* Vittorie */}
+                        <div className="w-16 flex-shrink-0 text-center">
+                          <span className="text-xs text-green-600 font-medium">{entry.wins}</span>
+                        </div>
+
+                        {/* Sconfitte */}
+                        <div className="w-16 flex-shrink-0 text-center">
+                          <span className="text-xs text-red-600 font-medium">{entry.losses}</span>
+                        </div>
+
+                        {/* Punti */}
+                        <div className="w-20 flex-shrink-0 text-center">
+                          <span className="text-sm font-bold text-secondary">{entry.points}</span>
+                        </div>
+
+                        {/* Azioni */}
+                        <div className="w-24 flex-shrink-0 flex items-center justify-center gap-1">
+                          {!isCurrentUser && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleChallengePlayer(entry);
+                                }}
+                                className="p-2 text-white bg-secondary hover:opacity-90 rounded-md transition-all"
+                                title="Lancia sfida"
+                              >
+                                <Swords className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProfile(entry);
+                                }}
+                                className="p-2 text-secondary/70 hover:bg-secondary/5 rounded-md transition-all"
+                                title="Vedi profilo"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-
-                    {!isCurrentUser && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleChallengePlayer(entry)}
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary transition-colors"
-                        >
-                          Sfida
-                        </button>
-                        <button
-                          onClick={() => handleViewProfile(entry)}
-                          className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                        >
-                          Profilo
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              </div>
             );
           })()}
         </div>
+      </div>
       )}
 
       {/* Info Tab */}
       {activeTab === "info" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Shield className="h-6 w-6 text-secondary" />
-            Come funziona l'Arena
-          </h2>
-          
+        <div className="bg-white rounded-lg">
           <div className="space-y-6">
             {/* Sistema di Punteggio */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
                 <Target className="h-5 w-5 text-secondary" />
                 Sistema di Punteggio (Tennis)
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <p className="text-sm text-gray-700">
-                  <strong className="text-secondary">Vittoria:</strong> +50 punti
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong className="text-red-600">Sconfitta:</strong> -20 punti (minimo 0)
-                </p>
-                <p className="text-xs text-gray-500 mt-2 italic">
-                  ⚠️ Nel tennis non esistono pareggi - ogni partita deve avere un vincitore
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                  <Check className="h-5 w-5 text-green-600" />
+                  <div>
+                    <span className="font-bold text-green-700">Vittoria:</span>
+                    <span className="text-green-600 ml-2">+50 punti</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-500">
+                  <XIcon className="h-5 w-5 text-red-600" />
+                  <div>
+                    <span className="font-bold text-red-700">Sconfitta:</span>
+                    <span className="text-red-600 ml-2">-20 punti (minimo 0)</span>
+                  </div>
+                </div>
+                <p className="text-xs text-secondary/60 mt-3">
+                  Nel tennis non esistono pareggi - ogni partita deve avere un vincitore
                 </p>
               </div>
             </div>
 
             {/* Livelli */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-amber-500" />
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-secondary" />
                 Livelli
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                  <p className="font-medium text-orange-700">🥉 Bronzo</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                  <p className="font-bold text-orange-700">Bronzo</p>
                   <p className="text-xs text-orange-600">0-799 punti</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-300">
-                  <p className="font-medium text-gray-700">🥈 Argento</p>
+                <div className="p-4 bg-gray-50 rounded-lg border-l-4 border-gray-400">
+                  <p className="font-bold text-gray-700">Argento</p>
                   <p className="text-xs text-gray-600">800-1499 punti</p>
                 </div>
-                <div className="bg-amber-50 rounded-lg p-3 border border-amber-300">
-                  <p className="font-medium text-amber-700">🥇 Oro</p>
+                <div className="p-4 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                  <p className="font-bold text-amber-700">Oro</p>
                   <p className="text-xs text-amber-600">1500-1999 punti</p>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-3 border border-purple-300">
-                  <p className="font-medium text-purple-700">💎 Platino</p>
+                <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                  <p className="font-bold text-purple-700">Platino</p>
                   <p className="text-xs text-purple-600">2000-2499 punti</p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-300 sm:col-span-2">
-                  <p className="font-medium text-blue-700">💠 Diamante</p>
+                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                  <p className="font-bold text-blue-700">Diamante</p>
                   <p className="text-xs text-blue-600">2500+ punti</p>
                 </div>
               </div>
             </div>
 
             {/* Tipi di Sfida */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
+                <Swords className="h-5 w-5 text-secondary" />
                 Tipi di Sfida
               </h3>
-              <div className="space-y-2">
-                <div className="bg-secondary/5 rounded-lg p-3">
-                  <p className="font-medium text-secondary">⚔️ Sfida Diretta</p>
-                  <p className="text-sm text-gray-600">Sfida un giocatore specifico 1 contro 1</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 bg-secondary/5 rounded-lg border-l-4 border-secondary">
+                  <p className="font-bold text-secondary">Sfida Diretta</p>
+                  <p className="text-sm text-secondary/70">Sfida un giocatore specifico 1 contro 1</p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-3">
-                  <p className="font-medium text-blue-700">👥 Sfida di Coppia</p>
-                  <p className="text-sm text-gray-600">Forma una coppia e sfida un'altra coppia 2 contro 2</p>
+                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                  <p className="font-bold text-blue-700">Sfida di Coppia</p>
+                  <p className="text-sm text-blue-600">Forma una coppia e sfida un'altra coppia 2 contro 2</p>
                 </div>
               </div>
             </div>
 
             {/* Regole */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-secondary" />
                 Regole Generali
               </h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-secondary mt-0.5">•</span>
-                  <span>Le sfide devono essere confermate dall'avversario</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-secondary mt-0.5">•</span>
-                  <span>Ogni sfida richiede la prenotazione di un campo</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-secondary mt-0.5">•</span>
-                  <span>Il risultato deve essere inserito entro 24 ore dalla sfida</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-secondary mt-0.5">•</span>
-                  <span>In caso di controversie, contattare lo staff</span>
-                </li>
-              </ul>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+                  <span className="text-sm text-secondary/80">Le sfide devono essere confermate dall'avversario</span>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+                  <span className="text-sm text-secondary/80">Ogni sfida richiede la prenotazione di un campo</span>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+                  <span className="text-sm text-secondary/80">Il risultato deve essere inserito entro 24 ore dalla sfida</span>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+                  <span className="text-sm text-secondary/80">In caso di controversie, contattare lo staff</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -957,167 +897,145 @@ export default function ArenaPage() {
 
       {/* Statistiche Tab */}
       {activeTab === "statistiche" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-secondary" />
-            Le Tue Statistiche
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Win Rate */}
-            <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-500 rounded-lg">
-                  <Trophy className="h-6 w-6 text-white" />
+        <div className="bg-white rounded-lg">
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Win Rate */}
+              <div className="bg-white rounded-lg border border-gray-200 p-5 border-l-4 border-l-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase font-bold">Win Rate</p>
+                    <p className="text-2xl font-bold text-secondary mt-1">{stats.winRate.toFixed(0)}%</p>
+                    <p className="text-xs text-secondary/60 mt-1">
+                      {stats.wins} vittorie su {stats.totalMatches} match
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-500 rounded-lg">
+                    <Trophy className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <span className="text-3xl font-bold text-green-600">
-                  {stats.winRate.toFixed(0)}%
-                </span>
               </div>
-              <p className="text-sm font-semibold text-gray-900">Win Rate</p>
-              <p className="text-xs text-gray-600 mt-1">
-                {stats.wins} vittorie su {stats.totalMatches} match
-              </p>
+
+              {/* Current Streak */}
+              <div className={`bg-white rounded-lg border border-gray-200 p-5 border-l-4 ${
+                stats.streak > 0 ? 'border-l-orange-500' : 'border-l-gray-400'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase font-bold">
+                      {stats.streak > 0 ? 'Serie Positiva' : stats.streak < 0 ? 'Serie Negativa' : 'Nessuna Serie'}
+                    </p>
+                    <p className="text-2xl font-bold text-secondary mt-1">{Math.abs(stats.streak)}</p>
+                    <p className="text-xs text-secondary/60 mt-1">
+                      {stats.streak > 0 ? 'Vittorie consecutive' : stats.streak < 0 ? 'Sconfitte consecutive' : 'Inizia a giocare'}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${stats.streak > 0 ? 'bg-orange-500' : 'bg-gray-400'}`}>
+                    <Flame className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Points */}
+              <div className="bg-white rounded-lg border border-gray-200 p-5 border-l-4 border-l-secondary">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase font-bold">Punti Totali</p>
+                    <p className="text-2xl font-bold text-secondary mt-1">{stats.points}</p>
+                    <p className="text-xs text-secondary/60 mt-1">
+                      Ranking #{stats.ranking || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-secondary rounded-lg">
+                    <Star className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Wins */}
+              <div className="bg-white rounded-lg border border-gray-200 p-5 border-l-4 border-l-green-600">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase font-bold">Vittorie</p>
+                    <p className="text-2xl font-bold text-green-600 mt-1">{stats.wins}</p>
+                    <p className="text-xs text-secondary/60 mt-1">Match vinti</p>
+                  </div>
+                  <div className="p-3 bg-green-600 rounded-lg">
+                    <Check className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Losses */}
+              <div className="bg-white rounded-lg border border-gray-200 p-5 border-l-4 border-l-red-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase font-bold">Sconfitte</p>
+                    <p className="text-2xl font-bold text-red-600 mt-1">{stats.losses}</p>
+                    <p className="text-xs text-secondary/60 mt-1">Match persi</p>
+                  </div>
+                  <div className="p-3 bg-red-500 rounded-lg">
+                    <XIcon className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Level Progress */}
+              <div className="bg-white rounded-lg border border-gray-200 p-5 border-l-4 border-l-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-secondary/60 uppercase font-bold">Livello Attuale</p>
+                    <p className="text-2xl font-bold text-purple-600 mt-1">{stats.level}</p>
+                    <p className="text-xs text-secondary/60 mt-1">
+                      {stats.level === "Diamante"
+                        ? "Livello massimo raggiunto!"
+                        : `${getPointsToNextLevel(stats.points, stats.level)} punti al prossimo`}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-purple-500 rounded-lg">
+                    <Crown className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Current Streak */}
-            <div className={`p-6 rounded-xl border ${
-              stats.streak > 0 
-                ? 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200' 
-                : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200'
-            }`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${stats.streak > 0 ? 'bg-orange-500' : 'bg-gray-400'}`}>
-                  <Flame className="h-6 w-6 text-white" />
+            {/* Progress to Next Level */}
+            {stats.level !== "Diamante" && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-secondary">Progresso verso il prossimo livello</h3>
+                  <span className="text-sm text-secondary/60">
+                    {stats.points} / {getNextLevelPoints(stats.level)} punti
+                  </span>
                 </div>
-                <span className={`text-3xl font-bold ${stats.streak > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
-                  {Math.abs(stats.streak)}
-                </span>
-              </div>
-              <p className="text-sm font-semibold text-gray-900">
-                {stats.streak > 0 ? 'Serie Positiva' : stats.streak < 0 ? 'Serie Negativa' : 'Nessuna Serie'}
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                {stats.streak > 0 ? 'Vittorie consecutive' : stats.streak < 0 ? 'Sconfitte consecutive' : 'Inizia a giocare'}
-              </p>
-            </div>
-
-            {/* Total Points */}
-            <div className="p-6 bg-gradient-to-br from-secondary/5 to-blue-50 rounded-xl border border-secondary/20">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-secondary rounded-lg">
-                  <Star className="h-6 w-6 text-white" />
+                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-secondary rounded-full transition-all"
+                    style={{
+                      width: `${Math.min((stats.points / getNextLevelPoints(stats.level)) * 100, 100)}%`,
+                    }}
+                  />
                 </div>
-                <span className="text-3xl font-bold text-secondary">
-                  {stats.points}
-                </span>
+                <p className="text-xs text-secondary/60 mt-2">
+                  Mancano {getPointsToNextLevel(stats.points, stats.level)} punti per raggiungere il livello successivo
+                </p>
               </div>
-              <p className="text-sm font-semibold text-gray-900">Punti Totali</p>
-              <p className="text-xs text-gray-600 mt-1">
-                Ranking #{stats.ranking || 'N/A'}
-              </p>
-            </div>
+            )}
 
-            {/* Wins */}
-            <div className="p-6 bg-gradient-to-br from-green-50 to-teal-50 rounded-xl border border-green-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-600 rounded-lg">
-                  <Check className="h-6 w-6 text-white" />
+            {/* Charts Placeholder */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-secondary mb-4">Prestazioni nel Tempo</h3>
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-2 text-secondary/20" />
+                  <p className="text-sm text-secondary/60">Grafici disponibili a breve</p>
                 </div>
-                <span className="text-3xl font-bold text-green-700">
-                  {stats.wins}
-                </span>
-              </div>
-              <p className="text-sm font-semibold text-gray-900">Vittorie</p>
-              <p className="text-xs text-gray-600 mt-1">
-                Match vinti
-              </p>
-            </div>
-
-            {/* Losses */}
-            <div className="p-6 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border border-red-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-red-500 rounded-lg">
-                  <XIcon className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-3xl font-bold text-red-600">
-                  {stats.losses}
-                </span>
-              </div>
-              <p className="text-sm font-semibold text-gray-900">Sconfitte</p>
-              <p className="text-xs text-gray-600 mt-1">
-                Match persi
-              </p>
-            </div>
-
-            {/* Level Progress */}
-            <div className="p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-500 rounded-lg">
-                  <Crown className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-3xl font-bold text-purple-600">
-                  {stats.level}
-                </span>
-              </div>
-              <p className="text-sm font-semibold text-gray-900">Livello Attuale</p>
-              <p className="text-xs text-gray-600 mt-1">
-                {stats.level === "Diamante" 
-                  ? "Livello massimo raggiunto!" 
-                  : `${getPointsToNextLevel(stats.points, stats.level)} punti al prossimo`}
-              </p>
-            </div>
-          </div>
-
-          {/* Charts Placeholder */}
-          <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Prestazioni nel Tempo</h3>
-            <div className="h-48 flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Grafici disponibili a breve</p>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Progress Section */}
-      <div className="bg-gradient-to-br from-secondary to-secondary rounded-xl p-6 text-white">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-              <TrendingUp className="h-8 w-8" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-1">Continua così!</h3>
-              <p className="text-white/90 text-sm">
-                {stats.level === "Diamante"
-                  ? "Hai raggiunto il massimo livello!"
-                  : `Sei a ${getPointsToNextLevel(stats.points, stats.level)} punti dal livello successivo`}
-              </p>
-            </div>
-          </div>
-          {stats.level !== "Diamante" && (
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-2xl font-bold">{stats.points}</p>
-                <p className="text-white/90 text-xs">
-                  / {getNextLevelPoints(stats.level)} punti
-                </p>
-              </div>
-              <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-white rounded-full transition-all"
-                  style={{
-                    width: `${(stats.points / getNextLevelPoints(stats.level)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Modals */}
       <ChallengeModal

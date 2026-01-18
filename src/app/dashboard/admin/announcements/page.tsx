@@ -425,48 +425,30 @@ export default function AnnouncementsPage() {
 
                   {/* Priorità */}
                   <div className="w-32 flex-shrink-0 text-center">
-                    <div className={`font-semibold text-sm ${priorityInfo.color} flex items-center justify-center gap-1`}>
+                    <span className="text-sm font-bold text-secondary">
                       {priorityInfo.label}
-                      <span className="text-xs">
-                        {"●".repeat(priorityInfo.dots)}
-                      </span>
-                    </div>
+                    </span>
                   </div>
 
                   {/* Visibilità */}
                   <div className="w-28 flex-shrink-0 text-center">
-                    <div className="flex items-center justify-center gap-1 text-sm text-secondary/70">
-                      <VisibilityIcon className="h-4 w-4" />
-                      <span className="font-medium">{visibilityConfig[announcement.visibility].label}</span>
-                    </div>
+                    <span className="text-sm font-bold text-secondary">
+                      {visibilityConfig[announcement.visibility].label}
+                    </span>
                   </div>
 
                   {/* Stato */}
                   <div className="w-24 flex-shrink-0 text-center">
-                    {isExpired ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700">
-                        <Calendar className="h-3 w-3" />
-                        Scaduto
-                      </span>
-                    ) : announcement.is_published ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
-                        <Eye className="h-3 w-3" />
-                        Pubbl.
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-700">
-                        <EyeOff className="h-3 w-3" />
-                        Bozza
-                      </span>
-                    )}
+                    <span className="text-sm font-bold text-secondary">
+                      {isExpired ? "Scaduto" : announcement.is_published ? "Pubblicato" : "Bozza"}
+                    </span>
                   </div>
 
                   {/* Visualizzazioni */}
                   <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-sm font-semibold text-secondary flex items-center justify-center gap-1">
-                      <Eye className="h-4 w-4 text-secondary/40" />
+                    <span className="text-sm font-bold text-secondary">
                       {announcement.view_count}
-                    </div>
+                    </span>
                   </div>
                 </div>
               </Link>

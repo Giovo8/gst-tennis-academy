@@ -98,12 +98,12 @@ export default function AdminArenaPage() {
   useEffect(() => {
     loadChallenges();
     loadLeaderboard();
-  }, [statusFilter]);
+  }, [statusFilter, activeTab]);
 
   async function loadChallenges() {
     try {
       setLoading(true);
-      
+
       // Load all challenges
       let url = "/api/arena/challenges";
       if (statusFilter !== "all") {
@@ -113,15 +113,42 @@ export default function AdminArenaPage() {
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        setChallenges(data.challenges || []);
-        
-        // Calculate stats
-        const total = data.challenges?.length || 0;
-        const active = data.challenges?.filter((c: Challenge) => 
+        const allChallenges = data.challenges || [];
+
+        // Filtra sfide in base alla data e allo stato
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        const filteredChallenges = allChallenges.filter((c: Challenge) => {
+          // Se la sfida è completata o cancellata, la mostriamo solo nello storico
+          if (c.status === "completed" || c.status === "cancelled" || c.status === "declined") {
+            return activeTab === "storico";
+          }
+
+          // Se ha una data di prenotazione
+          if (c.booking?.start_time) {
+            const challengeDate = new Date(c.booking.start_time);
+            const challengeDay = new Date(challengeDate.getFullYear(), challengeDate.getMonth(), challengeDate.getDate());
+
+            // Se la data è passata e lo stato è ancora pending o accepted, mostra solo nello storico
+            if (challengeDay < today && (c.status === "pending" || c.status === "accepted" || c.status === "counter_proposal")) {
+              return activeTab === "storico";
+            }
+          }
+
+          // Altrimenti mostra nella gestione
+          return activeTab === "gestione";
+        });
+
+        setChallenges(filteredChallenges);
+
+        // Calculate stats (su tutte le sfide, non filtrate)
+        const total = allChallenges.length || 0;
+        const active = allChallenges.filter((c: Challenge) =>
           c.status === "accepted" || c.status === "pending" || c.status === "counter_proposal"
         ).length || 0;
-        const completed = data.challenges?.filter((c: Challenge) => c.status === "completed").length || 0;
-        const pending = data.challenges?.filter((c: Challenge) => c.status === "pending").length || 0;
+        const completed = allChallenges.filter((c: Challenge) => c.status === "completed").length || 0;
+        const pending = allChallenges.filter((c: Challenge) => c.status === "pending").length || 0;
 
         setStats({
           totalChallenges: total,
@@ -421,19 +448,25 @@ export default function AdminArenaPage() {
                   <div className="text-xs font-bold text-white/80 uppercase">#</div>
                 </div>
                 <div className="w-10 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Avatar</div>
-                </div>
-                <div className="w-40 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Sfidante</div>
                 </div>
-                <div className="w-10 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Avatar</div>
-                </div>
                 <div className="w-40 flex-shrink-0">
+                  <div className="text-xs font-bold text-white/80 uppercase"></div>
+                </div>
+                <div className="w-10 flex-shrink-0 text-center">
                   <div className="text-xs font-bold text-white/80 uppercase">Avversario</div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Dettagli</div>
+                <div className="w-40 flex-shrink-0">
+                  <div className="text-xs font-bold text-white/80 uppercase"></div>
+                </div>
+                <div className="w-24 flex-shrink-0 text-center">
+                  <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+                </div>
+                <div className="w-20 flex-shrink-0 text-center">
+                  <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+                </div>
+                <div className="w-24 flex-shrink-0 text-center">
+                  <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
                 </div>
                 <div className="w-32 flex-shrink-0 text-center">
                   <div className="text-xs font-bold text-white/80 uppercase">Vincitore</div>
@@ -481,7 +514,7 @@ export default function AdminArenaPage() {
                     </div>
 
                     {/* Avatar Sfidante */}
-                    <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
                       {challenge.challenger?.avatar_url ? (
                         <img
                           src={challenge.challenger.avatar_url}
@@ -501,7 +534,7 @@ export default function AdminArenaPage() {
                     </div>
 
                     {/* Avatar Avversario */}
-                    <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
                       {challenge.opponent?.avatar_url ? (
                         <img
                           src={challenge.opponent.avatar_url}
@@ -520,31 +553,35 @@ export default function AdminArenaPage() {
                       </div>
                     </div>
 
-                    {/* Dettagli Partita */}
-                    <div className="flex-1 min-w-0 flex items-center gap-3 text-xs text-secondary/60">
-                      {challenge.booking && (
-                        <>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span>
-                              {new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
-                                day: "2-digit",
-                                month: "short",
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            <span>
-                              {new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
-                          <span>{challenge.booking.court}</span>
-                        </>
-                      )}
+                    {/* Data */}
+                    <div className="w-24 flex-shrink-0 text-center">
+                      <span className="text-xs text-secondary/60">
+                        {challenge.booking
+                          ? new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
+                              day: "2-digit",
+                              month: "short",
+                            })
+                          : "-"}
+                      </span>
+                    </div>
+
+                    {/* Ora */}
+                    <div className="w-20 flex-shrink-0 text-center">
+                      <span className="text-xs text-secondary/60">
+                        {challenge.booking
+                          ? new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "-"}
+                      </span>
+                    </div>
+
+                    {/* Campo */}
+                    <div className="w-24 flex-shrink-0 text-center">
+                      <span className="text-xs text-secondary/60">
+                        {challenge.booking?.court || "-"}
+                      </span>
                     </div>
 
                     {/* Tipo e Vincitore */}
@@ -565,7 +602,9 @@ export default function AdminArenaPage() {
 
                     {/* Stato */}
                     <div className="w-28 flex-shrink-0 text-center">
-                      {getStatusBadge(challenge.status)}
+                      <span className="text-xs text-secondary/60">
+                        {getStatusLabel(challenge.status)}
+                      </span>
                     </div>
 
                     {/* Azioni */}

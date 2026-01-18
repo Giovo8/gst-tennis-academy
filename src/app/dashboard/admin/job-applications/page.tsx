@@ -301,41 +301,19 @@ export default function JobApplicationsPage() {
 
                   {/* Ruolo */}
                   <div className="w-32 flex-shrink-0 text-center">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${
-                      app.role === "maestro"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-purple-100 text-purple-700"
-                    }`}>
+                    <span className="text-sm font-bold text-secondary">
                       {app.role === "maestro" ? "Maestro" : "Preparatore"}
                     </span>
                   </div>
 
                   {/* Stato */}
                   <div className="w-32 flex-shrink-0 text-center">
-                    {app.status === "pending" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-700">
-                        <Clock className="h-3 w-3" />
-                        In Attesa
-                      </span>
-                    )}
-                    {app.status === "reviewed" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700">
-                        <FileText className="h-3 w-3" />
-                        Revision.
-                      </span>
-                    )}
-                    {app.status === "accepted" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
-                        <CheckCircle className="h-3 w-3" />
-                        Accettata
-                      </span>
-                    )}
-                    {app.status === "rejected" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700">
-                        <XCircle className="h-3 w-3" />
-                        Rifiutata
-                      </span>
-                    )}
+                    <span className="text-sm font-bold text-secondary">
+                      {app.status === "pending" && "In Attesa"}
+                      {app.status === "reviewed" && "Revisionata"}
+                      {app.status === "accepted" && "Accettata"}
+                      {app.status === "rejected" && "Rifiutata"}
+                    </span>
                   </div>
                 </div>
               </Link>

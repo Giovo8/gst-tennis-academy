@@ -23,13 +23,13 @@ export default function VideoLessonFormPage() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     video_url: "",
     thumbnail_url: "",
     duration_minutes: "",
-    assigned_to: "",
     category: "generale",
     level: "tutti",
   });
@@ -89,10 +89,19 @@ export default function VideoLessonFormPage() {
           video_url: data.video_url,
           thumbnail_url: data.thumbnail_url || "",
           duration_minutes: data.duration_minutes?.toString() || "",
-          assigned_to: data.assigned_to || "",
           category: data.category,
           level: data.level,
         });
+
+        // Load assigned users
+        const { data: assignments } = await supabase
+          .from("video_assignments")
+          .select("user_id")
+          .eq("video_id", videoId);
+
+        if (assignments) {
+          setSelectedUsers(assignments.map((a) => a.user_id));
+        }
       }
     } catch (error) {
       console.error("Error loading video:", error);
@@ -118,21 +127,29 @@ export default function VideoLessonFormPage() {
         video_url: formData.video_url,
         thumbnail_url: formData.thumbnail_url || null,
         duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-        assigned_to: formData.assigned_to || null,
         category: formData.category,
         level: formData.level,
         is_active: true,
       };
 
+      let currentVideoId = videoId;
+
       if (isEditMode) {
+        // Update video
         const { error } = await supabase
           .from("video_lessons")
           .update(videoData)
           .eq("id", videoId);
 
         if (error) throw error;
-        alert("Video aggiornato con successo!");
+
+        // Delete existing assignments
+        await supabase
+          .from("video_assignments")
+          .delete()
+          .eq("video_id", videoId);
       } else {
+        // Create new video
         const { data: newVideo, error } = await supabase
           .from("video_lessons")
           .insert({
@@ -143,21 +160,36 @@ export default function VideoLessonFormPage() {
           .single();
 
         if (error) throw error;
+        currentVideoId = newVideo.id;
+      }
 
-        // Send notification if video is assigned
-        if (formData.assigned_to && newVideo) {
+      // Insert new assignments
+      if (selectedUsers.length > 0 && currentVideoId) {
+        const assignments = selectedUsers.map((userId) => ({
+          video_id: currentVideoId,
+          user_id: userId,
+          assigned_by: user?.id,
+        }));
+
+        const { error: assignError } = await supabase
+          .from("video_assignments")
+          .insert(assignments);
+
+        if (assignError) throw assignError;
+
+        // Send notifications to assigned users
+        for (const userId of selectedUsers) {
           await createNotification({
-            userId: formData.assigned_to,
+            userId: userId,
             type: "general",
-            title: "Nuovo video assegnato",
-            message: `Ti è stato assegnato il video: ${formData.title}`,
+            title: isEditMode ? "Video aggiornato" : "Nuovo video assegnato",
+            message: `${isEditMode ? "È stato aggiornato" : "Ti è stato assegnato"} il video: ${formData.title}`,
             link: "/dashboard/atleta/videos",
           });
         }
-
-        alert("Video creato con successo!");
       }
 
+      alert(isEditMode ? "Video aggiornato con successo!" : "Video creato con successo!");
       router.push("/dashboard/admin/video-lessons");
     } catch (error: any) {
       console.error("Error saving video:", error);
@@ -330,23 +362,53 @@ export default function VideoLessonFormPage() {
               </select>
             </div>
 
-            {/* Assigned User */}
+            {/* Assigned Users - Multiple Selection */}
             <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
               <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
-                Assegna a Utente
+                Assegna a Utenti
               </label>
-              <select
-                value={formData.assigned_to}
-                onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              >
-                <option value="">Nessuno (generale)</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name} ({user.role})
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1">
+                <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  <label className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.length === 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedUsers([]);
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-secondary focus:ring-secondary/20"
+                    />
+                    <span className="text-sm text-secondary font-medium">Nessuno (generale)</span>
+                  </label>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  {users.map((user) => (
+                    <label key={user.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedUsers([...selectedUsers, user.id]);
+                          } else {
+                            setSelectedUsers(selectedUsers.filter((id) => id !== user.id));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-secondary focus:ring-secondary/20"
+                      />
+                      <span className="text-sm text-secondary">
+                        {user.full_name} <span className="text-secondary/60">({user.role})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {selectedUsers.length > 0 && (
+                  <p className="text-xs text-secondary/60 mt-2">
+                    {selectedUsers.length} utent{selectedUsers.length === 1 ? "e" : "i"} selezionat{selectedUsers.length === 1 ? "o" : "i"}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 

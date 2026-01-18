@@ -340,7 +340,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return "Campo";
   }
 
-  function formatDateHeader(): string {
+  function formatDateHeader(short: boolean = false): string {
+    if (short) {
+      return selectedDate.toLocaleDateString("it-IT", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
     return selectedDate.toLocaleDateString("it-IT", {
       weekday: "long",
       day: "numeric",
@@ -386,10 +394,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             value={selectedDate.toISOString().split('T')[0]}
             className="absolute opacity-0 pointer-events-none"
           />
-          <h2 className={`text-sm sm:text-base md:text-lg font-bold capitalize ${
+          <h2 className={`text-base sm:text-lg font-bold capitalize ${
             isToday() ? 'text-white' : 'text-secondary'
           }`}>
-            {formatDateHeader()}
+            <span className="hidden sm:inline">{formatDateHeader()}</span>
+            <span className="sm:hidden">{formatDateHeader(true)}</span>
           </h2>
         </div>
 
@@ -411,137 +420,145 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto scrollbar-hide">
-            <div className="min-w-[800px] md:min-w-[1400px]">
+            <div style={{ minWidth: '1380px' }}>
               {/* Header Row with Time Slots */}
-              <div className="grid grid-cols-[120px_repeat(16,_minmax(60px,_1fr))] md:grid-cols-[180px_repeat(16,_minmax(80px,_1fr))] bg-secondary border border-secondary rounded-lg mb-3">
-                <div className="p-2 sm:p-3 md:p-4 flex items-center justify-center">
-                  <span className="font-bold text-white uppercase tracking-wide text-[10px] sm:text-[11px]">Campo</span>
+              <div className="flex bg-secondary rounded-lg mb-3">
+                <div className="w-[100px] flex-shrink-0 p-3 flex items-center justify-center">
+                  <span className="font-bold text-white uppercase tracking-wide text-[11px]">Campo</span>
                 </div>
-                {TIME_SLOTS.map((time) => (
-                  <div
-                    key={time}
-                    className="p-1.5 sm:p-2 md:p-3 text-center font-bold text-white text-[10px] sm:text-xs flex items-center justify-center"
-                  >
-                    {time}
-                  </div>
-                ))}
+                <div className="flex-1 grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
+                  {TIME_SLOTS.map((time) => (
+                    <div
+                      key={time}
+                      className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                    >
+                      {time}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Court Rows */}
               <div className="space-y-3">
               {courts.map((court) => {
                 const slots = courtTimeline[court] || [];
-                
+
                 return (
                   <div
                     key={court}
-                    className="grid grid-cols-[120px_repeat(16,_minmax(60px,_1fr))] md:grid-cols-[180px_repeat(16,_minmax(80px,_1fr))] hover:bg-gray-50/50 transition-colors bg-white border border-gray-200 rounded-lg"
-                    style={{ minHeight: "70px" }}
+                    className="flex hover:bg-gray-50/50 transition-colors bg-white border border-gray-200 rounded-lg"
                   >
                     {/* Court Name */}
-                    <div className="p-2 sm:p-3 md:p-4 bg-white font-bold text-secondary text-xs sm:text-sm flex items-center justify-center border-r border-gray-200">
+                    <div className="w-[100px] flex-shrink-0 p-3 bg-white font-bold text-secondary text-sm flex items-center justify-center border-r border-gray-200 rounded-l-lg">
                       {court}
                     </div>
 
-                    {/* Time Slots for this Court */}
-                    {slots.map((slot, index) => {
-                      // If there's a booking starting here
-                      if (slot.booking && slot.isStart) {
-                        const bookingStyle = getBookingStyle(slot.booking);
-                        const isLesson = slot.booking.type === "lezione_privata" || slot.booking.type === "lezione_gruppo";
+                    {/* Time Slots Container */}
+                    <div className="flex-1 grid timeline-grid relative" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
+                      {/* Prenotazioni esistenti come blocchi sovrapposti */}
+                      {bookingsForSelectedDate
+                        .filter(b => b.court === court)
+                        .map((booking) => {
+                          const start = new Date(booking.start_time);
+                          const end = new Date(booking.end_time);
+                          const startHour = start.getHours();
+                          const startMinute = start.getMinutes();
+                          const endHour = end.getHours();
+                          const endMinute = end.getMinutes();
 
-                        return (
-                          <div
-                            key={`${court}-${index}`}
-                            className="border-r border-gray-200 last:border-r-0 relative"
-                            style={{ gridColumn: `span ${slot.colspan}` }}
-                          >
-                            {/* Half hour markers */}
-                            {Array.from({ length: slot.colspan }).map((_, i) => (
-                              <div
-                                key={i}
-                                className="absolute w-px h-4 bg-gray-300 bottom-0"
-                                style={{ left: `${(i + 0.5) / slot.colspan * 100}%`, transform: 'translateX(-50%)' }}
-                              />
-                            ))}
-                            {/* Booking block */}
+                          const startSlot = (startHour - 7) * 2 + (startMinute >= 30 ? 1 : 0);
+                          const endSlot = (endHour - 7) * 2 + (endMinute > 0 ? (endMinute > 30 ? 2 : 1) : 0);
+                          const duration = endSlot - startSlot;
+
+                          if (startSlot < 0 || duration <= 0) return null;
+
+                          const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+
+                          return (
                             <div
+                              key={booking.id}
                               onClick={() => {
-                                if (!slot.booking) return;
-                                if (slot.booking.isBlock) {
-                                  router.push(`/dashboard/admin/courts/${slot.booking.id}`);
+                                if (booking.isBlock) {
+                                  router.push(`/dashboard/admin/courts/${booking.id}`);
                                 } else {
-                                  router.push(`/dashboard/admin/bookings/${slot.booking.id}`);
+                                  router.push(`/dashboard/admin/bookings/${booking.id}`);
                                 }
                               }}
-                              className="relative p-1.5 sm:p-2 md:p-2.5 text-white text-[10px] sm:text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 hover:scale-[1.02] transition-all cursor-pointer active:scale-95 z-10"
-                              style={bookingStyle}
-                              title={`Clicca per vedere i dettagli${slot.booking.isBlock ? '' : ` - ${slot.booking.user_profile?.full_name}`}`}
+                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 hover:scale-[1.02] transition-all cursor-pointer active:scale-95"
+                              style={{
+                                ...getBookingStyle(booking),
+                                left: `${(startSlot / 32) * 100}%`,
+                                width: `calc(${(duration / 32) * 100}% - 4px)`,
+                                top: '4px',
+                                bottom: '4px',
+                                marginLeft: '2px'
+                              }}
+                              title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${booking.user_profile?.full_name}`}`}
                             >
-                              {slot.booking.isBlock ? (
+                              {booking.isBlock ? (
                                 <>
                                   <div className="truncate leading-tight">
-                                    {getBookingLabel(slot.booking)}
+                                    {getBookingLabel(booking)}
                                   </div>
-                                  <div className="text-white/90 text-[10px] mt-1 uppercase tracking-wide leading-tight">
-                                    CAMPO BLOCCATO
+                                  <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                    BLOCCATO
                                   </div>
                                 </>
                               ) : (
                                 <>
                                   <div className="truncate leading-tight">
-                                    {slot.booking.user_profile?.full_name || "Sconosciuto"}
+                                    {booking.user_profile?.full_name || "Sconosciuto"}
                                   </div>
-                                  {isLesson && slot.booking.coach_profile && (
-                                    <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
-                                      {slot.booking.coach_profile.full_name}
+                                  {isLesson && booking.coach_profile && (
+                                    <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                      {booking.coach_profile.full_name}
                                     </div>
                                   )}
-                                  <div className="text-white/90 text-[10px] mt-1 uppercase tracking-wide leading-tight">
-                                    {getBookingLabel(slot.booking)}
+                                  <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                    {getBookingLabel(booking)}
                                   </div>
-                                  {!slot.booking.manager_confirmed && slot.booking.status !== "cancelled" && (
-                                    <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full shadow-sm" title="Da approvare" />
+                                  {!booking.manager_confirmed && booking.status !== "cancelled" && (
+                                    <div className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full shadow-sm" title="Da approvare" />
                                   )}
                                 </>
                               )}
                             </div>
+                          );
+                        })}
+
+                      {/* Slot cliccabili - sempre 16 */}
+                      {Array.from({ length: 16 }, (_, hourIndex) => {
+                        const hour = 7 + hourIndex;
+                        const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                        const time2 = `${hour.toString().padStart(2, '0')}:30`;
+                        const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
+                        const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
+
+                        return (
+                          <div
+                            key={`${court}-${hour}`}
+                            className="border-r border-gray-200 last:border-r-0 relative flex"
+                          >
+                            {/* Prima metà - :00 */}
+                            <div
+                              onClick={() => toggleSlotSelection(court, time1)}
+                              className={`flex-1 transition-colors cursor-pointer ${
+                                isSelected1 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
+                              }`}
+                            />
+                            {/* Seconda metà - :30 */}
+                            <div
+                              onClick={() => toggleSlotSelection(court, time2)}
+                              className={`flex-1 transition-colors cursor-pointer ${
+                                isSelected2 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
+                              }`}
+                            />
+                            {/* Tacchetta centrale */}
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                           </div>
                         );
-                      }
-
-                      // Empty slot - diviso in due metà da 30 minuti
-                      const timeSlot = TIME_SLOTS[index];
-                      const [hour] = timeSlot.split(":").map(Number);
-                      const time1 = `${hour.toString().padStart(2, '0')}:00`;
-                      const time2 = `${hour.toString().padStart(2, '0')}:30`;
-                      const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
-                      const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
-
-                      return (
-                        <div
-                          key={`${court}-${index}`}
-                          className="border-r border-gray-200 last:border-r-0 relative flex"
-                        >
-                          {/* Prima metà - :00 */}
-                          <div
-                            onClick={() => toggleSlotSelection(court, time1)}
-                            className={`flex-1 transition-colors cursor-pointer ${
-                              isSelected1 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
-                            }`}
-                          />
-                          {/* Seconda metà - :30 */}
-                          <div
-                            onClick={() => toggleSlotSelection(court, time2)}
-                            className={`flex-1 transition-colors cursor-pointer ${
-                              isSelected2 ? 'bg-secondary' : 'bg-white hover:bg-emerald-50/40'
-                            }`}
-                          />
-                          {/* Tacchetta centrale */}
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
-                        </div>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -551,12 +568,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
           {/* Book Button */}
           {selectedSlots.length > 0 && (
-            <div className="mt-4 sm:mt-6">
+            <div className="mt-6">
               <button
                 onClick={handleBookSlots}
-                className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="w-full px-6 py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
-                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <CalendarIcon className="h-5 w-5" />
                 Prenota Campo ({selectedSlots.length} slot selezionat{selectedSlots.length === 1 ? 'o' : 'i'})
               </button>
             </div>
