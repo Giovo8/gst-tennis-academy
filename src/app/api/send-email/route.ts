@@ -3,14 +3,19 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { logActivityServer } from "@/lib/activity/logActivity";
 
-// Initialize Resend for email sending
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // Initialize Supabase client with service role for admin operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Initialize Resend lazily to avoid errors during build when API key is not present
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,6 +62,7 @@ export async function POST(request: NextRequest) {
     // Send emails to all recipients
     const emailPromises = recipientEmails.map(async (email: string) => {
       try {
+        const resend = getResendClient();
         const result = await resend.emails.send({
           from: fromAddress,
           to: email,
