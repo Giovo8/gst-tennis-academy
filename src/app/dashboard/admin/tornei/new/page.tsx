@@ -167,17 +167,17 @@ export default function NewTournamentPage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+          <p className="breadcrumb text-secondary/60">
             <Link
               href="/dashboard/admin/tornei"
               className="hover:text-secondary/80 transition-colors"
             >
               Gestione Competizioni
             </Link>
-            <span className="mx-2">›</span>
+            {" › "}
             <span>Nuovo Torneo</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Crea nuovo torneo</h1>
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea nuovo torneo</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
             Configura e crea un nuovo torneo o campionato per la GST Tennis Academy
           </p>
@@ -209,17 +209,17 @@ export default function NewTournamentPage() {
       <form onSubmit={handleSubmit}>
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
           {/* Tipo competizione */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Tipo competizione *
             </label>
-            <div className="flex-1 flex gap-3 flex-wrap">
+            <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3 flex-wrap">
               {tournamentTypes.map((type) => (
                 <button
                   key={type.id}
                   type="button"
                   onClick={() => handleTypeSelect(type.id)}
-                  className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                  className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                     formData.tournament_type === type.id
                       ? 'bg-secondary text-white border-secondary'
                       : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -233,11 +233,11 @@ export default function NewTournamentPage() {
 
           {/* Numero partecipanti - Eliminazione Diretta */}
           {formData.tournament_type === 'eliminazione_diretta' && (
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                 Numero partecipanti *
               </label>
-              <div className="flex-1 flex gap-3 flex-wrap">
+              <div className="flex-1 flex flex-row gap-2 sm:gap-3 flex-wrap">
                 {eliminationSizes.map(size => (
                   <button
                     key={size}
@@ -259,8 +259,8 @@ export default function NewTournamentPage() {
           {/* Configurazione Gironi */}
           {formData.tournament_type === 'girone_eliminazione' && (
             <>
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Numero gironi *
                 </label>
                 <div className="flex-1">
@@ -270,13 +270,13 @@ export default function NewTournamentPage() {
                     max="8"
                     value={formData.num_groups}
                     onChange={(e) => handleGroupConfigChange('num_groups', Number(e.target.value))}
-                    className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
                   />
                 </div>
               </div>
 
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Squadre per girone *
                 </label>
                 <div className="flex-1">
@@ -286,13 +286,13 @@ export default function NewTournamentPage() {
                     max="8"
                     value={formData.teams_per_group}
                     onChange={(e) => handleGroupConfigChange('teams_per_group', Number(e.target.value))}
-                    className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
                   />
                 </div>
               </div>
 
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Qualificati per girone *
                 </label>
                 <div className="flex-1">
@@ -302,13 +302,13 @@ export default function NewTournamentPage() {
                     max={formData.teams_per_group - 1}
                     value={formData.teams_advancing}
                     onChange={(e) => handleGroupConfigChange('teams_advancing', Number(e.target.value))}
-                    className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
                   />
                 </div>
               </div>
 
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Partecipanti totali
                 </label>
                 <div className="flex-1">
@@ -316,7 +316,7 @@ export default function NewTournamentPage() {
                     type="number"
                     value={formData.max_participants}
                     readOnly
-                    className="w-full max-w-xs rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary"
                   />
                 </div>
               </div>
@@ -325,8 +325,8 @@ export default function NewTournamentPage() {
 
           {/* Numero partecipanti - Campionato */}
           {formData.tournament_type === 'campionato' && (
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                 Numero partecipanti *
               </label>
               <div className="flex-1">
@@ -336,15 +336,15 @@ export default function NewTournamentPage() {
                   max="30"
                   value={formData.max_participants}
                   onChange={(e) => handleParticipantsChange(Number(e.target.value))}
-                  className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
                 />
               </div>
             </div>
           )}
 
           {/* Nome torneo */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Nome torneo *
             </label>
             <div className="flex-1">
@@ -360,8 +360,8 @@ export default function NewTournamentPage() {
           </div>
 
           {/* Descrizione */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Descrizione
             </label>
             <div className="flex-1">
@@ -376,18 +376,18 @@ export default function NewTournamentPage() {
           </div>
 
           {/* Date */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Date
             </label>
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-secondary/60 mb-1.5 block">Data inizio</label>
                 <input
                   type="date"
                   value={formData.start_date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
                 />
               </div>
               <div>
@@ -396,22 +396,22 @@ export default function NewTournamentPage() {
                   type="date"
                   value={formData.end_date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
                 />
               </div>
             </div>
           </div>
 
           {/* Categoria */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Categoria
             </label>
             <div className="flex-1">
               <select
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
               >
                 <option value="Open">Open</option>
                 <option value="Under 18">Under 18</option>
@@ -423,15 +423,15 @@ export default function NewTournamentPage() {
           </div>
 
           {/* Formato partita */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Formato partita
             </label>
             <div className="flex-1">
               <select
                 value={formData.match_format}
                 onChange={(e) => setFormData(prev => ({ ...prev, match_format: e.target.value }))}
-                className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
               >
                 <option value="best_of_3">Al meglio di 3 set</option>
                 <option value="best_of_5">Al meglio di 5 set</option>
@@ -441,8 +441,8 @@ export default function NewTournamentPage() {
           </div>
 
           {/* Extra */}
-          <div className="flex items-start gap-8">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Extra
             </label>
             <div className="flex-1">

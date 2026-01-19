@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
 import Link from "next/link";
@@ -14,7 +15,7 @@ import {
   Filter,
   Download,
   Plus,
-  Edit,
+  Pencil,
   Trash2,
   Check,
   X,
@@ -55,6 +56,7 @@ type BookingsPageProps = {
 };
 
 export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -433,7 +435,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <span>Storico</span>
             </div>
           )}
-          <h1 className="text-3xl font-bold text-secondary mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">
             {mode === "history" ? "Storico prenotazioni" : "Gestione Prenotazioni"}
           </h1>
           <p className="text-secondary/70 font-medium">
@@ -623,8 +625,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                 className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                 style={borderStyle}
               >
-                <Link
-                  href={`/dashboard/admin/bookings/${booking.id}`}
+                <div
+                  onClick={() => router.push(`/dashboard/admin/bookings/${booking.id}`)}
                   className="grid grid-cols-[40px_80px_56px_80px_100px_100px_1fr_60px_64px] items-center gap-4 no-underline"
                 >
                     {/* Simbolo Tipo */}
@@ -689,14 +691,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     </div>
 
                     {/* Azioni */}
-                    <div className="flex items-center justify-center gap-0.5">
+                    <div className="flex items-center justify-center gap-1">
                       <Link
-                        href={`/dashboard/admin/bookings/${booking.id}/edit`}
+                        href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none"
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none w-8 h-8"
                         title="Modifica prenotazione"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Link>
                       <button
                         type="button"
@@ -707,13 +709,13 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                             deleteBooking(booking.id);
                           }
                         }}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#022431] transition-all focus:outline-none border-0 bg-transparent"
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-all focus:outline-none w-8 h-8"
                         title="Elimina prenotazione"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
-                  </Link>
+                  </div>
                 </div>
             );
           })}

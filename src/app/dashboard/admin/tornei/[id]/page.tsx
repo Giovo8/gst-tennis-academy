@@ -388,16 +388,11 @@ function AdminTournamentDetailInner() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-        <Link
-          href="/dashboard/admin/tornei"
-          className="hover:text-secondary/80 transition-colors"
-        >
-          Gestione Competizioni
-        </Link>
-        <span className="mx-2">›</span>
+      <p className="breadcrumb text-secondary/60">
+        <Link href="/dashboard/admin/tornei" className="hover:text-secondary/80 transition-colors">Gestione Competizioni</Link>
+        {" › "}
         <span>Dettagli Torneo</span>
-      </div>
+      </p>
 
       {!hasValidId && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
@@ -415,18 +410,18 @@ function AdminTournamentDetailInner() {
       {/* Header con titolo e descrizione */}
       {hasValidId && !loading && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Dettagli Competizione
-          </h1>
-          <p className="text-secondary/70 font-medium">
-            Visualizza e gestisci i dettagli della competizione
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleDeleteTournament}
-            disabled={deleting}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">
+              Dettagli Competizione
+            </h1>
+            <p className="text-secondary/70 font-medium">
+              Visualizza e gestisci i dettagli della competizione
+            </p>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleDeleteTournament}
+              disabled={deleting}
             className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="Elimina Torneo"
           >
@@ -536,7 +531,7 @@ function AdminTournamentDetailInner() {
               </button>
             </>
           )}
-        </div>
+          </div>
         </div>
       )}
 
@@ -569,8 +564,8 @@ function AdminTournamentDetailInner() {
           <div className="space-y-6">
             {/* Descrizione */}
             {tournament.description && (
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">{tournament.description}</p>
                 </div>
@@ -579,8 +574,8 @@ function AdminTournamentDetailInner() {
 
             {/* Data Inizio */}
             {tournament.start_date && (
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
                     {new Date(tournament.start_date).toLocaleDateString("it-IT", {
@@ -595,11 +590,11 @@ function AdminTournamentDetailInner() {
             )}
 
             {/* Tipo */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
-                  {isCampionato ? 'Campionato' : 
+                  {isCampionato ? 'Campionato' :
                    (tournament.tournament_type === 'girone_eliminazione' || tournament.competition_type === 'girone_eliminazione') ? 'Girone + Eliminazione' :
                    'Eliminazione Diretta'}
                 </p>
@@ -607,8 +602,8 @@ function AdminTournamentDetailInner() {
             </div>
 
             {/* Stato */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
               </div>
@@ -616,8 +611,8 @@ function AdminTournamentDetailInner() {
 
             {/* Fase Corrente */}
             {meta && (
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Fase corrente</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Fase corrente</label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold capitalize">{meta.currentPhase}</p>
                 </div>
@@ -625,8 +620,8 @@ function AdminTournamentDetailInner() {
             )}
 
             {/* Partecipanti */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {meta?.participantsCount ?? 0} / {tournament.max_participants}
@@ -641,8 +636,8 @@ function AdminTournamentDetailInner() {
 
             {/* Categoria */}
             {tournament.category && (
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">{tournament.category}</p>
                 </div>
@@ -651,8 +646,8 @@ function AdminTournamentDetailInner() {
 
             {/* Formato Partita */}
             {tournament.match_format && (
-              <div className="flex items-start gap-8">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">
                     {tournament.match_format === 'best_of_3' ? 'Al meglio di 3 set' :

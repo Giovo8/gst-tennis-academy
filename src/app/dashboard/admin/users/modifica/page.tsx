@@ -52,26 +52,11 @@ export default function ModificaUtentePage() {
   });
 
   const roleLabels = {
-    admin: { label: "Admin", icon: Crown },
-    gestore: { label: "Gestore", icon: Home },
-    maestro: { label: "Maestro", icon: GraduationCap },
-    atleta: { label: "Atleta", icon: UserCheck },
+    admin: { label: "Admin", icon: Crown, borderColor: "#022431" },
+    gestore: { label: "Gestore", icon: Home, borderColor: "#044462" },
+    maestro: { label: "Maestro", icon: GraduationCap, borderColor: "#056c94" },
+    atleta: { label: "Atleta", icon: UserCheck, borderColor: "#08b3f7" },
   };
-
-  function getRoleBorderColor(role: string) {
-    switch (role) {
-      case "admin":
-        return "border-l-red-500";
-      case "gestore":
-        return "border-l-purple-500";
-      case "maestro":
-        return "border-l-blue-500";
-      case "atleta":
-        return "border-l-secondary";
-      default:
-        return "border-l-secondary";
-    }
-  }
 
   useEffect(() => {
     if (userId) {
@@ -368,92 +353,81 @@ export default function ModificaUtentePage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+          <p className="breadcrumb text-secondary/60 mb-1">
             <Link
               href="/dashboard/admin/users"
               className="hover:text-secondary/80 transition-colors"
             >
-              Anagrafica Utenti
+              Gestione Utenti
             </Link>
-            <span className="mx-2">›</span>
+            {" › "}
             <span>Modifica Utente</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Modifica Utente</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Aggiorna le informazioni dell'utente {user.full_name || user.email}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica Utente</h1>
+          <p className="text-secondary/70 text-sm mt-1">
+            Aggiorna le informazioni dell'utente
           </p>
         </div>
       </div>
 
       {/* Avatar Card */}
       <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: (() => {
-          if (formData.role === "admin") return "#ef4444"; // red
-          if (formData.role === "gestore") return "#a855f7"; // purple
-          if (formData.role === "maestro") return "#3b82f6"; // blue
-          return "#034863"; // secondary
-        })() }}
+        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-4 sm:p-6 border-l-4"
+        style={{ borderLeftColor: roleLabels[formData.role].borderColor }}
       >
-        <div className="flex items-start gap-6">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden">
-              {user.avatar_url ? (
+        <div className="flex items-center gap-4 sm:gap-6">
+          <button
+            type="button"
+            onClick={() => setShowAvatarModal(true)}
+            disabled={uploadingAvatar}
+            className="relative flex-shrink-0 group cursor-pointer disabled:cursor-not-allowed"
+          >
+            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden group-hover:bg-white/30 transition-all">
+              {uploadingAvatar ? (
+                <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-white" />
+              ) : user.avatar_url ? (
                 <img
                   src={user.avatar_url}
                   alt={user.full_name || "Avatar"}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-3xl font-bold text-white">
+                <span className="text-2xl sm:text-3xl font-bold text-white">
                   {getInitials(user.full_name, user.email)}
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowAvatarModal(true)}
-              disabled={uploadingAvatar}
-              className="absolute -bottom-2 -right-2 p-2 rounded-lg bg-white text-secondary hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {uploadingAvatar ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Camera className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+            {!uploadingAvatar && (
+              <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                <Camera className="h-5 w-5 sm:h-6 sm:w-6 text-white opacity-0 group-hover:opacity-100 transition-all" />
+              </div>
+            )}
+          </button>
 
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white mb-1">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-white truncate">
               {user.full_name || "Nome non impostato"}
             </h2>
-            <p className="text-white/70 text-sm font-medium mb-2">{user.email}</p>
-            <span className="inline-block px-3 py-1 text-xs font-bold rounded-lg bg-white/20 text-white border border-white/30">
-              {roleLabels[formData.role].label}
-            </span>
           </div>
         </div>
       </div>
 
       <form onSubmit={updateUser} className="space-y-6">
         {/* Sezione Dati Anagrafici */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-bold text-secondary mb-6 pb-4 border-b border-gray-200">
-            Dati Anagrafici
-          </h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-secondary">Dati Anagrafici</h2>
+          </div>
           <div className="space-y-6">
             {/* Nome Completo */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Nome Completo *
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome Completo *</label>
               <div className="flex-1">
                 <input
                   type="text"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                   placeholder="Mario Rossi"
                   required
                 />
@@ -461,16 +435,14 @@ export default function ModificaUtentePage() {
             </div>
 
             {/* Email */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Email *
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email *</label>
               <div className="flex-1">
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                   placeholder="utente@esempio.com"
                   required
                 />
@@ -478,180 +450,149 @@ export default function ModificaUtentePage() {
             </div>
 
             {/* Telefono */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Telefono
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
               <div className="flex-1">
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                   placeholder="+39 123 456 7890"
                 />
               </div>
             </div>
 
             {/* Data di nascita */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Data di Nascita
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
               <div className="flex-1">
                 <input
                   type="date"
                   value={formData.date_of_birth}
                   onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                 />
               </div>
             </div>
 
             {/* Città di Nascita */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Città di Nascita
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Città di Nascita</label>
               <div className="flex-1">
                 <input
                   type="text"
                   value={formData.birth_city}
                   onChange={(e) => setFormData({ ...formData, birth_city: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                   placeholder="Roma"
                 />
               </div>
             </div>
 
             {/* Codice Fiscale */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Codice Fiscale
-            </label>
-            <div className="flex-1">
-              <input
-                type="text"
-                value={formData.fiscal_code}
-                onChange={(e) => setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase"
-                placeholder="RSSMRA80A01H501U"
-                maxLength={16}
-              />
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={formData.fiscal_code}
+                  onChange={(e) => setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase"
+                  placeholder="RSSMRA80A01H501U"
+                  maxLength={16}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Residenza - Indirizzo */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Indirizzo
-            </label>
-            <div className="flex-1">
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                placeholder="Via Roma, 123"
-              />
+            {/* Residenza - Indirizzo */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  placeholder="Via Roma, 123"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Residenza - Città, Provincia, CAP */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Città / Provincia / CAP
-              </label>
-              <div className="flex-1 flex gap-3">
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="flex-1 px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                placeholder="Milano"
-              />
-              <input
-                type="text"
-                value={formData.province}
-                onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
-                className="w-20 px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
-                placeholder="MI"
-                maxLength={2}
-              />
-              <input
-                type="text"
-                value={formData.postal_code}
-                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                className="w-28 px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                placeholder="20100"
-                maxLength={5}
-              />
+            {/* Residenza - Città, Provincia, CAP */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Città / Provincia / CAP</label>
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  placeholder="Milano"
+                />
+                <div className="flex gap-2 sm:gap-3">
+                  <input
+                    type="text"
+                    value={formData.province}
+                    onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
+                    className="w-20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
+                    placeholder="MI"
+                    maxLength={2}
+                  />
+                  <input
+                    type="text"
+                    value={formData.postal_code}
+                    onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                    className="w-24 sm:w-28 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    placeholder="20100"
+                    maxLength={5}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Rank Arena */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Rank Arena
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank Arena</label>
               <div className="flex-1">
-              <div className="flex gap-2">
-                {[
-                  { value: "Bronzo", points: "0 punti" },
-                  { value: "Argento", points: "800 punti" },
-                  { value: "Oro", points: "1500 punti" },
-                  { value: "Platino", points: "2000 punti" },
-                  { value: "Diamante", points: "2500 punti" }
-                ].map((rank) => (
-                  <button
-                    key={rank.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, arena_rank: rank.value as any })}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-lg border transition-all ${
-                      formData.arena_rank === rank.value
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                    }`}
-                  >
-                    <div className="font-semibold">{rank.value}</div>
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-secondary/50 mt-2">
-                ⚠️ Modificare il rank resetterà i punti Arena dell'utente
-              </p>
-              </div>
-            </div>
-
-            {/* Note */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Note
-              </label>
-              <div className="flex-1">
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
-                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
-                placeholder="Informazioni aggiuntive, problemi di salute, preferenze..."
-              />
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {[
+                    { value: "Bronzo" },
+                    { value: "Argento" },
+                    { value: "Oro" },
+                    { value: "Platino" },
+                    { value: "Diamante" }
+                  ].map((rank) => (
+                    <button
+                      key={rank.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, arena_rank: rank.value as any })}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        formData.arena_rank === rank.value
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {rank.value}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-secondary/50 mt-3">
+                  Modificare il rank resetterà i punti Arena dell'utente
+                </p>
               </div>
             </div>
 
             {/* Ruolo */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Ruolo *
-              </label>
-              <div className="flex-1">
-              <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo *</label>
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                 {Object.entries(roleLabels).map(([role, info]) => (
                   <button
                     key={role}
                     type="button"
                     onClick={() => setFormData({ ...formData, role: role as any })}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-lg border transition-all ${
+                    className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                       formData.role === role
                         ? 'bg-secondary text-white border-secondary'
                         : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -661,40 +602,46 @@ export default function ModificaUtentePage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Note */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+              <div className="flex-1">
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Eventuali note..."
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                />
               </div>
             </div>
           </div>
         </div>
 
         {/* Sezione Info Sistema */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-bold text-secondary mb-6 pb-4 border-b border-gray-200">
-            Info Sistema
-          </h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-secondary">Info Sistema</h2>
+          </div>
           <div className="space-y-6">
             {/* ID Utente */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                ID Utente
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
               <div className="flex-1">
                 <input
                   type="text"
                   value={user?.id || ""}
                   readOnly
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-gray-50 text-secondary/70 cursor-not-allowed"
+                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
                 />
-                <p className="text-xs text-secondary/50 mt-2">
-                  Identificativo univoco nel database (non modificabile)
-                </p>
               </div>
             </div>
 
             {/* Data Registrazione */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Data Registrazione
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
               <div className="flex-1">
                 <input
                   type="text"
@@ -706,111 +653,58 @@ export default function ModificaUtentePage() {
                     minute: "2-digit"
                   }) : ""}
                   readOnly
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-gray-50 text-secondary/70 cursor-not-allowed"
+                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-secondary/70 cursor-not-allowed"
                 />
-                <p className="text-xs text-secondary/50 mt-2">
-                  Data e ora di creazione dell'account (non modificabile)
-                </p>
               </div>
             </div>
 
             {/* Arena Stats */}
             {arenaStats && (
-              <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-                <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Statistiche Arena
-                </label>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Statistiche Arena</label>
                 <div className="flex-1">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="text-xs text-secondary/60 mb-1">Punti Attuali</div>
-                      <div className="text-2xl font-bold text-secondary">{arenaStats.points || 0}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <div className="text-xs text-secondary/60 mb-1">Punti</div>
+                      <div className="text-lg font-bold text-secondary">{arenaStats.points || 0}</div>
                     </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
                       <div className="text-xs text-secondary/60 mb-1">Ranking</div>
-                      <div className="text-2xl font-bold text-secondary">#{arenaStats.ranking || "-"}</div>
+                      <div className="text-lg font-bold text-secondary">#{arenaStats.ranking || "-"}</div>
                     </div>
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <div className="text-xs text-green-700 mb-1">Vittorie</div>
-                      <div className="text-2xl font-bold text-green-700">{arenaStats.wins || 0}</div>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <div className="text-xs text-secondary/60 mb-1">Vittorie</div>
+                      <div className="text-lg font-bold text-green-600">{arenaStats.wins || 0}</div>
                     </div>
-                    <div className="p-4 bg-red-50 rounded-lg">
-                      <div className="text-xs text-red-700 mb-1">Sconfitte</div>
-                      <div className="text-2xl font-bold text-red-700">{arenaStats.losses || 0}</div>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <div className="text-xs text-secondary/60 mb-1">Sconfitte</div>
+                      <div className="text-lg font-bold text-red-600">{arenaStats.losses || 0}</div>
                     </div>
                   </div>
-                  <p className="text-xs text-secondary/50 mt-3">
-                    Le statistiche Arena vengono aggiornate automaticamente dopo ogni match
-                  </p>
                 </div>
               </div>
             )}
-
-            {/* Tipo Abbonamento */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Tipo Abbonamento
-              </label>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={formData.subscription_type}
-                  onChange={(e) => setFormData({ ...formData, subscription_type: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  placeholder="Es. Mensile, Annuale, Clinic Pack"
-                />
-              </div>
-            </div>
-
-            {/* Notifiche Email */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Notifiche Email
-              </label>
-              <div className="flex-1">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.email_notifications_enabled}
-                    onChange={(e) => setFormData({ ...formData, email_notifications_enabled: e.target.checked })}
-                    className="w-5 h-5 rounded border-secondary/20 text-secondary focus:ring-secondary/20"
-                  />
-                  <div>
-                    <div className="text-sm font-medium text-secondary">Abilitate</div>
-                    <p className="text-xs text-secondary/60">L'utente riceverà email per prenotazioni, tornei e messaggi importanti</p>
-                  </div>
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={updating}
-            className="px-8 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            {updating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Salvataggio...
-              </>
-            ) : (
-              <>
-                <Check className="h-4 w-4" />
-                Salva Modifiche
-              </>
-            )}
-          </button>
-          <Link
-            href="/dashboard/admin/users"
-            className="px-8 py-3 text-sm font-semibold text-secondary/70 bg-white border-2 border-secondary/20 rounded-lg hover:border-secondary/40 transition-all"
-          >
-            Annulla
-          </Link>
-        </div>
+        <button
+          type="submit"
+          disabled={updating}
+          className="w-full px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {updating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Salvataggio...
+            </>
+          ) : (
+            <>
+              <Check className="h-4 w-4" />
+              Salva Modifiche
+            </>
+          )}
+        </button>
       </form>
 
       {/* Avatar Modal */}

@@ -142,7 +142,7 @@ function RegisterForm() {
         // Recupera il codice invito per verificare max_uses
         const { data: inviteCodeData } = await supabase
           .from("invite_codes")
-          .select("max_uses, uses_remaining")
+          .select("id, max_uses, uses_remaining")
           .eq("code", inviteCode)
           .single();
 
@@ -158,6 +158,33 @@ function RegisterForm() {
           .from("invite_codes")
           .update(updateData)
           .eq("code", inviteCode);
+
+        // Record invite code usage in invite_code_uses table
+        if (inviteCodeData?.id) {
+          await supabase
+            .from("invite_code_uses")
+            .insert({
+              invite_code_id: inviteCodeData.id,
+              user_id: authData.user.id,
+            });
+
+          // Log the invite code usage
+          await fetch("/api/activity-logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "invite_code_used",
+              entity_type: "invite_code",
+              entity_id: inviteCodeData.id,
+              metadata: {
+                code: inviteCode,
+                role: codeRole,
+                user_id: authData.user.id,
+                user_email: emailToUse,
+              },
+            }),
+          });
+        }
 
         // Login automatico e redirect alla dashboard
         const { error: signInError } = await supabase.auth.signInWithPassword({

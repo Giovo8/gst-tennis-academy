@@ -53,6 +53,44 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  
+  // Drag to scroll
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  // Drag to scroll handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineScrollRef.current) return;
+    isDragging.current = true;
+    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
+    scrollLeft.current = timelineScrollRef.current.scrollLeft;
+    timelineScrollRef.current.style.cursor = 'grabbing';
+    timelineScrollRef.current.style.userSelect = 'none';
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !timelineScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - timelineScrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2;
+    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.style.cursor = 'grab';
+      timelineScrollRef.current.style.userSelect = 'auto';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging.current) {
+      handleMouseUp();
+    }
+  };
 
   // Load courts from database on mount
   useEffect(() => {
@@ -420,8 +458,16 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="overflow-x-auto scrollbar-hide">
-            <div style={{ minWidth: '1380px' }}>
+          <div 
+            ref={timelineScrollRef}
+            className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+            style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+          >
+            <div className="min-w-[1380px]">
               {/* Header Row with Time Slots */}
               <div className="flex bg-secondary rounded-lg mb-3">
                 <div className="w-[100px] flex-shrink-0 p-3 flex items-center justify-center">

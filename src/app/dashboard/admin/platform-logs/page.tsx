@@ -201,6 +201,7 @@ export default function PlatformLogsPage() {
     if (action.includes("user")) return <User className="w-5 h-5 text-purple-500" />;
     if (action.includes("booking")) return <Calendar className="w-5 h-5 text-green-500" />;
     if (action.includes("tournament")) return <Trophy className="w-5 h-5 text-yellow-500" />;
+    if (action.includes("invite_code")) return <Ticket className="w-5 h-5 text-purple-500" />;
     return <Activity className="w-5 h-5 text-secondary" />;
   };
 

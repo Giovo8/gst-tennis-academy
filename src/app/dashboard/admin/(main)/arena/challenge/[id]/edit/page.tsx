@@ -150,6 +150,44 @@ export default function AdminEditChallengePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  // Drag to scroll
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  // Drag to scroll handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineScrollRef.current) return;
+    isDragging.current = true;
+    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
+    scrollLeft.current = timelineScrollRef.current.scrollLeft;
+    timelineScrollRef.current.style.cursor = 'grabbing';
+    timelineScrollRef.current.style.userSelect = 'none';
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !timelineScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - timelineScrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2;
+    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.style.cursor = 'grab';
+      timelineScrollRef.current.style.userSelect = 'auto';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging.current) {
+      handleMouseUp();
+    }
+  };
 
   useEffect(() => {
     loadPlayers();
@@ -769,8 +807,16 @@ export default function AdminEditChallengePage() {
                   <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
                   
                   {/* Timeline orizzontale */}
-                  <div className="overflow-x-auto scrollbar-hide">
-                    <div style={{ minWidth: '1280px' }}>
+                  <div 
+                    ref={timelineScrollRef}
+                    className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                    style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div className="min-w-[1280px]">
                       {/* Header con orari */}
                       <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
                         {Array.from({ length: 16 }, (_, i) => {
