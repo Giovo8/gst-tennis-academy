@@ -293,14 +293,14 @@ export default function AdminArenaPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary">Gestione Arena</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Gestione Arena</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
             Gestisci tutte le sfide e le statistiche della stagione Arena
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={() => {
               setActiveTab("gestione");
@@ -309,47 +309,48 @@ export default function AdminArenaPage() {
             className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Crea Sfida
+            <span className="hidden sm:inline">Crea Sfida</span>
+            <span className="sm:hidden">Nuova</span>
           </button>
           <button
             onClick={() => setActiveTab("storico")}
-            className={`px-4 py-2.5 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${
+            className={`p-2.5 rounded-md transition-all ${
               activeTab === "storico"
                 ? "text-white bg-secondary shadow-lg"
                 : "text-secondary bg-white border border-gray-300 hover:border-secondary"
             }`}
+            title="Storico"
           >
-            <History className="h-4 w-4" />
-            Storico
+            <History className="h-5 w-5" />
           </button>
           <button
             onClick={() => setActiveTab("statistiche")}
-            className={`px-4 py-2.5 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${
+            className={`p-2.5 rounded-md transition-all ${
               activeTab === "statistiche"
                 ? "text-white bg-secondary shadow-lg"
                 : "text-secondary bg-white border border-gray-300 hover:border-secondary"
             }`}
+            title="Statistiche"
           >
-            <BarChart3 className="h-4 w-4" />
-            Statistiche
+            <BarChart3 className="h-5 w-5" />
           </button>
           <button
             onClick={() => setActiveTab("info")}
-            className={`px-4 py-2.5 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${
+            className={`p-2.5 rounded-md transition-all ${
               activeTab === "info"
                 ? "text-white bg-secondary shadow-lg"
                 : "text-secondary bg-white border border-gray-300 hover:border-secondary"
             }`}
+            title="Info"
           >
-            <Shield className="h-4 w-4" />
-            Info
+            <Shield className="h-5 w-5" />
           </button>
           <button
             onClick={() => setShowResetModal(true)}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
+            className="p-2.5 text-secondary bg-white border border-gray-300 rounded-md hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
             title="Reset Stagione"
           >
-            <RefreshCw className="h-5 w-5" />
+            <AlertTriangle className="h-5 w-5" />
           </button>
         </div>
       </div>
@@ -371,49 +372,6 @@ export default function AdminArenaPage() {
           />
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setStatusFilter("all")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              statusFilter === "all"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Tutte
-          </button>
-          <button
-            onClick={() => setStatusFilter("pending")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              statusFilter === "pending"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            In Attesa
-          </button>
-          <button
-            onClick={() => setStatusFilter("accepted")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              statusFilter === "accepted"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Accettate
-          </button>
-          <button
-            onClick={() => setStatusFilter("completed")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              statusFilter === "completed"
-                ? "text-white bg-secondary"
-                : "bg-white text-secondary/70 hover:bg-secondary/5"
-            }`}
-          >
-            Completate
-          </button>
-        </div>
       </div>
 
       {/* Challenges List */}
@@ -440,43 +398,27 @@ export default function AdminArenaPage() {
             <p className="text-secondary/70">Crea la prima sfida per iniziare</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="space-y-3" style={{ minWidth: '1050px' }}>
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-4">
-                <div className="w-8 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-10 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Sfidante</div>
-                </div>
-                <div className="w-40 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase"></div>
-                </div>
-                <div className="w-10 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Avversario</div>
-                </div>
-                <div className="w-40 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase"></div>
-                </div>
-                <div className="w-24 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-                </div>
-                <div className="w-20 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
-                </div>
-                <div className="w-24 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
-                </div>
-                <div className="w-32 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Vincitore</div>
-                </div>
-                <div className="w-28 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
-                </div>
-                <div className="w-10 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
-                </div>
+              <div className="grid grid-cols-[32px_40px_140px_40px_140px_80px_64px_80px_100px_80px_40px] items-center gap-4">
+                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Sfid.</div>
+                <div className="text-xs font-bold text-white/80 uppercase"></div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Avv.</div>
+                <div className="text-xs font-bold text-white/80 uppercase"></div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Data</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Ora</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Campo</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Vincitore</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center"></div>
               </div>
             </div>
 
@@ -500,12 +442,12 @@ export default function AdminArenaPage() {
                 <div
                   key={challenge.id}
                   onClick={() => router.push(`/dashboard/admin/arena/challenge/${challenge.id}`)}
-                  className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4"
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                   style={borderStyle}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="grid grid-cols-[32px_40px_140px_40px_140px_80px_64px_80px_100px_80px_40px] items-center gap-4">
                     {/* Icona Tipo Sfida */}
-                    <div className="w-8 flex-shrink-0 flex items-center justify-center">
+                    <div className="flex items-center justify-center">
                       {challenge.challenge_type === "ranked" ? (
                         <Shield className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       ) : (
@@ -514,7 +456,7 @@ export default function AdminArenaPage() {
                     </div>
 
                     {/* Avatar Sfidante */}
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 min-w-[40px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0">
                       {challenge.challenger?.avatar_url ? (
                         <img
                           src={challenge.challenger.avatar_url}
@@ -527,14 +469,12 @@ export default function AdminArenaPage() {
                     </div>
 
                     {/* Nome Sfidante */}
-                    <div className="w-40 flex-shrink-0">
-                      <div className="font-bold text-secondary text-sm truncate">
-                        {challenge.challenger?.full_name}
-                      </div>
+                    <div className="font-bold text-secondary text-sm truncate">
+                      {challenge.challenger?.full_name}
                     </div>
 
                     {/* Avatar Avversario */}
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 min-w-[40px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0">
                       {challenge.opponent?.avatar_url ? (
                         <img
                           src={challenge.opponent.avatar_url}
@@ -547,45 +487,37 @@ export default function AdminArenaPage() {
                     </div>
 
                     {/* Nome Avversario */}
-                    <div className="w-40 flex-shrink-0">
-                      <div className="font-bold text-secondary text-sm truncate">
-                        {challenge.opponent?.full_name}
-                      </div>
+                    <div className="font-bold text-secondary text-sm truncate">
+                      {challenge.opponent?.full_name}
                     </div>
 
                     {/* Data */}
-                    <div className="w-24 flex-shrink-0 text-center">
-                      <span className="text-xs text-secondary/60">
-                        {challenge.booking
-                          ? new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
-                              day: "2-digit",
-                              month: "short",
-                            })
-                          : "-"}
-                      </span>
+                    <div className="text-sm font-semibold text-secondary text-center">
+                      {challenge.booking
+                        ? new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
+                            day: "2-digit",
+                            month: "short",
+                          })
+                        : "-"}
                     </div>
 
                     {/* Ora */}
-                    <div className="w-20 flex-shrink-0 text-center">
-                      <span className="text-xs text-secondary/60">
-                        {challenge.booking
-                          ? new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "-"}
-                      </span>
+                    <div className="text-sm font-semibold text-secondary text-center">
+                      {challenge.booking
+                        ? new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "-"}
                     </div>
 
                     {/* Campo */}
-                    <div className="w-24 flex-shrink-0 text-center">
-                      <span className="text-xs text-secondary/60">
-                        {challenge.booking?.court || "-"}
-                      </span>
+                    <div className="font-bold text-secondary text-center">
+                      {challenge.booking?.court || "-"}
                     </div>
 
-                    {/* Tipo e Vincitore */}
-                    <div className="w-32 flex-shrink-0 text-center">
+                    {/* Vincitore */}
+                    <div className="text-center">
                       {challenge.winner_id ? (
                         <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
                           <Trophy className="h-3 w-3" />
@@ -594,27 +526,25 @@ export default function AdminArenaPage() {
                             : challenge.opponent?.full_name?.split(' ')[0]}
                         </div>
                       ) : (
-                        <span className="text-xs text-secondary/60">
-                          {challenge.match_type === "singles" ? "Singolo" : challenge.match_type === "doubles" ? "Doppio" : "-"}
-                        </span>
+                        <span className="text-sm text-secondary/40">-</span>
                       )}
                     </div>
 
                     {/* Stato */}
-                    <div className="w-28 flex-shrink-0 text-center">
-                      <span className="text-xs text-secondary/60">
+                    <div className="text-center">
+                      <span className="text-xs font-medium text-secondary/70">
                         {getStatusLabel(challenge.status)}
                       </span>
                     </div>
 
                     {/* Azioni */}
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                    <div className="flex items-center justify-center">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteChallenge(challenge.id);
                         }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-all"
+                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded transition-all"
                         title="Elimina"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -624,6 +554,7 @@ export default function AdminArenaPage() {
                 </div>
               );
             })}
+            </div>
           </div>
         );
         })()}
@@ -636,7 +567,7 @@ export default function AdminArenaPage() {
         </div>
 
         {/* Rank Filter */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:items-center gap-2 mb-6">
           {["Tutti", "Bronzo", "Argento", "Oro", "Platino", "Diamante"].map((rank) => {
             return (
               <button
@@ -674,117 +605,106 @@ export default function AdminArenaPage() {
               </p>
             </div>
           ) : (
-            <>
+            <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3" style={{ minWidth: '800px' }}>
               {/* Header Row */}
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Punti</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Partite</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Vittorie</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Sconfitte</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Win Rate</div>
-                  </div>
+                <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px] items-center gap-4">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Partite</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Vittorie</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Sconfitte</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Win Rate</div>
                 </div>
               </div>
 
               {/* Data Rows */}
-              <div className="space-y-2">
-                {filteredLeaderboard.map((entry, index) => {
-                  const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
+              {filteredLeaderboard.map((entry, index) => {
+                const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
 
-                  // Determina il colore del bordo in base alla posizione
-                  let borderStyle = {};
-                  if (displayPosition === 1) {
-                    borderStyle = { borderLeftColor: "#eab308" }; // giallo oro
-                  } else if (displayPosition === 2) {
-                    borderStyle = { borderLeftColor: "#9ca3af" }; // grigio argento
-                  } else if (displayPosition === 3) {
-                    borderStyle = { borderLeftColor: "#f97316" }; // arancione bronzo
-                  } else {
-                    borderStyle = { borderLeftColor: "#0f4c7c" }; // secondary default
-                  }
+                // Determina il colore del bordo in base alla posizione
+                let borderStyle = {};
+                if (displayPosition === 1) {
+                  borderStyle = { borderLeftColor: "#eab308" }; // giallo oro
+                } else if (displayPosition === 2) {
+                  borderStyle = { borderLeftColor: "#9ca3af" }; // grigio argento
+                } else if (displayPosition === 3) {
+                  borderStyle = { borderLeftColor: "#f97316" }; // arancione bronzo
+                } else {
+                  borderStyle = { borderLeftColor: "#0f4c7c" }; // secondary default
+                }
 
-                  return (
-                    <div
-                      key={`${entry.userId}-${index}`}
-                      className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                      style={borderStyle}
-                    >
-                      <div className="flex items-center gap-4">
-                        {/* Position */}
-                        <div className="w-12 flex-shrink-0 flex items-center justify-center">
-                          <span className="text-lg font-bold text-secondary">
-                            {displayPosition}
-                          </span>
-                        </div>
+                return (
+                  <div
+                    key={`${entry.userId}-${index}`}
+                    className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4"
+                    style={borderStyle}
+                  >
+                    <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px] items-center gap-4">
+                      {/* Position */}
+                      <div className="text-center">
+                        <span className="text-lg font-bold text-secondary">
+                          {displayPosition}
+                        </span>
+                      </div>
 
-                        {/* Player */}
-                        <div className="flex-1 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-secondary text-white border-0 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
-                            {entry.avatar ? (
-                              <img
-                                src={entry.avatar}
-                                alt={entry.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span>
-                                {entry.name?.charAt(0).toUpperCase() || "?"}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-secondary">
-                              {entry.name || "N/A"}
+                      {/* Player */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 min-w-[40px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0">
+                          {entry.avatar ? (
+                            <img
+                              src={entry.avatar}
+                              alt={entry.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>
+                              {entry.name?.charAt(0).toUpperCase() || "?"}
                             </span>
-                          </div>
+                          )}
                         </div>
+                        <span className="font-bold text-secondary truncate">
+                          {entry.name || "N/A"}
+                        </span>
+                      </div>
 
-                        {/* Points */}
-                        <div className="w-24 flex-shrink-0 text-center">
-                          <div className="text-lg font-bold text-secondary">{entry.points ?? 0}</div>
-                        </div>
+                      {/* Points */}
+                      <div className="text-center">
+                        <span className="text-lg font-bold text-secondary">{entry.points ?? 0}</span>
+                      </div>
 
-                        {/* Total Matches */}
-                        <div className="w-24 flex-shrink-0 text-center">
-                          <div className="text-sm font-semibold text-secondary">{entry.totalMatches ?? 0}</div>
-                        </div>
+                      {/* Total Matches */}
+                      <div className="text-center">
+                        <span className="text-sm font-semibold text-secondary">{entry.totalMatches ?? 0}</span>
+                      </div>
 
-                        {/* Wins */}
-                        <div className="w-24 flex-shrink-0 text-center">
-                          <div className="text-sm font-semibold text-secondary">{entry.wins ?? 0}</div>
-                        </div>
+                      {/* Wins */}
+                      <div className="text-center">
+                        <span className="text-sm font-semibold text-secondary">{entry.wins ?? 0}</span>
+                      </div>
 
-                        {/* Losses */}
-                        <div className="w-24 flex-shrink-0 text-center">
-                          <div className="text-sm font-semibold text-secondary">{entry.losses ?? 0}</div>
-                        </div>
+                      {/* Losses */}
+                      <div className="text-center">
+                        <span className="text-sm font-semibold text-secondary">{entry.losses ?? 0}</span>
+                      </div>
 
-                        {/* Win Rate */}
-                        <div className="w-24 flex-shrink-0 text-center">
-                          <div className="text-sm font-semibold text-secondary">{entry.winRate?.toFixed(0) ?? 0}%</div>
-                        </div>
+                      {/* Win Rate */}
+                      <div className="text-center">
+                        <span className="text-sm font-semibold text-secondary">{entry.winRate?.toFixed(0) ?? 0}%</span>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
               </div>
-            </>
+            </div>
           );
         })()}
       </div>

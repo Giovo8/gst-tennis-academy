@@ -222,8 +222,8 @@ export default function NewAnnouncementPage() {
             
             <div className="space-y-6">
               {/* Title */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Titolo <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1">
@@ -239,8 +239,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Content */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Contenuto <span className="text-red-600">*</span>
                 </label>
                 <div className="flex-1">
@@ -255,17 +255,17 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Type */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Tipo Annuncio <span className="text-red-600">*</span>
                 </label>
-                <div className="flex-1 flex flex-wrap gap-3">
+                <div className="flex-1 grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
                   {typeOptions.map((option) => (
                     <button
                       key={option.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, announcement_type: option.value as any })}
-                      className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      className={`px-4 sm:px-5 py-2 text-left sm:text-center rounded-lg text-sm font-semibold transition-all ${
                         formData.announcement_type === option.value
                           ? "text-white bg-secondary hover:opacity-90"
                           : "bg-white text-secondary border border-gray-300 hover:border-secondary"
@@ -278,15 +278,15 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Priority */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Priorità</label>
-                <div className="flex-1 flex gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Priorità</label>
+                <div className="flex-1 grid grid-cols-2 sm:flex gap-2 sm:gap-3">
                   {priorityOptions.map((option) => (
                     <button
                       key={option.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, priority: option.value as any })}
-                      className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      className={`px-4 sm:px-5 py-2 text-left sm:text-center rounded-lg text-sm font-semibold transition-all ${
                         formData.priority === option.value
                           ? "text-white bg-secondary hover:opacity-90"
                           : "bg-white text-secondary border border-gray-300 hover:border-secondary"
@@ -299,15 +299,15 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Visibility */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Visibilità</label>
-                <div className="flex-1 flex flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Visibilità</label>
+                <div className="flex-1 grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
                   {visibilityOptions.map((option) => (
                     <button
                       key={option.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, visibility: option.value as any })}
-                      className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      className={`px-4 sm:px-5 py-2 text-left sm:text-center rounded-lg text-sm font-semibold transition-all ${
                         formData.visibility === option.value
                           ? "text-white bg-secondary hover:opacity-90"
                           : "bg-white text-secondary border border-gray-300 hover:border-secondary"
@@ -326,8 +326,8 @@ export default function NewAnnouncementPage() {
             
             <div className="space-y-6">
               {/* Image URL */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
                 <div className="flex-1">
                   <input
                     type="url"
@@ -340,8 +340,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Link URL */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Link</label>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Link</label>
                 <div className="flex-1">
                   <input
                     type="url"
@@ -354,8 +354,8 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Link Text */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Testo Link</label>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Testo Link</label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -374,8 +374,8 @@ export default function NewAnnouncementPage() {
             
             <div className="space-y-6">
               {/* Expiry Date */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Scadenza</label>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Scadenza</label>
                 <div className="flex-1">
                   <input
                     type="date"
@@ -387,9 +387,9 @@ export default function NewAnnouncementPage() {
               </div>
 
               {/* Options */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8">
-                <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Opzioni</label>
-                <div className="flex-1 flex gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Opzioni</label>
+                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:gap-6">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -415,13 +415,13 @@ export default function NewAnnouncementPage() {
           </div>
 
           {/* Submit and Delete Buttons */}
-          <div className="flex justify-between items-center pt-4">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 pt-4">
             {isEditMode && (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 px-6 py-4 text-base font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-4 text-sm sm:text-base font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="h-5 w-5" />
                 Elimina Annuncio
@@ -430,12 +430,13 @@ export default function NewAnnouncementPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px] ${!isEditMode ? 'ml-auto' : ''}`}
+              className={`inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto sm:min-w-[200px] ${!isEditMode ? 'sm:ml-auto' : ''}`}
             >
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  {isEditMode ? "Aggiornamento..." : "Creazione in corso..."}
+                  <span className="hidden sm:inline">{isEditMode ? "Aggiornamento..." : "Creazione in corso..."}</span>
+                  <span className="sm:hidden">{isEditMode ? "Aggiorno..." : "Creo..."}</span>
                 </>
               ) : (
                 <>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -556,17 +556,17 @@ export default function CreateChallengePage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div>
-          <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+          <p className="breadcrumb text-secondary/60">
             <Link
               href="/dashboard/admin/arena"
               className="hover:text-secondary/80 transition-colors"
             >
               Gestione Arena
             </Link>
-            <span className="mx-2">›</span>
+            {" › "}
             <span>Crea Sfida</span>
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">Crea sfida</h1>
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea sfida</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
             Seleziona giocatori, data e slot.
           </p>
@@ -602,22 +602,22 @@ export default function CreateChallengePage() {
       <div className="py-4">
         <div className="space-y-6">
           {/* Selettore Data */}
-          <div className="rounded-lg p-4 flex items-center justify-between transition-all bg-secondary">
+          <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
             <button
               onClick={() => handleDateChange(addDays(selectedDate, -1))}
-              className="p-2 rounded-md transition-colors hover:bg-white/10"
+              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
-            
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => {
                   const input = document.getElementById('date-picker') as HTMLInputElement;
                   if (input) input.showPicker();
                 }}
-                className="p-2 rounded-md transition-colors hover:bg-white/10"
+                className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
                 <Calendar className="h-5 w-5 text-white" />
@@ -631,14 +631,15 @@ export default function CreateChallengePage() {
                 max={getMaxDate()}
                 className="absolute opacity-0 pointer-events-none"
               />
-              <h2 className="text-lg font-bold capitalize text-white">
-                {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+              <h2 className="text-base sm:text-lg font-bold capitalize text-white">
+                <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
+                <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
               </h2>
             </div>
 
             <button
               onClick={() => handleDateChange(addDays(selectedDate, 1))}
-              className="p-2 rounded-md transition-colors hover:bg-white/10"
+              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>
@@ -662,8 +663,8 @@ export default function CreateChallengePage() {
                   {/* Dettagli sfida - stile form moderno */}
                   <div className="space-y-6 mt-6">
                     {/* Sfidante */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={challenger}
@@ -676,8 +677,8 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Sfidato */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={opponent}
@@ -690,15 +691,15 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Tipo Match */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
-                      <div className="flex-1 flex gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
+                      <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                         {MATCH_TYPES.map((type) => (
                           <button
                             key={type.value}
                             type="button"
                             onClick={() => setMatchType(type.value)}
-                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               matchType === type.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -713,8 +714,8 @@ export default function CreateChallengePage() {
                     {/* Partners se doppio */}
                     {matchType === "doubles" && (
                       <>
-                        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                          <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={myPartner}
@@ -726,8 +727,8 @@ export default function CreateChallengePage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                          <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
                           <div className="flex-1">
                             <SearchableSelect
                               value={opponentPartner}
@@ -742,15 +743,15 @@ export default function CreateChallengePage() {
                     )}
 
                     {/* Tipo Sfida */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
-                      <div className="flex-1 flex gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
+                      <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                         {CHALLENGE_TYPES.map((type) => (
                           <button
                             key={type.value}
                             type="button"
                             onClick={() => setChallengeType(type.value)}
-                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               challengeType === type.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -763,15 +764,15 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Formato Match */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
-                      <div className="flex-1 flex gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
+                      <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                         {MATCH_FORMATS.map((format) => (
                           <button
                             key={format.value}
                             type="button"
                             onClick={() => setMatchFormat(format.value)}
-                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               matchFormat === format.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -784,15 +785,15 @@ export default function CreateChallengePage() {
                     </div>
 
                     {/* Campo */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                      <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
-                      <div className="flex-1 flex gap-3 flex-wrap">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                      <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
                         {COURTS.map((court) => (
                           <button
                             key={court}
                             type="button"
                             onClick={() => handleCourtChange(court)}
-                            className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               selectedCourt === court
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -808,7 +809,7 @@ export default function CreateChallengePage() {
                   <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
                   
                   {/* Timeline orizzontale stile bookings */}
-                  <div 
+                  <div
                     ref={timelineScrollRef}
                     className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
                     style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
@@ -819,13 +820,13 @@ export default function CreateChallengePage() {
                   >
                     <div className="min-w-[1280px]">
                       {/* Header con orari */}
-                      <div className="grid grid-cols-[repeat(16,_minmax(60px,_1fr))] md:grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg mb-3">
+                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
                         {Array.from({ length: 16 }, (_, i) => {
                           const hour = 7 + i;
                           return (
                             <div
                               key={hour}
-                              className="p-1.5 sm:p-2 md:p-3 text-center font-bold text-secondary text-[10px] sm:text-xs flex items-center justify-center"
+                              className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
                             >
                               {hour.toString().padStart(2, '0')}:00
                             </div>
@@ -834,7 +835,7 @@ export default function CreateChallengePage() {
                       </div>
 
                       {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
-                      <div className="grid grid-cols-[repeat(16,_minmax(60px,_1fr))] md:grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
                         {/* Prenotazioni esistenti come blocchi sovrapposti */}
                         {existingBookings.map((booking) => {
                           const start = new Date(booking.start_time);

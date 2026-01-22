@@ -117,7 +117,7 @@ export default function VideoLessonsPage() {
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div>
               <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
@@ -131,7 +131,7 @@ export default function VideoLessonsPage() {
           </div>
           <Link
             href="/dashboard/admin/video-lessons/new"
-            className="px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center gap-2"
+            className="sm:px-6 sm:py-3 px-4 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 sm:flex-shrink-0"
           >
             <Plus className="h-5 w-5" />
             <span>Nuovo Video</span>
@@ -176,105 +176,120 @@ export default function VideoLessonsPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredVideos.map((video) => {
-              // Estrae l'ID del video YouTube dall'URL
-              const getYouTubeVideoId = (url: string) => {
-                const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-                return match ? match[1] : null;
-              };
-              const videoId = getYouTubeVideoId(video.video_url);
-
-              return (
-                <div
-                  key={video.id}
-                  onClick={() => router.push(`/dashboard/admin/video-lessons/new?id=${video.id}`)}
-                  className="block bg-white rounded-xl border-l-4 border-secondary shadow-md hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  <div className="flex flex-col sm:flex-row gap-4 p-6">
-                    {/* Video Preview */}
-                    <div
-                      className="flex-shrink-0 w-full sm:w-48 h-32 overflow-hidden rounded-lg bg-gray-100"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {videoId ? (
-                        <iframe
-                          src={`https://www.youtube.com/embed/${videoId}`}
-                          title={video.title}
-                          className="w-full h-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : video.thumbnail_url ? (
-                        <img
-                          src={video.thumbnail_url}
-                          alt={video.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-secondary/5">
-                          <Video className="w-12 h-12 text-secondary/20" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Category */}
-                      <span className="inline-block text-xs font-semibold text-secondary mb-2">
-                        {categories.find((c) => c.value === video.category)?.label}
-                      </span>
-
-                      {/* Title */}
-                      <h3 className="text-lg font-bold text-secondary mb-2 hover:opacity-70 transition-opacity line-clamp-2">
-                        {video.title}
-                      </h3>
-
-                      {/* Description */}
-                      {video.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                          {video.description}
-                        </p>
-                      )}
-
-                      {/* Meta info */}
-                      <div className="flex items-center gap-4 text-xs text-secondary/50 mt-2">
-                        <span className="flex items-center gap-1">
-                          {levels.find((l) => l.value === video.level)?.label}
-                        </span>
-                        {video.duration_minutes && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              {video.duration_minutes} min
-                            </span>
-                          </>
-                        )}
-                        {video.assigned_users && video.assigned_users.length > 0 && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3.5 w-3.5" />
-                              {video.assigned_users.length === 1
-                                ? video.assigned_users[0].full_name
-                                : `${video.assigned_users.length} utenti`}
-                            </span>
-                          </>
-                        )}
-                        {video.watch_count > 0 && (
-                          <>
-                            <span>•</span>
-                            <span className="text-secondary font-semibold">
-                              {video.watch_count} visualizzazioni
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+          <div className="bg-white rounded-lg">
+            <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3" style={{ minWidth: '900px' }}>
+                {/* Header Row */}
+                <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                  <div className="grid grid-cols-[160px_1fr_100px_80px_100px_100px] items-center gap-4">
+                    <div className="text-xs font-bold text-white/80 uppercase">Anteprima</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Titolo</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Visibilità</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Categoria</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Data</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Data Rows */}
+                {filteredVideos.map((video) => {
+                  // Estrae l'ID del video YouTube dall'URL
+                  const getYouTubeVideoId = (url: string) => {
+                    const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+                    return match ? match[1] : null;
+                  };
+                  const videoId = getYouTubeVideoId(video.video_url);
+                  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : video.thumbnail_url;
+
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => router.push(`/dashboard/admin/video-lessons/${video.id}`)}
+                      className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                      style={{ borderLeftColor: video.is_active ? '#08b3f7' : '#056c94' }}
+                    >
+                      <div className="grid grid-cols-[160px_1fr_100px_80px_100px_100px] items-center gap-4">
+                        {/* Thumbnail */}
+                        <div className="relative w-[140px] h-[80px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                          {thumbnailUrl ? (
+                            <img
+                              src={thumbnailUrl}
+                              alt={video.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-secondary/5">
+                              <Video className="w-8 h-8 text-secondary/20" />
+                            </div>
+                          )}
+                          {video.duration_minutes && (
+                            <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
+                              {video.duration_minutes}:00
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Title & Description */}
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-secondary text-sm line-clamp-1 mb-1">
+                            {video.title}
+                          </h3>
+                          {video.description ? (
+                            <p className="text-xs text-secondary/60 line-clamp-1">
+                              {video.description}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-secondary/40 italic">
+                              Aggiungi descrizione
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Visibility */}
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-xs text-secondary/60">
+                            {video.assigned_users && video.assigned_users.length > 0 ? (
+                              <>
+                                <Users className="h-3.5 w-3.5" />
+                                <span>{video.assigned_users.length} utenti</span>
+                              </>
+                            ) : (
+                              <span>Non in elenco</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Category */}
+                        <div className="text-center">
+                          <span className="text-xs font-medium text-secondary">
+                            {categories.find((c) => c.value === video.category)?.label || "Nessuna"}
+                          </span>
+                        </div>
+
+                        {/* Date */}
+                        <div className="text-center">
+                          <span className="text-xs font-medium text-secondary">
+                            {format(new Date(video.created_at), "d MMM yyyy", { locale: it })}
+                          </span>
+                        </div>
+
+                        {/* Status */}
+                        <div className="text-center">
+                          <span className={`text-xs font-medium ${video.is_active ? 'text-[#08b3f7]' : 'text-[#056c94]'}`}>
+                            {video.is_active ? 'Caricato' : 'Bozza'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>

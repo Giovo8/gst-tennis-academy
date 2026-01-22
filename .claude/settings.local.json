@@ -18,7 +18,9 @@
       "Bash(git commit:*)",
       "Bash(npx eslint:*)",
       "Bash(findstr:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(git push:*)"
     ]
   }
 }

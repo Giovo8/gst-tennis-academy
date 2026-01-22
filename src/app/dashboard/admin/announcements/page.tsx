@@ -305,155 +305,156 @@ export default function AnnouncementsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* Header Row */}
-          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="flex items-center gap-4">
-              <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                <button
-                  onClick={() => handleSort("type")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  #
-                  {sortBy === "type" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-28 flex-shrink-0">
-                <button
-                  onClick={() => handleSort("date")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Data
-                  {sortBy === "date" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <button
-                  onClick={() => handleSort("title")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Titolo
-                  {sortBy === "title" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-32 flex-shrink-0 text-center">
-                <button
-                  onClick={() => handleSort("priority")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                >
-                  Priorità
-                  {sortBy === "priority" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-28 flex-shrink-0 text-center">
-                <button
-                  onClick={() => handleSort("visibility")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                >
-                  Visibilità
-                  {sortBy === "visibility" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-24 flex-shrink-0 text-center">
-                <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
-              </div>
-              <div className="w-24 flex-shrink-0 text-center">
-                <div className="text-xs font-bold text-white/80 uppercase">Visualizz.</div>
+        <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          <div className="space-y-3" style={{ minWidth: '850px', width: 'max-content' }}>
+            {/* Header Row */}
+            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+              <div className="grid grid-cols-[40px_100px_1fr_100px_100px_100px_80px] items-center gap-4">
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => handleSort("type")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    #
+                    {sortBy === "type" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleSort("date")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Data
+                    {sortBy === "date" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleSort("title")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Titolo
+                    {sortBy === "title" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={() => handleSort("priority")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                  >
+                    Priorità
+                    {sortBy === "priority" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={() => handleSort("visibility")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                  >
+                    Visibilità
+                    {sortBy === "visibility" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs font-bold text-white/80 uppercase">Views</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Data Rows */}
-          {sortedAnnouncements.map((announcement) => {
-            const typeInfo = typeLabels[announcement.announcement_type];
-            const TypeIcon = typeIconMap[announcement.announcement_type];
-            const isExpired = announcement.expiry_date && new Date(announcement.expiry_date) < new Date();
-            const VisibilityIcon = visibilityConfig[announcement.visibility].icon;
-            const priorityInfo = priorityConfig[announcement.priority];
+            {/* Data Rows */}
+            {sortedAnnouncements.map((announcement) => {
+              const TypeIcon = typeIconMap[announcement.announcement_type];
+              const isExpired = announcement.expiry_date && new Date(announcement.expiry_date) < new Date();
+              const priorityInfo = priorityConfig[announcement.priority];
 
-            // Determina il colore del bordo in base allo stato
-            let borderStyle = {};
-            if (isExpired) {
-              borderStyle = { borderLeftColor: "#ef4444" }; // rosso - scaduto
-            } else if (!announcement.is_published) {
-              borderStyle = { borderLeftColor: "#f59e0b" }; // amber - bozza
-            } else if (announcement.is_pinned) {
-              borderStyle = { borderLeftColor: "#8b5cf6" }; // viola - fissato
-            } else {
-              borderStyle = { borderLeftColor: "#10b981" }; // emerald - pubblicato
-            }
+              // Determina il colore del bordo in base allo stato
+              let borderStyle = {};
+              if (isExpired) {
+                borderStyle = { borderLeftColor: "#ef4444" }; // rosso - scaduto
+              } else if (!announcement.is_published) {
+                borderStyle = { borderLeftColor: "#f59e0b" }; // amber - bozza
+              } else if (announcement.is_pinned) {
+                borderStyle = { borderLeftColor: "#8b5cf6" }; // viola - fissato
+              } else {
+                borderStyle = { borderLeftColor: "#10b981" }; // emerald - pubblicato
+              }
 
-            return (
-              <Link
-                key={announcement.id}
-                href={`/dashboard/admin/announcements/new?id=${announcement.id}`}
-                className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all block cursor-pointer border-l-4"
-                style={borderStyle}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Icona Tipo */}
-                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    <TypeIcon className="h-5 w-5 text-secondary/60" strokeWidth={2} />
-                  </div>
+              return (
+                <Link
+                  key={announcement.id}
+                  href={`/dashboard/admin/announcements/new?id=${announcement.id}`}
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all block cursor-pointer border-l-4"
+                  style={borderStyle}
+                >
+                  <div className="grid grid-cols-[40px_100px_1fr_100px_100px_100px_80px] items-center gap-4">
+                    {/* Icona Tipo */}
+                    <div className="flex items-center justify-center">
+                      <TypeIcon className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                    </div>
 
-                  {/* Data */}
-                  <div className="w-28 flex-shrink-0">
+                    {/* Data */}
                     <div className="font-bold text-secondary text-sm">
                       {formatDate(announcement.created_at)}
                     </div>
-                  </div>
 
-                  {/* Titolo */}
-                  <div className="flex-1 min-w-0">
+                    {/* Titolo */}
                     <div className="font-bold text-secondary text-sm truncate flex items-center gap-2">
                       {announcement.is_pinned && (
                         <Pin className="h-4 w-4 text-purple-500 flex-shrink-0" />
                       )}
                       {announcement.title}
                     </div>
-                  </div>
 
-                  {/* Priorità */}
-                  <div className="w-32 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {priorityInfo.label}
-                    </span>
-                  </div>
+                    {/* Priorità */}
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-secondary">
+                        {priorityInfo.label}
+                      </span>
+                    </div>
 
-                  {/* Visibilità */}
-                  <div className="w-28 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {visibilityConfig[announcement.visibility].label}
-                    </span>
-                  </div>
+                    {/* Visibilità */}
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-secondary">
+                        {visibilityConfig[announcement.visibility].label}
+                      </span>
+                    </div>
 
-                  {/* Stato */}
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {isExpired ? "Scaduto" : announcement.is_published ? "Pubblicato" : "Bozza"}
-                    </span>
-                  </div>
+                    {/* Stato */}
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-secondary">
+                        {isExpired ? "Scaduto" : announcement.is_published ? "Pubblicato" : "Bozza"}
+                      </span>
+                    </div>
 
-                  {/* Visualizzazioni */}
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {announcement.view_count}
-                    </span>
+                    {/* Visualizzazioni */}
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-secondary">
+                        {announcement.view_count}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

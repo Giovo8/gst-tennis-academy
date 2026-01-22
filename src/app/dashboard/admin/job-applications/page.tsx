@@ -189,136 +189,137 @@ export default function JobApplicationsPage() {
           <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* Header Row */}
-          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="flex items-center gap-4">
-              <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                <button
-                  onClick={() => handleSort("role")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  #
-                  {sortBy === "role" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-28 flex-shrink-0">
-                <button
-                  onClick={() => handleSort("date")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Data
-                  {sortBy === "date" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-48 flex-shrink-0">
-                <button
-                  onClick={() => handleSort("name")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Nome
-                  {sortBy === "name" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-              </div>
-              <div className="w-32 flex-shrink-0 text-center">
-                <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
-              </div>
-              <div className="w-32 flex-shrink-0 text-center">
-                <button
-                  onClick={() => handleSort("status")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                >
-                  Stato
-                  {sortBy === "status" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
+        <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          <div className="space-y-3" style={{ minWidth: '750px' }}>
+            {/* Header Row */}
+            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+              <div className="grid grid-cols-[40px_100px_160px_1fr_100px_100px] items-center gap-4">
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => handleSort("role")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    #
+                    {sortBy === "role" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleSort("date")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Data
+                    {sortBy === "date" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleSort("name")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Nome
+                    {sortBy === "name" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={() => handleSort("status")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                  >
+                    Stato
+                    {sortBy === "status" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Data Rows */}
-          {sortedApplications.map((app) => {
-            // Colore bordo sinistro basato sullo status
-            let borderStyle = {};
-            if (app.status === "rejected") {
-              borderStyle = { borderLeftColor: "#ef4444" }; // red
-            } else if (app.status === "pending") {
-              borderStyle = { borderLeftColor: "#f59e0b" }; // amber
-            } else if (app.status === "reviewed") {
-              borderStyle = { borderLeftColor: "#3b82f6" }; // blue
-            } else if (app.status === "accepted") {
-              borderStyle = { borderLeftColor: "#10b981" }; // green
-            }
+            {/* Data Rows */}
+            {sortedApplications.map((app) => {
+              // Colore bordo sinistro basato sullo status
+              let borderStyle = {};
+              if (app.status === "rejected") {
+                borderStyle = { borderLeftColor: "#ef4444" }; // red
+              } else if (app.status === "pending") {
+                borderStyle = { borderLeftColor: "#f59e0b" }; // amber
+              } else if (app.status === "reviewed") {
+                borderStyle = { borderLeftColor: "#3b82f6" }; // blue
+              } else if (app.status === "accepted") {
+                borderStyle = { borderLeftColor: "#10b981" }; // green
+              }
 
-            return (
-              <Link
-                key={app.id}
-                href={`/dashboard/admin/job-applications/${app.id}`}
-                className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all block cursor-pointer border-l-4"
-                style={borderStyle}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Icon Ruolo */}
-                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    {app.role === "maestro" ? (
-                      <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
-                    ) : (
-                      <Dumbbell className="h-5 w-5 text-secondary/60" strokeWidth={2} />
-                    )}
-                  </div>
+              return (
+                <Link
+                  key={app.id}
+                  href={`/dashboard/admin/job-applications/${app.id}`}
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all block cursor-pointer border-l-4"
+                  style={borderStyle}
+                >
+                  <div className="grid grid-cols-[40px_100px_160px_1fr_100px_100px] items-center gap-4">
+                    {/* Icon Ruolo */}
+                    <div className="flex items-center justify-center">
+                      {app.role === "maestro" ? (
+                        <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                      ) : (
+                        <Dumbbell className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                      )}
+                    </div>
 
-                  {/* Data */}
-                  <div className="w-28 flex-shrink-0">
+                    {/* Data */}
                     <div className="font-bold text-secondary text-sm">
                       {formatDate(app.created_at)}
                     </div>
-                  </div>
 
-                  {/* Nome */}
-                  <div className="w-48 flex-shrink-0">
+                    {/* Nome */}
                     <div className="font-bold text-secondary text-sm truncate">
                       {app.full_name}
                     </div>
-                  </div>
 
-                  {/* Email */}
-                  <div className="flex-1 min-w-0">
+                    {/* Email */}
                     <div className="text-sm text-secondary/70 truncate flex items-center gap-2">
                       <Mail className="h-4 w-4 text-secondary/40 flex-shrink-0" />
                       {app.email}
                     </div>
-                  </div>
 
-                  {/* Ruolo */}
-                  <div className="w-32 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {app.role === "maestro" ? "Maestro" : "Preparatore"}
-                    </span>
-                  </div>
+                    {/* Ruolo */}
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-secondary">
+                        {app.role === "maestro" ? "Maestro" : "Preparatore"}
+                      </span>
+                    </div>
 
-                  {/* Stato */}
-                  <div className="w-32 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {app.status === "pending" && "In Attesa"}
-                      {app.status === "reviewed" && "Revisionata"}
-                      {app.status === "accepted" && "Accettata"}
-                      {app.status === "rejected" && "Rifiutata"}
-                    </span>
+                    {/* Stato */}
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-secondary">
+                        {app.status === "pending" && "In Attesa"}
+                        {app.status === "reviewed" && "Revisionata"}
+                        {app.status === "accepted" && "Accettata"}
+                        {app.status === "rejected" && "Rifiutata"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

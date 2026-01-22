@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
-import { ArrowLeft, Trash2, Save } from "lucide-react";
+import { Trash2, Save } from "lucide-react";
 import AuthGuard from "@/components/auth/AuthGuard";
 
 type User = {
@@ -224,29 +224,20 @@ export default function VideoLessonFormPage() {
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <div>
-              <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-                GESTIONE VIDEO › {isEditMode ? "MODIFICA" : "NUOVO"}
-              </div>
-              <h1 className="text-3xl font-bold text-secondary">
-                {isEditMode ? "Modifica Video Lezione" : "Nuovo Video Lezione"}
-              </h1>
-              <p className="text-gray-600 text-sm mt-1 max-w-2xl">
-                {isEditMode
-                  ? "Modifica i dettagli del video lezione"
-                  : "Crea un nuovo video lezione e assegnalo agli atleti"}
-              </p>
+        <div className="flex flex-col gap-2">
+          <div>
+            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+              GESTIONE VIDEO › {isEditMode ? "MODIFICA" : "NUOVO"}
             </div>
+            <h1 className="text-3xl font-bold text-secondary">
+              {isEditMode ? "Modifica Video Lezione" : "Nuovo Video Lezione"}
+            </h1>
+            <p className="text-gray-600 text-sm mt-1 max-w-2xl">
+              {isEditMode
+                ? "Modifica i dettagli del video lezione"
+                : "Crea un nuovo video lezione e assegnalo agli atleti"}
+            </p>
           </div>
-          <Link
-            href="/dashboard/admin/video-lessons"
-            className="px-6 py-3 border border-gray-300 hover:bg-gray-50 text-secondary font-medium rounded-lg transition-all flex items-center gap-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Indietro</span>
-          </Link>
         </div>
 
         {/* Form */}
@@ -254,8 +245,8 @@ export default function VideoLessonFormPage() {
           <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni Video</h2>
           <div className="space-y-6">
             {/* Title */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 Titolo *
               </label>
               <input
@@ -269,8 +260,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Description */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 Descrizione
               </label>
               <textarea
@@ -283,8 +274,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Video URL */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 URL Video *
               </label>
               <input
@@ -298,8 +289,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Thumbnail URL */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 URL Thumbnail
               </label>
               <input
@@ -312,8 +303,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Duration */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 Durata (minuti)
               </label>
               <input
@@ -327,8 +318,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Category */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 Categoria
               </label>
               <select
@@ -345,8 +336,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Level */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 Livello
               </label>
               <select
@@ -363,8 +354,8 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Assigned Users - Multiple Selection */}
-            <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary w-48 pt-2 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 Assegna a Utenti
               </label>
               <div className="flex-1">
@@ -411,39 +402,30 @@ export default function VideoLessonFormPage() {
               </div>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-            <div>
-              {isEditMode && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="px-6 py-3 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-all flex items-center gap-2"
-                >
-                  <Trash2 className="h-5 w-5" />
-                  <span>Elimina Video</span>
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard/admin/video-lessons"
-                className="px-6 py-3 border border-gray-300 hover:bg-gray-50 text-secondary font-medium rounded-lg transition-all"
-              >
-                Annulla
-              </Link>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
-              >
-                <Save className="h-5 w-5" />
-                <span>{loading ? "Salvataggio..." : isEditMode ? "Salva Modifiche" : "Crea Video"}</span>
-              </button>
-            </div>
-          </div>
         </form>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium sm:flex-shrink-0"
+            >
+              <Trash2 className="h-5 w-5" />
+              Elimina Video
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            onClick={() => document.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true }))}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+          >
+            <Save className="h-5 w-5" />
+            <span>{loading ? "Salvataggio..." : isEditMode ? "Salva Modifiche" : "Crea Video"}</span>
+          </button>
+        </div>
       </div>
     </AuthGuard>
   );

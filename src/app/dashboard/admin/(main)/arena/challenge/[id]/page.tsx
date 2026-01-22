@@ -272,50 +272,23 @@ export default function AdminChallengeDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-        <button
-          onClick={() => router.push('/dashboard/admin/arena')}
-          className="hover:text-secondary/80 transition-colors"
-        >
-          GESTIONE ARENA
-        </button>
-        <span className="mx-2">›</span>
-        <span>DETTAGLI SFIDA</span>
-      </div>
-
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Dettagli Sfida</h1>
-          <p className="text-secondary/70 font-medium">
+          <p className="breadcrumb text-secondary/60 uppercase">
+            <button
+              onClick={() => router.push('/dashboard/admin/arena')}
+              className="hover:text-secondary/80 transition-colors uppercase"
+            >
+              Gestione Arena
+            </button>
+            {" › "}
+            <span className="uppercase">Dettagli Sfida</span>
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Dettagli Sfida</h1>
+          <p className="text-secondary/70 text-sm mt-1">
             Visualizza e gestisci i dettagli della sfida arena
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {challenge.booking && !challenge.booking.manager_confirmed && (
-            <button
-              onClick={handleConfirmBooking}
-              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
-            >
-              <Check className="h-4 w-4" />
-              Conferma Prenotazione
-            </button>
-          )}
-          <button
-            onClick={() => router.push(`/dashboard/admin/arena/challenge/${id}/edit`)}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Modifica"
-          >
-            <Edit className="h-5 w-5" />
-          </button>
-          <button
-            onClick={handleDelete}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all"
-            title="Elimina"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
@@ -349,9 +322,9 @@ export default function AdminChallengeDetailPage() {
         {/* Challenger */}
         <div className="bg-white rounded-xl p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-secondary mb-4">Sfidante</h3>
-          <div className="p-4 border border-gray-100 border-l-4 border-l-secondary rounded-md bg-white mb-4">
+          <div className="p-4 border border-gray-100 border-l-4 border-l-secondary rounded-md mb-4 bg-secondary">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-secondary text-white flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 rounded-lg bg-white text-secondary flex items-center justify-center overflow-hidden">
                 {challenge.challenger?.avatar_url ? (
                   <img
                     src={challenge.challenger.avatar_url}
@@ -365,14 +338,14 @@ export default function AdminChallengeDetailPage() {
                 )}
               </div>
               <div>
-                <p className="font-bold text-secondary">{challenge.challenger?.full_name}</p>
+                <p className="font-bold text-white">{challenge.challenger?.full_name}</p>
               </div>
             </div>
             {challenge.match_type === "doubles" && challenge.my_partner && (
-              <div className="mt-3 pt-3 border-t border-secondary/10">
-                <p className="text-xs font-medium text-secondary/60 mb-2">PARTNER</p>
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <p className="text-xs font-medium text-white/80 mb-2">PARTNER</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-white text-secondary flex items-center justify-center overflow-hidden">
                     {challenge.my_partner?.avatar_url ? (
                       <img
                         src={challenge.my_partner.avatar_url}
@@ -385,7 +358,7 @@ export default function AdminChallengeDetailPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-secondary">
+                  <p className="text-sm font-semibold text-white">
                     {challenge.my_partner?.full_name}
                   </p>
                 </div>
@@ -395,26 +368,26 @@ export default function AdminChallengeDetailPage() {
 
           {/* Info Sfidante */}
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pt-6 pb-6 border-b border-gray-200">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Email</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.challenger?.email || "N/A"}</p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.challenger?.phone || "N/A"}</p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{challenge.challenger?.arena_rank || "N/A"}</p>
               </div>
             </div>
-            <div className="flex items-start gap-8">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.challenger?.arena_points ?? "N/A"}</p>
               </div>
@@ -426,26 +399,26 @@ export default function AdminChallengeDetailPage() {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs font-medium text-secondary/60 uppercase mb-6">Info Partner</p>
               <div className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{challenge.my_partner.email || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{challenge.my_partner.phone || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
                   <div className="flex-1">
                     <p className="text-secondary font-semibold">{challenge.my_partner.arena_rank || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{challenge.my_partner.arena_points ?? "N/A"}</p>
                   </div>
@@ -458,9 +431,9 @@ export default function AdminChallengeDetailPage() {
         {/* Opponent */}
         <div className="bg-white rounded-xl p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-secondary mb-4">Avversario</h3>
-          <div className="p-4 border border-gray-100 border-l-4 border-l-secondary/40 rounded-md bg-white mb-4">
+          <div className="p-4 border border-gray-100 border-l-4 border-l-secondary rounded-md mb-4 bg-secondary">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-secondary text-white flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 rounded-lg bg-white text-secondary flex items-center justify-center overflow-hidden">
                 {challenge.opponent?.avatar_url ? (
                   <img
                     src={challenge.opponent.avatar_url}
@@ -474,14 +447,14 @@ export default function AdminChallengeDetailPage() {
                 )}
               </div>
               <div>
-                <p className="font-bold text-secondary">{challenge.opponent?.full_name}</p>
+                <p className="font-bold text-white">{challenge.opponent?.full_name}</p>
               </div>
             </div>
             {challenge.match_type === "doubles" && challenge.opponent_partner && (
-              <div className="mt-3 pt-3 border-t border-secondary/10">
-                <p className="text-xs font-medium text-secondary/60 mb-2">PARTNER</p>
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <p className="text-xs font-medium text-white/80 mb-2">PARTNER</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-white text-secondary flex items-center justify-center overflow-hidden">
                     {challenge.opponent_partner?.avatar_url ? (
                       <img
                         src={challenge.opponent_partner.avatar_url}
@@ -494,7 +467,7 @@ export default function AdminChallengeDetailPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-secondary">
+                  <p className="text-sm font-semibold text-white">
                     {challenge.opponent_partner?.full_name}
                   </p>
                 </div>
@@ -504,26 +477,26 @@ export default function AdminChallengeDetailPage() {
 
           {/* Info Avversario */}
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pt-6 pb-6 border-b border-gray-200">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Email</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.opponent?.email || "N/A"}</p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.opponent?.phone || "N/A"}</p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{challenge.opponent?.arena_rank || "N/A"}</p>
               </div>
             </div>
-            <div className="flex items-start gap-8">
-              <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-32 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.opponent?.arena_points ?? "N/A"}</p>
               </div>
@@ -535,26 +508,26 @@ export default function AdminChallengeDetailPage() {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs font-medium text-secondary/60 uppercase mb-6">Info Partner</p>
               <div className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{challenge.opponent_partner.email || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{challenge.opponent_partner.phone || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank</label>
                   <div className="flex-1">
                     <p className="text-secondary font-semibold">{challenge.opponent_partner.arena_rank || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-8">
-                  <label className="w-full md:w-32 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                  <label className="sm:w-32 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Punteggio</label>
                   <div className="flex-1">
                     <p className="text-secondary/70">{challenge.opponent_partner.arena_points ?? "N/A"}</p>
                   </div>
@@ -569,8 +542,8 @@ export default function AdminChallengeDetailPage() {
       <div className="bg-white rounded-xl p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli Match</h2>
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pt-6 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
                 {getStatusLabel(challenge.status)}
@@ -578,8 +551,8 @@ export default function AdminChallengeDetailPage() {
             </div>
           </div>
           {challenge.match_type && (
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo Match</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo Match</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {challenge.match_type === "singles" ? "Singolo" : "Doppio"}
@@ -588,16 +561,16 @@ export default function AdminChallengeDetailPage() {
             </div>
           )}
           {challenge.match_format && (
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato</label>
               <div className="flex-1">
                 <p className="text-secondary/70">{challenge.match_format}</p>
               </div>
             </div>
           )}
           {challenge.challenge_type && (
-            <div className="flex items-start gap-8">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo Sfida</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo Sfida</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {challenge.challenge_type === "ranked" ? "Classificata" : "Amichevole"}
@@ -609,8 +582,8 @@ export default function AdminChallengeDetailPage() {
 
         {challenge.winner_id && !showScoreForm && (
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-start gap-8 mb-4">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Vincitore</label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Vincitore</label>
               <div className="flex-1">
                 <p className="text-secondary font-bold">
                   {challenge.winner_id === challenge.challenger_id
@@ -622,54 +595,16 @@ export default function AdminChallengeDetailPage() {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => setShowScoreForm(true)}
-              className="px-4 py-2 text-sm font-medium text-secondary bg-white border border-secondary rounded-md hover:bg-secondary hover:text-white transition-all"
-            >
-              Modifica Risultato
-            </button>
           </div>
         )}
-
-        {(challenge.status === "accepted" || challenge.status === "completed") && !challenge.winner_id && !showScoreForm && (() => {
-          // Controlla se la data del match è passata
-          const now = new Date();
-          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          let isDatePassed = false;
-
-          if (challenge.booking?.start_time) {
-            const challengeDate = new Date(challenge.booking.start_time);
-            const challengeDay = new Date(challengeDate.getFullYear(), challengeDate.getMonth(), challengeDate.getDate());
-            isDatePassed = challengeDay < today;
-          }
-
-          return (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              {isDatePassed && challenge.status !== "completed" && (
-                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    ⚠️ La data del match è passata. La sfida verrà spostata nello storico.
-                  </p>
-                </div>
-              )}
-              <button
-                onClick={() => setShowScoreForm(true)}
-                className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
-              >
-                <Check className="h-4 w-4" />
-                Inserisci Risultato
-              </button>
-            </div>
-          );
-        })()}
 
         {showScoreForm && (
           <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
             <h3 className="text-md font-semibold text-secondary">Risultato Match</h3>
 
             {/* Selettore Vincitore */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                 Vincitore *
               </label>
               <div className="flex-1 space-y-3">
@@ -740,8 +675,8 @@ export default function AdminChallengeDetailPage() {
             </div>
 
             {/* Campo Score */}
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                 Punteggio *
               </label>
               <div className="flex-1">
@@ -793,14 +728,48 @@ export default function AdminChallengeDetailPage() {
         )}
       </div>
 
+      {/* Modifica Risultato - Fuori dal box */}
+      {challenge.winner_id && !showScoreForm && (
+        <button
+          onClick={() => setShowScoreForm(true)}
+          className="w-full px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all flex items-center justify-center gap-2"
+        >
+          <Edit className="h-5 w-5" />
+          Modifica Risultato
+        </button>
+      )}
+
+      {/* Inserisci Risultato - Sotto Dettagli Match */}
+      {(challenge.status === "accepted" || challenge.status === "completed") && !challenge.winner_id && !showScoreForm && (() => {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        let isDatePassed = false;
+
+        if (challenge.booking?.start_time) {
+          const challengeDate = new Date(challenge.booking.start_time);
+          const challengeDay = new Date(challengeDate.getFullYear(), challengeDate.getMonth(), challengeDate.getDate());
+          isDatePassed = challengeDay < today;
+        }
+
+        return (
+          <button
+            onClick={() => setShowScoreForm(true)}
+            className="w-full px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all flex items-center justify-center gap-2"
+          >
+            <Check className="h-5 w-5" />
+            Inserisci Risultato
+          </button>
+        );
+      })()}
+
       {/* Booking Info */}
       {challenge.booking && (
         <div className="bg-white rounded-xl p-6">
           <h2 className="text-lg font-semibold text-secondary mb-6">Prenotazione Campo</h2>
 
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pt-6 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
@@ -811,8 +780,8 @@ export default function AdminChallengeDetailPage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
               <div className="flex-1">
                 <p className="text-secondary/70">
                   {new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
@@ -827,14 +796,14 @@ export default function AdminChallengeDetailPage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-4 sm:pb-6 border-b border-gray-200">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{challenge.booking.court}</p>
               </div>
             </div>
-            <div className="flex items-start gap-8">
-              <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
                   {challenge.booking.manager_confirmed === true ? "Confermata" : "In attesa di conferma"}
@@ -854,6 +823,33 @@ export default function AdminChallengeDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Bottoni Azione - Alla fine */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {challenge.booking && !challenge.booking.manager_confirmed && (
+          <button
+            onClick={handleConfirmBooking}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#08b3f7] rounded-lg hover:bg-[#08b3f7]/90 transition-all font-medium"
+          >
+            <Check className="h-5 w-5" />
+            Conferma
+          </button>
+        )}
+        <button
+          onClick={() => router.push(`/dashboard/admin/arena/challenge/${id}/edit`)}
+          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+        >
+          <Edit className="h-5 w-5" />
+          Modifica
+        </button>
+        <button
+          onClick={handleDelete}
+          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
+        >
+          <Trash2 className="h-5 w-5" />
+          Elimina
+        </button>
+      </div>
     </div>
   );
 }

@@ -402,117 +402,105 @@ export default function PlatformLogsPage() {
             <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Header Row */}
-            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-4">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-48 flex-shrink-0">
+          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="space-y-3" style={{ minWidth: '900px' }}>
+              {/* Header Row */}
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                <div className="grid grid-cols-[40px_160px_100px_160px_200px_150px_40px] items-center gap-4">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Azione</div>
-                </div>
-                <div className="w-32 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Tipo</div>
-                </div>
-                <div className="w-48 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Utente</div>
-                </div>
-                <div className="w-56 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                </div>
-                <div className="w-44 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Data e Ora</div>
+                  <div></div>
                 </div>
               </div>
-            </div>
 
-            {/* Data Rows */}
-            {filteredActivityLogs.map((log) => {
-              // Colore bordo sinistro come bookings: verde, rosso, amber
-              let borderStyle = {};
-              if (log.action.includes("delete") || log.action.includes("fail")) {
-                borderStyle = { borderLeftColor: "#ef4444" };
-              } else if (log.action.includes("update") || log.action.includes("edit")) {
-                borderStyle = { borderLeftColor: "#f59e0b" };
-              } else {
-                borderStyle = { borderLeftColor: "#10b981" };
-              }
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white rounded-md p-5 hover:shadow-md transition-all block cursor-pointer border-l-4"
-                  style={borderStyle}
-                  onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                      {getActionIcon(log.action)}
-                    </div>
-                    <div className="w-48 flex-shrink-0">
-                      <div className="font-semibold text-secondary truncate">{log.action}</div>
-                    </div>
-                    <div className="w-32 flex-shrink-0">
-                      {log.entity_type && (
-                        <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded truncate block">
-                          {log.entity_type}
-                        </span>
-                      )}
-                    </div>
-                    <div className="w-48 flex-shrink-0">
+              {/* Data Rows */}
+              {filteredActivityLogs.map((log) => {
+                // Colore bordo sinistro come bookings: verde, rosso, amber
+                let borderStyle = {};
+                if (log.action.includes("delete") || log.action.includes("fail")) {
+                  borderStyle = { borderLeftColor: "#ef4444" };
+                } else if (log.action.includes("update") || log.action.includes("edit")) {
+                  borderStyle = { borderLeftColor: "#f59e0b" };
+                } else {
+                  borderStyle = { borderLeftColor: "#10b981" };
+                }
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-white rounded-lg px-4 py-3 hover:shadow-sm transition-all block cursor-pointer border-l-4 border border-gray-200 hover:border-gray-300"
+                    style={borderStyle}
+                    onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                  >
+                    <div className="grid grid-cols-[40px_160px_100px_160px_200px_150px_40px] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {getActionIcon(log.action)}
+                      </div>
+                      <div className="font-semibold text-secondary text-sm truncate">{log.action}</div>
+                      <div>
+                        {log.entity_type && (
+                          <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded truncate block">
+                            {log.entity_type}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-secondary/80 truncate">
                         {log.profiles?.full_name || "Utente sconosciuto"}
                       </div>
-                    </div>
-                    <div className="w-56 flex-shrink-0">
                       <div className="text-sm text-secondary/70 truncate">
                         {log.profiles?.email || "-"}
                       </div>
-                    </div>
-                    <div className="w-44 flex-shrink-0">
                       <div className="text-sm text-secondary/80">{new Date(log.created_at).toLocaleString("it-IT")}</div>
-                    </div>
-                    <div className="ml-auto">
-                      {expandedLog === log.id ? (
-                        <ChevronUp className="h-5 w-5 text-secondary/40" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-secondary/40" />
-                      )}
-                    </div>
-                  </div>
-                  {expandedLog === log.id && (
-                    <div className="mt-4 pt-4 border-t border-secondary/10">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        {log.entity_id && (
-                          <div>
-                            <span className="font-medium text-secondary">Entity ID:</span>
-                            <span className="ml-2 text-secondary/60 font-mono text-xs">{log.entity_id}</span>
-                          </div>
-                        )}
-                        {log.ip_address && (
-                          <div>
-                            <span className="font-medium text-secondary">IP Address:</span>
-                            <span className="ml-2 text-secondary/60">{log.ip_address}</span>
-                          </div>
-                        )}
-                        {log.user_agent && (
-                          <div className="md:col-span-2">
-                            <span className="font-medium text-secondary">User Agent:</span>
-                            <span className="ml-2 text-secondary/60 text-xs">{log.user_agent}</span>
-                          </div>
-                        )}
-                        {log.metadata && Object.keys(log.metadata).length > 0 && (
-                          <div className="md:col-span-2">
-                            <span className="font-medium text-secondary mb-2 block">Metadata:</span>
-                            <pre className="bg-secondary/5 p-3 rounded text-xs overflow-x-auto">{JSON.stringify(log.metadata, null, 2)}</pre>
-                          </div>
+                      <div className="flex justify-center">
+                        {expandedLog === log.id ? (
+                          <ChevronUp className="h-5 w-5 text-secondary/40" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-secondary/40" />
                         )}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    {expandedLog === log.id && (
+                      <div className="mt-4 pt-4 border-t border-secondary/10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          {log.entity_id && (
+                            <div>
+                              <span className="font-medium text-secondary">Entity ID:</span>
+                              <span className="ml-2 text-secondary/60 font-mono text-xs">{log.entity_id}</span>
+                            </div>
+                          )}
+                          {log.ip_address && (
+                            <div>
+                              <span className="font-medium text-secondary">IP Address:</span>
+                              <span className="ml-2 text-secondary/60">{log.ip_address}</span>
+                            </div>
+                          )}
+                          {log.user_agent && (
+                            <div className="md:col-span-2">
+                              <span className="font-medium text-secondary">User Agent:</span>
+                              <span className="ml-2 text-secondary/60 text-xs">{log.user_agent}</span>
+                            </div>
+                          )}
+                          {log.metadata && Object.keys(log.metadata).length > 0 && (
+                            <div className="md:col-span-2">
+                              <span className="font-medium text-secondary mb-2 block">Metadata:</span>
+                              <pre className="bg-secondary/5 p-3 rounded text-xs overflow-x-auto">{JSON.stringify(log.metadata, null, 2)}</pre>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )
       ) : logType === "email" ? (
@@ -523,114 +511,104 @@ export default function PlatformLogsPage() {
             <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Header Row */}
-            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-4">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-64 flex-shrink-0">
+          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="space-y-3" style={{ minWidth: '900px' }}>
+              {/* Header Row */}
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                <div className="grid grid-cols-[40px_200px_120px_200px_150px_100px_40px] items-center gap-4">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Oggetto</div>
-                </div>
-                <div className="w-40 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Template</div>
-                </div>
-                <div className="w-56 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Destinatario</div>
-                </div>
-                <div className="w-44 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Data e Ora</div>
-                </div>
-                <div className="w-32 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
+                  <div></div>
                 </div>
               </div>
-            </div>
 
-            {/* Data Rows */}
-            {filteredEmailLogs.map((log) => {
-              let borderStyle = {};
-              if (log.status === "failed" || log.status === "bounced") {
-                borderStyle = { borderLeftColor: "#ef4444" };
-              } else if (log.status === "pending") {
-                borderStyle = { borderLeftColor: "#f59e0b" };
-              } else {
-                borderStyle = { borderLeftColor: "#10b981" };
-              }
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white rounded-md p-5 hover:shadow-md transition-all block cursor-pointer border-l-4"
-                  style={borderStyle}
-                  onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                      {getStatusIcon(log.status)}
-                    </div>
-                    <div className="w-64 flex-shrink-0">
-                      <div className="font-semibold text-secondary truncate">{log.subject}</div>
-                    </div>
-                    <div className="w-40 flex-shrink-0">
-                      <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded truncate block">{log.template_name}</span>
-                    </div>
-                    <div className="w-56 flex-shrink-0">
+              {/* Data Rows */}
+              {filteredEmailLogs.map((log) => {
+                let borderStyle = {};
+                if (log.status === "failed" || log.status === "bounced") {
+                  borderStyle = { borderLeftColor: "#ef4444" };
+                } else if (log.status === "pending") {
+                  borderStyle = { borderLeftColor: "#f59e0b" };
+                } else {
+                  borderStyle = { borderLeftColor: "#10b981" };
+                }
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-white rounded-lg px-4 py-3 hover:shadow-sm transition-all block cursor-pointer border-l-4 border border-gray-200 hover:border-gray-300"
+                    style={borderStyle}
+                    onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                  >
+                    <div className="grid grid-cols-[40px_200px_120px_200px_150px_100px_40px] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {getStatusIcon(log.status)}
+                      </div>
+                      <div className="font-semibold text-secondary text-sm truncate">{log.subject}</div>
+                      <div>
+                        <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded truncate block">{log.template_name}</span>
+                      </div>
                       <div className="text-sm text-secondary/80 truncate">
                         {log.recipient_email}
                       </div>
-                    </div>
-                    <div className="w-44 flex-shrink-0">
                       <div className="text-sm text-secondary/80">{new Date(log.created_at).toLocaleString("it-IT")}</div>
-                    </div>
-                    <div className="w-32 flex-shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded border ${getStatusBadgeColor(log.status)}`}>{log.status}</span>
-                    </div>
-                    <div className="ml-auto">
-                      {expandedLog === log.id ? (
-                        <ChevronUp className="h-5 w-5 text-secondary/40" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-secondary/40" />
-                      )}
-                    </div>
-                  </div>
-                  {expandedLog === log.id && (
-                    <div className="mt-4 pt-4 border-t border-secondary/10">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium text-secondary">Provider:</span>
-                          <span className="ml-2 text-secondary/60">{log.provider}</span>
-                        </div>
-                        {log.sent_at && (
-                          <div>
-                            <span className="font-medium text-secondary">Inviata:</span>
-                            <span className="ml-2 text-secondary/60">{new Date(log.sent_at).toLocaleString("it-IT")}</span>
-                          </div>
-                        )}
-                        {log.delivered_at && (
-                          <div>
-                            <span className="font-medium text-secondary">Consegnata:</span>
-                            <span className="ml-2 text-secondary/60">{new Date(log.delivered_at).toLocaleString("it-IT")}</span>
-                          </div>
-                        )}
-                        {log.failed_at && (
-                          <div>
-                            <span className="font-medium text-secondary">Fallita:</span>
-                            <span className="ml-2 text-secondary/60">{new Date(log.failed_at).toLocaleString("it-IT")}</span>
-                          </div>
-                        )}
-                        {log.error_message && (
-                          <div className="md:col-span-2">
-                            <span className="font-medium text-secondary">Errore:</span>
-                            <span className="ml-2 text-red-600">{log.error_message}</span>
-                          </div>
+                      <div className="text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${getStatusBadgeColor(log.status)}`}>{log.status}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        {expandedLog === log.id ? (
+                          <ChevronUp className="h-5 w-5 text-secondary/40" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-secondary/40" />
                         )}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    {expandedLog === log.id && (
+                      <div className="mt-4 pt-4 border-t border-secondary/10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-secondary">Provider:</span>
+                            <span className="ml-2 text-secondary/60">{log.provider}</span>
+                          </div>
+                          {log.sent_at && (
+                            <div>
+                              <span className="font-medium text-secondary">Inviata:</span>
+                              <span className="ml-2 text-secondary/60">{new Date(log.sent_at).toLocaleString("it-IT")}</span>
+                            </div>
+                          )}
+                          {log.delivered_at && (
+                            <div>
+                              <span className="font-medium text-secondary">Consegnata:</span>
+                              <span className="ml-2 text-secondary/60">{new Date(log.delivered_at).toLocaleString("it-IT")}</span>
+                            </div>
+                          )}
+                          {log.failed_at && (
+                            <div>
+                              <span className="font-medium text-secondary">Fallita:</span>
+                              <span className="ml-2 text-secondary/60">{new Date(log.failed_at).toLocaleString("it-IT")}</span>
+                            </div>
+                          )}
+                          {log.error_message && (
+                            <div className="md:col-span-2">
+                              <span className="font-medium text-secondary">Errore:</span>
+                              <span className="ml-2 text-red-600">{log.error_message}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )
       ) : logType === "registration" ? (
@@ -641,75 +619,62 @@ export default function PlatformLogsPage() {
             <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Header Row */}
-            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-4">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-48 flex-shrink-0">
+          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="space-y-3" style={{ minWidth: '800px' }}>
+              {/* Header Row */}
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                <div className="grid grid-cols-[40px_160px_200px_120px_100px_150px] items-center gap-4">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
-                </div>
-                <div className="w-56 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                </div>
-                <div className="w-32 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                </div>
-                <div className="w-28 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
-                </div>
-                <div className="w-44 flex-shrink-0">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Ruolo</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Data Registrazione</div>
                 </div>
               </div>
-            </div>
 
-            {/* Data Rows */}
-            {filteredRegistrationLogs.map((log) => {
-              // Colore bordo sinistro in base al ruolo
-              let borderColor = "#0690c6"; // default blu
-              if (log.role === "admin") borderColor = "#dc2626";
-              else if (log.role === "gestore") borderColor = "#d97706";
-              else if (log.role === "maestro") borderColor = "#059669";
-              else if (log.role === "atleta") borderColor = "#0690c6";
+              {/* Data Rows */}
+              {filteredRegistrationLogs.map((log) => {
+                // Colore bordo sinistro in base al ruolo
+                let borderColor = "#0690c6"; // default blu
+                if (log.role === "admin") borderColor = "#dc2626";
+                else if (log.role === "gestore") borderColor = "#d97706";
+                else if (log.role === "maestro") borderColor = "#059669";
+                else if (log.role === "atleta") borderColor = "#0690c6";
 
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white rounded-md p-5 hover:shadow-md transition-all block border-l-4"
-                  style={{ borderLeftColor: borderColor }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                      {getRoleIcon(log.role)}
-                    </div>
-                    <div className="w-48 flex-shrink-0">
-                      <div className="font-semibold text-secondary truncate">
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-white rounded-lg px-4 py-3 hover:shadow-sm transition-all block border-l-4 border border-gray-200 hover:border-gray-300"
+                    style={{ borderLeftColor: borderColor }}
+                  >
+                    <div className="grid grid-cols-[40px_160px_200px_120px_100px_150px] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {getRoleIcon(log.role)}
+                      </div>
+                      <div className="font-semibold text-secondary text-sm truncate">
                         {log.full_name || "Nome non impostato"}
                       </div>
-                    </div>
-                    <div className="w-56 flex-shrink-0">
                       <div className="text-sm text-secondary/80 truncate">{log.email}</div>
-                    </div>
-                    <div className="w-32 flex-shrink-0">
                       <div className="text-sm text-secondary/70 truncate">{log.phone || "-"}</div>
-                    </div>
-                    <div className="w-28 flex-shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded border ${getRoleBadgeColor(log.role)}`}>
-                        {getRoleLabel(log.role)}
-                      </span>
-                    </div>
-                    <div className="w-44 flex-shrink-0">
+                      <div className="text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${getRoleBadgeColor(log.role)}`}>
+                          {getRoleLabel(log.role)}
+                        </span>
+                      </div>
                       <div className="text-sm text-secondary/80">
                         {new Date(log.registered_at).toLocaleString("it-IT")}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )
       ) : (
@@ -720,80 +685,67 @@ export default function PlatformLogsPage() {
             <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Header Row */}
-            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-4">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-32 flex-shrink-0">
+          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="space-y-3" style={{ minWidth: '800px' }}>
+              {/* Header Row */}
+              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                <div className="grid grid-cols-[40px_120px_160px_200px_100px_150px] items-center gap-4">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Codice</div>
-                </div>
-                <div className="w-48 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Utente</div>
-                </div>
-                <div className="w-56 flex-shrink-0">
                   <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                </div>
-                <div className="w-28 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Ruolo Codice</div>
-                </div>
-                <div className="w-44 flex-shrink-0">
+                  <div className="text-xs font-bold text-white/80 uppercase text-center">Ruolo Codice</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Data Utilizzo</div>
                 </div>
               </div>
-            </div>
 
-            {/* Data Rows */}
-            {filteredInviteCodeLogs.map((log) => {
-              // Colore bordo sinistro in base al ruolo del codice
-              const role = log.invite_code?.role || "atleta";
-              let borderColor = "#0690c6";
-              if (role === "admin") borderColor = "#dc2626";
-              else if (role === "gestore") borderColor = "#d97706";
-              else if (role === "maestro") borderColor = "#059669";
-              else if (role === "atleta") borderColor = "#0690c6";
+              {/* Data Rows */}
+              {filteredInviteCodeLogs.map((log) => {
+                // Colore bordo sinistro in base al ruolo del codice
+                const role = log.invite_code?.role || "atleta";
+                let borderColor = "#0690c6";
+                if (role === "admin") borderColor = "#dc2626";
+                else if (role === "gestore") borderColor = "#d97706";
+                else if (role === "maestro") borderColor = "#059669";
+                else if (role === "atleta") borderColor = "#0690c6";
 
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white rounded-md p-5 hover:shadow-md transition-all block border-l-4"
-                  style={{ borderLeftColor: borderColor }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                      <Ticket className="w-5 h-5 text-secondary/60" />
-                    </div>
-                    <div className="w-32 flex-shrink-0">
-                      <div className="font-mono font-semibold text-secondary truncate">
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-white rounded-lg px-4 py-3 hover:shadow-sm transition-all block border-l-4 border border-gray-200 hover:border-gray-300"
+                    style={{ borderLeftColor: borderColor }}
+                  >
+                    <div className="grid grid-cols-[40px_120px_160px_200px_100px_150px] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        <Ticket className="w-5 h-5 text-secondary/60" />
+                      </div>
+                      <div className="font-mono font-semibold text-secondary text-sm truncate">
                         {log.invite_code?.code || "N/A"}
                       </div>
-                    </div>
-                    <div className="w-48 flex-shrink-0">
-                      <div className="font-semibold text-secondary truncate">
+                      <div className="font-semibold text-secondary text-sm truncate">
                         {log.profile?.full_name || "Utente sconosciuto"}
                       </div>
-                    </div>
-                    <div className="w-56 flex-shrink-0">
                       <div className="text-sm text-secondary/80 truncate">
                         {log.profile?.email || "-"}
                       </div>
-                    </div>
-                    <div className="w-28 flex-shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded border ${getRoleBadgeColor(role)}`}>
-                        {getRoleLabel(role)}
-                      </span>
-                    </div>
-                    <div className="w-44 flex-shrink-0">
+                      <div className="text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${getRoleBadgeColor(role)}`}>
+                          {getRoleLabel(role)}
+                        </span>
+                      </div>
                       <div className="text-sm text-secondary/80">
                         {new Date(log.used_at).toLocaleString("it-IT")}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )
       )}
