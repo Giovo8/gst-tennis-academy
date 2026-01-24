@@ -231,7 +231,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
           {activeTab === 'bracket' && (
             <>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-secondary">Tabellone Eliminazione</h2>
+                <h2 className="text-xl font-bold text-secondary">Tabellone</h2>
                 <div className="flex gap-1 sm:gap-2">
                   <button
                     onClick={() => setActiveTab('overview')}
@@ -293,12 +293,16 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       <div className="flex-1">
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
-                      <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                      </div>
-                      <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                      </div>
+                      {isAdmin && (
+                        <>
+                          <div className="w-48 hidden md:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+                          </div>
+                        </>
+                      )}
                       {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                         <div className="w-10 flex-shrink-0 flex items-center justify-center">
                           <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
@@ -320,12 +324,12 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                            <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                               {avatarUrl ? (
                                 <img
                                   src={avatarUrl}
                                   alt={fullName}
-                                  className="w-full h-full object-cover"
+                                  className="absolute inset-0 w-full h-full object-cover"
                                 />
                               ) : (
                                 <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
@@ -337,24 +341,28 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                               {fullName}
                             </div>
                           </div>
-                          <div className="w-48 hidden md:block">
-                            {participant.profiles?.email ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.email}
+                          {isAdmin && (
+                            <>
+                              <div className="w-48 hidden md:block">
+                                {participant.profiles?.email ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.email}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            {participant.profiles?.phone ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.phone}
+                              <div className="w-32 hidden lg:block">
+                                {participant.profiles?.phone ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.phone}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
+                            </>
+                          )}
                           {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                             <div className="w-10 flex-shrink-0 flex items-center justify-center">
                               <button
@@ -415,12 +423,16 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       <div className="flex-1">
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
-                      <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                      </div>
-                      <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                      </div>
+                      {isAdmin && (
+                        <>
+                          <div className="w-48 hidden md:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -437,12 +449,12 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                            <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                               {avatarUrl ? (
                                 <img
                                   src={avatarUrl}
                                   alt={fullName}
-                                  className="w-full h-full object-cover"
+                                  className="absolute inset-0 w-full h-full object-cover"
                                 />
                               ) : (
                                 <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
@@ -459,24 +471,28 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                               </div>
                             )}
                           </div>
-                          <div className="w-48 hidden md:block">
-                            {participant.profiles?.email ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.email}
+                          {isAdmin && (
+                            <>
+                              <div className="w-48 hidden md:block">
+                                {participant.profiles?.email ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.email}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            {participant.profiles?.phone ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.phone}
+                              <div className="w-32 hidden lg:block">
+                                {participant.profiles?.phone ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.phone}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     );
@@ -568,12 +584,16 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       <div className="flex-1">
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
-                      <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                      </div>
-                      <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                      </div>
+                      {isAdmin && (
+                        <>
+                          <div className="w-48 hidden md:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -590,12 +610,12 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                            <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                               {avatarUrl ? (
                                 <img
                                   src={avatarUrl}
                                   alt={fullName}
-                                  className="w-full h-full object-cover"
+                                  className="absolute inset-0 w-full h-full object-cover"
                                 />
                               ) : (
                                 <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
@@ -616,24 +636,28 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                               </div>
                             )}
                           </div>
-                          <div className="w-48 hidden md:block">
-                            {participant.profiles?.email ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.email}
+                          {isAdmin && (
+                            <>
+                              <div className="w-48 hidden md:block">
+                                {participant.profiles?.email ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.email}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            {participant.profiles?.phone ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.phone}
+                              <div className="w-32 hidden lg:block">
+                                {participant.profiles?.phone ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.phone}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     );
@@ -646,7 +670,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
           {(tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && activeTab === 'bracket' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-secondary">Tabellone Eliminazione</h2>
+                <h2 className="text-xl font-bold text-secondary">Tabellone</h2>
                 {participants.length > 0 && (
                   <div className="flex gap-1 sm:gap-2">
                     <button
@@ -729,12 +753,16 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       <div className="flex-1">
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
-                      <div className="w-48 hidden md:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                      </div>
-                      <div className="w-32 hidden lg:block">
-                        <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                      </div>
+                      {isAdmin && (
+                        <>
+                          <div className="w-48 hidden md:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+                          </div>
+                          <div className="w-32 hidden lg:block">
+                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+                          </div>
+                        </>
+                      )}
                       {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                         <div className="w-10 flex-shrink-0 flex items-center justify-center">
                           <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
@@ -756,12 +784,12 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                            <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                               {avatarUrl ? (
                                 <img
                                   src={avatarUrl}
                                   alt={fullName}
-                                  className="w-full h-full object-cover"
+                                  className="absolute inset-0 w-full h-full object-cover"
                                 />
                               ) : (
                                 <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
@@ -773,24 +801,28 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                               {fullName}
                             </div>
                           </div>
-                          <div className="w-48 hidden md:block">
-                            {participant.profiles?.email ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.email}
+                          {isAdmin && (
+                            <>
+                              <div className="w-48 hidden md:block">
+                                {participant.profiles?.email ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.email}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            {participant.profiles?.phone ? (
-                              <div className="text-sm text-secondary/70 truncate">
-                                {participant.profiles.phone}
+                              <div className="w-32 hidden lg:block">
+                                {participant.profiles?.phone ? (
+                                  <div className="text-sm text-secondary/70 truncate">
+                                    {participant.profiles.phone}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-secondary/40">-</div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="text-sm text-secondary/40">-</div>
-                            )}
-                          </div>
+                            </>
+                          )}
                           {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                             <div className="w-10 flex-shrink-0 flex items-center justify-center">
                               <button
@@ -979,12 +1011,12 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                    <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                       {avatarUrl ? (
                         <img
                           src={avatarUrl}
                           alt={fullName}
-                          className="w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
                         <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Video, Loader2, Search, Plus, Play, Users, Calendar, Edit } from "lucide-react";
+import { Video, Loader2, Search, Plus, Play, Users, Calendar, Edit, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import AuthGuard from "@/components/auth/AuthGuard";
+import AtletaVideosAdminView from "./atleta-view";
 
 type VideoLesson = {
   id: string;
@@ -29,10 +30,14 @@ type VideoLesson = {
 
 export default function VideoLessonsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"admin" | "atleta">(
+    (searchParams.get("view") as "admin" | "atleta") || "admin"
+  );
 
   const categories = [
     { value: "generale", label: "Generale" },
@@ -115,8 +120,21 @@ export default function VideoLessonsPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">
-        {/* Header */}
+      {viewMode === "atleta" ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setViewMode("admin")}
+              className="px-4 py-2 bg-secondary/10 text-secondary rounded-lg hover:bg-secondary/20 transition-all flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Passa a Vista Admin
+            </button>
+          </div>
+          <AtletaVideosAdminView />
+        </div>
+      ) : (
+      <div className="space-y-6">{/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div>
@@ -129,13 +147,23 @@ export default function VideoLessonsPage() {
               </p>
             </div>
           </div>
-          <Link
-            href="/dashboard/admin/video-lessons/new"
-            className="sm:px-6 sm:py-3 px-4 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 sm:flex-shrink-0"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Nuovo Video</span>
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode("atleta")}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all flex items-center gap-2"
+              title="Vista Atleta"
+            >
+              <Eye className="h-4 w-4" />
+              Vista Atleta
+            </button>
+            <Link
+              href="/dashboard/admin/video-lessons/new"
+              className="sm:px-6 sm:py-3 px-4 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 sm:flex-shrink-0"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Nuovo Video</span>
+            </Link>
+          </div>
         </div>
 
         {/* Search */}
@@ -293,6 +321,7 @@ export default function VideoLessonsPage() {
           </div>
         )}
       </div>
+      )}
     </AuthGuard>
   );
 }

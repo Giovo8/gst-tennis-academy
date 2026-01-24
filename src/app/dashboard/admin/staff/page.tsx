@@ -2,20 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  User,
-  Loader2,
-  Search,
-  ArrowUp,
-  ArrowDown,
-  RefreshCw,
-  Download,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { Plus, User, Loader2, Search, ArrowUp, ArrowDown } from "lucide-react";
 import Link from "next/link";
 
 type StaffMember = {
@@ -114,26 +101,6 @@ export default function AdminStaffPage() {
     }
   };
 
-  function exportToCSV() {
-    const csv = [
-      ["Nome", "Ruolo", "Ordine", "Stato", "Biografia"].join(","),
-      ...sortedStaff.map((m) => [
-        `"${m.full_name.replace(/"/g, '""')}"`,
-        `"${m.role.replace(/"/g, '""')}"`,
-        m.order_index,
-        m.active ? "Attivo" : "Non attivo",
-        `"${(m.bio || "").replace(/"/g, '""')}"`,
-      ].join(","))
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `staff-${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -144,28 +111,14 @@ export default function AdminStaffPage() {
             Visualizza, modifica e gestisci i membri dello staff della homepage
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
           <Link
             href="/dashboard/admin/staff/new"
-            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Nuovo Membro
           </Link>
-          <button
-            onClick={() => loadStaff()}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Ricarica"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </button>
-          <button
-            onClick={exportToCSV}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Esporta CSV"
-          >
-            <Download className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
@@ -198,128 +151,134 @@ export default function AdminStaffPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* Header Row */}
-          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="flex items-center gap-4">
-              <div className="w-16 flex-shrink-0 text-center">
-                <div className="text-xs font-bold text-white/80 uppercase">Avatar</div>
-              </div>
-              <div className="w-20 flex-shrink-0 text-center">
-                <button
-                  onClick={() => handleSort("order")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                >
-                  Ordine
-                  {sortBy === "order" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <button
-                  onClick={() => handleSort("name")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Nome
-                  {sortBy === "name" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-48 flex-shrink-0">
-                <button
-                  onClick={() => handleSort("role")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Ruolo
-                  {sortBy === "role" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="w-24 flex-shrink-0 text-center">
-                <button
-                  onClick={() => handleSort("status")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                >
-                  Stato
-                  {sortBy === "status" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
+        <div
+          className="overflow-x-auto scrollbar-hide"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+
+          <div className="space-y-3 min-w-[860px]">
+            {/* Header Row */}
+            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+              <div className="grid grid-cols-[80px_90px_1fr_170px_120px] items-center gap-4">
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Avatar</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">
+                  <button
+                    onClick={() => handleSort("order")}
+                    className="flex items-center justify-center gap-1 hover:text-white transition-colors mx-auto"
+                  >
+                    Ordine
+                    {sortBy === "order" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs font-bold text-white/80 uppercase">
+                  <button
+                    onClick={() => handleSort("name")}
+                    className="flex items-center gap-1 hover:text-white transition-colors"
+                  >
+                    Nome
+                    {sortBy === "name" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs font-bold text-white/80 uppercase">
+                  <button
+                    onClick={() => handleSort("role")}
+                    className="flex items-center gap-1 hover:text-white transition-colors"
+                  >
+                    Ruolo
+                    {sortBy === "role" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">
+                  <button
+                    onClick={() => handleSort("status")}
+                    className="flex items-center justify-center gap-1 hover:text-white transition-colors mx-auto"
+                  >
+                    Stato
+                    {sortBy === "status" && (
+                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Data Rows */}
-          {sortedStaff.map((member) => {
-            // Determina il colore del bordo in base allo stato
-            const borderStyle = {
-              borderLeftColor: member.active ? "#10b981" : "#ef4444", // verde attivo, rosso non attivo
-            };
+            {/* Data Rows */}
+            {sortedStaff.map((member) => {
+              const statusColor = member.active ? "#08b3f7" : "#022431";
+              const borderStyle = { borderLeftColor: statusColor };
+              const badgeClasses = member.active
+                ? "bg-[#08b3f7]/10 text-[#022431] border border-[#08b3f7]/60"
+                : "bg-[#022431]/10 text-[#022431] border border-[#022431]/60";
 
-            return (
-              <Link
-                key={member.id}
-                href={`/dashboard/admin/staff/new?id=${member.id}`}
-                className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all block cursor-pointer border-l-4"
-                style={borderStyle}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Avatar */}
-                  <div className="w-16 flex-shrink-0 flex items-center justify-center">
-                    {member.image_url ? (
-                      <img
-                        src={member.image_url}
-                        alt={member.full_name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary text-white">
-                        <span className="font-bold text-lg">
-                          {member.full_name.charAt(0).toUpperCase()}
-                        </span>
+              return (
+                <Link
+                  key={member.id}
+                  href={`/dashboard/admin/staff/new?id=${member.id}`}
+                  className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all block cursor-pointer border-l-4"
+                  style={borderStyle}
+                >
+                  <div className="grid grid-cols-[80px_90px_1fr_170px_120px] items-center gap-4">
+                    {/* Avatar */}
+                    <div className="flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/10 flex items-center justify-center">
+                        {member.image_url ? (
+                          <img
+                            src={member.image_url}
+                            alt={member.full_name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="font-bold text-lg text-secondary">
+                            {member.full_name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Ordine */}
-                  <div className="w-20 flex-shrink-0 text-center">
-                    <div className="text-sm font-bold text-secondary">
+                    {/* Ordine */}
+                    <div className="text-sm font-bold text-secondary text-center">
                       #{member.order_index}
                     </div>
-                  </div>
 
-                  {/* Nome */}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-secondary text-sm truncate">
-                      {member.full_name}
-                    </div>
-                    {member.bio && (
-                      <div className="text-xs text-secondary/60 truncate mt-0.5">
-                        {member.bio}
+                    {/* Nome e bio */}
+                    <div className="min-w-0">
+                      <div className="font-bold text-secondary text-sm truncate">
+                        {member.full_name}
                       </div>
-                    )}
-                  </div>
+                      {member.bio && (
+                        <div className="text-xs text-secondary/60 truncate mt-0.5">
+                          {member.bio}
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Ruolo */}
-                  <div className="w-48 flex-shrink-0">
+                    {/* Ruolo */}
                     <div className="font-semibold text-sm text-secondary truncate">
                       {member.role}
                     </div>
-                  </div>
 
-                  {/* Stato */}
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <span className="text-sm font-bold text-secondary">
-                      {member.active ? "Attivo" : "Inattivo"}
-                    </span>
+                    {/* Stato */}
+                    <div className="flex items-center justify-center">
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClasses}`}>
+                        {member.active ? "Attivo" : "Inattivo"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

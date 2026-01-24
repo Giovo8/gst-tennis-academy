@@ -193,24 +193,27 @@ function AtletaTournamentDetailInner() {
 
   const TournamentIcon = getTournamentIcon();
 
-  // Determina colore bordo in base allo stato
+  // Determina colore bordo in base allo stato - using CSS variables from design system
   function getStatusBorderColor() {
     if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") {
-      return "#6b7280"; // gray
+      return "var(--foreground-muted)"; // #056c94 - frozen-700
     } else if (tournament?.status === "In Corso" || tournament?.status === "In corso") {
-      return "#034863"; // secondary
+      return "var(--secondary)"; // #034863 - frozen-800
     } else if (tournament?.status === "Aperto") {
-      // Rosso se posti esauriti, verde altrimenti
-      if (currentParticipants >= (tournament?.max_participants || 0)) {
-        return "#ef4444"; // red
-      }
-      return "#10b981"; // emerald
+      return "var(--primary)"; // #08b3f7 - frozen-500
     }
-    return "#034863"; // secondary
+    return "var(--secondary)"; // default
   }
 
   const spotsLeft = (tournament?.max_participants ?? 0) - currentParticipants;
   const isCampionato = tournament?.competition_type === 'campionato' || tournament?.tournament_type === 'campionato';
+  const isFull = tournament?.status === 'Aperto' && spotsLeft <= 0;
+  const getDisplayStatus = () => {
+    if (isFull) {
+      return "Registrazioni Chiuse - Posti Esauriti";
+    }
+    return tournament?.status || "In preparazione";
+  };
 
   if (loading) {
     return (
@@ -266,58 +269,13 @@ function AtletaTournamentDetailInner() {
       </p>
 
       {/* Header con titolo e descrizione */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Dettaglio Competizione
-          </h1>
-          <p className="text-secondary/70 font-medium">
-            Visualizza informazioni e partecipa al torneo
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Bottone Iscriviti */}
-          {!joined && tournament.status === 'Aperto' && spotsLeft > 0 && (
-            <button
-              onClick={handleJoin}
-              disabled={actionLoading}
-              className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {actionLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Iscrizione...
-                </>
-              ) : (
-                <>
-                  <Trophy className="h-4 w-4" />
-                  Iscriviti al Torneo
-                </>
-              )}
-            </button>
-          )}
-
-          {/* Bottone Cancella Iscrizione */}
-          {joined && tournament.status === 'Aperto' && (
-            <button
-              onClick={handleLeave}
-              disabled={actionLoading}
-              className="px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {actionLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Cancellazione...
-                </>
-              ) : (
-                <>
-                  <X className="h-4 w-4" />
-                  Cancella Iscrizione
-                </>
-              )}
-            </button>
-          )}
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-secondary mb-2">
+          Dettaglio Competizione
+        </h1>
+        <p className="text-secondary/70 font-medium">
+          Visualizza informazioni e partecipa al torneo
+        </p>
       </div>
 
       {/* Messaggio errore globale */}
@@ -342,13 +300,10 @@ function AtletaTournamentDetailInner() {
 
       {/* Badge iscritto */}
       {joined && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 border-l-4 border-l-emerald-500">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 border-l-4" style={{ borderLeftColor: 'var(--primary)' }}>
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-            <div>
-              <h3 className="text-lg font-bold text-secondary">Sei iscritto a questo torneo</h3>
-              <p className="text-sm text-secondary/70">Buona fortuna!</p>
-            </div>
+            <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--primary)' }} />
+            <h3 className="text-lg font-bold text-secondary">Sei iscritto a questo torneo</h3>
           </div>
         </div>
       )}
@@ -374,12 +329,16 @@ function AtletaTournamentDetailInner() {
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
-                  {new Date(tournament.start_date).toLocaleDateString("it-IT", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  {(() => {
+                    const dateStr = new Date(tournament.start_date).toLocaleDateString("it-IT", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+                    // Capitalizza il primo carattere (giorno della settimana) e il mese
+                    return dateStr.replace(/^(.)/, (match) => match.toUpperCase()).replace(/(\s)([a-z])/g, (match, space, char) => space + char.toUpperCase());
+                  })()}
                 </p>
               </div>
             </div>
@@ -401,7 +360,7 @@ function AtletaTournamentDetailInner() {
           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
             <div className="flex-1">
-              <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
+              <p className="text-secondary font-semibold">{getDisplayStatus()}</p>
             </div>
           </div>
 
@@ -412,11 +371,6 @@ function AtletaTournamentDetailInner() {
               <p className="text-secondary font-semibold">
                 {currentParticipants} / {tournament.max_participants}
               </p>
-              {spotsLeft > 0 && (
-                <p className="text-sm text-secondary/70 mt-1">
-                  {spotsLeft} {spotsLeft === 1 ? 'posto disponibile' : 'posti disponibili'}
-                </p>
-              )}
             </div>
           </div>
 
@@ -458,11 +412,69 @@ function AtletaTournamentDetailInner() {
       </div>
 
       {/* Tournament Manager (Partecipanti/Tabellone/Gironi/Calendario/Classifica) */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <TournamentManagerWrapper
-          tournamentId={tournament.id}
-          isAdmin={false}
-        />
+      {currentParticipants > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <TournamentManagerWrapper
+            tournamentId={tournament.id}
+            isAdmin={false}
+          />
+        </div>
+      )}
+
+      {/* Pulsanti azioni */}
+      <div className="flex flex-wrap gap-3">
+        {/* Bottone Iscriviti */}
+        {!joined && tournament.status === 'Aperto' && (
+          <button
+            onClick={handleJoin}
+            disabled={actionLoading || spotsLeft <= 0}
+            title={spotsLeft <= 0 ? "Posti esauriti" : "Iscriviti al torneo"}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white rounded-lg font-medium transition-all"
+            style={{
+              backgroundColor: spotsLeft <= 0 ? '#9CA3AF' : '#08b3f7',
+              opacity: spotsLeft <= 0 || actionLoading ? 0.6 : 1,
+              cursor: spotsLeft <= 0 || actionLoading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {actionLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Iscrizione in corso...
+              </>
+            ) : spotsLeft <= 0 ? (
+              <>
+                <X className="h-5 w-5" />
+                Posti Esauriti
+              </>
+            ) : (
+              <>
+                <Trophy className="h-5 w-5" />
+                Iscriviti al Torneo
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Bottone Cancella Iscrizione */}
+        {joined && tournament.status === 'Aperto' && (
+          <button
+            onClick={handleLeave}
+            disabled={actionLoading}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg hover:bg-[#056c94]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Cancellazione in corso...
+              </>
+            ) : (
+              <>
+                <X className="h-5 w-5" />
+                Cancella Iscrizione
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

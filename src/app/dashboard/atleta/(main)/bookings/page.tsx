@@ -520,14 +520,18 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     {/* Azioni */}
                     <div className="flex items-center justify-center gap-0.5">
                       {canEdit && (
-                        <Link
-                          href={`/dashboard/atleta/bookings/${booking.id}/edit`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none"
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.push(`/dashboard/atleta/bookings/${booking.id}/edit`);
+                          }}
+                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none border-0 bg-transparent"
                           title="Modifica prenotazione"
                         >
                           <Pencil className="h-4 w-4" />
-                        </Link>
+                        </button>
                       )}
                       {canCancel && (
                         <button

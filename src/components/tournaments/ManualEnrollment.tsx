@@ -244,12 +244,12 @@ export default function ManualEnrollment({
                           {isSelected && <Check className="h-3 w-3 text-white" />}
                         </div>
 
-                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                        <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                           {avatarUrl ? (
                             <img
                               src={avatarUrl}
                               alt={fullName}
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover"
                             />
                           ) : (
                             <span>{fullName.charAt(0).toUpperCase()}</span>

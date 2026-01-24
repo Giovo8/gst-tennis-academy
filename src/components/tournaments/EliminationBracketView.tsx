@@ -263,7 +263,7 @@ export default function EliminationBracket({
   return (
     <div className="space-y-6">
       {/* Visualizzazione bracket */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="flex gap-4 sm:gap-6 md:gap-8 pb-4" style={{ minWidth: 'fit-content' }}>
           {rounds.map(roundNum => {
             const roundMatches = matchesByRound[roundNum] || [];

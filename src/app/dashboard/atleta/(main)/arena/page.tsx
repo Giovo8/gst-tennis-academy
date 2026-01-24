@@ -23,6 +23,7 @@ import {
   X as XIcon,
   MessageSquare,
   Eye,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -124,6 +125,7 @@ export default function ArenaPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<SelectedPlayer | null>(null);
   const [activeTab, setActiveTab] = useState<"sfide" | "classifica" | "info" | "statistiche">("sfide");
   const [selectedRank, setSelectedRank] = useState<string>("Tutti");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     loadArenaData();
@@ -135,6 +137,16 @@ export default function ArenaPage() {
       router.replace('/dashboard/atleta/arena');
     }
   }, [searchParams]);
+
+  const filteredChallenges = challenges.filter((challenge) => {
+    if (!search.trim()) return true;
+
+    const q = search.toLowerCase();
+    const challengerName = (challenge.challenger?.full_name || "").toLowerCase();
+    const opponentName = (challenge.opponent?.full_name || "").toLowerCase();
+
+    return challengerName.includes(q) || opponentName.includes(q);
+  });
 
   async function loadArenaData() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -302,6 +314,19 @@ export default function ArenaPage() {
     }
   };
 
+  const getLevelAccentColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case "oro":
+        return "#f59e0b"; // amber-500
+      case "argento":
+        return "#9ca3af"; // gray-400
+      case "bronzo":
+        return "#f97316"; // orange-500
+      default:
+        return "#0ea5e9"; // secondary
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -318,19 +343,12 @@ export default function ArenaPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-secondary">Arena</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
             Sfida altri atleti, scala la classifica e raggiungi la vetta
           </p>
-          {/* Level Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-md text-white text-sm mt-3">
-            {getLevelIcon(stats.level)}
-            <span className="font-bold">Livello {stats.level}</span>
-            <span className="text-white/90">•</span>
-            <span className="text-white/90">{stats.points} punti</span>
-          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -365,12 +383,41 @@ export default function ArenaPage() {
         </div>
       </div>
 
+      {/* Level Badge - styled like admin tournament header - Full Width */}
+      <div
+        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
+        style={{ borderLeftColor: getLevelAccentColor(stats.level) }}
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-white flex-shrink-0">
+            {getLevelIcon(stats.level)}
+          </span>
+          <div className="flex items-center gap-2 text-white">
+            <span className="text-xl font-bold">Livello {stats.level}</span>
+            <span className="text-white/80">•</span>
+            <span className="text-lg font-semibold">{stats.points} punti</span>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content - Conditional Rendering based on activeTab */}
       {activeTab === "sfide" && (
       <div className="space-y-6">
+        {/* Search (no container, inline like other pages) */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+          <input
+            type="text"
+            placeholder="Cerca per nome giocatore..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          />
+        </div>
+
         {/* Sfide */}
         <div className="bg-white rounded-lg p-6">
-              {challenges.length === 0 ? (
+              {filteredChallenges.length === 0 ? (
                 <div className="text-center py-20 rounded-xl bg-white">
                   <Swords className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
                   <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna sfida trovata</h3>
@@ -410,7 +457,7 @@ export default function ArenaPage() {
                   </div>
 
                   {/* Data Rows */}
-                  {challenges.map((challenge) => {
+                  {filteredChallenges.map((challenge) => {
                     const isChallenger = challenge.challenger_id === userId;
                     const opponent = isChallenger ? challenge.opponent : challenge.challenger;
                     const isPending = challenge.status === "pending";
@@ -590,6 +637,10 @@ export default function ArenaPage() {
 
         {/* Leaderboard */}
         <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-secondary">Classifica Arena</h2>
+          </div>
+          
           {/* Rank Filter */}
           <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
             {["Tutti", "Bronzo", "Argento", "Oro", "Platino", "Diamante"].map((rank) => (
@@ -617,45 +668,33 @@ export default function ArenaPage() {
               : leaderboard.filter(entry => entry.level === selectedRank);
 
             return filteredLeaderboard.length === 0 ? (
-              <div className="text-center py-20 rounded-xl bg-white">
-                <Trophy className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
-                <h3 className="text-xl font-semibold text-secondary mb-2">Nessun giocatore in classifica</h3>
+              <div className="text-center py-12">
+                <Trophy className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
                 <p className="text-secondary/70">
                   {selectedRank === "Tutti"
-                    ? "Non ci sono ancora giocatori"
+                    ? "Nessun giocatore in classifica"
                     : `Nessun giocatore nel livello ${selectedRank}`}
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
-                <div className="space-y-3 min-w-[700px]">
+              <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`
+                  .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                  }
+                `}</style>
+                <div className="space-y-3" style={{ minWidth: '800px' }}>
                 {/* Header Row */}
                 <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                    </div>
-                    <div className="w-10 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase"></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
-                    </div>
-                    <div className="w-20 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase">Livello</div>
-                    </div>
-                    <div className="w-16 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase">V</div>
-                    </div>
-                    <div className="w-16 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase">S</div>
-                    </div>
-                    <div className="w-20 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase">Punti</div>
-                    </div>
-                    <div className="w-24 flex-shrink-0 text-center">
-                      <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
-                    </div>
+                  <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px_120px] items-center gap-4">
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Partite</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Vittorie</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Sconfitte</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Win Rate</div>
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
                   </div>
                 </div>
 
@@ -664,92 +703,84 @@ export default function ArenaPage() {
                   const isCurrentUser = entry.userId === userId;
                   const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
 
-                  // Determina colore bordo in base alla posizione
+                  // Determina il colore del bordo in base alla posizione
                   let borderStyle = {};
                   if (displayPosition === 1) {
-                    borderStyle = { borderLeftColor: "#eab308" }; // oro
+                    borderStyle = { borderLeftColor: "#eab308" }; // giallo oro
                   } else if (displayPosition === 2) {
-                    borderStyle = { borderLeftColor: "#9ca3af" }; // argento
+                    borderStyle = { borderLeftColor: "#9ca3af" }; // grigio argento
                   } else if (displayPosition === 3) {
-                    borderStyle = { borderLeftColor: "#f97316" }; // bronzo
-                  } else if (isCurrentUser) {
-                    borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary per utente corrente
+                    borderStyle = { borderLeftColor: "#f97316" }; // arancione bronzo
                   } else {
-                    borderStyle = { borderLeftColor: "#e5e7eb" }; // grigio default
+                    borderStyle = { borderLeftColor: "#0f4c7c" }; // secondary default
                   }
 
                   return (
                     <div
-                      key={entry.userId}
-                      onClick={() => !isCurrentUser && handleViewProfile(entry)}
-                      className={`bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4 ${
+                      key={`${entry.userId}-${index}`}
+                      className={`bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4 ${
                         isCurrentUser ? "bg-secondary/5" : ""
                       }`}
                       style={borderStyle}
                     >
-                      <div className="flex items-center gap-4">
-                        {/* Posizione */}
-                        <div className="w-10 flex-shrink-0 text-center">
-                          <div
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mx-auto ${
-                              displayPosition === 1
-                                ? "bg-yellow-500 text-white"
-                                : displayPosition === 2
-                                ? "bg-gray-400 text-white"
-                                : displayPosition === 3
-                                ? "bg-orange-500 text-white"
-                                : "bg-gray-100 text-secondary"
-                            }`}
-                          >
+                      <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px_120px] items-center gap-4">
+                        {/* Position */}
+                        <div className="text-center">
+                          <span className="text-lg font-bold text-secondary">
                             {displayPosition}
-                          </div>
+                          </span>
                         </div>
 
-                        {/* Avatar */}
-                        <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
-                          {entry.avatar ? (
-                            <img
-                              src={entry.avatar}
-                              alt={entry.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{entry.name?.charAt(0).toUpperCase() || "?"}</span>
-                          )}
-                        </div>
-
-                        {/* Nome Giocatore */}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-secondary text-sm truncate">
-                            {entry.name || "Giocatore"}
-                            {isCurrentUser && (
-                              <span className="ml-2 text-xs font-medium text-secondary/60">(Tu)</span>
+                        {/* Player */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 min-w-[40px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0">
+                            {entry.avatar ? (
+                              <img
+                                src={entry.avatar}
+                                alt={entry.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span>
+                                {entry.name?.charAt(0).toUpperCase() || "?"}
+                              </span>
                             )}
                           </div>
+                          <span className="font-bold text-secondary truncate">
+                            {entry.name || "N/A"}
+                            {isCurrentUser && (
+                              <span className="ml-1 text-xs font-medium text-secondary/60">(Tu)</span>
+                            )}
+                          </span>
                         </div>
 
-                        {/* Livello */}
-                        <div className="w-20 flex-shrink-0 text-center">
-                          <span className="text-xs text-secondary/60">{entry.level}</span>
+                        {/* Points */}
+                        <div className="text-center">
+                          <span className="text-lg font-bold text-secondary">{entry.points ?? 0}</span>
                         </div>
 
-                        {/* Vittorie */}
-                        <div className="w-16 flex-shrink-0 text-center">
-                          <span className="text-xs text-green-600 font-medium">{entry.wins}</span>
+                        {/* Total Matches */}
+                        <div className="text-center">
+                          <span className="text-sm font-semibold text-secondary">{entry.totalMatches ?? 0}</span>
                         </div>
 
-                        {/* Sconfitte */}
-                        <div className="w-16 flex-shrink-0 text-center">
-                          <span className="text-xs text-red-600 font-medium">{entry.losses}</span>
+                        {/* Wins */}
+                        <div className="text-center">
+                          <span className="text-sm font-semibold text-secondary">{entry.wins ?? 0}</span>
                         </div>
 
-                        {/* Punti */}
-                        <div className="w-20 flex-shrink-0 text-center">
-                          <span className="text-sm font-bold text-secondary">{entry.points}</span>
+                        {/* Losses */}
+                        <div className="text-center">
+                          <span className="text-sm font-semibold text-secondary">{entry.losses ?? 0}</span>
                         </div>
 
-                        {/* Azioni */}
-                        <div className="w-24 flex-shrink-0 flex items-center justify-center gap-1">
+                        {/* Win Rate */}
+                        <div className="text-center">
+                          <span className="text-sm font-semibold text-secondary">{entry.winRate?.toFixed(0) ?? 0}%</span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-center gap-1">
                           {!isCurrentUser && (
                             <>
                               <button

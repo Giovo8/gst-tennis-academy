@@ -5,14 +5,9 @@ import { useRouter } from "next/navigation";
 import DashboardShell, { NavItem } from "@/components/dashboard/DashboardShell";
 import { supabase } from "@/lib/supabase/client";
 import {
-  Home,
   Calendar,
   Trophy,
   Video,
-  User,
-  Clock,
-  CreditCard,
-  Megaphone,
   Mail,
   LayoutGrid,
   Swords,
@@ -29,7 +24,6 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [pendingBookings, setPendingBookings] = useState(0);
-  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
@@ -66,37 +60,10 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       
       setPendingBookings(count || 0);
 
-      // Count unread announcements
-      await loadUnreadCount(user.id);
-
       // Count unread messages
       await loadUnreadMessages();
 
       setLoading(false);
-    }
-
-    async function loadUnreadCount(userId: string) {
-      const { data: announcements } = await supabase
-        .from("announcements")
-        .select("id")
-        .eq("is_published", true)
-        .or("expiry_date.is.null,expiry_date.gt." + new Date().toISOString());
-
-      if (announcements && announcements.length > 0) {
-        const announcementIds = announcements.map((a) => a.id);
-        
-        const { data: viewedAnnouncements } = await supabase
-          .from("announcement_views")
-          .select("announcement_id")
-          .eq("user_id", userId)
-          .in("announcement_id", announcementIds);
-
-        const viewedIds = new Set(viewedAnnouncements?.map((v) => v.announcement_id) || []);
-        const unreadCount = announcements.filter((a) => !viewedIds.has(a.id)).length;
-        setUnreadAnnouncements(unreadCount);
-      } else {
-        setUnreadAnnouncements(0);
-      }
     }
 
     async function loadUnreadMessages() {
@@ -118,26 +85,16 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       }
     }
 
-    // Listen for announcement read events
-    const handleAnnouncementRead = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await loadUnreadCount(user.id);
-      }
-    };
-
     // Listen for message read events
     const handleMessageRead = async () => {
       await loadUnreadMessages();
     };
 
-    window.addEventListener('announcementRead', handleAnnouncementRead);
     window.addEventListener('messageRead', handleMessageRead);
 
     loadUser();
 
     return () => {
-      window.removeEventListener('announcementRead', handleAnnouncementRead);
       window.removeEventListener('messageRead', handleMessageRead);
     };
   }, [router]);
@@ -155,41 +112,25 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       badge: pendingBookings > 0 ? pendingBookings : undefined,
     },
     {
-      label: "Tornei",
+      label: "Competizioni",
       href: "/dashboard/atleta/tornei",
       icon: <Trophy className="h-5 w-5" />,
     },
     {
-      label: "Arena",
-      href: "/dashboard/atleta/arena",
-      icon: <Swords className="h-5 w-5" />,
-    },
-    {
-      label: "Chat",
-      href: "/dashboard/atleta/mail",
-      icon: <Mail className="h-5 w-5" />,
-      badge: unreadMessages > 0 ? unreadMessages : undefined,
-    },
-    {
-      label: "I Miei Video",
+      label: "Video Lab",
       href: "/dashboard/atleta/videos",
       icon: <Video className="h-5 w-5" />,
     },
     {
-      label: "Annunci",
-      href: "/dashboard/atleta/annunci",
-      icon: <Megaphone className="h-5 w-5" />,
-      badge: unreadAnnouncements > 0 ? unreadAnnouncements : undefined,
+      label: "Arena GST",
+      href: "/dashboard/atleta/arena",
+      icon: <Swords className="h-5 w-5" />,
     },
     {
-      label: "Abbonamento",
-      href: "/dashboard/atleta/subscription",
-      icon: <CreditCard className="h-5 w-5" />,
-    },
-    {
-      label: "Profilo",
-      href: "/dashboard/atleta/profile",
-      icon: <User className="h-5 w-5" />,
+      label: "Messaggi",
+      href: "/dashboard/atleta/mail",
+      icon: <Mail className="h-5 w-5" />,
+      badge: unreadMessages > 0 ? unreadMessages : undefined,
     },
   ];
 

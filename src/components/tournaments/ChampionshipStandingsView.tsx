@@ -391,12 +391,12 @@ export default function ChampionshipStandingsView({
                     <div className="flex items-center gap-4">
                       {/* Avatar */}
                       <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                        <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                           {avatarUrl ? (
                             <img
                               src={avatarUrl}
                               alt={fullName}
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover"
                             />
                           ) : (
                             <span>{fullName?.charAt(0)?.toUpperCase() || 'U'}</span>
@@ -568,12 +568,12 @@ export default function ChampionshipStandingsView({
                       </div>
 
                       <div className="flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                        <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                           {avatarUrl ? (
                             <img
                               src={avatarUrl}
                               alt={fullName}
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover"
                             />
                           ) : (
                             <span>{fullName.charAt(0).toUpperCase()}</span>

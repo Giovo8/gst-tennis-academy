@@ -197,12 +197,12 @@ export default function CompetitionView({
                 className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                  <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt={fullName}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
                     ) : (
                       <span>{initials || 'U'}</span>

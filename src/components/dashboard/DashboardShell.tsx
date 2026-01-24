@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, ReactNode } from "react";
 import Link from "next/link";
@@ -69,6 +69,18 @@ export default function DashboardShell({
     document.documentElement.classList.remove('dark');
     localStorage.removeItem('darkMode');
   }, []);
+
+  // Blocca lo scroll del body quando la sidebar mobile Ã¨ aperta
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [sidebarOpen]);
 
   // Search handler
   useEffect(() => {
@@ -210,13 +222,14 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header - solo per mobile */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-white border-b border-gray-200">
-        <div className="h-full px-4 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="h-16 px-4 flex items-center justify-between">
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-3 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center touch-manipulation"
+            aria-label={sidebarOpen ? "Chiudi menu" : "Apri menu"}
           >
-            <Menu className="h-5 w-5 text-gray-600" />
+            {sidebarOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
           </button>
           
           <Link href="/" className="flex items-center gap-2">
@@ -232,25 +245,102 @@ export default function DashboardShell({
           
           <NotificationsDropdown />
         </div>
+
+        {/* Mobile Dropdown Menu - appare dall'alto */}
+        {sidebarOpen && (
+          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top duration-300">
+            {/* User Info Mobile */}
+            <div className="p-4 border-b border-gray-100 bg-gray-50">
+              <Link
+                href={`/dashboard/${role}/profile`}
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors"
+              >
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userName || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-secondary leading-tight truncate">{userName || "User"}</span>
+                  <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
+                </div>
+              </Link>
+            </div>
+
+            {/* Navigation Mobile */}
+            <nav className="p-4 space-y-1">
+              {renderNavItem(dashboardItem)}
+              {hasPrimarySection ? (
+                <>
+                  {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => (
+                    <div key={item.href} onClick={() => setSidebarOpen(false)}>
+                      {renderNavItem(item)}
+                    </div>
+                  ))}
+                  {menuItemsWithPrimary.map((item) => (
+                    <div key={item.href} onClick={() => setSidebarOpen(false)}>
+                      {renderNavItem(item)}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {otherItems.map((item) => (
+                    <div key={item.href} onClick={() => setSidebarOpen(false)}>
+                      {renderNavItem(item)}
+                    </div>
+                  ))}
+                </>
+              )}
+            </nav>
+
+            {/* Actions Mobile */}
+            <div className="p-4 border-t border-gray-100 space-y-2">
+              <button
+                onClick={() => {
+                  setSidebarOpen(false);
+                  setShowSearchModal(true);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+              >
+                <Search className="h-5 w-5" />
+                <span className="text-sm font-medium">Cerca</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-gray-700 hover:text-red-600"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="text-sm font-medium">Esci</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Sidebar Overlay (Mobile) */}
+      {/* Sidebar Overlay (Mobile) - solo per chiudere il dropdown */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-30 bg-transparent"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar Desktop - visibile solo su desktop */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen
+          hidden lg:block
+          fixed top-0 left-0 z-30 h-screen
           bg-white border-r border-gray-200
-          transform transition-all duration-300 ease-in-out
-          lg:translate-x-0
+          transition-all duration-300 ease-in-out
           ${sidebarCollapsed ? "w-[70px]" : "w-[260px]"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         <div className="flex flex-col h-full">
@@ -288,13 +378,13 @@ export default function DashboardShell({
                 </>
               ) : (
                 <>
-                  {otherItems.slice(0, -2).map((item) => renderNavItem(item))}
+                  {otherItems.map((item) => renderNavItem(item))}
                 </>
               )}
             </div>
           </nav>
 
-          {/* Footer: azioni e profilo */}
+          {/* Footer: azioni e profilo Desktop */}
           <div className={`${sidebarCollapsed ? "p-3" : "p-4"} space-y-3`}>
             {/* Azioni: Cerca, Notifiche, Logout e Collapse */}
             {!sidebarCollapsed && (
@@ -331,7 +421,7 @@ export default function DashboardShell({
               </div>
             )}
 
-            {/* Azioni in modalità collapsed */}
+            {/* Azioni in modalitÃ  collapsed */}
             {sidebarCollapsed && (
               <div className="flex flex-col gap-2">
                 {/* Search */}
@@ -366,7 +456,7 @@ export default function DashboardShell({
               </div>
             )}
 
-            {/* Profilo Utente - cliccabile */}
+            {/* Profilo Utente - cliccabile Desktop */}
             <Link
               href={`/dashboard/${role}/profile`}
               title={sidebarCollapsed ? "Profilo" : undefined}
