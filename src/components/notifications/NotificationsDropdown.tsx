@@ -64,7 +64,7 @@ export default function NotificationsDropdown() {
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     } else if (error) {
-      console.error("❌ Error loading notifications:", error);
+      console.error("❌ Error loading notifications:", error.message || error);
     }
   }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  ArrowLeft,
   Swords,
   Calendar,
   Clock,
@@ -19,6 +19,7 @@ import {
   Star,
   CheckCircle,
   AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 
 interface OpponentProfile {
@@ -37,6 +38,98 @@ interface Player {
 interface TimeSlot {
   time: string;
   available: boolean;
+}
+
+interface SearchableOption {
+  value: string;
+  label: string;
+}
+
+interface SearchableSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchableOption[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+}
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+}: SearchableSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setOpen(false);
+  };
+
+  const handleToggle = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (!next) {
+        setQuery("");
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+      >
+        <span className={selectedOption ? "" : "text-secondary/40"}>
+          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
+        </span>
+        <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+          <div className="p-2 border-b border-gray-100">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder || "Cerca..."}
+              className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
+            />
+          </div>
+          <div className="max-h-56 overflow-auto py-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-secondary/40">
+                Nessun risultato
+              </div>
+            ) : (
+              filteredOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleSelect(opt.value)}
+                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-secondary/5 ${
+                    opt.value === value ? "bg-secondary/10 font-semibold" : ""
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
@@ -87,6 +180,45 @@ export default function ConfigureChallengePage() {
   // Slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [existingBookings, setExistingBookings] = useState<any[]>([]);
+
+  // Drag to scroll
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  // Drag to scroll handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineScrollRef.current) return;
+    isDragging.current = true;
+    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
+    scrollLeft.current = timelineScrollRef.current.scrollLeft;
+    timelineScrollRef.current.style.cursor = 'grabbing';
+    timelineScrollRef.current.style.userSelect = 'none';
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !timelineScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - timelineScrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2;
+    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.style.cursor = 'grab';
+      timelineScrollRef.current.style.userSelect = 'auto';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging.current) {
+      handleMouseUp();
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -185,101 +317,146 @@ export default function ConfigureChallengePage() {
     if (!selectedDate || !selectedCourt) return;
 
     setLoadingSlots(true);
-    
-    const dateStr = selectedDate.toISOString().split("T")[0];
+    try {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const response = await fetch(
+        `/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(selectedCourt)}`
+      );
 
-    // Get existing bookings for this court and date
-    const { data: bookings } = await supabase
-      .from("bookings")
-      .select("start_time, end_time, manager_confirmed")
-      .eq("court", selectedCourt)
-      .neq("status", "cancelled")
-      .gte("start_time", `${dateStr}T00:00:00`)
-      .lte("start_time", `${dateStr}T23:59:59`);
-
-    // Build occupied time ranges for confirmed bookings
-    const occupiedRanges: { start: Date; end: Date }[] = [];
-    
-    bookings?.forEach(b => {
-      // Only consider confirmed bookings
-      if (b.manager_confirmed) {
-        occupiedRanges.push({
-          start: new Date(b.start_time),
-          end: new Date(b.end_time)
-        });
-      }
-    });
-
-    // Generate slots (8:00 - 22:00)
-    const generatedSlots: TimeSlot[] = [];
-    const now = new Date();
-    const isToday = selectedDate.toDateString() === now.toDateString();
-
-    for (let hour = 8; hour < 22; hour++) {
-      const time = `${hour.toString().padStart(2, "0")}:00`;
-      
-      const slotStart = new Date(selectedDate);
-      slotStart.setHours(hour, 0, 0, 0);
-      
-      const slotEnd = new Date(slotStart);
-      slotEnd.setHours(hour + 1, 0, 0, 0);
-
-      // Check if occupied by any confirmed booking
-      const isOccupied = occupiedRanges.some(range => {
-        return (slotStart < range.end && slotEnd > range.start);
-      });
-
-      let available = !isOccupied;
-      
-      // If today, check if slot is in the past (1h buffer)
-      if (isToday && hour <= now.getHours()) {
-        available = false;
+      if (response.ok) {
+        const data = await response.json();
+        setSlots(data.slots || []);
+      } else {
+        generateDefaultSlots();
       }
 
-      generatedSlots.push({ time, available });
+      await loadExistingBookings();
+    } catch (error) {
+      console.error("Error loading slots:", error);
+      generateDefaultSlots();
+    } finally {
+      setLoadingSlots(false);
     }
-
-    setSlots(generatedSlots);
-    setLoadingSlots(false);
   }
 
-  const handleDateInputChange = (value: string) => {
-    if (!value) return;
-    const [year, month, day] = value.split("-").map(Number);
-    const newDate = new Date();
-    newDate.setFullYear(year, month - 1, day);
-    setSelectedDate(newDate);
-  };
+  async function loadExistingBookings() {
+    try {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      
+      const { data: bookings } = await supabase
+        .from("bookings")
+        .select("id, user_id, coach_id, start_time, end_time, type, status")
+        .eq("court", selectedCourt)
+        .neq("status", "cancelled")
+        .gte("start_time", `${dateStr}T00:00:00`)
+        .lte("start_time", `${dateStr}T23:59:59`);
 
-  const handleSlotClick = (time: string, available: boolean) => {
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: courtBlocks } = await supabase
+        .from("court_blocks")
+        .select("id, start_time, end_time, reason")
+        .eq("court_id", selectedCourt)
+        .gte("start_time", startOfDay.toISOString())
+        .lte("start_time", endOfDay.toISOString());
+
+      const userIds = [...new Set([
+        ...(bookings?.map(b => b.user_id) || []),
+        ...(bookings?.map(b => b.coach_id).filter(Boolean) || [])
+      ])];
+
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      const profilesMap = new Map(
+        profilesData?.map(p => [p.id, p]) || []
+      );
+
+      const enrichedBookings = bookings?.map(booking => ({
+        ...booking,
+        user_profile: profilesMap.get(booking.user_id) || null,
+        coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null
+      })) || [];
+
+      const blocksAsBookings = courtBlocks?.map(block => ({
+        id: block.id,
+        start_time: block.start_time,
+        end_time: block.end_time,
+        type: "blocco",
+        status: "blocked",
+        user_profile: null,
+        coach_profile: null,
+        reason: block.reason,
+        isBlock: true
+      })) || [];
+
+      const allBookings = [...enrichedBookings, ...blocksAsBookings];
+      setExistingBookings(allBookings);
+
+      // Mark occupied slots as unavailable
+      setSlots(prevSlots => prevSlots.map(slot => {
+        const isOccupied = allBookings.some(booking => {
+          const start = new Date(booking.start_time);
+          const end = new Date(booking.end_time);
+          const [slotHour, slotMinute] = slot.time.split(':').map(Number);
+          const slotDate = new Date(selectedDate);
+          slotDate.setHours(slotHour, slotMinute, 0, 0);
+          
+          return slotDate >= start && slotDate < end;
+        });
+        
+        return {
+          ...slot,
+          available: !isOccupied && slot.available
+        };
+      }));
+    } catch (error) {
+      console.error("Error loading existing bookings:", error);
+      setExistingBookings([]);
+    }
+  }
+
+  function generateDefaultSlots() {
+    const timeSlots = [];
+    for (let hour = 7; hour <= 21; hour++) {
+      timeSlots.push({
+        time: `${hour.toString().padStart(2, "0")}:00`,
+        available: true,
+      });
+      timeSlots.push({
+        time: `${hour.toString().padStart(2, "0")}:30`,
+        available: true,
+      });
+    }
+    timeSlots.push({ time: "22:00", available: true });
+    setSlots(timeSlots);
+  }
+
+  function handleSlotClick(time: string, available: boolean) {
     if (!available) return;
 
     setSelectedSlots((prev) => {
       if (prev.includes(time)) {
-        // Deselect
         return prev.filter((t) => t !== time);
       } else {
-        // Select consecutive slots
-        const allSlots = slots.map((s) => s.time);
-        const newIndex = allSlots.indexOf(time);
-
-        if (prev.length === 0) {
-          return [time];
-        }
-
-        const existingIndices = prev.map((t) => allSlots.indexOf(t));
-        const minIndex = Math.min(...existingIndices);
-        const maxIndex = Math.max(...existingIndices);
-
-        // If clicking adjacent
-        if (newIndex === minIndex - 1 || newIndex === maxIndex + 1) {
-          return [...prev, time].sort((a, b) => allSlots.indexOf(a) - allSlots.indexOf(b));
-        }
-
-        // Otherwise start fresh
-        return [time];
+        return [...prev, time].sort();
       }
     });
+  }
+
+  const handleCourtChange = (court: string) => {
+    setSelectedCourt(court);
+    setSelectedSlots([]);
+  };
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedSlots([]);
   };
 
   async function handleSubmit() {
@@ -499,6 +676,11 @@ export default function ConfigureChallengePage() {
     (p) => p.id !== currentUserId && p.id !== opponentId && p.id !== myPartner && p.id !== opponentPartner
   );
 
+  const partnerOptions: SearchableOption[] = availablePartners.map((player) => ({
+    value: player.id,
+    label: player.full_name,
+  }));
+
   const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((matchType === "singolo") || (matchType === "doppio" && myPartner && opponentPartner));
 
@@ -519,25 +701,25 @@ export default function ConfigureChallengePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-24">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="text-sm text-gray-600 hover:text-gray-900 mb-4 inline-flex items-center gap-1"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Torna alla scelta avversario
-        </button>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-          <div className="p-2 bg-secondary rounded-xl">
-            <Swords className="h-8 w-8 text-white" />
-          </div>
-          Configura la Sfida
-        </h1>
-        <p className="text-sm text-gray-600">
-          Imposta i dettagli del match con {opponent.full_name}
-        </p>
+      <div className="flex flex-col gap-2">
+        <div>
+          <p className="breadcrumb text-secondary/60 uppercase">
+            <Link
+              href="/dashboard/atleta/arena"
+              className="hover:text-secondary/80 transition-colors uppercase"
+            >
+              Arena
+            </Link>
+            {" › "}
+            <span className="uppercase">Configura Sfida</span>
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Configura sfida</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Imposta i dettagli del match con {opponent.full_name}.
+          </p>
+        </div>
       </div>
 
       {/* Messages */}
@@ -562,9 +744,9 @@ export default function ConfigureChallengePage() {
       )}
 
       {/* Opponent Card */}
-      <div className="bg-gradient-to-r from-secondary/5 to-blue-50 rounded-xl border-2 border-secondary/20 p-6">
+      <div className="bg-secondary rounded-xl p-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-16 h-16 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
             {opponent.avatar_url ? (
               <img
                 src={opponent.avatar_url}
@@ -578,319 +760,385 @@ export default function ConfigureChallengePage() {
             )}
           </div>
           <div>
-            <p className="text-sm text-secondary font-semibold">Avversario</p>
-            <h3 className="text-xl font-bold text-gray-900">{opponent.full_name}</h3>
-            <p className="text-sm text-gray-600">{opponent.email}</p>
+            <h3 className="text-xl font-bold text-white">{opponent.full_name}</h3>
           </div>
         </div>
+      </div>
+
+      {/* Date Selector */}
+      <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
+        <button
+          onClick={() => handleDateChange(addDays(selectedDate, -1))}
+          className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+        >
+          <span className="text-lg font-semibold text-white">&lt;</span>
+        </button>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              const input = document.getElementById('date-picker') as HTMLInputElement;
+              if (input) input.showPicker();
+            }}
+            className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+            title="Scegli data"
+          >
+            <Calendar className="h-5 w-5 text-white" />
+          </button>
+          <input
+            id="date-picker"
+            type="date"
+            value={format(selectedDate, "yyyy-MM-dd")}
+            onChange={(e) => handleDateChange(new Date(e.target.value))}
+            min={getMinDate()}
+            max={getMaxDate()}
+            className="absolute opacity-0 pointer-events-none"
+          />
+          <h2 className="text-base sm:text-lg font-bold capitalize text-white">
+            <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
+            <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
+          </h2>
+        </div>
+
+        <button
+          onClick={() => handleDateChange(addDays(selectedDate, 1))}
+          className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+        >
+          <span className="text-lg font-semibold text-white">&gt;</span>
+        </button>
       </div>
 
       {/* Configuration Card */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        
-        {/* Challenge Type */}
-        <div className="p-6 border-b border-gray-200">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
-            Tipo di Sfida *
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {CHALLENGE_TYPES.map((type) => (
-              <button
-                key={type.value}
-                onClick={() => setChallengeType(type.value)}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
-                  challengeType === type.value
-                    ? "border-secondary bg-secondary/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={challengeType === type.value ? "text-secondary" : "text-gray-600"}>
-                    {type.icon}
-                  </div>
-                  <div className="font-medium text-gray-900">{type.label}</div>
-                </div>
-                <div className="text-xs text-gray-600">{type.description}</div>
-              </button>
-            ))}
+      <div className="bg-white rounded-xl p-6 space-y-6">
+        {loadingSlots ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
+            <p className="text-secondary font-semibold">Caricamento slot...</p>
           </div>
-        </div>
-
-        {/* Match Type */}
-        <div className="p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
-            Tipo di Match *
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {MATCH_TYPES.map((type) => (
-              <button
-                key={type.value}
-                onClick={() => setMatchType(type.value)}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
-                  matchType === type.value
-                    ? "border-secondary bg-secondary/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="text-2xl mb-2">{type.icon}</div>
-                <div className="font-medium text-gray-900">{type.label}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Partners for Doubles */}
-        {matchType === "doppio" && (
-          <div className="p-6 bg-blue-50">
-            <label className="block text-sm font-semibold text-gray-900 mb-3">
-              <Users className="h-4 w-4 inline mr-2" />
-              Compagni di Doppio *
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-600 mb-2 font-medium">Il tuo compagno</label>
-                <select
-                  value={myPartner}
-                  onChange={(e) => setMyPartner(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
-                >
-                  <option value="">Seleziona compagno</option>
-                  {availablePartners
-                    .filter((p) => p.id !== opponentPartner)
-                    .map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.full_name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-2 font-medium">
-                  Compagno di {opponent.full_name}
-                </label>
-                <select
-                  value={opponentPartner}
-                  onChange={(e) => setOpponentPartner(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
-                >
-                  <option value="">Seleziona compagno</option>
-                  {availablePartners
-                    .filter((p) => p.id !== myPartner)
-                    .map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.full_name}
-                      </option>
-                    ))}
-                </select>
-              </div>
+        ) : (
+          <>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-secondary">Dettagli sfida</h2>
             </div>
-            <div className="mt-2 flex items-start gap-2 text-xs text-gray-600">
-              <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-              <span>Seleziona i compagni per entrambe le coppie</span>
-            </div>
-          </div>
-        )}
 
-        {/* Match Format */}
-        <div className="p-6 border-b border-gray-200">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
-            Formato Match *
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            {MATCH_FORMATS.map((format) => (
-              <button
-                key={format.value}
-                onClick={() => setMatchFormat(format.value)}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  matchFormat === format.value
-                    ? "border-secondary bg-secondary/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="font-medium text-gray-900">{format.label}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Date & Court Selection Header */}
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-secondary/10">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-xs text-secondary/70 uppercase tracking-wider font-semibold mb-1">
-                <Calendar className="h-3 w-3 inline mr-1" />
-                Prenotazione Campo
-              </p>
-              <h2 className="text-xl font-bold text-secondary capitalize">
-                {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
-              </h2>
-            </div>
-            
-            {/* Date Picker */}
-            <div className="flex items-center gap-3">
-              <input
-                type="date"
-                value={format(selectedDate, "yyyy-MM-dd")}
-                onChange={(e) => handleDateInputChange(e.target.value)}
-                min={getMinDate()}
-                max={getMaxDate()}
-                className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Court Selection */}
-        <div className="p-6 border-b border-gray-200">
-          <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">
-            <MapPin className="h-3 w-3 inline mr-1" />
-            Campo *
-          </label>
-          <select
-            value={selectedCourt}
-            onChange={(e) => setSelectedCourt(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-          >
-            {COURTS.map((court) => (
-              <option key={court} value={court}>
-                {court}
-              </option>
-            ))}
-          </select>          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-700">
-                <span className="font-semibold">Nota:</span> La prenotazione del campo verrà creata ma dovrà essere confermata dal gestore/amministratore prima di essere definitiva. Riceverai una notifica quando sarà confermata.
-              </p>
-            </div>
-          </div>        </div>
-
-        {/* Time Slots */}
-        <div className="p-6 border-b border-gray-200">
-          {loadingSlots ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
-              <p className="text-secondary font-semibold">Caricamento slot...</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-secondary/60" />
-                  <h3 className="text-sm font-semibold text-secondary/70 uppercase tracking-wider">
-                    Slot disponibili
-                  </h3>
-                </div>
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-secondary"></div>
-                    <span className="text-secondary/70">Selezionato</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded border-2 border-gray-300"></div>
-                    <span className="text-secondary/70">Disponibile</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-gray-200"></div>
-                    <span className="text-secondary/70">Occupato</span>
-                  </div>
+            <div className="space-y-6 mt-6">
+              {/* Tipo Sfida */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {CHALLENGE_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setChallengeType(type.value)}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        challengeType === type.value
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3">
-                {slots.map((slot) => (
-                  <button
-                    key={slot.time}
-                    onClick={() => handleSlotClick(slot.time, slot.available)}
-                    disabled={!slot.available}
-                    className={`relative p-4 rounded-lg border-2 transition-all ${
-                      selectedSlots.includes(slot.time)
-                        ? "bg-secondary border-secondary shadow-md"
-                        : slot.available
-                        ? "bg-white border-gray-200 hover:border-secondary/40 hover:shadow-sm"
-                        : "bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed"
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <Clock className={`h-4 w-4 ${
-                        selectedSlots.includes(slot.time) ? "text-white" : slot.available ? "text-secondary/60" : "text-gray-400"
-                      }`} />
-                      <span className={`text-base font-bold ${
-                        selectedSlots.includes(slot.time) ? "text-white" : slot.available ? "text-secondary" : "text-gray-400 line-through"
-                      }`}>
-                        {slot.time}
-                      </span>
+              {/* Tipo Match */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {MATCH_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setMatchType(type.value)}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        matchType === type.value
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Partners se doppio */}
+              {matchType === "doppio" && (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Il tuo partner</label>
+                    <div className="flex-1">
+                      <SearchableSelect
+                        value={myPartner}
+                        onChange={setMyPartner}
+                        options={partnerOptions.filter(p => p.value !== opponentPartner)}
+                        placeholder="Seleziona partner"
+                        searchPlaceholder="Cerca partner..."
+                      />
                     </div>
-                    {selectedSlots.includes(slot.time) && (
-                      <div className="absolute top-1.5 right-1.5">
-                        <CheckCircle className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner di {opponent.full_name}</label>
+                    <div className="flex-1">
+                      <SearchableSelect
+                        value={opponentPartner}
+                        onChange={setOpponentPartner}
+                        options={partnerOptions.filter(p => p.value !== myPartner)}
+                        placeholder="Seleziona partner"
+                        searchPlaceholder="Cerca partner..."
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Formato Match */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {MATCH_FORMATS.map((format) => (
+                    <button
+                      key={format.value}
+                      type="button"
+                      onClick={() => setMatchFormat(format.value)}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        matchFormat === format.value
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {format.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {selectedSlots.length > 0 && (
-                <div className="mt-4 p-4 bg-secondary/5 rounded-lg border border-secondary/20">
-                  <div className="flex items-center gap-2 text-sm text-secondary">
-                    <Info className="h-4 w-4 flex-shrink-0" />
-                    <span>
-                      Match programmato: <strong>{selectedSlots[0]}</strong> su <strong>{selectedCourt}</strong> ({selectedSlots.length}h)
-                    </span>
-                  </div>
+              {/* Campo */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                  {COURTS.map((court) => (
+                    <button
+                      key={court}
+                      type="button"
+                      onClick={() => handleCourtChange(court)}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        selectedCourt === court
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                      }`}
+                    >
+                      {court}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              </div>
+            </div>
 
-        {/* Message */}
-        <div className="p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
-            <MessageSquare className="h-4 w-4 inline mr-2" />
-            Messaggio (opzionale)
-          </label>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Aggiungi un messaggio alla tua sfida (verrà creata una chat)..."
-            rows={4}
-            maxLength={500}
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary resize-none"
-          />
-          <p className="text-xs text-gray-500 mt-2">{message.length}/500 caratteri</p>
-        </div>
+            <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
+            
+            {/* Timeline orizzontale */}
+            <div
+              ref={timelineScrollRef}
+              className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+              style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div className="min-w-[1280px]">
+                {/* Header con orari */}
+                <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                  {Array.from({ length: 16 }, (_, i) => {
+                    const hour = 7 + i;
+                    return (
+                      <div
+                        key={hour}
+                        className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                      >
+                        {hour.toString().padStart(2, '0')}:00
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Griglia slot selezionabili */}
+                <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                  {/* Prenotazioni esistenti */}
+                  {existingBookings.map((booking) => {
+                    const start = new Date(booking.start_time);
+                    const end = new Date(booking.end_time);
+                    const startHour = start.getHours();
+                    const startMinute = start.getMinutes();
+                    const endHour = end.getHours();
+                    const endMinute = end.getMinutes();
+                    
+                    const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
+                    const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
+                    const duration = endSlot - startSlot;
+                    
+                    const getBookingStyle = () => {
+                      if (booking.isBlock) {
+                        return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
+                      }
+                      switch (booking.type) {
+                        case "lezione_privata":
+                        case "lezione_gruppo":
+                          return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
+                        case "campo":
+                          return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
+                        case "arena":
+                          return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
+                        default:
+                          return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
+                      }
+                    };
+                    
+                    return (
+                      <div
+                        key={booking.id}
+                        className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10 pointer-events-none"
+                        style={{
+                          ...getBookingStyle(),
+                          left: `${(startSlot / 32) * 100}%`,
+                          width: `${(duration / 32) * 100}%`,
+                          top: '4px',
+                          bottom: '4px'
+                        }}
+                      >
+                        <div className="truncate leading-tight">
+                          {booking.isBlock ? "CAMPO BLOCCATO" : (booking.user_profile?.full_name || "Prenotazione")}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Slot cliccabili */}
+                  {Array.from({ length: 16 }, (_, hourIndex) => {
+                    const hour = 7 + hourIndex;
+                    const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                    const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
+                    const available1 = slots.find(s => s.time === time1)?.available ?? true;
+                    const available2 = time2 ? (slots.find(s => s.time === time2)?.available ?? true) : false;
+                    const isSelected1 = selectedSlots.includes(time1);
+                    const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
+                    
+                    if (!time2) {
+                      return (
+                        <div
+                          key={hour}
+                          className={`border-r border-gray-200 relative transition-all ${
+                            isSelected1
+                              ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
+                              : available1
+                              ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
+                              : 'bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
+                          onClick={() => handleSlotClick(time1, available1)}
+                          title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                        >
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                          {isSelected1 && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                        <div
+                          className={`flex-1 relative transition-all ${
+                            isSelected1
+                              ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
+                              : available1
+                              ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
+                              : 'bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
+                          onClick={() => handleSlotClick(time1, available1)}
+                          title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                        >
+                          {isSelected1 && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div
+                          className={`flex-1 relative transition-all ${
+                            isSelected2
+                              ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
+                              : available2
+                              ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
+                              : 'bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
+                          onClick={() => handleSlotClick(time2, available2)}
+                          title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                        >
+                          {isSelected2 && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Message */}
+            <div className="mt-6">
+              <label className="block text-sm font-semibold text-secondary mb-3">
+                <MessageSquare className="h-4 w-4 inline mr-2" />
+                Messaggio (opzionale)
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Aggiungi un messaggio alla tua sfida (verrà creata una chat)..."
+                rows={4}
+                maxLength={500}
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-2">{message.length}/500 caratteri</p>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-6 shadow-lg z-10">
-        <div className="max-w-5xl mx-auto flex gap-3">
-          <button
-            onClick={() => router.back()}
-            disabled={sending}
-            className="flex-1 px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            Annulla
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={sending || !canSubmit}
-            className="flex-1 px-6 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {sending ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Invio in corso...
-              </>
-            ) : (
-              <>
-                <Trophy className="h-5 w-5" />
-                Lancia Sfida
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      {/* Bottone Salva */}
+      <button
+        onClick={handleSubmit}
+        disabled={sending || !canSubmit}
+        className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+      >
+        {sending ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Invio in corso...</span>
+          </>
+        ) : (
+          <>
+            <CheckCircle className="h-5 w-5" />
+            <span>Invia Sfida</span>
+          </>
+        )}
+      </button>
+
+      {/* Bottom Spacer */}
+      <div className="h-8" />
     </div>
   );
 }

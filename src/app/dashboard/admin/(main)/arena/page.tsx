@@ -300,24 +300,23 @@ export default function AdminArenaPage() {
             Gestisci tutte le sfide e le statistiche della stagione Arena
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => {
               setActiveTab("gestione");
               router.push("/dashboard/admin/arena/create-challenge");
             }}
-            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Crea Sfida</span>
-            <span className="sm:hidden">Nuova</span>
+            Crea Sfida
           </button>
           <button
             onClick={() => setActiveTab("storico")}
             className={`p-2.5 rounded-md transition-all ${
               activeTab === "storico"
-                ? "text-white bg-secondary shadow-lg"
-                : "text-secondary bg-white border border-gray-300 hover:border-secondary"
+                ? "text-white bg-secondary"
+                : "text-secondary/70 bg-white border border-gray-200 hover:bg-secondary hover:text-white"
             }`}
             title="Storico"
           >
@@ -327,8 +326,8 @@ export default function AdminArenaPage() {
             onClick={() => setActiveTab("statistiche")}
             className={`p-2.5 rounded-md transition-all ${
               activeTab === "statistiche"
-                ? "text-white bg-secondary shadow-lg"
-                : "text-secondary bg-white border border-gray-300 hover:border-secondary"
+                ? "text-white bg-secondary"
+                : "text-secondary/70 bg-white border border-gray-200 hover:bg-secondary hover:text-white"
             }`}
             title="Statistiche"
           >
@@ -338,8 +337,8 @@ export default function AdminArenaPage() {
             onClick={() => setActiveTab("info")}
             className={`p-2.5 rounded-md transition-all ${
               activeTab === "info"
-                ? "text-white bg-secondary shadow-lg"
-                : "text-secondary bg-white border border-gray-300 hover:border-secondary"
+                ? "text-white bg-secondary"
+                : "text-secondary/70 bg-white border border-gray-200 hover:bg-secondary hover:text-white"
             }`}
             title="Info"
           >
@@ -347,7 +346,7 @@ export default function AdminArenaPage() {
           </button>
           <button
             onClick={() => setShowResetModal(true)}
-            className="p-2.5 text-secondary bg-white border border-gray-300 rounded-md hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
             title="Reset Stagione"
           >
             <AlertTriangle className="h-5 w-5" />

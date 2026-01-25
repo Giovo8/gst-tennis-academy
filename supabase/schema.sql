@@ -51,6 +51,11 @@ create policy "Admins can insert profiles"
   for insert
   with check (public.get_my_role() in ('admin', 'gestore'));
 
+create policy "Users can insert their own profile"
+  on public.profiles
+  for insert
+  with check (auth.uid() = id);
+
 create policy "Users can view coach profiles"
   on public.profiles
   for select

@@ -620,31 +620,24 @@ export default function AtletaMailPage() {
             <Plus className="h-4 w-4" />
             Nuova Chat
           </button>
-          <button
-            onClick={() => setActiveModal("newGroup")}
-            className="px-4 py-2.5 text-sm font-medium text-secondary bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all flex items-center gap-2"
-          >
-            <Users className="h-4 w-4" />
-            Nuovo Gruppo
-          </button>
         </div>
       </div>
 
       {/* Chat Container */}
-      <div className="h-[calc(100vh-16rem)] flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="h-[calc(100vh-10rem)] flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex h-full">
           {/* Sidebar - Lista conversazioni */}
           <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
             {/* Search */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="relative">
+            <div className="px-4 py-3 border-b border-white/10 bg-secondary flex items-center">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Cerca conversazioni..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 bg-white rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 h-10"
                 />
               </div>
             </div>
@@ -676,17 +669,17 @@ export default function AtletaMailPage() {
                     <div className="flex gap-3">
                       <div className="flex-shrink-0 relative">
                         {conv.type === "group" ? (
-                          <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
                             <Users className="h-6 w-6 text-secondary" />
                           </div>
                         ) : conv.avatar ? (
                           <img
                             src={conv.avatar}
                             alt={conv.name}
-                            className="w-12 h-12 rounded-full object-cover"
+                            className="w-12 h-12 rounded-lg object-cover"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
                             <User className="h-6 w-6 text-gray-500" />
                           </div>
                         )}
@@ -736,48 +729,48 @@ export default function AtletaMailPage() {
             ) : (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 bg-white flex items-center gap-3">
+                <div className="px-4 py-3 border-b border-white/10 bg-secondary flex items-center gap-3">
                   <button
                     onClick={() => setSelectedConversation(null)}
-                    className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+                    className="md:hidden p-2 hover:bg-white/10 rounded-lg text-white"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
 
                   {selectedConversation.type === "group" ? (
-                    <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-secondary" />
+                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-white" />
                     </div>
                   ) : selectedConversation.avatar ? (
                     <img
                       src={selectedConversation.avatar}
                       alt={selectedConversation.name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <User className="h-5 w-5 text-gray-500" />
+                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
                     </div>
                   )}
 
                   <div className="flex-1">
-                    <h2 className="font-semibold text-gray-900">{selectedConversation.name}</h2>
+                    <h2 className="font-semibold text-white">{selectedConversation.name}</h2>
                     {selectedConversation.type === "group" && (
-                      <p className="text-xs text-gray-500">{selectedConversation.memberCount} membri</p>
+                      <p className="text-xs text-white/70">{selectedConversation.memberCount} membri</p>
                     )}
                   </div>
 
                   {selectedConversation.type === "group" && (
                     <button
                       onClick={() => setActiveModal("groupSettings")}
-                      className="p-2 hover:bg-gray-100 rounded-lg"
+                      className="p-2 hover:bg-white/10 rounded-lg text-white"
                     >
-                      <Settings className="h-5 w-5 text-gray-600" />
+                      <Settings className="h-5 w-5" />
                     </button>
                   )}
 
-                  <button className="p-2 hover:bg-gray-100 rounded-lg">
-                    <MoreVertical className="h-5 w-5 text-gray-600" />
+                  <button className="p-2 hover:bg-white/10 rounded-lg text-white">
+                    <MoreVertical className="h-5 w-5" />
                   </button>
                 </div>
 
@@ -798,10 +791,10 @@ export default function AtletaMailPage() {
                                 <img
                                   src={msg.sender.avatar_url}
                                   alt={msg.sender.full_name}
-                                  className="w-8 h-8 rounded-full object-cover"
+                                  className="w-8 h-8 rounded-lg object-cover"
                                 />
                               ) : (
-                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center">
                                   <User className="h-4 w-4 text-gray-500" />
                                 </div>
                               )}
@@ -835,7 +828,7 @@ export default function AtletaMailPage() {
                 </div>
 
                 {/* Message Input */}
-                <div className="p-4 bg-white border-t border-gray-200">
+                <div className="p-4 bg-secondary border-t border-white/10">
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -848,13 +841,13 @@ export default function AtletaMailPage() {
                         }
                       }}
                       placeholder="Scrivi un messaggio..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                      className="flex-1 px-4 py-2 border border-gray-300 bg-white rounded-full text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30"
                       disabled={sending}
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={!messageInput.trim() || sending}
-                      className="p-3 bg-secondary text-white rounded-full hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-3 bg-white text-secondary rounded-full hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="h-5 w-5" />
                     </button>
@@ -878,8 +871,8 @@ export default function AtletaMailPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
-                <Plus className="h-6 w-6 text-white" />
-                <h3 className="text-lg font-bold text-white">Nuova Chat</h3>
+                {selectedMembers.length > 0 ? <Users className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
+                <h3 className="text-lg font-bold text-white">{selectedMembers.length > 0 ? `Nuovo Gruppo (${selectedMembers.length} membri)` : 'Nuova Chat'}</h3>
               </div>
               <button
                 onClick={closeModal}
@@ -890,16 +883,53 @@ export default function AtletaMailPage() {
             </div>
 
             {/* Search */}
-            <div className="p-6 border-b border-gray-200 bg-gray-50">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-                <input
-                  type="text"
-                  placeholder="Cerca per nome o email..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                />
+            <div className="p-6 border-b border-gray-200 bg-gray-50 space-y-4">
+              {selectedMembers.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-2">
+                    Nome del gruppo *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Es. Team Agonisti"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-2">
+                  {selectedMembers.length > 0 ? `Membri selezionati (${selectedMembers.length})` : 'Cerca persone'}
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+                  <input
+                    type="text"
+                    placeholder="Cerca per nome o email..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  />
+                </div>
+                {selectedMembers.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedMembers.map((member) => (
+                      <span
+                        key={member.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-white rounded-full text-xs font-medium"
+                      >
+                        {member.full_name}
+                        <button
+                          onClick={() => toggleMemberSelection(member)}
+                          className="hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -915,38 +945,89 @@ export default function AtletaMailPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {searchResults.map((user) => (
-                    <div
-                      key={user.id}
-                      onClick={() => startNewChat(user)}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 cursor-pointer transition-all hover:border-secondary/50 hover:shadow-sm"
-                    >
-                      <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt={user.full_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{user.full_name.charAt(0).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-secondary text-sm truncate">{user.full_name}</p>
+                  {searchResults.map((user) => {
+                    const isSelected = selectedMembers.some((m) => m.id === user.id);
+                    return (
+                      <div
+                        key={user.id}
+                        onClick={() => toggleMemberSelection(user)}
+                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-secondary bg-secondary/5 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-secondary/50 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'border-secondary bg-secondary'
+                            : 'border-gray-300'
+                        }`}>
+                          {isSelected && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
-                          <p className="text-xs text-secondary/70 truncate">{user.email}</p>
+                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{user.full_name.charAt(0).toUpperCase()}</span>
+                          )}
                         </div>
-                        <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium capitalize">
-                          {user.role}
-                        </span>
+                        <div className="flex-1 min-w-0 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-secondary text-sm truncate">{user.full_name}</p>
+                          </div>
+                          <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
+                            <p className="text-xs text-secondary/70 truncate">{user.email}</p>
+                          </div>
+                          <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium capitalize">
+                            {user.role}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
+            </div>
+            
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
+              <button
+                onClick={() => {
+                  if (selectedMembers.length === 1) {
+                    startNewChat(selectedMembers[0]);
+                  } else if (selectedMembers.length > 1) {
+                    createGroup();
+                  }
+                }}
+                disabled={selectedMembers.length === 0 || (selectedMembers.length > 1 && !groupName.trim()) || creatingGroup}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {creatingGroup ? (
+                  <>
+                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creazione in corso...
+                  </>
+                ) : selectedMembers.length > 1 ? (
+                  <>
+                    <Users className="h-5 w-5" />
+                    Crea Gruppo ({selectedMembers.length} membri)
+                  </>
+                ) : selectedMembers.length === 1 ? (
+                  <>
+                    <Plus className="h-5 w-5" />
+                    Avvia Chat
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5" />
+                    Seleziona almeno una persona
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

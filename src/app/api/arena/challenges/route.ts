@@ -14,6 +14,8 @@ export async function GET(req: Request) {
     const status = searchParams.get("status");
     const challengeId = searchParams.get("challenge_id");
 
+    console.log("🔵 GET /api/arena/challenges called with:", { userId, status, challengeId });
+
     // If requesting a specific challenge
     if (challengeId) {
       const { data: challenge, error } = await supabaseServer
@@ -98,75 +100,144 @@ export async function GET(req: Request) {
       query = query.or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`);
     }
 
-    if (status) {
-      query = query.eq("status", status);
-    }
-
     const { data, error } = await query;
 
     if (error) {
-      console.error("Error fetching challenges:", error);
+      console.error("❌ Error fetching challenges:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Fetch related data manually
-    if (data && data.length > 0) {
-      const userIds = [...new Set([
-        ...data.map(c => c.challenger_id),
-        ...data.map(c => c.opponent_id),
-      ].filter(Boolean))];
+    console.log("✅ Fetched challenges:", data?.length || 0);
 
-      const bookingIds = data.map(c => c.booking_id).filter(Boolean);
-
-      // Fetch profiles
-      const { data: profiles } = await supabaseServer
-        .from("profiles")
-        .select("id, full_name, avatar_url, email, phone")
-        .in("id", userIds);
-
-      // Fetch arena stats separately
-      const { data: arenaStats } = await supabaseServer
-        .from("arena_stats")
-        .select("user_id, ranking, points, level")
-        .in("user_id", userIds);
-
-      // Combine profiles with arena stats
-      const enrichedProfiles = profiles?.map(profile => {
-        const stats = arenaStats?.find(s => s.user_id === profile.id);
-        return {
-          id: profile.id,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-          email: profile.email,
-          phone: profile.phone,
-          arena_rank: stats?.level || null,
-          arena_points: stats?.points || null,
-        };
-      });
-
-      // Fetch bookings
-      const { data: bookings } = bookingIds.length > 0
-        ? await supabaseServer
-            .from("bookings")
-            .select("id, court, start_time, end_time, status, manager_confirmed")
-            .in("id", bookingIds)
-        : { data: [] };
-
-      // Attach related data
-      const enrichedChallenges = data.map(challenge => ({
-        ...challenge,
-        challenger: enrichedProfiles?.find(p => p.id === challenge.challenger_id),
-        opponent: enrichedProfiles?.find(p => p.id === challenge.opponent_id),
-        booking: bookings?.find(b => b.id === challenge.booking_id),
-      }));
-
-      return NextResponse.json({ challenges: enrichedChallenges });
+    // Filter by status if requested
+    let filteredData = data || [];
+    if (status) {
+      filteredData = filteredData.filter(c => c.status === status);
+      console.log("✅ After status filter:", filteredData.length);
     }
 
-    return NextResponse.json({ challenges: data || [] });
+    // If no data, return empty
+    if (!filteredData || filteredData.length === 0) {
+      console.log("⚠️ No challenges found");
+      return NextResponse.json({ challenges: [] });
+    }
+
+    // Fetch related data
+    const userIds = [...new Set([
+      ...filteredData.map(c => c.challenger_id),
+      ...filteredData.map(c => c.opponent_id),
+    ].filter(Boolean))];
+
+    const bookingIds = filteredData.map(c => c.booking_id).filter(Boolean);
+
+    console.log("📊 Fetching related data for", userIds.length, "users and", bookingIds.length, "bookings");
+
+    // Fetch profiles
+    let profiles: any[] = [];
+    if (userIds.length > 0) {
+      try {
+        const result = await supabaseServer
+          .from("profiles")
+          .select("id, full_name, avatar_url, email, phone")
+          .in("id", userIds);
+        profiles = result.data || [];
+        console.log("✅ Fetched profiles:", profiles.length);
+      } catch (err) {
+        console.error("❌ Error fetching profiles:", err);
+      }
+    }
+
+    // Fetch arena stats
+    let arenaStats: any[] = [];
+    if (userIds.length > 0) {
+      try {
+        const result = await supabaseServer
+          .from("arena_stats")
+          .select("user_id, ranking, points, level")
+          .in("user_id", userIds);
+        arenaStats = result.data || [];
+        console.log("✅ Fetched arena stats:", arenaStats.length);
+      } catch (err) {
+        console.error("❌ Error fetching arena stats:", err);
+      }
+    }
+
+    // Combine profiles with arena stats
+    const enrichedProfiles = profiles?.map(profile => {
+      const stats = arenaStats?.find(s => s.user_id === profile.id);
+      return {
+        id: profile.id,
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        email: profile.email,
+        phone: profile.phone,
+        arena_rank: stats?.level || null,
+        arena_points: stats?.points || null,
+      };
+    });
+
+    // Fetch bookings
+    let bookings: any[] = [];
+    if (bookingIds.length > 0) {
+      try {
+        const result = await supabaseServer
+          .from("bookings")
+          .select("id, court, start_time, end_time, status, manager_confirmed")
+          .in("id", bookingIds);
+        bookings = result.data || [];
+        console.log("✅ Fetched bookings:", bookings.length);
+      } catch (err) {
+        console.error("❌ Error fetching bookings:", err);
+      }
+    }
+
+    // Attach related data
+    const enrichedChallenges = filteredData.map(challenge => ({
+      ...challenge,
+      challenger: enrichedProfiles?.find(p => p.id === challenge.challenger_id),
+      opponent: enrichedProfiles?.find(p => p.id === challenge.opponent_id),
+      booking: bookings?.find(b => b.id === challenge.booking_id),
+    }));
+
+    // Auto-cancel challenges with past dates and pending status
+    const now = new Date();
+    const challengesToCancel = enrichedChallenges.filter(
+      challenge => 
+        challenge.status === "pending" && 
+        challenge.scheduled_date && 
+        new Date(challenge.scheduled_date) < now
+    );
+
+    if (challengesToCancel.length > 0) {
+      console.log("⏰ Found", challengesToCancel.length, "challenges with past dates. Cancelling them...");
+      
+      try {
+        const challengeIds = challengesToCancel.map(c => c.id);
+        await supabaseServer
+          .from("arena_challenges")
+          .update({ status: "cancelled" })
+          .in("id", challengeIds);
+        
+        console.log("✅ Auto-cancelled", challengeIds.length, "expired challenges");
+        
+        // Update the local array with new status
+        const cancelledMap = new Map(challengeIds.map(id => [id, true]));
+        enrichedChallenges.forEach(challenge => {
+          if (cancelledMap.has(challenge.id)) {
+            challenge.status = "cancelled";
+          }
+        });
+      } catch (err) {
+        console.error("❌ Error auto-cancelling expired challenges:", err);
+      }
+    }
+
+    console.log("✅ Returning", enrichedChallenges.length, "enriched challenges");
+    return NextResponse.json({ challenges: enrichedChallenges });
   } catch (error: any) {
-    console.error("Error in GET /api/arena/challenges:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("💥 Error in GET /api/arena/challenges:", error);
+    console.error("Stack:", error.stack);
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }
 
@@ -234,6 +305,8 @@ export async function POST(req: Request) {
       console.error("Error creating challenge:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log("✅ Challenge created successfully:", data?.id);
 
     // Create notification for opponent
     try {
