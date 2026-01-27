@@ -49,13 +49,25 @@ export default function UsersPage() {
     }
 
     try {
-      // Prima elimina il profilo
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", userId);
+      // Ottieni il token di autenticazione
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Sessione non valida");
+      }
 
-      if (profileError) throw profileError;
+      // Chiama l'API per eliminare l'utente (profilo + auth)
+      const response = await fetch(`/api/admin/users?userId=${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Errore durante l'eliminazione");
+      }
 
       alert("Utente eliminato con successo!");
       loadUsers();
