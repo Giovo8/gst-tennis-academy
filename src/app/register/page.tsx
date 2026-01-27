@@ -36,17 +36,15 @@ function RegisterForm() {
 
   async function validateCode() {
     try {
-      const { data, error } = await supabase
-        .from("invite_codes")
-        .select("*")
-        .eq("code", inviteCode)
-        .single();
+      // Use API endpoint to bypass RLS (service role on server)
+      const response = await fetch(`/api/invite-codes/validate?code=${encodeURIComponent(inviteCode || "")}`);
+      const data = await response.json();
 
-      if (error || !data) {
+      if (!response.ok || !data.valid) {
         setCodeValid(false);
-      } else if (data.used_by) {
-        setCodeValid(false);
-        setError("Questo codice è già stato utilizzato");
+        if (data.error) {
+          setError(data.error);
+        }
       } else {
         setCodeValid(true);
         setCodeRole(data.role);
@@ -60,7 +58,7 @@ function RegisterForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError("Le password non coincidono");
       return;
@@ -77,23 +75,7 @@ function RegisterForm() {
     try {
       const emailToUse = formData.email.trim().toLowerCase();
 
-      // Controlla se esiste un profilo orfano con questa email
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id, email")
-        .eq("email", emailToUse)
-        .single();
-
-      if (existingProfile) {
-        // Esiste un profilo orfano - proviamo a eliminarlo
-        await supabase
-          .from("profiles")
-          .delete()
-          .eq("id", existingProfile.id);
-        
-        console.log("Profilo orfano eliminato:", existingProfile.id);
-      }
-
+      // Signup with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: emailToUse,
         password: formData.password,
@@ -109,82 +91,55 @@ function RegisterForm() {
       // Gestisci errori specifici di Supabase Auth
       if (authError) {
         console.error("Errore Supabase Auth:", authError);
-        if (authError.message.includes("User already registered") || 
+        if (authError.message.includes("User already registered") ||
             authError.message.includes("already registered")) {
           throw new Error("Questa email è già registrata nel sistema. Prova ad accedere o usa un'altra email.");
         }
-        // Mostra l'errore originale di Supabase
         throw new Error(`Errore durante la registrazione: ${authError.message}`);
       }
 
       if (authData.user) {
         // Attendi un momento per permettere al trigger del database di creare il profilo
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Crea o aggiorna il profilo usando upsert
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .upsert({
-            id: authData.user.id,
-            email: emailToUse,
-            full_name: formData.fullName,
-            phone: formData.phone,
-            role: codeRole,
-          }, {
-            onConflict: 'id'
-          });
+        // Use API endpoint to handle profile creation and invite code usage (bypasses RLS)
+        const useCodeResponse = await fetch("/api/invite-codes/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: inviteCode,
+            user_id: authData.user.id,
+            profile_data: {
+              email: emailToUse,
+              full_name: formData.fullName,
+              phone: formData.phone,
+            },
+          }),
+        });
 
-        if (profileError) {
-          console.error("Errore profilo:", profileError);
-          throw profileError;
+        const useCodeResult = await useCodeResponse.json();
+
+        if (!useCodeResponse.ok) {
+          console.error("Errore utilizzo codice:", useCodeResult.error);
+          // Non bloccare la registrazione, l'utente è già creato
         }
 
-        // Recupera il codice invito per verificare max_uses
-        const { data: inviteCodeData } = await supabase
-          .from("invite_codes")
-          .select("id, max_uses, uses_remaining")
-          .eq("code", inviteCode)
-          .single();
-
-        // Aggiorna il codice invito
-        const updateData: any = { used_by: authData.user.id };
-        
-        // Se ha un limite di utilizzi, decrementa uses_remaining
-        if (inviteCodeData?.max_uses && inviteCodeData.uses_remaining !== null) {
-          updateData.uses_remaining = Math.max(0, inviteCodeData.uses_remaining - 1);
-        }
-
-        await supabase
-          .from("invite_codes")
-          .update(updateData)
-          .eq("code", inviteCode);
-
-        // Record invite code usage in invite_code_uses table
-        if (inviteCodeData?.id) {
-          await supabase
-            .from("invite_code_uses")
-            .insert({
-              invite_code_id: inviteCodeData.id,
+        // Log the invite code usage
+        await fetch("/api/activity-logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "invite_code_used",
+            entity_type: "invite_code",
+            entity_id: inviteCode,
+            metadata: {
+              code: inviteCode,
+              role: codeRole,
               user_id: authData.user.id,
-            });
-
-          // Log the invite code usage
-          await fetch("/api/activity-logs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "invite_code_used",
-              entity_type: "invite_code",
-              entity_id: inviteCodeData.id,
-              metadata: {
-                code: inviteCode,
-                role: codeRole,
-                user_id: authData.user.id,
-                user_email: emailToUse,
-              },
-            }),
-          });
-        }
+              user_email: emailToUse,
+            },
+          }),
+        });
 
         // Login automatico e redirect alla dashboard
         const { error: signInError } = await supabase.auth.signInWithPassword({
