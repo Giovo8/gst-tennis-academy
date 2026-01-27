@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { CheckCircle, AlertCircle, Loader2, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { CheckCircle, AlertCircle, Loader2, Trash2, Upload, Link as LinkIcon, X } from "lucide-react";
 
 type FormData = {
   full_name: string;
@@ -29,6 +28,9 @@ export default function NewStaffPage() {
   const [loadingData, setLoadingData] = useState(isEditMode);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
 
   const [formData, setFormData] = useState<FormData>({
     full_name: "",
@@ -142,6 +144,66 @@ export default function NewStaffPage() {
     }
   }
 
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("L'immagine deve essere inferiore a 5MB");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Il file deve essere un'immagine");
+      return;
+    }
+
+    setUploadingImage(true);
+    setShowImageModal(false);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      if (formData.image_url) {
+        uploadFormData.append("oldImageUrl", formData.image_url);
+      }
+
+      const response = await fetch("/api/upload/staff-image", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Upload failed");
+      }
+
+      const { url } = await response.json();
+      setFormData({ ...formData, image_url: url });
+
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Errore durante l'upload dell'immagine");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  function handleImageUrl() {
+    if (!imageUrlInput) return;
+
+    try {
+      new URL(imageUrlInput);
+    } catch {
+      alert("Inserisci un URL valido");
+      return;
+    }
+
+    setFormData({ ...formData, image_url: imageUrlInput });
+    setImageUrlInput("");
+    setShowImageModal(false);
+  }
+
   if (loadingData) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -250,30 +312,43 @@ export default function NewStaffPage() {
                 </div>
               </div>
 
-              {/* URL Immagine */}
+              {/* Immagine */}
               <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  URL Immagine
+                  Immagine
                 </label>
-                <div className="flex-1">
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://esempio.com/foto.jpg"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowImageModal(true)}
+                      disabled={uploadingImage}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-secondary font-medium hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {formData.image_url ? "Cambia immagine" : "Carica immagine"}
+                    </button>
+                    {formData.image_url && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_url: "" })}
+                        className="p-2.5 rounded-lg border border-gray-300 bg-white text-secondary hover:bg-gray-50 transition-all"
+                        title="Rimuovi immagine"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                   {formData.image_url && (
-                    <div className="mt-3">
-                      <img
-                        src={formData.image_url}
-                        alt="Preview"
-                        className="h-32 w-32 rounded-lg object-cover border-2 border-gray-200"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
+                    <img
+                      src={formData.image_url}
+                      alt="Preview"
+                      className="w-full max-w-xs rounded-lg object-cover border-2 border-gray-200"
+                    />
                   )}
                 </div>
               </div>
@@ -424,6 +499,88 @@ export default function NewStaffPage() {
           </div>
         </form>
       </div>
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+              <h3 className="text-xl font-bold text-white">Scegli Immagine</h3>
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Upload File */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Carica un'immagine
+                </label>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('staff-image-upload')?.click()}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all"
+                >
+                  <Upload className="h-5 w-5" />
+                  Scegli File
+                </button>
+                <input
+                  id="staff-image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Massimo 5MB - Formati: JPG, PNG, GIF
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500 font-medium">oppure</span>
+                </div>
+              </div>
+
+              {/* URL Input */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Inserisci URL immagine
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    placeholder="https://esempio.com/immagine.jpg"
+                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                    onKeyDown={(e) => e.key === 'Enter' && handleImageUrl()}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImageUrl}
+                    disabled={!imageUrlInput}
+                    className="px-4 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <LinkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Incolla l'URL di un'immagine già caricata online
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
