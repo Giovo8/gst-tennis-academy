@@ -76,10 +76,12 @@ function RegisterForm() {
       const emailToUse = formData.email.trim().toLowerCase();
 
       // Signup with Supabase Auth
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: emailToUse,
         password: formData.password,
         options: {
+          emailRedirectTo: `${siteUrl}/auth/callback`,
           data: {
             full_name: formData.fullName,
             phone: formData.phone,

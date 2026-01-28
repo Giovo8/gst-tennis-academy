@@ -76,10 +76,12 @@ export default function NewUserPage() {
 
     try {
       // Crea l'utente con Supabase Auth
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
         options: {
+          emailRedirectTo: `${siteUrl}/auth/callback`,
           data: {
             full_name: newUser.full_name,
             phone: newUser.phone,
