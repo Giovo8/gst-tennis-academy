@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error("Upload error details:", {
         message: uploadError.message,
-        status: uploadError.statusCode,
+        name: uploadError.name,
         fileName,
         fileSize: file.size,
         fileType: file.type,
