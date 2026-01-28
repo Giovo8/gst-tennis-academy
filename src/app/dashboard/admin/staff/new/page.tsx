@@ -162,30 +162,93 @@ export default function NewStaffPage() {
     setShowImageModal(false);
 
     try {
+      // Validate file before upload
+      if (file.size === 0) {
+        throw new Error("Il file è vuoto");
+      }
+
+      // Create FormData - critical for mobile compatibility
       const uploadFormData = new FormData();
       uploadFormData.append("file", file);
       if (formData.image_url) {
         uploadFormData.append("oldImageUrl", formData.image_url);
       }
 
+      // Add timeout for mobile network reliability
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch("/api/upload/staff-image", {
         method: "POST",
         body: uploadFormData,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
+        let errorMessage = "Upload failed";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `HTTP ${response.status}`;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      const { url } = await response.json();
-      setFormData({ ...formData, image_url: url });
+      const responseData = await response.json();
+      
+      if (!responseData.url) {
+        throw new Error("Server non ha restituito un URL valido");
+      }
+
+      setFormData({ ...formData, image_url: responseData.url });
 
     } catch (error) {
-      console.error("Error uploading image:", error);
-      alert("Errore durante l'upload dell'immagine");
+      let errorMsg = "Errore sconosciuto";
+      
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === "string") {
+        errorMsg = error;
+      }
+
+      console.error("Upload error details:", {
+        message: errorMsg,
+        fileName: file?.name,
+        fileSize: file?.size,
+        fileType: file?.type,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Provide specific error messages based on error type
+      let userMessage = "Errore durante l'upload dell'immagine";
+      
+      if (errorMsg.includes("abort")) {
+        userMessage = "⏱️ Timeout durante l'upload. La connessione è troppo lenta. Riprova con una connessione migliore.";
+      } else if (errorMsg.includes("Network") || errorMsg.includes("fetch")) {
+        userMessage = "🌐 Errore di connessione. Verifica la connessione internet e riprova.";
+      } else if (errorMsg.includes("File too large")) {
+        userMessage = "📦 L'immagine è troppo grande. Massimo 5MB.";
+      } else if (errorMsg.includes("must be an image")) {
+        userMessage = "🖼️ Il file deve essere un'immagine valida (JPG, PNG, GIF, WebP).";
+      } else if (errorMsg.includes("vuoto")) {
+        userMessage = "⚠️ Il file è vuoto o corrotto.";
+      } else if (errorMsg.includes("URL valido")) {
+        userMessage = "❌ Errore server: il file non è stato salvato correttamente.";
+      } else if (errorMsg.includes("HTTP")) {
+        userMessage = `❌ ${errorMsg}`;
+      } else {
+        userMessage = `❌ ${errorMsg}`;
+      }
+      
+      alert(userMessage);
     } finally {
       setUploadingImage(false);
+      // Reset file input
+      const fileInput = document.getElementById('staff-image-upload') as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
     }
   }
 

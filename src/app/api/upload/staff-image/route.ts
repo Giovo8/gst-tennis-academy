@@ -22,33 +22,44 @@ export async function POST(request: NextRequest) {
     }
 
     // Remove old image if exists
-    if (oldImageUrl && oldImageUrl.includes("/avatars/staff/")) {
-      const oldPath = oldImageUrl.split("/avatars/").pop();
-      if (oldPath) {
-        await supabaseServer.storage.from("avatars").remove([oldPath]);
+    if (oldImageUrl) {
+      try {
+        const oldPath = oldImageUrl.split("/avatars/").pop();
+        if (oldPath) {
+          await supabaseServer.storage.from("avatars").remove([oldPath]);
+        }
+      } catch (deleteError) {
+        // Log but don't fail if old image deletion fails
+        console.warn("Warning: Could not delete old image:", deleteError);
       }
     }
 
     // Generate unique filename
-    const fileExt = file.name.split(".").pop();
-    const fileName = `staff/${Date.now()}.${fileExt}`;
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const fileName = `staff/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-    // Convert File to Buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Upload file using admin client (bypasses RLS)
-    const { error: uploadError } = await supabaseServer.storage
+    // Upload file directly (Supabase handles the conversion)
+    // For mobile compatibility, upload File object directly instead of converting to Buffer
+    const { error: uploadError, data: uploadData } = await supabaseServer.storage
       .from("avatars")
-      .upload(fileName, buffer, {
-        contentType: file.type,
+      .upload(fileName, file, {
+        contentType: file.type || "image/jpeg",
         cacheControl: "3600",
         upsert: false,
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      console.error("Upload error details:", {
+        message: uploadError.message,
+        status: uploadError.statusCode,
+        fileName,
+        fileSize: file.size,
+        fileType: file.type,
+      });
+      return NextResponse.json(
+        { error: `Upload failed: ${uploadError.message || "Unknown error"}` },
+        { status: 500 }
+      );
     }
 
     // Get public URL
@@ -56,9 +67,20 @@ export async function POST(request: NextRequest) {
       .from("avatars")
       .getPublicUrl(fileName);
 
+    console.log("File uploaded successfully:", { fileName, fileSize: file.size });
     return NextResponse.json({ url: publicUrl });
   } catch (error) {
-    console.error("Error uploading staff image:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Error uploading staff image:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return NextResponse.json(
+      { 
+        error: error instanceof Error 
+          ? `Server error: ${error.message}` 
+          : "Internal server error" 
+      },
+      { status: 500 }
+    );
   }
 }
