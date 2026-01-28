@@ -22,6 +22,14 @@ import {
   FileText,
   Info,
   Newspaper,
+  Cloud,
+  Sun,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  Wind,
+  Droplets,
+  Thermometer,
 } from "lucide-react";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
 
@@ -86,6 +94,15 @@ interface Notification {
   created_at: string;
 }
 
+interface WeatherData {
+  temperature: number;
+  apparentTemperature: number;
+  humidity: number;
+  windSpeed: number;
+  weatherCode: number;
+  isDay: boolean;
+}
+
 const bookingTypeLabels: Record<string, string> = {
   campo: "Campo",
   lezione_privata: "Lezione Privata",
@@ -113,10 +130,63 @@ export default function AdminDashboard() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [userName, setUserName] = useState("");
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
 
   useEffect(() => {
     loadDashboardData();
+    loadWeatherData();
   }, []);
+
+  async function loadWeatherData() {
+    try {
+      const response = await fetch(
+        "https://api.open-meteo.com/v1/forecast?latitude=42.07631852280004&longitude=12.373061355799356&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&timezone=Europe%2FRome"
+      );
+      const data = await response.json();
+
+      if (data.current) {
+        setWeather({
+          temperature: Math.round(data.current.temperature_2m),
+          apparentTemperature: Math.round(data.current.apparent_temperature),
+          humidity: data.current.relative_humidity_2m,
+          windSpeed: Math.round(data.current.wind_speed_10m),
+          weatherCode: data.current.weather_code,
+          isDay: data.current.is_day === 1,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading weather data:", error);
+    }
+    setWeatherLoading(false);
+  }
+
+  function getWeatherInfo(code: number) {
+    const weatherMap: Record<number, { label: string; icon: React.ReactNode }> = {
+      0: { label: "Sereno", icon: <Sun className="h-8 w-8" /> },
+      1: { label: "Prevalentemente sereno", icon: <Sun className="h-8 w-8" /> },
+      2: { label: "Parzialmente nuvoloso", icon: <Cloud className="h-8 w-8" /> },
+      3: { label: "Nuvoloso", icon: <Cloud className="h-8 w-8" /> },
+      45: { label: "Nebbia", icon: <Cloud className="h-8 w-8" /> },
+      48: { label: "Nebbia con brina", icon: <Cloud className="h-8 w-8" /> },
+      51: { label: "Pioggerella leggera", icon: <CloudRain className="h-8 w-8" /> },
+      53: { label: "Pioggerella", icon: <CloudRain className="h-8 w-8" /> },
+      55: { label: "Pioggerella intensa", icon: <CloudRain className="h-8 w-8" /> },
+      61: { label: "Pioggia leggera", icon: <CloudRain className="h-8 w-8" /> },
+      63: { label: "Pioggia", icon: <CloudRain className="h-8 w-8" /> },
+      65: { label: "Pioggia intensa", icon: <CloudRain className="h-8 w-8" /> },
+      71: { label: "Neve leggera", icon: <CloudSnow className="h-8 w-8" /> },
+      73: { label: "Neve", icon: <CloudSnow className="h-8 w-8" /> },
+      75: { label: "Neve intensa", icon: <CloudSnow className="h-8 w-8" /> },
+      80: { label: "Rovesci leggeri", icon: <CloudRain className="h-8 w-8" /> },
+      81: { label: "Rovesci", icon: <CloudRain className="h-8 w-8" /> },
+      82: { label: "Rovesci violenti", icon: <CloudRain className="h-8 w-8" /> },
+      95: { label: "Temporale", icon: <CloudLightning className="h-8 w-8" /> },
+      96: { label: "Temporale con grandine", icon: <CloudLightning className="h-8 w-8" /> },
+      99: { label: "Temporale con grandine", icon: <CloudLightning className="h-8 w-8" /> },
+    };
+    return weatherMap[code] || { label: "Sconosciuto", icon: <Cloud className="h-8 w-8" /> };
+  }
 
   async function loadDashboardData() {
     const {
@@ -328,388 +398,341 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Link href="/dashboard/admin/users" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+        <Link href="/dashboard/admin/users" className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4">
           <div className="flex-shrink-0">
-            <Users className="h-8 w-8 text-white" />
+            <Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 hidden sm:block">
             <p className="text-sm text-white/70">Utenti Totali</p>
             <h3 className="text-2xl font-bold text-white">{stats.totalUsers}</h3>
           </div>
+          <div className="flex sm:hidden items-center gap-3 flex-1">
+            <h3 className="text-3xl font-bold text-white">{stats.totalUsers}</h3>
+            <p className="text-base text-white/70">Utenti Totali</p>
+          </div>
         </Link>
 
-        <Link href="/dashboard/admin/bookings" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+        <Link href="/dashboard/admin/bookings" className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4">
           <div className="flex-shrink-0">
-            <Calendar className="h-8 w-8 text-white" />
+            <Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 hidden sm:block">
             <p className="text-sm text-white/70">Prenotazioni Oggi</p>
             <h3 className="text-2xl font-bold text-white">{stats.todayBookings}</h3>
           </div>
+          <div className="flex sm:hidden items-center gap-3 flex-1">
+            <h3 className="text-3xl font-bold text-white">{stats.todayBookings}</h3>
+            <p className="text-base text-white/70">Prenotazioni Oggi</p>
+          </div>
         </Link>
 
-        <Link href="/dashboard/admin/tornei" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+        <Link href="/dashboard/admin/tornei" className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4">
           <div className="flex-shrink-0">
-            <Trophy className="h-8 w-8 text-white" />
+            <Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 hidden sm:block">
             <p className="text-sm text-white/70">Tornei Attivi</p>
             <h3 className="text-2xl font-bold text-white">{stats.activeTournaments}</h3>
           </div>
+          <div className="flex sm:hidden items-center gap-3 flex-1">
+            <h3 className="text-3xl font-bold text-white">{stats.activeTournaments}</h3>
+            <p className="text-base text-white/70">Tornei Attivi</p>
+          </div>
         </Link>
 
-        <Link href="/dashboard/admin/video-lessons" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+        <Link href="/dashboard/admin/video-lessons" className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4">
           <div className="flex-shrink-0">
-            <Video className="h-8 w-8 text-white" />
+            <Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 hidden sm:block">
             <p className="text-sm text-white/70">Video Lezioni</p>
             <h3 className="text-2xl font-bold text-white">{stats.videoLessonsCount}</h3>
+          </div>
+          <div className="flex sm:hidden items-center gap-3 flex-1">
+            <h3 className="text-3xl font-bold text-white">{stats.videoLessonsCount}</h3>
+            <p className="text-base text-white/70">Video Lezioni</p>
           </div>
         </Link>
       </div>
 
-      {/* Timeline Prenotazioni */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Timeline Campi</h2>
-          <Link href="/dashboard/admin/bookings" className="text-sm font-medium text-secondary hover:opacity-80">
-            Gestisci
-          </Link>
+      {/* Meteo */}
+      <div className="bg-secondary rounded-xl p-5 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-lg">Tennis Club GST</h3>
+            <p className="text-sm text-white/80">Formello, RM</p>
+          </div>
+
+          {weatherLoading ? (
+            <div className="flex items-center gap-6 animate-pulse">
+              <div className="h-12 w-24 bg-white/20 rounded" />
+              <div className="h-8 w-8 bg-white/20 rounded-full" />
+            </div>
+          ) : weather ? (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              {/* Mobile Layout */}
+              <div className="sm:hidden flex items-center gap-2">
+                <div className="text-white">
+                  {getWeatherInfo(weather.weatherCode).icon}
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold">{weather.temperature}°C</div>
+                  <p className="text-xs text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
+                </div>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center gap-4">
+                <div className="text-left">
+                  <div className="text-4xl font-bold">{weather.temperature}°C</div>
+                  <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
+                </div>
+                <div className="text-white">
+                  {getWeatherInfo(weather.weatherCode).icon}
+                </div>
+              </div>
+
+              {/* Info aggiuntive */}
+              <div className="hidden sm:flex items-center gap-4 pl-6 border-l border-white/20">
+                <div className="text-center">
+                  <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Percepita</p>
+                  <p className="text-sm font-semibold">{weather.apparentTemperature}°C</p>
+                </div>
+                <div className="text-center">
+                  <Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Umidità</p>
+                  <p className="text-sm font-semibold">{weather.humidity}%</p>
+                </div>
+                <div className="text-center">
+                  <Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Vento</p>
+                  <p className="text-sm font-semibold">{weather.windSpeed} km/h</p>
+                </div>
+              </div>
+
+              {/* Mobile info */}
+              <div className="sm:hidden grid grid-cols-3 gap-3 w-full pt-2 border-t border-white/20">
+                <div className="text-center">
+                  <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Percepita</p>
+                  <p className="text-sm font-semibold">{weather.apparentTemperature}°C</p>
+                </div>
+                <div className="text-center">
+                  <Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Umidità</p>
+                  <p className="text-sm font-semibold">{weather.humidity}%</p>
+                </div>
+                <div className="text-center">
+                  <Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Vento</p>
+                  <p className="text-sm font-semibold">{weather.windSpeed} km/h</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-white/80">
+              <Cloud className="h-6 w-6" />
+              <p className="text-sm">Meteo non disponibile</p>
+            </div>
+          )}
         </div>
-        <div className="px-4 pb-4">
+      </div>
+
+      {/* Timeline Prenotazioni */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden w-full">
+        <div className="px-6 py-5">
+          <h2 className="text-lg font-bold text-gray-900">Timeline Campi</h2>
+        </div>
+        <div className="px-4 pb-4 w-full overflow-x-auto">
           <BookingsTimeline bookings={timelineBookings} loading={loading} />
         </div>
       </div>
 
-      {/* Richiede Attenzione */}
-      {alertsCount > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-5">
-            <h2 className="text-lg font-bold text-gray-900">Richiede Attenzione</h2>
-          </div>
-
-          <div className="px-6 pt-2 pb-6">
-            <div className="space-y-3">
-              {stats.pendingBookings > 0 && (
-                <Link
-                  href="/dashboard/admin/bookings?filter=pending"
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-amber-500 hover:border-amber-300 hover:bg-amber-50/30 transition-all cursor-pointer"
-                >
-                  <div className="flex-shrink-0">
-                    <Calendar className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Prenotazioni da approvare</p>
-                  </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-md">
-                    {stats.pendingBookings}
-                  </span>
-                </Link>
-              )}
-
-              {stats.unreadMessages > 0 && (
-                <Link
-                  href="/dashboard/admin/chat"
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-blue-500 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer"
-                >
-                  <div className="flex-shrink-0">
-                    <MessageSquare className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Messaggi non letti</p>
-                  </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-md">
-                    {stats.unreadMessages}
-                  </span>
-                </Link>
-              )}
-
-              {stats.pendingArena > 0 && (
-                <Link
-                  href="/dashboard/admin/arena"
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-purple-500 hover:border-purple-300 hover:bg-purple-50/30 transition-all cursor-pointer"
-                >
-                  <div className="flex-shrink-0">
-                    <Swords className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Sfide arena in attesa</p>
-                  </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-md">
-                    {stats.pendingArena}
-                  </span>
-                </Link>
-              )}
-
-              {stats.pendingJobApplications > 0 && (
-                <Link
-                  href="/dashboard/admin/job-applications"
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-emerald-500 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all cursor-pointer"
-                >
-                  <div className="flex-shrink-0">
-                    <FileText className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Candidature da valutare</p>
-                  </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-md">
-                    {stats.pendingJobApplications}
-                  </span>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Annunci */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Annunci</h2>
-          <Link href="/dashboard/admin/announcements" className="text-sm font-medium text-secondary hover:opacity-80">
-            Gestisci
-          </Link>
-        </div>
-
-        <div className="px-6 pt-2 pb-6">
-          {recentAnnouncements.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3">
-                <Megaphone className="h-6 w-6 text-gray-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-900 mb-1">Nessun annuncio</p>
-              <p className="text-xs text-gray-600">Non ci sono annunci al momento</p>
-              <Link
-                href="/dashboard/admin/announcements/new"
-                className="inline-flex items-center gap-2 mt-4 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90"
-              >
-                <Plus className="h-4 w-4" />
-                Crea Annuncio
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recentAnnouncements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="relative p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all group cursor-pointer"
-                  onClick={() => handleAnnouncementClick(announcement)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0">
-                      <Megaphone className="h-5 w-5 text-secondary" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900">{announcement.title}</h3>
-                    </div>
-
-                    {announcement.priority === "urgent" && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded-md whitespace-nowrap">
-                        URGENTE
-                      </span>
-                    )}
-
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span>
-                          {new Date(announcement.created_at).toLocaleDateString("it-IT", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Centro Notifiche */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Centro Notifiche</h2>
-          {unreadNotifications > 0 && (
-            <button onClick={markAllNotificationsRead} className="text-xs font-semibold text-secondary hover:opacity-80 flex items-center gap-1">
-              <CheckCircle className="h-4 w-4" />
-              Segna tutte come lette ({unreadNotifications})
-            </button>
-          )}
-        </div>
-
-        <div className="px-6 pt-2 pb-4">
-          {notifications.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3">
-                <Bell className="h-6 w-6 text-gray-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-900 mb-1">Nessuna notifica</p>
-              <p className="text-xs text-gray-600">Non ci sono notifiche al momento</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {notifications.map((n) => {
-                const icon = (() => {
-                  switch (n.type) {
-                    case "booking":
-                      return <Calendar className="h-5 w-5 text-blue-600" />;
-                    case "tournament":
-                      return <Trophy className="h-5 w-5 text-purple-600" />;
-                    case "message":
-                      return <MessageSquare className="h-5 w-5 text-secondary" />;
-                    case "success":
-                      return <CheckCircle className="h-5 w-5 text-green-600" />;
-                    case "warning":
-                      return <AlertCircle className="h-5 w-5 text-amber-600" />;
-                    case "error":
-                      return <XCircle className="h-5 w-5 text-red-600" />;
-                    default:
-                      return <Info className="h-5 w-5 text-secondary" />;
-                  }
-                })();
-
-                return (
-                  <div
-                    key={n.id}
-                    className="flex items-center gap-4 p-4 rounded-lg border border-l-4 border-l-secondary transition-all cursor-pointer bg-white border-gray-200 hover:border-secondary/30 hover:bg-blue-50/30"
-                    onClick={() => handleNotificationClick(n)}
-                  >
-                    <div className="flex-shrink-0">{icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span>
-                        {new Date(n.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
-                      </span>
-                    </div>
-                    {!n.is_read && <span className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Prenotazioni Oggi */}
+      {/* Bacheca GST - Centro Operativo */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Prenotazioni di Oggi</h2>
-          <Link href="/dashboard/admin/bookings" className="text-sm font-medium text-secondary hover:opacity-80">
-            Vedi tutte
-          </Link>
+        <div className="px-6 py-5">
+          <h2 className="text-lg font-bold text-gray-900">Bacheca GST</h2>
         </div>
 
-        <div className="px-6 pt-2 pb-6">
-          {todayBookings.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="inline-flex p-4 bg-gray-50 rounded-full mb-4">
-                <Calendar className="h-8 w-8 text-gray-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-900 mb-1">Nessuna prenotazione</p>
-              <p className="text-sm text-gray-600 mb-6">Non ci sono prenotazioni per oggi</p>
-              <Link
-                href="/dashboard/admin/bookings/new"
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all"
-              >
-                <Plus className="h-4 w-4" />
-                Nuova Prenotazione
-              </Link>
-            </div>
-          ) : (
+        <div className="space-y-6 px-6 pb-6">
+          {/* Richiede Attenzione - Alert Cards */}
+          {alertsCount > 0 && (
             <div className="space-y-3">
-              {todayBookings.map((booking) => (
-                <Link
-                  key={booking.id}
-                  href={`/dashboard/admin/bookings/${booking.id}`}
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all cursor-pointer"
-                >
-                  <div className="flex-shrink-0">
-                    <Calendar className="h-5 w-5 text-secondary" />
-                  </div>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Richiede Attenzione</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.pendingBookings > 0 && (
+                  <Link
+                    href="/dashboard/admin/bookings?filter=pending"
+                    className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all flex flex-row items-center gap-3"
+                  >
+                    <div className="flex-shrink-0">
+                      <Calendar className="h-8 w-8 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                    <div className="flex-1 hidden sm:block">
+                      <p className="text-xs text-white/70">Prenotazioni</p>
+                      <h3 className="text-2xl font-bold text-white">{stats.pendingBookings}</h3>
+                    </div>
+                    <div className="flex sm:hidden items-center gap-2 flex-1">
+                      <h3 className="text-2xl font-bold text-white">{stats.pendingBookings}</h3>
+                      <p className="text-xs text-white/70">Pren.</p>
+                    </div>
+                  </Link>
+                )}
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {booking.user_profile?.full_name || "Utente"} - {booking.court}
-                    </p>
-                  </div>
+                {stats.unreadMessages > 0 && (
+                  <Link
+                    href="/dashboard/admin/chat"
+                    className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all flex flex-row items-center gap-3"
+                  >
+                    <div className="flex-shrink-0">
+                      <MessageSquare className="h-8 w-8 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                    <div className="flex-1 hidden sm:block">
+                      <p className="text-xs text-white/70">Messaggi</p>
+                      <h3 className="text-2xl font-bold text-white">{stats.unreadMessages}</h3>
+                    </div>
+                    <div className="flex sm:hidden items-center gap-2 flex-1">
+                      <h3 className="text-2xl font-bold text-white">{stats.unreadMessages}</h3>
+                      <p className="text-xs text-white/70">Msg</p>
+                    </div>
+                  </Link>
+                )}
 
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-secondary/10 text-secondary rounded-md whitespace-nowrap flex-shrink-0">
-                    {bookingTypeLabels[booking.type] || booking.type}
-                  </span>
+                {stats.pendingArena > 0 && (
+                  <Link
+                    href="/dashboard/admin/arena"
+                    className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all flex flex-row items-center gap-3"
+                  >
+                    <div className="flex-shrink-0">
+                      <Swords className="h-8 w-8 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                    <div className="flex-1 hidden sm:block">
+                      <p className="text-xs text-white/70">Arena</p>
+                      <h3 className="text-2xl font-bold text-white">{stats.pendingArena}</h3>
+                    </div>
+                    <div className="flex sm:hidden items-center gap-2 flex-1">
+                      <h3 className="text-2xl font-bold text-white">{stats.pendingArena}</h3>
+                      <p className="text-xs text-white/70">Arena</p>
+                    </div>
+                  </Link>
+                )}
 
-                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{formatTime(booking.start_time)}</span>
-                    <span className="text-gray-300">-</span>
-                    <span>{formatTime(booking.end_time)}</span>
-                  </div>
-
-                  {!booking.manager_confirmed && booking.status !== "cancelled" && (
-                    <span className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
-                  )}
-                </Link>
-              ))}
+                {stats.pendingJobApplications > 0 && (
+                  <Link
+                    href="/dashboard/admin/job-applications"
+                    className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all flex flex-row items-center gap-3"
+                  >
+                    <div className="flex-shrink-0">
+                      <FileText className="h-8 w-8 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                    <div className="flex-1 hidden sm:block">
+                      <p className="text-xs text-white/70">Candidature</p>
+                      <h3 className="text-2xl font-bold text-white">{stats.pendingJobApplications}</h3>
+                    </div>
+                    <div className="flex sm:hidden items-center gap-2 flex-1">
+                      <h3 className="text-2xl font-bold text-white">{stats.pendingJobApplications}</h3>
+                      <p className="text-xs text-white/70">Cand.</p>
+                    </div>
+                  </Link>
+                )}
+              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Azioni Rapide */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-5">
-          <h2 className="text-lg font-bold text-gray-900">Azioni Rapide</h2>
-        </div>
+          {/* Annunci */}
+          <div className="space-y-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Annunci</h3>
+              <Link href="/dashboard/admin/announcements" className="text-xs font-medium text-secondary hover:opacity-80">
+                Gestisci
+              </Link>
+            </div>
 
-        <div className="px-6 pt-2 pb-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Link
-              href="/dashboard/admin/bookings/new"
-              className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all"
-            >
-              <div className="flex-shrink-0">
-                <Calendar className="h-5 w-5 text-secondary" />
+            {recentAnnouncements.length === 0 ? (
+              <div className="text-center py-6">
+                <Megaphone className="h-5 w-5 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">Nessun annuncio al momento</p>
               </div>
-              <p className="text-sm font-medium text-gray-900">Prenotazione</p>
-            </Link>
-
-            <Link
-              href="/dashboard/admin/tornei/new"
-              className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-purple-500 hover:border-purple-300 hover:bg-purple-50/30 transition-all"
-            >
-              <div className="flex-shrink-0">
-                <Trophy className="h-5 w-5 text-purple-600" />
+            ) : (
+              <div className="space-y-2">
+                {recentAnnouncements.slice(0, 3).map((announcement) => (
+                  <div
+                    key={announcement.id}
+                    className="p-3 bg-gray-50 rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:bg-gray-100 transition-all cursor-pointer"
+                    onClick={() => handleAnnouncementClick(announcement)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Megaphone className="h-4 w-4 text-secondary flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{announcement.title}</p>
+                      </div>
+                      {announcement.priority === "urgent" && (
+                        <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded whitespace-nowrap flex-shrink-0">
+                          URGENTE
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="text-sm font-medium text-gray-900">Torneo</p>
-            </Link>
+            )}
+          </div>
 
-            <Link
-              href="/dashboard/admin/announcements/new"
-              className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-pink-500 hover:border-pink-300 hover:bg-pink-50/30 transition-all"
-            >
-              <div className="flex-shrink-0">
-                <Megaphone className="h-5 w-5 text-pink-600" />
-              </div>
-              <p className="text-sm font-medium text-gray-900">Annuncio</p>
-            </Link>
+          {/* Centro Notifiche */}
+          <div className="space-y-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Notifiche</h3>
+              {unreadNotifications > 0 && (
+                <button onClick={markAllNotificationsRead} className="text-xs font-semibold text-secondary hover:opacity-80">
+                  Segna tutte come lette
+                </button>
+              )}
+            </div>
 
-            <Link
-              href="/dashboard/admin/news/create"
-              className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-indigo-500 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"
-            >
-              <div className="flex-shrink-0">
-                <Newspaper className="h-5 w-5 text-indigo-600" />
+            {notifications.length === 0 ? (
+              <div className="text-center py-6">
+                <Bell className="h-5 w-5 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">Nessuna notifica</p>
               </div>
-              <p className="text-sm font-medium text-gray-900">News</p>
-            </Link>
+            ) : (
+              <div className="space-y-2">
+                {notifications.slice(0, 3).map((n) => {
+                  const icon = (() => {
+                    switch (n.type) {
+                      case "booking":
+                        return <Calendar className="h-4 w-4 text-secondary" />;
+                      case "tournament":
+                        return <Trophy className="h-4 w-4 text-secondary" />;
+                      case "message":
+                        return <MessageSquare className="h-4 w-4 text-secondary" />;
+                      case "success":
+                        return <CheckCircle className="h-4 w-4 text-secondary" />;
+                      case "warning":
+                        return <AlertCircle className="h-4 w-4 text-secondary" />;
+                      case "error":
+                        return <XCircle className="h-4 w-4 text-secondary" />;
+                      default:
+                        return <Info className="h-4 w-4 text-secondary" />;
+                    }
+                  })();
+
+                  return (
+                    <div
+                      key={n.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+                      onClick={() => handleNotificationClick(n)}
+                    >
+                      <div className="flex-shrink-0">{icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
+                      </div>
+                      {!n.is_read && <span className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

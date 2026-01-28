@@ -433,7 +433,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             value={selectedDate.toISOString().split('T')[0]}
             className="absolute opacity-0 pointer-events-none"
           />
-          <h2 className={`text-base sm:text-lg font-bold capitalize ${
+          <h2 className={`text-base sm:text-lg font-bold capitalize whitespace-nowrap ${
             isToday() ? 'text-white' : 'text-secondary'
           }`}>
             <span className="hidden sm:inline">{formatDateHeader()}</span>
