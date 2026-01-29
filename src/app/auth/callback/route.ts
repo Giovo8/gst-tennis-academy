@@ -52,6 +52,25 @@ export async function GET(request: Request) {
 
       return NextResponse.redirect(`${origin}${next}`);
     }
+
+    // Code exchange failed - check if user is already logged in
+    const { data: { user: existingUser } } = await supabase.auth.getUser();
+    if (existingUser) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", existingUser.id)
+        .single();
+
+      let destination = next;
+      if (profile?.role === "admin" || profile?.role === "gestore") {
+        destination = "/dashboard/admin";
+      } else if (profile?.role === "maestro") {
+        destination = "/dashboard/maestro";
+      }
+
+      return NextResponse.redirect(`${origin}${destination}`);
+    }
   }
 
   // Return the user to an error page with instructions
