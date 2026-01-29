@@ -27,6 +27,15 @@ import {
   XCircle,
   X,
   ExternalLink,
+  Cloud,
+  Sun,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  Wind,
+  Droplets,
+  Thermometer,
+  ChevronRight,
 } from "lucide-react";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
@@ -73,6 +82,27 @@ interface Notification {
   created_at: string;
 }
 
+interface WeatherData {
+  temperature: number;
+  apparentTemperature: number;
+  humidity: number;
+  windSpeed: number;
+  weatherCode: number;
+  isDay: boolean;
+}
+
+interface ForecastDay {
+  date: string;
+  tempMax: number;
+  tempMin: number;
+  weatherCode: number;
+  sunrise: string;
+  sunset: string;
+  uvIndexMax: number;
+  precipitationSum: number;
+  hourly: { time: string; temp: number; weatherCode: number }[];
+}
+
 export default function AtletaDashboard() {
   const [stats, setStats] = useState<Stats>({
     upcomingBookings: 0,
@@ -90,10 +120,95 @@ export default function AtletaDashboard() {
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+  const [showWeatherModal, setShowWeatherModal] = useState(false);
+  const [selectedForecastDay, setSelectedForecastDay] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
+    loadWeatherData();
   }, []);
+
+  async function loadWeatherData() {
+    try {
+      const response = await fetch(
+        "https://api.open-meteo.com/v1/forecast?latitude=42.07631852280004&longitude=12.373061355799356&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,uv_index_max,precipitation_sum&hourly=temperature_2m,weather_code&timezone=Europe%2FRome&forecast_days=7"
+      );
+      const data = await response.json();
+
+      if (data.current) {
+        setWeather({
+          temperature: Math.round(data.current.temperature_2m),
+          apparentTemperature: Math.round(data.current.apparent_temperature),
+          humidity: data.current.relative_humidity_2m,
+          windSpeed: Math.round(data.current.wind_speed_10m),
+          weatherCode: data.current.weather_code,
+          isDay: data.current.is_day === 1,
+        });
+      }
+
+      if (data.daily && data.hourly) {
+        const days: ForecastDay[] = data.daily.time.map((date: string, i: number) => {
+          const dayHourly = data.hourly.time
+            .map((t: string, hi: number) => ({ time: t, temp: Math.round(data.hourly.temperature_2m[hi]), weatherCode: data.hourly.weather_code[hi] }))
+            .filter((h: { time: string }) => h.time.startsWith(date));
+          return {
+            date,
+            tempMax: Math.round(data.daily.temperature_2m_max[i]),
+            tempMin: Math.round(data.daily.temperature_2m_min[i]),
+            weatherCode: data.daily.weather_code[i],
+            sunrise: data.daily.sunrise[i],
+            sunset: data.daily.sunset[i],
+            uvIndexMax: Math.round(data.daily.uv_index_max[i]),
+            precipitationSum: data.daily.precipitation_sum[i],
+            hourly: dayHourly,
+          };
+        });
+        setForecast(days);
+      }
+    } catch (error) {
+      console.error("Error loading weather data:", error);
+    }
+    setWeatherLoading(false);
+  }
+
+  function getWeatherInfo(code: number, iconClass = "h-12 w-12 sm:h-8 sm:w-8") {
+    const weatherLabels: Record<number, string> = {
+      0: "Sereno", 1: "Prevalentemente sereno",
+      2: "Parzialmente nuvoloso", 3: "Nuvoloso",
+      45: "Nebbia", 48: "Nebbia con brina",
+      51: "Pioggerella leggera", 53: "Pioggerella", 55: "Pioggerella intensa",
+      61: "Pioggia leggera", 63: "Pioggia", 65: "Pioggia intensa",
+      71: "Neve leggera", 73: "Neve", 75: "Neve intensa",
+      80: "Rovesci leggeri", 81: "Rovesci", 82: "Rovesci violenti",
+      95: "Temporale", 96: "Temporale con grandine", 99: "Temporale con grandine",
+    };
+    const label = weatherLabels[code] || "Sconosciuto";
+
+    const getIcon = (c: number) => {
+      if (c <= 1) return <Sun className={iconClass} />;
+      if (c <= 48) return <Cloud className={iconClass} />;
+      if (c <= 67 || (c >= 80 && c <= 82)) return <CloudRain className={iconClass} />;
+      if (c <= 77) return <CloudSnow className={iconClass} />;
+      return <CloudLightning className={iconClass} />;
+    };
+
+    return { label, icon: getIcon(code) };
+  }
+
+  function formatForecastDate(dateStr: string) {
+    const date = new Date(dateStr + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.getTime() === today.getTime()) return "Oggi";
+    if (date.getTime() === tomorrow.getTime()) return "Domani";
+    return date.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
+  }
 
   async function loadDashboardData() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -369,6 +484,212 @@ export default function AtletaDashboard() {
           </div>
         </Link>
       </div>
+
+      {/* Meteo */}
+      <div className="bg-secondary rounded-xl p-5 text-white cursor-pointer hover:bg-secondary/90 transition-all" onClick={() => setShowWeatherModal(true)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <h3 className="font-bold text-lg">Tennis Club GST</h3>
+              <p className="text-sm text-white/80">Formello, RM</p>
+            </div>
+          </div>
+
+          {weatherLoading ? (
+            <div className="flex items-center gap-6 animate-pulse">
+              <div className="h-12 w-24 bg-white/20 rounded" />
+              <div className="h-8 w-8 bg-white/20 rounded-full" />
+            </div>
+          ) : weather ? (
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-4xl font-bold">{weather.temperature}°C</div>
+                  <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
+                </div>
+                <div className="text-white">
+                  {getWeatherInfo(weather.weatherCode).icon}
+                </div>
+              </div>
+              <div className="flex items-center gap-4 pl-6 border-l border-white/20">
+                <div className="text-center">
+                  <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Percepita</p>
+                  <p className="text-sm font-semibold">{weather.apparentTemperature}°C</p>
+                </div>
+                <div className="text-center">
+                  <Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Umidità</p>
+                  <p className="text-sm font-semibold">{weather.humidity}%</p>
+                </div>
+                <div className="text-center">
+                  <Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Vento</p>
+                  <p className="text-sm font-semibold">{weather.windSpeed} km/h</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-white/80">
+              <Cloud className="h-6 w-6" />
+              <p className="text-sm">Meteo non disponibile</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Weather Modal - iPhone Style */}
+      {showWeatherModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setShowWeatherModal(false)}>
+          <div className="w-full sm:max-w-md max-h-[90vh] overflow-hidden rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-b from-[#034a6e] via-[#045a84] to-[#067ab5] text-white overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ maxHeight: "90vh", scrollbarWidth: "none" }}>
+              <div className="sm:hidden flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-white/30" />
+              </div>
+
+              <div className="text-center px-6 pt-4 pb-6">
+                <p className="text-base font-medium text-white/90 mb-0.5">Formello</p>
+                <div className="text-7xl font-thin tracking-tighter mb-1">
+                  {weather?.temperature ?? "--"}°
+                </div>
+                {forecast.length > 0 && (
+                  <>
+                    <p className="text-base text-white/90 mb-1">{getWeatherInfo(weather?.weatherCode ?? 0, "h-0 w-0").label}</p>
+                    <p className="text-base text-white/80">
+                      Max {forecast[0]?.tempMax}°  Min {forecast[0]?.tempMin}°
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {forecast.length > 0 && (
+                <div className="mx-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4 mb-3">
+                  <div className="flex overflow-x-auto gap-4 pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+                    {forecast[0].hourly
+                      .filter((h) => {
+                        const hourTime = new Date(h.time);
+                        const now = new Date();
+                        return hourTime >= now || hourTime.getHours() % 3 === 0;
+                      })
+                      .slice(0, 12)
+                      .map((h, i) => {
+                        const hourTime = new Date(h.time);
+                        const now = new Date();
+                        const isNow = i === 0 && hourTime.getHours() === now.getHours();
+                        const label = isNow ? "Ora" : h.time.split("T")[1]?.slice(0, 5) || "";
+                        return (
+                          <div key={h.time} className="flex flex-col items-center gap-1.5 flex-shrink-0 min-w-[44px]">
+                            <p className="text-xs font-medium text-white/80">{label}</p>
+                            <div className="text-white">{getWeatherInfo(h.weatherCode, "h-5 w-5").icon}</div>
+                            <p className="text-sm font-semibold">{h.temp}°</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {forecast.length > 0 && (() => {
+                const allMin = Math.min(...forecast.map(d => d.tempMin));
+                const allMax = Math.max(...forecast.map(d => d.tempMax));
+                const range = allMax - allMin || 1;
+                return (
+                  <div className="mx-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4 mb-3">
+                    <div className="flex items-center gap-1.5 mb-3 text-white/60">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Previsioni 7 giorni</p>
+                    </div>
+                    <div className="space-y-2.5">
+                      {forecast.map((day, i) => {
+                        const leftPct = ((day.tempMin - allMin) / range) * 100;
+                        const widthPct = ((day.tempMax - day.tempMin) / range) * 100;
+                        return (
+                          <div key={day.date} className="flex items-center gap-2">
+                            <div className="w-10 text-sm font-medium text-white/90 flex-shrink-0">
+                              {i === 0 ? "Oggi" : new Date(day.date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "short" }).replace(/^\w/, c => c.toUpperCase())}
+                            </div>
+                            <div className="flex-shrink-0 w-5 text-white">{getWeatherInfo(day.weatherCode, "h-5 w-5").icon}</div>
+                            <span className="text-sm text-white/50 w-7 text-right flex-shrink-0">{day.tempMin}°</span>
+                            <div className="flex-1 h-1 rounded-full bg-white/15 relative mx-1">
+                              <div
+                                className="absolute h-full rounded-full bg-gradient-to-r from-[#5ac8fa] to-[#ffd60a]"
+                                style={{ left: `${leftPct}%`, width: `${Math.max(widthPct, 8)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-white w-7 flex-shrink-0">{day.tempMax}°</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {weather && forecast.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 mx-4 mb-4">
+                  <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4">
+                    <div className="flex items-center gap-1.5 mb-2 text-white/60">
+                      <Sun className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Indice UV</p>
+                    </div>
+                    <div className="text-3xl font-bold mb-1">{forecast[0]?.uvIndexMax}</div>
+                    <p className="text-sm text-white/70">
+                      {forecast[0]?.uvIndexMax <= 2 ? "Basso" : forecast[0]?.uvIndexMax <= 5 ? "Moderato" : forecast[0]?.uvIndexMax <= 7 ? "Alto" : "Molto alto"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4">
+                    <div className="flex items-center gap-1.5 mb-2 text-white/60">
+                      <Sun className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Alba / Tramonto</p>
+                    </div>
+                    <div className="text-lg font-bold">{forecast[0]?.sunrise?.split("T")[1]?.slice(0, 5)}</div>
+                    <div className="text-lg font-bold text-white/70">{forecast[0]?.sunset?.split("T")[1]?.slice(0, 5)}</div>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4">
+                    <div className="flex items-center gap-1.5 mb-2 text-white/60">
+                      <Wind className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Vento</p>
+                    </div>
+                    <div className="text-3xl font-bold mb-1">{weather.windSpeed}</div>
+                    <p className="text-sm text-white/70">km/h</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4">
+                    <div className="flex items-center gap-1.5 mb-2 text-white/60">
+                      <Droplets className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Precipitazioni</p>
+                    </div>
+                    <div className="text-3xl font-bold mb-1">{forecast[0]?.precipitationSum ?? 0}</div>
+                    <p className="text-sm text-white/70">mm oggi</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4">
+                    <div className="flex items-center gap-1.5 mb-2 text-white/60">
+                      <Thermometer className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Percepita</p>
+                    </div>
+                    <div className="text-3xl font-bold">{weather.apparentTemperature}°</div>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-4">
+                    <div className="flex items-center gap-1.5 mb-2 text-white/60">
+                      <Droplets className="h-3.5 w-3.5" />
+                      <p className="text-xs font-semibold uppercase tracking-wider">Umidita</p>
+                    </div>
+                    <div className="text-3xl font-bold">{weather.humidity}%</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="px-4 pb-6 pt-1">
+                <button
+                  onClick={() => setShowWeatherModal(false)}
+                  className="w-full py-3 rounded-2xl bg-white/15 text-white font-semibold text-sm hover:bg-white/25 transition-all"
+                >
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Annunci + Centro Notifiche */}
       <div className="grid grid-cols-1 gap-6">

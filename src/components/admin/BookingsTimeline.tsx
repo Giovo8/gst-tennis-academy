@@ -381,19 +381,25 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
   function formatDateHeader(short: boolean = false): string {
     if (short) {
-      return selectedDate.toLocaleDateString("it-IT", {
+      const formatted = selectedDate.toLocaleDateString("it-IT", {
         weekday: "short",
         day: "numeric",
         month: "short",
         year: "numeric"
       });
+      return formatted.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
     }
-    return selectedDate.toLocaleDateString("it-IT", {
+    const formatted = selectedDate.toLocaleDateString("it-IT", {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric"
     });
+    return formatted.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
   }
 
   function isToday(): boolean {
@@ -404,27 +410,21 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   return (
     <div className="space-y-4">
       {/* Date Navigation */}
-      <div className={`rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all ${
-        isToday() ? 'bg-secondary' : 'bg-white border border-gray-200'
-      }`}>
+      <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
         <button
           onClick={() => changeDate(-1)}
-          className={`p-2 rounded-md transition-colors ${
-            isToday() ? 'hover:bg-white/10' : 'hover:bg-secondary/10'
-          }`}
+          className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
         >
-          <ChevronLeft className={`h-5 w-5 ${isToday() ? 'text-white' : 'text-secondary'}`} />
+          <span className="text-lg font-semibold text-white">&lt;</span>
         </button>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={openDatePicker}
-            className={`p-2 rounded-md transition-colors ${
-              isToday() ? 'hover:bg-white/10' : 'hover:bg-secondary/10'
-            }`}
+            className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             title="Scegli data"
           >
-            <CalendarIcon className={`h-5 w-5 ${isToday() ? 'text-white' : 'text-secondary'}`} />
+            <CalendarIcon className="h-5 w-5 text-white" />
           </button>
           <input
             ref={dateInputRef}
@@ -433,9 +433,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             value={selectedDate.toISOString().split('T')[0]}
             className="absolute opacity-0 pointer-events-none"
           />
-          <h2 className={`text-base sm:text-lg font-bold capitalize whitespace-nowrap ${
-            isToday() ? 'text-white' : 'text-secondary'
-          }`}>
+          <h2 className="text-base sm:text-lg font-bold capitalize text-white">
             <span className="hidden sm:inline">{formatDateHeader()}</span>
             <span className="sm:hidden">{formatDateHeader(true)}</span>
           </h2>
@@ -443,11 +441,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
         <button
           onClick={() => changeDate(1)}
-          className={`p-2 rounded-md transition-colors ${
-            isToday() ? 'hover:bg-white/10' : 'hover:bg-secondary/10'
-          }`}
+          className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
         >
-          <ChevronRight className={`h-5 w-5 ${isToday() ? 'text-white' : 'text-secondary'}`} />
+          <span className="text-lg font-semibold text-white">&gt;</span>
         </button>
       </div>
 

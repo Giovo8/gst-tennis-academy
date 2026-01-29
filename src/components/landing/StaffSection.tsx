@@ -140,23 +140,26 @@ export default function StaffSection() {
         {/* Staff Grid */}
         <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
           {staff.map((member) => (
-            <article key={member.id} className="text-center">
-              {/* Avatar */}
-              <div className="flex justify-center mb-3 sm:mb-4">
+            <article key={member.id} className="text-center border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
+              {/* Avatar - 1/3 of card */}
+              <div className="w-full h-32 sm:h-40 overflow-hidden">
                 {member.image_url ? (
                   <img
                     src={member.image_url}
                     alt={member.full_name}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
-                    <svg className="w-10 h-10 sm:w-12 sm:h-12" style={{fill: 'white', opacity: 0.8}} viewBox="0 0 24 24">
+                  <div className="w-full h-full flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
+                    <svg className="w-12 h-12 sm:w-16 sm:h-16" style={{fill: 'white', opacity: 0.8}} viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                   </div>
                 )}
               </div>
+
+              {/* Content */}
+              <div className="p-6">
 
               {/* Name */}
               <h3 className="text-base sm:text-lg font-bold mb-1 text-secondary">
@@ -169,7 +172,7 @@ export default function StaffSection() {
               </p>
 
               {/* Bio */}
-              <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-2 text-secondary opacity-80">
+              <p className="text-xs sm:text-sm mb-3 sm:mb-4 text-secondary opacity-80">
                 {member.bio || "Professionista certificato con anni di esperienza."}
               </p>
 
@@ -219,6 +222,7 @@ export default function StaffSection() {
                     <Twitter className="w-5 h-5" />
                   </a>
                 )}
+              </div>
               </div>
             </article>
           ))}

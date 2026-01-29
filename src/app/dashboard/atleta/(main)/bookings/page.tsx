@@ -127,6 +127,25 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return;
     }
 
+    // Auto-annulla prenotazioni pending con data passata
+    const now = new Date();
+    const expiredPendingIds = bookingsData
+      .filter(b => b.status !== "cancelled" && !b.manager_confirmed && new Date(b.start_time) < now)
+      .map(b => b.id);
+
+    if (expiredPendingIds.length > 0) {
+      await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .in("id", expiredPendingIds);
+
+      for (const b of bookingsData) {
+        if (expiredPendingIds.includes(b.id)) {
+          b.status = "cancelled";
+        }
+      }
+    }
+
     // Seconda query: prendi i profili dei coach se esistono
     const coachIds = [...new Set(bookingsData.map(b => b.coach_id).filter(Boolean))];
 
@@ -347,24 +366,24 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
           <button
             onClick={() => setViewMode("list")}
-            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
               viewMode === "list"
                 ? "bg-secondary text-white"
                 : "text-secondary/60 hover:text-secondary border border-gray-200"
             }`}
           >
-            <List className="h-3.5 w-3.5" />
+            <List className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
             Lista
           </button>
           <button
             onClick={() => setViewMode("timeline")}
-            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
               viewMode === "timeline"
                 ? "bg-secondary text-white"
                 : "text-secondary/60 hover:text-secondary border border-gray-200"
             }`}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
             Timeline
           </button>
         </div>

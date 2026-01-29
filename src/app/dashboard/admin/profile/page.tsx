@@ -338,15 +338,15 @@ export default function AdminProfilePage() {
       </div>
 
       {/* Profile Card */}
-      <div className={`bg-white rounded-xl border border-gray-200 border-l-4 p-6 ${
+      <div className={`bg-white rounded-xl border border-gray-200 border-l-4 p-4 sm:p-6 ${
         profile.role === "admin" ? "border-l-red-500" :
         profile.role === "gestore" ? "border-l-purple-500" :
         profile.role === "maestro" ? "border-l-blue-500" :
         "border-l-secondary"
       }`}>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -372,7 +372,7 @@ export default function AdminProfilePage() {
             </button>
           </div>
           
-          <div className="flex-1">
+          <div className="flex-1 text-center sm:text-left">
             <h2 className="text-xl font-bold text-secondary mb-1">
               {profile.full_name || "Nome non impostato"}
             </h2>
@@ -385,7 +385,7 @@ export default function AdminProfilePage() {
       </div>
 
       {/* Sezione 1: Dati Anagrafici */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 className="text-lg font-bold text-secondary mb-6 pb-4 border-b border-gray-200 flex items-center gap-2">
           <User className="h-5 w-5" />
           Dati Anagrafici
@@ -393,8 +393,8 @@ export default function AdminProfilePage() {
 
         <div className="space-y-6">
           {/* Nome Completo */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Nome Completo
             </label>
             <div className="flex-1">
@@ -409,8 +409,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Email */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Email
             </label>
             <div className="flex-1">
@@ -424,8 +424,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Telefono */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Telefono
             </label>
             <div className="flex-1">
@@ -440,8 +440,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Data di Nascita */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Data di Nascita
             </label>
             <div className="flex-1">
@@ -455,8 +455,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Città di Nascita */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Città di Nascita
             </label>
             <div className="flex-1">
@@ -471,8 +471,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Codice Fiscale */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Codice Fiscale
             </label>
             <div className="flex-1">
@@ -491,8 +491,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Indirizzo */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Indirizzo
             </label>
             <div className="flex-1">
@@ -507,11 +507,11 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Città, Provincia, CAP */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Città, Provincia, CAP
             </label>
-            <div className="flex-1 flex gap-3">
+            <div className="flex-1 flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 value={formData.city}
@@ -519,34 +519,36 @@ export default function AdminProfilePage() {
                 placeholder="Roma"
                 className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
               />
-              <input
-                type="text"
-                value={formData.province}
-                onChange={(e) => {
-                  const value = e.target.value.toUpperCase().slice(0, 2);
-                  setFormData({ ...formData, province: value });
-                }}
-                placeholder="RM"
-                maxLength={2}
-                className="w-20 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary uppercase text-center"
-              />
-              <input
-                type="text"
-                value={formData.postal_code}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "").slice(0, 5);
-                  setFormData({ ...formData, postal_code: value });
-                }}
-                placeholder="00100"
-                maxLength={5}
-                className="w-28 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
-              />
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={formData.province}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().slice(0, 2);
+                    setFormData({ ...formData, province: value });
+                  }}
+                  placeholder="RM"
+                  maxLength={2}
+                  className="w-20 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary uppercase text-center"
+                />
+                <input
+                  type="text"
+                  value={formData.postal_code}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 5);
+                    setFormData({ ...formData, postal_code: value });
+                  }}
+                  placeholder="00100"
+                  maxLength={5}
+                  className="flex-1 sm:w-28 sm:flex-none px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                />
+              </div>
             </div>
           </div>
 
           {/* Note */}
-          <div className="flex items-start gap-4">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Note
             </label>
             <div className="flex-1">
@@ -589,7 +591,7 @@ export default function AdminProfilePage() {
       </div>
 
       {/* Sezione 2: Info Sistema */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 className="text-lg font-bold text-secondary mb-6 pb-4 border-b border-gray-200 flex items-center gap-2">
           <Shield className="h-5 w-5" />
           Info Sistema
@@ -597,8 +599,8 @@ export default function AdminProfilePage() {
 
         <div className="space-y-6">
           {/* ID Utente */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               ID Utente
             </label>
             <div className="flex-1">
@@ -612,8 +614,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Data Registrazione */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Data Registrazione
             </label>
             <div className="flex-1">
@@ -627,8 +629,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* Ruolo */}
-          <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Ruolo
             </label>
             <div className="flex-1">
@@ -673,8 +675,8 @@ export default function AdminProfilePage() {
           )}
 
           {/* Tipo Abbonamento */}
-          <div className="flex items-start gap-4">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
               Tipo Abbonamento
             </label>
             <div className="flex-1">
