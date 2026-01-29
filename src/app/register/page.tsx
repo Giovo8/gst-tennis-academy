@@ -75,99 +75,51 @@ function RegisterForm() {
     try {
       const emailToUse = formData.email.trim().toLowerCase();
 
-      // Signup with Supabase Auth
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: emailToUse,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${siteUrl}/auth/callback`,
-          data: {
-            full_name: formData.fullName,
-            phone: formData.phone,
-            role: codeRole,
-          },
-        },
-      });
-
-      // Gestisci errori specifici di Supabase Auth
-      if (authError) {
-        console.error("Errore Supabase Auth:", authError);
-        if (authError.message.includes("User already registered") ||
-            authError.message.includes("already registered")) {
-          throw new Error("Questa email è già registrata nel sistema. Prova ad accedere o usa un'altra email.");
-        }
-        throw new Error(`Errore durante la registrazione: ${authError.message}`);
-      }
-
-      if (authData.user) {
-        // Attendi un momento per permettere al trigger del database di creare il profilo
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Use API endpoint to handle profile creation and invite code usage (bypasses RLS)
-        const useCodeResponse = await fetch("/api/invite-codes/validate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: inviteCode,
-            user_id: authData.user.id,
-            profile_data: {
-              email: emailToUse,
-              full_name: formData.fullName,
-              phone: formData.phone,
-            },
-          }),
-        });
-
-        const useCodeResult = await useCodeResponse.json();
-
-        if (!useCodeResponse.ok) {
-          console.error("Errore utilizzo codice:", useCodeResult.error);
-          // Non bloccare la registrazione, l'utente è già creato
-        }
-
-        // Log the invite code usage
-        await fetch("/api/activity-logs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "invite_code_used",
-            entity_type: "invite_code",
-            entity_id: inviteCode,
-            metadata: {
-              code: inviteCode,
-              role: codeRole,
-              user_id: authData.user.id,
-              user_email: emailToUse,
-            },
-          }),
-        });
-
-        // Login automatico e redirect alla dashboard
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Call API endpoint for immediate signup with auto-confirmed email
+      const signupResponse = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           email: emailToUse,
           password: formData.password,
-        });
+          fullName: formData.fullName,
+          phone: formData.phone,
+          role: codeRole,
+          inviteCode: inviteCode,
+        }),
+      });
 
-        if (signInError) {
-          console.error("Errore login automatico:", signInError);
-          alert("Registrazione completata! Effettua il login.");
-          router.push("/login");
-          return;
-        }
+      const signupData = await signupResponse.json();
 
-        // Determina la dashboard in base al ruolo
-        let destination = "/dashboard/atleta";
-        if (codeRole === "admin") {
-          destination = "/dashboard/admin";
-        } else if (codeRole === "gestore") {
-          destination = "/dashboard/admin";
-        } else if (codeRole === "maestro") {
-          destination = "/dashboard/maestro";
-        }
-
-        router.push(destination);
+      if (!signupResponse.ok) {
+        throw new Error(signupData.error || "Errore durante la registrazione");
       }
+
+      // L'utente è già creato e confermato, effettua login diretto
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: emailToUse,
+        password: formData.password,
+      });
+
+      if (signInError) {
+        console.error("Errore login automatico:", signInError);
+        throw new Error("Registrazione completata ma login fallito. Per favore effettua il login.");
+      }
+
+      // Attendi la sessione
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Determina la dashboard in base al ruolo
+      let destination = "/dashboard/atleta";
+      if (codeRole === "admin") {
+        destination = "/dashboard/admin";
+      } else if (codeRole === "gestore") {
+        destination = "/dashboard/admin";
+      } else if (codeRole === "maestro") {
+        destination = "/dashboard/maestro";
+      }
+
+      router.push(destination);
     } catch (err: any) {
       console.error("Errore registrazione:", err);
       setError(err.message || "Errore durante la registrazione");
