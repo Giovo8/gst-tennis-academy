@@ -53,6 +53,8 @@ export async function GET(req: Request) {
     const type = url.searchParams.get("type") as CompetitionType | null;
     const includeCounts = url.searchParams.get("includeCounts") === "true";
 
+    logger.debug('Tournament GET request', { id, upcoming, type, includeCounts });
+
     // Validate UUID if provided
     if (id && !sanitizeUuid(id)) {
       return NextResponse.json(
@@ -114,22 +116,21 @@ export async function GET(req: Request) {
       .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayISO = today.toISOString();
-      // Filter for active tournaments: open registrations, in progress, or future with valid status
+      // Filter for active tournaments: open registrations or in progress
       query = query.in("status", ["Aperte le Iscrizioni", "In Corso"]);
+      logger.debug('Filtering for active tournaments', { upcoming });
     }
 
     // Validate and filter by competition type
     if (type && (type === COMPETITION_TYPE.TORNEO || type === COMPETITION_TYPE.CAMPIONATO)) {
       query = query.eq("competition_type", type);
+      logger.debug('Filtering by competition type', { type });
     }
 
     const { data, error } = await query;
     
     if (error) {
-      logger.error('Database error fetching tournaments', error);
+      logger.error('Database error fetching tournaments', error, { upcoming, type });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
         { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
@@ -138,15 +139,19 @@ export async function GET(req: Request) {
     
     // Check timeout before processing results
     if (Date.now() - startTime > requestTimeout) {
-      logger.warn('Request approaching timeout limit', { duration: Date.now() - startTime });
+      logger.warn('Request approaching timeout limit', { 
+        duration: Date.now() - startTime,
+        dataLength: data?.length || 0 
+      });
       return NextResponse.json({ tournaments: data || [] });
     }
     
     // Only add participant counts if explicitly requested AND time permits
     let result = data || [];
     if (includeCounts && result.length > 0 && (Date.now() - startTime < requestTimeout - 2000)) {
+      logger.debug('Fetching participant counts', { count: Math.min(10, result.length) });
       result = await Promise.all(
-        result.slice(0, 10).map(async (tournament) => { // Limit to 10 tournaments max
+        result.slice(0, 10).map(async (tournament) => {
           const { count } = await supabaseServer
             .from("tournament_participants")
             .select("id", { count: "exact", head: true })
@@ -158,10 +163,11 @@ export async function GET(req: Request) {
     
     const duration = Date.now() - startTime;
     logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.OK, duration);
+    logger.debug('Returned tournaments', { count: result.length, duration });
     return NextResponse.json({ tournaments: result });
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error('Exception in tournaments GET', error);
+    logger.error('Exception in tournaments GET', error, { duration });
     logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },

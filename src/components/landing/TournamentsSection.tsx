@@ -38,13 +38,23 @@ export default function TournamentsSection() {
     let mounted = true;
     let retryCount = 0;
     const maxRetries = 2;
+    let abortController: AbortController | null = null;
 
     async function load() {
       try {
+        // Create abort controller with manual timeout (better browser support)
+        abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController?.abort(), 9000);
+
         // Use upcoming=true to get only active tournaments for homepage
         const res = await fetch("/api/tournaments?upcoming=true", {
-          signal: AbortSignal.timeout(9000), // 9 second timeout
+          signal: abortController.signal,
+          headers: {
+            'Accept': 'application/json',
+          },
         });
+
+        clearTimeout(timeoutId);
         
         if (!res.ok) {
           console.error("[TournamentsSection] API error:", res.status, res.statusText);
@@ -57,7 +67,10 @@ export default function TournamentsSection() {
             return;
           }
           
-          if (mounted) setError("Errore nel caricamento dei tornei");
+          if (mounted) {
+            setError("Errore nel caricamento dei tornei");
+            setLoading(false);
+          }
           return;
         }
         
@@ -75,30 +88,37 @@ export default function TournamentsSection() {
         if (mounted) {
           setItems(activeTournaments);
           setError(null); // Clear any previous errors
+          setLoading(false);
         }
       } catch (err: any) {
+        // Handle abort specifically
         if (err?.name === 'AbortError') {
-          console.error("[TournamentsSection] Request timeout");
+          console.warn("[TournamentsSection] Request aborted/timed out");
         } else {
-          console.error("[TournamentsSection] Fetch failed:", err);
+          console.error("[TournamentsSection] Fetch failed:", err?.message || err);
         }
         
         // Retry on timeout or network errors
-        if (retryCount < maxRetries) {
+        if ((err?.name === 'AbortError' || !navigator.onLine) && retryCount < maxRetries) {
           retryCount++;
           console.warn(`[TournamentsSection] Retrying (${retryCount}/${maxRetries})...`);
           setTimeout(load, 1000 * retryCount);
           return;
         }
         
-        if (mounted) setError("Errore nel caricamento dei tornei");
-      } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setError("Errore nel caricamento dei tornei");
+          setLoading(false);
+        }
       }
     }
     
     load();
-    return () => { mounted = false; };
+    
+    return () => {
+      mounted = false;
+      abortController?.abort();
+    };
   }, []);
 
   const getTournamentTypeLabel = (tournament: Tournament) => {
