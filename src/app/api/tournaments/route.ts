@@ -103,16 +103,15 @@ export async function GET(req: Request) {
     }
 
     // Build query for list of tournaments
+    // Limit fields to reduce payload size on Vercel
+    const selectFields = includeCounts
+      ? "*"
+      : "id,title,description,start_date,max_participants,tournament_type,competition_type,status,format";
+    
     let query = supabaseServer
       .from("tournaments")
-      .select("*");
-
-    // Limit fields to reduce payload size on Vercel
-    if (!includeCounts) {
-      query = query.select("id,title,description,start_date,max_participants,tournament_type,competition_type,status,format", { count: "exact" });
-    }
-
-    query = query.order("start_date", { ascending: true });
+      .select(selectFields) // NO count here - causes extra query
+      .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
       const today = new Date();
