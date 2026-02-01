@@ -57,7 +57,8 @@ export default function TournamentsSection() {
         clearTimeout(timeoutId);
         
         if (!res.ok) {
-          console.error("[TournamentsSection] API error:", res.status, res.statusText);
+          const errorText = await res.text();
+          console.error("[TournamentsSection] API error:", res.status, res.statusText, errorText);
           
           // Retry logic for 5xx errors
           if (res.status >= 500 && retryCount < maxRetries) {
@@ -68,7 +69,7 @@ export default function TournamentsSection() {
           }
           
           if (mounted) {
-            setError("Errore nel caricamento dei tornei");
+            setError(`Errore nel caricamento (${res.status})`);
             setLoading(false);
           }
           return;
@@ -76,6 +77,10 @@ export default function TournamentsSection() {
         
         const json = await res.json();
         const tournaments = json.tournaments || [];
+        
+        if (!Array.isArray(tournaments)) {
+          console.warn("[TournamentsSection] Unexpected response format:", json);
+        }
         
         // Filtra via i tornei conclusi/archiviati (backup filter)
         const activeTournaments = tournaments.filter(
@@ -185,16 +190,23 @@ export default function TournamentsSection() {
 
         {/* Lista eventi stile "Events" */}
         {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-secondary" />
+          <div className="flex flex-col items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-secondary mb-2" />
+            <p className="text-xs text-secondary/50">Caricamento tornei...</p>
           </div>
         ) : error ? (
-          <div className="text-sm text-red-600 py-10 rounded-md px-4 bg-red-50">
-            {error}
+          <div className="text-sm text-red-600 py-10 rounded-md px-4 bg-red-50 border border-red-200">
+            <p className="font-semibold mb-2">❌ {error}</p>
+            <p className="text-xs text-red-500">
+              Se il problema persiste, contatta l'amministratore.
+            </p>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="text-sm text-secondary/70 py-10 rounded-md px-4 bg-secondary/5">
-            Al momento non ci sono tornei in programma.
+          <div className="text-sm text-secondary/70 py-10 rounded-md px-4 bg-secondary/5 border border-secondary/10">
+            <p className="font-semibold mb-1">📭 Al momento non ci sono tornei in programma</p>
+            <p className="text-xs text-secondary/60">
+              Torna presto a controllare i prossimi eventi!
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
