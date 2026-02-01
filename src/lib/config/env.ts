@@ -24,7 +24,7 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY è obbligatoria'),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY è obbligatoria'),
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY è obbligatoria'),
+  RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional().default('noreply@gst-tennis-academy.it'),
   EMAIL_REPLY_TO: z.string().optional().default('info@gst-tennis-academy.it'),
   ENABLE_RATE_LIMITING: z.enum(['true', 'false']).default('true'),
