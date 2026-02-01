@@ -50,6 +50,7 @@ export async function GET(req: Request) {
     const id = url.searchParams.get("id");
     const upcoming = url.searchParams.get("upcoming");
     const type = url.searchParams.get("type") as CompetitionType | null;
+    const includeCounts = url.searchParams.get("includeCounts") === "true";
 
     // Validate UUID if provided
     if (id && !sanitizeUuid(id)) {
@@ -127,20 +128,23 @@ export async function GET(req: Request) {
       );
     }
     
-    // Add participant count for each tournament
-    const tournamentsWithCounts = await Promise.all(
-      (data || []).map(async (tournament) => {
-        const { count } = await supabaseServer
-          .from("tournament_participants")
-          .select("id", { count: "exact", head: true })
-          .eq("tournament_id", tournament.id);
-        return { ...tournament, current_participants: count ?? 0 };
-      })
-    );
+    // Only add participant counts if explicitly requested
+    let result = data || [];
+    if (includeCounts && result.length > 0) {
+      result = await Promise.all(
+        result.map(async (tournament) => {
+          const { count } = await supabaseServer
+            .from("tournament_participants")
+            .select("id", { count: "exact", head: true })
+            .eq("tournament_id", tournament.id);
+          return { ...tournament, current_participants: count ?? 0 };
+        })
+      );
+    }
     
     const duration = Date.now() - startTime;
     logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.OK, duration);
-    return NextResponse.json({ tournaments: tournamentsWithCounts });
+    return NextResponse.json({ tournaments: result });
   } catch (error) {
     const duration = Date.now() - startTime;
     logger.error('Exception in tournaments GET', error);

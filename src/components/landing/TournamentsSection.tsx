@@ -38,7 +38,8 @@ export default function TournamentsSection() {
     let mounted = true;
     async function load() {
       try {
-        const res = await fetch("/api/tournaments");
+        // Use upcoming=true to get only active tournaments for homepage
+        const res = await fetch("/api/tournaments?upcoming=true");
         if (!res.ok) {
           console.error("[TournamentsSection] API error:", res.status, res.statusText);
           if (mounted) setError("Errore nel caricamento dei tornei");
@@ -46,7 +47,7 @@ export default function TournamentsSection() {
         }
         const json = await res.json();
         const tournaments = json.tournaments || [];
-        // Filtra via i tornei conclusi/archiviati
+        // Filtra via i tornei conclusi/archiviati (backup filter)
         const activeTournaments = tournaments.filter(
           (t: Tournament) =>
             t.status !== 'Concluso' &&
