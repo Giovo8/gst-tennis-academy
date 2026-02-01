@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Send, Dumbbell, Users, CheckCircle } from "lucide-react";
+import { Loader2, Send, Dumbbell, Users, CheckCircle, AlertCircle } from "lucide-react";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 
 type RoleOption = "maestro" | "preparatore";
@@ -48,12 +48,11 @@ export default function WorkWithUsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-
+    <div className="min-h-screen bg-gray-50/50">
       <PublicNavbar />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-        {/* Header Section */}
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-secondary/60 mb-3">
             Entra nel Team
@@ -62,146 +61,228 @@ export default function WorkWithUsPage() {
             Lavora con noi
           </h1>
           <p className="text-base sm:text-lg text-secondary/80 max-w-3xl mx-auto leading-relaxed">
-            Unisciti al team GST Tennis Academy! Cerchiamo professionisti appassionati 
+            Unisciti al team GST Tennis Academy! Cerchiamo professionisti appassionati
             per far crescere la nostra community sportiva.
           </p>
         </div>
 
-        {/* Posizioni Aperte */}
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 mb-12 sm:mb-16">
-          <div className="border-l-4 border-secondary pl-6 bg-secondary/5 p-6 rounded-r-md">
-            <div className="mb-4 inline-flex rounded-full bg-secondary/10 p-3">
-              <Users className="h-6 w-6 text-secondary" />
+        {/* Posizioni Aperte - Card stile admin */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 mb-6">
+          <div className="bg-white rounded-lg p-5 border border-gray-200 border-l-4 border-l-secondary hover:shadow-sm transition-all">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex rounded-full bg-secondary/10 p-2.5">
+                <Users className="h-5 w-5 text-secondary" />
+              </div>
+              <h3 className="text-lg font-bold text-secondary">Maestri di Tennis</h3>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-secondary mb-3">Maestri di Tennis</h3>
-            <p className="text-sm sm:text-base text-secondary/70 mb-4">
-              Istruttori certificati FITP con esperienza nell'insegnamento a tutte le età.
-              Passione per il tennis e ottime capacità comunicative.
+            <p className="text-sm text-secondary/70 mb-4">
+              Istruttori certificati FITP con esperienza nell&apos;insegnamento a tutte le età.
             </p>
             <ul className="space-y-2 text-sm text-secondary/80">
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+                <CheckCircle className="h-4 w-4 text-secondary/60 flex-shrink-0" />
                 Certificazione FITP richiesta
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+                <CheckCircle className="h-4 w-4 text-secondary/60 flex-shrink-0" />
                 Esperienza con bambini e adulti
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+                <CheckCircle className="h-4 w-4 text-secondary/60 flex-shrink-0" />
                 Disponibilità part-time/full-time
               </li>
             </ul>
           </div>
 
-          <div className="border-l-4 border-secondary pl-6 bg-secondary/5 p-6 rounded-r-md">
-            <div className="mb-4 inline-flex rounded-full bg-secondary/10 p-3">
-              <Dumbbell className="h-6 w-6 text-secondary" />
+          <div className="bg-white rounded-lg p-5 border border-gray-200 border-l-4 border-l-secondary hover:shadow-sm transition-all">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex rounded-full bg-secondary/10 p-2.5">
+                <Dumbbell className="h-5 w-5 text-secondary" />
+              </div>
+              <h3 className="text-lg font-bold text-secondary">Preparatore Fisico</h3>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-secondary mb-3">Preparatore Fisico</h3>
-            <p className="text-sm sm:text-base text-secondary/70 mb-4">
-              Professionisti della preparazione atletica per tennisti. 
-              Esperienza in allenamento funzionale e prevenzione infortuni.
+            <p className="text-sm text-secondary/70 mb-4">
+              Professionisti della preparazione atletica per tennisti.
             </p>
             <ul className="space-y-2 text-sm text-secondary/80">
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+                <CheckCircle className="h-4 w-4 text-secondary/60 flex-shrink-0" />
                 Laurea in Scienze Motorie
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+                <CheckCircle className="h-4 w-4 text-secondary/60 flex-shrink-0" />
                 Esperienza con atleti agonisti
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-secondary" />
+                <CheckCircle className="h-4 w-4 text-secondary/60 flex-shrink-0" />
                 Conoscenza metodologie di allenamento
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Form Candidatura */}
-        <div className="bg-white border-2 border-secondary/20 rounded-md p-6 sm:p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-secondary mb-3">Invia la tua candidatura</h2>
-            <p className="text-sm sm:text-base text-secondary/70">
-              Compila il form con i tuoi dati. Il nostro team valuterà il tuo profilo e ti contatterà.
-            </p>
-          </div>
-          <form className="grid gap-6 sm:grid-cols-2" onSubmit={handleSubmit}>
-            <label className="text-sm font-semibold text-secondary sm:col-span-2">
-              Nome completo *
-              <input
-                className="mt-2 w-full rounded-md border-2 border-secondary/20 bg-white px-4 py-3 text-secondary outline-none focus:border-secondary transition placeholder:text-secondary/40"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Mario Rossi"
-                required
-              />
-            </label>
-            <label className="text-sm font-semibold text-secondary">
-              Email *
-              <input
-                type="email"
-                className="mt-2 w-full rounded-md border-2 border-secondary/20 bg-white px-4 py-3 text-secondary outline-none focus:border-secondary transition placeholder:text-secondary/40"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="mario.rossi@email.it"
-                required
-              />
-            </label>
-            <label className="text-sm font-semibold text-secondary">
-              Posizione *
-              <select
-                className="mt-2 w-full rounded-md border-2 border-secondary/20 bg-white px-4 py-3 text-secondary outline-none focus:border-secondary transition"
-                value={role}
-                onChange={(e) => setRole(e.target.value as RoleOption)}
-              >
-                <option value="maestro">Maestro di Tennis</option>
-                <option value="preparatore">Preparatore Fisico</option>
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-secondary sm:col-span-2">
-              Link CV (opzionale)
-              <input
-                className="mt-2 w-full rounded-md border-2 border-secondary/20 bg-white px-4 py-3 text-secondary outline-none focus:border-secondary transition placeholder:text-secondary/40"
-                value={cvUrl}
-                onChange={(e) => setCvUrl(e.target.value)}
-                placeholder="https://drive.google.com/... o LinkedIn"
-              />
-            </label>
-            <label className="text-sm font-semibold text-secondary sm:col-span-2">
-              Presentazione
-              <textarea
-                className="mt-2 w-full rounded-md border-2 border-secondary/20 bg-white px-4 py-3 text-secondary outline-none focus:border-secondary transition placeholder:text-secondary/40"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Parlaci delle tue esperienze, certificazioni, disponibilità e motivazioni..."
-                rows={5}
-              />
-            </label>
-            <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-md px-8 py-3 text-sm font-semibold bg-secondary text-white transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {loading ? "Invio in corso..." : "Invia candidatura"}
-              </button>
-              {success && (
-                <div className="flex items-center gap-2 text-sm text-secondary font-medium">
-                  <CheckCircle className="h-5 w-5" />
-                  {success}
-                </div>
-              )}
-              {error && <span className="text-sm text-red-600 font-medium">{error}</span>}
+        {/* Messages */}
+        {error && (
+          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-900">Errore</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
-          </form>
-        </div>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-green-900">Successo</p>
+              <p className="text-sm text-green-700 mt-1">{success}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Form Candidatura - stile admin users/new */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Dati Personali */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-secondary">Dati Personali</h2>
+            </div>
+
+            <div className="space-y-0">
+              {/* Nome Completo */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Nome Completo *
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    placeholder="Mario Rossi"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200 pt-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Email *
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    placeholder="mario.rossi@email.it"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Posizione */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pt-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Posizione *
+                </label>
+                <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRole("maestro")}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        role === "maestro"
+                          ? "bg-secondary text-white border-secondary"
+                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                      }`}
+                    >
+                      Maestro di Tennis
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole("preparatore")}
+                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        role === "preparatore"
+                          ? "bg-secondary text-white border-secondary"
+                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                      }`}
+                    >
+                      Preparatore Fisico
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Candidatura */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-secondary">Candidatura</h2>
+            </div>
+
+            <div className="space-y-0">
+              {/* Link CV */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Link CV
+                </label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={cvUrl}
+                    onChange={(e) => setCvUrl(e.target.value)}
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    placeholder="https://drive.google.com/... o LinkedIn"
+                  />
+                  <p className="text-xs text-secondary/50 mt-2">
+                    Inserisci un link al tuo CV su Google Drive, LinkedIn o altro servizio
+                  </p>
+                </div>
+              </div>
+
+              {/* Presentazione */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pt-6">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                  Presentazione
+                </label>
+                <div className="flex-1">
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={4}
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                    placeholder="Parlaci delle tue esperienze, certificazioni, disponibilità e motivazioni..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Invio in corso...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Invia candidatura
+              </>
+            )}
+          </button>
+        </form>
       </main>
     </div>
   );
 }
-
-
