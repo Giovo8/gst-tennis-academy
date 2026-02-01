@@ -37,7 +37,7 @@ import {
   Thermometer,
   ChevronRight,
 } from "lucide-react";
-import NotificationBell from "@/components/notifications/NotificationBell";
+
 
 interface Stats {
   upcomingBookings: number;
