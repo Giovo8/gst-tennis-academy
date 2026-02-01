@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeSearchQuery } from "@/lib/security/sanitize";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize-server";
 import { searchQuerySchema } from "@/lib/validation/schemas";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import logger from "@/lib/logger/secure-logger";

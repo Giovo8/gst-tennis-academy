@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { RoundData, GroupData, GroupStanding } from "@/lib/types/tournament";
 import { createTournamentSchema } from "@/lib/validation/schemas";
-import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize";
+import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import {
   HTTP_STATUS,

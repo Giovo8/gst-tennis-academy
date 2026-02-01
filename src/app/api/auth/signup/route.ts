@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { signupSchema } from "@/lib/validation/schemas";
-import { sanitizeEmail, sanitizeObject } from "@/lib/security/sanitize";
+import { sanitizeEmail, sanitizeObject } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import logger from "@/lib/logger/secure-logger";
 import env from "@/lib/config/env";

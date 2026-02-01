@@ -5,7 +5,7 @@ import { createNotification } from "@/lib/notifications/createNotification";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { logActivityServer } from "@/lib/activity/logActivity";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
-import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize";
+import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, TIME_CONSTANTS, BOOKING_STATUS } from "@/lib/constants/app";

@@ -111,7 +111,7 @@ export async function GET(req: Request) {
 
     // Step 7: Test sanitize import
     try {
-      const { sanitizeObject, sanitizeUuid } = await import("@/lib/security/sanitize");
+      const { sanitizeObject, sanitizeUuid } = await import("@/lib/security/sanitize-server");
       steps.push({ 
         step: "7-sanitize", 
         status: "ok",
