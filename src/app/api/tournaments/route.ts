@@ -53,7 +53,11 @@ export async function GET(req: Request) {
     const type = url.searchParams.get("type") as CompetitionType | null;
     const includeCounts = url.searchParams.get("includeCounts") === "true";
 
-    logger.debug('Tournament GET request', { id, upcoming, type, includeCounts });
+    try {
+      logger.debug('Tournament GET request', { id, upcoming, type, includeCounts });
+    } catch (logErr) {
+      console.error('[API] Logger failed:', logErr);
+    }
 
     // Validate UUID if provided
     if (id && !sanitizeUuid(id)) {
@@ -118,19 +122,32 @@ export async function GET(req: Request) {
     if (upcoming === "true") {
       // Filter for active tournaments: open registrations or in progress
       query = query.in("status", ["Aperte le Iscrizioni", "In Corso"]);
-      logger.debug('Filtering for active tournaments', { upcoming });
+      try {
+        logger.debug('Filtering for active tournaments', { upcoming });
+      } catch (logErr) {
+        console.log('[API] Filtering for active tournaments');
+      }
     }
 
     // Validate and filter by competition type
     if (type && (type === COMPETITION_TYPE.TORNEO || type === COMPETITION_TYPE.CAMPIONATO)) {
       query = query.eq("competition_type", type);
-      logger.debug('Filtering by competition type', { type });
+      try {
+        logger.debug('Filtering by competition type', { type });
+      } catch (logErr) {
+        console.log('[API] Filtering by type:', type);
+      }
     }
 
     const { data, error } = await query;
     
     if (error) {
-      logger.error('Database error fetching tournaments', error, { upcoming, type });
+      console.error('[API/tournaments] Database error:', error);
+      try {
+        logger.error('Database error fetching tournaments', error, { upcoming, type });
+      } catch (logErr) {
+        console.error('[API] Logger failed:', logErr);
+      }
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
         { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
@@ -139,17 +156,25 @@ export async function GET(req: Request) {
     
     // Check timeout before processing results
     if (Date.now() - startTime > requestTimeout) {
-      logger.warn('Request approaching timeout limit', { 
-        duration: Date.now() - startTime,
-        dataLength: data?.length || 0 
-      });
+      try {
+        logger.warn('Request approaching timeout limit', { 
+          duration: Date.now() - startTime,
+          dataLength: data?.length || 0 
+        });
+      } catch (logErr) {
+        console.warn('[API] Timeout warning:', Date.now() - startTime);
+      }
       return NextResponse.json({ tournaments: data || [] });
     }
     
     // Only add participant counts if explicitly requested AND time permits
     let result = data || [];
     if (includeCounts && result.length > 0 && (Date.now() - startTime < requestTimeout - 2000)) {
-      logger.debug('Fetching participant counts', { count: Math.min(10, result.length) });
+      try {
+        logger.debug('Fetching participant counts', { count: Math.min(10, result.length) });
+      } catch (logErr) {
+        console.log('[API] Fetching counts for', Math.min(10, result.length), 'tournaments');
+      }
       result = await Promise.all(
         result.slice(0, 10).map(async (tournament) => {
           const { count } = await supabaseServer
@@ -162,13 +187,32 @@ export async function GET(req: Request) {
     }
     
     const duration = Date.now() - startTime;
-    logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.OK, duration);
-    logger.debug('Returned tournaments', { count: result.length, duration });
+    try {
+      logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.OK, duration);
+      logger.debug('Returned tournaments', { count: result.length, duration });
+    } catch (logErr) {
+      console.log('[API] Response:', { count: result.length, duration });
+    }
     return NextResponse.json({ tournaments: result });
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error('Exception in tournaments GET', error, { duration });
-    logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    
+    // Log to console for Vercel debugging
+    console.error('[API/tournaments] GET failed:', {
+      error: errorMessage,
+      duration,
+      stack: errorStack?.substring(0, 500),
+    });
+    
+    try {
+      logger.error('Exception in tournaments GET', error, { duration });
+      logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    } catch (logErr) {
+      console.error('[API] Logger failed on error:', logErr);
+    }
+    
     return NextResponse.json(
       { error: ERROR_MESSAGES.SERVER_ERROR },
       { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
