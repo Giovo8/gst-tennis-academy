@@ -19,32 +19,6 @@ type Tournament = {
   status?: string;
 };
 
-const defaultTournaments: Tournament[] = [
-  {
-    id: "1",
-    title: "Torneo Sociale di Primavera 2026",
-    description: "Torneo open maschile e femminile. Formula a eliminazione diretta con tabelloni separati. Iscrizioni aperte fino al 20 marzo.",
-    start_date: "2026-04-05",
-    tournament_type: "eliminazione_diretta",
-    status: "Aperto"
-  },
-  {
-    id: "2",
-    title: "Campionato Invernale a Squadre",
-    description: "Competizione a squadre con formula girone all'italiana. Incontri ogni sabato pomeriggio. Aperto a giocatori di tutti i livelli.",
-    start_date: "2026-03-15",
-    tournament_type: "campionato",
-    status: "Aperto"
-  },
-  {
-    id: "3",
-    title: "Torneo Estivo con Gironi",
-    description: "Torneo misto con fase a gironi seguita da eliminazione diretta. Perfetto per migliorare il ranking e giocare molte partite.",
-    start_date: "2026-06-20",
-    tournament_type: "girone_eliminazione",
-    status: "Aperto"
-  }
-];
 
 type FilterKey = "all" | "tornei" | "campionati";
 
@@ -55,8 +29,9 @@ const FILTERS: { id: FilterKey; label: string }[] = [
 ];
 
 export default function TournamentsSection() {
-  const [items, setItems] = useState<Tournament[]>(defaultTournaments);
+  const [items, setItems] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
   useEffect(() => {
@@ -64,27 +39,26 @@ export default function TournamentsSection() {
     async function load() {
       try {
         const res = await fetch("/api/tournaments");
+        if (!res.ok) {
+          console.error("[TournamentsSection] API error:", res.status, res.statusText);
+          if (mounted) setError("Errore nel caricamento dei tornei");
+          return;
+        }
         const json = await res.json();
-        if (res.ok && json.tournaments && json.tournaments.length > 0) {
-          // Filtra via i tornei conclusi/archiviati (come nella dashboard admin)
-          const activeTournaments = json.tournaments.filter(
-            (t: Tournament) => 
-              t.status !== 'Concluso' && 
-              t.status !== 'Completato' && 
-              t.status !== 'Chiuso'
-          );
-          if (mounted) {
-            setItems(activeTournaments.length > 0 ? activeTournaments : defaultTournaments);
-          }
-        } else {
-          if (mounted) {
-            setItems(defaultTournaments);
-          }
+        const tournaments = json.tournaments || [];
+        // Filtra via i tornei conclusi/archiviati
+        const activeTournaments = tournaments.filter(
+          (t: Tournament) =>
+            t.status !== 'Concluso' &&
+            t.status !== 'Completato' &&
+            t.status !== 'Chiuso'
+        );
+        if (mounted) {
+          setItems(activeTournaments);
         }
       } catch (err) {
-        if (mounted) {
-          setItems(defaultTournaments);
-        }
+        console.error("[TournamentsSection] Fetch failed:", err);
+        if (mounted) setError("Errore nel caricamento dei tornei");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -160,9 +134,13 @@ export default function TournamentsSection() {
           <div className="flex items-center justify-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-secondary" />
           </div>
+        ) : error ? (
+          <div className="text-sm text-red-600 py-10 rounded-md px-4 bg-red-50">
+            {error}
+          </div>
         ) : filteredItems.length === 0 ? (
           <div className="text-sm text-secondary/70 py-10 rounded-md px-4 bg-secondary/5">
-            Al momento non ci sono tornei imminenti.
+            Al momento non ci sono tornei in programma.
           </div>
         ) : (
           <div className="space-y-4">
