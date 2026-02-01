@@ -72,8 +72,8 @@ class EnvironmentConfig {
           });
         }
         
-        // In production, fail hard only on server
-        if (process.env.NODE_ENV === 'production' && !isClient) {
+        // In production, fail hard only on server (but not during build)
+        if (process.env.NODE_ENV === 'production' && !isClient && process.env.NEXT_PHASE !== 'phase-production-build') {
           throw new Error('Invalid environment configuration');
         }
         
