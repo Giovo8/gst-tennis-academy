@@ -99,13 +99,9 @@ export async function GET(req: Request) {
     }
 
     // Build query for list of tournaments
-    const selectFields = includeCounts
-      ? "*"
-      : "id,title,description,start_date,max_participants,tournament_type,competition_type,status,format";
-
     let query = supabase
       .from("tournaments")
-      .select(selectFields)
+      .select("*")
       .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
