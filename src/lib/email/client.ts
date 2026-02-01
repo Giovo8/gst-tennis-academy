@@ -35,7 +35,11 @@ function getResendClient(): Resend {
   return resendInstance;
 }
 
-export const resend = getResendClient();
+export const resend = new Proxy({} as Resend, {
+  get(_, prop) {
+    return (getResendClient() as any)[prop];
+  },
+});
 
 // Email configuration from environment
 export const EMAIL_CONFIG = {
