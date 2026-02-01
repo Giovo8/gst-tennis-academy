@@ -20,7 +20,9 @@
       "Bash(findstr:*)",
       "Bash(wc:*)",
       "Bash(find:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh auth status:*)",
+      "Bash(npm run lint:*)"
     ]
   }
 }

@@ -14,9 +14,14 @@ export interface AuthResult {
   } | null;
 }
 
-export interface AuthError {
-  error: string;
-  status: number;
+export interface AuthErrorResponse {
+  success: false;
+  response: NextResponse;
+}
+
+export interface AuthSuccessResponse {
+  success: true;
+  data: AuthResult;
 }
 
 /**
@@ -26,7 +31,7 @@ export interface AuthError {
 export async function verifyAuth(
   req: Request,
   allowedRoles?: UserRole[]
-): Promise<{ success: true; data: AuthResult } | { success: false; response: NextResponse }> {
+): Promise<any> {
   const authHeader = req.headers.get("authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

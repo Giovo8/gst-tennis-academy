@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
-import CompetitionView from "@/components/tournaments/CompetitionView";
+import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 import { Trophy, Award, Calendar, Users, Target, Zap, ArrowLeft, Loader2 } from "lucide-react";
 
@@ -244,152 +244,173 @@ export default function TournamentDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <PublicNavbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
-        {/* Hero Header */}
-        <div className="mb-8 sm:mb-10 md:mb-12">
-          {/* Tournament Type Badge */}
-          <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-secondary/60 mb-3">
-            {isCampionato ? 'Campionato' : 'Torneo'}
-          </p>
-
-          {/* Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-4 leading-tight">
-            {tournament.title}
-          </h1>
-
-          {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-secondary/60 mb-6">
-            {tournament.category && (
-              <span>{tournament.category}</span>
-            )}
-            {tournament.status && (
-              <>
-                <span>•</span>
-                <span>{tournament.status}</span>
-              </>
-            )}
-            {tournament.level && (
-              <>
-                <span>•</span>
-                <span>{tournament.level}</span>
-              </>
-            )}
+        {/* Header con info torneo */}
+        <div
+          className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4 mb-6"
+          style={{ borderLeftColor: (() => {
+            if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280";
+            if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#0ea5e9";
+            if (tournament?.status === "Aperto" && (tournament?.max_participants || 0) > 0 && currentParticipants >= (tournament?.max_participants || 0)) return "#ef4444";
+            if (tournament?.status === "Aperto") return "#10b981";
+            return "#0ea5e9";
+          })() }}
+        >
+          <div className="flex items-start gap-6">
+            <Trophy className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-white">{tournament.title}</h1>
+            </div>
           </div>
-
-          {/* Description */}
-          {tournament.description && (
-            <p className="text-base sm:text-lg text-secondary/80 leading-relaxed max-w-3xl">
-              {tournament.description}
-            </p>
-          )}
         </div>
 
-        {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 sm:mb-10 md:mb-12">
-          {/* Date Card */}
-          {tournament.start_date && (
-            <div className="border-l-4 border-secondary pl-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Data Inizio</p>
-              <p className="text-xl font-bold text-secondary">
-                {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
-                  day: 'numeric', 
-                  month: 'long'
-                })}
-              </p>
-              <p className="text-sm text-secondary/70 mt-1">
-                {new Date(tournament.start_date).toLocaleDateString('it-IT', { 
-                  year: 'numeric'
-                })} ore {new Date(tournament.start_date).toLocaleTimeString('it-IT', { 
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-          )}
+        {/* Dettagli torneo */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
+          
+          <div className="space-y-6">
+            {/* Descrizione */}
+            {tournament.description && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.description}</p>
+                </div>
+              </div>
+            )}
 
-          {/* Participants Card */}
-          <div className="border-l-4 border-secondary pl-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Partecipanti</p>
-            <p className="text-xl font-bold text-secondary">
-              {currentParticipants} / {tournament.max_participants}
-            </p>
-            <p className="text-sm text-secondary/70 mt-1">
-              {spotsLeft > 0 ? `${spotsLeft} posti disponibili` : 'Tutto esaurito'}
-            </p>
+            {/* Data Inizio */}
+            {tournament.start_date && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {new Date(tournament.start_date).toLocaleDateString("it-IT", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tipo */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {getTournamentTypeLabel()}
+                </p>
+              </div>
+            </div>
+
+            {/* Stato */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
+              </div>
+            </div>
+
+            {/* Partecipanti */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {currentParticipants} / {tournament.max_participants}
+                </p>
+                {spotsLeft > 0 && (
+                  <p className="text-sm text-secondary/70 mt-1">
+                    {spotsLeft} {spotsLeft === 1 ? 'posto disponibile' : 'posti disponibili'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Categoria */}
+            {tournament.category && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.category}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Formato Partita */}
+            {tournament.best_of && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">
+                    {tournament.best_of === 3 ? 'Al meglio di 3 set' :
+                     tournament.best_of === 5 ? 'Al meglio di 5 set' :
+                     tournament.best_of === 1 ? '1 set unico' :
+                     `Best of ${tournament.best_of}`}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Format Card */}
-          {tournament.best_of && (
-            <div className="border-l-4 border-secondary pl-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-secondary/60 mb-2">Formato</p>
-              <p className="text-xl font-bold text-secondary">
-                Best of {tournament.best_of}
-              </p>
-              <p className="text-sm text-secondary/70 mt-1">
-                {tournament.best_of === 3 ? 'Al meglio di 3 set' : tournament.best_of === 5 ? 'Al meglio di 5 set' : 'Set personalizzati'}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Action Section */}
-        <div className="mb-8 sm:mb-10 md:mb-12">
-          {!isManager && (
-            <div>
-              {joined ? (
-                <div className="bg-secondary/5 p-6 rounded">
-                  <p className="text-lg font-bold text-secondary mb-2">✓ Sei iscritto a questo torneo</p>
-                  <p className="text-sm text-secondary/70">Controlla la dashboard per gli aggiornamenti e il tabellone</p>
-                </div>
-              ) : spotsLeft <= 0 ? (
-                <div className="bg-secondary/5 p-6 rounded">
-                  <p className="text-lg font-bold text-secondary mb-2">Iscrizioni chiuse</p>
-                  <p className="text-sm text-secondary/70">Tutti i posti sono stati occupati</p>
-                </div>
-              ) : (
-                <div>
-                  <h3 className="text-xl font-bold text-secondary mb-4">Partecipa al torneo</h3>
-                  <button 
-                    onClick={handleJoin} 
-                    disabled={actionLoading} 
-                    className="inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold bg-secondary text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-                  >
-                    {actionLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Iscrizione in corso...
-                      </>
-                    ) : (
-                      'Iscriviti Ora'
-                    )}
-                  </button>
-                  
-                  {profile?.role === 'maestro' && (
-                    <p className="mt-4 text-sm text-secondary/70">
-                      <span className="font-semibold text-secondary">Nota per maestri:</span> Puoi iscrivere i tuoi atleti dalla{' '}
-                      <button 
-                        onClick={() => router.push('/dashboard/maestro')} 
-                        className="underline hover:no-underline text-secondary font-semibold"
-                      >
-                        Dashboard
-                      </button>
-                    </p>
+        {!isManager && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            {joined ? (
+              <div>
+                <p className="text-lg font-bold text-secondary mb-2">✓ Sei iscritto a questo torneo</p>
+                <p className="text-sm text-secondary/70">Controlla la dashboard per gli aggiornamenti e il tabellone</p>
+              </div>
+            ) : spotsLeft <= 0 ? (
+              <div>
+                <p className="text-lg font-bold text-secondary mb-2">Iscrizioni chiuse</p>
+                <p className="text-sm text-secondary/70">Tutti i posti sono stati occupati</p>
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-lg font-semibold text-secondary mb-4">Partecipa al torneo</h3>
+                <button 
+                  onClick={handleJoin} 
+                  disabled={actionLoading} 
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold bg-secondary text-white rounded-md hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Iscrizione in corso...
+                    </>
+                  ) : (
+                    'Iscriviti Ora'
                   )}
-                </div>
-              )}
-            </div>
-          )}
+                </button>
+                
+                {profile?.role === 'maestro' && (
+                  <p className="mt-4 text-sm text-secondary/70">
+                    <span className="font-semibold text-secondary">Nota per maestri:</span> Puoi iscrivere i tuoi atleti dalla{' '}
+                    <button 
+                      onClick={() => router.push('/dashboard/maestro')} 
+                      className="underline hover:no-underline text-secondary font-semibold"
+                    >
+                      Dashboard
+                    </button>
+                  </p>
+                )}
+              </div>
+            )}
         </div>
+        )}
 
         {/* Competition View Section */}
-        <div>
-          <CompetitionView 
-            tournament={tournament}
-            participants={participantsList}
-            isAdmin={isManager}
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <TournamentManagerWrapper
+            tournamentId={id}
+            isAdmin={false}
           />
         </div>
       </main>

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import logger from '@/lib/logger/secure-logger';
 
 export async function notifyAdmins({
   type,
@@ -37,6 +38,6 @@ export async function notifyAdmins({
       });
     }
   } catch (error) {
-    console.error("Error notifying admins:", error);
+    logger.error("Error notifying admins:", error);
   }
 }

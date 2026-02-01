@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Users, Loader2, Search, Crown, GraduationCap, Home, UserCheck, Ticket, Plus, UserPlus, Trash2, Edit2, X, Check, Pencil } from "lucide-react";
+import { Users, Loader2, Search, Crown, GraduationCap, Home, UserCheck, Ticket, Plus, UserPlus, Trash2, Edit2, X, Check, Pencil, MoreVertical } from "lucide-react";
 import Link from "next/link";
 
 type Profile = {
@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "role" | "email" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -165,7 +166,7 @@ export default function UsersPage() {
           placeholder="Cerca per nome o email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
         />
       </div>
 
@@ -191,13 +192,11 @@ export default function UsersPage() {
           <div className="space-y-3 min-w-[980px]">
           {/* Header Row */}
           <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="flex items-center gap-4">
-              <div className="w-12 flex-shrink-0 flex justify-center">
-                <div className="text-xs font-bold text-white/80 uppercase">#</div>
-              </div>
+            <div className="grid grid-cols-[48px_180px_100px_1fr_120px_40px] items-center gap-4">
+              <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
               <button
                 onClick={() => handleSort("name")}
-                className="w-48 flex-shrink-0 text-left hover:text-white/60 transition-colors"
+                className="text-left hover:text-white/60 transition-colors"
               >
                 <div className="text-xs font-bold text-white/80 uppercase flex items-center gap-1">
                   Nome
@@ -208,7 +207,7 @@ export default function UsersPage() {
               </button>
               <button
                 onClick={() => handleSort("role")}
-                className="w-28 flex-shrink-0 text-left hover:text-white/60 transition-colors"
+                className="text-left hover:text-white/60 transition-colors"
               >
                 <div className="text-xs font-bold text-white/80 uppercase flex items-center gap-1">
                   Ruolo
@@ -219,7 +218,7 @@ export default function UsersPage() {
               </button>
               <button
                 onClick={() => handleSort("email")}
-                className="w-56 flex-shrink-0 text-left hover:text-white/60 transition-colors"
+                className="text-left hover:text-white/60 transition-colors"
               >
                 <div className="text-xs font-bold text-white/80 uppercase flex items-center gap-1">
                   Email
@@ -228,13 +227,8 @@ export default function UsersPage() {
                   )}
                 </div>
               </button>
-              <div className="w-32 flex-shrink-0">
-                <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-              </div>
-              <div className="flex-1"></div>
-              <div className="w-28 flex-shrink-0 flex justify-center">
-                <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
-              </div>
+              <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+              <div></div>
             </div>
           </div>
 
@@ -256,19 +250,21 @@ export default function UsersPage() {
             }
 
             return (
-              <Link
-                href={`/dashboard/admin/users/${user.id}`}
+              <div
                 key={user.id}
-                className="block bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4 cursor-pointer"
+                className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4 cursor-pointer"
                 style={{ borderLeftColor: borderColor }}
               >
-                <div className="flex items-center gap-4">
+                <Link
+                  href={`/dashboard/admin/users/${user.id}`}
+                  className="grid grid-cols-[48px_180px_100px_1fr_120px_40px] items-center gap-4 no-underline"
+                >
                     {/* Avatar */}
-                    <div className="w-12 flex-shrink-0 flex justify-center">
-                      <div className={`w-12 h-12 rounded-lg ${roleInfo.color} flex items-center justify-center text-lg font-bold border overflow-hidden`}>
+                    <div className="flex items-center justify-center">
+                      <div className={`w-10 h-10 rounded-lg ${roleInfo.color} flex items-center justify-center text-sm font-bold border overflow-hidden`}>
                         {user.avatar_url ? (
-                          <img 
-                            src={user.avatar_url} 
+                          <img
+                            src={user.avatar_url}
                             alt={user.full_name || "Avatar"}
                             className="w-full h-full object-cover"
                           />
@@ -279,64 +275,76 @@ export default function UsersPage() {
                     </div>
 
                     {/* Nome */}
-                    <div className="w-48 flex-shrink-0">
-                      <h3 className="font-bold text-secondary truncate">
-                        {user.full_name || "Nome non impostato"}
-                      </h3>
+                    <div className="font-bold text-secondary truncate">
+                      {user.full_name || "Nome non impostato"}
                     </div>
 
                     {/* Ruolo */}
-                    <div className="w-28 flex-shrink-0">
-                      <span className="font-semibold text-secondary">
-                        {roleInfo.label}
-                      </span>
+                    <div className="font-semibold text-secondary text-sm">
+                      {roleInfo.label}
                     </div>
 
                     {/* Email */}
-                    <div className="w-56 flex-shrink-0">
-                      <p className="text-secondary/70 truncate">{user.email}</p>
-                    </div>
+                    <div className="text-secondary/70 text-sm truncate">{user.email}</div>
 
                     {/* Telefono */}
-                    <div className="w-32 flex-shrink-0">
+                    <div>
                       {user.phone ? (
-                        <p className="text-secondary/70 truncate">{user.phone}</p>
+                        <span className="text-secondary/70 text-sm truncate">{user.phone}</span>
                       ) : (
-                        <p className="text-secondary/30">-</p>
+                        <span className="text-secondary/30 text-sm">-</span>
                       )}
                     </div>
 
-                    {/* Spazio flessibile */}
-                    <div className="flex-1"></div>
-
-                    {/* Azioni */}
-                    <div className="w-28 flex-shrink-0 flex flex-row flex-nowrap items-center justify-center gap-1">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          window.location.href = `/dashboard/admin/users/modifica?id=${user.id}`;
-                        }}
-                        className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none w-8 h-8"
-                        title="Modifica utente"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                    {/* Azioni - 3 puntini */}
+                    <div className="relative flex items-center justify-center">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          deleteUser(user.id, user.email);
+                          setOpenMenuId(openMenuId === user.id ? null : user.id);
                         }}
-                        className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-all focus:outline-none w-8 h-8"
-                        title="Elimina utente"
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
                       >
-                        <X className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </button>
+                      {openMenuId === user.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                window.location.href = `/dashboard/admin/users/modifica?id=${user.id}`;
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Modifica
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                deleteUser(user.id, user.email);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div>
-              </Link>
+                </Link>
+              </div>
             );
           })}
           </div>

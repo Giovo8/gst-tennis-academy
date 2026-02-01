@@ -282,7 +282,11 @@ export default function CreateNewsPage() {
                               target.style.display = 'none';
                               const parent = target.parentElement;
                               if (parent) {
-                                parent.innerHTML = '<div class="flex items-center justify-center h-full text-sm text-red-600">URL immagine non valido</div>';
+                                // Safely set error message without innerHTML
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'flex items-center justify-center h-full text-sm text-red-600';
+                                errorDiv.textContent = 'URL immagine non valido';
+                                parent.replaceChildren(errorDiv);
                               }
                             }}
                           />

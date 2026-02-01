@@ -16,7 +16,7 @@ export default function CTASection() {
           </p>
           
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          <div className="flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
             <a
               href="https://wa.me/393791958651"
               target="_blank"

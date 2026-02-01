@@ -13,7 +13,9 @@ import {
   Calendar,
   Search,
   Archive,
-  Target
+  Target,
+  MoreVertical,
+  Pencil,
 } from "lucide-react";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import TournamentStats from "@/components/tournaments/TournamentStats";
@@ -43,6 +45,7 @@ function AdminTorneiPageInner() {
   const [managingTournamentId, setManagingTournamentId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
   const [search, setSearch] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -215,20 +218,12 @@ function AdminTorneiPageInner() {
           <div className="space-y-3 min-w-[600px]">
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="flex items-center gap-4">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="w-48 flex-shrink-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Nome Torneo</div>
-                </div>
-                <div className="flex-1"></div>
-                <div className="w-28 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-                </div>
-                <div className="w-24 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Iscritti</div>
-                </div>
+              <div className="grid grid-cols-[40px_1fr_80px_80px_40px] items-center gap-4">
+                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                <div className="text-xs font-bold text-white/80 uppercase">Nome Torneo</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Data</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">Iscritti</div>
+                <div></div>
               </div>
             </div>
 
@@ -254,12 +249,15 @@ function AdminTorneiPageInner() {
               return (
                 <div
                   key={tournament.id}
-                  onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
-                  className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                   style={{ borderLeftColor: borderColor }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                  <div
+                    onClick={() => router.push(`/dashboard/admin/tornei/${tournament.id}`)}
+                    className="grid grid-cols-[40px_1fr_80px_80px_40px] items-center gap-4 no-underline"
+                  >
+                    {/* Simbolo Tipo */}
+                    <div className="flex items-center justify-center">
                       {(tournament.tournament_type === 'eliminazione_diretta' || tournament.competition_type === 'eliminazione_diretta') && (
                         <Trophy className="h-5 w-5 text-secondary/60" />
                       )}
@@ -272,17 +270,12 @@ function AdminTorneiPageInner() {
                     </div>
 
                     {/* Nome */}
-                    <div className="w-48 flex-shrink-0">
-                      <div className="font-bold text-secondary truncate">
-                        {tournament.title}
-                      </div>
+                    <div className="font-bold text-secondary truncate">
+                      {tournament.title}
                     </div>
 
-                    {/* Spazio flessibile */}
-                    <div className="flex-1"></div>
-
                     {/* Data */}
-                    <div className="w-28 flex-shrink-0 text-center">
+                    <div className="text-center">
                       {tournament.start_date ? (
                         <div className="text-sm font-semibold text-secondary">
                           {new Date(tournament.start_date).toLocaleDateString('it-IT', {
@@ -296,10 +289,57 @@ function AdminTorneiPageInner() {
                     </div>
 
                     {/* Partecipanti */}
-                    <div className="w-24 flex-shrink-0 text-center">
+                    <div className="text-center">
                       <div className="text-sm font-semibold text-secondary">
                         {tournament.current_participants || 0}/{tournament.max_participants || 0}
                       </div>
+                    </div>
+
+                    {/* Azioni - 3 puntini */}
+                    <div className="relative flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === tournament.id ? null : tournament.id);
+                        }}
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {openMenuId === tournament.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                router.push(`/dashboard/admin/tornei/${tournament.id}`);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Gestisci
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                handleDeleteTournament(tournament.id);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

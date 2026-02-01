@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/service";
+import logger from '@/lib/logger/secure-logger';
 import {
   bookingConfirmationTemplate,
   bookingReminderTemplate,
@@ -33,7 +34,7 @@ export async function sendBookingConfirmation(bookingData: {
   bookingId: string;
 }) {
   if (!isEmailServiceAvailable()) {
-    console.log("Email service not configured, skipping booking confirmation");
+    logger.info("Email service not configured, skipping booking confirmation");
     return { success: true, message: "Email service not configured" };
   }
 
@@ -71,7 +72,7 @@ export async function sendBookingCancellation(bookingData: {
   refundAmount?: string;
 }) {
   if (!isEmailServiceAvailable()) {
-    console.log("Skipping booking cancellation email: RESEND_API_KEY not configured");
+    logger.info("Skipping booking cancellation email: RESEND_API_KEY not configured");
     return { success: true, message: "Email service not configured" };
   }
 
@@ -110,7 +111,7 @@ export async function sendTournamentRegistration(tournamentData: {
   tournamentId: string;
 }) {
   if (!isEmailServiceAvailable()) {
-    console.log("Skipping tournament registration email: RESEND_API_KEY not configured");
+    logger.info("Skipping tournament registration email: RESEND_API_KEY not configured");
     return { success: true, message: "Email service not configured" };
   }
 
@@ -148,7 +149,7 @@ export async function sendTournamentMatchReminder(matchData: {
   courtNumber: string;
 }) {
   if (!isEmailServiceAvailable()) {
-    console.log("Skipping tournament match reminder: RESEND_API_KEY not configured");
+    logger.info("Skipping tournament match reminder: RESEND_API_KEY not configured");
     return { success: true, message: "Email service not configured" };
   }
 
@@ -187,7 +188,7 @@ export async function sendLessonConfirmation(lessonData: {
   duration: string;
 }) {
   if (!isEmailServiceAvailable()) {
-    console.log("Skipping lesson confirmation email: RESEND_API_KEY not configured");
+    logger.info("Skipping lesson confirmation email: RESEND_API_KEY not configured");
     return { success: true, message: "Email service not configured" };
   }
 
@@ -221,7 +222,7 @@ export async function sendWelcomeEmail(userData: {
   userId: string;
 }) {
   if (!isEmailServiceAvailable()) {
-    console.log("Skipping welcome email: RESEND_API_KEY not configured");
+    logger.info("Skipping welcome email: RESEND_API_KEY not configured");
     return { success: true, message: "Email service not configured" };
   }
 
@@ -247,7 +248,7 @@ export async function sendBookingReminders() {
   try {
     // Skip if email service not configured
     if (!isEmailServiceAvailable()) {
-      console.log("Skipping email reminders: RESEND_API_KEY not configured");
+      logger.info("Skipping email reminders: RESEND_API_KEY not configured");
       return { success: true, sent: 0, message: "Email service not configured" };
     }
 
@@ -284,7 +285,7 @@ export async function sendBookingReminders() {
       .lt("start_time", dayAfterTomorrow.toISOString());
 
     if (error || !bookings) {
-      console.error("Error fetching bookings for reminders:", error);
+      logger.error("Error fetching bookings for reminders:", error);
       return { success: false, error: error?.message };
     }
 
@@ -339,10 +340,10 @@ export async function sendBookingReminders() {
       }
     }
 
-    console.log(`Booking reminders sent: ${successCount} successful, ${failCount} failed`);
+    logger.info(`Booking reminders sent: ${successCount} successful, ${failCount} failed`);
     return { success: true, sent: successCount, failed: failCount };
   } catch (error: any) {
-    console.error("Error in sendBookingReminders:", error);
+    logger.error("Error in sendBookingReminders:", error);
     return { success: false, error: error.message };
   }
 }

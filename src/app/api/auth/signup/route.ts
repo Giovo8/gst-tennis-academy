@@ -1,29 +1,98 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { signupSchema } from "@/lib/validation/schemas";
+import { sanitizeEmail, sanitizeObject } from "@/lib/security/sanitize";
+import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
+import logger from "@/lib/logger/secure-logger";
+import env from "@/lib/config/env";
+import { HTTP_STATUS, ERROR_MESSAGES, USER_ROLES } from "@/lib/constants/app";
+import { z } from "zod";
 
+/**
+ * POST /api/auth/signup
+ * User registration endpoint
+ * 
+ * Security features:
+ * - Rate limiting to prevent abuse
+ * - Strong password validation
+ * - Input sanitization
+ * - Secure logging (no password exposure)
+ */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let userEmail: string | undefined;
+
   try {
-    const { email, password, fullName, phone, role, inviteCode } = await request.json();
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimit = applyRateLimit(clientId, RATE_LIMITS.AUTH_SIGNUP);
 
-    // Validate input
-    if (!email || !password || !fullName || !role) {
+    if (!rateLimit.allowed) {
+      logger.security('Signup rate limit exceeded', { clientId });
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
+        {
+          error: ERROR_MESSAGES.RATE_LIMIT,
+          retryAfter: rateLimit.reset,
+        },
+        {
+          status: HTTP_STATUS.TOO_MANY_REQUESTS,
+          headers: {
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.reset.toString(),
+          },
+        }
       );
     }
 
-    if (password.length < 6) {
+    // Parse and sanitize request body
+    const rawBody = await request.json();
+    const sanitizedBody = sanitizeObject(rawBody);
+
+    // Validate input with Zod schema
+    const validationResult = signupSchema.safeParse(sanitizedBody);
+
+    if (!validationResult.success) {
+      logger.warn('Signup validation failed', {
+        errors: validationResult.error.errors.map(e => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+        clientId,
+      });
+
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
+        {
+          error: ERROR_MESSAGES.INVALID_INPUT,
+          details: validationResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
-    // Use service role for admin operations (can auto-confirm)
+    const { email, password, fullName, phone, role, inviteCode } = validationResult.data;
+    userEmail = email;
+
+    // Additional role validation - only allow specific roles
+    const allowedRoles = [USER_ROLES.ATLETA, USER_ROLES.MAESTRO];
+    if (!allowedRoles.includes(role as any)) {
+      logger.security('Attempt to register with unauthorized role', {
+        role,
+        email,
+        clientId,
+      });
+      return NextResponse.json(
+        { error: 'Ruolo non autorizzato' },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
+    }
+
+    // Create Supabase admin client
     const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      env.supabaseUrl,
+      env.supabaseServiceRoleKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -32,90 +101,136 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Create user with auto-confirmation (email_confirmed_at is set)
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      logger.warn('Signup attempt with existing email', { email });
+      return NextResponse.json(
+        { error: 'Email già registrata' },
+        { status: HTTP_STATUS.CONFLICT }
+      );
+    }
+
+    // Create user with auto-confirmation
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
+      email,
       password,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: true,
       user_metadata: {
         full_name: fullName,
-        phone,
+        phone: phone || null,
         role,
       },
     });
 
     if (authError || !authData.user) {
-      console.error("Auth error:", authError);
+      logger.error('Auth user creation failed', authError, {
+        email,
+        role,
+      });
+
+      // Generic error to avoid user enumeration
       return NextResponse.json(
-        { error: authError?.message || "Failed to create user" },
-        { status: 400 }
+        { error: 'Errore durante la registrazione' },
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
-    // Wait a moment for trigger to create profile
+    const userId = authData.user.id;
+
+    // Wait for database trigger to create profile
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Create profile record (if not auto-created by trigger)
-    const { data: existingProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("id", authData.user.id)
+    // Verify profile was created
+    const { data: profile, error: profileCheckError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
       .single();
 
-    if (!existingProfile) {
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .insert({
-          id: authData.user.id,
-          email: email.trim().toLowerCase(),
-          full_name: fullName,
-          role,
-        });
+    // Create profile if not auto-created by trigger
+    if (!profile && !profileCheckError) {
+      const { error: profileError } = await supabaseAdmin.from('profiles').insert({
+        id: userId,
+        email,
+        full_name: fullName,
+        role,
+      });
 
       if (profileError) {
-        console.error("Profile creation error:", profileError);
+        logger.error('Profile creation failed', profileError, {
+          userId,
+          email,
+        });
       }
     }
 
     // Mark invite code as used if provided
     if (inviteCode) {
-      try {
-        await supabaseAdmin
-          .from("invite_codes")
-          .update({ used_by: authData.user.id, used_at: new Date() })
-          .eq("code", inviteCode);
+      const { error: inviteError } = await supabaseAdmin
+        .from('invite_codes')
+        .update({
+          used_by: userId,
+          used_at: new Date().toISOString(),
+        })
+        .eq('code', inviteCode)
+        .eq('used_by', null); // Only update if not already used
 
-        // Log the action
-        await supabaseAdmin
-          .from("activity_logs")
-          .insert({
-            action: "invite_code_used",
-            entity_type: "invite_code",
-            entity_id: inviteCode,
-            user_id: authData.user.id,
-            metadata: {
-              code: inviteCode,
-              role,
-              user_email: email.trim().toLowerCase(),
-            },
-          });
-      } catch (err) {
-        console.error("Error processing invite code:", err);
+      if (!inviteError) {
+        // Log invite code usage
+        await supabaseAdmin.from('activity_logs').insert({
+          action: 'invite_code_used',
+          entity_type: 'invite_code',
+          entity_id: inviteCode,
+          user_id: userId,
+          metadata: {
+            code: inviteCode,
+            role,
+          },
+        });
       }
     }
 
-    return NextResponse.json({
-      user: {
-        id: authData.user.id,
-        email: authData.user.email,
+    // Log successful registration
+    logger.auth('User registered', userId, true);
+    await supabaseAdmin.from('activity_logs').insert({
+      action: 'user_registered',
+      entity_type: 'user',
+      entity_id: userId,
+      user_id: userId,
+      metadata: {
+        email,
+        role,
+        invite_code: inviteCode || null,
       },
-      message: "User created successfully and email auto-confirmed",
     });
-  } catch (error: any) {
-    console.error("Signup error:", error);
+
+    const duration = Date.now() - startTime;
+    logger.apiResponse('POST', '/api/auth/signup', HTTP_STATUS.CREATED, duration);
+
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
+      {
+        message: 'Registrazione completata con successo',
+        user: {
+          id: userId,
+          email,
+        },
+      },
+      { status: HTTP_STATUS.CREATED }
+    );
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error('Signup exception', error, { email: userEmail });
+    logger.apiResponse('POST', '/api/auth/signup', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

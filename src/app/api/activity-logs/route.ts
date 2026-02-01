@@ -7,11 +7,11 @@ export async function GET(req: Request) {
     const limit = parseInt(url.searchParams.get("limit") || "50");
 
     // Use server client with service role to bypass RLS
-    const { data: logs, error } = await supabaseServer
+    const { data: logs, error } = (await supabaseServer
       .from("activity_log")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(limit)) as any;
 
     if (error) {
       console.error("Error loading activity logs:", error);
@@ -19,22 +19,22 @@ export async function GET(req: Request) {
     }
 
     // Manually fetch profiles for the users
-    const userIds = [...new Set(logs?.map(log => log.user_id).filter(Boolean))];
+    const userIds = [...new Set(logs?.map((log: any) => log.user_id).filter(Boolean))];
     let profilesMap = new Map();
 
     if (userIds.length > 0) {
-      const { data: profiles } = await supabaseServer
+      const { data: profiles } = (await supabaseServer
         .from("profiles")
         .select("id, full_name, email")
-        .in("id", userIds);
+        .in("id", userIds)) as any;
 
-      profiles?.forEach(profile => {
+      profiles?.forEach((profile: any) => {
         profilesMap.set(profile.id, profile);
       });
     }
 
     // Enrich logs with profile data
-    const enrichedLogs = logs?.map(log => ({
+    const enrichedLogs = logs?.map((log: any) => ({
       ...log,
       profiles: log.user_id ? profilesMap.get(log.user_id) : null
     }));

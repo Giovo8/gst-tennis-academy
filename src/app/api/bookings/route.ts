@@ -4,13 +4,28 @@ import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { createNotification } from "@/lib/notifications/createNotification";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { logActivityServer } from "@/lib/activity/logActivity";
+import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
+import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize";
+import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
+import logger from "@/lib/logger/secure-logger";
+import { HTTP_STATUS, ERROR_MESSAGES, TIME_CONSTANTS, BOOKING_STATUS } from "@/lib/constants/app";
 
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     const user_id = url.searchParams.get("user_id");
     const coach_id = url.searchParams.get("coach_id");
+
+    // Validate UUID if provided
+    if (id && !sanitizeUuid(id)) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.INVALID_INPUT },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
 
     if (id) {
       const { data, error } = await supabaseServer
@@ -18,7 +33,17 @@ export async function GET(req: Request) {
         .select("*")
         .eq("id", id)
         .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+      
+      if (error) {
+        logger.error('Booking not found', error, { bookingId: id });
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.NOT_FOUND },
+          { status: HTTP_STATUS.NOT_FOUND }
+        );
+      }
+      
+      const duration = Date.now() - startTime;
+      logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
       return NextResponse.json({ booking: data });
     }
 
@@ -31,49 +56,112 @@ export async function GET(req: Request) {
     if (coach_id) query = query.eq("coach_id", coach_id);
     
     const { data, error } = await query;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    if (error) {
+      logger.error('Database error fetching bookings', error);
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+    
+    const duration = Date.now() - startTime;
+    logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
     return NextResponse.json({ bookings: data });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in bookings GET', err);
+    logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+  
   try {
-    // ✅ SECURITY FIX: Verifica autenticazione
+    // Rate limiting
+    const clientId = getClientIdentifier(req);
+    const rateLimit = applyRateLimit(clientId, RATE_LIMITS.API_WRITE);
+    
+    if (!rateLimit.allowed) {
+      logger.security('Booking creation rate limit exceeded', { clientId });
+      return NextResponse.json(
+        { 
+          error: ERROR_MESSAGES.RATE_LIMIT,
+          retryAfter: rateLimit.reset,
+        },
+        { 
+          status: HTTP_STATUS.TOO_MANY_REQUESTS,
+          headers: {
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.reset.toString(),
+          },
+        }
+      );
+    }
+
+    // Authentication
     const authResult = await verifyAuth(req);
     if (!authResult.success) {
       return authResult.response;
     }
 
     const { user, profile } = authResult.data;
-    const body = await req.json();
-    const { user_id, coach_id, court, type, start_time, end_time } = body;
+    
+    // Parse and sanitize input
+    const rawBody = await req.json();
+    const sanitized = sanitizeObject(rawBody);
 
-    if (!user_id || !court || !start_time || !end_time) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    // ✅ SECURITY FIX: L'utente può prenotare solo per sé stesso, admin/gestore per chiunque
-    const canBookForOthers = isAdminOrGestore(profile?.role);
-    if (user_id !== user.id && !canBookForOthers) {
+    // Validate with Zod
+    const validationResult = createBookingSchema.safeParse(sanitized);
+    
+    if (!validationResult.success) {
+      logger.warn('Booking validation failed', {
+        userId: user.id,
+        errors: validationResult.error.errors,
+      });
       return NextResponse.json(
-        { error: "Non autorizzato a prenotare per altri utenti" },
-        { status: 403 }
+        {
+          error: ERROR_MESSAGES.INVALID_INPUT,
+          details: validationResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
-    // Validazione 24h anticipo (solo per utenti normali)
-    const startTime = new Date(start_time);
+    const bookingData = validationResult.data;
+    const { user_id, coach_id, court, type, start_time, end_time } = bookingData;
+
+    // Authorization: users can only book for themselves, admin/gestore for anyone
+    const canBookForOthers = isAdminOrGestore(profile?.role);
+    if (user_id !== user.id && !canBookForOthers) {
+      logger.security('Unauthorized booking attempt for other user', {
+        userId: user.id,
+        targetUserId: user_id,
+      });
+      return NextResponse.json(
+        { error: "Non autorizzato a prenotare per altri utenti" },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
+    }
+
+    // Validate 24h advance (only for regular users)
+    const bookingStartTime = new Date(start_time);
     const now = new Date();
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const advanceTime = new Date(now.getTime() + TIME_CONSTANTS.TWENTY_FOUR_HOURS_MS);
     
-    // Admin e gestore possono bypassare il limite 24h
-    if (startTime < twentyFourHoursFromNow && !canBookForOthers) {
+    // Admin and gestore can bypass 24h advance requirement
+    if (bookingStartTime < advanceTime && !canBookForOthers) {
       return NextResponse.json(
         { error: "Le prenotazioni devono essere effettuate con almeno 24 ore di anticipo" },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
@@ -82,34 +170,42 @@ export async function POST(req: Request) {
       .from("bookings")
       .select("id, user_id, status, manager_confirmed, start_time, end_time")
       .eq("court", court)
-      .neq("status", "cancelled") // Ignore cancelled bookings
+      .neq("status", BOOKING_STATUS.CANCELLED)
       .or(`and(start_time.lt.${end_time},end_time.gt.${start_time})`);
 
     if (conflictError) {
-      // Log only in development
-      if (process.env.NODE_ENV === "development") {
-        console.error("Error checking conflicts:", conflictError);
-      }
-      return NextResponse.json({ error: conflictError.message }, { status: 500 });
+      logger.error('Error checking booking conflicts', conflictError, {
+        userId: user.id,
+        court,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
     }
 
     // Filter to only confirmed bookings (manager_confirmed = true)
     const confirmedConflicts = conflicts?.filter(b => b.manager_confirmed === true) || [];
 
     if (confirmedConflicts.length > 0) {
+      logger.warn('Booking conflict detected', {
+        userId: user.id,
+        court,
+        requestedTime: start_time,
+      });
       return NextResponse.json(
         { 
           error: "Slot già prenotato. Seleziona un altro orario.",
           conflict: true 
         },
-        { status: 409 }
+        { status: HTTP_STATUS.CONFLICT }
       );
     }
 
-    // Determine status and confirmation flags based on booking type and user making the booking
-    const bookingStatus = body.status || "pending";
-    const coachConfirmed = body.coach_confirmed ?? false;
-    const managerConfirmed = body.manager_confirmed ?? false;
+    // Determine status and confirmation flags
+    const bookingStatus = bookingData.status || BOOKING_STATUS.PENDING;
+    const coachConfirmed = bookingData.coach_confirmed ?? false;
+    const managerConfirmed = bookingData.manager_confirmed ?? false;
 
     const { data, error } = await supabaseServer
       .from("bookings")
@@ -124,12 +220,18 @@ export async function POST(req: Request) {
           status: bookingStatus,
           coach_confirmed: coachConfirmed,
           manager_confirmed: managerConfirmed,
-          notes: body.notes || null,
+          notes: bookingData.notes || null,
         },
       ])
       .select();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      logger.error('Failed to create booking', error, { userId: user.id });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
 
     // Notify admins/gestori about new booking
     if (data && data[0]) {
@@ -176,20 +278,40 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ booking: data?.[0] ?? null }, { status: 201 });
+    const duration = Date.now() - startTime;
+    logger.info('Booking created successfully', {
+      userId: user.id,
+      bookingId: data[0].id,
+    });
+    logger.apiResponse('POST', '/api/bookings', HTTP_STATUS.CREATED, duration);
+    
+    return NextResponse.json({ booking: data?.[0] ?? null }, { status: HTTP_STATUS.CREATED });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Invalid request";
-    return NextResponse.json({ error: message }, { status: 400 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in bookings POST', err);
+    logger.apiResponse('POST', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }
 
 export async function PUT(req: Request) {
+  const startTime = Date.now();
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     
-    // ✅ Usa verifyAuth helper
+    if (!id || !sanitizeUuid(id)) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.INVALID_INPUT },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
+    
+    // Authentication
     const authResult = await verifyAuth(req);
     if (!authResult.success) {
       return authResult.response;
@@ -197,7 +319,7 @@ export async function PUT(req: Request) {
 
     const { user, profile } = authResult.data;
 
-    // Check if booking exists and belongs to user
+    // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
       .select("user_id")
@@ -205,37 +327,71 @@ export async function PUT(req: Request) {
       .single();
 
     if (!booking) {
-      return NextResponse.json({ error: "Prenotazione non trovata" }, { status: 404 });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.NOT_FOUND },
+        { status: HTTP_STATUS.NOT_FOUND }
+      );
     }
 
-    // Admin/gestore possono modificare qualsiasi prenotazione
+    // Authorization check
     const canEdit = booking.user_id === user.id || isAdminOrGestore(profile?.role);
     if (!canEdit) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
+      logger.security('Unauthorized booking update attempt', {
+        userId: user.id,
+        bookingId: id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.FORBIDDEN },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
     }
     
-    const body = await req.json();
+    const rawBody = await req.json();
+    const sanitized = sanitizeObject(rawBody);
+    
     const { data, error } = await supabaseServer
       .from("bookings")
-      .update(body)
+      .update(sanitized)
       .eq("id", id)
       .select();
     
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      logger.error('Failed to update booking', error, { userId: user.id, bookingId: id });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+    
+    const duration = Date.now() - startTime;
+    logger.apiResponse('PUT', '/api/bookings', HTTP_STATUS.OK, duration);
     return NextResponse.json({ booking: data?.[0] });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in bookings PUT', err);
+    logger.apiResponse('PUT', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }
 
 export async function DELETE(req: Request) {
+  const startTime = Date.now();
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     
-    // ✅ Usa verifyAuth helper
+    if (!id || !sanitizeUuid(id)) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.INVALID_INPUT },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
+    
+    // Authentication
     const authResult = await verifyAuth(req);
     if (!authResult.success) {
       return authResult.response;
@@ -243,7 +399,7 @@ export async function DELETE(req: Request) {
 
     const { user, profile } = authResult.data;
 
-    // Check if booking exists and belongs to user
+    // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
       .select("user_id")
@@ -251,20 +407,46 @@ export async function DELETE(req: Request) {
       .single();
 
     if (!booking) {
-      return NextResponse.json({ error: "Prenotazione non trovata" }, { status: 404 });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.NOT_FOUND },
+        { status: HTTP_STATUS.NOT_FOUND }
+      );
     }
 
-    // Admin/gestore possono eliminare qualsiasi prenotazione
+    // Authorization check
     const canDelete = booking.user_id === user.id || isAdminOrGestore(profile?.role);
     if (!canDelete) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
+      logger.security('Unauthorized booking deletion attempt', {
+        userId: user.id,
+        bookingId: id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.FORBIDDEN },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
     }
     
     const { error } = await supabaseServer.from("bookings").delete().eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    
+    if (error) {
+      logger.error('Failed to delete booking', error, { userId: user.id, bookingId: id });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+    
+    const duration = Date.now() - startTime;
+    logger.info('Booking deleted', { userId: user.id, bookingId: id });
+    logger.apiResponse('DELETE', '/api/bookings', HTTP_STATUS.OK, duration);
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in bookings DELETE', err);
+    logger.apiResponse('DELETE', '/api/bookings', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }

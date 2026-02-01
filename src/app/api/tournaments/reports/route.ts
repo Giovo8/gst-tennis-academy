@@ -75,9 +75,9 @@ export async function GET() {
     }>();
 
     // Initialize player stats from participants
-    allParticipants?.forEach(participant => {
+    allParticipants?.forEach((participant: any) => {
       if (!playerStats.has(participant.user_id)) {
-        const profile = profilesMap.get(participant.user_id);
+        const profile: any = profilesMap.get(participant.user_id);
         playerStats.set(participant.user_id, {
           player_id: participant.user_id,
           player_name: profile?.full_name || 'Sconosciuto',

@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { getErrorMessage } from "@/lib/types/errors";
 import type { RoundData, GroupData, GroupStanding } from "@/lib/types/tournament";
-
-type CompetitionType = 'torneo' | 'campionato';
-type CompetitionFormat = 'eliminazione_diretta' | 'round_robin' | 'girone_eliminazione';
+import { createTournamentSchema, updateTournamentSchema } from "@/lib/validation/schemas";
+import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize";
+import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
+import logger from "@/lib/logger/secure-logger";
+import { 
+  HTTP_STATUS, 
+  ERROR_MESSAGES, 
+  USER_ROLES,
+  COMPETITION_TYPE,
+  COMPETITION_FORMAT,
+  TOURNAMENT_CONFIG 
+} from "@/lib/constants/app";
+import type { CompetitionType, CompetitionFormat } from "@/lib/constants/app";
 
 interface TournamentBody {
   title: string;
@@ -33,11 +43,21 @@ async function getUserProfileFromRequest(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     const upcoming = url.searchParams.get("upcoming");
     const type = url.searchParams.get("type") as CompetitionType | null;
+
+    // Validate UUID if provided
+    if (id && !sanitizeUuid(id)) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.INVALID_INPUT },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
 
     if (id) {
       const { data, error } = await supabaseServer
@@ -45,54 +65,69 @@ export async function GET(req: Request) {
         .select(`*`)
         .eq("id", id)
         .single();
+      
       if (error) {
-        console.error('[tournaments GET by id] error:', error);
-        return NextResponse.json({ error: error.message }, { status: 404 });
+        logger.error('Tournament not found', error, { tournamentId: id });
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.NOT_FOUND },
+          { status: HTTP_STATUS.NOT_FOUND }
+        );
       }
-      if (!data) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+      
+      if (!data) {
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.NOT_FOUND },
+          { status: HTTP_STATUS.NOT_FOUND }
+        );
+      }
 
-      // count participants
+      // Count participants
       const { count, error: countErr } = await supabaseServer
         .from("tournament_participants")
         .select("id", { count: "exact", head: true })
         .eq("tournament_id", id);
+      
       if (countErr) {
-        console.error('[tournaments GET participants count] error:', countErr);
-        return NextResponse.json({ error: countErr.message }, { status: 500 });
+        logger.error('Failed to count participants', countErr, { tournamentId: id });
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.SERVER_ERROR },
+          { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        );
       }
 
+      const duration = Date.now() - startTime;
+      logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.OK, duration);
       return NextResponse.json({ tournament: data, current_participants: count ?? 0 });
     }
 
-    // Build query - use start_date column (actual DB column name)
+    // Build query
     let query = supabaseServer
       .from("tournaments")
       .select("*")
       .order("start_date", { ascending: true });
 
     if (upcoming === "true") {
-      // Include tornei "In Corso", "Aperte le Iscrizioni" e futuri
-      // Mostra tornei con status attivi o che iniziano in futuro
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      // Mostra tornei in corso/aperti o futuri
       query = query.or(`status.eq.In Corso,status.eq.Aperte le Iscrizioni,start_date.gte.${today.toISOString()}`);
     }
 
-    // Filter by competition type if column exists
-    if (type && (type === 'torneo' || type === 'campionato')) {
+    // Validate and filter by competition type
+    if (type && (type === COMPETITION_TYPE.TORNEO || type === COMPETITION_TYPE.CAMPIONATO)) {
       query = query.eq("competition_type", type);
     }
 
     const { data, error } = await query;
     
     if (error) {
-      console.error('[tournaments GET] error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logger.error('Database error fetching tournaments', error);
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
     }
     
-    // Aggiungi il conteggio dei partecipanti per ogni torneo
+    // Add participant count for each tournament
     const tournamentsWithCounts = await Promise.all(
       (data || []).map(async (tournament) => {
         const { count } = await supabaseServer
@@ -103,51 +138,97 @@ export async function GET(req: Request) {
       })
     );
     
+    const duration = Date.now() - startTime;
+    logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.OK, duration);
     return NextResponse.json({ tournaments: tournamentsWithCounts });
   } catch (error) {
-    console.error('[tournaments GET] catch error:', error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in tournaments GET', error);
+    logger.apiResponse('GET', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+  
   try {
-    const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile || !["gestore", "admin"].includes(String(profile.role).toLowerCase())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body: TournamentBody = await req.json();
+    // Rate limiting
+    const clientId = getClientIdentifier(req);
+    const rateLimit = applyRateLimit(clientId, RATE_LIMITS.API_WRITE);
     
-    // Validate competition_type
-    if (body.competition_type && !['torneo', 'campionato'].includes(body.competition_type)) {
-      return NextResponse.json({ error: "Invalid competition_type. Must be 'torneo' or 'campionato'" }, { status: 400 });
+    if (!rateLimit.allowed) {
+      logger.security('Tournament creation rate limit exceeded', { clientId });
+      return NextResponse.json(
+        { 
+          error: ERROR_MESSAGES.RATE_LIMIT,
+          retryAfter: rateLimit.reset,
+        },
+        { 
+          status: HTTP_STATUS.TOO_MANY_REQUESTS,
+          headers: {
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.reset.toString(),
+          },
+        }
+      );
     }
 
-    // Validate format
-    if (body.format && !['eliminazione_diretta', 'round_robin', 'girone_eliminazione'].includes(body.format)) {
-      return NextResponse.json({ error: "Invalid format" }, { status: 400 });
+    // Authentication and authorization
+    const { user, profile } = await getUserProfileFromRequest(req);
+    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role as any)) {
+      logger.security('Unauthorized tournament creation attempt', {
+        userId: user?.id,
+        role: profile?.role,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.FORBIDDEN },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
     }
 
-    // Set defaults if not provided
-    if (!body.competition_type) {
-      body.competition_type = 'torneo';
-    }
-    if (!body.format) {
-      body.format = 'eliminazione_diretta';
+    const rawBody = await req.json();
+    const sanitized = sanitizeObject(rawBody);
+
+    // Validate with Zod
+    const validationResult = createTournamentSchema.safeParse(sanitized);
+    
+    if (!validationResult.success) {
+      logger.warn('Tournament validation failed', {
+        userId: user.id,
+        errors: validationResult.error.errors,
+      });
+      return NextResponse.json(
+        {
+          error: ERROR_MESSAGES.INVALID_INPUT,
+          details: validationResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
     }
 
-    // Validate max_participants based on format
-    if (body.format === 'eliminazione_diretta' && ![2, 4, 8, 16, 32, 64, 128].includes(body.max_participants)) {
+    const body = validationResult.data;
+
+    // Additional validation for bracket sizes
+    if (body.format === COMPETITION_FORMAT.ELIMINAZIONE_DIRETTA && 
+        !TOURNAMENT_CONFIG.VALID_BRACKET_SIZES.includes(body.max_participants as any)) {
       return NextResponse.json({ 
-        error: "For eliminazione_diretta, max_participants must be a power of 2 (2, 4, 8, 16, 32, 64, 128)" 
-      }, { status: 400 });
+        error: `For eliminazione_diretta, max_participants must be one of: ${TOURNAMENT_CONFIG.VALID_BRACKET_SIZES.join(', ')}` 
+      }, { status: HTTP_STATUS.BAD_REQUEST });
     }
 
-    if ((body.format === 'round_robin' || body.format === 'girone_eliminazione') && body.max_participants < 3) {
+    if ((body.format === COMPETITION_FORMAT.ROUND_ROBIN || 
+         body.format === COMPETITION_FORMAT.GIRONE_ELIMINAZIONE) && 
+        body.max_participants < TOURNAMENT_CONFIG.MIN_GROUP_SIZE) {
       return NextResponse.json({ 
-        error: "For round_robin or girone_eliminazione, max_participants must be at least 3" 
-      }, { status: 400 });
+        error: `For round_robin or girone_eliminazione, max_participants must be at least ${TOURNAMENT_CONFIG.MIN_GROUP_SIZE}` 
+      }, { status: HTTP_STATUS.BAD_REQUEST });
     }
 
     const { data, error } = await supabaseServer
@@ -155,54 +236,131 @@ export async function POST(req: Request) {
       .insert([body])
       .select();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ tournament: data?.[0] }, { status: 201 });
+    if (error) {
+      logger.error('Failed to create tournament', error, { userId: user.id });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+    
+    const duration = Date.now() - startTime;
+    logger.info('Tournament created', { userId: user.id, tournamentId: data[0].id });
+    logger.apiResponse('POST', '/api/tournaments', HTTP_STATUS.CREATED, duration);
+    return NextResponse.json({ tournament: data?.[0] }, { status: HTTP_STATUS.CREATED });
   } catch (error) {
-    console.error('[tournaments POST] error:', error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in tournaments POST', error);
+    logger.apiResponse('POST', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }
 
 export async function PUT(req: Request) {
+  const startTime = Date.now();
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-
-    const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile || !["gestore", "admin"].includes(String(profile.role).toLowerCase())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    
+    if (!id || !sanitizeUuid(id)) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.INVALID_INPUT },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
     }
 
-    const body = await req.json();
+    const { user, profile } = await getUserProfileFromRequest(req);
+    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role as any)) {
+      logger.security('Unauthorized tournament update attempt', {
+        userId: user?.id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.FORBIDDEN },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
+    }
+
+    const rawBody = await req.json();
+    const sanitized = sanitizeObject(rawBody);
+    
     const { data, error } = await supabaseServer
       .from("tournaments")
-      .update(body)
+      .update(sanitized)
       .eq("id", id)
       .select();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      logger.error('Failed to update tournament', error, { userId: user.id, tournamentId: id });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+    
+    const duration = Date.now() - startTime;
+    logger.apiResponse('PUT', '/api/tournaments', HTTP_STATUS.OK, duration);
     return NextResponse.json({ tournament: data?.[0] });
   } catch (error) {
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in tournaments PUT', error);
+    logger.apiResponse('PUT', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }
 
 export async function DELETE(req: Request) {
+  const startTime = Date.now();
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    
+    if (!id || !sanitizeUuid(id)) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.INVALID_INPUT },
+        { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
 
     const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile || !["gestore", "admin"].includes(String(profile.role).toLowerCase())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role as any)) {
+      logger.security('Unauthorized tournament deletion attempt', {
+        userId: user?.id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.FORBIDDEN },
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
     }
 
     const { error } = await supabaseServer.from("tournaments").delete().eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    
+    if (error) {
+      logger.error('Failed to delete tournament', error, { userId: user.id, tournamentId: id });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+    
+    const duration = Date.now() - startTime;
+    logger.info('Tournament deleted', { userId: user.id, tournamentId: id });
+    logger.apiResponse('DELETE', '/api/tournaments', HTTP_STATUS.OK, duration);
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    const duration = Date.now() - startTime;
+    logger.error('Exception in tournaments DELETE', error);
+    logger.apiResponse('DELETE', '/api/tournaments', HTTP_STATUS.INTERNAL_SERVER_ERROR, duration);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.SERVER_ERROR },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
   }
 }

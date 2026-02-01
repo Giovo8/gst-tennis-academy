@@ -4,9 +4,7 @@
  * Test per le funzioni di autenticazione e autorizzazione
  */
 
-// Definiamo le funzioni localmente per evitare di importare il modulo
-// che richiede la connessione a Supabase
-type UserRole = "atleta" | "maestro" | "gestore" | "admin";
+import { UserRole } from "./types";
 
 function isAdminOrGestore(role: UserRole | undefined): boolean {
   return role === "admin" || role === "gestore";

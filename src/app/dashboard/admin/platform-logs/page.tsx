@@ -250,7 +250,7 @@ export default function PlatformLogsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Log Piattaforma</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">Log Piattaforma</h1>
           <p className="text-secondary/70 font-medium">
             Monitora le attività della piattaforma e i log delle email inviate
           </p>
@@ -335,7 +335,7 @@ export default function PlatformLogsPage() {
             }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
           />
         </div>
 
@@ -344,7 +344,7 @@ export default function PlatformLogsPage() {
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="px-4 py-2.5 rounded-md bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="px-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
           >
             <option value="all">Tutte le azioni</option>
             {uniqueActions.map((action) => (
@@ -356,7 +356,7 @@ export default function PlatformLogsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 rounded-md bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="px-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
           >
             <option value="all">Tutti gli stati</option>
             {uniqueStatuses.map((status) => (
@@ -368,7 +368,7 @@ export default function PlatformLogsPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2.5 rounded-md bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="px-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
           >
             <option value="all">Tutti i ruoli</option>
             {uniqueRoles.map((role) => (
@@ -379,7 +379,7 @@ export default function PlatformLogsPage() {
         <select
           value={limit}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="px-4 py-2.5 rounded-md bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="px-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
         >
           <option value={50}>Ultimi 50</option>
           <option value={100}>Ultimi 100</option>
@@ -408,7 +408,7 @@ export default function PlatformLogsPage() {
                 display: none;
               }
             `}</style>
-            <div className="space-y-3" style={{ minWidth: '900px' }}>
+            <div className="space-y-3 min-w-[900px]">
               {/* Header Row */}
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="grid grid-cols-[40px_160px_100px_160px_200px_150px_40px] items-center gap-4">
@@ -517,7 +517,7 @@ export default function PlatformLogsPage() {
                 display: none;
               }
             `}</style>
-            <div className="space-y-3" style={{ minWidth: '900px' }}>
+            <div className="space-y-3 min-w-[900px]">
               {/* Header Row */}
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="grid grid-cols-[40px_200px_120px_200px_150px_100px_40px] items-center gap-4">
@@ -625,7 +625,7 @@ export default function PlatformLogsPage() {
                 display: none;
               }
             `}</style>
-            <div className="space-y-3" style={{ minWidth: '800px' }}>
+            <div className="space-y-3 min-w-[800px]">
               {/* Header Row */}
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="grid grid-cols-[40px_160px_200px_120px_100px_150px] items-center gap-4">
@@ -691,7 +691,7 @@ export default function PlatformLogsPage() {
                 display: none;
               }
             `}</style>
-            <div className="space-y-3" style={{ minWidth: '800px' }}>
+            <div className="space-y-3 min-w-[800px]">
               {/* Header Row */}
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
                 <div className="grid grid-cols-[40px_120px_160px_200px_100px_150px] items-center gap-4">

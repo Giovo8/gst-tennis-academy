@@ -14,7 +14,7 @@ export default function ServicesSection() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
             L'eccellenza del tennis firmata GST Academy
           </h2>
-          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80 px-2">
+          <p className="text-xs sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80 px-2">
             Un ecosistema completo dedicato alla tua crescita sportiva. Dalle strutture all'avanguardia alla formazione tecnica: tutto ciò che serve per vivere il tennis da protagonista.
           </p>
         </div>

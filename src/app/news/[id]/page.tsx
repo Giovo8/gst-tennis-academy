@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft, Calendar, Tag } from "lucide-react";
 import Link from "next/link";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 import { supabase } from "@/lib/supabase/client";
+import { sanitizeHtml } from "@/lib/security/sanitize";
 
 type NewsPost = {
   id: string;
@@ -352,16 +353,18 @@ export default function NewsDetailPage() {
               if (paragraph.trim() === "") {
                 return <br key={index} />;
               }
-              // Handle bold text **text**
+              // Handle bold text **text** and sanitize HTML
               const contentWithBold = paragraph.replace(
                 /\*\*(.*?)\*\*/g,
                 '<strong class="font-semibold">$1</strong>'
               );
+              // Sanitize HTML to prevent XSS
+              const sanitized = sanitizeHtml(contentWithBold);
               return (
                 <p
                   key={index}
                   className="mb-4 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: contentWithBold }}
+                  dangerouslySetInnerHTML={{ __html: sanitized }}
                 />
               );
             })}

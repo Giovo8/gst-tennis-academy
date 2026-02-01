@@ -15,6 +15,7 @@ type Tournament = {
   start_date?: string;
   max_participants?: number;
   tournament_type?: TournamentType;
+  competition_type?: TournamentType;
   status?: string;
 };
 
@@ -25,15 +26,23 @@ const defaultTournaments: Tournament[] = [
     description: "Torneo open maschile e femminile. Formula a eliminazione diretta con tabelloni separati. Iscrizioni aperte fino al 20 marzo.",
     start_date: "2026-04-05",
     tournament_type: "eliminazione_diretta",
-    status: "upcoming"
+    status: "Aperto"
   },
   {
     id: "2",
     title: "Campionato Invernale a Squadre",
     description: "Competizione a squadre con formula girone all'italiana. Incontri ogni sabato pomeriggio. Aperto a giocatori di tutti i livelli.",
-    start_date: "2026-02-15",
+    start_date: "2026-03-15",
+    tournament_type: "campionato",
+    status: "Aperto"
+  },
+  {
+    id: "3",
+    title: "Torneo Estivo con Gironi",
+    description: "Torneo misto con fase a gironi seguita da eliminazione diretta. Perfetto per migliorare il ranking e giocare molte partite.",
+    start_date: "2026-06-20",
     tournament_type: "girone_eliminazione",
-    status: "upcoming"
+    status: "Aperto"
   }
 ];
 
@@ -54,20 +63,18 @@ export default function TournamentsSection() {
     let mounted = true;
     async function load() {
       try {
-        const res = await fetch("/api/tournaments?upcoming=true");
+        const res = await fetch("/api/tournaments");
         const json = await res.json();
         if (res.ok && json.tournaments && json.tournaments.length > 0) {
-          // Filtra tornei validi (con titolo non numerico e descrizione presente)
-          const validTournaments = json.tournaments.filter((t: Tournament) => 
-            t.title && 
-            t.title.length > 10 && 
-            !/^\d+$/.test(t.title) && // Escludi titoli che sono solo numeri
-            t.description && 
-            t.description.length > 20
+          // Filtra via i tornei conclusi/archiviati (come nella dashboard admin)
+          const activeTournaments = json.tournaments.filter(
+            (t: Tournament) => 
+              t.status !== 'Concluso' && 
+              t.status !== 'Completato' && 
+              t.status !== 'Chiuso'
           );
-          
           if (mounted) {
-            setItems(validTournaments.length > 0 ? validTournaments : defaultTournaments);
+            setItems(activeTournaments.length > 0 ? activeTournaments : defaultTournaments);
           }
         } else {
           if (mounted) {
@@ -86,10 +93,11 @@ export default function TournamentsSection() {
     return () => { mounted = false; };
   }, []);
 
-  const getTournamentTypeLabel = (type?: TournamentType) => {
+  const getTournamentTypeLabel = (tournament: Tournament) => {
+    const type = tournament.tournament_type || tournament.competition_type;
     switch(type) {
       case "eliminazione_diretta": return "Torneo";
-      case "girone_eliminazione": return "Torneo";
+      case "girone_eliminazione": return "Torneo con fase a gironi";
       case "campionato": return "Campionato";
       default: return "Torneo";
     }
@@ -117,18 +125,19 @@ export default function TournamentsSection() {
 
   const filterByCategory = (tournament: Tournament): boolean => {
     if (activeFilter === "all") return true;
+    const type = tournament.tournament_type || tournament.competition_type;
     if (activeFilter === "campionati") {
-      return tournament.tournament_type === "campionato";
+      return type === "campionato";
     }
     // "tornei": tutti gli altri tipi
     return (
-      tournament.tournament_type === "eliminazione_diretta" ||
-      tournament.tournament_type === "girone_eliminazione" ||
-      !tournament.tournament_type
+      type === "eliminazione_diretta" ||
+      type === "girone_eliminazione" ||
+      !type
     );
   };
 
-  const filteredItems = items.filter(filterByCategory).slice(0, 3);
+  const filteredItems = items.filter(filterByCategory);
 
   return (
     <section id="tornei" className="py-12 sm:py-16 md:py-20 bg-white">
@@ -146,23 +155,6 @@ export default function TournamentsSection() {
           </p>
         </div>
 
-        {/* Filtri categoria */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pb-4 mb-6 sm:mb-8 text-center">
-          {FILTERS.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
-              className={`text-sm px-3 py-1.5 rounded-sm transition-colors ${
-                activeFilter === filter.id
-                  ? "bg-secondary text-white"
-                  : "text-secondary/70 hover:text-secondary"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-
         {/* Lista eventi stile "Events" */}
         {loading ? (
           <div className="flex items-center justify-center py-10">
@@ -173,73 +165,70 @@ export default function TournamentsSection() {
             Al momento non ci sono tornei imminenti.
           </div>
         ) : (
-          <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8 md:mb-10">
+          <div className="space-y-4">
             {filteredItems.map((tournament) => {
-              const typeLabel = getTournamentTypeLabel(tournament.tournament_type);
-              const statusInfo = getStatusInfo(tournament.status);
+              const typeLabel = getTournamentTypeLabel(tournament);
               const date = tournament.start_date ? new Date(tournament.start_date) : null;
               const weekday = date ? format(date, "EEE", { locale: it }) : "";
               const day = date ? format(date, "dd", { locale: it }) : "";
-              const monthYear = date ? format(date, "MMM yyyy", { locale: it }) : "Data da definire";
+              const monthYear = date ? format(date, "MMM yyyy", { locale: it }).toUpperCase() : "DATA DA DEFINIRE";
+              
+              // Determina il colore del bordo in base allo stato
+              const getBorderColor = () => {
+                const status = tournament.status?.toLowerCase();
+                if (status === "aperto") return "#10b981"; // verde emerald
+                if (status === "in corso") return "#0ea5e9"; // blu secondary
+                if (status === "concluso" || status === "completato" || status === "chiuso") return "#6b7280"; // grigio
+                return "#0ea5e9"; // default blu
+              };
 
               return (
-                <article
+                <Link
                   key={tournament.id}
-                  className="bg-secondary/5 rounded-md px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 md:gap-6"
+                  href={`/tornei/${tournament.id}`}
+                  className="bg-white px-0 py-0 flex flex-row items-stretch border-l-4 border border-gray-200 rounded-md overflow-hidden hover:bg-gray-50 transition-colors cursor-pointer"
+                  style={{ borderLeftColor: getBorderColor() }}
                 >
                   {/* Colonna data */}
-                  <div className="flex flex-col items-center justify-center sm:w-32">
-                    <p className="text-xs font-semibold uppercase text-secondary/50 text-center">
+                  <div className="bg-secondary flex flex-col items-center justify-center w-20 sm:w-28 flex-shrink-0 px-3 py-5">
+                    <p className="text-xs font-semibold uppercase text-white/70 text-center mb-1">
                       {weekday}
                     </p>
-                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary leading-none text-center">
+                    <p className="text-4xl sm:text-3xl md:text-4xl font-bold text-white leading-none text-center">
                       {day}
                     </p>
-                    <p className="text-xs text-secondary/60 mt-1 text-center">
+                    <p className="text-xs font-semibold uppercase text-white/70 mt-1.5 text-center whitespace-nowrap">
                       {monthYear}
                     </p>
                   </div>
 
+                  {/* Barra separatrice */}
+                  <div className="w-px bg-gray-200"></div>
+
                   {/* Contenuto centrale */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 px-5 sm:px-6 py-5 sm:py-6">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-semibold uppercase tracking-wide text-secondary/60">
                         {typeLabel}
                       </span>
-                      {statusInfo && (
-                        <span className={statusInfo.className}>{statusInfo.label}</span>
-                      )}
                     </div>
                     <h3 className="text-base sm:text-lg font-semibold text-secondary truncate">
                       {tournament.title}
                     </h3>
-                    <p className="text-xs text-secondary/60 mt-1">
-                      Presso GST Tennis Academy
-                    </p>
                     {tournament.description && (
                       <p className="text-sm text-secondary/70 mt-2 line-clamp-2">
                         {tournament.description}
                       </p>
                     )}
                   </div>
-
-                  {/* Azione a destra */}
-                  <div className="sm:pl-4 flex-shrink-0">
-                    <Link
-                      href={`/tornei/${tournament.id}`}
-                      className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold border border-secondary/40 text-secondary rounded-sm hover:bg-secondary hover:text-white transition-colors whitespace-nowrap"
-                    >
-                      Vedi dettagli
-                    </Link>
-                  </div>
-                </article>
+                </Link>
               );
             })}
           </div>
         )}
 
         {/* Pulsante "Vedi tutti" */}
-        <div className="text-center">
+        <div className="text-center mt-8 sm:mt-10">
           <Link
             href="/tornei"
             className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 text-sm font-semibold rounded-sm bg-secondary text-white hover:opacity-90 transition-colors"

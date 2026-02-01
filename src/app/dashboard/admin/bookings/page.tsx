@@ -32,6 +32,7 @@ import {
   Users,
   Trophy,
   Circle,
+  MoreVertical,
 } from "lucide-react";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
 
@@ -64,6 +65,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const [sortBy, setSortBy] = useState<"date" | "court" | "type" | "status" | "athlete" | "coach" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     loadBookings();
@@ -615,7 +617,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
               <div></div>
               <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
-              <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
+              <div></div>
             </div>
           </div>
 
@@ -710,30 +712,49 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                       )}
                     </div>
 
-                    {/* Azioni */}
-                    <div className="flex items-center justify-center gap-1">
-                      <Link
-                        href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none w-8 h-8"
-                        title="Modifica prenotazione"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Link>
+                    {/* Azioni - 3 puntini */}
+                    <div className="relative flex items-center justify-center">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
-                            deleteBooking(booking.id);
-                          }
+                          setOpenMenuId(openMenuId === booking.id ? null : booking.id);
                         }}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-all focus:outline-none w-8 h-8"
-                        title="Elimina prenotazione"
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
                       >
-                        <X className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </button>
+                      {openMenuId === booking.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                            <Link
+                              href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
+                              onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Modifica
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
+                                  deleteBooking(booking.id);
+                                }
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

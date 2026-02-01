@@ -14,11 +14,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = (await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .single()) as any;
 
     if (!profile || (profile.role !== "admin" && profile.role !== "gestore")) {
       return NextResponse.json({ error: "Accesso negato" }, { status: 403 });
@@ -36,10 +36,10 @@ export async function GET(req: NextRequest) {
 
     const stats = {
       total_sent: logs?.length || 0,
-      total_delivered: logs?.filter((log) => log.status === "delivered").length || 0,
-      total_opened: logs?.filter((log) => log.opened_at).length || 0,
-      total_clicked: logs?.filter((log) => log.clicked_at).length || 0,
-      total_failed: logs?.filter((log) => log.status === "failed" || log.status === "bounced").length || 0,
+      total_delivered: logs?.filter((log: any) => log.status === "delivered").length || 0,
+      total_opened: logs?.filter((log: any) => log.opened_at).length || 0,
+      total_clicked: logs?.filter((log: any) => log.clicked_at).length || 0,
+      total_failed: logs?.filter((log: any) => log.status === "failed" || log.status === "bounced").length || 0,
     };
 
     return NextResponse.json({ stats });

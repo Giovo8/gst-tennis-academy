@@ -23,6 +23,8 @@ import {
   Shield,
   Star,
   History,
+  MoreVertical,
+  Pencil,
 } from "lucide-react";
 
 interface Challenge {
@@ -94,6 +96,7 @@ export default function AdminArenaPage() {
   const [resetting, setResetting] = useState(false);
   const [selectedRank, setSelectedRank] = useState<string>("Tutti");
   const [activeTab, setActiveTab] = useState<"gestione" | "storico" | "statistiche" | "info">("gestione");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     loadChallenges();
@@ -357,29 +360,23 @@ export default function AdminArenaPage() {
       {/* Main Content - Conditional Rendering based on activeTab */}
       {activeTab === "gestione" && (
         <>
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        {/* Search Bar */}
-        <div className="relative flex-1 min-w-[250px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-          <input
-            type="text"
-            placeholder="Cerca per nome giocatore..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-          />
-        </div>
-
+      {/* Search */}
+      <div className="relative w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+        <input
+          type="text"
+          placeholder="Cerca per nome giocatore..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+        />
       </div>
 
       {/* Challenges List */}
-      <div className="bg-white rounded-lg">
-
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 animate-spin text-secondary" />
-            <p className="mt-4 text-secondary/70">Caricamento sfide...</p>
+            <p className="mt-4 text-secondary/60">Caricamento sfide...</p>
           </div>
         ) : (() => {
           const filteredChallenges = challenges.filter((challenge) => {
@@ -391,26 +388,27 @@ export default function AdminArenaPage() {
           });
 
           return filteredChallenges.length === 0 ? (
-          <div className="text-center py-20 rounded-xl bg-white">
+          <div className="text-center py-20 rounded-md bg-white">
             <Swords className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
             <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna sfida trovata</h3>
-            <p className="text-secondary/70">Crea la prima sfida per iniziare</p>
+            <p className="text-secondary/60">Crea la prima sfida per iniziare</p>
           </div>
         ) : (
-          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="overflow-x-auto overflow-y-visible scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <style>{`
               .scrollbar-hide::-webkit-scrollbar {
                 display: none;
               }
             `}</style>
-            <div className="space-y-3" style={{ minWidth: '1050px' }}>
+            <div className="space-y-3 min-w-[1180px] relative">
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="grid grid-cols-[32px_40px_140px_40px_140px_80px_64px_80px_100px_80px_40px] items-center gap-4">
+              <div className="grid grid-cols-[40px_40px_160px_40px_160px_1fr_90px_70px_140px_120px_90px_40px] items-center gap-4">
                 <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Sfid.</div>
                 <div className="text-xs font-bold text-white/80 uppercase"></div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Avv.</div>
+                <div className="text-xs font-bold text-white/80 uppercase"></div>
                 <div className="text-xs font-bold text-white/80 uppercase"></div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Data</div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Ora</div>
@@ -444,7 +442,7 @@ export default function AdminArenaPage() {
                   className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                   style={borderStyle}
                 >
-                  <div className="grid grid-cols-[32px_40px_140px_40px_140px_80px_64px_80px_100px_80px_40px] items-center gap-4">
+                  <div className="grid grid-cols-[40px_40px_160px_40px_160px_1fr_90px_70px_140px_120px_90px_40px] items-center gap-4">
                     {/* Icona Tipo Sfida */}
                     <div className="flex items-center justify-center">
                       {challenge.challenge_type === "ranked" ? (
@@ -490,6 +488,9 @@ export default function AdminArenaPage() {
                       {challenge.opponent?.full_name}
                     </div>
 
+                    {/* Spacer */}
+                    <div></div>
+
                     {/* Data */}
                     <div className="text-sm font-semibold text-secondary text-center">
                       {challenge.booking
@@ -511,7 +512,7 @@ export default function AdminArenaPage() {
                     </div>
 
                     {/* Campo */}
-                    <div className="font-bold text-secondary text-center">
+                    <div className="text-sm font-semibold text-secondary text-center truncate px-1">
                       {challenge.booking?.court || "-"}
                     </div>
 
@@ -536,18 +537,52 @@ export default function AdminArenaPage() {
                       </span>
                     </div>
 
-                    {/* Azioni */}
-                    <div className="flex items-center justify-center">
+                    {/* Azioni - 3 puntini */}
+                    <div className="relative flex items-center justify-end pr-1">
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          handleDeleteChallenge(challenge.id);
+                          setOpenMenuId(openMenuId === challenge.id ? null : challenge.id);
                         }}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded transition-all"
-                        title="Elimina"
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                        aria-label="Azioni"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </button>
+                      {openMenuId === challenge.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                          <div className="absolute right-0 top-9 z-30 w-44 bg-white rounded-lg shadow-xl border border-gray-200 py-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                router.push(`/dashboard/admin/arena/challenge/${challenge.id}`);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Gestisci
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                handleDeleteChallenge(challenge.id);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -557,7 +592,6 @@ export default function AdminArenaPage() {
           </div>
         );
         })()}
-      </div>
 
       {/* Classifica Section */}
       <div className="bg-white rounded-lg p-6">

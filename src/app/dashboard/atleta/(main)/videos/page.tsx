@@ -99,12 +99,12 @@ export default function AtletaVideosPage() {
       }
 
       const videoIds = assignments.map(a => a.video_id);
-      const { data: videosData } = await supabase
+      const { data: videosData } = (await supabase
         .from("video_lessons")
         .select("*")
         .in("id", videoIds)
         .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })) as any;
 
       if (!videosData) {
         setVideos([]);
@@ -127,8 +127,8 @@ export default function AtletaVideosPage() {
       }
 
       const assignmentsMap = new Map(assignments.map(a => [a.video_id, a]));
-      const enrichedVideos = videosData.map(video => {
-        const assignment = assignmentsMap.get(video.id);
+      const enrichedVideos = videosData.map((video: any) => {
+        const assignment: any = assignmentsMap.get(video.id);
         return {
           ...video,
           watched_at: assignment?.watched_at || null,

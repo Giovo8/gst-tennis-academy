@@ -7,49 +7,11 @@
  * senza interagire con il database reale.
  */
 
+import { UserRole, User, Booking, Profile, Course, Enrollment, Tournament } from "./types";
+
 // ============================================
 // Simulazione delle Regole RLS
 // ============================================
-
-type UserRole = "atleta" | "maestro" | "gestore" | "admin";
-
-interface User {
-  id: string;
-  role: UserRole;
-}
-
-interface Booking {
-  id: string;
-  user_id: string;
-  court: string;
-  status: string;
-  manager_confirmed: boolean;
-}
-
-interface Profile {
-  id: string;
-  role: UserRole;
-  full_name: string;
-  email: string;
-}
-
-interface Course {
-  id: string;
-  created_by: string;
-  active: boolean;
-}
-
-interface Enrollment {
-  id: string;
-  user_id: string;
-  course_id: string;
-}
-
-interface Tournament {
-  id: string;
-  created_by: string;
-  status: string;
-}
 
 interface VideoLesson {
   id: string;

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/client";
 import { DEFAULT_COURTS } from "./constants";
+import logger from '@/lib/logger/secure-logger';
 
 export type Court = {
   id: string;
@@ -21,7 +22,7 @@ export async function getCourts(): Promise<string[]> {
       .order("display_order", { ascending: true });
 
     if (error) {
-      console.error("Error loading courts:", error);
+      logger.error("Error loading courts:", error);
       // Fallback to default courts if database query fails
       return DEFAULT_COURTS;
     }
@@ -33,7 +34,7 @@ export async function getCourts(): Promise<string[]> {
 
     return data.map((court) => court.court_name);
   } catch (error) {
-    console.error("Error in getCourts:", error);
+    logger.error("Error in getCourts:", error);
     // Fallback to default courts on exception
     return DEFAULT_COURTS;
   }
@@ -51,13 +52,13 @@ export async function getCourtsWithDetails(): Promise<Court[]> {
       .order("display_order", { ascending: true });
 
     if (error) {
-      console.error("Error loading courts:", error);
+      logger.error("Error loading courts:", error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error("Error in getCourtsWithDetails:", error);
+    logger.error("Error in getCourtsWithDetails:", error);
     return [];
   }
 }

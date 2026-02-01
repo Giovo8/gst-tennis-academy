@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Urbanist } from "next/font/google";
 import "./globals.css";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
@@ -28,13 +28,14 @@ export const metadata: Metadata = {
     ],
     apple: '/images/logo-tennis.png',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: 'cover',
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import logger from "@/lib/logger/secure-logger";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,7 +21,7 @@ export function getAvatarUrl(avatarUrl?: string | null): string | null {
     : process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     
   if (!supabaseUrl) {
-    console.warn('SUPABASE_URL not found, returning original avatar URL');
+    logger.warn('SUPABASE_URL not configured, returning original avatar URL');
     return avatarUrl;
   }
   

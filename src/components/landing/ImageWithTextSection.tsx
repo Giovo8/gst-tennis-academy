@@ -4,18 +4,12 @@ import Link from "next/link";
 
 export default function ImageWithTextSection() {
   return (
-    <section className="relative w-full h-[150px] sm:h-[200px] md:h-[250px] lg:h-[300px] xl:h-[350px] overflow-hidden" style={{ maxHeight: '350px' }}>
-      {/* Background Image */}
-      <div className="absolute inset-0">
-        <img
-          src="/images/2.jpeg"
-          alt="Tennis Club GST"
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="lazy"
-        />
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/50"></div>
-      </div>
+    <section
+      className="relative w-full h-[360px] sm:h-[200px] md:h-[250px] lg:h-[300px] xl:h-[350px] overflow-hidden !py-0 bg-center bg-cover"
+      style={{
+        backgroundImage: "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/2.jpeg')"
+      }}
+    >
 
       {/* Content */}
       <div className="relative z-10 h-full flex items-center justify-center">

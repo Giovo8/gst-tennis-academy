@@ -71,7 +71,6 @@ function formatNewsDate(dateString: string | undefined): string {
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>("tutte");
 
   useEffect(() => {
     loadNews();
@@ -95,14 +94,6 @@ export default function NewsSection() {
     }
     setLoading(false);
   }
-
-  const categories = Array.from(new Set(news.map((item) => item.category))).filter(
-    (cat) => !!cat
-  );
-
-  const filteredNews = news.filter((item) =>
-    activeCategory === "tutte" ? true : item.category === activeCategory
-  );
 
   if (loading) {
     return (
@@ -132,40 +123,13 @@ export default function NewsSection() {
           </p>
         </div>
 
-        {/* Filtri categoria */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pb-3 sm:pb-4 mb-6 sm:mb-8 text-center">
-          <button
-            onClick={() => setActiveCategory("tutte")}
-            className={`text-sm px-3 py-1.5 rounded-sm transition-colors ${
-              activeCategory === "tutte"
-                ? "bg-secondary text-white"
-                : "text-secondary/70 hover:text-secondary"
-            }`}
-          >
-            Tutte
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`text-sm px-3 py-1.5 rounded-sm transition-colors ${
-                activeCategory === category
-                  ? "bg-secondary text-white"
-                  : "text-secondary/70 hover:text-secondary"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
         {/* Griglia news cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
-          {filteredNews.map((item) => {
+          {news.map((item) => {
             return (
               <article
                 key={item.id}
-                className="flex flex-col group"
+                className="flex flex-col group border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
               >
                 {/* Immagine / placeholder */}
                 <div className="w-full aspect-[4/3] mb-4 overflow-hidden">
@@ -237,7 +201,7 @@ export default function NewsSection() {
           })}
         </div>
 
-        {/* Pulsante "Vedi tutte" */}
+        {/* Pulsante Vedi tutte */}
         <div className="text-center">
           <Link
             href="/news"

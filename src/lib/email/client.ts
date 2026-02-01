@@ -1,14 +1,46 @@
 import { Resend } from "resend";
+import env from "@/lib/config/env";
+import logger from "@/lib/logger/secure-logger";
 
-// Initialize Resend client with fallback for build time
-const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder_key_for_build");
+/**
+ * Resend Email Client
+ * Initialized with API key from environment variables
+ * 
+ * ⚠️ Security: RESEND_API_KEY must be set in environment
+ */
 
-export { resend };
+let resendInstance: Resend | null = null;
 
-// Email configuration
+function createResendClient(): Resend {
+  try {
+    const apiKey = env.resendApiKey;
+    
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+    
+    logger.debug('Initializing Resend email client');
+    return new Resend(apiKey);
+  } catch (error) {
+    logger.error('Failed to initialize Resend client', error);
+    throw error;
+  }
+}
+
+// Lazy initialization
+function getResendClient(): Resend {
+  if (!resendInstance) {
+    resendInstance = createResendClient();
+  }
+  return resendInstance;
+}
+
+export const resend = getResendClient();
+
+// Email configuration from environment
 export const EMAIL_CONFIG = {
-  from: process.env.EMAIL_FROM || "GST Tennis Academy <info@gst-tennis.it>",
-  replyTo: process.env.EMAIL_REPLY_TO || "info@gst-tennis.it",
+  from: env.emailFrom,
+  replyTo: env.emailReplyTo,
   defaultSubject: "GST Tennis Academy",
 };
 

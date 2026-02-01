@@ -1,3 +1,5 @@
+import logger from '@/lib/logger/secure-logger';
+
 // Helper functions to create notifications for various events
 // These can be called from API routes or server actions
 
@@ -31,7 +33,7 @@ export async function createNotification(params: CreateNotificationParams) {
 
     return await response.json();
   } catch (error) {
-    console.error("Error creating notification:", error);
+    logger.error("Error creating notification:", error);
     return null;
   }
 }
@@ -133,7 +135,7 @@ export async function notifyAdmins(title: string, message: string, link?: string
 
     return await response.json();
   } catch (error) {
-    console.error("Error notifying admins:", error);
+    logger.error("Error notifying admins:", error);
     return null;
   }
 }

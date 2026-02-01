@@ -34,7 +34,7 @@ export default function TorneiPage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch('/api/tournaments?upcoming=true');
+        const res = await fetch('/api/tournaments');
         let json: any = {};
         try {
           json = await res.json();
@@ -42,7 +42,14 @@ export default function TorneiPage() {
           json = {};
         }
         if (res.ok) {
-          if (mounted) setTournaments(json.tournaments ?? []);
+          // Filtra via i tornei conclusi/archiviati (come nella dashboard admin e homepage)
+          const activeTournaments = (json.tournaments ?? []).filter(
+            (t: Tournament) => 
+              t.status !== 'Concluso' && 
+              t.status !== 'Completato' && 
+              t.status !== 'Chiuso'
+          );
+          if (mounted) setTournaments(activeTournaments);
         } else {
           setError(json.error || 'Impossibile caricare i tornei');
         }
@@ -130,57 +137,13 @@ export default function TorneiPage() {
             </div>
           ) : (
             <>
-              {/* Filtri per stato */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-8 sm:mb-12">
-                <button
-                  onClick={() => setActiveFilter("all")}
-                  className={`text-sm px-4 py-2 border transition-colors ${
-                    activeFilter === "all"
-                      ? "border-secondary bg-white text-secondary font-medium"
-                      : "border-transparent text-secondary/70 hover:text-secondary"
-                  }`}
-                >
-                  Tutti
-                </button>
-                <button
-                  onClick={() => setActiveFilter("open")}
-                  className={`text-sm px-4 py-2 border transition-colors ${
-                    activeFilter === "open"
-                      ? "border-secondary bg-white text-secondary font-medium"
-                      : "border-transparent text-secondary/70 hover:text-secondary"
-                  }`}
-                >
-                  Iscrizioni aperte
-                </button>
-                <button
-                  onClick={() => setActiveFilter("running")}
-                  className={`text-sm px-4 py-2 border transition-colors ${
-                    activeFilter === "running"
-                      ? "border-secondary bg-white text-secondary font-medium"
-                      : "border-transparent text-secondary/70 hover:text-secondary"
-                  }`}
-                >
-                  In corso
-                </button>
-                <button
-                  onClick={() => setActiveFilter("closed")}
-                  className={`text-sm px-4 py-2 border transition-colors ${
-                    activeFilter === "closed"
-                      ? "border-secondary bg-white text-secondary font-medium"
-                      : "border-transparent text-secondary/70 hover:text-secondary"
-                  }`}
-                >
-                  Conclusi
-                </button>
-              </div>
-
               {/* Lista tornei */}
               {filteredTournaments.length === 0 ? (
                 <div className="text-center py-12 bg-secondary/5 rounded-lg">
-                  <p className="text-sm text-secondary/70">Nessun torneo trovato per questa categoria.</p>
+                  <p className="text-sm text-secondary/70">Nessun torneo trovato.</p>
                 </div>
               ) : (
-                <div className="space-y-4 sm:space-y-5">
+                <div className="space-y-4">
                   {filteredTournaments.map((t) => {
                     const typeLabel = getTournamentTypeLabel(t.tournament_type);
                     const startDate = t.start_date ? new Date(t.start_date) : null;
@@ -191,59 +154,58 @@ export default function TorneiPage() {
                       ? format(startDate, "dd", { locale: it })
                       : "";
                     const monthYear = startDate
-                      ? format(startDate, "MMM yyyy", { locale: it })
-                      : "Data da definire";
+                      ? format(startDate, "MMM yyyy", { locale: it }).toUpperCase()
+                      : "DATA DA DEFINIRE";
+                    
+                    // Determina il colore del bordo in base allo stato
+                    const getBorderColor = () => {
+                      const status = t.status?.toLowerCase();
+                      if (status === "aperto") return "#10b981"; // verde emerald
+                      if (status === "in corso") return "#0ea5e9"; // blu secondary
+                      if (status === "concluso" || status === "completato" || status === "chiuso") return "#6b7280"; // grigio
+                      return "#0ea5e9"; // default blu
+                    };
 
                     return (
-                      <article
+                      <Link
                         key={t.id}
-                        className="bg-secondary/5 rounded-md px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6"
+                        href={`/tornei/${t.id}`}
+                        className="bg-white px-0 py-0 flex flex-row items-stretch border-l-4 border border-gray-200 rounded-md overflow-hidden hover:bg-gray-50 transition-colors cursor-pointer"
+                        style={{ borderLeftColor: getBorderColor() }}
                       >
                         {/* Colonna data */}
-                        <div className="flex flex-col items-center justify-center sm:w-32">
-                          <p className="text-xs font-semibold uppercase text-secondary/50 text-center">
+                        <div className="bg-secondary flex flex-col items-center justify-center w-20 sm:w-28 flex-shrink-0 px-3 py-5">
+                          <p className="text-xs font-semibold uppercase text-white/70 text-center mb-1">
                             {weekday}
                           </p>
-                          <p className="text-3xl sm:text-4xl font-bold text-secondary leading-none text-center">
+                          <p className="text-4xl sm:text-3xl md:text-4xl font-bold text-white leading-none text-center">
                             {day}
                           </p>
-                          <p className="text-xs text-secondary/60 mt-1 text-center">
+                          <p className="text-xs font-semibold uppercase text-white/70 mt-1.5 text-center whitespace-nowrap">
                             {monthYear}
                           </p>
                         </div>
 
+                        {/* Barra separatrice */}
+                        <div className="w-px bg-gray-200"></div>
+
                         {/* Contenuto centrale */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-secondary/60 mb-1">
-                            {typeLabel}
-                          </p>
-                          <h2 className="text-base sm:text-lg font-semibold text-secondary">
-                            {t.title}
-                          </h2>
-                          <div className="mt-1">
-                            {t.status && (
-                              <p className="text-xs text-secondary/60">
-                                {t.category || (t.tournament_type === "campionato" ? "Team" : "Open")} - {t.status}
-                              </p>
-                            )}
+                        <div className="flex-1 min-w-0 px-5 sm:px-6 py-5 sm:py-6">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-secondary/60">
+                              {typeLabel}
+                            </span>
                           </div>
+                          <h3 className="text-base sm:text-lg font-semibold text-secondary truncate">
+                            {t.title}
+                          </h3>
                           {t.description && (
                             <p className="text-sm text-secondary/70 mt-2 line-clamp-2">
                               {t.description}
                             </p>
                           )}
                         </div>
-
-                        {/* Azione a destra */}
-                        <div className="sm:pl-4 flex-shrink-0">
-                          <Link
-                            href={`/tornei/${t.id}`}
-                            className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold border border-secondary/40 text-secondary rounded-sm hover:bg-secondary hover:text-white transition-colors whitespace-nowrap"
-                          >
-                            Vedi dettagli
-                          </Link>
-                        </div>
-                      </article>
+                      </Link>
                     );
                   })}
                 </div>

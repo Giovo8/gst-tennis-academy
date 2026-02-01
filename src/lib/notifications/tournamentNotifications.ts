@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import logger from '@/lib/logger/secure-logger';
 
 export async function notifyTournamentStart(tournamentId: string, tournamentName: string) {
   try {
@@ -27,7 +28,7 @@ export async function notifyTournamentStart(tournamentId: string, tournamentName
       });
     }
   } catch (error) {
-    console.error("Error notifying tournament start:", error);
+    logger.error("Error notifying tournament start:", error);
   }
 }
 
@@ -52,6 +53,6 @@ export async function notifyMatchScheduled(
       }),
     });
   } catch (error) {
-    console.error("Error notifying match scheduled:", error);
+    logger.error("Error notifying match scheduled:", error);
   }
 }

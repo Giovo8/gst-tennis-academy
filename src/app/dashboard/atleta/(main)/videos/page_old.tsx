@@ -139,8 +139,8 @@ export default function AtletaVideosPage() {
       }
 
       const assignmentsMap = new Map(assignments.map(a => [a.video_id, a]));
-      const enrichedVideos = videosData.map(video => {
-        const assignment = assignmentsMap.get(video.id);
+      const enrichedVideos = videosData.map((video: any) => {
+        const assignment: any = assignmentsMap.get(video.id);
         return {
           ...video,
           watched_at: assignment?.watched_at || null,

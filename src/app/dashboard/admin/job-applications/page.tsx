@@ -20,6 +20,8 @@ import {
   RefreshCw,
   Download,
   Plus,
+  MoreVertical,
+  Pencil,
 } from "lucide-react";
 
 interface JobApplication {
@@ -40,6 +42,7 @@ export default function JobApplicationsPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "name" | "role" | "status" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     loadApplications();
@@ -141,7 +144,7 @@ export default function JobApplicationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Candidature Lavoro</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">Candidature Lavoro</h1>
           <p className="text-secondary/70 font-medium">
             Gestisci le candidature ricevute dalla pagina "Lavora con noi"
           </p>
@@ -165,7 +168,7 @@ export default function JobApplicationsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative flex-1">
+      <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
         <input
           type="text"
@@ -195,10 +198,10 @@ export default function JobApplicationsPage() {
               display: none;
             }
           `}</style>
-          <div className="space-y-3" style={{ minWidth: '750px' }}>
+          <div className="space-y-3 min-w-[750px]">
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="grid grid-cols-[40px_100px_160px_1fr_100px_100px] items-center gap-4">
+              <div className="grid grid-cols-[40px_100px_160px_1fr_100px_100px_40px] items-center gap-4">
                 <div className="flex items-center justify-center">
                   <button
                     onClick={() => handleSort("role")}
@@ -249,6 +252,7 @@ export default function JobApplicationsPage() {
                     )}
                   </button>
                 </div>
+                <div></div>
               </div>
             </div>
 
@@ -267,13 +271,15 @@ export default function JobApplicationsPage() {
               }
 
               return (
-                <Link
+                <div
                   key={app.id}
-                  href={`/dashboard/admin/job-applications/${app.id}`}
-                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all block cursor-pointer border-l-4"
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                   style={borderStyle}
                 >
-                  <div className="grid grid-cols-[40px_100px_160px_1fr_100px_100px] items-center gap-4">
+                  <Link
+                    href={`/dashboard/admin/job-applications/${app.id}`}
+                    className="grid grid-cols-[40px_100px_160px_1fr_100px_100px_40px] items-center gap-4 no-underline"
+                  >
                     {/* Icon Ruolo */}
                     <div className="flex items-center justify-center">
                       {app.role === "maestro" ? (
@@ -315,8 +321,56 @@ export default function JobApplicationsPage() {
                         {app.status === "rejected" && "Rifiutata"}
                       </span>
                     </div>
-                  </div>
-                </Link>
+
+                    {/* Azioni - 3 puntini */}
+                    <div className="relative flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === app.id ? null : app.id);
+                        }}
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {openMenuId === app.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                window.location.href = `/dashboard/admin/job-applications/${app.id}`;
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Visualizza
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                // Delete not implemented for job applications
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                </div>
               );
             })}
           </div>

@@ -125,124 +125,140 @@ export default function StaffSection() {
     <section id="staff" className="py-12 sm:py-16 md:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-12">
-          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
+        <div className="text-center mb-12 sm:mb-16">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary/70">
             STAFF
           </p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
             I nostri maestri
           </h2>
-          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80 px-2">
+          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary/70 px-2">
             Professionisti con anni di esperienza nel tennis agonistico e didattico.
           </p>
         </div>
 
         {/* Staff Grid */}
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
-          {staff.map((member) => (
-            <article key={member.id} className="text-center border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
-              {/* Avatar - 1/3 of card */}
-              <div className="w-full h-32 sm:h-40 overflow-hidden">
-                {member.image_url ? (
-                  <img
-                    src={member.image_url}
-                    alt={member.full_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{backgroundColor: 'var(--secondary)'}}>
-                    <svg className="w-12 h-12 sm:w-16 sm:h-16" style={{fill: 'white', opacity: 0.8}} viewBox="0 0 24 24">
-                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                    </svg>
+        <div className="grid gap-8 sm:gap-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12 sm:mb-16 lg:mb-20">
+          {staff.map((member, index) => {
+            return (
+              <div
+                key={member.id}
+                className="text-center transition-all"
+              >
+                {/* Card */}
+                <div
+                  className="bg-white rounded-lg p-6 sm:p-8 border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {/* Circular Avatar */}
+                  <div className="flex justify-center mb-5 sm:mb-6">
+                    <div
+                      className="relative w-20 sm:w-24 h-20 sm:h-24 rounded-full border-4 border-secondary overflow-hidden flex-shrink-0"
+                    >
+                      {member.image_url ? (
+                        <img
+                          src={member.image_url}
+                          alt={member.full_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center bg-secondary/10"
+                        >
+                          <svg
+                            className="w-10 h-10 sm:w-12 sm:h-12 text-secondary"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+
+                  {/* Name with colored underline */}
+                  <div className="mb-2">
+                    <h3
+                      className="text-lg sm:text-xl font-bold pb-2 border-b-2 border-secondary inline-block text-secondary"
+                    >
+                      {member.full_name}
+                    </h3>
+                  </div>
+
+                  {/* Role */}
+                  <p
+                    className="text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4 text-secondary/70"
+                  >
+                    {member.role}
+                  </p>
+
+                  {/* Bio */}
+                  <p
+                    className="text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6 text-secondary/70"
+                  >
+                    {member.bio || 'Professionista certificato con anni di esperienza.'}
+                  </p>
+
+                  {/* Social Icons */}
+                  <div className="flex justify-center gap-3 sm:gap-4 flex-wrap">
+                    {member.facebook_url && (
+                      <a
+                        href={member.facebook_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-secondary/70 p-2 rounded-full bg-secondary/5 text-secondary"
+                      >
+                        <Facebook className="w-5 h-5" />
+                      </a>
+                    )}
+                    {member.instagram_url && (
+                      <a
+                        href={member.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-secondary/70 p-2 rounded-full bg-secondary/5 text-secondary"
+                      >
+                        <Instagram className="w-5 h-5" />
+                      </a>
+                    )}
+                    {member.linkedin_url && (
+                      <a
+                        href={member.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-secondary/70 p-2 rounded-full bg-secondary/5 text-secondary"
+                      >
+                        <Linkedin className="w-5 h-5" />
+                      </a>
+                    )}
+                    {member.twitter_url && (
+                      <a
+                        href={member.twitter_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-secondary/70 p-2 rounded-full bg-secondary/5 text-secondary"
+                      >
+                        <Twitter className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
-
-              {/* Content */}
-              <div className="p-6">
-
-              {/* Name */}
-              <h3 className="text-base sm:text-lg font-bold mb-1 text-secondary">
-                {member.full_name}
-              </h3>
-
-              {/* Role */}
-              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3" style={{color: 'var(--secondary)', opacity: 0.7}}>
-                {member.role}
-              </p>
-
-              {/* Bio */}
-              <p className="text-xs sm:text-sm mb-3 sm:mb-4 text-secondary opacity-80">
-                {member.bio || "Professionista certificato con anni di esperienza."}
-              </p>
-
-              {/* Social Icons */}
-              <div className="flex justify-center gap-2 sm:gap-3">
-                {member.facebook_url && (
-                  <a 
-                    href={member.facebook_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="transition-opacity hover:opacity-70" 
-                    style={{color: 'var(--secondary)'}}
-                  >
-                    <Facebook className="w-5 h-5" />
-                  </a>
-                )}
-                {member.instagram_url && (
-                  <a 
-                    href={member.instagram_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="transition-opacity hover:opacity-70" 
-                    style={{color: 'var(--secondary)'}}
-                  >
-                    <Instagram className="w-5 h-5" />
-                  </a>
-                )}
-                {member.linkedin_url && (
-                  <a 
-                    href={member.linkedin_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="transition-opacity hover:opacity-70" 
-                    style={{color: 'var(--secondary)'}}
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                )}
-                {member.twitter_url && (
-                  <a 
-                    href={member.twitter_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="transition-opacity hover:opacity-70" 
-                    style={{color: 'var(--secondary)'}}
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </a>
-                )}
-              </div>
-              </div>
-            </article>
-          ))}
+            );
+          })}
         </div>
 
         {/* Join Team CTA */}
-        <div className="text-center">
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-secondary">
+        <div className="text-center py-8 sm:py-12 bg-secondary/5 rounded-lg">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-secondary">
             Unisciti al team
           </h3>
-          <p className="text-sm sm:text-base mb-4 sm:mb-6 max-w-2xl mx-auto px-4" style={{color: 'var(--secondary)', opacity: 0.8}}>
+          <p className="text-sm sm:text-base mb-6 sm:mb-8 max-w-2xl mx-auto px-4 text-secondary/70">
             Cerchiamo maestri e istruttori appassionati di tennis e di insegnamento.
           </p>
           <Link
             href="/lavora-con-noi"
-            className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-md font-semibold text-sm sm:text-base transition-all hover:opacity-90 min-h-[48px] touch-manipulation"
-            style={{
-              backgroundColor: 'var(--secondary)',
-              color: 'white'
-            }}
+            className="inline-block px-8 sm:px-10 py-3 sm:py-3.5 rounded-md font-semibold text-sm sm:text-base transition-all hover:opacity-90 min-h-[48px] touch-manipulation text-white bg-secondary"
           >
             Candidati
           </Link>

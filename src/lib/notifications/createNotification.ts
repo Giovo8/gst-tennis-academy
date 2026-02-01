@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import logger from '@/lib/logger/secure-logger';
 
 export async function createNotification({
   userId,
@@ -14,7 +15,7 @@ export async function createNotification({
   link?: string;
 }) {
   try {
-    console.log("📤 Sending notification to API:", { userId, type, title });
+    logger.info("📤 Sending notification to API:", { userId, type, title });
     
     const response = await fetch("/api/notifications", {
       method: "POST",
@@ -30,16 +31,16 @@ export async function createNotification({
       }),
     });
 
-    console.log("📥 Response status:", response.status);
+    logger.info("📥 Response status: " + response.status);
 
     if (!response.ok) {
       const error = await response.json();
-      console.error("❌ Error creating notification:", error);
+      logger.error("❌ Error creating notification:", error);
     } else {
       const result = await response.json();
-      console.log("✅ Notification created:", result);
+      logger.info("✅ Notification created:", result);
     }
   } catch (error) {
-    console.error("❌ Exception creating notification:", error);
+    logger.error("❌ Exception creating notification:", error);
   }
 }
