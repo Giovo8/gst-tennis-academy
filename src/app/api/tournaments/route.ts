@@ -44,6 +44,7 @@ async function getUserProfileFromRequest(req: Request) {
 
 export async function GET(req: Request) {
   const startTime = Date.now();
+  const requestTimeout = 8000; // 8 seconds timeout for Vercel (10s limit)
   
   try {
     const url = new URL(req.url);
@@ -101,16 +102,24 @@ export async function GET(req: Request) {
       return NextResponse.json({ tournament: data, current_participants: count ?? 0 });
     }
 
-    // Build query
+    // Build query for list of tournaments
     let query = supabaseServer
       .from("tournaments")
-      .select("*")
-      .order("start_date", { ascending: true });
+      .select("*");
+
+    // Limit fields to reduce payload size on Vercel
+    if (!includeCounts) {
+      query = query.select("id,title,description,start_date,max_participants,tournament_type,competition_type,status,format", { count: "exact" });
+    }
+
+    query = query.order("start_date", { ascending: true });
 
     if (upcoming === "true") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      query = query.or(`status.eq.In Corso,status.eq.Aperte le Iscrizioni,start_date.gte.${today.toISOString()}`);
+      const todayISO = today.toISOString();
+      // Filter for active tournaments: open registrations, in progress, or future with valid status
+      query = query.in("status", ["Aperte le Iscrizioni", "In Corso"]);
     }
 
     // Validate and filter by competition type
@@ -128,11 +137,17 @@ export async function GET(req: Request) {
       );
     }
     
-    // Only add participant counts if explicitly requested
+    // Check timeout before processing results
+    if (Date.now() - startTime > requestTimeout) {
+      logger.warn('Request approaching timeout limit', { duration: Date.now() - startTime });
+      return NextResponse.json({ tournaments: data || [] });
+    }
+    
+    // Only add participant counts if explicitly requested AND time permits
     let result = data || [];
-    if (includeCounts && result.length > 0) {
+    if (includeCounts && result.length > 0 && (Date.now() - startTime < requestTimeout - 2000)) {
       result = await Promise.all(
-        result.map(async (tournament) => {
+        result.slice(0, 10).map(async (tournament) => { // Limit to 10 tournaments max
           const { count } = await supabaseServer
             .from("tournament_participants")
             .select("id", { count: "exact", head: true })

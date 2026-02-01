@@ -36,17 +36,34 @@ export default function TournamentsSection() {
 
   useEffect(() => {
     let mounted = true;
+    let retryCount = 0;
+    const maxRetries = 2;
+
     async function load() {
       try {
         // Use upcoming=true to get only active tournaments for homepage
-        const res = await fetch("/api/tournaments?upcoming=true");
+        const res = await fetch("/api/tournaments?upcoming=true", {
+          signal: AbortSignal.timeout(9000), // 9 second timeout
+        });
+        
         if (!res.ok) {
           console.error("[TournamentsSection] API error:", res.status, res.statusText);
+          
+          // Retry logic for 5xx errors
+          if (res.status >= 500 && retryCount < maxRetries) {
+            retryCount++;
+            console.warn(`[TournamentsSection] Retrying (${retryCount}/${maxRetries})...`);
+            setTimeout(load, 1000 * retryCount); // Exponential backoff
+            return;
+          }
+          
           if (mounted) setError("Errore nel caricamento dei tornei");
           return;
         }
+        
         const json = await res.json();
         const tournaments = json.tournaments || [];
+        
         // Filtra via i tornei conclusi/archiviati (backup filter)
         const activeTournaments = tournaments.filter(
           (t: Tournament) =>
@@ -54,16 +71,32 @@ export default function TournamentsSection() {
             t.status !== 'Completato' &&
             t.status !== 'Chiuso'
         );
+        
         if (mounted) {
           setItems(activeTournaments);
+          setError(null); // Clear any previous errors
         }
-      } catch (err) {
-        console.error("[TournamentsSection] Fetch failed:", err);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          console.error("[TournamentsSection] Request timeout");
+        } else {
+          console.error("[TournamentsSection] Fetch failed:", err);
+        }
+        
+        // Retry on timeout or network errors
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.warn(`[TournamentsSection] Retrying (${retryCount}/${maxRetries})...`);
+          setTimeout(load, 1000 * retryCount);
+          return;
+        }
+        
         if (mounted) setError("Errore nel caricamento dei tornei");
       } finally {
         if (mounted) setLoading(false);
       }
     }
+    
     load();
     return () => { mounted = false; };
   }, []);
