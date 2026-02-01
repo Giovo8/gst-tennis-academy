@@ -81,12 +81,12 @@ export const bookingStatusSchema = z.enum([
 
 export const baseBookingSchema = z.object({
   user_id: uuidSchema,
-  coach_id: uuidSchema.optional(),
+  coach_id: uuidSchema.optional().nullable(),
   court: z.string().min(1, 'Campo obbligatorio'),
-  type: z.enum(['campo', 'lezione']).default('campo'),
+  type: z.enum(['campo', 'lezione', 'lezione_privata', 'lezione_gruppo']).default('campo'),
   start_time: dateStringSchema,
   end_time: dateStringSchema,
-  notes: z.string().max(500, 'Note troppo lunghe').optional(),
+  notes: z.string().max(500, 'Note troppo lunghe').optional().nullable(),
   status: bookingStatusSchema.optional(),
   coach_confirmed: z.boolean().optional(),
   manager_confirmed: z.boolean().optional(),
