@@ -429,19 +429,19 @@ export default function AtletaDashboard() {
   return (
     <div className="space-y-6">
       {/* Modern Header */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-1">
             Bentornato, {userName}
           </h1>
-          <p className="text-secondary/70 font-medium">
+          <p className="text-secondary/70 font-medium text-sm sm:text-base">
             Ecco il riepilogo della tua attività
           </p>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Link href="/dashboard/atleta/bookings" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
           <div className="flex-shrink-0">
             <Calendar className="h-8 w-8 text-white" />
@@ -485,12 +485,10 @@ export default function AtletaDashboard() {
 
       {/* Meteo */}
       <div className="bg-secondary rounded-xl p-5 text-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h3 className="font-bold text-lg">Tennis Club GST</h3>
-              <p className="text-sm text-white/80">Formello, RM</p>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg sm:text-lg">Tennis Club GST</h3>
+            <p className="text-xs sm:text-sm text-white/80">Formello, RM</p>
           </div>
 
           {weatherLoading ? (
@@ -499,9 +497,21 @@ export default function AtletaDashboard() {
               <div className="h-8 w-8 bg-white/20 rounded-full" />
             </div>
           ) : weather ? (
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 flex-shrink-0">
+              {/* Mobile Layout */}
+              <div className="sm:hidden flex items-center justify-between gap-4 w-full">
+                <div className="text-left">
+                  <div className="text-4xl font-bold leading-none mb-1">{weather.temperature}°C</div>
+                  <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
+                </div>
+                <div className="text-white flex-shrink-0">
+                  {getWeatherInfo(weather.weatherCode).icon}
+                </div>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center gap-4">
+                <div className="text-left">
                   <div className="text-4xl font-bold">{weather.temperature}°C</div>
                   <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
                 </div>
@@ -509,7 +519,28 @@ export default function AtletaDashboard() {
                   {getWeatherInfo(weather.weatherCode).icon}
                 </div>
               </div>
-              <div className="flex items-center gap-4 pl-6 border-l border-white/20">
+
+              {/* Info aggiuntive */}
+              <div className="hidden sm:flex items-center gap-4 pl-6 border-l border-white/20">
+                <div className="text-center">
+                  <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Percepita</p>
+                  <p className="text-sm font-semibold">{weather.apparentTemperature}°C</p>
+                </div>
+                <div className="text-center">
+                  <Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Umidità</p>
+                  <p className="text-sm font-semibold">{weather.humidity}%</p>
+                </div>
+                <div className="text-center">
+                  <Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Vento</p>
+                  <p className="text-sm font-semibold">{weather.windSpeed} km/h</p>
+                </div>
+              </div>
+
+              {/* Mobile info */}
+              <div className="sm:hidden grid grid-cols-3 gap-3 w-full pt-2 border-t border-white/20">
                 <div className="text-center">
                   <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
                   <p className="text-xs text-white/70">Percepita</p>
@@ -537,61 +568,45 @@ export default function AtletaDashboard() {
       </div>
 
 
-      {/* Annunci + Centro Notifiche */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Annunci Recenti */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-5">
-            <h2 className="text-lg font-bold text-gray-900">
-              Annunci
-            </h2>
-          </div>
-
-          <div className="px-6 pt-2 pb-6">
-            {recentAnnouncements.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3">
-                  <Megaphone className="h-6 w-6 text-gray-400" />
-                </div>
-                <p className="text-sm font-semibold text-gray-900 mb-1">Nessun annuncio</p>
-                <p className="text-xs text-gray-600">Non ci sono annunci al momento</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentAnnouncements.map((announcement) => (
-                  <div
-                    key={announcement.id}
-                    className="relative p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all group cursor-pointer"
-                    onClick={() => handleAnnouncementClick(announcement)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0">
-                        <Megaphone className="h-5 w-5 text-secondary" />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900">{announcement.title}</h3>
-                      </div>
-
-                      {announcement.priority === "urgent" && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded-md whitespace-nowrap">
-                          URGENTE
-                        </span>
-                      )}
-
-                      <div className="flex items-center gap-3 text-sm text-gray-600">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          <span>
-                            {new Date(announcement.created_at).toLocaleDateString("it-IT", {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short"
-                            })}
+      {/* Bacheca */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Annunci */}
+        <div className="px-4 sm:px-6 pt-5 pb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Annunci</h2>
+          {recentAnnouncements.length === 0 ? (
+            <p className="text-sm text-gray-500">Nessun annuncio al momento</p>
+          ) : (
+            <div className="space-y-3">
+              {recentAnnouncements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className="relative p-3 sm:p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all group cursor-pointer"
+                  onClick={() => handleAnnouncementClick(announcement)}
+                >
+                  <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                    <div className="flex-shrink-0 mt-0.5 sm:mt-0">
+                      <Megaphone className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-gray-900 text-sm sm:text-base">{announcement.title}</h3>
+                        {announcement.priority === "urgent" && (
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded-md whitespace-nowrap">
+                            URGENTE
                           </span>
-                        </div>
-                        <span className="text-gray-300">•</span>
-                        <span className="font-medium">
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>
+                          {new Date(announcement.created_at).toLocaleDateString("it-IT", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short"
+                          })}
+                        </span>
+                        <span className="text-gray-300">&bull;</span>
+                        <span>
                           {new Date(announcement.created_at).toLocaleTimeString("it-IT", {
                             hour: "2-digit",
                             minute: "2-digit"
@@ -600,96 +615,83 @@ export default function AtletaDashboard() {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
+        <hr className="border-gray-200" />
+
         {/* Centro Notifiche */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-5 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">
-              Centro Notifiche
-            </h2>
+        <div className="px-4 sm:px-6 pt-5 pb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Centro Notifiche</h2>
             {unreadNotifications > 0 && (
               <button
                 onClick={markAllNotificationsRead}
                 className="text-xs font-semibold text-secondary hover:opacity-80 flex items-center gap-1"
               >
                 <CheckCircle className="h-4 w-4" />
-                Segna tutte come lette ({unreadNotifications})
+                <span className="hidden sm:inline">Segna tutte come lette</span> ({unreadNotifications})
               </button>
             )}
           </div>
-
-          <div className="px-6 pt-2 pb-4">
-            {notifications.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3">
-                  <Bell className="h-6 w-6 text-gray-400" />
-                </div>
-                <p className="text-sm font-semibold text-gray-900 mb-1">Nessuna notifica</p>
-                <p className="text-xs text-gray-600">Non ci sono notifiche al momento</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {notifications.map((n) => {
-                  const icon = (() => {
-                    switch (n.type) {
-                      case "booking": return <Calendar className="h-5 w-5" style={{ color: '#056c94' }} />; // frozen-700
-                      case "tournament": return <Trophy className="h-5 w-5" style={{ color: '#39c3f9' }} />; // frozen-400
-                      case "message": return <MessageSquare className="h-5 w-5" style={{ color: '#08b3f7' }} />; // frozen-500
-                      case "course": return <Users className="h-5 w-5" style={{ color: '#0690c6' }} />; // frozen-600
-                      case "success": return <CheckCircle className="h-5 w-5" style={{ color: '#6bd2fa' }} />; // frozen-300
-                      case "warning": return <AlertCircle className="h-5 w-5" style={{ color: '#9ce1fc' }} />; // frozen-200
-                      case "error": return <XCircle className="h-5 w-5" style={{ color: '#056c94' }} />; // frozen-700
-                      default: return <Info className="h-5 w-5" style={{ color: '#034863' }} />; // frozen-800
-                    }
-                  })();
-
-                  return (
-                    <div
-                      key={n.id}
-                      className="flex items-center gap-4 p-4 rounded-lg border border-l-4 border-l-secondary transition-all cursor-pointer bg-white border-gray-200 hover:border-secondary/30 hover:bg-blue-50/30"
-                      onClick={() => handleNotificationClick(n)}
-                    >
-                      <div className="flex-shrink-0">{icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-500">Nessuna notifica al momento</p>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((n) => {
+                const icon = (() => {
+                  switch (n.type) {
+                    case "booking": return <Calendar className="h-5 w-5" style={{ color: '#056c94' }} />;
+                    case "tournament": return <Trophy className="h-5 w-5" style={{ color: '#39c3f9' }} />;
+                    case "message": return <MessageSquare className="h-5 w-5" style={{ color: '#08b3f7' }} />;
+                    case "course": return <Users className="h-5 w-5" style={{ color: '#0690c6' }} />;
+                    case "success": return <CheckCircle className="h-5 w-5" style={{ color: '#6bd2fa' }} />;
+                    case "warning": return <AlertCircle className="h-5 w-5" style={{ color: '#9ce1fc' }} />;
+                    case "error": return <XCircle className="h-5 w-5" style={{ color: '#056c94' }} />;
+                    default: return <Info className="h-5 w-5" style={{ color: '#034863' }} />;
+                  }
+                })();
+                return (
+                  <div
+                    key={n.id}
+                    className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-l-4 border-l-secondary transition-all cursor-pointer bg-white border-gray-200 hover:border-secondary/30 hover:bg-blue-50/30"
+                    onClick={() => handleNotificationClick(n)}
+                  >
+                    <div className="flex-shrink-0 mt-0.5 sm:mt-0">{icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                      <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500 sm:hidden">
                         <Clock className="h-3.5 w-3.5" />
                         <span>
                           {new Date(n.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
                         </span>
                       </div>
-                      {!n.is_read && <span className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Prossime Prenotazioni */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5">
-          <h2 className="text-lg font-bold text-gray-900">
-            Prossimi Eventi
-          </h2>
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>
+                        {new Date(n.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
+                      </span>
+                    </div>
+                    {!n.is_read && <span className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        <div className="px-6 pt-2 pb-6">
+        <hr className="border-gray-200" />
+
+        {/* Prossimi Eventi */}
+        <div className="px-4 sm:px-6 pt-5 pb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Prossimi Eventi</h2>
           {nextEvents.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="inline-flex p-4 bg-gray-50 rounded-full mb-4">
-                <Calendar className="h-8 w-8 text-gray-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-900 mb-1">Nessun evento</p>
-              <p className="text-sm text-gray-600 mb-6">Non hai prossimi appuntamenti</p>
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-500 mb-4">Non hai prossimi appuntamenti</p>
               <Link
                 href="/dashboard/atleta/bookings/new"
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all"
@@ -704,29 +706,28 @@ export default function AtletaDashboard() {
                 <Link
                   key={event.id}
                   href={event.eventType === 'booking' ? `/dashboard/atleta/bookings/${event.id}` : `/dashboard/atleta/tornei/${event.id}`}
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all cursor-pointer"
+                  className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all cursor-pointer"
                 >
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 mt-0.5 sm:mt-0">
                     {event.eventType === 'booking' ? (
                       <Calendar className="h-5 w-5 text-secondary" />
                     ) : (
                       <Trophy className="h-5 w-5 text-secondary" />
                     )}
                   </div>
-
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
-                  </div>
-
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-secondary/10 text-secondary rounded-md whitespace-nowrap flex-shrink-0">
-                    {event.eventType === 'booking' ? event.type : 'Torneo'}
-                  </span>
-
-                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{formatDate(event.start_time)}</span>
-                    <span className="text-gray-300">•</span>
-                    <span className="font-medium">{formatTime(event.start_time)}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                      <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-secondary/10 text-secondary rounded-md whitespace-nowrap">
+                        {event.eventType === 'booking' ? event.type : 'Torneo'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{formatDate(event.start_time)}</span>
+                      <span className="text-gray-300">&bull;</span>
+                      <span className="font-medium">{formatTime(event.start_time)}</span>
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -745,10 +746,10 @@ export default function AtletaDashboard() {
         >
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
-              <div className="flex items-center gap-3">
-                <Megaphone className="h-6 w-6 text-white" />
-                <h3 className="text-lg font-bold text-white">{selectedAnnouncement.title}</h3>
+            <div className="flex items-center justify-between p-4 sm:p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3 min-w-0">
+                <Megaphone className="h-6 w-6 text-white flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedAnnouncement.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedAnnouncement(null)}
@@ -759,9 +760,9 @@ export default function AtletaDashboard() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 space-y-4">
               {/* Date and Priority */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sm text-secondary/70">
                   <Clock className="w-4 h-4" />
                   <span>
@@ -825,10 +826,10 @@ export default function AtletaDashboard() {
         >
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
-              <div className="flex items-center gap-3">
-                <Bell className="h-6 w-6 text-white" />
-                <h3 className="text-lg font-bold text-white">{selectedNotification.title}</h3>
+            <div className="flex items-center justify-between p-4 sm:p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3 min-w-0">
+                <Bell className="h-6 w-6 text-white flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedNotification.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedNotification(null)}
@@ -839,10 +840,10 @@ export default function AtletaDashboard() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 space-y-4">
               {/* Date */}
               <div className="flex items-center gap-2 text-sm text-secondary/70">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4 flex-shrink-0" />
                 <span>
                   {new Date(selectedNotification.created_at).toLocaleDateString("it-IT", {
                     weekday: "long",
