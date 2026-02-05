@@ -284,8 +284,9 @@ export async function POST(req: Request) {
         .select();
 
       if (participantsError) {
-        logger.warn('Failed to insert booking participants', participantsError, {
+        logger.warn('Failed to insert booking participants', {
           bookingId,
+          error: participantsError,
         });
       } else {
         participantsInserted = insertedParticipants?.length || 0;
