@@ -241,33 +241,30 @@ export default function AtletaDashboard() {
     // Load upcoming tournaments
     const { data: tournaments } = await supabase
       .from("tournaments")
-      .select("id, name, start_date, category, type")
-      .eq("status", "published")
+      .select("id, title, start_date, category, tournament_type")
+      .in("status", ["Aperto", "Aperte le Iscrizioni", "In Corso"])
       .gte("start_date", now)
       .order("start_date", { ascending: true })
       .limit(10);
 
 
-    // Load completed video lessons count (assignments watched)
-    const { data: videoAssignments } = await supabase
+    // Load completed video lessons count (total assignments)
+    const { count: videoCount } = await supabase
       .from("video_assignments")
-      .select("watched_at")
+      .select("id", { count: "exact" })
       .eq("user_id", user.id);
 
-    const completedCount = (videoAssignments || []).filter((va: any) => !!va.watched_at).length;
-
-    // Load arena activities
-    const { data: arenaActivities, count: arenaCount } = await supabase
-      .from("arena_sessions")
+    // Load arena activities (active challenges)
+    const { count: arenaCount } = await supabase
+      .from("arena_challenges")
       .select("id", { count: "exact" })
-      .eq("user_id", user.id)
-      .neq("status", "cancelled")
-      .gte("start_time", now);
+      .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
+      .in("status", ["pending", "accepted"]);
 
     setStats({
       upcomingBookings: bookingsCount || 0,
       activeTournaments: participations?.length || 0,
-      completedLessons: completedCount,
+      completedLessons: videoCount || 0,
       arenaActivities: arenaCount || 0,
     });
 
@@ -294,10 +291,10 @@ export default function AtletaDashboard() {
       tournaments.forEach(tournament => {
         events.push({
           id: tournament.id,
-          title: tournament.name,
+          title: tournament.title,
           start_time: tournament.start_date,
           eventType: 'tournament',
-          type: tournament.category || tournament.type
+          type: tournament.category || tournament.tournament_type
         });
       });
     }

@@ -13,6 +13,7 @@ import { CalendarDays, Clock, Loader2, Users2, AlertCircle, Lock } from "lucide-
 import { supabase } from "@/lib/supabase/client";
 import { type UserRole } from "@/lib/roles";
 import { useBookingsRealtime } from "@/lib/hooks/useBookingsRealtime";
+import AthletesSelector from "@/components/bookings/AthletesSelector";
 
 type BookingType = "campo" | "lezione_privata" | "lezione_gruppo";
 
@@ -41,6 +42,13 @@ type Athlete = {
   full_name: string | null;
   email: string;
   role: UserRole;
+};
+
+type SelectedAthlete = {
+  userId?: string;
+  fullName: string;
+  email?: string;
+  isRegistered: boolean;
 };
 
 const courts = ["Campo 1", "Campo 2", "Campo 3"];
@@ -85,7 +93,8 @@ export default function BookingCalendar() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [selectedCoach, setSelectedCoach] = useState<string>("");
   const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [selectedAthlete, setSelectedAthlete] = useState<string>("");
+  const [selectedAthlete, setSelectedAthlete] = useState<string>(""); // Backward compatibility for admin
+  const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]); // Multiple athletes
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -296,15 +305,29 @@ export default function BookingCalendar() {
 
     const isAdminOrGestore = profileData?.role === "admin" || profileData?.role === "gestore";
 
-    // Se admin/gestore, deve selezionare un atleta
-    if (isAdminOrGestore && !selectedAthlete) {
-      setError("Seleziona l'atleta per cui vuoi prenotare.");
+    // Se admin/gestore, deve selezionare atleti (max 4) oppure se atleta normale può aggiungere ospiti
+    if (selectedAthletes.length === 0) {
+      setError("Seleziona almeno un partecipante.");
       setSaving(false);
       return;
     }
 
-    // Determina l'ID utente da usare per la prenotazione
-    const bookingUserId = isAdminOrGestore ? selectedAthlete : user.id;
+    if (selectedAthletes.length > 4) {
+      setError("Massimo 4 partecipanti per prenotazione.");
+      setSaving(false);
+      return;
+    }
+
+    // Se admin/gestore e nessun atleta registrato selezionato ed è la prima booking
+    if (isAdminOrGestore && selectedAthletes.length > 0) {
+      const firstAthlete = selectedAthletes[0];
+      // OK, user_id is either from selectedAthletes or null for guests
+    }
+
+    // Determina l'ID utente da usare per la prenotazione (primo atleta o user corrente)
+    const bookingUserId = isAdminOrGestore && selectedAthletes[0]?.userId 
+      ? selectedAthletes[0].userId 
+      : user.id;
 
     // Validazione 24h - NON SI APPLICA ad admin/gestore
     if (!isAdminOrGestore) {
@@ -351,6 +374,7 @@ export default function BookingCalendar() {
           coach_confirmed: bookingType !== "lezione_privata" || isAdminOrGestore,
           manager_confirmed: isAdminOrGestore,
           notes: null,
+          participants: selectedAthletes,
         };
       });
 
@@ -396,6 +420,7 @@ export default function BookingCalendar() {
           coach_confirmed: bookingType !== "lezione_privata" || isAdminOrGestore,
           manager_confirmed: isAdminOrGestore,
           notes: null,
+          participants: selectedAthletes,
         };
 
         const resp = await fetch('/api/bookings', {
@@ -430,6 +455,7 @@ export default function BookingCalendar() {
     setSaving(false);
     setSelectedSlot(null);
     setSelectedSlots([]);
+    setSelectedAthletes([]);
     
     // Clear success message after 5s
     setTimeout(() => {
@@ -497,23 +523,36 @@ export default function BookingCalendar() {
 
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {(userRole === "admin" || userRole === "gestore") && (
-          <label className="text-sm text-muted">
-            Seleziona Atleta *
-            <select
-              className="mt-2 w-full rounded-xl border border-white/15 bg-surface px-3 py-2 text-white outline-none focus-ring-accent"
-              value={selectedAthlete}
-              onChange={(e) => setSelectedAthlete(e.target.value)}
-            >
-              <option value="">Scegli atleta</option>
-              {athletes.map((athlete) => (
-                <option key={athlete.id} value={athlete.id}>
-                  {athlete.full_name && athlete.full_name.trim() !== '' 
-                    ? `${athlete.full_name} (${athlete.email})`
-                    : athlete.email}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="sm:col-span-2">
+            <AthletesSelector
+              athletes={athletes}
+              selectedAthletes={selectedAthletes}
+              onAthleteAdd={(athlete) => {
+                if (selectedAthletes.length < 4) {
+                  setSelectedAthletes([...selectedAthletes, athlete]);
+                }
+              }}
+              onAthleteRemove={(index) => {
+                setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+              }}
+              maxAthletes={4}
+            />
+          </div>
+        )}
+        {(userRole !== "admin" && userRole !== "gestore") && (
+          <AthletesSelector
+            athletes={athletes}
+            selectedAthletes={selectedAthletes}
+            onAthleteAdd={(athlete) => {
+              if (selectedAthletes.length < 4) {
+                setSelectedAthletes([...selectedAthletes, athlete]);
+              }
+            }}
+            onAthleteRemove={(index) => {
+              setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+            }}
+            maxAthletes={4}
+          />
         )}
         <label className="text-sm text-muted">
           Tipo prenotazione

@@ -28,23 +28,35 @@ export async function GET(req: Request) {
     }
 
     if (id) {
-      const { data, error } = await supabaseServer
+      const { data: booking, error: bookingError } = await supabaseServer
         .from("bookings")
         .select("*")
         .eq("id", id)
         .single();
       
-      if (error) {
-        logger.error('Booking not found', error, { bookingId: id });
+      if (bookingError) {
+        logger.error('Booking not found', bookingError, { bookingId: id });
         return NextResponse.json(
           { error: ERROR_MESSAGES.NOT_FOUND },
           { status: HTTP_STATUS.NOT_FOUND }
         );
       }
-      
+
+      // Fetch participants
+      const { data: participants } = await supabaseServer
+        .from("booking_participants")
+        .select("*")
+        .eq("booking_id", id)
+        .order("order_index", { ascending: true });
+
       const duration = Date.now() - startTime;
       logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
-      return NextResponse.json({ booking: data });
+      return NextResponse.json({ 
+        booking: {
+          ...booking,
+          participants: participants || []
+        } 
+      });
     }
 
     let query = supabaseServer
@@ -55,7 +67,7 @@ export async function GET(req: Request) {
     if (user_id) query = query.eq("user_id", user_id);
     if (coach_id) query = query.eq("coach_id", coach_id);
     
-    const { data, error } = await query;
+    const { data: bookings, error } = await query;
     
     if (error) {
       logger.error('Database error fetching bookings', error);
@@ -64,10 +76,29 @@ export async function GET(req: Request) {
         { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
+
+    // Fetch participants for all bookings
+    const bookingIds = bookings?.map(b => b.id) || [];
+    let allParticipants: any[] = [];
+
+    if (bookingIds.length > 0) {
+      const { data: participants } = await supabaseServer
+        .from("booking_participants")
+        .select("*")
+        .in("booking_id", bookingIds);
+      
+      allParticipants = participants || [];
+    }
+
+    // Merge participants with bookings
+    const bookingsWithParticipants = (bookings || []).map(booking => ({
+      ...booking,
+      participants: allParticipants.filter(p => p.booking_id === booking.id)
+    }));
     
     const duration = Date.now() - startTime;
     logger.apiResponse('GET', '/api/bookings', HTTP_STATUS.OK, duration);
-    return NextResponse.json({ bookings: data });
+    return NextResponse.json({ bookings: bookingsWithParticipants });
   } catch (err: unknown) {
     const duration = Date.now() - startTime;
     logger.error('Exception in bookings GET', err);
@@ -137,7 +168,7 @@ export async function POST(req: Request) {
     }
 
     const bookingData = validationResult.data;
-    const { user_id, coach_id, court, type, start_time, end_time } = bookingData;
+    const { user_id, coach_id, court, type, start_time, end_time, participants } = bookingData;
 
     // Authorization: users can only book for themselves, admin/gestore for anyone
     const canBookForOthers = isAdminOrGestore(profile?.role);
@@ -233,6 +264,34 @@ export async function POST(req: Request) {
       );
     }
 
+    // Insert booking participants if provided
+    let participantsInserted = 0;
+    if (data && data[0] && participants && participants.length > 0) {
+      const bookingId = data[0].id;
+      const participantsData = participants.map((p, index) => ({
+        booking_id: bookingId,
+        user_id: p.user_id || null,
+        full_name: p.full_name,
+        email: p.email || null,
+        is_registered: p.is_registered || false,
+        participant_type: 'atleta',
+        order_index: index,
+      }));
+
+      const { error: participantsError, data: insertedParticipants } = await supabaseServer
+        .from("booking_participants")
+        .insert(participantsData)
+        .select();
+
+      if (participantsError) {
+        logger.warn('Failed to insert booking participants', participantsError, {
+          bookingId,
+        });
+      } else {
+        participantsInserted = insertedParticipants?.length || 0;
+      }
+    }
+
     // Notify admins/gestori about new booking
     if (data && data[0]) {
       const booking = data[0];
@@ -274,6 +333,7 @@ export async function POST(req: Request) {
           startTime: booking.start_time,
           endTime: booking.end_time,
           status: booking.status,
+          participantsCount: participantsInserted,
         },
       });
     }
@@ -282,6 +342,7 @@ export async function POST(req: Request) {
     logger.info('Booking created successfully', {
       userId: user.id,
       bookingId: data[0].id,
+      participantsCount: participantsInserted,
     });
     logger.apiResponse('POST', '/api/bookings', HTTP_STATUS.CREATED, duration);
     

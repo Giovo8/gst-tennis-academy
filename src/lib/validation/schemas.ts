@@ -79,6 +79,14 @@ export const bookingStatusSchema = z.enum([
   BOOKING_STATUS.REJECTED,
 ] as [string, ...string[]]);
 
+// Booking participant schema
+export const bookingParticipantSchema = z.object({
+  user_id: uuidSchema.optional().nullable(),
+  full_name: z.string().min(2, 'Nome troppo corto').max(100, 'Nome troppo lungo'),
+  email: emailSchema.optional().nullable(),
+  is_registered: z.boolean().default(false),
+});
+
 export const baseBookingSchema = z.object({
   user_id: uuidSchema,
   coach_id: uuidSchema.optional().nullable(),
@@ -90,6 +98,7 @@ export const baseBookingSchema = z.object({
   status: bookingStatusSchema.optional(),
   coach_confirmed: z.boolean().optional(),
   manager_confirmed: z.boolean().optional(),
+  participants: z.array(bookingParticipantSchema).max(4, 'Massimo 4 partecipanti').optional().default([]),
 });
 
 export const createBookingSchema = baseBookingSchema.refine((data) => {
@@ -188,6 +197,7 @@ export const paginationSchema = z.object({
 
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type BookingParticipant = z.infer<typeof bookingParticipantSchema>;
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 export type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
 export type CreateTournamentInput = z.infer<typeof createTournamentSchema>;

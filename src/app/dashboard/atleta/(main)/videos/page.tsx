@@ -60,7 +60,7 @@ export default function AtletaVideosPage() {
     try {
       const { data: assignments } = await supabase
         .from("video_assignments")
-        .select("video_id, watched_at, watch_count")
+        .select("video_id")
         .eq("user_id", user.id);
 
       if (!assignments || assignments.length === 0) {
@@ -126,13 +126,11 @@ export default function AtletaVideosPage() {
         }
       }
 
-      const assignmentsMap = new Map(assignments.map(a => [a.video_id, a]));
       const enrichedVideos = videosData.map((video: any) => {
-        const assignment: any = assignmentsMap.get(video.id);
         return {
           ...video,
-          watched_at: assignment?.watched_at || null,
-          watch_count: assignment?.watch_count || 0,
+          watched_at: video.watched_at || null,
+          watch_count: video.watch_count || 0,
           creator: video.created_by ? creatorsMap.get(video.created_by) : null
         };
       });

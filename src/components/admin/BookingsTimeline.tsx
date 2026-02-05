@@ -21,6 +21,13 @@ type Booking = {
   notes: string | null;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
+  participants?: Array<{
+    id: string;
+    full_name: string;
+    email?: string;
+    is_registered: boolean;
+    user_id?: string;
+  }>;
   isBlock?: boolean;
   reason?: string;
 };
@@ -536,7 +543,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                 bottom: '4px',
                                 marginLeft: '2px'
                               }}
-                              title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${booking.user_profile?.full_name}`}`}
+                              title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${booking.user_profile?.full_name}${booking.participants && booking.participants.length > 0 ? ` +${booking.participants.length} partecipanti` : ''}`}`}
                             >
                               {booking.isBlock ? (
                                 <>
@@ -552,6 +559,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   <div className="truncate leading-tight">
                                     {booking.user_profile?.full_name || "Sconosciuto"}
                                   </div>
+                                  {booking.participants && booking.participants.length > 0 && (
+                                    <div className="truncate text-white/90 text-[10px] mt-0.5 leading-tight">
+                                      👥 {booking.participants.length} {booking.participants.length === 1 ? 'partecipante' : 'partecipanti'}
+                                    </div>
+                                  )}
                                   {isLesson && booking.coach_profile && (
                                     <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
                                       {booking.coach_profile.full_name}

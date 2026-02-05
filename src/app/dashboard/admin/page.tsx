@@ -266,7 +266,7 @@ export default function AdminDashboard() {
         supabase.from("bookings").select("*", { count: "exact", head: true }).gte("start_time", `${todayStr}T00:00:00`).lte("start_time", `${todayStr}T23:59:59`),
         supabase.from("bookings").select("*", { count: "exact", head: true }).eq("manager_confirmed", false).neq("status", "cancelled"),
         supabase.from("tournaments").select("*", { count: "exact", head: true }).in("status", ["active", "Aperto", "In Corso"]),
-        supabase.from("messages").select("*", { count: "exact", head: true }).eq("read", false),
+        supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("is_read", false),
         supabase.from("video_lessons").select("*", { count: "exact", head: true }),
         supabase.from("arena_challenges").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("recruitment_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
@@ -338,12 +338,22 @@ export default function AdminDashboard() {
       // Load recent announcements
       const { data: announcementsData } = await supabase
         .from("announcements")
-        .select("id, title, content, announcement_type, priority, created_at, is_pinned, profiles(full_name)")
+        .select("id, title, content, announcement_type, priority, created_at, is_pinned, author_id")
         .order("created_at", { ascending: false })
         .limit(3);
 
-      if (announcementsData) {
-        setRecentAnnouncements(announcementsData as any);
+      if (announcementsData && announcementsData.length > 0) {
+        const authorIds = [...new Set(announcementsData.map((a: any) => a.author_id).filter(Boolean))];
+        const { data: authorProfiles } = authorIds.length > 0
+          ? await supabase.from("profiles").select("id, full_name").in("id", authorIds)
+          : { data: [] };
+        const authorMap = new Map((authorProfiles || []).map((p: any) => [p.id, p]));
+
+        const enriched = announcementsData.map((a: any) => ({
+          ...a,
+          profiles: authorMap.get(a.author_id) || null,
+        }));
+        setRecentAnnouncements(enriched as any);
       }
 
       // Load notifications

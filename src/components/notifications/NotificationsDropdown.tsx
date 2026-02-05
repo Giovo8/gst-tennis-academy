@@ -96,7 +96,7 @@ export default function NotificationsDropdown() {
   }
 
   return (
-    <>
+    <div className="relative">
       <button
         onClick={() => {
           setIsOpen(!isOpen);
@@ -118,7 +118,7 @@ export default function NotificationsDropdown() {
       {isOpen && (
         <>
           {/* Desktop Dropdown */}
-          <div className="hidden sm:block absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
+          <div className="hidden lg:block absolute left-0 bottom-full mb-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
             {/* Header */}
             <div className="px-4 py-3 bg-secondary flex items-center justify-between rounded-t-lg">
               <h3 className="font-semibold text-white">Notifiche</h3>
@@ -203,8 +203,8 @@ export default function NotificationsDropdown() {
           </div>
 
           {/* Mobile Modal - stile come menu hamburger */}
-          <div 
-            className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top duration-300"
+          <div
+            className="lg:hidden fixed top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top duration-300 z-[100]"
           >
             {/* Header */}
             <div className="px-4 py-3 bg-secondary flex items-center justify-between">
@@ -280,13 +280,13 @@ export default function NotificationsDropdown() {
             )}
           </div>
 
-          {/* Overlay per chiudere il dropdown (Mobile) */}
+          {/* Overlay per chiudere il dropdown */}
           <div
-            className="lg:hidden fixed inset-0 z-[99998] bg-transparent"
+            className="fixed inset-0 z-[99] bg-transparent"
             onClick={() => setIsOpen(false)}
           />
         </>
       )}
-    </>
+    </div>
   );
 }
