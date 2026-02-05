@@ -46,8 +46,8 @@ export default function TournamentsSection() {
         abortController = new AbortController();
         const timeoutId = setTimeout(() => abortController?.abort(), 9000);
 
-        // Use upcoming=true to get only active tournaments for homepage
-        const res = await fetch("/api/tournaments?upcoming=true", {
+        // Get all tournaments like /tornei page does
+        const res = await fetch("/api/tournaments", {
           signal: abortController.signal,
           headers: {
             'Accept': 'application/json',

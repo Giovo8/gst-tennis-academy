@@ -189,10 +189,10 @@ export default function UsersPage() {
               display: none;
             }
           `}</style>
-          <div className="space-y-3 min-w-[980px]">
+          <div className="space-y-3 min-w-[700px]">
           {/* Header Row */}
           <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="grid grid-cols-[48px_180px_100px_1fr_120px_40px] items-center gap-4">
+            <div className="grid grid-cols-[48px_1fr_90px_260px_130px_40px] items-center gap-3">
               <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
               <button
                 onClick={() => handleSort("name")}
@@ -257,7 +257,7 @@ export default function UsersPage() {
               >
                 <Link
                   href={`/dashboard/admin/users/${user.id}`}
-                  className="grid grid-cols-[48px_180px_100px_1fr_120px_40px] items-center gap-4 no-underline"
+                  className="grid grid-cols-[48px_1fr_90px_260px_130px_40px] items-center gap-3 no-underline"
                 >
                     {/* Avatar */}
                     <div className="flex items-center justify-center">

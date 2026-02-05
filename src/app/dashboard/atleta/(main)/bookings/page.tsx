@@ -20,6 +20,7 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  MoreVertical,
 } from "lucide-react";
 import Link from "next/link";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
@@ -57,6 +58,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const [sortField, setSortField] = useState<string>("start_time");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
   function handleSort(field: string) {
     if (sortField === field) {
@@ -479,8 +482,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                   className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                   style={borderStyle}
                 >
-                  <Link
-                    href={`/dashboard/atleta/bookings/${booking.id}`}
+                  <div
+                    onClick={() => router.push(`/dashboard/atleta/bookings/${booking.id}`)}
                     className="grid grid-cols-[40px_80px_56px_80px_1fr_56px_64px] items-center gap-4 no-underline"
                   >
                     {/* Simbolo Tipo */}
@@ -536,57 +539,97 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                       )}
                     </div>
 
-                    {/* Azioni */}
-                    <div className="flex items-center justify-center gap-0.5">
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            router.push(`/dashboard/atleta/bookings/${booking.id}/edit`);
-                          }}
-                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#08b3f7] transition-all focus:outline-none border-0 bg-transparent"
-                          title="Modifica prenotazione"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      )}
-                      {canCancel && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            cancelBooking(booking.id);
-                          }}
-                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#022431] transition-all focus:outline-none border-0 bg-transparent"
-                          title="Annulla prenotazione"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                      {canRequestCancellation && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            requestCancellation(booking.id);
-                          }}
-                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#056c94] transition-all focus:outline-none border-0 bg-transparent"
-                          title="Richiedi cancellazione"
-                        >
-                          <AlertCircle className="h-4 w-4" />
-                        </button>
-                      )}
-                      {isCancellationRequested && (
+                    {/* Azioni - 3 puntini */}
+                    <div className="relative flex items-center justify-center">
+                      {(canEdit || canCancel || canRequestCancellation) ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (openMenuId === booking.id) {
+                                setOpenMenuId(null);
+                                setMenuPosition(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setMenuPosition({
+                                  top: rect.bottom + 4,
+                                  right: window.innerWidth - rect.right,
+                                });
+                                setOpenMenuId(booking.id);
+                              }
+                            }}
+                            className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                          {openMenuId === booking.id && menuPosition && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setMenuPosition(null); }} />
+                              <div
+                                className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                                style={{ top: menuPosition.top, right: menuPosition.right }}
+                              >
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      setMenuPosition(null);
+                                      router.push(`/dashboard/atleta/bookings/${booking.id}/edit`);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    Modifica
+                                  </button>
+                                )}
+                                {canCancel && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      setMenuPosition(null);
+                                      cancelBooking(booking.id);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Annulla
+                                  </button>
+                                )}
+                                {canRequestCancellation && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      setMenuPosition(null);
+                                      requestCancellation(booking.id);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors w-full"
+                                  >
+                                    <AlertCircle className="h-3.5 w-3.5" />
+                                    Richiedi cancellazione
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </>
+                      ) : isCancellationRequested ? (
                         <span className="inline-flex items-center justify-center p-1.5 text-[#056c94]" title="Cancellazione in attesa di approvazione">
                           <Clock className="h-4 w-4" />
                         </span>
-                      )}
+                      ) : null}
                     </div>
-                  </Link>
+                  </div>
                 </div>
               );
             })}

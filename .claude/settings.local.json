@@ -22,7 +22,11 @@
       "Bash(find:*)",
       "Bash(git push:*)",
       "Bash(gh auth status:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(curl:*)",
+      "Bash(npx vercel logs:*)",
+      "Bash(node -e:*)",
+      "Bash(git status:*)"
     ]
   }
 }

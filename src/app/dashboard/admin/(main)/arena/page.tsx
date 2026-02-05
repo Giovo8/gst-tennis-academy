@@ -647,7 +647,7 @@ export default function AdminArenaPage() {
               <div className="space-y-3" style={{ minWidth: '800px' }}>
               {/* Header Row */}
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px] items-center gap-4">
+                <div className="grid grid-cols-[48px_1fr_80px_80px_80px_80px_80px] items-center gap-4">
                   <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
                   <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
@@ -680,7 +680,7 @@ export default function AdminArenaPage() {
                     className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4"
                     style={borderStyle}
                   >
-                    <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px] items-center gap-4">
+                    <div className="grid grid-cols-[48px_1fr_80px_80px_80px_80px_80px] items-center gap-4">
                       {/* Position */}
                       <div className="text-center">
                         <span className="text-lg font-bold text-secondary">

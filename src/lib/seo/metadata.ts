@@ -3,8 +3,8 @@ import { Metadata } from 'next'
 export const defaultMetadata: Metadata = {
   metadataBase: new URL('https://gst-tennis-academy.vercel.app'),
   title: {
-    default: 'GST Tennis Academy | Scuola Tennis Roma',
-    template: '%s | GST Tennis Academy'
+    default: 'GST Academy',
+    template: '%s | GST Academy'
   },
   description: 'Scuola tennis a Roma con corsi per tutti i livelli: principianti, intermedi, avanzati e agonisti. Tornei, lezioni private, prenotazione campi online.',
   keywords: ['tennis', 'scuola tennis', 'Roma', 'corsi tennis', 'lezioni tennis', 'tornei tennis', 'prenotazione campi', 'tennis academy', 'GST Academy'],
