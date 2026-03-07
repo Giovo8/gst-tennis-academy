@@ -101,7 +101,7 @@ export default function InfoPage() {
               </div>
               <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
                 <p className="font-bold text-blue-700">Sfida di Coppia</p>
-                <p className="text-sm text-blue-600">Forma una coppia e sfida un'altra coppia 2 contro 2</p>
+                <p className="text-sm text-blue-600">Forma una coppia e sfida un&apos;altra coppia 2 contro 2</p>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function InfoPage() {
             <div className="space-y-3">
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
-                <span className="text-sm text-secondary/80">Le sfide devono essere confermate dall'avversario</span>
+                <span className="text-sm text-secondary/80">Le sfide devono essere confermate dall&apos;avversario</span>
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>

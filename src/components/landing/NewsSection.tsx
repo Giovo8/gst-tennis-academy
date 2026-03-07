@@ -72,10 +72,6 @@ export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadNews();
-  }, []);
-
   async function loadNews() {
     const { data, error } = await supabase
       .from("news")
@@ -94,6 +90,10 @@ export default function NewsSection() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadNews();
+  }, []);
 
   if (loading) {
     return (

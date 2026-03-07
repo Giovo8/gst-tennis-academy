@@ -260,7 +260,7 @@ export default function AdminEditBookingPage() {
           duration: (existingEnd.getTime() - existingStart.getTime()) / (1000 * 60) + " minuti"
         });
         const initialSlots: string[] = [];
-        let current = new Date(existingStart);
+        const current = new Date(existingStart);
         while (current < existingEnd) {
           const hours = current.getHours().toString().padStart(2, "0");
           const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -334,7 +334,7 @@ export default function AdminEditBookingPage() {
           ...(bookingsData?.map(b => b.coach_id).filter(Boolean) || [])
         ])];
 
-        let profilesMap = new Map();
+        const profilesMap = new Map();
         if (userIds.length > 0) {
           const { data: profilesData } = await supabase
             .from("profiles")
@@ -386,7 +386,7 @@ export default function AdminEditBookingPage() {
           const start = new Date(b.start_time);
           const end = new Date(b.end_time);
 
-          let current = new Date(start);
+          const current = new Date(start);
           while (current < end) {
             const hours = current.getHours().toString().padStart(2, "0");
             const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -401,7 +401,7 @@ export default function AdminEditBookingPage() {
         const isToday = selectedDate.toDateString() === now.toDateString();
 
         for (let hour = 7; hour <= 22; hour++) {
-          for (let minute of [0, 30]) {
+          for (const minute of [0, 30]) {
             if (hour === 22 && minute === 30) break;
 
             const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;

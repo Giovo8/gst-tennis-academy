@@ -124,11 +124,6 @@ export default function AtletaDashboard() {
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
 
-  useEffect(() => {
-    loadDashboardData();
-    loadWeatherData();
-  }, []);
-
   async function loadWeatherData() {
     try {
       const response = await fetch(
@@ -339,6 +334,11 @@ export default function AtletaDashboard() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadDashboardData();
+    loadWeatherData();
+  }, []);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);

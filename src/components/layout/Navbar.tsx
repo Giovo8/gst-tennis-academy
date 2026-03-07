@@ -14,10 +14,6 @@ export default function Navbar() {
   const [profile, setProfile] = useState<{ role: UserRole; full_name: string } | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    loadUser();
-  }, []);
-
   async function loadUser() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -30,6 +26,10 @@ export default function Navbar() {
       if (profileData) setProfile(profileData);
     }
   }
+
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();

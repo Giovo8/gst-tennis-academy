@@ -19,7 +19,7 @@ export default function TermsPage() {
             Termini e Condizioni
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-4">
-            Regole e condizioni per l'utilizzo dei servizi GST Tennis Academy
+            Regole e condizioni per l&apos;utilizzo dei servizi GST Tennis Academy
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
             Ultimo aggiornamento: 1 Gennaio 2026
@@ -34,7 +34,7 @@ export default function TermsPage() {
                 1. Accettazione dei Termini
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Accedendo e utilizzando i servizi di GST Tennis Academy ("Servizio"), accetti di essere vincolato da questi Termini e Condizioni ("Termini"). Se non accetti tutti i termini e le condizioni, non dovresti utilizzare questo Servizio.
+                Accedendo e utilizzando i servizi di GST Tennis Academy (&quot;Servizio&quot;), accetti di essere vincolato da questi Termini e Condizioni (&quot;Termini&quot;). Se non accetti tutti i termini e le condizioni, non dovresti utilizzare questo Servizio.
               </p>
             </section>
 
@@ -43,7 +43,7 @@ export default function TermsPage() {
                 2. Descrizione del Servizio
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                GST Tennis Academy fornisce una piattaforma online per la prenotazione di campi da tennis, la partecipazione a tornei, l'accesso a corsi e lezioni, e altri servizi correlati al tennis. Il Servizio include anche funzionalità di chat, notifiche e gestione del profilo utente.
+                GST Tennis Academy fornisce una piattaforma online per la prenotazione di campi da tennis, la partecipazione a tornei, l&apos;accesso a corsi e lezioni, e altri servizi correlati al tennis. Il Servizio include anche funzionalità di chat, notifiche e gestione del profilo utente.
               </p>
             </section>
 
@@ -58,7 +58,7 @@ export default function TermsPage() {
                 <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
                   <li>Fornire informazioni accurate, attuali e complete</li>
                   <li>Mantenere e aggiornare tempestivamente le informazioni del tuo account</li>
-                  <li>Mantenere la riservatezza della password e dell'account</li>
+                  <li>Mantenere la riservatezza della password e dell&apos;account</li>
                   <li>Accettare la responsabilità per tutte le attività che si verificano sotto il tuo account</li>
                   <li>Notificarci immediatamente qualsiasi uso non autorizzato del tuo account</li>
                 </ul>
@@ -96,7 +96,7 @@ export default function TermsPage() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                5. Comportamento dell'Utente
+                5. Comportamento dell&apos;Utente
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
                 Accetti di non utilizzare il Servizio per:
@@ -125,7 +125,7 @@ export default function TermsPage() {
                 7. Limitazione di Responsabilità
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                GST Tennis Academy non sarà responsabile per danni indiretti, incidentali, speciali o consequenziali derivanti dall'uso del Servizio. La nostra responsabilità totale non supererà l'importo pagato per il Servizio negli ultimi 12 mesi.
+                GST Tennis Academy non sarà responsabile per danni indiretti, incidentali, speciali o consequenziali derivanti dall&apos;uso del Servizio. La nostra responsabilità totale non supererà l&apos;importo pagato per il Servizio negli ultimi 12 mesi.
               </p>
             </section>
 
@@ -134,7 +134,7 @@ export default function TermsPage() {
                 8. Risoluzione
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Possiamo terminare o sospendere il tuo account e l'accesso al Servizio immediatamente, senza preavviso, per qualsiasi motivo, incluso se violi questi Termini. In caso di risoluzione, il tuo diritto di utilizzare il Servizio cesserà immediatamente.
+                Possiamo terminare o sospendere il tuo account e l&apos;accesso al Servizio immediatamente, senza preavviso, per qualsiasi motivo, incluso se violi questi Termini. In caso di risoluzione, il tuo diritto di utilizzare il Servizio cesserà immediatamente.
               </p>
             </section>
 
@@ -143,7 +143,7 @@ export default function TermsPage() {
                 9. Modifiche ai Termini
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Possiamo modificare questi Termini in qualsiasi momento. Ti informeremo di eventuali modifiche pubblicandole sul nostro sito. L'uso continuato del Servizio dopo le modifiche costituisce accettazione dei nuovi Termini.
+                Possiamo modificare questi Termini in qualsiasi momento. Ti informeremo di eventuali modifiche pubblicandole sul nostro sito. L&apos;uso continuato del Servizio dopo le modifiche costituisce accettazione dei nuovi Termini.
               </p>
             </section>
 

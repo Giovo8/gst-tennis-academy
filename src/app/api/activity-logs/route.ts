@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
     // Manually fetch profiles for the users
     const userIds = [...new Set(logs?.map((log: any) => log.user_id).filter(Boolean))];
-    let profilesMap = new Map();
+    const profilesMap = new Map();
 
     if (userIds.length > 0) {
       const { data: profiles } = (await supabaseServer

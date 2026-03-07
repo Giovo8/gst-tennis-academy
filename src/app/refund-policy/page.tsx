@@ -34,7 +34,7 @@ export default function RefundPolicyPage() {
                 1. Politica Generale di Rimborso
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                GST Tennis Academy offre rimborsi in conformità con le seguenti condizioni. La nostra politica è progettata per essere equa sia per i clienti che per l'accademia, garantendo al contempo la disponibilità dei campi per tutti gli utenti.
+                GST Tennis Academy offre rimborsi in conformità con le seguenti condizioni. La nostra politica è progettata per essere equa sia per i clienti che per l&apos;accademia, garantendo al contempo la disponibilità dei campi per tutti gli utenti.
               </p>
             </section>
 
@@ -63,7 +63,7 @@ export default function RefundPolicyPage() {
                     </h3>
                   </div>
                   <p className="text-frozen-800 dark:text-frozen-200">
-                    <strong>Rimborso parziale:</strong> 50% del pagamento rimborsato. L'altra metà viene trattenuta come penale di cancellazione.
+                    <strong>Rimborso parziale:</strong> 50% del pagamento rimborsato. L&apos;altra metà viene trattenuta come penale di cancellazione.
                   </p>
                 </div>
 
@@ -75,7 +75,7 @@ export default function RefundPolicyPage() {
                     </h3>
                   </div>
                   <p className="text-frozen-800 dark:text-frozen-200">
-                    <strong>Nessun rimborso:</strong> Il pagamento completo viene trattenuto. La prenotazione può essere trasferita a un'altra persona con il consenso dell'accademia.
+                    <strong>Nessun rimborso:</strong> Il pagamento completo viene trattenuto. La prenotazione può essere trasferita a un&apos;altra persona con il consenso dell&apos;accademia.
                   </p>
                 </div>
               </div>
@@ -91,7 +91,7 @@ export default function RefundPolicyPage() {
                     Corsi di Gruppo:
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                    <li>Cancellazione fino a 7 giorni prima dell'inizio: rimborso completo</li>
+                    <li>Cancellazione fino a 7 giorni prima dell&apos;inizio: rimborso completo</li>
                     <li>Cancellazione 3-7 giorni prima: rimborso 50%</li>
                     <li>Cancellazione meno di 3 giorni prima: nessun rimborso</li>
                     <li>Lezioni perse per motivi personali: non rimborsabili</li>
@@ -119,17 +119,17 @@ export default function RefundPolicyPage() {
                   Le iscrizioni ai tornei sono generalmente non rimborsabili, salvo nei seguenti casi:
                 </p>
                 <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
-                  <li><strong>Cancellazione del torneo:</strong> Rimborso completo se l'accademia annulla l'evento</li>
+                  <li><strong>Cancellazione del torneo:</strong> Rimborso completo se l&apos;accademia annulla l&apos;evento</li>
                   <li><strong>Problemi medici certificati:</strong> Rimborso parziale (50-75%) con documentazione medica</li>
                   <li><strong>Forza maggiore:</strong> Valutazione caso per caso (terremoti, alluvioni, etc.)</li>
-                  <li><strong>Trasferimento iscrizione:</strong> Possibile trasferire l'iscrizione a un'altra persona con supplemento amministrativo</li>
+                  <li><strong>Trasferimento iscrizione:</strong> Possibile trasferire l&apos;iscrizione a un&apos;altra persona con supplemento amministrativo</li>
                 </ul>
               </div>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                5. Cancellazioni da Parte dell'Accademia
+                5. Cancellazioni da Parte dell&apos;Accademia
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Se siamo costretti a cancellare una prenotazione, corso o torneo per motivi indipendenti dalla nostra volontà (condizioni meteorologiche avverse, manutenzione urgente, problemi tecnici, etc.), offriremo:
@@ -152,9 +152,9 @@ export default function RefundPolicyPage() {
                 </h3>
                 <ol className="list-decimal list-inside text-frozen-800 dark:text-frozen-200 space-y-2">
                   <li>Accedi al tuo account GST Tennis Academy</li>
-                  <li>Vai alla sezione "Le mie prenotazioni"</li>
+                  <li>Vai alla sezione &quot;Le mie prenotazioni&quot;</li>
                   <li>Seleziona la prenotazione da cancellare</li>
-                  <li>Clicca "Richiedi cancellazione" e segui le istruzioni</li>
+                  <li>Clicca &quot;Richiedi cancellazione&quot; e segui le istruzioni</li>
                   <li>Riceverai una conferma via email entro 24 ore</li>
                   <li>I rimborsi vengono elaborati entro 5-7 giorni lavorativi</li>
                 </ol>

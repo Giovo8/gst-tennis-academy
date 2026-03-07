@@ -40,10 +40,6 @@ export default function AdminCommunicationsPage() {
   const [type, setType] = useState<"info" | "warning" | "success">("info");
   const [targetRoles, setTargetRoles] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, []);
-
   async function loadAnnouncements() {
     const { data } = await supabase
       .from("announcements")
@@ -55,6 +51,10 @@ export default function AdminCommunicationsPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadAnnouncements();
+  }, []);
 
   async function createAnnouncement() {
     if (!title || !content) {

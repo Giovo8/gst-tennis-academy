@@ -112,7 +112,7 @@ export default function ChooseOpponentPage() {
           className="text-sm text-gray-600 hover:text-gray-900 mb-4 inline-flex items-center gap-1"
         >
           <ArrowLeft className="h-4 w-4" />
-          Torna all'Arena
+          Torna all&apos;Arena
         </button>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
           <div className="p-2 bg-frozen-500 rounded-xl">
@@ -208,7 +208,7 @@ export default function ChooseOpponentPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">Nuovo nell'Arena</p>
+                    <p className="text-sm text-gray-500">Nuovo nell&apos;Arena</p>
                   )}
                 </div>
               </div>

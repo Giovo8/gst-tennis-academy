@@ -141,12 +141,12 @@ export default function AccessibilityPage() {
                 4. Accessibilità Fisica
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                Oltre all'accessibilità digitale, ci impegniamo per l'accessibilità fisica delle nostre strutture:
+                Oltre all&apos;accessibilità digitale, ci impegniamo per l&apos;accessibilità fisica delle nostre strutture:
               </p>
               <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
                 <li><strong>Accesso facilitato:</strong> Rampe, ascensori e ingressi larghi per disabili</li>
                 <li><strong>Spogliatoi accessibili:</strong> Docce e servizi igienici adattati</li>
-                <li><strong>Parcheggi riservati:</strong> Posti auto per disabili vicino all'ingresso</li>
+                <li><strong>Parcheggi riservati:</strong> Posti auto per disabili vicino all&apos;ingresso</li>
                 <li><strong>Attrezzature speciali:</strong> Sedie a rotelle sportive e ausili per giocatori con disabilità</li>
                 <li><strong>Personale formato:</strong> Staff addestrato per assistere giocatori con bisogni speciali</li>
               </ul>
@@ -157,7 +157,7 @@ export default function AccessibilityPage() {
                 5. Feedback e Segnalazioni
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                La tua opinione è importante per noi. Se riscontri difficoltà nell'utilizzare il nostro sito o i nostri servizi, o hai suggerimenti per migliorare l'accessibilità, ti preghiamo di contattarci. Prendiamo sul serio ogni segnalazione e lavoriamo continuamente per migliorare.
+                La tua opinione è importante per noi. Se riscontri difficoltà nell&apos;utilizzare il nostro sito o i nostri servizi, o hai suggerimenti per migliorare l&apos;accessibilità, ti preghiamo di contattarci. Prendiamo sul serio ogni segnalazione e lavoriamo continuamente per migliorare.
               </p>
             </section>
 
@@ -166,7 +166,7 @@ export default function AccessibilityPage() {
                 6. Conformità Legale
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Ci impegniamo a rispettare tutte le normative vigenti in materia di accessibilità digitale, inclusa la Direttiva Europea 2016/2102 sull'accessibilità dei siti web e delle applicazioni mobili degli enti pubblici, e le linee guida WCAG 2.1 AA.
+                Ci impegniamo a rispettare tutte le normative vigenti in materia di accessibilità digitale, inclusa la Direttiva Europea 2016/2102 sull&apos;accessibilità dei siti web e delle applicazioni mobili degli enti pubblici, e le linee guida WCAG 2.1 AA.
               </p>
             </section>
 
@@ -184,7 +184,7 @@ export default function AccessibilityPage() {
                 8. Contatti Accessibilità
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                Per questioni relative all'accessibilità o per richiedere assistenza:
+                Per questioni relative all&apos;accessibilità o per richiedere assistenza:
               </p>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
                 <div className="grid md:grid-cols-2 gap-4">

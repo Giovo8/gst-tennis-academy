@@ -13,7 +13,7 @@ export default function AtletaAnnunciPage() {
             Annunci
           </h1>
           <p className="text-sm text-gray-600">
-            Rimani aggiornato su eventi, tornei e novità dell'accademia
+            Rimani aggiornato su eventi, tornei e novità dell&apos;accademia
           </p>
         </div>
       </div>

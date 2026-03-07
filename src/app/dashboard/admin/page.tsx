@@ -147,11 +147,6 @@ export default function AdminDashboard() {
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
 
-  useEffect(() => {
-    loadDashboardData();
-    loadWeatherData();
-  }, []);
-
   async function loadWeatherData() {
     try {
       const response = await fetch(
@@ -374,6 +369,11 @@ export default function AdminDashboard() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadDashboardData();
+    loadWeatherData();
+  }, []);
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);

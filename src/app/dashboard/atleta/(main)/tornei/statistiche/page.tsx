@@ -118,7 +118,7 @@ function StatistichePageInner() {
           </p>
           <h1 className="text-3xl font-bold text-secondary">Statistiche Competizioni</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Visualizza le tue statistiche e l'attività recente
+            Visualizza le tue statistiche e l&apos;attività recente
           </p>
         </div>
       </div>

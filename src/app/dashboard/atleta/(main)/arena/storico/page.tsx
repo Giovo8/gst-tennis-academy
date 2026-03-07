@@ -47,10 +47,6 @@ export default function StoricoPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
 
-  useEffect(() => {
-    loadArenaData();
-  }, []);
-
   async function loadArenaData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -70,6 +66,10 @@ export default function StoricoPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadArenaData();
+  }, []);
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {

@@ -260,7 +260,7 @@ export default function EditBookingPage() {
 
       // Calcola gli slot selezionati
       const slotsFromBooking: string[] = [];
-      let current = new Date(startTime);
+      const current = new Date(startTime);
       while (current < endTime) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -347,7 +347,7 @@ export default function EditBookingPage() {
       const start = new Date(b.start_time);
       const end = new Date(b.end_time);
 
-      let current = new Date(start);
+      const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -361,7 +361,7 @@ export default function EditBookingPage() {
       const start = new Date(block.start_time);
       const end = new Date(block.end_time);
 
-      let current = new Date(start);
+      const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");

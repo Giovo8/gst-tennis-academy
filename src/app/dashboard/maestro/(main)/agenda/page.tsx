@@ -53,10 +53,6 @@ export default function AgendaPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "confirmed" | "pending">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    loadWeekBookings();
-  }, [currentWeek]);
-
   async function loadWeekBookings() {
     setLoading(true);
 
@@ -103,6 +99,10 @@ export default function AgendaPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadWeekBookings();
+  }, [currentWeek]);
 
   async function updateBookingConfirmation(id: string, confirmed: boolean) {
     setUpdatingId(id);

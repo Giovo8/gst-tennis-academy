@@ -70,7 +70,7 @@ export default function Bracket({
 
   // Build rounds structure
   const rounds: Match[][] = [];
-  let currentRound = padded.slice();
+  const currentRound = padded.slice();
   
   // First round - pair up participants
   const firstRoundMatches: Match[] = [];

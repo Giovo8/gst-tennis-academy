@@ -20,6 +20,21 @@ export function useUserPresence(userId: string | null): UseUserPresenceReturn {
   const [status, setStatus] = useState<UserStatus>("offline");
   const [lastSeen, setLastSeen] = useState<string | null>(null);
 
+  async function loadPresence() {
+    if (!userId) return;
+
+    const { data } = await supabase
+      .from("user_presence")
+      .select("status, last_seen")
+      .eq("user_id", userId)
+      .single();
+
+    if (data) {
+      setStatus(data.status || "offline");
+      setLastSeen(data.last_seen);
+    }
+  }
+
   useEffect(() => {
     if (!userId) return;
 
@@ -51,21 +66,6 @@ export function useUserPresence(userId: string | null): UseUserPresenceReturn {
     };
   }, [userId]);
 
-  async function loadPresence() {
-    if (!userId) return;
-
-    const { data } = await supabase
-      .from("user_presence")
-      .select("status, last_seen")
-      .eq("user_id", userId)
-      .single();
-
-    if (data) {
-      setStatus(data.status || "offline");
-      setLastSeen(data.last_seen);
-    }
-  }
-
   return {
     status,
     lastSeen,
@@ -79,6 +79,35 @@ export function useUserPresence(userId: string | null): UseUserPresenceReturn {
  */
 export function useCurrentUserPresence() {
   const [userId, setUserId] = useState<string | null>(null);
+
+  async function updatePresence(status: UserStatus) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Upsert presence
+    await supabase.from("user_presence").upsert(
+      {
+        user_id: user.id,
+        status,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      }
+    );
+  }
+
+  async function initializePresence() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setUserId(user.id);
+    await updatePresence("online");
+  }
 
   useEffect(() => {
     initializePresence();
@@ -106,35 +135,6 @@ export function useCurrentUserPresence() {
       updatePresence("offline");
     };
   }, []);
-
-  async function initializePresence() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    setUserId(user.id);
-    await updatePresence("online");
-  }
-
-  async function updatePresence(status: UserStatus) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Upsert presence
-    await supabase.from("user_presence").upsert(
-      {
-        user_id: user.id,
-        status,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-      }
-    );
-  }
 
   return { userId };
 }

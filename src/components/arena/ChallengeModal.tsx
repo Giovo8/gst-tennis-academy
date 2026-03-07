@@ -135,7 +135,7 @@ export default function ChallengeModal({
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-700">
               Il tuo avversario riceverà una notifica e potrà accettare o rifiutare la sfida.
-              Dopo l'accettazione, potrete organizzare data e campo insieme.
+              Dopo l&apos;accettazione, potrete organizzare data e campo insieme.
             </p>
           </div>
 

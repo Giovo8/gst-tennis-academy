@@ -56,10 +56,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     }
   }
 
-  useEffect(() => {
-    loadBookings();
-  }, []);
-
   async function loadBookings() {
     setLoading(true);
     console.log("🔍 Caricamento prenotazioni atleta...");
@@ -130,6 +126,10 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     setBookings(enrichedBookings);
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadBookings();
+  }, []);
 
   async function cancelBooking(id: string) {
     if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;

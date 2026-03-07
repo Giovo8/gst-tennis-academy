@@ -464,7 +464,7 @@ export default function ArenaPage() {
 
                           {challenge.message && (
                             <p className="text-sm text-gray-600 mb-2 line-clamp-1">
-                              "{challenge.message}"
+                              &quot;{challenge.message}&quot;
                             </p>
                           )}
 
@@ -857,7 +857,7 @@ export default function ArenaPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Shield className="h-6 w-6 text-frozen-500" />
-            Come funziona l'Arena
+            Come funziona l&apos;Arena
           </h2>
           
           <div className="space-y-6">
@@ -922,7 +922,7 @@ export default function ArenaPage() {
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">
                   <p className="font-medium text-blue-700">👥 Sfida di Coppia</p>
-                  <p className="text-sm text-gray-600">Forma una coppia e sfida un'altra coppia 2 contro 2</p>
+                  <p className="text-sm text-gray-600">Forma una coppia e sfida un&apos;altra coppia 2 contro 2</p>
                 </div>
               </div>
             </div>
@@ -935,7 +935,7 @@ export default function ArenaPage() {
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
                   <span className="text-frozen-500 mt-0.5">•</span>
-                  <span>Le sfide devono essere confermate dall'avversario</span>
+                  <span>Le sfide devono essere confermate dall&apos;avversario</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-frozen-500 mt-0.5">•</span>

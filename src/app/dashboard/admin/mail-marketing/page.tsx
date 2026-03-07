@@ -38,6 +38,24 @@ export default function MailMarketingPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [search, setSearch] = useState("");
 
+  async function loadCampaigns() {
+    try {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .select("*")
+        .order("sent_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading campaigns:", error);
+        return;
+      }
+
+      setCampaigns(data || []);
+    } catch (err) {
+      console.error("Error loading campaigns:", err);
+    }
+  }
+
   useEffect(() => {
     loadCampaigns();
 
@@ -63,24 +81,6 @@ export default function MailMarketingPage() {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  async function loadCampaigns() {
-    try {
-      const { data, error } = await supabase
-        .from("email_campaigns")
-        .select("*")
-        .order("sent_at", { ascending: false });
-
-      if (error) {
-        console.error("Error loading campaigns:", error);
-        return;
-      }
-
-      setCampaigns(data || []);
-    } catch (err) {
-      console.error("Error loading campaigns:", err);
-    }
-  }
 
   const handleSort = (column: "name" | "date" | "recipients" | "status") => {
     if (sortBy === column) {
@@ -167,7 +167,7 @@ export default function MailMarketingPage() {
             <Mail className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessuna campagna</h3>
             <p className="text-gray-600">
-              Le tue campagne email appariranno qui dopo l'invio
+              Le tue campagne email appariranno qui dopo l&apos;invio
             </p>
           </div>
         ) : (

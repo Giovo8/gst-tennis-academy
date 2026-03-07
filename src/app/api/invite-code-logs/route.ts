@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     const codeIds = [...new Set(uses.map((u) => u.invite_code_id).filter(Boolean))];
 
     // Fetch profiles
-    let profilesMap = new Map();
+    const profilesMap = new Map();
     if (userIds.length > 0) {
       const { data: profiles } = await supabaseServer
         .from("profiles")
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     }
 
     // Fetch invite codes
-    let codesMap = new Map();
+    const codesMap = new Map();
     if (codeIds.length > 0) {
       const { data: codes } = await supabaseServer
         .from("invite_codes")

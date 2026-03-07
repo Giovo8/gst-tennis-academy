@@ -173,9 +173,26 @@ export default function NewsDetailPage() {
 
   const id = params.id as string;
 
-  useEffect(() => {
-    loadNewsPost();
-  }, [id]);
+  async function loadRelatedPosts(category: string) {
+    const { data, error } = await supabase
+      .from("news")
+      .select("*")
+      .eq("is_published", true)
+      .eq("category", category)
+      .neq("id", id)
+      .order("published_at", { ascending: false })
+      .limit(3);
+
+    if (!error && data && data.length > 0) {
+      setRelatedPosts(data);
+    } else {
+      // Fallback to default posts
+      const related = Object.values(defaultPosts)
+        .filter((p) => p.category === category && p.id !== id)
+        .slice(0, 3);
+      setRelatedPosts(related);
+    }
+  }
 
   async function loadNewsPost() {
     setLoading(true);
@@ -205,26 +222,9 @@ export default function NewsDetailPage() {
     setLoading(false);
   }
 
-  async function loadRelatedPosts(category: string) {
-    const { data, error } = await supabase
-      .from("news")
-      .select("*")
-      .eq("is_published", true)
-      .eq("category", category)
-      .neq("id", id)
-      .order("published_at", { ascending: false })
-      .limit(3);
-
-    if (!error && data && data.length > 0) {
-      setRelatedPosts(data);
-    } else {
-      // Fallback to default posts
-      const related = Object.values(defaultPosts)
-        .filter((p) => p.category === category && p.id !== id)
-        .slice(0, 3);
-      setRelatedPosts(related);
-    }
-  }
+  useEffect(() => {
+    loadNewsPost();
+  }, [id]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";

@@ -47,10 +47,6 @@ export default function CoachHomePage() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
   async function loadDashboardData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -121,6 +117,10 @@ export default function CoachHomePage() {
     setTodayLessons(lessonsWithAthletes);
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString("it-IT", {

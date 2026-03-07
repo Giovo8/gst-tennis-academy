@@ -193,7 +193,7 @@ export default function ProfilePage() {
                   value={profile?.email ?? ""}
                   readOnly
                 />
-                <p className="text-xs text-secondary/50 mt-1">L'email non può essere modificata</p>
+                <p className="text-xs text-secondary/50 mt-1">L&apos;email non può essere modificata</p>
               </div>
 
               <div>

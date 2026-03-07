@@ -23,10 +23,6 @@ export default function GestoreCourtsPage() {
   const [blocks, setBlocks] = useState<CourtBlock[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadBlocks();
-  }, []);
-
   async function loadBlocks() {
     setLoading(true);
     const now = new Date().toISOString();
@@ -43,6 +39,10 @@ export default function GestoreCourtsPage() {
     
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadBlocks();
+  }, []);
 
   const isCourtBlocked = (courtId: string) => {
     const now = new Date();

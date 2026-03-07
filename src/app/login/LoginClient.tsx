@@ -192,7 +192,7 @@ export default function LoginClient() {
         {/* Contact Info */}
         <div className="mt-10 sm:mt-12 text-center">
           <p className="text-sm text-secondary opacity-70 mb-4 sm:mb-5">
-            Non hai un account? Contatta l'amministrazione
+            Non hai un account? Contatta l&apos;amministrazione
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <a

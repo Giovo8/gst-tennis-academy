@@ -200,7 +200,7 @@ export default function ChallengePage() {
         className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
       >
         <ArrowLeft className="h-5 w-5" />
-        <span className="font-medium">Torna all'Arena</span>
+        <span className="font-medium">Torna all&apos;Arena</span>
       </button>
 
       {/* Challenge Card */}
@@ -455,7 +455,7 @@ export default function ChallengePage() {
                     <div className="flex-1">
                       <h3 className="text-sm font-semibold text-green-800">Prenotazione confermata</h3>
                       <p className="mt-1 text-sm text-green-700">
-                        Il gestore ha confermato la prenotazione del campo. Puoi presentarti all'orario indicato.
+                        Il gestore ha confermato la prenotazione del campo. Puoi presentarti all&apos;orario indicato.
                       </p>
                     </div>
                   </div>
@@ -504,7 +504,7 @@ export default function ChallengePage() {
                 Messaggio
               </h2>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-gray-900 italic">"{challenge.message}"</p>
+                <p className="text-gray-900 italic">&quot;{challenge.message}&quot;</p>
               </div>
             </div>
           )}

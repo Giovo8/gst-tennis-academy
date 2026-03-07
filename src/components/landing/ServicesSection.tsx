@@ -12,10 +12,10 @@ export default function ServicesSection() {
             SERVIZI
           </p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
-            L'eccellenza del tennis firmata GST Academy
+            L&apos;eccellenza del tennis firmata GST Academy
           </h2>
           <p className="text-xs sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80 px-2">
-            Un ecosistema completo dedicato alla tua crescita sportiva. Dalle strutture all'avanguardia alla formazione tecnica: tutto ciò che serve per vivere il tennis da protagonista.
+            Un ecosistema completo dedicato alla tua crescita sportiva. Dalle strutture all&apos;avanguardia alla formazione tecnica: tutto ciò che serve per vivere il tennis da protagonista.
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export default function ServicesSection() {
               Tornei e Sfide
             </h3>
             <p className="text-sm sm:text-base text-secondary opacity-80">
-              Partecipa ai nostri tornei e campionati a squadre. Un calendario ricco di eventi per chi ama l'agonismo e vuole sfidare nuovi avversari.
+              Partecipa ai nostri tornei e campionati a squadre. Un calendario ricco di eventi per chi ama l&apos;agonismo e vuole sfidare nuovi avversari.
             </p>
           </div>
 
@@ -62,7 +62,7 @@ export default function ServicesSection() {
               Coaching e Scuola Tennis
             </h3>
             <p className="text-sm sm:text-base text-secondary opacity-80">
-              Lezioni private personalizzate e corsi di gruppo per tutte le età. Migliora il tuo gioco affidandoti all'esperienza dei nostri istruttori qualificati FITP
+              Lezioni private personalizzate e corsi di gruppo per tutte le età. Migliora il tuo gioco affidandoti all&apos;esperienza dei nostri istruttori qualificati FITP
             </p>
           </div>
         </div>

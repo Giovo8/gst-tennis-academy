@@ -22,10 +22,6 @@ export default function GestoreAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, []);
-
   async function loadAnnouncements() {
     setLoading(true);
     
@@ -54,6 +50,10 @@ export default function GestoreAnnouncementsPage() {
     
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadAnnouncements();
+  }, []);
 
   const getCategoryBadge = (category: string) => {
     const styles: Record<string, string> = {

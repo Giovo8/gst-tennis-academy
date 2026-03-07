@@ -32,10 +32,6 @@ export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSubscription, setFilterSubscription] = useState("all");
 
-  useEffect(() => {
-    loadStudents();
-  }, []);
-
   async function loadStudents() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -83,6 +79,10 @@ export default function StudentsPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadStudents();
+  }, []);
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = 

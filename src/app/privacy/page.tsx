@@ -34,7 +34,7 @@ export default function PrivacyPage() {
                 1. Introduzione
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                GST Tennis Academy ("noi", "nostro" o "GST") si impegna a proteggere la privacy degli utenti del nostro sito web e dei nostri servizi. Questa Privacy Policy spiega come raccogliamo, utilizziamo, divulghiamo e proteggiamo le informazioni personali degli utenti in conformità con il Regolamento Generale sulla Protezione dei Dati (GDPR) UE 2016/679.
+                GST Tennis Academy (&quot;noi&quot;, &quot;nostro&quot; o &quot;GST&quot;) si impegna a proteggere la privacy degli utenti del nostro sito web e dei nostri servizi. Questa Privacy Policy spiega come raccogliamo, utilizziamo, divulghiamo e proteggiamo le informazioni personali degli utenti in conformità con il Regolamento Generale sulla Protezione dei Dati (GDPR) UE 2016/679.
               </p>
             </section>
 
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
               <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
                 <li>Fornire e gestire i nostri servizi di prenotazione campi e tornei</li>
                 <li>Comunicare con te riguardo alle tue prenotazioni e attività</li>
-                <li>Migliorare i nostri servizi e l'esperienza utente</li>
+                <li>Migliorare i nostri servizi e l&apos;esperienza utente</li>
                 <li>Inviare notifiche importanti relative al tuo account</li>
                 <li>Conformarci agli obblighi legali e normativi</li>
               </ul>

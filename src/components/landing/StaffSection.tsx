@@ -90,10 +90,6 @@ export default function StaffSection() {
   const [staff, setStaff] = useState<StaffMember[]>(defaultStaff);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStaff();
-  }, []);
-
   async function loadStaff() {
     const { data, error } = await supabase
       .from("staff")
@@ -110,6 +106,10 @@ export default function StaffSection() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadStaff();
+  }, []);
 
   if (loading) {
     return (

@@ -581,7 +581,7 @@ export default function NewStaffPage() {
               {/* Upload File */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Carica un'immagine
+                  Carica un&apos;immagine
                 </label>
                 <button
                   type="button"
@@ -637,7 +637,7 @@ export default function NewStaffPage() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Incolla l'URL di un'immagine già caricata online
+                  Incolla l&apos;URL di un&apos;immagine già caricata online
                 </p>
               </div>
             </div>

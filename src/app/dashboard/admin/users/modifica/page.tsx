@@ -365,7 +365,7 @@ export default function ModificaUtentePage() {
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica Utente</h1>
           <p className="text-secondary/70 text-sm mt-1">
-            Aggiorna le informazioni dell'utente
+            Aggiorna le informazioni dell&apos;utente
           </p>
         </div>
       </div>
@@ -578,7 +578,7 @@ export default function ModificaUtentePage() {
                   ))}
                 </div>
                 <p className="text-xs text-secondary/50 mt-3">
-                  Modificare il rank resetterà i punti Arena dell'utente
+                  Modificare il rank resetterà i punti Arena dell&apos;utente
                 </p>
               </div>
             </div>
@@ -725,7 +725,7 @@ export default function ModificaUtentePage() {
               {/* Upload File */}
               <div>
                 <label className="block text-sm font-bold text-secondary mb-2">
-                  Carica un'immagine
+                  Carica un&apos;immagine
                 </label>
                 <button
                   type="button"
@@ -781,7 +781,7 @@ export default function ModificaUtentePage() {
                   </button>
                 </div>
                 <p className="text-xs text-secondary/60 mt-2">
-                  Incolla l'URL di un'immagine già caricata online
+                  Incolla l&apos;URL di un&apos;immagine già caricata online
                 </p>
               </div>
             </div>

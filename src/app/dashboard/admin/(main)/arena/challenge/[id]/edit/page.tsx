@@ -251,7 +251,7 @@ export default function AdminEditChallengePage() {
             const start = new Date(challenge.booking.start_time);
             const end = new Date(challenge.booking.end_time);
             const initialSlots: string[] = [];
-            let current = new Date(start);
+            const current = new Date(start);
             while (current < end) {
               const hours = current.getHours().toString().padStart(2, "0");
               const minutes = current.getMinutes().toString().padStart(2, "0");

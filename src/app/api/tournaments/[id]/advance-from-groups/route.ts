@@ -100,7 +100,7 @@ export async function POST(
 
     // Fetch profiles for participants
     const userIds = allParticipants.map(p => p.user_id).filter(Boolean);
-    let profilesMap = new Map();
+    const profilesMap = new Map();
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')

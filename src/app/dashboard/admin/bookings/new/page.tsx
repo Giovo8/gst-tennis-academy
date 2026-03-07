@@ -17,6 +17,8 @@ import { addDays, format, isToday } from "date-fns";
 import { it } from "date-fns/locale";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { type UserRole } from "@/lib/roles";
 
 interface Coach {
   id: string;
@@ -27,7 +29,17 @@ interface Athlete {
   id: string;
   full_name: string;
   email: string;
+  phone?: string | null;
+  role: UserRole;
 }
+
+type SelectedAthlete = {
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  isRegistered: boolean;
+};
 
 interface TimeSlot {
   time: string;
@@ -145,7 +157,7 @@ function NewAdminBookingPageInner() {
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
-  const [selectedAthlete, setSelectedAthlete] = useState("");
+  const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourt, setSelectedCourt] = useState("");
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
@@ -167,7 +179,8 @@ function NewAdminBookingPageInner() {
   const scrollLeft = useRef(0);
 
   // Validation
-  const canSubmit = selectedAthlete && selectedDate && selectedCourt && selectedSlots.length > 0 &&
+  const hasRegisteredAthlete = selectedAthletes.some((athlete) => athlete.isRegistered && athlete.userId);
+  const canSubmit = selectedAthletes.length > 0 && hasRegisteredAthlete && selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
 
   // Drag to scroll handlers
@@ -310,7 +323,7 @@ function NewAdminBookingPageInner() {
       // Load athletes
       const { data: athleteData } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, phone, role")
         .eq("role", "atleta")
         .order("full_name");
 
@@ -439,7 +452,7 @@ function NewAdminBookingPageInner() {
       const end = new Date(b.end_time);
       
       // Mark all 30-minute slots as occupied
-      let current = new Date(start);
+      const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -454,7 +467,7 @@ function NewAdminBookingPageInner() {
       const end = new Date(block.end_time);
       
       // Mark all 30-minute slots as occupied
-      let current = new Date(start);
+      const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -469,7 +482,7 @@ function NewAdminBookingPageInner() {
     const isToday = selectedDate.toDateString() === now.toDateString();
 
     for (let hour = 7; hour <= 22; hour++) {
-      for (let minute of [0, 30]) {
+      for (const minute of [0, 30]) {
         if (hour === 22 && minute === 30) break;
         
         const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
@@ -495,7 +508,18 @@ function NewAdminBookingPageInner() {
   }
 
   async function handleSubmit() {
-    if (!selectedAthlete || !selectedDate || !selectedCourt || selectedSlots.length === 0) {
+    if (selectedAthletes.length === 0 || !selectedDate || !selectedCourt || selectedSlots.length === 0) {
+      setError("Completa tutti i campi obbligatori");
+      return;
+    }
+
+    if (selectedAthletes.length > 4) {
+      setError("Massimo 4 partecipanti per prenotazione");
+      return;
+    }
+
+    const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
+    if (!registeredAthlete || !registeredAthlete.userId) {
       setError("Completa tutti i campi obbligatori");
       return;
     }
@@ -538,7 +562,7 @@ function NewAdminBookingPageInner() {
       });
 
       const bookingData = {
-        user_id: selectedAthlete,
+        user_id: registeredAthlete.userId,
         coach_id: selectedCoach || null,
         court: selectedCourt,
         type: bookingType,
@@ -548,6 +572,12 @@ function NewAdminBookingPageInner() {
         manager_confirmed: true,
         coach_confirmed: bookingType === "campo" ? true : false,
         notes: notes || null,
+        participants: selectedAthletes.map((athlete) => ({
+          user_id: athlete.userId || null,
+          full_name: athlete.fullName,
+          email: athlete.email || null,
+          is_registered: athlete.isRegistered,
+        })),
       };
 
       const response = await fetch("/api/bookings", {
@@ -748,19 +778,20 @@ function NewAdminBookingPageInner() {
                   <div className="space-y-6 mt-6">
                     {/* Atleta */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta *</label>
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti *</label>
                       <div className="flex-1">
-                        <SearchableSelect
-                          value={selectedAthlete}
-                          onChange={setSelectedAthlete}
-                          options={athletes.map((athlete) => ({
-                            value: athlete.id,
-                            label: athlete.email
-                              ? `${athlete.full_name} (${athlete.email})`
-                              : athlete.full_name,
-                          }))}
-                          placeholder="Seleziona atleta"
-                          searchPlaceholder="Cerca per nome o email"
+                        <AthletesSelector
+                          athletes={athletes}
+                          selectedAthletes={selectedAthletes}
+                          onAthleteAdd={(athlete) => {
+                            if (selectedAthletes.length < 4) {
+                              setSelectedAthletes([...selectedAthletes, athlete]);
+                            }
+                          }}
+                          onAthleteRemove={(index) => {
+                            setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                          }}
+                          maxAthletes={4}
                         />
                       </div>
                     </div>
@@ -834,7 +865,7 @@ function NewAdminBookingPageInner() {
                     )}
 
                     {/* Note */}
-                    {selectedAthlete && (
+                    {selectedAthletes.length > 0 && (
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                         <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
                         <div className="flex-1">

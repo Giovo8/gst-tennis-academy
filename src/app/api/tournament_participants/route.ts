@@ -32,7 +32,7 @@ export async function GET(req: Request) {
 
     // fetch profile info for listed user_ids (if profiles table exists)
     const userIds = (data || []).map((r: any) => r.user_id).filter(Boolean);
-    let profilesMap = new Map();
+    const profilesMap = new Map();
     if (userIds.length > 0) {
       const { data: profiles } = (await supabaseServer.from('profiles').select('id, full_name, email, avatar_url, phone').in('id', userIds)) as any;
       (profiles || []).forEach((p: any) => profilesMap.set(p.id, p));

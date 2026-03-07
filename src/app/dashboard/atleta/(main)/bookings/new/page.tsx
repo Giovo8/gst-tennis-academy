@@ -16,11 +16,20 @@ import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import AthletesSelector from "@/components/bookings/AthletesSelector";
 
 interface Coach {
   id: string;
   full_name: string;
 }
+
+type SelectedAthlete = {
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  isRegistered: boolean;
+};
 
 interface TimeSlot {
   time: string;
@@ -142,6 +151,8 @@ function NewBookingPageInner() {
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectedCoach, setSelectedCoach] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -195,6 +206,42 @@ function NewBookingPageInner() {
 
   useEffect(() => {
     loadCourtsAndCoaches();
+  }, []);
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) return;
+
+      setCurrentUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", user.id)
+        .single();
+
+      const fullName = profile?.full_name || user.email || "Atleta";
+
+      setSelectedAthletes((prev) => {
+        if (prev.some((athlete) => athlete.userId === user.id)) {
+          return prev;
+        }
+        return [
+          {
+            userId: user.id,
+            fullName,
+            email: user.email || undefined,
+            phone: profile?.phone || undefined,
+            isRegistered: true,
+          },
+          ...prev,
+        ];
+      });
+    };
+
+    void loadCurrentUser();
   }, []);
 
   // Apply URL parameters after courts are loaded
@@ -354,7 +401,7 @@ function NewBookingPageInner() {
       const start = new Date(b.start_time);
       const end = new Date(b.end_time);
 
-      let current = new Date(start);
+      const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -368,7 +415,7 @@ function NewBookingPageInner() {
       const start = new Date(block.start_time);
       const end = new Date(block.end_time);
 
-      let current = new Date(start);
+      const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
         const minutes = current.getMinutes().toString().padStart(2, "0");
@@ -456,7 +503,18 @@ function NewBookingPageInner() {
   };
 
   async function handleSubmit() {
-    if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
+    if (selectedAthletes.length === 0 || !selectedDate || !selectedCourt || selectedSlots.length === 0) {
+      setError("Completa tutti i campi obbligatori");
+      return;
+    }
+
+    if (selectedAthletes.length > 4) {
+      setError("Massimo 4 partecipanti per prenotazione");
+      return;
+    }
+
+    const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
+    if (!registeredAthlete || !registeredAthlete.userId) {
       setError("Completa tutti i campi obbligatori");
       return;
     }
@@ -504,6 +562,12 @@ function NewBookingPageInner() {
         manager_confirmed: false,
         coach_confirmed: false,
         notes: notes || null,
+        participants: selectedAthletes.map((athlete) => ({
+          user_id: athlete.userId || null,
+          full_name: athlete.fullName,
+          email: athlete.email || null,
+          is_registered: athlete.isRegistered,
+        })),
       };
 
       const response = await fetch("/api/bookings", {
@@ -639,6 +703,33 @@ function NewBookingPageInner() {
 
                 {/* Dettagli prenotazione */}
                 <div className="space-y-6 mt-6">
+                  {/* Partecipanti */}
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti *</label>
+                    <div className="flex-1">
+                      <AthletesSelector
+                        athletes={[]}
+                        selectedAthletes={selectedAthletes}
+                        onAthleteAdd={(athlete) => {
+                          if (selectedAthletes.length < 4) {
+                            setSelectedAthletes([...selectedAthletes, athlete]);
+                          }
+                        }}
+                        onAthleteRemove={(index) => {
+                          const athlete = selectedAthletes[index];
+                          if (athlete?.userId && athlete.userId === currentUserId) {
+                            return;
+                          }
+                          setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                        }}
+                        maxAthletes={4}
+                      />
+                      <p className="mt-2 text-xs text-gray-500">
+                        Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a 3 ospiti.
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>

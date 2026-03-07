@@ -60,10 +60,6 @@ export default function StudentDetailPage() {
   const [newNoteContent, setNewNoteContent] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadStudentData();
-  }, [studentId]);
-
   async function loadStudentData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -113,6 +109,10 @@ export default function StudentDetailPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadStudentData();
+  }, [studentId]);
 
   async function handleSaveNote() {
     if (!newNoteContent.trim()) return;
@@ -186,7 +186,7 @@ export default function StudentDetailPage() {
           href="/dashboard/maestro/students"
           className="text-frozen-600 hover:text-frozen-700"
         >
-          Torna all'elenco
+          Torna all&apos;elenco
         </Link>
       </div>
     );
@@ -329,7 +329,7 @@ export default function StudentDetailPage() {
             <div className="p-8 text-center">
               <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">Nessuna nota registrata</p>
-              <p className="text-sm text-gray-400 mt-1">Aggiungi note sui progressi dell'allievo</p>
+              <p className="text-sm text-gray-400 mt-1">Aggiungi note sui progressi dell&apos;allievo</p>
             </div>
           ) : (
             notes.map((note) => (

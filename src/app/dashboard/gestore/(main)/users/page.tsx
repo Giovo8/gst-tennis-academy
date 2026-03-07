@@ -32,10 +32,6 @@ export default function GestoreUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("all");
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
   async function loadUsers() {
     const { data, error } = await supabase
       .from("profiles")
@@ -47,6 +43,10 @@ export default function GestoreUsersPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 

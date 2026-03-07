@@ -154,8 +154,8 @@ function generateKnockoutMatches(
     32: "Sedicesimi di Finale",
   };
 
-  let currentRoundSize = numParticipants;
-  let roundOrder = 1;
+  const currentRoundSize = numParticipants;
+  const roundOrder = 1;
 
   // Generate first round (with seeding)
   const firstRoundMatches = [];

@@ -39,10 +39,6 @@ export default function StatistichePage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
   async function loadStats() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -70,6 +66,10 @@ export default function StatistichePage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   const getLevelIcon = (level: string) => {
     switch (level.toLowerCase()) {

@@ -34,7 +34,7 @@ export default function CookiePolicyPage() {
                 1. Cosa Sono i Cookie
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                I cookie sono piccoli file di testo che vengono salvati sul tuo dispositivo quando visiti un sito web. Ci aiutano a fornire e migliorare i nostri servizi, personalizzare la tua esperienza e analizzare l'utilizzo del sito.
+                I cookie sono piccoli file di testo che vengono salvati sul tuo dispositivo quando visiti un sito web. Ci aiutano a fornire e migliorare i nostri servizi, personalizzare la tua esperienza e analizzare l&apos;utilizzo del sito.
               </p>
             </section>
 
@@ -90,7 +90,7 @@ export default function CookiePolicyPage() {
                     Cookie di Marketing
                   </h3>
                   <p className="text-orange-800 dark:text-orange-200 mb-3">
-                    Utilizzati per mostrarti annunci rilevanti e misurare l'efficacia delle campagne pubblicitarie.
+                    Utilizzati per mostrarti annunci rilevanti e misurare l&apos;efficacia delle campagne pubblicitarie.
                   </p>
                   <ul className="list-disc list-inside text-orange-800 dark:text-orange-200 space-y-1">
                     <li>Facebook Pixel</li>

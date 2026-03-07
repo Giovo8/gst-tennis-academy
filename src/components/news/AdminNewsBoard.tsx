@@ -52,10 +52,6 @@ export default function AdminNewsBoard() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("tutte");
 
-  useEffect(() => {
-    loadNews();
-  }, []);
-
   async function loadNews() {
     const { data, error } = await supabase
       .from("news")
@@ -73,6 +69,10 @@ export default function AdminNewsBoard() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadNews();
+  }, []);
 
   const categories = Array.from(new Set(posts.map((post) => post.category))).filter(
     (cat) => !!cat

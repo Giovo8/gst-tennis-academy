@@ -8,16 +8,16 @@ import ChatPanel from "@/components/chat/ChatPanel";
 export default function ChatPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/login");
     }
   }
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 sm:px-6 py-6 sm:py-10">

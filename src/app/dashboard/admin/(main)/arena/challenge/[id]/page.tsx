@@ -819,7 +819,7 @@ export default function AdminChallengeDetailPage() {
         <div className="bg-white rounded-xl p-6">
           <h2 className="text-lg font-semibold text-secondary mb-6">Messaggio</h2>
           <div className="p-4 bg-secondary/5 rounded-lg">
-            <p className="text-secondary italic">"{challenge.message}"</p>
+            <p className="text-secondary italic">&quot;{challenge.message}&quot;</p>
           </div>
         </div>
       )}

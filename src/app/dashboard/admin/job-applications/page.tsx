@@ -44,10 +44,6 @@ export default function JobApplicationsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadApplications();
-  }, []);
-
   async function loadApplications() {
     setLoading(true);
     const { data, error } = await supabase
@@ -60,6 +56,10 @@ export default function JobApplicationsPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadApplications();
+  }, []);
 
   const filteredApplications = applications.filter(app => {
     const matchesFilter = filter === "all" || app.status === filter;
@@ -146,7 +146,7 @@ export default function JobApplicationsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">Candidature Lavoro</h1>
           <p className="text-secondary/70 font-medium">
-            Gestisci le candidature ricevute dalla pagina "Lavora con noi"
+            Gestisci le candidature ricevute dalla pagina &quot;Lavora con noi&quot;
           </p>
         </div>
         <div className="flex items-center gap-3">

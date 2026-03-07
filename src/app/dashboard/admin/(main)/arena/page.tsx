@@ -946,11 +946,11 @@ export default function AdminArenaPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-secondary flex items-center gap-2">
                 <Trophy className="h-5 w-5" />
-                Come Funziona l'Arena
+                Come Funziona l&apos;Arena
               </h3>
               <div className="bg-secondary/5 rounded-lg p-6 space-y-4">
                 <p className="text-secondary/80">
-                  L'Arena è un sistema competitivo dove gli atleti possono sfidarsi a vicenda per scalare la classifica e guadagnare punti.
+                  L&apos;Arena è un sistema competitivo dove gli atleti possono sfidarsi a vicenda per scalare la classifica e guadagnare punti.
                 </p>
                 <ul className="space-y-2 text-secondary/80">
                   <li className="flex items-start gap-2">
@@ -1024,7 +1024,7 @@ export default function AdminArenaPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h4 className="font-bold text-blue-900 mb-2">💡 Nota</h4>
               <p className="text-sm text-blue-800">
-                Le sfide amichevoli permettono di allenarsi senza rischiare la classifica, mentre le sfide classificate influenzano direttamente il tuo ranking nell'Arena.
+                Le sfide amichevoli permettono di allenarsi senza rischiare la classifica, mentre le sfide classificate influenzano direttamente il tuo ranking nell&apos;Arena.
               </p>
             </div>
           </div>

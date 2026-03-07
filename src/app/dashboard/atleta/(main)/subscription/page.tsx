@@ -76,10 +76,6 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadSubscription();
-  }, []);
-
   async function loadSubscription() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -96,6 +92,10 @@ export default function SubscriptionPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadSubscription();
+  }, []);
 
   async function handleUpgrade(planId: string) {
     setUpgrading(planId);

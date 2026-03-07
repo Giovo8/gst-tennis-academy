@@ -198,7 +198,7 @@ export default function TournamentsSection() {
           <div className="text-sm text-red-600 py-10 rounded-md px-4 bg-red-50 border border-red-200">
             <p className="font-semibold mb-2">❌ {error}</p>
             <p className="text-xs text-red-500">
-              Se il problema persiste, contatta l'amministratore.
+              Se il problema persiste, contatta l&apos;amministratore.
             </p>
           </div>
         ) : filteredItems.length === 0 ? (

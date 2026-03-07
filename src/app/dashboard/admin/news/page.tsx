@@ -38,10 +38,6 @@ export default function AdminNewsPage() {
     'novità': 'Novità'
   };
 
-  useEffect(() => {
-    loadNews();
-  }, []);
-
   async function loadNews() {
     setLoading(true);
     const { data, error } = await supabase
@@ -56,6 +52,10 @@ export default function AdminNewsPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadNews();
+  }, []);
 
   function resetForm() {
     // Not needed anymore

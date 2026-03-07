@@ -226,7 +226,7 @@ export default function NewUserPage() {
                   required
                 />
                 <p className="text-xs text-secondary/50 mt-2">
-                  Assicurati che l'email abbia un dominio valido (es: @esempio.com)
+                  Assicurati che l&apos;email abbia un dominio valido (es: @esempio.com)
                 </p>
               </div>
             </div>

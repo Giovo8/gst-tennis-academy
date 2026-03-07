@@ -24,13 +24,9 @@ export default function GestoreBookingsPage() {
   const [filter, setFilter] = useState<"all" | "today" | "upcoming">("today");
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    loadBookings();
-  }, [filter]);
-
   async function loadBookings() {
     setLoading(true);
-    
+
     let query = supabase
       .from("bookings")
       .select(`
@@ -65,9 +61,13 @@ export default function GestoreBookingsPage() {
       }));
       setBookings(formattedBookings);
     }
-    
+
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadBookings();
+  }, [filter]);
 
   const filteredBookings = bookings.filter(b => {
     if (!searchTerm) return true;

@@ -20,10 +20,6 @@ export default function GestoreTorneiPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadTournaments();
-  }, []);
-
   async function loadTournaments() {
     setLoading(true);
     
@@ -55,6 +51,10 @@ export default function GestoreTorneiPage() {
     
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {

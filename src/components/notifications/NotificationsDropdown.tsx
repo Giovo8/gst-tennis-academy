@@ -23,18 +23,6 @@ export default function NotificationsDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    loadNotifications();
-
-    const interval = setInterval(() => {
-      loadNotifications();
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
   async function loadNotifications() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -51,6 +39,18 @@ export default function NotificationsDropdown() {
       setUnreadCount(data.filter((n) => !n.is_read).length);
     }
   }
+
+  useEffect(() => {
+    loadNotifications();
+
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   async function markAsRead(notificationId: string) {
     await supabase

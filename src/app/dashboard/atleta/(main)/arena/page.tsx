@@ -114,37 +114,6 @@ export default function ArenaPage() {
   const [selectedRank, setSelectedRank] = useState<string>("Tutti");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    loadArenaData();
-    
-    // Check if returning from challenge creation
-    const success = searchParams.get('success');
-    if (success === 'challenge_created') {
-      // Remove the query param
-      router.replace('/dashboard/atleta/arena');
-    }
-  }, [searchParams]);
-
-  const filteredChallenges = challenges.filter((challenge) => {
-    // Filter by search term
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const challengerName = (challenge.challenger?.full_name || "").toLowerCase();
-      const opponentName = (challenge.opponent?.full_name || "").toLowerCase();
-
-      if (!challengerName.includes(q) && !opponentName.includes(q)) {
-        return false;
-      }
-    }
-
-    // Filter by status - only show active challenges (not finalized)
-    if (["completed", "declined", "cancelled"].includes(challenge.status)) {
-      return false;
-    }
-
-    return true;
-  });
-
   async function loadArenaData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -227,6 +196,37 @@ export default function ArenaPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    loadArenaData();
+
+    // Check if returning from challenge creation
+    const success = searchParams.get('success');
+    if (success === 'challenge_created') {
+      // Remove the query param
+      router.replace('/dashboard/atleta/arena');
+    }
+  }, [searchParams]);
+
+  const filteredChallenges = challenges.filter((challenge) => {
+    // Filter by search term
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const challengerName = (challenge.challenger?.full_name || "").toLowerCase();
+      const opponentName = (challenge.opponent?.full_name || "").toLowerCase();
+
+      if (!challengerName.includes(q) && !opponentName.includes(q)) {
+        return false;
+      }
+    }
+
+    // Filter by status - only show active challenges (not finalized)
+    if (["completed", "declined", "cancelled"].includes(challenge.status)) {
+      return false;
+    }
+
+    return true;
+  });
 
   async function handleChallengeAction(challengeId: string, action: "accept" | "decline") {
     try {
