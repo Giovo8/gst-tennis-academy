@@ -5,6 +5,7 @@ export {
   bookingConfirmationTemplate,
   bookingReminderTemplate,
   bookingCancelledTemplate,
+  adminNewBookingTemplate,
 } from "./booking";
 
 export {

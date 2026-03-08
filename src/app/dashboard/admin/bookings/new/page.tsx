@@ -220,6 +220,13 @@ function NewAdminBookingPageInner() {
     loadCourtsAndUsers();
   }, []);
 
+  // Quando si passa a lezione_privata (1 a 1), mantieni solo il primo atleta
+  useEffect(() => {
+    if (bookingType === "lezione_privata") {
+      setSelectedAthletes((prev) => prev.slice(0, 1));
+    }
+  }, [bookingType]);
+
   // Apply URL parameters after courts are loaded
   useEffect(() => {
     if (courtsLoading || urlParamsApplied.current) return;
@@ -776,26 +783,6 @@ function NewAdminBookingPageInner() {
 
                   {/* Dettagli prenotazione - stile form moderno */}
                   <div className="space-y-6 mt-6">
-                    {/* Atleta */}
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti *</label>
-                      <div className="flex-1">
-                        <AthletesSelector
-                          athletes={athletes}
-                          selectedAthletes={selectedAthletes}
-                          onAthleteAdd={(athlete) => {
-                            if (selectedAthletes.length < 4) {
-                              setSelectedAthletes([...selectedAthletes, athlete]);
-                            }
-                          }}
-                          onAthleteRemove={(index) => {
-                            setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                          }}
-                          maxAthletes={4}
-                        />
-                      </div>
-                    </div>
-
                     {/* Tipo prenotazione */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                       <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
@@ -814,6 +801,29 @@ function NewAdminBookingPageInner() {
                             {type.label}
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* Atleta / Partecipanti */}
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                        {bookingType === "lezione_privata" ? "Atleta *" : "Partecipanti *"}
+                      </label>
+                      <div className="flex-1">
+                        <AthletesSelector
+                          athletes={athletes}
+                          selectedAthletes={selectedAthletes}
+                          onAthleteAdd={(athlete) => {
+                            const max = bookingType === "lezione_privata" ? 1 : 4;
+                            if (selectedAthletes.length < max) {
+                              setSelectedAthletes([...selectedAthletes, athlete]);
+                            }
+                          }}
+                          onAthleteRemove={(index) => {
+                            setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                          }}
+                          maxAthletes={bookingType === "lezione_privata" ? 1 : 4}
+                        />
                       </div>
                     </div>
 

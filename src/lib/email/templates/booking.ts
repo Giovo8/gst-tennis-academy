@@ -107,6 +107,47 @@ export function bookingReminderTemplate(data: BookingReminderData): string {
   });
 }
 
+interface AdminNewBookingData {
+  athlete_name: string;
+  court: string;
+  booking_date: string;
+  booking_time: string;
+  booking_id: string;
+  participants_count: number;
+  site_url: string;
+}
+
+export function adminNewBookingTemplate(data: AdminNewBookingData): string {
+  const content = `
+    <div class="tennis-icon">📋</div>
+
+    <h1>Nuova Prenotazione</h1>
+
+    <p>È stata effettuata una nuova prenotazione che richiede conferma.</p>
+
+    <div class="info-box">
+      <h2 style="margin-top: 0;">Dettagli Prenotazione</h2>
+      <p style="margin: 8px 0;"><strong>Atleta:</strong> ${data.athlete_name}</p>
+      <p style="margin: 8px 0;"><strong>Campo:</strong> ${data.court}</p>
+      <p style="margin: 8px 0;"><strong>Data:</strong> ${data.booking_date}</p>
+      <p style="margin: 8px 0;"><strong>Orario:</strong> ${data.booking_time}</p>
+      ${data.participants_count > 1 ? `<p style="margin: 8px 0;"><strong>Partecipanti:</strong> ${data.participants_count}</p>` : ""}
+      <p style="margin: 8px 0; color: #64748b; font-size: 13px;">ID: #${data.booking_id}</p>
+    </div>
+
+    <a href="${data.site_url}/dashboard/admin/bookings" class="button">Gestisci Prenotazioni</a>
+
+    <p style="margin-top: 30px; font-size: 13px; color: #64748b;">
+      Questa è una notifica automatica del sistema GST Tennis Academy.
+    </p>
+  `;
+
+  return baseEmailLayout({
+    preheader: `Nuova prenotazione da ${data.athlete_name} — ${data.booking_date} ${data.booking_time}`,
+    content,
+  });
+}
+
 interface BookingCancelledData {
   user_name: string;
   court_name: string;

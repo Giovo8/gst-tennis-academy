@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { createNotification } from "@/lib/notifications/createNotification";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
+import { sendAdminNewBookingAlert } from "@/lib/email/triggers";
 import { logActivityServer } from "@/lib/activity/logActivity";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
 import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize-server";
@@ -318,6 +319,16 @@ export async function POST(req: Request) {
         title: "Nuova prenotazione",
         message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTime}`,
         link: "/dashboard/admin/bookings",
+      });
+
+      // Send email alert to admins
+      await sendAdminNewBookingAlert({
+        athleteName: userProfile?.full_name || "Utente sconosciuto",
+        court: booking.court,
+        bookingDate: startDate,
+        bookingTime: startTime,
+        bookingId: booking.id,
+        participantsCount: participantsInserted > 0 ? participantsInserted : 1,
       });
 
       // Log activity

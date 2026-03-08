@@ -5,6 +5,7 @@ import {
   bookingConfirmationTemplate,
   bookingReminderTemplate,
   bookingCancelledTemplate,
+  adminNewBookingTemplate,
   tournamentRegistrationTemplate,
   tournamentReminderTemplate,
   lessonConfirmedTemplate,
@@ -241,6 +242,60 @@ export async function sendWelcomeEmail(userData: {
     recipientName: userData.userName,
     category: "transactional",
   });
+}
+
+// Admin notification for new booking
+export async function sendAdminNewBookingAlert(bookingData: {
+  athleteName: string;
+  court: string;
+  bookingDate: string;
+  bookingTime: string;
+  bookingId: string;
+  participantsCount: number;
+}) {
+  if (!isEmailServiceAvailable()) {
+    logger.info("Email service not configured, skipping admin booking alert");
+    return { success: true, message: "Email service not configured" };
+  }
+
+  try {
+    const { supabaseServer } = await import("@/lib/supabase/serverClient");
+
+    // Fetch emails of all admins
+    const { data: admins } = await supabaseServer
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("role", "admin");
+
+    if (!admins || admins.length === 0) {
+      logger.info("No admins found, skipping email alert");
+      return { success: true, message: "No admins to notify" };
+    }
+
+    const html = adminNewBookingTemplate({
+      athlete_name: bookingData.athleteName,
+      court: bookingData.court,
+      booking_date: bookingData.bookingDate,
+      booking_time: bookingData.bookingTime,
+      booking_id: bookingData.bookingId,
+      participants_count: bookingData.participantsCount,
+      site_url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    });
+
+    const adminEmails = admins.map((a) => a.email).filter(Boolean);
+
+    return await sendEmail({
+      to: adminEmails,
+      subject: `Nuova prenotazione — ${bookingData.athleteName} — ${bookingData.bookingDate} ${bookingData.bookingTime}`,
+      html,
+      templateName: "booking_confirmation",
+      templateData: bookingData,
+      category: "notification",
+    });
+  } catch (error: any) {
+    logger.error("Error sending admin booking alert:", error);
+    return { success: false, error: error.message };
+  }
 }
 
 // Batch reminder function (called by scheduler)

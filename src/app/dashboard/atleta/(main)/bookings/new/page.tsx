@@ -17,10 +17,19 @@ import { it } from "date-fns/locale";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { type UserRole } from "@/lib/roles";
 
 interface Coach {
   id: string;
   full_name: string;
+}
+
+interface Athlete {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  role: UserRole;
 }
 
 type SelectedAthlete = {
@@ -141,6 +150,7 @@ function NewBookingPageInner() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
 
@@ -244,6 +254,13 @@ function NewBookingPageInner() {
     void loadCurrentUser();
   }, []);
 
+  // Reset extra participants when switching to lezione_privata (1 a 1)
+  useEffect(() => {
+    if (bookingType === "lezione_privata") {
+      setSelectedAthletes((prev) => prev.filter((a) => a.userId === currentUserId));
+    }
+  }, [bookingType, currentUserId]);
+
   // Apply URL parameters after courts are loaded
   useEffect(() => {
     if (courtsLoading || urlParamsApplied.current) return;
@@ -338,6 +355,15 @@ function NewBookingPageInner() {
         .order("full_name");
 
       if (coachData) setCoaches(coachData);
+
+      // Load athletes for participant selection
+      const { data: athleteData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, phone, role")
+        .eq("role", "atleta")
+        .order("full_name");
+
+      if (athleteData) setAthletes(athleteData);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -703,33 +729,6 @@ function NewBookingPageInner() {
 
                 {/* Dettagli prenotazione */}
                 <div className="space-y-6 mt-6">
-                  {/* Partecipanti */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti *</label>
-                    <div className="flex-1">
-                      <AthletesSelector
-                        athletes={[]}
-                        selectedAthletes={selectedAthletes}
-                        onAthleteAdd={(athlete) => {
-                          if (selectedAthletes.length < 4) {
-                            setSelectedAthletes([...selectedAthletes, athlete]);
-                          }
-                        }}
-                        onAthleteRemove={(index) => {
-                          const athlete = selectedAthletes[index];
-                          if (athlete?.userId && athlete.userId === currentUserId) {
-                            return;
-                          }
-                          setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                        }}
-                        maxAthletes={4}
-                      />
-                      <p className="mt-2 text-xs text-gray-500">
-                        Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a 3 ospiti.
-                      </p>
-                    </div>
-                  </div>
-
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
@@ -751,6 +750,35 @@ function NewBookingPageInner() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Partecipanti - per campo e lezione di gruppo */}
+                  {(bookingType === "campo" || bookingType === "lezione_gruppo") && (
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti *</label>
+                      <div className="flex-1">
+                        <AthletesSelector
+                          athletes={athletes.filter((a) => a.id !== currentUserId)}
+                          selectedAthletes={selectedAthletes}
+                          onAthleteAdd={(athlete) => {
+                            if (selectedAthletes.length < 4) {
+                              setSelectedAthletes([...selectedAthletes, athlete]);
+                            }
+                          }}
+                          onAthleteRemove={(index) => {
+                            const athlete = selectedAthletes[index];
+                            if (athlete?.userId && athlete.userId === currentUserId) {
+                              return;
+                            }
+                            setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                          }}
+                          maxAthletes={4}
+                        />
+                        <p className="mt-2 text-xs text-gray-500">
+                          Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a 3 partecipanti.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Campo */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">

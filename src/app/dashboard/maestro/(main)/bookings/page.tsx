@@ -15,6 +15,7 @@ import {
   Search,
   RefreshCw,
   Trash2,
+  MoreVertical,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -46,6 +47,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<string>("start_time");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   function handleSort(field: string) {
     if (sortField === field) {
@@ -424,16 +426,44 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     )}
                   </div>
 
-                  {/* Azioni */}
-                  <div className="flex items-center justify-end gap-2 w-28 flex-shrink-0">
-                    {canCancel && (
-                      <button
-                        onClick={() => cancelBooking(booking.id)}
-                        className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-all flex items-center gap-1.5"
-                      >
-                        <XCircle className="h-3.5 w-3.5" />
-                        Annulla
-                      </button>
+                  {/* Azioni - 3 puntini */}
+                  <div className="relative flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === booking.id ? null : booking.id);
+                      }}
+                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                      aria-label="Azioni"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {openMenuId === booking.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+                        <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                          <Link
+                            href={`/dashboard/maestro/bookings/${booking.id}`}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
+                            onClick={() => setOpenMenuId(null)}
+                          >
+                            <Calendar className="h-4 w-4 text-secondary/60" />
+                            Dettagli
+                          </Link>
+                          {canCancel && (
+                            <button
+                              type="button"
+                              onClick={() => { setOpenMenuId(null); cancelBooking(booking.id); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Annulla
+                            </button>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
