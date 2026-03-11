@@ -3,8 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { VALIDATION_RULES } from "@/lib/constants/app";
 
 function RegisterForm() {
   const router = useRouter();
@@ -25,6 +26,34 @@ function RegisterForm() {
     phone: "",
   });
   const [error, setError] = useState("");
+
+  function validatePassword(password: string): string | null {
+    if (password.length < VALIDATION_RULES.PASSWORD_MIN_LENGTH) {
+      return `La password deve contenere almeno ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} caratteri`;
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "La password deve contenere almeno una lettera maiuscola";
+    }
+    if (!/[a-z]/.test(password)) {
+      return "La password deve contenere almeno una lettera minuscola";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "La password deve contenere almeno un numero";
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return "La password deve contenere almeno un carattere speciale";
+    }
+
+    return null;
+  }
+
+  function getSignupErrorMessage(responseData: any): string {
+    if (Array.isArray(responseData?.details) && responseData.details.length > 0) {
+      return responseData.details[0]?.message || "Dati non validi";
+    }
+
+    return responseData?.error || "Errore durante la registrazione";
+  }
 
   useEffect(() => {
     if (inviteCode) {
@@ -64,8 +93,9 @@ function RegisterForm() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("La password deve essere almeno di 6 caratteri");
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -74,6 +104,7 @@ function RegisterForm() {
 
     try {
       const emailToUse = formData.email.trim().toLowerCase();
+      const normalizedPhone = formData.phone.trim();
 
       // Call API endpoint for immediate signup with auto-confirmed email
       const signupResponse = await fetch("/api/auth/signup", {
@@ -83,7 +114,7 @@ function RegisterForm() {
           email: emailToUse,
           password: formData.password,
           fullName: formData.fullName,
-          phone: formData.phone,
+          phone: normalizedPhone || undefined,
           role: codeRole,
           inviteCode: inviteCode,
         }),
@@ -92,7 +123,7 @@ function RegisterForm() {
       const signupData = await signupResponse.json();
 
       if (!signupResponse.ok) {
-        throw new Error(signupData.error || "Errore durante la registrazione");
+        throw new Error(getSignupErrorMessage(signupData));
       }
 
       // L'utente è già creato e confermato, effettua login diretto
@@ -282,7 +313,7 @@ function RegisterForm() {
                   type={showPassword ? "text" : "password"}
                   required
                   className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-md text-base text-secondary placeholder-secondary/40 focus:outline-none focus:border-secondary transition-all pr-12"
-                  placeholder="Minimo 6 caratteri"
+                  placeholder="Minimo 8 caratteri"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   autoComplete="new-password"
@@ -296,6 +327,9 @@ function RegisterForm() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              <p className="mt-2 text-xs text-secondary/60">
+                Minimo 8 caratteri con maiuscola, minuscola, numero e simbolo.
+              </p>
             </div>
 
             {/* Conferma Password */}

@@ -36,10 +36,20 @@ export const uuidSchema = z.string().uuid('ID non valido');
 
 export const urlSchema = z.string().url('URL non valido').optional();
 
-export const phoneSchema = z
-  .string()
-  .regex(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/, 'Numero di telefono non valido')
-  .optional();
+export const phoneSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const normalized = value.trim();
+    return normalized === '' ? undefined : normalized;
+  },
+  z
+    .string()
+    .regex(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/, 'Numero di telefono non valido')
+    .optional()
+);
 
 export const dateStringSchema = z.string().datetime('Data non valida');
 
