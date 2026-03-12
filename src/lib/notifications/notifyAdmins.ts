@@ -13,11 +13,11 @@ export async function notifyAdmins({
   link?: string;
 }) {
   try {
-    // Get all admin users
+    // Get all admin and gestore users
     const { data: admins } = await supabase
       .from("profiles")
       .select("id")
-      .eq("role", "admin");
+      .in("role", ["admin", "gestore"]);
 
     if (!admins || admins.length === 0) return;
 

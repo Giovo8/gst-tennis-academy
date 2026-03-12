@@ -66,6 +66,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [sortBy, setSortBy] = useState<"date" | "court" | "type" | "status" | "athlete" | "coach" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     loadBookings();
@@ -414,6 +415,28 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     }
   };
 
+  const closeActionMenu = () => {
+    setOpenMenuId(null);
+    setMenuPosition(null);
+  };
+
+  const openActionMenu = (bookingId: string, buttonRect: DOMRect) => {
+    const menuWidth = 176; // w-44
+    const menuHeight = 100; // 2 items + paddings
+    const viewportPadding = 8;
+
+    let left = buttonRect.right - menuWidth;
+    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuWidth - viewportPadding));
+
+    let top = buttonRect.bottom + 6;
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = Math.max(viewportPadding, buttonRect.top - menuHeight - 6);
+    }
+
+    setOpenMenuId(bookingId);
+    setMenuPosition({ top, left });
+  };
+
   const stats = {
     total: mergedBaseBookings.length,
     confirmed: mergedBaseBookings.filter((b) => b.status === "confirmed").length,
@@ -719,19 +742,27 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setOpenMenuId(openMenuId === booking.id ? null : booking.id);
+                          if (openMenuId === booking.id) {
+                            closeActionMenu();
+                            return;
+                          }
+
+                          openActionMenu(booking.id, e.currentTarget.getBoundingClientRect());
                         }}
                         className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      {openMenuId === booking.id && (
+                      {openMenuId === booking.id && menuPosition && (
                         <>
-                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                          <div
+                            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                            style={{ top: menuPosition.top, left: menuPosition.left }}
+                          >
                             <Link
                               href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
-                              onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }}
+                              onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -742,7 +773,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setOpenMenuId(null);
+                                closeActionMenu();
                                 if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
                                   deleteBooking(booking.id);
                                 }

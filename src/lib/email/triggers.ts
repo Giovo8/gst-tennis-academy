@@ -261,14 +261,14 @@ export async function sendAdminNewBookingAlert(bookingData: {
   try {
     const { supabaseServer } = await import("@/lib/supabase/serverClient");
 
-    // Fetch emails of all admins
+    // Fetch emails of all admins and gestori
     const { data: admins } = await supabaseServer
       .from("profiles")
       .select("id, email, full_name")
-      .eq("role", "admin");
+      .in("role", ["admin", "gestore"]);
 
     if (!admins || admins.length === 0) {
-      logger.info("No admins found, skipping email alert");
+      logger.info("No admins/gestori found, skipping email alert");
       return { success: true, message: "No admins to notify" };
     }
 
