@@ -179,8 +179,7 @@ function NewAdminBookingPageInner() {
   const scrollLeft = useRef(0);
 
   // Validation
-  const hasRegisteredAthlete = selectedAthletes.some((athlete) => athlete.isRegistered && athlete.userId);
-  const canSubmit = selectedAthletes.length > 0 && hasRegisteredAthlete && selectedDate && selectedCourt && selectedSlots.length > 0 &&
+  const canSubmit = selectedAthletes.length > 0 && selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
 
   // Drag to scroll handlers
@@ -525,12 +524,6 @@ function NewAdminBookingPageInner() {
       return;
     }
 
-    const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
-    if (!registeredAthlete || !registeredAthlete.userId) {
-      setError("Completa tutti i campi obbligatori");
-      return;
-    }
-
     if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !selectedCoach) {
       setError("Seleziona un maestro per le lezioni");
       return;
@@ -549,6 +542,14 @@ function NewAdminBookingPageInner() {
       }
 
       const orderedSlots = [...selectedSlots].sort((a, b) => {
+              // Determina l'user_id: primo atleta registrato oppure l'admin stesso
+              const registeredAthlete = selectedAthletes.find((a) => a.isRegistered && a.userId);
+              const bookingUserId = registeredAthlete?.userId ?? sessionData?.session?.user?.id;
+              if (!bookingUserId) {
+                throw new Error("Impossibile determinare l'utente per la prenotazione.");
+              }
+
+              const orderedSlots = [...selectedSlots].sort((a, b) => {
         const [hA, mA] = a.split(":").map(Number);
         const [hB, mB] = b.split(":").map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
@@ -569,7 +570,7 @@ function NewAdminBookingPageInner() {
       });
 
       const bookingData = {
-        user_id: registeredAthlete.userId,
+        user_id: bookingUserId,
         coach_id: selectedCoach || null,
         court: selectedCourt,
         type: bookingType,

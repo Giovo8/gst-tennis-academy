@@ -754,7 +754,7 @@ function NewBookingPageInner() {
                   {/* Partecipanti - per campo e lezione di gruppo */}
                   {(bookingType === "campo" || bookingType === "lezione_gruppo") && (
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti *</label>
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
                       <div className="flex-1">
                         <AthletesSelector
                           athletes={athletes.filter((a) => a.id !== currentUserId)}
