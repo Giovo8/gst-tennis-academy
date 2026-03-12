@@ -95,21 +95,33 @@ export function removeNullBytes(input: string): string {
   return input.replace(/\0/g, '');
 }
 
+function sanitizeValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return removeNullBytes(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    const sanitizedRecord: Record<string, unknown> = {};
+
+    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+      sanitizedRecord[key] = sanitizeValue(nestedValue);
+    }
+
+    return sanitizedRecord;
+  }
+
+  return value;
+}
+
 /**
  * Sanitize object by applying sanitization to all string values
  */
 export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  const sanitized: any = { ...obj };
-  
-  for (const key in sanitized) {
-    if (typeof sanitized[key] === 'string') {
-      sanitized[key] = removeNullBytes(sanitized[key]);
-    } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
-      sanitized[key] = sanitizeObject(sanitized[key]);
-    }
-  }
-  
-  return sanitized;
+  return sanitizeValue(obj) as T;
 }
 
 /**
