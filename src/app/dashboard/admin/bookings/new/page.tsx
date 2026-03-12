@@ -144,6 +144,13 @@ const BOOKING_TYPES = [
   { value: "lezione_gruppo", label: "Lezione Privata di Gruppo", icon: "👥" },
 ];
 
+const MATCH_FORMATS = [
+  { value: "singolo", label: "Singolo" },
+  { value: "doppio", label: "Doppio" },
+] as const;
+
+type MatchFormat = (typeof MATCH_FORMATS)[number]["value"];
+
 function NewAdminBookingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -160,6 +167,7 @@ function NewAdminBookingPageInner() {
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourt, setSelectedCourt] = useState("");
+  const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectedCoach, setSelectedCoach] = useState("");
   const [notes, setNotes] = useState("");
@@ -177,6 +185,13 @@ function NewAdminBookingPageInner() {
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+
+  const maxAthletesAllowed =
+    bookingType === "lezione_privata"
+      ? 1
+      : bookingType === "campo" && matchFormat === "singolo"
+        ? 2
+        : 4;
 
   // Validation
   const canSubmit = selectedAthletes.length > 0 && selectedDate && selectedCourt && selectedSlots.length > 0 &&
@@ -219,12 +234,15 @@ function NewAdminBookingPageInner() {
     loadCourtsAndUsers();
   }, []);
 
-  // Quando si passa a lezione_privata (1 a 1), mantieni solo il primo atleta
+  // Mantiene il numero partecipanti coerente con il tipo prenotazione selezionato.
   useEffect(() => {
-    if (bookingType === "lezione_privata") {
-      setSelectedAthletes((prev) => prev.slice(0, 1));
-    }
-  }, [bookingType]);
+    setSelectedAthletes((prev) => {
+      if (prev.length <= maxAthletesAllowed) {
+        return prev;
+      }
+      return prev.slice(0, maxAthletesAllowed);
+    });
+  }, [maxAthletesAllowed]);
 
   // Apply URL parameters after courts are loaded
   useEffect(() => {
@@ -519,8 +537,8 @@ function NewAdminBookingPageInner() {
       return;
     }
 
-    if (selectedAthletes.length > 4) {
-      setError("Massimo 4 partecipanti per prenotazione");
+    if (selectedAthletes.length > maxAthletesAllowed) {
+      setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       return;
     }
 
@@ -541,15 +559,14 @@ function NewAdminBookingPageInner() {
         throw new Error("Sessione scaduta, effettua di nuovo il login.");
       }
 
-      const orderedSlots = [...selectedSlots].sort((a, b) => {
-              // Determina l'user_id: primo atleta registrato oppure l'admin stesso
-              const registeredAthlete = selectedAthletes.find((a) => a.isRegistered && a.userId);
-              const bookingUserId = registeredAthlete?.userId ?? sessionData?.session?.user?.id;
-              if (!bookingUserId) {
-                throw new Error("Impossibile determinare l'utente per la prenotazione.");
-              }
+      // Determina l'user_id: primo atleta registrato oppure l'admin stesso
+      const registeredAthlete = selectedAthletes.find((a) => a.isRegistered && a.userId);
+      const bookingUserId = registeredAthlete?.userId ?? sessionData?.session?.user?.id;
+      if (!bookingUserId) {
+        throw new Error("Impossibile determinare l'utente per la prenotazione.");
+      }
 
-              const orderedSlots = [...selectedSlots].sort((a, b) => {
+      const orderedSlots = [...selectedSlots].sort((a, b) => {
         const [hA, mA] = a.split(":").map(Number);
         const [hB, mB] = b.split(":").map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
@@ -752,9 +769,9 @@ function NewAdminBookingPageInner() {
                 onChange={(e) => handleDateInputChange(e.target.value)}
                 className="absolute opacity-0 pointer-events-none"
               />
-              <h2 className="text-base sm:text-lg font-bold capitalize text-white">
-                <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
-                <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
+              <h2 className="text-base sm:text-lg font-bold text-white">
+                <span className="hidden sm:inline capitalize">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
+                <span className="sm:hidden capitalize">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
               </h2>
             </div>
 
@@ -786,7 +803,7 @@ function NewAdminBookingPageInner() {
                   <div className="space-y-6 mt-6">
                     {/* Tipo prenotazione */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
                       <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
                         {BOOKING_TYPES.map((type) => (
                           <button
@@ -805,32 +822,56 @@ function NewAdminBookingPageInner() {
                       </div>
                     </div>
 
+                    {/* Modalita campo */}
+                    {bookingType === "campo" && (
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
+                        <div className="flex-1 flex flex-col gap-2">
+                          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                            {MATCH_FORMATS.map((formatOption) => (
+                              <button
+                                key={formatOption.value}
+                                type="button"
+                                onClick={() => setMatchFormat(formatOption.value)}
+                                className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                                  matchFormat === formatOption.value
+                                    ? "bg-secondary text-white border-secondary"
+                                    : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                                }`}
+                              >
+                                {formatOption.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Atleta / Partecipanti */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                       <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                        {bookingType === "lezione_privata" ? "Atleta *" : "Partecipanti *"}
+                        {bookingType === "lezione_privata" ? "Atleta" : "Partecipanti"}
                       </label>
                       <div className="flex-1">
                         <AthletesSelector
                           athletes={athletes}
                           selectedAthletes={selectedAthletes}
                           onAthleteAdd={(athlete) => {
-                            const max = bookingType === "lezione_privata" ? 1 : 4;
-                            if (selectedAthletes.length < max) {
+                            if (selectedAthletes.length < maxAthletesAllowed) {
                               setSelectedAthletes([...selectedAthletes, athlete]);
                             }
                           }}
                           onAthleteRemove={(index) => {
                             setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
                           }}
-                          maxAthletes={bookingType === "lezione_privata" ? 1 : 4}
+                          maxAthletes={maxAthletesAllowed}
                         />
                       </div>
                     </div>
 
                     {/* Campo */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
                       <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
                         {courtsLoading ? (
                           <div className="flex items-center gap-2 text-secondary/60">
@@ -859,7 +900,7 @@ function NewAdminBookingPageInner() {
                     {/* Maestro se necessario */}
                     {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
                         <div className="flex-1">
                           <SearchableSelect
                             value={selectedCoach}

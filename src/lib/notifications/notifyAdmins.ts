@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabaseServer } from "@/lib/supabase/serverClient";
 import logger from '@/lib/logger/secure-logger';
 
 export async function notifyAdmins({
@@ -13,29 +13,33 @@ export async function notifyAdmins({
   link?: string;
 }) {
   try {
-    // Get all admin and gestore users
-    const { data: admins } = await supabase
+    const { data: admins, error: adminsError } = await supabaseServer
       .from("profiles")
       .select("id")
       .in("role", ["admin", "gestore"]);
 
+    if (adminsError) {
+      logger.error("Error fetching admins for notifications:", adminsError);
+      return;
+    }
+
     if (!admins || admins.length === 0) return;
 
-    // Create notification for each admin using API
-    for (const admin of admins) {
-      await fetch("/api/notifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: admin.id,
-          type,
-          title,
-          message,
-          link,
-        }),
-      });
+    const notifications = admins.map((admin) => ({
+      user_id: admin.id,
+      type,
+      title,
+      message,
+      link: link || null,
+      is_read: false,
+    }));
+
+    const { error: insertError } = await supabaseServer
+      .from("notifications")
+      .insert(notifications);
+
+    if (insertError) {
+      logger.error("Error inserting admin notifications:", insertError);
     }
   } catch (error) {
     logger.error("Error notifying admins:", error);

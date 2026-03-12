@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/service";
+import { resend, EMAIL_CONFIG } from "@/lib/email/client";
 import logger from '@/lib/logger/secure-logger';
 import {
   bookingConfirmationTemplate,
@@ -262,10 +263,15 @@ export async function sendAdminNewBookingAlert(bookingData: {
     const { supabaseServer } = await import("@/lib/supabase/serverClient");
 
     // Fetch emails of all admins and gestori
-    const { data: admins } = await supabaseServer
+    const { data: admins, error: adminsQueryError } = await supabaseServer
       .from("profiles")
       .select("id, email, full_name")
       .in("role", ["admin", "gestore"]);
+
+    if (adminsQueryError) {
+      logger.error("sendAdminNewBookingAlert: error fetching admins", adminsQueryError);
+      return { success: false, error: adminsQueryError.message };
+    }
 
     if (!admins || admins.length === 0) {
       logger.info("No admins/gestori found, skipping email alert");
@@ -282,18 +288,35 @@ export async function sendAdminNewBookingAlert(bookingData: {
       site_url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     });
 
-    const adminEmails = admins.map((a) => a.email).filter(Boolean);
+    const adminEmails = admins
+      .map((admin) => admin.email?.trim())
+      .filter((email): email is string => Boolean(email));
 
-    return await sendEmail({
+    if (adminEmails.length === 0) {
+      logger.info("No admin emails available, skipping admin booking alert");
+      return { success: true, message: "No admin emails to notify" };
+    }
+
+    logger.info(`sendAdminNewBookingAlert: sending to ${adminEmails.length} admin(s): ${adminEmails.join(", ")}`);
+
+    // Chiama Resend direttamente — bypassa il wrapper sendEmail (nessun check unsubscribe,
+    // nessun accesso a email_logs) per evitare qualsiasi fallimento silenzioso.
+    const { data, error: resendError } = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
       to: adminEmails,
       subject: `Nuova prenotazione — ${bookingData.athleteName} — ${bookingData.bookingDate} ${bookingData.bookingTime}`,
       html,
-      templateName: "booking_confirmation",
-      templateData: bookingData,
-      category: "notification",
     });
+
+    if (resendError) {
+      logger.error("sendAdminNewBookingAlert: Resend error", resendError);
+      return { success: false, error: String(resendError) };
+    }
+
+    logger.info(`sendAdminNewBookingAlert: email sent successfully, id=${data?.id}`);
+    return { success: true, messageId: data?.id };
   } catch (error: any) {
-    logger.error("Error sending admin booking alert:", error);
+    logger.error("sendAdminNewBookingAlert: unexpected error", error);
     return { success: false, error: error.message };
   }
 }

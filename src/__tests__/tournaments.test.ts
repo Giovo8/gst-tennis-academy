@@ -1,7 +1,8 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-
+/**
+ * @jest-environment node
+ */
 // Mock the server client used by the API routes
-vi.mock('@/lib/supabase/serverClient', () => {
+jest.mock('@/lib/supabase/serverClient', () => {
   const mockProfiles = new Map<string, any>();
   mockProfiles.set('user-gestore', { id: 'user-gestore', role: 'gestore', full_name: 'Gestore' });
   mockProfiles.set('user-maestro', { id: 'user-maestro', role: 'maestro', full_name: 'Maestro' });
@@ -80,12 +81,18 @@ vi.mock('@/lib/supabase/serverClient', () => {
 });
 
 // Import the route handlers after mocking
+// Also mock @supabase/supabase-js so the tournaments route (which calls createClient directly)
+// shares the same mock state as the serverClient mock above.
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: () => jest.requireMock('@/lib/supabase/serverClient').supabaseServer,
+}));
+
 import { POST as createTournament } from '../app/api/tournaments/route';
 import { POST as joinParticipant } from '../app/api/tournament_participants/route';
 
 describe('Tournaments API (mocked)', () => {
   it('allows gestore to create a tournament', async () => {
-    const req = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Mock Cup', start_date: '2026-01-01T10:00:00Z', max_participants: 2, status: 'Aperto' }) });
+    const req = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Mock Cup', start_date: '2026-01-01T10:00:00Z', max_participants: 2, status: 'Aperte le Iscrizioni' }) });
     const res = await createTournament(req as unknown as Request);
     expect(res.status).toBe(201);
     const json = await res.json();
@@ -95,7 +102,7 @@ describe('Tournaments API (mocked)', () => {
 
   it('allows athletes to join until sold out', async () => {
     // first, create tournament as gestore
-    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Capacity Cup', start_date: '2026-02-01T10:00:00Z', max_participants: 2, status: 'Aperto' }) });
+    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Capacity Cup', start_date: '2026-02-01T10:00:00Z', max_participants: 2, status: 'Aperte le Iscrizioni' }) });
     const createRes = await createTournament(createReq as unknown as Request);
     const createJson = await createRes.json();
     console.log('CREATE TOURNAMENT RESULT:', createRes.status, createJson?.tournament?.id);
@@ -120,11 +127,11 @@ describe('Tournaments API (mocked)', () => {
     const r3 = await joinParticipant(joinReq3 as unknown as Request);
     console.log('JOIN3 STATUS:', r3.status);
     expect(r3.status).toBe(409);
-  }, { timeout: 20000 });
+  }, 20000);
 
   it('allows maestro to register an athlete but not other roles', async () => {
     // create tournament as gestore
-    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'CoachEnroll Cup', start_date: '2026-03-01T10:00:00Z', max_participants: 4, status: 'Aperto' }) });
+    const createReq = new Request('http://localhost/api/tournaments', { method: 'POST', headers: { Authorization: 'user-gestore', 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'CoachEnroll Cup', start_date: '2026-03-01T10:00:00Z', max_participants: 4, status: 'Aperte le Iscrizioni' }) });
     const createRes = await createTournament(createReq as unknown as Request);
     const createJson = await createRes.json();
     const tournamentId = createJson.tournament.id;

@@ -49,9 +49,18 @@ export async function sendEmail({
 
     // Convert to array if single email
     const recipients = Array.isArray(to) ? to : [to];
+    const normalizedRecipients = recipients
+      .map((email) => email?.trim())
+      .filter((email): email is string => Boolean(email));
+
+    if (normalizedRecipients.length === 0) {
+      return { success: false, error: "No valid recipients" };
+    }
+
+    const allowedRecipients: string[] = [];
 
     // Check if any recipient is unsubscribed
-    for (const email of recipients) {
+    for (const email of normalizedRecipients) {
       const { data: unsubscribed } = await supabase.rpc("is_user_unsubscribed", {
         check_email: email,
         email_category: category,
@@ -73,15 +82,20 @@ export async function sendEmail({
           error_message: "User unsubscribed",
           metadata: { category, skipped: true },
         });
-
-        return { success: false, error: "User unsubscribed" };
+        continue;
       }
+
+      allowedRecipients.push(email);
+    }
+
+    if (allowedRecipients.length === 0) {
+      return { success: false, error: "All recipients unsubscribed" };
     }
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
-      to: recipients,
+      to: allowedRecipients,
       subject,
       html,
       text: text || stripHtml(html),
@@ -96,7 +110,7 @@ export async function sendEmail({
       console.error("Resend error:", error);
 
       // Log failed email
-      for (const email of recipients) {
+      for (const email of allowedRecipients) {
         await logEmail({
           recipient_email: email,
           recipient_name: recipientName,
@@ -115,7 +129,7 @@ export async function sendEmail({
     }
 
     // Log successful email
-    for (const email of recipients) {
+    for (const email of allowedRecipients) {
       await logEmail({
         recipient_email: email,
         recipient_name: recipientName,

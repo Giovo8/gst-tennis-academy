@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
-import { createNotification } from "@/lib/notifications/createNotification";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { sendAdminNewBookingAlert } from "@/lib/email/triggers";
 import { logActivityServer } from "@/lib/activity/logActivity";
@@ -9,7 +8,7 @@ import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schem
 import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import logger from "@/lib/logger/secure-logger";
-import { HTTP_STATUS, ERROR_MESSAGES, TIME_CONSTANTS, BOOKING_STATUS } from "@/lib/constants/app";
+import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -184,19 +183,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate 24h advance (only for regular users)
-    const bookingStartTime = new Date(start_time);
-    const now = new Date();
-    const advanceTime = new Date(now.getTime() + TIME_CONSTANTS.TWENTY_FOUR_HOURS_MS);
-    
-    // Admin and gestore can bypass 24h advance requirement
-    if (bookingStartTime < advanceTime && !canBookForOthers) {
-      return NextResponse.json(
-        { error: "Le prenotazioni devono essere effettuate con almeno 24 ore di anticipo" },
-        { status: HTTP_STATUS.BAD_REQUEST }
-      );
-    }
-
     // Check for overlapping confirmed bookings on the same court
     const { data: conflicts, error: conflictError } = await supabaseServer
       .from("bookings")
@@ -322,7 +308,7 @@ export async function POST(req: Request) {
       });
 
       // Send email alert to admins
-      await sendAdminNewBookingAlert({
+      const emailResult = await sendAdminNewBookingAlert({
         athleteName: userProfile?.full_name || "Utente sconosciuto",
         court: booking.court,
         bookingDate: startDate,
@@ -330,6 +316,9 @@ export async function POST(req: Request) {
         bookingId: booking.id,
         participantsCount: participantsInserted > 0 ? participantsInserted : 1,
       });
+      if (!emailResult.success) {
+        logger.warn("Admin booking email not sent", { reason: emailResult.error || emailResult.message });
+      }
 
       // Log activity
       await logActivityServer({

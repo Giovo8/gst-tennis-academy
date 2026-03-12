@@ -51,7 +51,7 @@ export function validateBookingFields(booking: Partial<BookingData>): {
 }
 
 /**
- * Valida la regola delle 24 ore di anticipo
+ * Valida che la prenotazione non sia nel passato
  */
 export function validateAdvanceBooking(
   startTime: Date,
@@ -62,12 +62,10 @@ export function validateAdvanceBooking(
     return { valid: true };
   }
 
-  const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-  if (startTime < twentyFourHoursFromNow) {
+  if (startTime < now) {
     return {
       valid: false,
-      error: "Le prenotazioni devono essere effettuate con almeno 24 ore di anticipo",
+      error: "Non puoi prenotare uno slot nel passato",
     };
   }
 
@@ -213,15 +211,12 @@ describe("Booking Validation", () => {
       expect(validateAdvanceBooking(startTime, now)).toEqual({ valid: true });
     });
 
-    it("rejects booking less than 24h in advance", () => {
+    it("allows booking less than 24h in advance", () => {
       const startTime = new Date("2025-01-19T10:00:00Z"); // 22h ahead
-      expect(validateAdvanceBooking(startTime, now)).toEqual({
-        valid: false,
-        error: "Le prenotazioni devono essere effettuate con almeno 24 ore di anticipo",
-      });
+      expect(validateAdvanceBooking(startTime, now)).toEqual({ valid: true });
     });
 
-    it("allows admin/gestore to bypass 24h rule", () => {
+    it("allows admin/gestore to bypass timing restrictions", () => {
       const startTime = new Date("2025-01-19T10:00:00Z"); // 22h ahead
       expect(validateAdvanceBooking(startTime, now, true)).toEqual({ valid: true });
     });
@@ -230,7 +225,7 @@ describe("Booking Validation", () => {
       const startTime = new Date("2025-01-17T10:00:00Z"); // in the past
       expect(validateAdvanceBooking(startTime, now)).toEqual({
         valid: false,
-        error: "Le prenotazioni devono essere effettuate con almeno 24 ore di anticipo",
+        error: "Non puoi prenotare uno slot nel passato",
       });
     });
 

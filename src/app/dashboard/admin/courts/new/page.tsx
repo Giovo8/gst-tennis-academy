@@ -13,6 +13,7 @@ import {
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
 const BLOCK_TYPES = [
   { value: "corsi_tennis", label: "Corsi Tennis" },
+  { value: "corso_adulti", label: "Corso Adulti" },
   { value: "manutenzione", label: "Manutenzione" },
   { value: "evento", label: "Evento" },
   { value: "altro", label: "Altro" },
@@ -309,6 +310,20 @@ export default function NewCourtBlockPage() {
                   </select>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+            <div className="flex-1">
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Aggiungi dettagli aggiuntivi..."
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+              />
             </div>
           </div>
         </div>

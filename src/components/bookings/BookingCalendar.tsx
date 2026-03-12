@@ -9,7 +9,7 @@ import {
   setHours,
   setMinutes,
 } from "date-fns";
-import { CalendarDays, Clock, Loader2, Users2, AlertCircle, Lock } from "lucide-react";
+import { CalendarDays, Clock, Loader2, Users2, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { type UserRole } from "@/lib/roles";
 import { useBookingsRealtime } from "@/lib/hooks/useBookingsRealtime";
@@ -229,11 +229,7 @@ export default function BookingCalendar() {
     
     // Per altri utenti: slot nel passato non disponibile
     if (slot < now) return false;
-    
-    // Slot è entro 24h da ora (solo per non admin/gestore)
-    const twentyFourHoursFromNow = addHours(now, 24);
-    if (slot < twentyFourHoursFromNow) return false;
-    
+
     // Slot è confermato (solo confermate bloccano per tutti)
     if (isSlotConfirmed(slot)) return false;
     
@@ -328,20 +324,6 @@ export default function BookingCalendar() {
     const bookingUserId = isAdminOrGestore && selectedAthletes[0]?.userId 
       ? selectedAthletes[0].userId 
       : user.id;
-
-    // Validazione 24h - NON SI APPLICA ad admin/gestore
-    if (!isAdminOrGestore) {
-      const now = new Date();
-      const twentyFourHoursFromNow = addHours(now, 24);
-      
-      // Verifica che TUTTI gli slot rispettino la regola 24h
-      const tooSoonSlots = slotsToBook.filter(slot => slot < twentyFourHoursFromNow);
-      if (tooSoonSlots.length > 0) {
-        setError("Le prenotazioni devono essere effettuate con almeno 24 ore di anticipo.");
-        setSaving(false);
-        return;
-      }
-    }
 
     if (bookingType === "lezione_privata" && !selectedCoach) {
       setError("Seleziona un maestro per la lezione privata.");
@@ -657,7 +639,7 @@ export default function BookingCalendar() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted">
             <CalendarDays className="h-4 w-4 text-accent" />
-            Seleziona uno slot da 1 ora (08:00-22:00). Le prenotazioni richiedono 24h di anticipo.
+              Seleziona uno slot da 1 ora (08:00-22:00).
           </div>
           
           {/* Legenda */}
@@ -689,8 +671,6 @@ export default function BookingCalendar() {
               const available = isSlotAvailable(slot);
               const confirmed = isSlotConfirmed(slot);
               const pending = isSlotPending(slot);
-              const isAdminOrGestore = userRole === "admin" || userRole === "gestore";
-              const tooSoon = !isAdminOrGestore && slot < addHours(new Date(), 24) && slot >= new Date();
               const isPast = slot < new Date();
               
               // Check selezione (sia singola che multipla)
@@ -703,9 +683,6 @@ export default function BookingCalendar() {
               if (isPast) {
                 statusLabel = "Passato";
                 statusIcon = <Clock className="inline h-3 w-3 mr-1" />;
-              } else if (tooSoon) {
-                statusLabel = "< 24h";
-                statusIcon = <AlertCircle className="inline h-3 w-3 mr-1" />;
               } else if (confirmed) {
                 statusLabel = "Occupato";
                 statusIcon = <Lock className="inline h-3 w-3 mr-1" />;
@@ -722,7 +699,7 @@ export default function BookingCalendar() {
                   aria-pressed={isSelected ? "true" : "false"}
                   aria-label={`${format(slot, "HH:mm")}-${format(slotEnd, "HH:mm")} ${selectedCourt} ${!available ? "(non disponibile)" : pending ? "(in attesa conferma)" : "(disponibile)"}`}
                   className={`flex flex-col rounded-lg sm:rounded-xl border px-2.5 sm:px-3 py-2.5 sm:py-3 text-left text-xs sm:text-sm transition min-h-[60px] ${
-                    confirmed || isPast || tooSoon
+                    confirmed || isPast
                       ? "cursor-not-allowed border-red-400/50 bg-red-500/20 text-red-200 relative overflow-hidden"
                       : pending
                       ? "cursor-pointer border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:border-yellow-400/50 hover:bg-yellow-400/20"
@@ -731,7 +708,7 @@ export default function BookingCalendar() {
                       : "border-white/10 bg-tournament-bg-card/60 text-white hover:border-tournament-border/50 hover:bg-tournament-bg-card/80 hover:scale-105"
                    } focus:outline-none focus-ring-accent`}
                 >
-                  {(confirmed || isPast || tooSoon) && (
+                  {(confirmed || isPast) && (
                     <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-red-800/10 pointer-events-none"></div>
                   )}
                   <span className="font-semibold text-base relative z-10">{format(slot, "HH:mm")}</span>
@@ -739,7 +716,7 @@ export default function BookingCalendar() {
                     <Clock className="mr-1 inline h-3 w-3" />
                     1h · {selectedCourt}
                   </span>
-                  {(confirmed || isPast || tooSoon) && (
+                  {(confirmed || isPast) && (
                     <span className="mt-1 text-xs font-semibold text-red-300 relative z-10 flex items-center">
                       {statusIcon}
                       {statusLabel}

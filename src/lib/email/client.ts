@@ -42,8 +42,14 @@ export const resend = new Proxy({} as Resend, {
 });
 
 // Email configuration from environment
+// Resend requires "Display Name <email>" format for verified domains.
+// If EMAIL_FROM already contains "<", use it as-is, otherwise wrap it.
+function buildFromAddress(email: string): string {
+  return email.includes('<') ? email : `GST Tennis Academy <${email}>`;
+}
+
 export const EMAIL_CONFIG = {
-  from: env.emailFrom,
+  from: buildFromAddress(env.emailFrom),
   replyTo: env.emailReplyTo,
   defaultSubject: "GST Tennis Academy",
 };

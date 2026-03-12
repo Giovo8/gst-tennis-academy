@@ -30,6 +30,7 @@ type Block = {
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
 const BLOCK_TYPES = [
   { value: "corsi_tennis", label: "Corsi Tennis" },
+  { value: "corso_adulti", label: "Corso Adulti" },
   { value: "manutenzione", label: "Manutenzione" },
   { value: "evento", label: "Evento" },
 ];
@@ -73,6 +74,16 @@ export default function CourtBlockDetailPage() {
   // Determina tipo, colore e icona
   function getBlockStyle(reason?: string) {
     const reasonLower = (reason || "").toLowerCase();
+
+    if (reasonLower.includes("corso adulti")) {
+      return {
+        type: "Corso Adulti",
+        borderColor: "border-frozen-lake-700",
+        bgColor: "bg-frozen-lake-700",
+        iconColor: "text-frozen-lake-700",
+        icon: GraduationCap
+      };
+    }
     
     if (reasonLower.includes("corsi") || reasonLower.includes("tennis")) {
       return {

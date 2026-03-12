@@ -155,7 +155,7 @@ class EnvironmentConfig {
   }
 
   public get emailFrom(): string {
-    return this.get('EMAIL_FROM') || 'noreply@gst-tennis-academy.it';
+    return this.get('EMAIL_FROM') || 'noreply@gstacademy.it';
   }
 
   public get emailReplyTo(): string {

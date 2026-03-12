@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
+import { sendAdminNewBookingAlert } from "@/lib/email/triggers";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -101,6 +103,47 @@ export async function POST(request: Request) {
         { error: "Failed to create bookings", details: insertError.message },
         { status: 500 }
       );
+    }
+
+    if (insertedBookings && insertedBookings.length > 0) {
+      const firstBooking = insertedBookings[0];
+      const startDate = new Date(firstBooking.start_time).toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      const startTime = new Date(firstBooking.start_time).toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", firstBooking.user_id)
+        .single();
+
+      const bookingCount = insertedBookings.length;
+      const athleteName = userProfile?.full_name || "Un utente";
+      const countLabel = bookingCount > 1 ? `${bookingCount} prenotazioni` : "una prenotazione";
+
+      await notifyAdmins({
+        type: "booking",
+        title: bookingCount > 1 ? "Nuove prenotazioni multiple" : "Nuova prenotazione",
+        message: `${athleteName} ha creato ${countLabel} sul ${firstBooking.court} a partire dal ${startDate} alle ${startTime}`,
+        link: "/dashboard/admin/bookings",
+      });
+
+      await sendAdminNewBookingAlert({
+        athleteName,
+        court: firstBooking.court,
+        bookingDate: startDate,
+        bookingTime: startTime,
+        bookingId: firstBooking.id,
+        participantsCount: Array.isArray(bookings[0]?.participants) && bookings[0].participants.length > 0
+          ? bookings[0].participants.length
+          : 1,
+      });
     }
 
     return NextResponse.json(

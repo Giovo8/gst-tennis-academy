@@ -124,6 +124,13 @@ const BOOKING_TYPES = [
   { value: "lezione_gruppo", label: "Lezione Gruppo", icon: "👥" },
 ];
 
+const MATCH_FORMATS = [
+  { value: "singolo", label: "Singolo" },
+  { value: "doppio", label: "Doppio" },
+] as const;
+
+type MatchFormat = (typeof MATCH_FORMATS)[number]["value"];
+
 export default function NewBookingPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -133,6 +140,7 @@ export default function NewBookingPage() {
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
+  const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourt, setSelectedCourt] = useState(COURTS[0]);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
@@ -452,9 +460,27 @@ export default function NewBookingPage() {
               </select>
             </div>
 
+            {/* Modalita */}
+            {bookingType === "campo" && (
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Modalità</label>
+                <select
+                  value={matchFormat}
+                  onChange={(e) => setMatchFormat(e.target.value as MatchFormat)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  {MATCH_FORMATS.map((formatOption) => (
+                    <option key={formatOption.value} value={formatOption.value}>
+                      {formatOption.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Campo */}
             <div>
-              <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Campo *</label>
+              <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Campo</label>
               <select
                 value={selectedCourt}
                 onChange={(e) => setSelectedCourt(e.target.value)}
@@ -471,7 +497,7 @@ export default function NewBookingPage() {
             {/* Maestro se necessario */}
             {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Maestro *</label>
+                <label className="block text-xs font-semibold text-secondary/70 uppercase tracking-wider mb-2">Maestro</label>
                 <SearchableSelect
                   value={selectedCoach}
                   onChange={setSelectedCoach}

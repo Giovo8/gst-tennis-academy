@@ -187,10 +187,10 @@ export default function AthletesSelector({
                 </button>
 
                 {showGuestForm && (
-                  <div className="space-y-2 p-3 bg-secondary/5 border border-secondary/20 rounded-lg">
+                  <div className="space-y-2 p-3 bg-white border border-gray-200 rounded-lg">
                     <input
                       type="text"
-                      placeholder="Nome e cognome *"
+                      placeholder="Nome e cognome"
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
@@ -217,11 +217,7 @@ export default function AthletesSelector({
         )}
       </div>
 
-      {selectedAthletes.length === 0 ? (
-        <div className="text-center py-6 rounded-md bg-white border border-gray-200 text-sm text-secondary/60">
-          Nessun partecipante selezionato
-        </div>
-      ) : (
+      {selectedAthletes.length > 0 && (
         <div className="space-y-3">
           <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary">
             <div className="grid grid-cols-[40px_1fr_1fr_64px] items-center gap-4">

@@ -139,6 +139,16 @@ export default function CourtsBlockPage() {
   // Determina tipo, colore e icona in base al motivo
   function getBlockStyle(reason?: string) {
     const reasonLower = (reason || "").toLowerCase();
+
+    if (reasonLower.includes("corso adulti")) {
+      return {
+        type: "Corso Adulti",
+        borderColor: "border-frozen-lake-700",
+        iconColor: "text-frozen-lake-700",
+        bgHover: "hover:bg-frozen-lake-50",
+        icon: GraduationCap
+      };
+    }
     
     if (reasonLower.includes("corsi") || reasonLower.includes("tennis")) {
       return {

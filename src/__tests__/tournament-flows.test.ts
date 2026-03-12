@@ -1,21 +1,26 @@
 /**
  * Tournament System End-to-End Tests
  * Tests all tournament flows: creation, enrollment, start, matches, completion
+ * Requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY env vars.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Mock Supabase client - replace with actual test credentials
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const hasCredentials = !!(supabaseUrl && supabaseKey);
 
-describe('Tournament System - Full Flows', () => {
+let supabase: SupabaseClient;
+
+const describeTests = hasCredentials ? describe : describe.skip;
+
+describeTests('Tournament System - Full Flows', () => {
   let testUserId: string;
   let testTournamentId: string;
   let participantIds: string[] = [];
 
   beforeAll(async () => {
+    supabase = createClient(supabaseUrl!, supabaseKey!);
     // Setup: Get or create test user
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
