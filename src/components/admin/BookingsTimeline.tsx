@@ -217,6 +217,10 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     endOfDay.setHours(23, 59, 59, 999);
 
     const filteredBookings = allBookings.filter(booking => {
+      if (booking.status === "cancelled") {
+        return false;
+      }
+
       const bookingDate = new Date(booking.start_time);
       return bookingDate >= startOfDay && bookingDate <= endOfDay;
     });

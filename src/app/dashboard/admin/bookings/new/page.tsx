@@ -1042,7 +1042,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                       {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
                       <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
                         {/* Prenotazioni esistenti come blocchi sovrapposti */}
-                        {existingBookings.map((booking) => {
+                        {existingBookings.filter((booking) => booking.status !== "cancelled").map((booking) => {
                           const start = new Date(booking.start_time);
                           const end = new Date(booking.end_time);
                           const startHour = start.getHours();
