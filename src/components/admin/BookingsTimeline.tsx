@@ -39,6 +39,7 @@ type BookingsTimelineProps = {
   bookings: Booking[];
   loading: boolean;
   basePath?: string; // Optional base path for navigation (default: /dashboard/admin)
+  fetchOccupied?: boolean; // When true, fetches ALL bookings via API to show occupied slots from other users
 };
 
 const TIME_SLOTS = [
@@ -54,11 +55,12 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin" }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
   const [blocksLoading, setBlocksLoading] = useState(false);
+  const [allOccupiedBookings, setAllOccupiedBookings] = useState<any[]>([]);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
@@ -127,6 +129,27 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   useEffect(() => {
     loadCourtBlocks();
   }, [selectedDate]);
+
+  // When fetchOccupied is enabled, fetch all bookings via API (bypasses RLS)
+  useEffect(() => {
+    if (!fetchOccupied) return;
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const fetchAll = async () => {
+      try {
+        const results = await Promise.all(
+          courts.map(court =>
+            fetch(`/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(court)}`)
+              .then(r => r.ok ? r.json() : { bookings: [] })
+              .then(d => (d.bookings ?? []) as any[])
+          )
+        );
+        setAllOccupiedBookings(results.flat());
+      } catch (err) {
+        console.error('Error fetching occupied bookings:', err);
+      }
+    };
+    void fetchAll();
+  }, [selectedDate, courts, fetchOccupied]);
 
   async function loadCourtsFromDB() {
     setCourtsLoading(true);
@@ -525,9 +548,18 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                     {/* Time Slots Container */}
                     <div className="flex-1 grid timeline-grid relative" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
                       {/* Prenotazioni esistenti come blocchi sovrapposti */}
-                      {bookingsForSelectedDate
-                        .filter(b => b.court === court)
-                        .map((booking) => {
+                      {(() => {
+                        // When fetchOccupied, merge own bookings with API-fetched ones (deduplicated by id)
+                        const ownIds = new Set(bookingsForSelectedDate.filter(b => b.court === court).map(b => b.id));
+                        const foreignBlocks: any[] = fetchOccupied
+                          ? allOccupiedBookings.filter(b => b.court === court && !ownIds.has(b.id))
+                          : [];
+                        const allBlocks = [
+                          ...bookingsForSelectedDate.filter(b => b.court === court),
+                          ...foreignBlocks
+                        ];
+                        return allBlocks.map((booking) => {
+                          const isForeign = !ownIds.has(booking.id);
                           const start = new Date(booking.start_time);
                           const end = new Date(booking.end_time);
                           const startHour = start.getHours();
@@ -547,13 +579,14 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             <div
                               key={booking.id}
                               onClick={() => {
+                                if (isForeign) return; // non navigare per prenotazioni altrui
                                 if (booking.isBlock) {
                                   router.push(`${basePath}/courts/${booking.id}`);
                                 } else {
                                   router.push(`${basePath}/bookings/${booking.id}`);
                                 }
                               }}
-                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 hover:scale-[1.02] transition-all cursor-pointer active:scale-95"
+                              className={`absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all ${isForeign ? 'cursor-default' : 'hover:scale-[1.02] cursor-pointer active:scale-95'}`}
                               style={{
                                 ...getBookingStyle(booking),
                                 left: `${(startSlot / 32) * 100}%`,
@@ -562,17 +595,16 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                 bottom: '4px',
                                 marginLeft: '2px'
                               }}
-                              title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
+                              title={isForeign ? 'Slot occupato' : `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
                             >
                               {booking.isBlock ? (
-                                <>
-                                  <div className="truncate leading-tight">
-                                    {getBookingLabel(booking)}
-                                  </div>
-                                  <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
-                                    BLOCCATO
-                                  </div>
-                                </>
+                                <div className="truncate leading-tight uppercase tracking-wider">
+                                  {getBookingLabel(booking)}
+                                </div>
+                              ) : isForeign ? (
+                                <div className="truncate leading-tight uppercase tracking-wider">
+                                  {getBookingLabel(booking)}
+                                </div>
                               ) : (
                                 <>
                                   <div className="truncate leading-tight">
@@ -593,7 +625,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               )}
                             </div>
                           );
-                        })}
+                        });
+                      })()}
 
                       {/* Slot cliccabili - sempre 16 */}
                       {Array.from({ length: 16 }, (_, hourIndex) => {
@@ -603,8 +636,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
                         const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
 
-                        // Check if slots are occupied
-                        const isOccupied1 = bookingsForSelectedDate.some(b => {
+                        // Check if slots are occupied (use API-fetched data when available)
+                        const occupiedSource = fetchOccupied && allOccupiedBookings.length > 0
+                          ? allOccupiedBookings
+                          : bookingsForSelectedDate;
+
+                        const isOccupied1 = occupiedSource.some(b => {
                           if (b.court !== court) return false;
                           const bookingStart = new Date(b.start_time);
                           const bookingEnd = new Date(b.end_time);
@@ -613,7 +650,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                           return slotTime >= bookingStart && slotTime < bookingEnd;
                         });
 
-                        const isOccupied2 = bookingsForSelectedDate.some(b => {
+                        const isOccupied2 = occupiedSource.some(b => {
                           if (b.court !== court) return false;
                           const bookingStart = new Date(b.start_time);
                           const bookingEnd = new Date(b.end_time);

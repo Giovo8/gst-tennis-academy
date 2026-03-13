@@ -406,7 +406,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       {/* Bookings List or Timeline */}
       {viewMode === "timeline" ? (
-        <BookingsTimeline bookings={filteredBookings} loading={loading} basePath="/dashboard/atleta" />
+        <BookingsTimeline bookings={filteredBookings} loading={loading} basePath="/dashboard/atleta" fetchOccupied={true} />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />

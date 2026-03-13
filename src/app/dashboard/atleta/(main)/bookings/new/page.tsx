@@ -408,68 +408,29 @@ function NewBookingPageInner() {
 
     const dateStr = selectedDate.toISOString().split("T")[0];
 
-    // Get existing bookings for this court and date
-    const { data: bookings } = await supabase
-      .from("bookings")
-      .select("id, user_id, coach_id, start_time, end_time, type, status")
-      .eq("court", selectedCourt)
-      .neq("status", "cancelled")
-      .gte("start_time", `${dateStr}T00:00:00`)
-      .lte("start_time", `${dateStr}T23:59:59`);
+    // Usa l'API server-side (service role) per ottenere tutte le occupazioni del campo,
+    // aggirando la RLS che limiterebbe l'atleta a vedere solo le proprie prenotazioni.
+    let allOccupations: any[] = [];
+    try {
+      const res = await fetch(
+        `/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(selectedCourt)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        allOccupations = data.bookings ?? [];
+      }
+    } catch (err) {
+      console.error("Error fetching availability:", err);
+    }
 
-    // Get court blocks for this court and date
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const { data: courtBlocks } = await supabase
-      .from("court_blocks")
-      .select("id, start_time, end_time, reason")
-      .eq("court_id", selectedCourt)
-      .gte("start_time", startOfDay.toISOString())
-      .lte("start_time", endOfDay.toISOString());
-
-    // Build enriched bookings for display
-    const enrichedBookings = bookings?.map(booking => ({
-      ...booking,
-      isBlock: false
-    })) || [];
-
-    // Add court blocks as fake bookings
-    const blocksAsBookings = courtBlocks?.map(block => ({
-      id: block.id,
-      start_time: block.start_time,
-      end_time: block.end_time,
-      type: "blocco",
-      status: "blocked",
-      reason: block.reason,
-      isBlock: true
-    })) || [];
-
-    setExistingBookings([...enrichedBookings, ...blocksAsBookings]);
+    setExistingBookings(allOccupations);
 
     // Build occupied half-hour slots set
     const occupiedSlots = new Set<string>();
 
-    // Mark slots occupied by bookings
-    bookings?.forEach(b => {
+    allOccupations.forEach(b => {
       const start = new Date(b.start_time);
       const end = new Date(b.end_time);
-
-      const current = new Date(start);
-      while (current < end) {
-        const hours = current.getHours().toString().padStart(2, "0");
-        const minutes = current.getMinutes().toString().padStart(2, "0");
-        occupiedSlots.add(`${hours}:${minutes}`);
-        current.setMinutes(current.getMinutes() + 30);
-      }
-    });
-
-    // Mark slots occupied by court blocks
-    courtBlocks?.forEach(block => {
-      const start = new Date(block.start_time);
-      const end = new Date(block.end_time);
 
       const current = new Date(start);
       while (current < end) {
@@ -943,24 +904,35 @@ function NewBookingPageInner() {
                           if (booking.isBlock) {
                             return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
                           }
-                          return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
+                          switch (booking.type) {
+                            case "lezione_privata":
+                            case "lezione_gruppo":
+                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
+                            case "campo":
+                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
+                            default:
+                              return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
+                          }
                         };
 
                         const getBookingLabel = () => {
                           if (booking.isBlock) return booking.reason || "BLOCCATO";
-                          return "Occupato";
+                          if (booking.type === "lezione_privata") return "Lezione Privata";
+                          if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
+                          return "Campo";
                         };
 
                         return (
                           <div
                             key={booking.id}
-                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10"
+                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10"
                             style={{
                               ...getBookingStyle(),
                               left: `${(startSlot / 32) * 100}%`,
-                              width: `${(duration / 32) * 100}%`,
+                              width: `calc(${(duration / 32) * 100}% - 4px)`,
                               top: '4px',
-                              bottom: '4px'
+                              bottom: '4px',
+                              marginLeft: '2px'
                             }}
                           >
                             <div className="truncate leading-tight uppercase tracking-wider">
