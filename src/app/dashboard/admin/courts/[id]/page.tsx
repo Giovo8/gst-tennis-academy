@@ -405,10 +405,10 @@ export default function CourtBlockDetailPage() {
                     key={court}
                     type="button"
                     onClick={() => setSelectedCourt(court)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
                       selectedCourt === court
                         ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                     }`}
                   >
                     {court}
@@ -428,10 +428,10 @@ export default function CourtBlockDetailPage() {
                     key={type.value}
                     type="button"
                     onClick={() => setBlockType(type.value)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
                       blockType === type.value
                         ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                     }`}
                   >
                     {type.label}
@@ -451,10 +451,10 @@ export default function CourtBlockDetailPage() {
                     key={day.value}
                     type="button"
                     onClick={() => toggleWeekDay(day.value)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
                       selectedWeekDays.includes(day.value)
                         ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary/50'
+                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                     }`}
                   >
                     {day.label}

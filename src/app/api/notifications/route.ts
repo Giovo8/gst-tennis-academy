@@ -78,33 +78,6 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ API: Notification created successfully", data.id);
 
-    // Check if user has email notifications enabled
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("email, full_name, email_notifications_enabled")
-      .eq("id", user_id)
-      .single();
-
-    // Send email notification if enabled
-    if (profile?.email_notifications_enabled) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/notification`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: profile.email,
-            name: profile.full_name,
-            title,
-            message,
-            link,
-          }),
-        });
-      } catch (emailError) {
-        console.error("Failed to send email notification:", emailError);
-        // Don't fail the request if email fails
-      }
-    }
-
     return NextResponse.json({ notification: data });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
-import { sendAdminNewBookingAlert } from "@/lib/email/triggers";
 import { logActivityServer } from "@/lib/activity/logActivity";
+import { sendBookingCreatedEmailToAdminAndGestore } from "@/lib/email/booking-notifications";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
 import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
@@ -308,7 +308,7 @@ export async function POST(req: Request) {
         month: "2-digit",
         year: "numeric",
       });
-      const startTime = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+      const startTimeLabel = new Date(booking.start_time).toLocaleTimeString("it-IT", {
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -316,28 +316,32 @@ export async function POST(req: Request) {
       // Get user name for notification
       const { data: userProfile } = await supabaseServer
         .from("profiles")
-        .select("full_name")
+        .select("full_name, email")
         .eq("id", user_id)
         .single();
 
       await notifyAdmins({
         type: "booking",
         title: "Nuova prenotazione",
-        message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTime}`,
+        message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTimeLabel}`,
         link: "/dashboard/admin/bookings",
       });
 
-      // Send email alert to admins
-      const emailResult = await sendAdminNewBookingAlert({
-        athleteName: userProfile?.full_name || "Utente sconosciuto",
-        court: booking.court,
-        bookingDate: startDate,
-        bookingTime: startTime,
-        bookingId: booking.id,
-        participantsCount: participantsInserted > 0 ? participantsInserted : 1,
-      });
-      if (!emailResult.success) {
-        logger.warn("Admin booking email not sent", { reason: emailResult.error || emailResult.message });
+      // Send email only when an athlete creates the booking
+      if (profile?.role === "atleta") {
+        const bookingMode = participants && participants.length > 2 ? "doppio" : "singolo";
+
+        await sendBookingCreatedEmailToAdminAndGestore({
+          bookingId: booking.id,
+          athleteName: userProfile?.full_name || profile.full_name || "Un atleta",
+          athleteEmail: userProfile?.email || user.email || null,
+          court: booking.court,
+          type: booking.type || "campo",
+          bookingMode,
+          startTime: booking.start_time,
+          endTime: booking.end_time,
+          notes: booking.notes || null,
+        });
       }
 
       // Log activity

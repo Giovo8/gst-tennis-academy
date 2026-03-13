@@ -12,7 +12,6 @@ import {
   Users,
   MessageSquare,
   Mail,
-  Send,
   Key,
   Newspaper,
   Image,
@@ -103,11 +102,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Chat",
       href: "/dashboard/admin/chat",
       icon: <Mail className="h-5 w-5" />,
-    },
-    {
-      label: "Mail Marketing",
-      href: "/dashboard/admin/mail-marketing",
-      icon: <Send className="h-5 w-5" />,
     },
     {
       label: "News",

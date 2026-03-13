@@ -47,8 +47,11 @@ interface EmailLog {
   template_name: string;
   status: string;
   provider: string;
+  provider_message_id: string | null;
   sent_at: string | null;
   delivered_at: string | null;
+  opened_at: string | null;
+  clicked_at: string | null;
   failed_at: string | null;
   error_message: string | null;
   created_at: string;
@@ -108,7 +111,6 @@ export default function PlatformLogsPage() {
           if (!response.ok) {
             throw new Error(json.error || "Failed to fetch activity logs");
           }
-
           setActivityLogs(json.logs || []);
         } else if (logType === "email") {
           const response = await fetch(`/api/email-logs?limit=${limit}`);
@@ -197,7 +199,6 @@ export default function PlatformLogsPage() {
 
   // Helper functions
   const getActionIcon = (action: string) => {
-    if (action.includes("email")) return <Mail className="w-5 h-5 text-blue-500" />;
     if (action.includes("user")) return <User className="w-5 h-5 text-purple-500" />;
     if (action.includes("booking")) return <Calendar className="w-5 h-5 text-green-500" />;
     if (action.includes("tournament")) return <Trophy className="w-5 h-5 text-yellow-500" />;
@@ -206,16 +207,16 @@ export default function PlatformLogsPage() {
   };
 
   const getStatusIcon = (status: string) => {
-    if (status === "delivered") return <CheckCircle className="w-5 h-5 text-green-500" />;
+    if (status === "delivered" || status === "sent") return <CheckCircle className="w-5 h-5 text-green-500" />;
     if (status === "failed" || status === "bounced") return <XCircle className="w-5 h-5 text-red-500" />;
-    if (status === "pending") return <Clock className="w-5 h-5 text-amber-500" />;
+    if (status === "pending" || status === "queued") return <Clock className="w-5 h-5 text-amber-500" />;
     return <AlertCircle className="w-5 h-5 text-secondary" />;
   };
 
   const getStatusBadgeColor = (status: string) => {
-    if (status === "delivered") return "bg-green-50 text-green-700 border-green-200";
+    if (status === "delivered" || status === "sent") return "bg-green-50 text-green-700 border-green-200";
     if (status === "failed" || status === "bounced") return "bg-red-50 text-red-700 border-red-200";
-    if (status === "pending") return "bg-amber-50 text-amber-700 border-amber-200";
+    if (status === "pending" || status === "queued") return "bg-amber-50 text-amber-700 border-amber-200";
     return "bg-secondary/10 text-secondary border-secondary/20";
   };
 
@@ -252,7 +253,7 @@ export default function PlatformLogsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">Log Piattaforma</h1>
           <p className="text-secondary/70 font-medium">
-            Monitora le attività della piattaforma e i log delle email inviate
+            Monitora le attività della piattaforma
           </p>
         </div>
       </div>
@@ -328,8 +329,8 @@ export default function PlatformLogsPage() {
               logType === "activity"
                 ? "Cerca per azione, utente o email..."
                 : logType === "email"
-                  ? "Cerca per destinatario, oggetto o template..."
-                  : logType === "registration"
+                    ? "Cerca per destinatario, oggetto o template..."
+                : logType === "registration"
                     ? "Cerca per nome, email o telefono..."
                     : "Cerca per utente o codice..."
             }
@@ -517,30 +518,29 @@ export default function PlatformLogsPage() {
                 display: none;
               }
             `}</style>
-            <div className="space-y-3 min-w-[900px]">
-              {/* Header Row */}
+            <div className="space-y-3 min-w-[980px]">
               <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="grid grid-cols-[40px_200px_120px_200px_150px_100px_40px] items-center gap-4">
+                <div className="grid grid-cols-[40px_220px_120px_210px_100px_150px_40px] items-center gap-4">
                   <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Oggetto</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Template</div>
                   <div className="text-xs font-bold text-white/80 uppercase">Destinatario</div>
-                  <div className="text-xs font-bold text-white/80 uppercase">Data e Ora</div>
                   <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
+                  <div className="text-xs font-bold text-white/80 uppercase">Data e Ora</div>
                   <div></div>
                 </div>
               </div>
 
-              {/* Data Rows */}
               {filteredEmailLogs.map((log) => {
                 let borderStyle = {};
                 if (log.status === "failed" || log.status === "bounced") {
                   borderStyle = { borderLeftColor: "#ef4444" };
-                } else if (log.status === "pending") {
+                } else if (log.status === "pending" || log.status === "queued") {
                   borderStyle = { borderLeftColor: "#f59e0b" };
                 } else {
                   borderStyle = { borderLeftColor: "#10b981" };
                 }
+
                 return (
                   <div
                     key={log.id}
@@ -548,20 +548,24 @@ export default function PlatformLogsPage() {
                     style={borderStyle}
                     onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
                   >
-                    <div className="grid grid-cols-[40px_200px_120px_200px_150px_100px_40px] items-center gap-4">
+                    <div className="grid grid-cols-[40px_220px_120px_210px_100px_150px_40px] items-center gap-4">
                       <div className="flex items-center justify-center">
                         {getStatusIcon(log.status)}
                       </div>
                       <div className="font-semibold text-secondary text-sm truncate">{log.subject}</div>
                       <div>
-                        <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded truncate block">{log.template_name}</span>
+                        <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded truncate block">
+                          {log.template_name}
+                        </span>
                       </div>
-                      <div className="text-sm text-secondary/80 truncate">
-                        {log.recipient_email}
-                      </div>
-                      <div className="text-sm text-secondary/80">{new Date(log.created_at).toLocaleString("it-IT")}</div>
+                      <div className="text-sm text-secondary/80 truncate">{log.recipient_email}</div>
                       <div className="text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded border ${getStatusBadgeColor(log.status)}`}>{log.status}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded border ${getStatusBadgeColor(log.status)}`}>
+                          {log.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-secondary/80">
+                        {new Date(log.created_at).toLocaleString("it-IT")}
                       </div>
                       <div className="flex justify-center">
                         {expandedLog === log.id ? (
@@ -576,8 +580,14 @@ export default function PlatformLogsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-medium text-secondary">Provider:</span>
-                            <span className="ml-2 text-secondary/60">{log.provider}</span>
+                            <span className="ml-2 text-secondary/60">{log.provider || "resend"}</span>
                           </div>
+                          {log.provider_message_id && (
+                            <div>
+                              <span className="font-medium text-secondary">Provider Message ID:</span>
+                              <span className="ml-2 text-secondary/60 font-mono text-xs">{log.provider_message_id}</span>
+                            </div>
+                          )}
                           {log.sent_at && (
                             <div>
                               <span className="font-medium text-secondary">Inviata:</span>

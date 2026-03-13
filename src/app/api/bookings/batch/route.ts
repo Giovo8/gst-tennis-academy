@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
-import { sendAdminNewBookingAlert } from "@/lib/email/triggers";
+import { sendBookingCreatedEmailToAdminAndGestore } from "@/lib/email/booking-notifications";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
 
       const { data: userProfile } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, email, role")
         .eq("id", firstBooking.user_id)
         .single();
 
@@ -134,16 +134,30 @@ export async function POST(request: Request) {
         link: "/dashboard/admin/bookings",
       });
 
-      await sendAdminNewBookingAlert({
-        athleteName,
-        court: firstBooking.court,
-        bookingDate: startDate,
-        bookingTime: startTime,
-        bookingId: firstBooking.id,
-        participantsCount: Array.isArray(bookings[0]?.participants) && bookings[0].participants.length > 0
-          ? bookings[0].participants.length
-          : 1,
-      });
+      if (userProfile?.role === "atleta") {
+        await Promise.all(
+          insertedBookings.map((booking, index) => {
+            const sourceBooking = bookings[index];
+            const participantsCount = Array.isArray(sourceBooking?.participants)
+              ? sourceBooking.participants.length
+              : 0;
+            const bookingMode = participantsCount > 2 ? "doppio" : "singolo";
+
+            return sendBookingCreatedEmailToAdminAndGestore({
+              bookingId: booking.id,
+              athleteName,
+              athleteEmail: userProfile.email || null,
+              court: booking.court,
+              type: booking.type || "campo",
+              bookingMode,
+              startTime: booking.start_time,
+              endTime: booking.end_time,
+              notes: booking.notes || null,
+            });
+          })
+          )
+        );
+      }
     }
 
     return NextResponse.json(

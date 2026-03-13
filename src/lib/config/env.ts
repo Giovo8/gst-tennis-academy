@@ -25,8 +25,7 @@ const serverEnvSchema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY è obbligatoria'),
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().optional().default('noreply@gst-tennis-academy.it'),
-  EMAIL_REPLY_TO: z.string().optional().default('info@gst-tennis-academy.it'),
+  EMAIL_FROM: z.string().optional(),
   ENABLE_RATE_LIMITING: z.enum(['true', 'false']).default('true'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
@@ -86,8 +85,7 @@ class EnvironmentConfig {
           SUPABASE_URL: process.env.SUPABASE_URL,
           SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
           RESEND_API_KEY: process.env.RESEND_API_KEY,
-          EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@gst-tennis-academy.it',
-          EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO || 'info@gst-tennis-academy.it',
+          EMAIL_FROM: process.env.EMAIL_FROM,
           ENABLE_RATE_LIMITING: (process.env.ENABLE_RATE_LIMITING || 'true') as any,
           LOG_LEVEL: (process.env.LOG_LEVEL || 'info') as any,
         } as EnvConfig;
@@ -155,11 +153,7 @@ class EnvironmentConfig {
   }
 
   public get emailFrom(): string {
-    return this.get('EMAIL_FROM') || 'noreply@gstacademy.it';
-  }
-
-  public get emailReplyTo(): string {
-    return this.get('EMAIL_REPLY_TO') || 'info@gst-tennis-academy.it';
+    return this.get('EMAIL_FROM') || '';
   }
 
   // Features

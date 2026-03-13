@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Get all admin and gestore users
     const { data: admins, error: adminsError } = await supabase
       .from("profiles")
-      .select("id, email, full_name, email_notifications_enabled")
+      .select("id")
       .in("role", ["admin", "gestore"]);
 
     if (adminsError) {
@@ -48,27 +48,6 @@ export async function POST(request: NextRequest) {
 
     if (notifError) {
       return NextResponse.json({ error: notifError.message }, { status: 500 });
-    }
-
-    // Send email notifications to admins who have them enabled
-    const adminsWithEmail = admins.filter((admin) => admin.email_notifications_enabled);
-
-    for (const admin of adminsWithEmail) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/notification`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: admin.email,
-            name: admin.full_name,
-            title,
-            message,
-            link,
-          }),
-        });
-      } catch (emailError) {
-        console.error(`Failed to send email to ${admin.email}:`, emailError);
-      }
     }
 
     return NextResponse.json({

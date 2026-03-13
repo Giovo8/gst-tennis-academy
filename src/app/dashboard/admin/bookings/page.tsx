@@ -761,7 +761,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
               >
                 <div
                   onClick={() => router.push(`${basePath}/bookings/${booking.id}`)}
-                  className="grid grid-cols-[40px_80px_56px_80px_220px_120px_1fr_60px_64px] items-center gap-4 no-underline"
+                  className="grid grid-cols-[40px_80px_56px_80px_220px_220px_1fr_60px_64px] items-center gap-4 no-underline"
                 >
                     {/* Simbolo Tipo */}
                     <div className="flex items-center justify-center">
@@ -800,7 +800,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                     {/* Maestro */}
                     <div>
                       {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") ? (
-                        <div className="font-semibold text-secondary truncate text-sm">
+                        <div className="font-semibold text-secondary text-sm whitespace-nowrap">
                           {booking.coach_profile?.full_name || "N/A"}
                         </div>
                       ) : (

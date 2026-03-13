@@ -4,6 +4,20 @@
 
 Ho implementato un sistema completo per l'invio di email con cronologia:
 
+### Nuova automazione prenotazioni
+- Flusso attivo: quando un utente con ruolo atleta crea una prenotazione, viene inviata una email ai profili con ruolo admin e gestore.
+- Integrazione: Resend API server-side.
+- File principali:
+  - `src/app/api/bookings/route.ts`
+  - `src/app/api/bookings/batch/route.ts`
+  - `src/lib/email/booking-notifications.ts`
+  - `src/lib/email/resend-client.ts`
+  - `src/lib/email/email-log.ts`
+- Variabili richieste:
+  - `RESEND_API_KEY`
+  - `EMAIL_FROM` (esempio: `noreply@gstacademy.it`)
+- Logging: ogni invio salva esito `sent`/`failed` con `provider_message_id` su `email_logs` (fallback su `email_log` in ambienti legacy).
+
 ### 1. Database
 - **File SQL**: `supabase/CREATE_EMAIL_CAMPAIGNS_TABLE.sql`
 - **Tabella**: `email_campaigns` con tutti i campi necessari
