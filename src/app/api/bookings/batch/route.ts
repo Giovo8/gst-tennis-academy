@@ -155,7 +155,6 @@ export async function POST(request: Request) {
               notes: booking.notes || null,
             });
           })
-          )
         );
       }
     }
