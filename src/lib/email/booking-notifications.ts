@@ -94,49 +94,61 @@ export async function sendBookingCreatedEmailToAdminAndGestore(params: SendBooki
     });
     const createdAtLabel = new Date().toLocaleString("it-IT");
 
-    const bookingUrl = `${env.appUrl.replace(/\/$/, "")}/dashboard/admin/bookings`;
+    const appBaseUrl = env.appUrl.replace(/\/$/, "");
+    const bookingUrl = `${appBaseUrl}/dashboard/admin/bookings`;
+    const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
     const bookingMode = params.bookingMode || "singolo";
 
-    const subject = `Nuova prenotazione atleta - ${params.court} - ${dateLabel} ${startLabel}`;
+    const subject = `Nuova prenotazione registrata - ${params.court} - ${dateLabel} ${startLabel}`;
 
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #111827; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-        <div style="background: #0f172a; padding: 14px 18px;">
-          <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Tennis Academy</div>
-          <div style="color: #bfdbfe; font-size: 12px; margin-top: 2px;">Notifica nuova prenotazione</div>
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #f3f7fa; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+                <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">Notifica prenotazione</div>
+              </td>
+            </tr>
+          </table>
         </div>
         <div style="padding: 18px; background: #ffffff;">
-          <h2 style="margin: 0 0 10px 0; font-size: 18px;">Nuova prenotazione atleta</h2>
-          <p style="margin-bottom: 16px; color: #334155;">Un atleta ha effettuato una nuova prenotazione in piattaforma.</p>
-          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
-            <tr><td style="padding: 6px 0; width: 170px;"><strong>Atleta</strong></td><td style="padding: 6px 0;">${escapeHtml(params.athleteName)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Email atleta</strong></td><td style="padding: 6px 0;">${escapeHtml(safeAthleteEmail)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Campo</strong></td><td style="padding: 6px 0;">${escapeHtml(params.court)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Tipo</strong></td><td style="padding: 6px 0;">${escapeHtml(params.type)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Modalita</strong></td><td style="padding: 6px 0;">${escapeHtml(bookingMode)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Data</strong></td><td style="padding: 6px 0;">${escapeHtml(dateLabel)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Orario</strong></td><td style="padding: 6px 0;">${escapeHtml(startLabel)} - ${escapeHtml(endLabel)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>ID prenotazione</strong></td><td style="padding: 6px 0;">${escapeHtml(params.bookingId)}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Creata il</strong></td><td style="padding: 6px 0;">${escapeHtml(createdAtLabel)}</td></tr>
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova prenotazione registrata</h2>
+          <p style="margin: 0 0 16px 0; color: #334155;">È stata registrata una nuova prenotazione e il calendario campi è stato aggiornato.</p>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.type)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingMode)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">${escapeHtml(dateLabel)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">${escapeHtml(startLabel)} - ${escapeHtml(endLabel)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.bookingId)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Creata il</strong></td><td style="padding: 8px 10px;">${escapeHtml(createdAtLabel)}</td></tr>
           </table>
           ${notes ? `<p style="margin: 0 0 16px 0;"><strong>Note:</strong> ${escapeHtml(notes)}</p>` : ""}
-          <p style="margin-top: 10px;">
-            <a href="${bookingUrl}" style="display: inline-block; background: #0f172a; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri gestione prenotazioni</a>
+          <p style="margin: 10px 0 0 0;">
+            <a href="${bookingUrl}" style="display: inline-block; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri gestione prenotazioni</a>
           </p>
+          <p style="margin: 12px 0 0 0; color: #64748b; font-size: 12px;">Questa notifica è stata inviata automaticamente agli account admin e gestore della piattaforma.</p>
         </div>
       </div>
     `;
 
     const text = [
-      "Nuova prenotazione atleta",
+      "Nuova prenotazione registrata",
       "",
       `Atleta: ${params.athleteName}`,
       `Email atleta: ${safeAthleteEmail}`,
       `Campo: ${params.court}`,
       `Tipo: ${params.type}`,
-      `Modalita: ${bookingMode}`,
+      `Modalità: ${bookingMode}`,
       `Data: ${dateLabel}`,
       `Orario: ${startLabel} - ${endLabel}`,
       `ID prenotazione: ${params.bookingId}`,
