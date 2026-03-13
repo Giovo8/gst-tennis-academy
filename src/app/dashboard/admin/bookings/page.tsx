@@ -51,12 +51,23 @@ type Booking = {
   created_at: string;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
 };
 type BookingsPageProps = {
   mode?: "default" | "history";
+  basePath?: string;
 };
 
-export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
+export default function BookingsPage({ mode = "default", basePath = "/dashboard/admin" }: BookingsPageProps) {
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +78,30 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+
+  const getPrimaryParticipant = (booking: Booking) =>
+    booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
+
+  const getAthleteDisplayName = (booking: Booking) =>
+    getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "N/A";
+
+  const getAthleteDisplayEmail = (booking: Booking) => {
+    if ((booking.participants?.length || 0) > 0) {
+      return getPrimaryParticipant(booking)?.email || "";
+    }
+
+    return booking.user_profile?.email || "";
+  };
+
+  const getParticipantIdentityKey = (booking: Booking) => {
+    if (booking.participants && booking.participants.length > 0) {
+      return booking.participants
+        .map((participant) => participant.user_id || `guest:${participant.full_name.trim().toLowerCase()}`)
+        .join("|");
+    }
+
+    return booking.user_id;
+  };
 
   useEffect(() => {
     loadBookings();
@@ -135,6 +170,53 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         .select("id, full_name, email, phone")
         .in("id", userIds);
 
+      const bookingIds = bookingsData.map((booking) => booking.id);
+      let participantsData:
+        | Array<{
+            id?: string;
+            booking_id?: string;
+            full_name: string;
+            email?: string;
+            phone?: string;
+            is_registered: boolean;
+            user_id?: string | null;
+            order_index?: number;
+          }>
+        | null = null;
+
+      if (bookingIds.length > 0) {
+        let bookingParticipantsData = null;
+        let participantsError = null;
+
+        const participantsQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+          .in("booking_id", bookingIds)
+          .order("booking_id", { ascending: true })
+          .order("order_index", { ascending: true });
+
+        bookingParticipantsData = participantsQuery.data;
+        participantsError = participantsQuery.error;
+
+        if (participantsError?.message?.toLowerCase().includes('phone')) {
+          const fallbackQuery = await supabase
+            .from("booking_participants")
+            .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+            .in("booking_id", bookingIds)
+            .order("booking_id", { ascending: true })
+            .order("order_index", { ascending: true });
+
+          bookingParticipantsData = fallbackQuery.data;
+          participantsError = fallbackQuery.error;
+        }
+
+        if (participantsError) {
+          console.warn("⚠️ Errore caricamento partecipanti prenotazioni:", participantsError);
+        } else {
+          participantsData = bookingParticipantsData;
+        }
+      }
+
       if (profilesError) {
         console.warn("⚠️ Errore caricamento profili:", profilesError);
       }
@@ -148,7 +230,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       const enrichedBookings = bookingsData.map(booking => ({
         ...booking,
         user_profile: profilesMap.get(booking.user_id) || null,
-        coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null
+        coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null,
+        participants: participantsData?.filter((participant) => participant.booking_id === booking.id) || []
       }));
 
       console.log("✅ Prenotazioni caricate:", enrichedBookings.length);
@@ -274,7 +357,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         formatTime(b.start_time),
         formatTime(b.end_time),
         b.court,
-        b.user_profile?.full_name || "N/A",
+        getAthleteDisplayName(b),
         b.coach_profile?.full_name || "N/A",
         typeConfig[b.type]?.label || b.type,
         statusConfig[b.status]?.label || b.status,
@@ -335,14 +418,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       // Check if same user, same court, same type, and consecutive times
       const currentEnd = new Date(current.end_time);
       const nextStart = new Date(next.start_time);
-      const sameUser = current.user_id === next.user_id;
+      const sameParticipant = getParticipantIdentityKey(current) === getParticipantIdentityKey(next);
       const sameCourt = current.court === next.court;
       const sameType = current.type === next.type;
       const sameCoach = current.coach_id === next.coach_id;
       const sameStatus = current.status === next.status;
       const consecutive = currentEnd.getTime() === nextStart.getTime();
       
-      if (sameUser && sameCourt && sameType && sameCoach && sameStatus && consecutive) {
+      if (sameParticipant && sameCourt && sameType && sameCoach && sameStatus && consecutive) {
         // Merge: extend current end time, keep first booking ID
         current = {
           ...current,
@@ -364,12 +447,18 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
   const filteredBookings = mergedBaseBookings.filter((booking) => {
     const matchesStatus = filter === "all" || booking.status === filter;
+    const normalizedSearch = search.toLowerCase();
     const matchesSearch =
       !search ||
-      booking.user_profile?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.user_profile?.email?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.coach_profile?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.court?.toLowerCase().includes(search.toLowerCase());
+      getAthleteDisplayName(booking).toLowerCase().includes(normalizedSearch) ||
+      getAthleteDisplayEmail(booking).toLowerCase().includes(normalizedSearch) ||
+      booking.participants?.some(
+        (participant) =>
+          participant.full_name?.toLowerCase().includes(normalizedSearch) ||
+          participant.email?.toLowerCase().includes(normalizedSearch)
+      ) ||
+      booking.coach_profile?.full_name?.toLowerCase().includes(normalizedSearch) ||
+      booking.court?.toLowerCase().includes(normalizedSearch);
     return matchesStatus && matchesSearch;
   });
 
@@ -392,8 +481,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         comparison = a.status.localeCompare(b.status);
         break;
       case "athlete":
-        const athleteA = a.user_profile?.full_name || "";
-        const athleteB = b.user_profile?.full_name || "";
+        const athleteA = getAthleteDisplayName(a);
+        const athleteB = getAthleteDisplayName(b);
         comparison = athleteA.localeCompare(athleteB);
         break;
       case "coach":
@@ -471,7 +560,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           {mode === "history" && (
             <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
               <Link
-                href="/dashboard/admin/bookings"
+                href={`${basePath}/bookings`}
                 className="hover:text-secondary/80 transition-colors"
               >
                 Prenotazioni
@@ -493,14 +582,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           {mode !== "history" && (
             <>
               <Link
-                href="/dashboard/admin/bookings/new"
+                href={`${basePath}/bookings/new`}
                 className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 Crea Prenotazione
               </Link>
               <Link
-                href="/dashboard/admin/bookings/storico"
+                href={`${basePath}/bookings/storico`}
                 className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
                 title="Storico"
               >
@@ -510,7 +599,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           )}
           {mode !== "history" && (
             <Link
-              href="/dashboard/admin/courts"
+              href={`${basePath}/courts`}
               className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
               title="Blocco Campi"
             >
@@ -579,7 +668,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       {/* Bookings List or Timeline */}
       {mode !== "history" && viewMode === "timeline" ? (
-        <BookingsTimeline bookings={sortedBookings} loading={loading} />
+        <BookingsTimeline bookings={sortedBookings} loading={loading} basePath={basePath} />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
@@ -598,10 +687,10 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               display: none;
             }
           `}</style>
-          <div className="space-y-3 min-w-[900px]">
+          <div className="space-y-3 min-w-[1040px]">
           {/* Header Row */}
           <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="grid grid-cols-[40px_80px_56px_80px_100px_100px_1fr_60px_64px] items-center gap-4">
+            <div className="grid grid-cols-[40px_80px_56px_80px_220px_120px_1fr_60px_64px] items-center gap-4">
               <div className="text-xs font-bold text-white/80 uppercase text-center">
                 <button
                   onClick={() => handleSort("type")}
@@ -671,8 +760,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                 style={borderStyle}
               >
                 <div
-                  onClick={() => router.push(`/dashboard/admin/bookings/${booking.id}`)}
-                  className="grid grid-cols-[40px_80px_56px_80px_100px_100px_1fr_60px_64px] items-center gap-4 no-underline"
+                  onClick={() => router.push(`${basePath}/bookings/${booking.id}`)}
+                  className="grid grid-cols-[40px_80px_56px_80px_220px_120px_1fr_60px_64px] items-center gap-4 no-underline"
                 >
                     {/* Simbolo Tipo */}
                     <div className="flex items-center justify-center">
@@ -704,8 +793,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     <div className="font-bold text-secondary">{booking.court}</div>
 
                     {/* Atleta */}
-                    <div className="font-semibold text-secondary truncate text-sm">
-                      {booking.user_profile?.full_name || "N/A"}
+                    <div className="font-semibold text-secondary text-sm whitespace-nowrap">
+                      {getAthleteDisplayName(booking)}
                     </div>
 
                     {/* Maestro */}
@@ -761,7 +850,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                             style={{ top: menuPosition.top, left: menuPosition.left }}
                           >
                             <Link
-                              href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
+                              href={`${basePath}/bookings/modifica?id=${booking.id}`}
                               onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
                             >

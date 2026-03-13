@@ -5,7 +5,7 @@ import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { sendAdminNewBookingAlert } from "@/lib/email/triggers";
 import { logActivityServer } from "@/lib/activity/logActivity";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
-import { sanitizeObject, sanitizeUuid } from "@/lib/security/sanitize-server";
+import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
@@ -260,6 +260,7 @@ export async function POST(req: Request) {
         user_id: p.user_id || null,
         full_name: p.full_name,
         email: p.email || null,
+        phone: p.phone ? sanitizePhone(p.phone) : null,
         is_registered: p.is_registered || false,
         participant_type: 'atleta',
         order_index: index,
@@ -271,10 +272,29 @@ export async function POST(req: Request) {
         .select();
 
       if (participantsError) {
-        logger.warn('Failed to insert booking participants', {
-          bookingId,
-          error: participantsError,
-        });
+        const missingPhoneColumn = participantsError.message?.toLowerCase().includes('phone');
+
+        if (missingPhoneColumn) {
+          const fallbackParticipantsData = participantsData.map(({ phone: _phone, ...participant }) => participant);
+          const { error: fallbackError, data: fallbackInsertedParticipants } = await supabaseServer
+            .from("booking_participants")
+            .insert(fallbackParticipantsData)
+            .select();
+
+          if (fallbackError) {
+            logger.warn('Failed to insert booking participants after phone fallback', {
+              bookingId,
+              error: fallbackError,
+            });
+          } else {
+            participantsInserted = fallbackInsertedParticipants?.length || 0;
+          }
+        } else {
+          logger.warn('Failed to insert booking participants', {
+            bookingId,
+            error: participantsError,
+          });
+        }
       } else {
         participantsInserted = insertedParticipants?.length || 0;
       }

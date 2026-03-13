@@ -136,8 +136,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     },
   ];
 
+  // Filtra i log piattaforma per il ruolo gestore
+  const filteredNavItems = userRole === "gestore"
+    ? navItems.filter(item => item.href !== "/dashboard/admin/platform-logs")
+    : navItems;
+
   // Sezione primaria in alto nella sidebar (es. voci principali)
-  const primaryNavItems: NavItem[] = navItems.slice(0, 4);
+  const primaryNavItems: NavItem[] = filteredNavItems.slice(0, 4);
 
   if (loading) {
     return (
@@ -152,7 +157,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <DashboardShell
-      navItems={navItems}
+      navItems={filteredNavItems}
       primaryNavItems={primaryNavItems}
       role={userRole}
       userName={userName}

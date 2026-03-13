@@ -36,9 +36,23 @@ type Booking = {
   created_at: string;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
 };
 
-export default function BookingDetailPage() {
+type BookingDetailPageProps = {
+  basePath?: string;
+};
+
+export default function BookingDetailPage({ basePath = "/dashboard/admin" }: BookingDetailPageProps) {
   const router = useRouter();
   const params = useParams();
   const bookingId = params?.id as string;
@@ -47,6 +61,32 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const getPrimaryParticipant = (currentBooking: Booking | null) =>
+    currentBooking?.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
+
+  const hasParticipants = (currentBooking: Booking | null) =>
+    (currentBooking?.participants?.length || 0) > 0;
+
+  const getDisplayParticipants = (currentBooking: Booking | null) => {
+    if (!currentBooking) return [];
+
+    if (hasParticipants(currentBooking)) {
+      return (currentBooking.participants || []).map((participant) => ({
+        fullName: participant.full_name,
+        email: participant.email || null,
+        phone: participant.phone || null,
+      }));
+    }
+
+    return [
+      {
+        fullName: currentBooking.user_profile?.full_name || "Nome non disponibile",
+        email: currentBooking.user_profile?.email || null,
+        phone: currentBooking.user_profile?.phone || null,
+      },
+    ];
+  };
 
   useEffect(() => {
     if (bookingId) {
@@ -65,7 +105,7 @@ export default function BookingDetailPage() {
       if (error || !bookingData) {
         console.error("Errore caricamento prenotazione:", error);
         alert("Prenotazione non trovata");
-        router.push("/dashboard/admin/bookings");
+        router.push(`${basePath}/bookings`);
         return;
       }
 
@@ -76,6 +116,26 @@ export default function BookingDetailPage() {
         .select("id, full_name, email, phone")
         .in("id", userIds);
 
+      let participantsData = null;
+
+      const participantsQuery = await supabase
+        .from("booking_participants")
+        .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+        .eq("booking_id", bookingId)
+        .order("order_index", { ascending: true });
+
+      participantsData = participantsQuery.data;
+
+      if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+        const fallbackParticipantsQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+          .eq("booking_id", bookingId)
+          .order("order_index", { ascending: true });
+
+        participantsData = fallbackParticipantsQuery.data;
+      }
+
       const profilesMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
 
       const enrichedBooking = {
@@ -84,6 +144,7 @@ export default function BookingDetailPage() {
         coach_profile: bookingData.coach_id
           ? profilesMap.get(bookingData.coach_id) || null
           : null,
+        participants: participantsData || [],
       };
 
       console.log("📅 Dettaglio prenotazione:", {
@@ -97,7 +158,7 @@ export default function BookingDetailPage() {
     } catch (error) {
       console.error("Errore:", error);
       alert("Errore nel caricamento della prenotazione");
-      router.push("/dashboard/admin/bookings");
+      router.push(`${basePath}/bookings`);
     } finally {
       setLoading(false);
     }
@@ -135,7 +196,7 @@ export default function BookingDetailPage() {
           link: "/dashboard/atleta/bookings",
         });
 
-        router.push("/dashboard/admin/bookings");
+        router.push(`${basePath}/bookings`);
       }
     } catch (error) {
       console.error("Errore:", error);
@@ -179,7 +240,7 @@ export default function BookingDetailPage() {
           link: "/dashboard/atleta/bookings",
         });
 
-        router.push("/dashboard/admin/bookings");
+        router.push(`${basePath}/bookings`);
       }
     } catch (error) {
       console.error("Errore:", error);
@@ -203,7 +264,7 @@ export default function BookingDetailPage() {
         .eq("id", booking.id);
 
       if (!error) {
-        router.push("/dashboard/admin/bookings");
+        router.push(`${basePath}/bookings`);
       } else {
         alert("Errore durante l'eliminazione");
       }
@@ -246,6 +307,7 @@ export default function BookingDetailPage() {
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
   const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
   const needsApproval = !booking.manager_confirmed && booking.status !== "cancelled";
+  const displayParticipants = getDisplayParticipants(booking);
 
   // Determina icona e stile in base al tipo
   function getBookingStyle() {
@@ -307,7 +369,7 @@ export default function BookingDetailPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/admin/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+        <Link href={`${basePath}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
         {" › "}
         <span>Dettagli Prenotazione</span>
       </p>
@@ -341,6 +403,34 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
+      {/* Partecipanti */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-secondary mb-6">
+          Partecipanti
+        </h2>
+        <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[640px]">
+            <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
+              <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+            </div>
+          </div>
+
+          {displayParticipants.map((participant, index) => (
+            <div key={`${participant.fullName}-${index}`} className="bg-white rounded-lg px-4 py-3 border border-gray-200 min-w-[640px]">
+              <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
+                <div className="text-sm text-secondary/60 text-center">{index + 1}</div>
+                <div className="text-secondary font-semibold text-sm">{participant.fullName}</div>
+                <div className="text-secondary/70 text-sm">{participant.email || "Non disponibile"}</div>
+                <div className="text-secondary/70 text-sm">{participant.phone || "Non disponibile"}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Dettagli prenotazione */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli prenotazione</h2>
@@ -369,6 +459,18 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
+          {/* Modalità - solo per prenotazioni campo */}
+          {booking.type === "campo" && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {(booking.participants?.length ?? 0) > 2 ? "Doppio" : "Singolo"}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Orario */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
@@ -384,32 +486,6 @@ export default function BookingDetailPage() {
                   minute: "2-digit",
                 })}
               </p>
-            </div>
-          </div>
-
-          {/* Atleta */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {booking.user_profile?.full_name || "Nome non disponibile"}
-              </p>
-            </div>
-          </div>
-
-          {/* Email Atleta */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
-            <div className="flex-1">
-              <p className="text-secondary/70">{booking.user_profile?.email || "Non disponibile"}</p>
-            </div>
-          </div>
-
-          {/* Telefono Atleta */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
-            <div className="flex-1">
-              <p className="text-secondary/70">{booking.user_profile?.phone || "Non disponibile"}</p>
             </div>
           </div>
 
@@ -533,7 +609,7 @@ export default function BookingDetailPage() {
       <div className="flex flex-wrap gap-3">
           {booking.status !== "cancelled" && (
             <Link
-              href={`/dashboard/admin/bookings/modifica?id=${booking.id}`}
+              href={`${basePath}/bookings/modifica?id=${booking.id}`}
               className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
             >
               <Edit className="h-5 w-5" />

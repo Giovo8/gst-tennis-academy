@@ -38,6 +38,7 @@ export default function AthletesSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -75,11 +76,13 @@ export default function AthletesSelector({
     onAthleteAdd({
       fullName: guestName.trim(),
       email: guestEmail.trim() || undefined,
+      phone: guestPhone.trim() || undefined,
       isRegistered: false,
     });
 
     setGuestName("");
     setGuestEmail("");
+    setGuestPhone("");
     setShowGuestForm(false);
   };
 
@@ -200,6 +203,13 @@ export default function AthletesSelector({
                       placeholder="Email (facoltativo)"
                       value={guestEmail}
                       onChange={(e) => setGuestEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Telefono (facoltativo)"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
                     />
                     <button

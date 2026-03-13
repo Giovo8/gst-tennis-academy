@@ -622,6 +622,7 @@ function NewBookingPageInner() {
           user_id: athlete.userId || null,
           full_name: athlete.fullName,
           email: athlete.email || null,
+          phone: athlete.phone || null,
           is_registered: athlete.isRegistered,
         })),
       };

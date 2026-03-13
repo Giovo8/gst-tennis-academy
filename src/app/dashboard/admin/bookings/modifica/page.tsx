@@ -7,6 +7,8 @@ import { Loader2, AlertCircle, Calendar, ChevronDown } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/lib/supabase/client";
+import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { type UserRole } from "@/lib/roles";
 
 interface Booking {
   id: string;
@@ -20,7 +22,18 @@ interface Booking {
   user_profile?: {
     full_name: string | null;
     email: string | null;
+    phone?: string | null;
   };
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
 }
 
 interface TimeSlot {
@@ -36,8 +49,18 @@ interface ExistingBooking {
   status: string;
   user_id?: string;
   coach_id?: string;
-  user_profile?: { full_name: string | null } | null;
-  coach_profile?: { full_name: string | null } | null;
+  user_profile?: { full_name: string | null; email?: string | null } | null;
+  coach_profile?: { full_name: string | null; email?: string | null } | null;
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
   isBlock?: boolean;
   reason?: string;
 }
@@ -140,12 +163,39 @@ const COURTS = [
 ];
 
 const BOOKING_TYPES = [
-  { value: "campo", label: "Campo Libero" },
+  { value: "campo", label: "Campo" },
   { value: "lezione_privata", label: "Lezione Privata" },
   { value: "lezione_gruppo", label: "Lezione Gruppo" },
 ];
 
-export default function AdminEditBookingPage() {
+const MATCH_FORMATS = [
+  { value: "singolo", label: "Singolo" },
+  { value: "doppio", label: "Doppio" },
+] as const;
+
+type MatchFormat = "singolo" | "doppio";
+
+interface AthleteProfile {
+  id: string;
+  full_name: string | null;
+  email: string;
+  phone?: string | null;
+  role: UserRole;
+}
+
+type SelectedAthlete = {
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  isRegistered: boolean;
+};
+
+type AdminEditBookingPageProps = {
+  basePath?: string;
+};
+
+export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: AdminEditBookingPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("id");
@@ -165,6 +215,9 @@ export default function AdminEditBookingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
+  const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
+  const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   
@@ -173,6 +226,12 @@ export default function AdminEditBookingPage() {
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+
+  const getPrimaryParticipant = (bookingItem: ExistingBooking | null) =>
+    bookingItem?.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
+
+  const getBookingDisplayName = (bookingItem: ExistingBooking) =>
+    getPrimaryParticipant(bookingItem)?.full_name || bookingItem.user_profile?.full_name || "Sconosciuto";
 
   // Drag to scroll handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -226,13 +285,14 @@ export default function AdminEditBookingPage() {
       if (error) {
         setError("Errore nel caricamento della prenotazione");
       } else if (data) {
-        let userProfile: { full_name: string | null; email: string | null } | undefined;
+        let userProfile: { full_name: string | null; email: string | null; phone?: string | null } | undefined;
+        let participantsData = null;
 
         // Carica i dati dell'atleta associato alla prenotazione
         if (data.user_id) {
           const { data: profileData } = await supabase
             .from("profiles")
-            .select("full_name, email")
+            .select("full_name, email, phone")
             .eq("id", data.user_id)
             .single();
 
@@ -240,11 +300,19 @@ export default function AdminEditBookingPage() {
             userProfile = {
               full_name: profileData.full_name ?? null,
               email: profileData.email ?? null,
+              phone: profileData.phone ?? null,
             };
           }
         }
 
-        setBooking({ ...(data as any), user_profile: userProfile } as Booking);
+        const participantsQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+          .eq("booking_id", bookingId)
+          .order("order_index", { ascending: true });
+        participantsData = participantsQuery.data;
+
+        setBooking({ ...(data as any), user_profile: userProfile, participants: participantsData || [] } as Booking);
         setSelectedCourt(data.court);
         setBookingType(data.type || "campo");
         setSelectedCoach(data.coach_id || "");
@@ -271,6 +339,16 @@ export default function AdminEditBookingPage() {
         setSelectedSlots(initialSlots);
 
         setNotes(data.notes || "");
+
+        const participantsForEdit: SelectedAthlete[] = (participantsData || []).map((p: any) => ({
+          userId: p.user_id || undefined,
+          fullName: p.full_name || "",
+          email: p.email || undefined,
+          phone: p.phone || undefined,
+          isRegistered: p.is_registered || false,
+        }));
+        setSelectedAthletes(participantsForEdit);
+        setMatchFormat((participantsData?.length || 0) > 2 ? "doppio" : "singolo");
       }
 
       setLoading(false);
@@ -281,19 +359,16 @@ export default function AdminEditBookingPage() {
 
   // Carica elenco maestri
   useEffect(() => {
-    const loadCoaches = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .eq("role", "maestro")
-        .order("full_name");
-
-      if (data) {
-        setCoaches(data as { id: string; full_name: string }[]);
-      }
+    const loadCoachesAndAthletes = async () => {
+      const [coachRes, athleteRes] = await Promise.all([
+        supabase.from("profiles").select("id, full_name").eq("role", "maestro").order("full_name"),
+        supabase.from("profiles").select("id, full_name, email, phone, role").eq("role", "atleta").order("full_name"),
+      ]);
+      if (coachRes.data) setCoaches(coachRes.data as { id: string; full_name: string }[]);
+      if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
     };
 
-    void loadCoaches();
+    void loadCoachesAndAthletes();
   }, []);
 
   // Carica/aggiorna gli slot disponibili per la data e il campo selezionati
@@ -338,13 +413,45 @@ export default function AdminEditBookingPage() {
         if (userIds.length > 0) {
           const { data: profilesData } = await supabase
             .from("profiles")
-            .select("id, full_name")
+            .select("id, full_name, email")
             .in("id", userIds);
 
           profilesData?.forEach(profile => {
             profilesMap.set(profile.id, profile);
           });
         }
+
+        const bookingIds = bookingsData?.map((bookingItem) => bookingItem.id) || [];
+        let bookingParticipantsData = null;
+
+        if (bookingIds.length > 0) {
+          const participantsQuery = await supabase
+            .from("booking_participants")
+            .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+            .in("booking_id", bookingIds)
+            .order("booking_id", { ascending: true })
+            .order("order_index", { ascending: true });
+
+          bookingParticipantsData = participantsQuery.data;
+
+          if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+            const fallbackParticipantsQuery = await supabase
+              .from("booking_participants")
+              .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+              .in("booking_id", bookingIds)
+              .order("booking_id", { ascending: true })
+              .order("order_index", { ascending: true });
+
+            bookingParticipantsData = fallbackParticipantsQuery.data;
+          }
+        }
+
+        const participantsMap = new Map<string, ExistingBooking["participants"]>();
+        (bookingParticipantsData || []).forEach((participant: any) => {
+          const existing = participantsMap.get(participant.booking_id) || [];
+          existing.push(participant);
+          participantsMap.set(participant.booking_id, existing);
+        });
 
         // Enrich bookings with profiles
         const enrichedBookings = bookingsData?.map((b: any) => ({
@@ -357,6 +464,7 @@ export default function AdminEditBookingPage() {
           coach_id: b.coach_id,
           user_profile: b.user_id ? profilesMap.get(b.user_id) : undefined,
           coach_profile: b.coach_id ? profilesMap.get(b.coach_id) : undefined,
+          participants: participantsMap.get(b.id) || [],
         })) || [];
 
         // Add court blocks as fake bookings for visualization
@@ -476,6 +584,29 @@ export default function AdminEditBookingPage() {
     });
   };
 
+  const maxAthletesAllowed =
+    bookingType === "lezione_privata" ? 1
+    : bookingType === "campo" && matchFormat === "singolo" ? 2 : 4;
+
+  const canSave = selectedAthletes.length > 0 && !!selectedDate && !!selectedCourt && selectedSlots.length > 0 &&
+    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !!selectedCoach));
+
+  useEffect(() => {
+    setSelectedAthletes((prev) => {
+      if (prev.length <= maxAthletesAllowed) {
+        return prev;
+      }
+      return prev.slice(0, maxAthletesAllowed);
+    });
+  }, [maxAthletesAllowed]);
+
+  const handleMatchFormatChange = (format: MatchFormat) => {
+    setMatchFormat(format);
+    if (format === "singolo" && selectedAthletes.length > 2) {
+      setSelectedAthletes(prev => prev.slice(0, 2));
+    }
+  };
+
   async function handleSave() {
     if (!bookingId) return;
 
@@ -485,6 +616,26 @@ export default function AdminEditBookingPage() {
     try {
       if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
         throw new Error("Seleziona giorno, campo e almeno uno slot orario");
+      }
+
+      if (selectedAthletes.length === 0) {
+        throw new Error("Seleziona almeno un atleta/partecipante");
+      }
+
+      if (selectedAthletes.length > maxAthletesAllowed) {
+        throw new Error(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
+      }
+
+      if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !selectedCoach) {
+        throw new Error("Seleziona un maestro per le lezioni");
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
+      const bookingUserId = registeredAthlete?.userId ?? booking?.user_id ?? sessionData?.session?.user?.id;
+
+      if (!bookingUserId) {
+        throw new Error("Impossibile determinare l'utente della prenotazione");
       }
 
       const orderedSlots = [...selectedSlots].sort((a, b) => {
@@ -503,6 +654,7 @@ export default function AdminEditBookingPage() {
       const { error } = await supabase
         .from("bookings")
         .update({
+          user_id: bookingUserId,
           court: selectedCourt,
           type: bookingType || "campo",
           coach_id:
@@ -517,9 +669,51 @@ export default function AdminEditBookingPage() {
 
       if (error) throw error;
 
+      const { error: deleteParticipantsError } = await supabase
+        .from("booking_participants")
+        .delete()
+        .eq("booking_id", bookingId);
+
+      if (deleteParticipantsError) throw deleteParticipantsError;
+
+      if (selectedAthletes.length > 0) {
+        const participantsPayload = selectedAthletes.map((athlete, index) => ({
+          booking_id: bookingId,
+          user_id: athlete.userId || null,
+          full_name: athlete.fullName,
+          email: athlete.email || null,
+          phone: athlete.phone || null,
+          is_registered: athlete.isRegistered,
+          order_index: index,
+        }));
+
+        let { error: insertParticipantsError } = await supabase
+          .from("booking_participants")
+          .insert(participantsPayload);
+
+        if (insertParticipantsError?.message?.toLowerCase().includes("phone")) {
+          const fallbackPayload = selectedAthletes.map((athlete, index) => ({
+            booking_id: bookingId,
+            user_id: athlete.userId || null,
+            full_name: athlete.fullName,
+            email: athlete.email || null,
+            is_registered: athlete.isRegistered,
+            order_index: index,
+          }));
+
+          const { error: fallbackInsertError } = await supabase
+            .from("booking_participants")
+            .insert(fallbackPayload);
+
+          insertParticipantsError = fallbackInsertError || null;
+        }
+
+        if (insertParticipantsError) throw insertParticipantsError;
+      }
+
       setSuccess("Prenotazione aggiornata con successo!");
       setTimeout(() => {
-        router.push("/dashboard/admin/bookings");
+        router.push(`${basePath}/bookings`);
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -537,7 +731,7 @@ export default function AdminEditBookingPage() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-red-600">ID prenotazione mancante.</p>
-        <Link href="/dashboard/admin/bookings" className="text-sm text-secondary underline">
+        <Link href={`${basePath}/bookings`} className="text-sm text-secondary underline">
           Torna alle prenotazioni
         </Link>
       </div>
@@ -550,7 +744,7 @@ export default function AdminEditBookingPage() {
       <div className="flex flex-col gap-2">
         <p className="breadcrumb text-secondary/60">
           <Link
-            href="/dashboard/admin/bookings"
+            href={`${basePath}/bookings`}
             className="hover:text-secondary/80 transition-colors"
           >
             Prenotazioni
@@ -676,23 +870,6 @@ export default function AdminEditBookingPage() {
 
                     {/* Dettagli prenotazione - stile form moderno */}
                     <div className="space-y-6 mt-6">
-                      {/* Atleta (read-only) */}
-                      {booking && (
-                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Atleta</label>
-                          <div className="flex-1">
-                            <div className="text-secondary font-semibold">
-                              {booking.user_profile?.full_name || "Nome non disponibile"}
-                              {booking.user_profile?.email && (
-                                <span className="text-secondary/60 font-normal ml-2">
-                                  ({booking.user_profile.email})
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                       {/* Tipo prenotazione */}
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                         <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
@@ -716,6 +893,53 @@ export default function AdminEditBookingPage() {
                               {type.label}
                             </button>
                           ))}
+                        </div>
+                      </div>
+
+                      {/* Modalita campo */}
+                      {bookingType === "campo" && (
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
+                          <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                              {MATCH_FORMATS.map((formatOption) => (
+                                <button
+                                  key={formatOption.value}
+                                  type="button"
+                                  onClick={() => handleMatchFormatChange(formatOption.value)}
+                                  className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                                    matchFormat === formatOption.value
+                                      ? "bg-secondary text-white border-secondary"
+                                      : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                                  }`}
+                                >
+                                  {formatOption.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Atleta / Partecipanti */}
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                          {bookingType === "lezione_privata" ? "Atleta" : "Partecipanti"}
+                        </label>
+                        <div className="flex-1">
+                          <AthletesSelector
+                            athletes={athletes}
+                            selectedAthletes={selectedAthletes}
+                            onAthleteAdd={(athlete) => {
+                              if (selectedAthletes.length < maxAthletesAllowed) {
+                                setSelectedAthletes([...selectedAthletes, athlete]);
+                              }
+                            }}
+                            onAthleteRemove={(index) => {
+                              setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                            }}
+                            maxAthletes={maxAthletesAllowed}
+                          />
                         </div>
                       </div>
 
@@ -791,7 +1015,7 @@ export default function AdminEditBookingPage() {
                     >
                       <div className="min-w-[1280px]">
                         {/* Header con orari */}
-                        <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                        <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
                           {Array.from({ length: 16 }, (_, i) => {
                             const hour = 7 + i;
                             return (
@@ -806,7 +1030,7 @@ export default function AdminEditBookingPage() {
                         </div>
 
                         {/* Griglia slot selezionabili (ogni colonna divisa in due slot da 30 min) */}
-                        <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                        <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
                           {/* Prenotazioni esistenti come blocchi sovrapposti */}
                           {existingBookings.map((booking) => {
                             // Ignora la prenotazione che stiamo modificando
@@ -858,14 +1082,15 @@ export default function AdminEditBookingPage() {
                             return (
                               <div
                                 key={booking.id}
-                                onClick={() => router.push(isBlock ? `/dashboard/admin/courts/${booking.id}` : `/dashboard/admin/bookings/${booking.id}`)}
-                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => router.push(isBlock ? `${basePath}/courts/${booking.id}` : `${basePath}/bookings/${booking.id}`)}
+                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-pointer hover:opacity-90 transition-opacity"
                                 style={{
                                   ...getBookingStyle(),
                                   left: `${(startSlot / 32) * 100}%`,
-                                  width: `${(duration / 32) * 100}%`,
+                                  width: `calc(${(duration / 32) * 100}% - 4px)`,
                                   top: '4px',
-                                  bottom: '4px'
+                                  bottom: '4px',
+                                  marginLeft: '2px'
                                 }}
                               >
                                 {isBlock ? (
@@ -880,7 +1105,7 @@ export default function AdminEditBookingPage() {
                                 ) : (
                                   <>
                                     <div className="truncate leading-tight">
-                                      {booking.user_profile?.full_name || "Sconosciuto"}
+                                      {getBookingDisplayName(booking)}
                                     </div>
                                     {isLesson && booking.coach_profile && (
                                       <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
@@ -971,7 +1196,7 @@ export default function AdminEditBookingPage() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !canSave}
               className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
             >
               {saving ? (

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
-import { sanitizeObject, sanitizeUuid, sanitizeText } from "@/lib/security/sanitize-server";
+import { sanitizeObject, sanitizePhone, sanitizeUuid, sanitizeText } from "@/lib/security/sanitize-server";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants/app";
 
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     const rawBody = await req.json();
     const sanitized = sanitizeObject(rawBody);
     
-    const { booking_id, full_name, email, user_id } = sanitized;
+    const { booking_id, full_name, email, phone, user_id } = sanitized;
 
     if (!booking_id || !sanitizeUuid(booking_id)) {
       return NextResponse.json(
@@ -161,27 +161,51 @@ export async function POST(req: Request) {
     const nextIndex = currentCount;
     const isRegistered = user_id ? true : false;
 
-    const { data, error } = await supabaseServer
+    const participantData = {
+      booking_id,
+      user_id: user_id || null,
+      full_name: sanitizeText(full_name),
+      email: email || null,
+      phone: phone ? sanitizePhone(phone) : null,
+      is_registered: isRegistered,
+      participant_type: 'atleta',
+      order_index: nextIndex,
+    };
+
+    let data = null;
+    const { data: insertedParticipant, error } = await supabaseServer
       .from("booking_participants")
-      .insert([
-        {
-          booking_id,
-          user_id: user_id || null,
-          full_name: sanitizeText(full_name),
-          email: email || null,
-          is_registered: isRegistered,
-          participant_type: 'atleta',
-          order_index: nextIndex,
-        },
-      ])
+      .insert([participantData])
       .select();
 
     if (error) {
-      logger.error('Failed to add participant', error);
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.SERVER_ERROR },
-        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
-      );
+      const missingPhoneColumn = error.message?.toLowerCase().includes('phone');
+
+      if (!missingPhoneColumn) {
+        logger.error('Failed to add participant', error);
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.SERVER_ERROR },
+          { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        );
+      }
+
+      const { phone: _phone, ...fallbackParticipantData } = participantData;
+      const { data: fallbackData, error: fallbackError } = await supabaseServer
+        .from("booking_participants")
+        .insert([fallbackParticipantData])
+        .select();
+
+      if (fallbackError) {
+        logger.error('Failed to add participant after phone fallback', fallbackError);
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.SERVER_ERROR },
+          { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+        );
+      }
+
+      data = fallbackData;
+    } else {
+      data = insertedParticipant;
     }
 
     const duration = Date.now() - startTime;

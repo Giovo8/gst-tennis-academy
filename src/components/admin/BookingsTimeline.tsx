@@ -22,11 +22,14 @@ type Booking = {
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
   participants?: Array<{
-    id: string;
+    id?: string;
+    booking_id?: string;
     full_name: string;
     email?: string;
+    phone?: string;
     is_registered: boolean;
-    user_id?: string;
+    user_id?: string | null;
+    order_index?: number;
   }>;
   isBlock?: boolean;
   reason?: string;
@@ -66,6 +69,22 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+
+  const getPrimaryParticipant = (booking: Booking) =>
+    booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
+
+  const getBookingDisplayName = (booking: Booking) =>
+    getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
+
+  const getParticipantIdentityKey = (booking: Booking) => {
+    if (booking.participants && booking.participants.length > 0) {
+      return booking.participants
+        .map((participant) => participant.user_id || `guest:${participant.full_name.trim().toLowerCase()}`)
+        .join("|");
+    }
+
+    return booking.user_id;
+  };
 
   // Drag to scroll handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -284,7 +303,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         // Check if consecutive and same user/type
         if (
           prevEnd === currentStart &&
-          prevMerged.user_id === booking.user_id &&
+          getParticipantIdentityKey(prevMerged) === getParticipantIdentityKey(booking) &&
           prevMerged.type === booking.type &&
           prevMerged.coach_id === booking.coach_id
         ) {
@@ -543,7 +562,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                 bottom: '4px',
                                 marginLeft: '2px'
                               }}
-                              title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${booking.user_profile?.full_name}${booking.participants && booking.participants.length > 0 ? ` +${booking.participants.length} partecipanti` : ''}`}`}
+                              title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
                             >
                               {booking.isBlock ? (
                                 <>
@@ -557,13 +576,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               ) : (
                                 <>
                                   <div className="truncate leading-tight">
-                                    {booking.user_profile?.full_name || "Sconosciuto"}
+                                    {getBookingDisplayName(booking)}
                                   </div>
-                                  {booking.participants && booking.participants.length > 0 && (
-                                    <div className="truncate text-white/90 text-[10px] mt-0.5 leading-tight">
-                                      👥 {booking.participants.length} {booking.participants.length === 1 ? 'partecipante' : 'partecipanti'}
-                                    </div>
-                                  )}
                                   {isLesson && booking.coach_profile && (
                                     <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
                                       {booking.coach_profile.full_name}

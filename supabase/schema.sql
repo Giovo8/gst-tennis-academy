@@ -155,6 +155,7 @@ create table public.booking_participants (
   user_id uuid references auth.users on delete set null,
   full_name text not null,
   email text,
+  phone text,
   is_registered boolean default false,
   participant_type text default 'atleta', -- 'atleta', 'ospite'
   order_index int not null default 0, -- For ordering (0, 1, 2, 3)

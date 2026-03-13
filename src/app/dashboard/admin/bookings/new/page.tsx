@@ -46,6 +46,30 @@ interface TimeSlot {
   available: boolean;
 }
 
+interface ExistingBooking {
+  id: string;
+  user_id?: string;
+  coach_id?: string | null;
+  start_time: string;
+  end_time: string;
+  type: string;
+  status: string;
+  user_profile?: { full_name: string | null; email?: string | null } | null;
+  coach_profile?: { full_name: string | null; email?: string | null } | null;
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
+  isBlock?: boolean;
+  reason?: string;
+}
+
 interface SearchableOption {
   value: string;
   label: string;
@@ -151,7 +175,11 @@ const MATCH_FORMATS = [
 
 type MatchFormat = (typeof MATCH_FORMATS)[number]["value"];
 
-function NewAdminBookingPageInner() {
+type NewAdminBookingPageProps = {
+  basePath?: string;
+};
+
+function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBookingPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
@@ -175,7 +203,7 @@ function NewAdminBookingPageInner() {
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [existingBookings, setExistingBookings] = useState<any[]>([]);
+  const [existingBookings, setExistingBookings] = useState<ExistingBooking[]>([]);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const pendingSlotsSelection = useRef<string[]>([]);
   const urlParamsApplied = useRef<boolean>(false);
@@ -185,6 +213,22 @@ function NewAdminBookingPageInner() {
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+
+  const getPrimaryParticipant = (booking: ExistingBooking | null) =>
+    booking?.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
+
+  const getBookingDisplayName = (booking: ExistingBooking) =>
+    getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
+
+  const getParticipantIdentityKey = (booking: ExistingBooking) => {
+    if (booking.participants && booking.participants.length > 0) {
+      return booking.participants
+        .map((participant) => participant.user_id || `guest:${participant.full_name.trim().toLowerCase()}`)
+        .join("|");
+    }
+
+    return booking.user_id || "";
+  };
 
   const maxAthletesAllowed =
     bookingType === "lezione_privata"
@@ -318,10 +362,10 @@ function NewAdminBookingPageInner() {
 
       // Remove URL parameters after successfully applying the slots
       setTimeout(() => {
-        router.replace('/dashboard/admin/bookings/new', { scroll: false });
+        router.replace(`${basePath}/bookings/new`, { scroll: false });
       }, 100);
     }
-  }, [slots, loadingSlots, router]);
+  }, [slots, loadingSlots, router, basePath]);
 
   async function loadCourtsAndUsers() {
     setCourtsLoading(true);
@@ -399,14 +443,47 @@ function NewAdminBookingPageInner() {
       .select("id, full_name, email")
       .in("id", userIds);
 
+    const bookingIds = bookings?.map((booking) => booking.id) || [];
+    let bookingParticipantsData = null;
+
+    if (bookingIds.length > 0) {
+      const participantsQuery = await supabase
+        .from("booking_participants")
+        .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+        .in("booking_id", bookingIds)
+        .order("booking_id", { ascending: true })
+        .order("order_index", { ascending: true });
+
+      bookingParticipantsData = participantsQuery.data;
+
+      if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+        const fallbackParticipantsQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+          .in("booking_id", bookingIds)
+          .order("booking_id", { ascending: true })
+          .order("order_index", { ascending: true });
+
+        bookingParticipantsData = fallbackParticipantsQuery.data;
+      }
+    }
+
     const profilesMap = new Map(
       profilesData?.map(p => [p.id, p]) || []
     );
 
+    const participantsMap = new Map<string, ExistingBooking["participants"]>();
+    (bookingParticipantsData || []).forEach((participant: any) => {
+      const existing = participantsMap.get(participant.booking_id) || [];
+      existing.push(participant);
+      participantsMap.set(participant.booking_id, existing);
+    });
+
     const enrichedBookings = bookings?.map(booking => ({
       ...booking,
       user_profile: profilesMap.get(booking.user_id) || null,
-      coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null
+      coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null,
+      participants: participantsMap.get(booking.id) || []
     })) || [];
 
     // Add court blocks as fake bookings for visualization
@@ -423,7 +500,7 @@ function NewAdminBookingPageInner() {
     })) || [];
 
     // Merge consecutive bookings of the same person
-    const mergeConsecutiveBookings = (bookings: any[]) => {
+    const mergeConsecutiveBookings = (bookings: ExistingBooking[]) => {
       if (bookings.length === 0) return [];
       
       // Sort by start time
@@ -431,7 +508,7 @@ function NewAdminBookingPageInner() {
         new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
       );
       
-      const merged: any[] = [];
+      const merged: ExistingBooking[] = [];
       let current = sorted[0];
       
       for (let i = 1; i < sorted.length; i++) {
@@ -440,11 +517,11 @@ function NewAdminBookingPageInner() {
         // Check if same user, same type, and consecutive times
         const currentEnd = new Date(current.end_time);
         const nextStart = new Date(next.start_time);
-        const sameUser = current.user_id === next.user_id;
+        const sameParticipant = getParticipantIdentityKey(current) === getParticipantIdentityKey(next);
         const sameType = current.type === next.type;
         const consecutive = currentEnd.getTime() === nextStart.getTime();
         
-        if (sameUser && sameType && consecutive && !current.isBlock && !next.isBlock) {
+        if (sameParticipant && sameType && consecutive && !current.isBlock && !next.isBlock) {
           // Merge: extend current end time
           current = {
             ...current,
@@ -601,6 +678,7 @@ function NewAdminBookingPageInner() {
           user_id: athlete.userId || null,
           full_name: athlete.fullName,
           email: athlete.email || null,
+          phone: athlete.phone || null,
           is_registered: athlete.isRegistered,
         })),
       };
@@ -628,7 +706,7 @@ function NewAdminBookingPageInner() {
 
       setSuccess("Prenotazione creata con successo!");
       setTimeout(() => {
-        router.push("/dashboard/admin/bookings");
+        router.push(`${basePath}/bookings`);
       }, 1500);
     } catch (err: any) {
       setError(err.message || "Errore nella creazione della prenotazione");
@@ -702,7 +780,7 @@ function NewAdminBookingPageInner() {
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/admin/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+          <Link href={`${basePath}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
           {" › "}
           <span>Crea Prenotazione</span>
         </p>
@@ -1011,14 +1089,15 @@ function NewAdminBookingPageInner() {
                           return (
                             <div
                               key={booking.id}
-                              onClick={() => router.push(isBlock ? `/dashboard/admin/courts/${booking.id}` : `/dashboard/admin/bookings/${booking.id}`)}
-                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => router.push(isBlock ? `${basePath}/courts/${booking.id}` : `${basePath}/bookings/${booking.id}`)}
+                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-pointer hover:opacity-90 transition-opacity"
                               style={{
                                 ...getBookingStyle(),
                                 left: `${(startSlot / 32) * 100}%`,
-                                width: `${(duration / 32) * 100}%`,
+                                width: `calc(${(duration / 32) * 100}% - 4px)`,
                                 top: '4px',
-                                bottom: '4px'
+                                bottom: '4px',
+                                marginLeft: '2px'
                               }}
                             >
                               {isBlock ? (
@@ -1033,7 +1112,7 @@ function NewAdminBookingPageInner() {
                               ) : (
                                 <>
                                   <div className="truncate leading-tight">
-                                    {booking.user_profile?.full_name || "Sconosciuto"}
+                                      {getBookingDisplayName(booking)}
                                   </div>
                                   {isLesson && booking.coach_profile && (
                                     <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
@@ -1147,13 +1226,17 @@ function NewAdminBookingPageInner() {
 }
 
 export default function NewAdminBookingPage() {
+  return <NewAdminBookingPageWithBasePath />;
+}
+
+export function NewAdminBookingPageWithBasePath(props: NewAdminBookingPageProps) {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-secondary" />
       </div>
     }>
-      <NewAdminBookingPageInner />
+      <NewAdminBookingPageInner basePath={props.basePath} />
     </Suspense>
   );
 }

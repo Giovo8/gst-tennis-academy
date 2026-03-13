@@ -94,6 +94,7 @@ export const bookingParticipantSchema = z.object({
   user_id: uuidSchema.optional().nullable(),
   full_name: z.string().min(2, 'Nome troppo corto').max(100, 'Nome troppo lungo'),
   email: emailSchema.optional().nullable(),
+  phone: phoneSchema.optional().nullable(),
   is_registered: z.boolean().default(false),
 });
 
