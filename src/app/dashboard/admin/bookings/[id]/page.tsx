@@ -169,19 +169,29 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     setDeleting(true);
 
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .delete()
-        .eq("id", booking.id);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      if (!error) {
-        router.push(`${basePath}/bookings`);
-      } else {
-        alert("Errore durante l'eliminazione");
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
+
+      const response = await fetch(`/api/bookings?id=${encodeURIComponent(booking.id)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      }
+
+      router.push(`${basePath}/bookings`);
     } catch (error) {
       console.error("Errore:", error);
-      alert("Errore durante l'eliminazione");
+      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     } finally {
       setActionLoading(false);
       setDeleting(false);

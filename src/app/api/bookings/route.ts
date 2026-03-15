@@ -3,10 +3,14 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { logActivityServer } from "@/lib/activity/logActivity";
-import { sendBookingCreatedEmailToAdminAndGestore } from "@/lib/email/booking-notifications";
+import { sendBookingCreatedEmailToGestore } from "@/lib/email/booking-notifications";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
 import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
+import {
+  buildAdminsNotificationForAthleteBookingDeletion,
+  shouldNotifyAdminsForAthleteBookingDeletion,
+} from "@/lib/bookings/bookingDeletionNotifications";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
@@ -327,7 +331,7 @@ export async function POST(req: Request) {
       if (profile?.role === "atleta") {
         const bookingMode = participants && participants.length > 2 ? "doppio" : "singolo";
 
-        await sendBookingCreatedEmailToAdminAndGestore({
+        await sendBookingCreatedEmailToGestore({
           bookingId: booking.id,
           athleteName: userProfile?.full_name || profile.full_name || "Un atleta",
           athleteEmail: userProfile?.email || user.email || null,
@@ -404,7 +408,7 @@ export async function PUT(req: Request) {
     // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
-      .select("user_id")
+      .select("user_id, court, start_time")
       .eq("id", id)
       .single();
 
@@ -416,16 +420,38 @@ export async function PUT(req: Request) {
     }
 
     // Authorization check
-    const canEdit = booking.user_id === user.id || isAdminOrGestore(profile?.role);
+    const canEdit = isAdminOrGestore(profile?.role);
     if (!canEdit) {
       logger.security('Unauthorized booking update attempt', {
         userId: user.id,
         bookingId: id,
+        role: profile?.role,
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
         { status: HTTP_STATUS.FORBIDDEN }
       );
+    }
+
+    const updatedByManager = booking.user_id !== user.id;
+
+    let shouldNotifyAthlete = false;
+    if (updatedByManager) {
+      const { data: ownerProfile, error: ownerProfileError } = await supabaseServer
+        .from("profiles")
+        .select("role")
+        .eq("id", booking.user_id)
+        .single();
+
+      if (ownerProfileError) {
+        logger.warn("Failed to resolve booking owner role before update", {
+          bookingId: id,
+          ownerId: booking.user_id,
+          error: ownerProfileError.message,
+        });
+      }
+
+      shouldNotifyAthlete = ownerProfile?.role === "atleta";
     }
     
     const rawBody = await req.json();
@@ -445,6 +471,43 @@ export async function PUT(req: Request) {
         { error: ERROR_MESSAGES.SERVER_ERROR },
         { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
+    }
+
+    if (shouldNotifyAthlete) {
+      const actorRoleLabel = profile?.role === "admin" ? "admin" : "gestore";
+      const updatedBooking = data?.[0];
+      const bookingCourt = updatedBooking?.court || booking.court || "campo";
+      const bookingStartTime = updatedBooking?.start_time || booking.start_time;
+
+      const bookingDate = new Date(bookingStartTime);
+      const dateLabel = bookingDate.toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      const timeLabel = bookingDate.toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const { error: notificationError } = await supabaseServer
+        .from("notifications")
+        .insert({
+          user_id: booking.user_id,
+          type: "booking",
+          title: "Prenotazione modificata",
+          message: `La tua prenotazione ${bookingCourt} del ${dateLabel} alle ${timeLabel} è stata modificata da un ${actorRoleLabel}.`,
+          link: "/dashboard/atleta/bookings",
+          is_read: false,
+        });
+
+      if (notificationError) {
+        logger.warn("Failed to create booking update notification", {
+          bookingId: id,
+          recipientUserId: booking.user_id,
+          error: notificationError.message,
+        });
+      }
     }
     
     const duration = Date.now() - startTime;
@@ -486,7 +549,7 @@ export async function DELETE(req: Request) {
     // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
-      .select("user_id")
+      .select("user_id, court, start_time")
       .eq("id", id)
       .single();
 
@@ -503,6 +566,7 @@ export async function DELETE(req: Request) {
       logger.security('Unauthorized booking deletion attempt', {
         userId: user.id,
         bookingId: id,
+        role: profile?.role,
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
@@ -510,6 +574,41 @@ export async function DELETE(req: Request) {
       );
     }
     
+    const deletedByManager = isAdminOrGestore(profile?.role) && booking.user_id !== user.id;
+    const deletedByOwner = booking.user_id === user.id;
+
+    let shouldNotifyAthlete = false;
+    let bookingOwnerRole: string | null = null;
+    let bookingOwnerFullName: string | null = null;
+
+    if (deletedByManager || deletedByOwner) {
+      const { data: ownerProfile, error: ownerProfileError } = await supabaseServer
+        .from("profiles")
+        .select("role, full_name")
+        .eq("id", booking.user_id)
+        .single();
+
+      if (ownerProfileError) {
+        logger.warn("Failed to resolve booking owner role before deletion", {
+          bookingId: id,
+          ownerId: booking.user_id,
+          error: ownerProfileError.message,
+        });
+      } else {
+        bookingOwnerRole = ownerProfile?.role || null;
+        bookingOwnerFullName = ownerProfile?.full_name || null;
+      }
+
+      shouldNotifyAthlete = deletedByManager && ownerProfile?.role === "atleta";
+    }
+
+    const shouldNotifyAdmins = shouldNotifyAdminsForAthleteBookingDeletion({
+      actorUserId: user.id,
+      bookingOwnerId: booking.user_id,
+      actorRole: profile?.role,
+      ownerRole: bookingOwnerRole,
+    });
+
     const { error } = await supabaseServer.from("bookings").delete().eq("id", id);
     
     if (error) {
@@ -520,6 +619,49 @@ export async function DELETE(req: Request) {
       );
     }
     
+    if (shouldNotifyAthlete) {
+      const actorRoleLabel = profile?.role === "admin" ? "admin" : "gestore";
+      const bookingDate = new Date(booking.start_time);
+      const dateLabel = bookingDate.toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      const timeLabel = bookingDate.toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const { error: notificationError } = await supabaseServer
+        .from("notifications")
+        .insert({
+          user_id: booking.user_id,
+          type: "booking",
+          title: "Prenotazione eliminata",
+          message: `La tua prenotazione ${booking.court} del ${dateLabel} alle ${timeLabel} è stata eliminata da un ${actorRoleLabel}.`,
+          link: "/dashboard/atleta/bookings",
+          is_read: false,
+        });
+
+      if (notificationError) {
+        logger.warn("Failed to create booking deletion notification", {
+          bookingId: id,
+          recipientUserId: booking.user_id,
+          error: notificationError.message,
+        });
+      }
+    }
+
+    if (shouldNotifyAdmins) {
+      const notification = buildAdminsNotificationForAthleteBookingDeletion({
+        athleteName: bookingOwnerFullName || profile?.full_name || user.email || "Un atleta",
+        court: booking.court,
+        startTime: booking.start_time,
+      });
+
+      await notifyAdmins(notification);
+    }
+
     const duration = Date.now() - startTime;
     logger.info('Booking deleted', { userId: user.id, bookingId: id });
     logger.apiResponse('DELETE', '/api/bookings', HTTP_STATUS.OK, duration);

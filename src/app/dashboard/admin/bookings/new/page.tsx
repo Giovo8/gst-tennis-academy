@@ -18,7 +18,7 @@ import { it } from "date-fns/locale";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { type UserRole } from "@/lib/roles";
+import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 
 interface Coach {
   id: string;
@@ -165,7 +165,6 @@ function SearchableSelect({
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", icon: "🎾" },
   { value: "lezione_privata", label: "Lezione Privata", icon: "👤" },
-  { value: "lezione_gruppo", label: "Lezione Privata di Gruppo", icon: "👥" },
 ];
 
 const MATCH_FORMATS = [
@@ -232,14 +231,14 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
   const maxAthletesAllowed =
     bookingType === "lezione_privata"
-      ? 1
+      ? null
       : bookingType === "campo" && matchFormat === "singolo"
         ? 2
         : 4;
 
   // Validation
   const canSubmit = selectedAthletes.length > 0 && selectedDate && selectedCourt && selectedSlots.length > 0 &&
-    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
+    ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoach));
 
   // Drag to scroll handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -281,6 +280,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   // Mantiene il numero partecipanti coerente con il tipo prenotazione selezionato.
   useEffect(() => {
     setSelectedAthletes((prev) => {
+      if (maxAthletesAllowed === null) {
+        return prev;
+      }
       if (prev.length <= maxAthletesAllowed) {
         return prev;
       }
@@ -382,11 +384,17 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       // Load coaches
       const { data: coachData } = await supabase
         .from("profiles")
-        .select("id, full_name")
-        .eq("role", "maestro")
+        .select("id, full_name, role, metadata")
+        .in("role", ["maestro", "gestore"])
         .order("full_name");
 
-      if (coachData) setCoaches(coachData);
+      if (coachData) {
+        const eligibleCoaches = coachData
+          .filter((coach) => isBookableCoachProfile(coach))
+          .map(({ id, full_name }) => ({ id, full_name }));
+
+        setCoaches(eligibleCoaches);
+      }
 
       // Load athletes
       const { data: athleteData } = await supabase
@@ -614,12 +622,12 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       return;
     }
 
-    if (selectedAthletes.length > maxAthletesAllowed) {
+    if (maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
       setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       return;
     }
 
-    if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !selectedCoach) {
+      if (bookingType === "lezione_privata" && !selectedCoach) {
       setError("Seleziona un maestro per le lezioni");
       return;
     }
@@ -923,74 +931,75 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                       </div>
                     )}
 
-                    {/* Atleta / Partecipanti */}
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                        {bookingType === "lezione_privata" ? "Atleta" : "Partecipanti"}
-                      </label>
-                      <div className="flex-1">
-                        <AthletesSelector
-                          athletes={athletes}
-                          selectedAthletes={selectedAthletes}
-                          onAthleteAdd={(athlete) => {
-                            if (selectedAthletes.length < maxAthletesAllowed) {
-                              setSelectedAthletes([...selectedAthletes, athlete]);
-                            }
-                          }}
-                          onAthleteRemove={(index) => {
-                            setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                          }}
-                          maxAthletes={maxAthletesAllowed}
-                        />
-                      </div>
-                    </div>
+                    {/* Partecipanti */}
 
-                    {/* Campo */}
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                      <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                        {courtsLoading ? (
-                          <div className="flex items-center gap-2 text-secondary/60">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm">Caricamento campi...</span>
-                          </div>
-                        ) : (
-                          courts.map((court) => (
-                            <button
-                              key={court}
-                              type="button"
-                              onClick={() => setSelectedCourt(court)}
-                              className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                                selectedCourt === court
-                                  ? 'bg-secondary text-white border-secondary'
-                                  : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                              }`}
-                            >
-                              {court}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Maestro se necessario */}
-                    {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                          Partecipanti
+                        </label>
                         <div className="flex-1">
-                          <SearchableSelect
-                            value={selectedCoach}
-                            onChange={setSelectedCoach}
-                            options={coaches.map((coach) => ({
-                              value: coach.id,
-                              label: coach.full_name,
-                            }))}
-                            placeholder="Seleziona maestro"
-                            searchPlaceholder="Cerca maestro"
+                          <AthletesSelector
+                            athletes={athletes}
+                            selectedAthletes={selectedAthletes}
+                            onAthleteAdd={(athlete) => {
+                              if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
+                                setSelectedAthletes([...selectedAthletes, athlete]);
+                              }
+                            }}
+                            onAthleteRemove={(index) => {
+                              setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                            }}
+                            maxAthletes={maxAthletesAllowed}
                           />
                         </div>
                       </div>
-                    )}
+
+                      {/* Maestro - solo per lezione_privata, prima del campo */}
+                      {bookingType === "lezione_privata" && (
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
+                          <div className="flex-1">
+                            <SearchableSelect
+                              value={selectedCoach}
+                              onChange={setSelectedCoach}
+                              options={coaches.map((coach) => ({
+                                value: coach.id,
+                                label: coach.full_name,
+                              }))}
+                              placeholder="Seleziona maestro"
+                              searchPlaceholder="Cerca maestro"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Campo */}
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                        <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                        <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                          {courtsLoading ? (
+                            <div className="flex items-center gap-2 text-secondary/60">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-sm">Caricamento campi...</span>
+                            </div>
+                          ) : (
+                            courts.map((court) => (
+                              <button
+                                key={court}
+                                type="button"
+                                onClick={() => setSelectedCourt(court)}
+                                className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                                  selectedCourt === court
+                                    ? 'bg-secondary text-white border-secondary'
+                                    : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                                }`}
+                              >
+                                {court}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
 
                     {/* Note */}
                     {selectedAthletes.length > 0 && (
@@ -1073,15 +1082,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                             }
                           };
                           
-                          const getBookingLabel = () => {
-                            if (booking.isBlock) return booking.reason || "CAMPO BLOCCATO";
-                            if (booking.type === "lezione_privata") return "Lezione Privata";
-                            if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
-                            if (booking.type === "arena") return "Match Arena";
-                            return "Campo";
-                          };
-                          
-                          const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
                           const isBlock = booking.isBlock;
                           
                           return (
@@ -1097,32 +1097,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                                 bottom: '4px',
                                 marginLeft: '2px'
                               }}
-                            >
-                              {isBlock ? (
-                                <>
-                                  <div className="truncate leading-tight uppercase tracking-wider">
-                                    CAMPO BLOCCATO
-                                  </div>
-                                  <div className="text-white/90 text-[10px] mt-1 leading-tight">
-                                    {booking.reason || "Blocco campo"}
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="truncate leading-tight">
-                                      {getBookingDisplayName(booking)}
-                                  </div>
-                                  {isLesson && booking.coach_profile && (
-                                    <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
-                                      {booking.coach_profile.full_name}
-                                    </div>
-                                  )}
-                                  <div className="text-white/90 text-[10px] mt-1 uppercase tracking-wide leading-tight">
-                                    {getBookingLabel()}
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                            />
                           );
                         })}
                         

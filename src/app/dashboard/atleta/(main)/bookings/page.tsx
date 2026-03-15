@@ -49,6 +49,7 @@ type BookingsPageProps = {
 
 export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const router = useRouter();
+  const isHistoryMode = mode === "history";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -92,7 +93,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     let query = supabase
       .from("bookings")
       .select("*")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .neq("status", "cancelled");
 
     // In modalità default mostra solo dal giorno corrente in avanti
     // In modalità history mostra solo prenotazioni passate
@@ -164,15 +166,32 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   }, []);
 
   async function cancelBooking(id: string) {
-    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
+    if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
 
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "cancelled" })
-      .eq("id", id);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-    if (!error) {
-      loadBookings();
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+      }
+
+      const response = await fetch(`/api/bookings?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      }
+
+      await loadBookings();
+    } catch (error) {
+      console.error("Errore durante l'eliminazione della prenotazione:", error);
+      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     }
   }
 
@@ -211,6 +230,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
   const filteredBookings = bookings
     .filter((booking) => {
+      if (booking.status === "cancelled") return false;
+
       const matchesStatus = filter === "all" || booking.status === filter;
       const matchesSearch =
         !search ||
@@ -252,6 +273,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return 0;
     });
 
+  const effectiveViewMode = isHistoryMode ? "list" : viewMode;
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -270,7 +293,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          {mode === "history" && (
+          {isHistoryMode && (
             <p className="breadcrumb text-secondary/60">
               <Link
                 href="/dashboard/atleta/bookings"
@@ -282,16 +305,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <span>Storico</span>
             </p>
           )}
-          <h1 className="text-3xl font-bold text-secondary mb-2">{mode === "history" ? "Storico prenotazioni" : "Le mie Prenotazioni"}
+          <h1 className="text-3xl font-bold text-secondary mb-2">{isHistoryMode ? "Storico prenotazioni" : "Le mie Prenotazioni"}
           </h1>
           <p className="text-secondary/70 font-medium">
-            {mode === "history"
+            {isHistoryMode
               ? "Consulta l'elenco completo delle tue prenotazioni effettuate"
               : "Visualizza e gestisci le tue prenotazioni dei campi da oggi in avanti"}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          {mode !== "history" && (
+          {!isHistoryMode && (
             <Link
               href="/dashboard/atleta/bookings/new"
               className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
@@ -300,7 +323,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               Nuova Prenotazione
             </Link>
           )}
-          {mode !== "history" && (
+          {!isHistoryMode && (
             <Link
               href="/dashboard/atleta/bookings/storico"
               className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
@@ -322,11 +345,12 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       {/* Filters */}
       <div className="flex flex-col gap-3">
         {/* View Mode Toggle */}
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
+        {!isHistoryMode && (
+          <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
           <button
             onClick={() => setViewMode("list")}
             className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
-              viewMode === "list"
+              effectiveViewMode === "list"
                 ? "bg-secondary text-white"
                 : "text-secondary/60 hover:text-secondary border border-gray-200"
             }`}
@@ -337,16 +361,17 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           <button
             onClick={() => setViewMode("timeline")}
             className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
-              viewMode === "timeline"
+              effectiveViewMode === "timeline"
                 ? "bg-secondary text-white"
                 : "text-secondary/60 hover:text-secondary border border-gray-200"
             }`}
           >
             <LayoutGrid className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-            Timeline
+            Calendario
           </button>
-        </div>
-        {viewMode === "list" && (
+          </div>
+        )}
+        {effectiveViewMode === "list" && (
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
             <input
@@ -361,8 +386,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       </div>
 
       {/* Bookings List or Timeline */}
-      {viewMode === "timeline" ? (
-        <BookingsTimeline bookings={filteredBookings} loading={loading} basePath="/dashboard/atleta" fetchOccupied={true} />
+      {effectiveViewMode === "timeline" ? (
+        <BookingsTimeline
+          bookings={filteredBookings}
+          loading={loading}
+          basePath="/dashboard/atleta"
+          fetchOccupied={false}
+          swapAxes={true}
+          showBlockReason={false}
+          showCourtBlocks={false}
+        />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
@@ -414,7 +447,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               const isCancelled = booking.status === "cancelled";
               const isCancellationRequested = booking.status === "cancellation_requested";
               const canCancel = !isCancelled && !isCancellationRequested && !isPast;
-              const canEdit = canCancel;
+              const canEdit = false;
 
               // Determina il colore del bordo in base allo stato (palette frozen-lake)
               let borderStyle = {};

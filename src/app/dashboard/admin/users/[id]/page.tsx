@@ -34,7 +34,11 @@ type ArenaStats = {
   total_matches: number;
 };
 
-export default function UserProfilePage() {
+type UserProfilePageProps = {
+  basePath?: string;
+};
+
+export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserProfilePageProps) {
   const params = useParams();
   const userId = params.id as string;
   
@@ -120,7 +124,7 @@ export default function UserProfilePage() {
         <div>
           <p className="breadcrumb text-secondary/60 mb-1">
             <Link
-              href="/dashboard/admin/users"
+              href={`${basePath}/users`}
               className="hover:text-secondary/80 transition-colors"
             >
               Gestione Utenti
@@ -348,7 +352,7 @@ export default function UserProfilePage() {
 
       {/* Bottone Modifica */}
       <Link
-        href={`/dashboard/admin/users/modifica?id=${userId}`}
+        href={`${basePath}/users/modifica?id=${userId}`}
         className="w-full px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
       >
         <Pencil className="h-4 w-4" />

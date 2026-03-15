@@ -7,7 +7,11 @@ import { UserPlus, Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide
 import { supabase } from "@/lib/supabase/client";
 import { useEffect } from "react";
 
-export default function NewUserPage() {
+type NewUserPageProps = {
+  basePath?: string;
+};
+
+export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPageProps) {
   const router = useRouter();
   
   useEffect(() => {
@@ -154,7 +158,7 @@ export default function NewUserPage() {
       
       // Attendi un attimo prima di reindirizzare
       await new Promise(resolve => setTimeout(resolve, 1500));
-      router.push("/dashboard/admin/users");
+      router.push(`${basePath}/users`);
     } catch (error: any) {
       console.error("Error creating user:", error);
       setError(error.message || "Errore durante la creazione dell'utente");
@@ -168,7 +172,7 @@ export default function NewUserPage() {
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/admin/users" className="hover:text-secondary/80 transition-colors">Anagrafica Utenti</Link>
+          <Link href={`${basePath}/users`} className="hover:text-secondary/80 transition-colors">Anagrafica Utenti</Link>
           {" › "}
           <span>Crea Utente</span>
         </p>

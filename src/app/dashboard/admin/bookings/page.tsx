@@ -225,16 +225,29 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
     
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .delete()
-        .eq("id", bookingId);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      if (!error) {
-        loadBookings();
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
+
+      const response = await fetch(`/api/bookings?id=${encodeURIComponent(bookingId)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      }
+
+      loadBookings();
     } catch (error) {
       console.error("Error deleting booking:", error);
+      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     }
   }
 
@@ -280,7 +293,11 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   const baseBookings =
     mode === "history"
       ? bookings
-      : bookings.filter((booking) => new Date(booking.start_time) >= startOfToday);
+      : bookings.filter(
+          (booking) =>
+            new Date(booking.start_time) >= startOfToday &&
+            booking.status !== "cancelled"
+        );
 
   // Merge consecutive bookings of the same user on the same court
   const mergeConsecutiveBookings = (bookings: Booking[]): Booking[] => {
@@ -548,7 +565,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
       {/* Bookings List or Timeline */}
       {mode !== "history" && viewMode === "timeline" ? (
-        <BookingsTimeline bookings={sortedBookings} loading={loading} basePath={basePath} />
+        <BookingsTimeline bookings={sortedBookings} loading={loading} basePath={basePath} swapAxes={true} />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />

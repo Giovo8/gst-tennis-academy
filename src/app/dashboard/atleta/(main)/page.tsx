@@ -14,7 +14,6 @@ import {
   Target,
   Award,
   BookOpen,
-  CheckCircle2,
   Zap,
   Megaphone,
   Bell,
@@ -53,6 +52,7 @@ interface Booking {
   start_time: string;
   end_time: string;
   status: string;
+  coach_id?: string | null;
 }
 
 interface Announcement {
@@ -221,12 +221,42 @@ export default function AtletaDashboard() {
     const now = new Date().toISOString();
     const { data: bookings, count: bookingsCount } = await supabase
       .from("bookings")
-      .select("id, court, type, start_time, end_time, status", { count: "exact" })
+      .select("id, court, type, start_time, end_time, status, coach_id", { count: "exact" })
       .eq("user_id", user.id)
       .neq("status", "cancelled")
       .gte("start_time", now)
       .order("start_time", { ascending: true })
       .limit(3);
+
+    const bookingIds = (bookings || []).map((booking) => booking.id);
+    const coachIds = Array.from(
+      new Set((bookings || []).map((booking) => booking.coach_id).filter(Boolean))
+    ) as string[];
+
+    const participantsCountByBooking = new Map<string, number>();
+    if (bookingIds.length > 0) {
+      const { data: participants } = await supabase
+        .from("booking_participants")
+        .select("booking_id")
+        .in("booking_id", bookingIds);
+
+      for (const participant of participants || []) {
+        const bookingId = participant.booking_id as string;
+        participantsCountByBooking.set(bookingId, (participantsCountByBooking.get(bookingId) || 0) + 1);
+      }
+    }
+
+    const coachNameById = new Map<string, string>();
+    if (coachIds.length > 0) {
+      const { data: coaches } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", coachIds);
+
+      for (const coach of coaches || []) {
+        coachNameById.set(coach.id, coach.full_name || "-");
+      }
+    }
 
     // Load tournament participations
     const { data: participations } = await supabase
@@ -276,7 +306,9 @@ export default function AtletaDashboard() {
           end_time: booking.end_time,
           court: booking.court,
           type: booking.type,
-          eventType: 'booking'
+          eventType: 'booking',
+          coachName: booking.coach_id ? coachNameById.get(booking.coach_id) || "-" : "-",
+          participantsCount: participantsCountByBooking.get(booking.id) || 0,
         });
       });
     }
@@ -342,16 +374,31 @@ export default function AtletaDashboard() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString("it-IT", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+    const weekday = date.toLocaleDateString("it-IT", { weekday: "short" });
+    const day = date.getDate();
+    const month = date.toLocaleDateString("it-IT", { month: "short" });
+
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+
+    return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
   };
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const formatBookingType = (type?: string) => {
+    if (type === "lezione_privata") return "Lezione Privata";
+    if (type === "lezione_gruppo") return "Lezione Gruppo";
+    return "Campo";
+  };
+
+  const formatBookingMode = (event: Event) => {
+    if (event.eventType !== "booking") return "-";
+    if (event.type === "lezione_privata") return "";
+    return (event.participantsCount || 0) > 2 ? "Doppio" : "Singolo";
   };
 
   async function handleAnnouncementClick(announcement: Announcement) {
@@ -573,47 +620,50 @@ export default function AtletaDashboard() {
           {recentAnnouncements.length === 0 ? (
             <p className="text-sm text-gray-500">Nessun annuncio al momento</p>
           ) : (
-            <div className="space-y-3">
-              {recentAnnouncements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="relative p-3 sm:p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all group cursor-pointer"
-                  onClick={() => handleAnnouncementClick(announcement)}
-                >
-                  <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-                    <div className="flex-shrink-0 mt-0.5 sm:mt-0">
-                      <Megaphone className="h-5 w-5 text-secondary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-gray-900 text-sm sm:text-base">{announcement.title}</h3>
-                        {announcement.priority === "urgent" && (
-                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded-md whitespace-nowrap">
-                            URGENTE
-                          </span>
-                        )}
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3 min-w-[500px]">
+
+                {recentAnnouncements.map((announcement) => {
+                  const isUnread = !announcement.has_viewed;
+
+                  return (
+                    <button
+                      key={announcement.id}
+                      type="button"
+                      className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                      style={{ borderLeftColor: isUnread ? "var(--secondary)" : "#9ca3af" }}
+                      onClick={() => handleAnnouncementClick(announcement)}
+                    >
+                      <div className="grid grid-cols-[40px_112px_1fr] items-center gap-4">
+                        <div className="flex items-center justify-center">
+                          <Megaphone className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        </div>
+
+                        <div className="text-sm font-semibold text-secondary">
+                          {formatDate(announcement.created_at)}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-secondary text-sm truncate">{announcement.title}</p>
+                            {announcement.is_pinned && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                                <Zap className="h-3 w-3" />
+                                In evidenza
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>
-                          {new Date(announcement.created_at).toLocaleDateString("it-IT", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short"
-                          })}
-                        </span>
-                        <span className="text-gray-300">&bull;</span>
-                        <span>
-                          {new Date(announcement.created_at).toLocaleTimeString("it-IT", {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -637,46 +687,59 @@ export default function AtletaDashboard() {
           {notifications.length === 0 ? (
             <p className="text-sm text-gray-500">Nessuna notifica al momento</p>
           ) : (
-            <div className="space-y-2">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3 min-w-[500px]">
               {notifications.map((n) => {
+                const isUnread = !n.is_read;
                 const icon = (() => {
                   switch (n.type) {
-                    case "booking": return <Calendar className="h-5 w-5" style={{ color: '#056c94' }} />;
-                    case "tournament": return <Trophy className="h-5 w-5" style={{ color: '#39c3f9' }} />;
-                    case "message": return <MessageSquare className="h-5 w-5" style={{ color: '#08b3f7' }} />;
-                    case "course": return <Users className="h-5 w-5" style={{ color: '#0690c6' }} />;
-                    case "success": return <CheckCircle className="h-5 w-5" style={{ color: '#6bd2fa' }} />;
-                    case "warning": return <AlertCircle className="h-5 w-5" style={{ color: '#9ce1fc' }} />;
-                    case "error": return <XCircle className="h-5 w-5" style={{ color: '#056c94' }} />;
-                    default: return <Info className="h-5 w-5" style={{ color: '#034863' }} />;
+                    case "booking": return <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "tournament": return <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "message": return <MessageSquare className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "course": return <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "success": return <CheckCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "warning": return <AlertCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "error": return <XCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    default: return <Info className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                   }
                 })();
                 return (
-                  <div
+                  <button
                     key={n.id}
-                    className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-l-4 border-l-secondary transition-all cursor-pointer bg-white border-gray-200 hover:border-secondary/30 hover:bg-blue-50/30"
+                    type="button"
+                    className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                    style={{ borderLeftColor: "var(--secondary)" }}
                     onClick={() => handleNotificationClick(n)}
                   >
-                    <div className="flex-shrink-0 mt-0.5 sm:mt-0">{icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                      <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500 sm:hidden">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>
-                          {new Date(n.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
-                        </span>
+                    <div className="grid grid-cols-[40px_112px_1fr] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {icon}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary">
+                        {formatDate(n.created_at)}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-secondary text-sm truncate">{n.title}</p>
+                          {isUnread && (
+                            <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                              Nuova
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span>
-                        {new Date(n.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
-                      </span>
-                    </div>
-                    {!n.is_read && <span className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />}
-                  </div>
+                  </button>
                 );
               })}
+              </div>
             </div>
           )}
         </div>
@@ -698,36 +761,64 @@ export default function AtletaDashboard() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
-              {nextEvents.map((event) => (
-                <Link
-                  key={event.id}
-                  href={event.eventType === 'booking' ? `/dashboard/atleta/bookings/${event.id}` : `/dashboard/atleta/tornei/${event.id}`}
-                  className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:border-secondary/30 hover:bg-blue-50/30 transition-all cursor-pointer"
-                >
-                  <div className="flex-shrink-0 mt-0.5 sm:mt-0">
-                    {event.eventType === 'booking' ? (
-                      <Calendar className="h-5 w-5 text-secondary" />
-                    ) : (
-                      <Trophy className="h-5 w-5 text-secondary" />
-                    )}
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3 min-w-[1040px]">
+                <div className="bg-secondary rounded-lg px-4 py-3 mb-3 border border-secondary">
+                  <div className="grid grid-cols-[40px_1fr_80px_120px_160px_120px_160px] items-center gap-4">
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Tipo</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Modalità</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                      <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-secondary/10 text-secondary rounded-md whitespace-nowrap">
-                        {event.eventType === 'booking' ? event.type : 'Torneo'}
-                      </span>
+                </div>
+
+                {nextEvents.map((event) => (
+                  <Link
+                    key={event.id}
+                    href={event.eventType === 'booking' ? `/dashboard/atleta/bookings/${event.id}` : `/dashboard/atleta/tornei/${event.id}`}
+                    className="block bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                    style={{ borderLeftColor: 'var(--secondary)' }}
+                  >
+                    <div className="grid grid-cols-[40px_1fr_80px_120px_160px_120px_160px] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {event.eventType === 'booking' ? (
+                          <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        ) : (
+                          <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        )}
+                      </div>
+
+                      <div className="font-bold text-secondary text-sm">{formatDate(event.start_time)}</div>
+
+                      <div className="text-sm font-semibold text-secondary">{formatTime(event.start_time)}</div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {event.eventType === "booking" ? event.court || "-" : "-"}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {event.eventType === "booking" ? formatBookingType(event.type) : "-"}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {formatBookingMode(event)}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {event.eventType === "booking" ? event.coachName || "-" : "-"}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span>{formatDate(event.start_time)}</span>
-                      <span className="text-gray-300">&bull;</span>
-                      <span className="font-medium">{formatTime(event.start_time)}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -891,4 +982,6 @@ interface Event {
   court?: string;
   type?: string;
   eventType: 'booking' | 'tournament';
+  coachName?: string;
+  participantsCount?: number;
 }

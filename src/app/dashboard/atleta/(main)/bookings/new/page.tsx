@@ -17,7 +17,7 @@ import { it } from "date-fns/locale";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { type UserRole } from "@/lib/roles";
+import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 
 interface Coach {
   id: string;
@@ -140,7 +140,6 @@ function SearchableSelect({
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", shortLabel: "Campo", icon: "🎾" },
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata", icon: "👤" },
-  { value: "lezione_gruppo", label: "Lezione Gruppo", shortLabel: "Gruppo", icon: "👥" },
 ];
 
 const MATCH_FORMATS = [
@@ -220,14 +219,14 @@ function NewBookingPageInner() {
 
   const maxAthletesAllowed =
     bookingType === "lezione_privata"
-      ? 1
+      ? null
       : bookingType === "campo" && matchFormat === "singolo"
         ? 2
         : 4;
 
   // Validation
   const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
-    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
+    ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoach));
 
   useEffect(() => {
     loadCourtsAndCoaches();
@@ -272,6 +271,10 @@ function NewBookingPageInner() {
   // Mantiene il numero partecipanti coerente con il tipo prenotazione selezionato.
   useEffect(() => {
     setSelectedAthletes((prev) => {
+      if (maxAthletesAllowed === null) {
+        return prev;
+      }
+
       if (prev.length <= maxAthletesAllowed) {
         return prev;
       }
@@ -380,11 +383,17 @@ function NewBookingPageInner() {
       // Load coaches
       const { data: coachData } = await supabase
         .from("profiles")
-        .select("id, full_name")
-        .eq("role", "maestro")
+        .select("id, full_name, role, metadata")
+        .in("role", ["maestro", "gestore"])
         .order("full_name");
 
-      if (coachData) setCoaches(coachData);
+      if (coachData) {
+        const eligibleCoaches = coachData
+          .filter((coach) => isBookableCoachProfile(coach))
+          .map(({ id, full_name }) => ({ id, full_name }));
+
+        setCoaches(eligibleCoaches);
+      }
 
       // Load athletes for participant selection
       const { data: athleteData } = await supabase
@@ -525,7 +534,7 @@ function NewBookingPageInner() {
       return;
     }
 
-    if (selectedAthletes.length > maxAthletesAllowed) {
+    if (maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
       setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       return;
     }
@@ -536,7 +545,7 @@ function NewBookingPageInner() {
       return;
     }
 
-    if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !selectedCoach) {
+    if (bookingType === "lezione_privata" && !selectedCoach) {
       setError("Seleziona un maestro per le lezioni");
       return;
     }
@@ -764,31 +773,50 @@ function NewBookingPageInner() {
                     </div>
                   )}
 
-                  {/* Partecipanti - per campo e lezione di gruppo */}
-                  {(bookingType === "campo" || bookingType === "lezione_gruppo") && (
+                  {/* Partecipanti */}
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
+                    <div className="flex-1">
+                      <AthletesSelector
+                        athletes={athletes.filter((a) => a.id !== currentUserId)}
+                        selectedAthletes={selectedAthletes}
+                        onAthleteAdd={(athlete) => {
+                          if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
+                            setSelectedAthletes([...selectedAthletes, athlete]);
+                          }
+                        }}
+                        onAthleteRemove={(index) => {
+                          const athlete = selectedAthletes[index];
+                          if (athlete?.userId && athlete.userId === currentUserId) {
+                            return;
+                          }
+                          setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                        }}
+                        maxAthletes={maxAthletesAllowed}
+                      />
+                      <p className="mt-2 text-xs text-gray-500">
+                        {maxAthletesAllowed === null
+                          ? "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
+                          : `Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a ${maxAthletesAllowed - 1} ${(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Maestro - solo per lezione privata */}
+                  {bookingType === "lezione_privata" && (
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
                       <div className="flex-1">
-                        <AthletesSelector
-                          athletes={athletes.filter((a) => a.id !== currentUserId)}
-                          selectedAthletes={selectedAthletes}
-                          onAthleteAdd={(athlete) => {
-                            if (selectedAthletes.length < maxAthletesAllowed) {
-                              setSelectedAthletes([...selectedAthletes, athlete]);
-                            }
-                          }}
-                          onAthleteRemove={(index) => {
-                            const athlete = selectedAthletes[index];
-                            if (athlete?.userId && athlete.userId === currentUserId) {
-                              return;
-                            }
-                            setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                          }}
-                          maxAthletes={maxAthletesAllowed}
+                        <SearchableSelect
+                          value={selectedCoach}
+                          onChange={setSelectedCoach}
+                          options={coaches.map((coach) => ({
+                            value: coach.id,
+                            label: coach.full_name,
+                          }))}
+                          placeholder="Seleziona maestro"
+                          searchPlaceholder="Cerca maestro"
                         />
-                        <p className="mt-2 text-xs text-gray-500">
-                          Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a {maxAthletesAllowed - 1} {(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.
-                        </p>
                       </div>
                     </div>
                   )}
@@ -820,25 +848,6 @@ function NewBookingPageInner() {
                       )}
                     </div>
                   </div>
-
-                  {/* Maestro se necessario */}
-                  {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
-                      <div className="flex-1">
-                        <SearchableSelect
-                          value={selectedCoach}
-                          onChange={setSelectedCoach}
-                          options={coaches.map((coach) => ({
-                            value: coach.id,
-                            label: coach.full_name,
-                          }))}
-                          placeholder="Seleziona maestro"
-                          searchPlaceholder="Cerca maestro"
-                        />
-                      </div>
-                    </div>
-                  )}
 
                   {/* Note */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -898,32 +907,14 @@ function NewBookingPageInner() {
                         const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
                         const duration = endSlot - startSlot;
 
-                        const getBookingStyle = () => {
-                          if (booking.isBlock) {
-                            return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
-                          }
-                          switch (booking.type) {
-                            case "lezione_privata":
-                            case "lezione_gruppo":
-                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
-                            case "campo":
-                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
-                            default:
-                              return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
-                          }
-                        };
-
-                        const getBookingLabel = () => {
-                          if (booking.isBlock) return booking.reason || "BLOCCATO";
-                          if (booking.type === "lezione_privata") return "Lezione Privata";
-                          if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
-                          return "Campo";
-                        };
+                        const getBookingStyle = () => ({
+                          background: "var(--secondary)",
+                        });
 
                         return (
                           <div
                             key={booking.id}
-                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10"
+                            className="absolute rounded-md z-10"
                             style={{
                               ...getBookingStyle(),
                               left: `${(startSlot / 32) * 100}%`,
@@ -932,11 +923,7 @@ function NewBookingPageInner() {
                               bottom: '4px',
                               marginLeft: '2px'
                             }}
-                          >
-                            <div className="truncate leading-tight uppercase tracking-wider">
-                              {getBookingLabel()}
-                            </div>
-                          </div>
+                          />
                         );
                       })}
 

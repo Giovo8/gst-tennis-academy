@@ -16,11 +16,11 @@ type SendBookingNotificationInput = {
   notes?: string | null;
 };
 
-type AdminRecipient = {
+type GestoreRecipient = {
   id: string;
   email: string;
   full_name?: string | null;
-  role: "admin" | "gestore";
+  role: "gestore";
 };
 
 function escapeHtml(value: string): string {
@@ -32,19 +32,19 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#039;");
 }
 
-async function getAdminRecipients(): Promise<AdminRecipient[]> {
+async function getGestoreRecipients(): Promise<GestoreRecipient[]> {
   const { data, error } = await supabaseServer
     .from("profiles")
     .select("id, email, full_name, role")
-    .in("role", ["admin", "gestore"])
+    .eq("role", "gestore")
     .not("email", "is", null);
 
   if (error) {
-    logger.error("Failed to fetch admin recipients for booking emails", error);
+    logger.error("Failed to fetch gestore recipients for booking emails", error);
     return [];
   }
 
-  const byEmail = new Map<string, AdminRecipient>();
+  const byEmail = new Map<string, GestoreRecipient>();
 
   for (const item of data || []) {
     const normalizedEmail = item.email?.trim().toLowerCase();
@@ -55,21 +55,21 @@ async function getAdminRecipients(): Promise<AdminRecipient[]> {
       id: item.id,
       email: normalizedEmail,
       full_name: item.full_name || null,
-      role: item.role as "admin" | "gestore",
+      role: item.role as "gestore",
     });
   }
 
   return Array.from(byEmail.values());
 }
 
-export async function sendBookingCreatedEmailToAdminAndGestore(params: SendBookingNotificationInput): Promise<void> {
+export async function sendBookingCreatedEmailToGestore(params: SendBookingNotificationInput): Promise<void> {
   try {
     const resend = getResendClient();
     if (!resend) return;
 
-    const recipients = await getAdminRecipients();
+    const recipients = await getGestoreRecipients();
     if (recipients.length === 0) {
-      logger.warn("No admin or gestore recipients found for booking email", {
+      logger.warn("No gestore recipients found for booking email", {
         bookingId: params.bookingId,
       });
       return;
@@ -136,7 +136,7 @@ export async function sendBookingCreatedEmailToAdminAndGestore(params: SendBooki
           <p style="margin: 10px 0 0 0;">
             <a href="${bookingUrl}" style="display: inline-block; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri gestione prenotazioni</a>
           </p>
-          <p style="margin: 12px 0 0 0; color: #64748b; font-size: 12px;">Questa notifica è stata inviata automaticamente agli account admin e gestore della piattaforma.</p>
+          <p style="margin: 12px 0 0 0; color: #64748b; font-size: 12px;">Questa notifica è stata inviata automaticamente agli account gestore della piattaforma.</p>
         </div>
       </div>
     `;
@@ -181,7 +181,7 @@ export async function sendBookingCreatedEmailToAdminAndGestore(params: SendBooki
             recipientName: recipient.full_name || null,
             recipientUserId: recipient.id,
             subject,
-            templateName: "booking_created_admin_notification",
+            templateName: "booking_created_gestore_notification",
             status: "failed",
             provider: "resend",
             providerMessageId: null,
@@ -208,7 +208,7 @@ export async function sendBookingCreatedEmailToAdminAndGestore(params: SendBooki
           recipientName: recipient.full_name || null,
           recipientUserId: recipient.id,
           subject,
-          templateName: "booking_created_admin_notification",
+          templateName: "booking_created_gestore_notification",
           status: "sent",
           provider: "resend",
           providerMessageId: data?.id || null,

@@ -367,6 +367,16 @@ export default function AdminDashboard() {
     loadWeatherData();
   }, []);
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const weekday = date.toLocaleDateString("it-IT", { weekday: "short" });
+    const day = date.getDate();
+    const month = date.toLocaleDateString("it-IT", { month: "short" });
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+    return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
+  };
+
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
@@ -587,7 +597,7 @@ export default function AdminDashboard() {
 
       {/* Timeline Prenotazioni */}
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} />
+        <BookingsTimeline bookings={timelineBookings} loading={loading} swapAxes={true} />
       </div>
 
       {/* Bacheca GST - Centro Operativo */}
@@ -603,25 +613,34 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600">Nessun annuncio al momento</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {recentAnnouncements.slice(0, 3).map((announcement) => (
-                  <div
+                  <button
                     key={announcement.id}
-                    className="p-3 bg-gray-50 rounded-lg border border-gray-200 border-l-4 border-l-secondary hover:bg-gray-100 transition-all cursor-pointer"
+                    type="button"
+                    className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                    style={{ borderLeftColor: "var(--secondary)" }}
                     onClick={() => handleAnnouncementClick(announcement)}
                   >
-                    <div className="flex items-center gap-3">
-                      <Megaphone className="h-4 w-4 text-secondary flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{announcement.title}</p>
+                    <div className="grid grid-cols-[40px_112px_1fr] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        <Megaphone className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                       </div>
-                      {announcement.priority === "urgent" && (
-                        <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded whitespace-nowrap flex-shrink-0">
-                          URGENTE
-                        </span>
-                      )}
+                      <div className="text-sm font-semibold text-secondary">
+                        {formatDate(announcement.created_at)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-secondary text-sm truncate">{announcement.title}</p>
+                          {announcement.is_pinned && (
+                            <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                              In evidenza
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -642,39 +661,52 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600">Nessuna notifica</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {notifications.slice(0, 3).map((n) => {
                   const icon = (() => {
                     switch (n.type) {
                       case "booking":
-                        return <Calendar className="h-4 w-4 text-secondary" />;
+                        return <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                       case "tournament":
-                        return <Trophy className="h-4 w-4 text-secondary" />;
+                        return <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                       case "message":
-                        return <MessageSquare className="h-4 w-4 text-secondary" />;
+                        return <MessageSquare className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                       case "success":
-                        return <CheckCircle className="h-4 w-4 text-secondary" />;
+                        return <CheckCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                       case "warning":
-                        return <AlertCircle className="h-4 w-4 text-secondary" />;
+                        return <AlertCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                       case "error":
-                        return <XCircle className="h-4 w-4 text-secondary" />;
+                        return <XCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                       default:
-                        return <Info className="h-4 w-4 text-secondary" />;
+                        return <Info className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
                     }
                   })();
 
                   return (
-                    <div
+                    <button
                       key={n.id}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+                      type="button"
+                      className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                      style={{ borderLeftColor: "var(--secondary)" }}
                       onClick={() => handleNotificationClick(n)}
                     >
-                      <div className="flex-shrink-0">{icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
+                      <div className="grid grid-cols-[40px_112px_1fr] items-center gap-4">
+                        <div className="flex items-center justify-center">{icon}</div>
+                        <div className="text-sm font-semibold text-secondary">
+                          {formatDate(n.created_at)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-secondary text-sm truncate">{n.title}</p>
+                            {!n.is_read && (
+                              <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                                Nuova
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      {!n.is_read && <span className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />}
-                    </div>
+                    </button>
                   );
                 })}
               </div>

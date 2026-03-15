@@ -11,7 +11,7 @@ import {
 } from "date-fns";
 import { CalendarDays, Clock, Loader2, Users2, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import { type UserRole } from "@/lib/roles";
+import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { useBookingsRealtime } from "@/lib/hooks/useBookingsRealtime";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
 
@@ -167,8 +167,7 @@ export default function BookingCalendar() {
             
             // Filtra per ruolo
             const coachData = users.filter((p: any) => {
-              const role = String(p.role || '').toLowerCase();
-              return role === 'maestro';
+              return isBookableCoachProfile(p);
             });
             
             const athleteData = users.filter((p: any) => {

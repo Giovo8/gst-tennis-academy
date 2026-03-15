@@ -38,6 +38,9 @@ type BookingsTimelineProps = {
   loading: boolean;
   basePath?: string; // Optional base path for navigation (default: /dashboard/admin)
   fetchOccupied?: boolean; // When true, fetches ALL bookings via API to show occupied slots from other users
+  swapAxes?: boolean; // When true, shows time on Y axis and courts on X axis
+  showBlockReason?: boolean;
+  showCourtBlocks?: boolean;
 };
 
 const TIME_SLOTS = [
@@ -46,6 +49,9 @@ const TIME_SLOTS = [
   "19:00", "20:00", "21:00", "22:00"
 ];
 
+const HALF_SLOTS_PER_DAY = TIME_SLOTS.length * 2;
+const TIMELINE_ROW_HEIGHT = 72;
+
 type TimeSlotInfo = {
   booking: Booking | null;
   isPartOfBooking: boolean;
@@ -53,7 +59,7 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
@@ -125,8 +131,14 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
   // Load court blocks for the selected date
   useEffect(() => {
+    if (!showCourtBlocks) {
+      setCourtBlocks([]);
+      setBlocksLoading(false);
+      return;
+    }
+
     loadCourtBlocks();
-  }, [selectedDate]);
+  }, [selectedDate, showCourtBlocks]);
 
   // When fetchOccupied is enabled, fetch all bookings via API (bypasses RLS)
   useEffect(() => {
@@ -163,6 +175,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   async function loadCourtBlocks() {
+    if (!showCourtBlocks) {
+      setCourtBlocks([]);
+      setBlocksLoading(false);
+      return;
+    }
+
     setBlocksLoading(true);
     try {
       const startOfDay = new Date(selectedDate);
@@ -421,7 +439,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function getBookingLabel(booking: Booking): string {
-    if (booking.isBlock) return booking.reason || "Blocco Campo";
+    if (booking.isBlock) return showBlockReason ? booking.reason || "Blocco Campo" : "Blocco Campo";
     if (booking.type === "lezione_privata") return "Lezione Privata";
     if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
     if (booking.type === "arena") return "Match Arena";
@@ -455,6 +473,26 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     const today = new Date();
     return selectedDate.toDateString() === today.toDateString();
   }
+
+  function getBookingSlotRange(booking: Booking) {
+    const start = new Date(booking.start_time);
+    const end = new Date(booking.end_time);
+    const startHour = start.getHours();
+    const startMinute = start.getMinutes();
+    const endHour = end.getHours();
+    const endMinute = end.getMinutes();
+
+    const startSlot = (startHour - 7) * 2 + (startMinute >= 30 ? 1 : 0);
+    const endSlot = (endHour - 7) * 2 + (endMinute > 0 ? (endMinute > 30 ? 2 : 1) : 0);
+    const duration = endSlot - startSlot;
+
+    return { startSlot, duration };
+  }
+
+  const occupiedSource = fetchOccupied && allOccupiedBookings.length > 0
+    ? allOccupiedBookings
+    : bookingsForSelectedDate;
+  const timelineColumnsCount = Math.max(courts.length, 1);
 
   return (
     <div className="space-y-4">
@@ -503,39 +541,37 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         </div>
       ) : (
         <div className="space-y-4">
-          <div 
-            ref={timelineScrollRef}
-            className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-            style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="min-w-[1380px]">
-              {/* Header Row with Time Slots */}
-              <div className="flex bg-secondary rounded-lg mb-3">
-                <div className="w-[100px] flex-shrink-0 p-3 flex items-center justify-center">
-                  <span className="font-bold text-white uppercase tracking-wide text-[11px]">Campo</span>
+          {!swapAxes ? (
+            <div
+              ref={timelineScrollRef}
+              className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+              style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div className="min-w-[1380px]">
+                {/* Header Row with Time Slots */}
+                <div className="flex bg-secondary rounded-lg mb-3">
+                  <div className="w-[100px] flex-shrink-0 p-3 flex items-center justify-center">
+                    <span className="font-bold text-white uppercase tracking-wide text-[11px]">Campo</span>
+                  </div>
+                  <div className="flex-1 grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
+                    {TIME_SLOTS.map((time) => (
+                      <div
+                        key={time}
+                        className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                      >
+                        {time}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
-                  {TIME_SLOTS.map((time) => (
-                    <div
-                      key={time}
-                      className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
-                    >
-                      {time}
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Court Rows */}
-              <div className="space-y-3">
-              {courts.map((court) => {
-                const slots = courtTimeline[court] || [];
-
-                return (
+                {/* Court Rows */}
+                <div className="space-y-3">
+                {courts.map((court) => (
                   <div
                     key={court}
                     className="flex hover:bg-gray-50/50 transition-colors bg-white border border-gray-200 rounded-lg"
@@ -560,16 +596,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         ];
                         return allBlocks.map((booking) => {
                           const isForeign = !ownIds.has(booking.id);
-                          const start = new Date(booking.start_time);
-                          const end = new Date(booking.end_time);
-                          const startHour = start.getHours();
-                          const startMinute = start.getMinutes();
-                          const endHour = end.getHours();
-                          const endMinute = end.getMinutes();
-
-                          const startSlot = (startHour - 7) * 2 + (startMinute >= 30 ? 1 : 0);
-                          const endSlot = (endHour - 7) * 2 + (endMinute > 0 ? (endMinute > 30 ? 2 : 1) : 0);
-                          const duration = endSlot - startSlot;
+                          const { startSlot, duration } = getBookingSlotRange(booking);
 
                           if (startSlot < 0 || duration <= 0) return null;
 
@@ -589,8 +616,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               className={`absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all ${isForeign ? 'cursor-default' : 'hover:scale-[1.02] cursor-pointer active:scale-95'}`}
                               style={{
                                 ...getBookingStyle(booking),
-                                left: `${(startSlot / 32) * 100}%`,
-                                width: `calc(${(duration / 32) * 100}% - 4px)`,
+                                left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
+                                width: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
                                 top: '4px',
                                 bottom: '4px',
                                 marginLeft: '2px'
@@ -632,11 +659,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         const time2 = `${hour.toString().padStart(2, '0')}:30`;
                         const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
                         const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
-
-                        // Check if slots are occupied (use API-fetched data when available)
-                        const occupiedSource = fetchOccupied && allOccupiedBookings.length > 0
-                          ? allOccupiedBookings
-                          : bookingsForSelectedDate;
 
                         const isOccupied1 = occupiedSource.some(b => {
                           if (b.court !== court) return false;
@@ -690,11 +712,185 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                       })}
                     </div>
                   </div>
-                );
-              })}
+                ))}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              ref={timelineScrollRef}
+              className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+              style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div className="min-w-[1040px]">
+                <div className="flex bg-secondary rounded-t-lg border border-secondary overflow-hidden">
+                  <div className="w-[90px] flex-shrink-0 p-3 flex items-center justify-center border-r border-white/15">
+                    <span className="font-bold text-white uppercase tracking-wide text-[11px]">Ora</span>
+                  </div>
+                  <div className="flex-1 grid timeline-grid" style={{ gridTemplateColumns: `repeat(${timelineColumnsCount}, minmax(140px, 1fr))` }}>
+                    {courts.map((court) => (
+                      <div
+                        key={`header-${court}`}
+                        className="p-3 text-center font-bold text-white text-xs flex items-center justify-center border-r border-white/15 last:border-r-0"
+                      >
+                        {court}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex bg-white border-x border-b border-gray-200 rounded-b-lg overflow-hidden">
+                  <div className="w-[90px] flex-shrink-0 bg-white border-r border-gray-200">
+                    {TIME_SLOTS.map((time, hourIndex) => (
+                      <div
+                        key={`time-row-${time}`}
+                        className={`font-bold text-secondary text-xs flex items-center justify-center ${hourIndex === TIME_SLOTS.length - 1 ? '' : 'border-b border-gray-200'}`}
+                        style={{ height: `${TIMELINE_ROW_HEIGHT}px` }}
+                      >
+                        {time}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex-1 relative">
+                    <div className="grid timeline-grid" style={{ gridTemplateColumns: `repeat(${timelineColumnsCount}, minmax(140px, 1fr))` }}>
+                      {TIME_SLOTS.map((_, hourIndex) => {
+                        const hour = 7 + hourIndex;
+
+                        return courts.map((court, courtIndex) => {
+                          const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                          const time2 = `${hour.toString().padStart(2, '0')}:30`;
+                          const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
+                          const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
+
+                          const isOccupied1 = occupiedSource.some(b => {
+                            if (b.court !== court) return false;
+                            const bookingStart = new Date(b.start_time);
+                            const bookingEnd = new Date(b.end_time);
+                            const slotTime = new Date(selectedDate);
+                            slotTime.setHours(hour, 0, 0, 0);
+                            return slotTime >= bookingStart && slotTime < bookingEnd;
+                          });
+
+                          const isOccupied2 = occupiedSource.some(b => {
+                            if (b.court !== court) return false;
+                            const bookingStart = new Date(b.start_time);
+                            const bookingEnd = new Date(b.end_time);
+                            const slotTime = new Date(selectedDate);
+                            slotTime.setHours(hour, 30, 0, 0);
+                            return slotTime >= bookingStart && slotTime < bookingEnd;
+                          });
+
+                          return (
+                            <div
+                              key={`${court}-${hour}-swap`}
+                              className={`relative flex flex-col border-r border-gray-200 ${courtIndex === courts.length - 1 ? 'border-r-0' : ''} ${hourIndex === TIME_SLOTS.length - 1 ? '' : 'border-b border-gray-200'}`}
+                              style={{ height: `${TIMELINE_ROW_HEIGHT}px` }}
+                            >
+                              <div
+                                onClick={() => !isOccupied1 && toggleSlotSelection(court, time1)}
+                                className={`flex-1 transition-colors ${
+                                  isOccupied1
+                                    ? 'bg-gray-100 cursor-not-allowed'
+                                    : isSelected1
+                                    ? 'bg-secondary cursor-pointer'
+                                    : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
+                                }`}
+                              />
+                              <div
+                                onClick={() => !isOccupied2 && toggleSlotSelection(court, time2)}
+                                className={`flex-1 transition-colors border-t border-gray-200/70 ${
+                                  isOccupied2
+                                    ? 'bg-gray-100 cursor-not-allowed'
+                                    : isSelected2
+                                    ? 'bg-secondary cursor-pointer'
+                                    : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
+                                }`}
+                              />
+                              <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-px bg-gray-300" />
+                            </div>
+                          );
+                        });
+                      })}
+                    </div>
+
+                    <div className="absolute inset-0 pointer-events-none">
+                      {courts.flatMap((court, courtIndex) => {
+                        const ownIds = new Set(bookingsForSelectedDate.filter(b => b.court === court).map(b => b.id));
+                        const foreignBlocks: any[] = fetchOccupied
+                          ? allOccupiedBookings.filter(b => b.court === court && !ownIds.has(b.id))
+                          : [];
+                        const allBlocks = [
+                          ...bookingsForSelectedDate.filter(b => b.court === court),
+                          ...foreignBlocks
+                        ];
+
+                        return allBlocks.map((booking) => {
+                          const isForeign = !ownIds.has(booking.id);
+                          const { startSlot, duration } = getBookingSlotRange(booking);
+
+                          if (startSlot < 0 || duration <= 0) return null;
+
+                          const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+
+                          return (
+                            <div
+                              key={`swap-${court}-${booking.id}`}
+                              onClick={() => {
+                                if (isForeign) return;
+                                if (booking.isBlock) {
+                                  router.push(`${basePath}/courts/${booking.id}`);
+                                } else {
+                                  router.push(`${basePath}/bookings/${booking.id}`);
+                                }
+                              }}
+                              className={`absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all ${isForeign ? 'cursor-default' : 'hover:scale-[1.01] cursor-pointer active:scale-95'}`}
+                              style={{
+                                ...getBookingStyle(booking),
+                                left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
+                                width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
+                                top: `calc(${(startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
+                                height: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
+                              }}
+                              title={isForeign ? 'Slot occupato' : `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
+                            >
+                              {booking.isBlock ? (
+                                <div className="truncate leading-tight uppercase tracking-wider">
+                                  {getBookingLabel(booking)}
+                                </div>
+                              ) : isForeign ? (
+                                <div className="truncate leading-tight uppercase tracking-wider">
+                                  {getBookingLabel(booking)}
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="truncate leading-tight">
+                                    {getBookingDisplayName(booking)}
+                                  </div>
+                                  {isLesson && booking.coach_profile && (
+                                    <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                      {booking.coach_profile.full_name}
+                                    </div>
+                                  )}
+                                  <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                    {getBookingLabel(booking)}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          );
+                        });
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Book Button */}
           {selectedSlots.length > 0 && (

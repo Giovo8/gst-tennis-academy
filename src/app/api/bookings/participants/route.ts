@@ -122,11 +122,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const canEdit = booking.user_id === user.id || isAdminOrGestore(profile?.role);
+    const canEdit = isAdminOrGestore(profile?.role);
     if (!canEdit) {
       logger.security('Unauthorized participant add attempt', {
         userId: user.id,
         bookingId: booking_id,
+        role: profile?.role,
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
@@ -260,11 +261,12 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const canEdit = booking.user_id === user.id || isAdminOrGestore(profile?.role);
+    const canEdit = isAdminOrGestore(profile?.role);
     if (!canEdit) {
       logger.security('Unauthorized participant delete attempt', {
         userId: user.id,
         bookingId,
+        role: profile?.role,
       });
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },

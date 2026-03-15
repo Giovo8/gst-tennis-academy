@@ -15,7 +15,11 @@ type Profile = {
   created_at: string;
 };
 
-export default function UsersPage() {
+type UsersPageProps = {
+  basePath?: string;
+};
+
+export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPageProps) {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -142,7 +146,7 @@ export default function UsersPage() {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link
-            href="/dashboard/admin/users/new"
+            href={`${basePath}/users/new`}
             className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             <UserPlus className="h-4 w-4" />
@@ -256,7 +260,7 @@ export default function UsersPage() {
                 style={{ borderLeftColor: borderColor }}
               >
                 <Link
-                  href={`/dashboard/admin/users/${user.id}`}
+                  href={`${basePath}/users/${user.id}`}
                   className="grid grid-cols-[48px_1fr_90px_260px_130px_40px] items-center gap-3 no-underline"
                 >
                     {/* Avatar */}
@@ -319,7 +323,7 @@ export default function UsersPage() {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 setOpenMenuId(null);
-                                window.location.href = `/dashboard/admin/users/modifica?id=${user.id}`;
+                                window.location.href = `${basePath}/users/modifica?id=${user.id}`;
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                             >

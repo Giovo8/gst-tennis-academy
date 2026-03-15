@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
-import { sendBookingCreatedEmailToAdminAndGestore } from "@/lib/email/booking-notifications";
+import { sendBookingCreatedEmailToGestore } from "@/lib/email/booking-notifications";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
               : 0;
             const bookingMode = participantsCount > 2 ? "doppio" : "singolo";
 
-            return sendBookingCreatedEmailToAdminAndGestore({
+            return sendBookingCreatedEmailToGestore({
               bookingId: booking.id,
               athleteName,
               athleteEmail: userProfile.email || null,

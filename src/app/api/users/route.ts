@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { isBookableCoachProfile } from '@/lib/roles';
 
 async function getUserProfile(req: Request) {
   const authHeader = (req as any).headers?.get?.('authorization') ?? null;
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     // Get all users that can be enrolled in tournaments
     const { data: users, error } = await supabaseServer
       .from('profiles')
-      .select('id, full_name, email, role, avatar_url')
+      .select('id, full_name, email, role, avatar_url, metadata')
       .not('role', 'is', null)
       .order('full_name', { ascending: true, nullsFirst: false });
 
@@ -48,10 +49,9 @@ export async function GET(req: Request) {
     let filteredUsers = users || [];
     
     if (roleLower === 'atleta') {
-      // Athletes can only see maestro profiles (for booking purposes)
+      // Athletes can only see coach profiles (maestro + gestore con ruolo secondario maestro)
       filteredUsers = filteredUsers.filter(user => {
-        const role = String(user.role || '').toLowerCase();
-        return role === 'maestro';
+        return isBookableCoachProfile(user);
       });
     } else {
       // Maestros, admin, and gestore can see all relevant roles
@@ -61,7 +61,15 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json({ users: filteredUsers });
+    const usersResponse = filteredUsers.map((user: any) => {
+      const { metadata, ...safeUser } = user;
+      return {
+        ...safeUser,
+        is_bookable_coach: isBookableCoachProfile(user),
+      };
+    });
+
+    return NextResponse.json({ users: usersResponse });
   } catch (error: any) {
     console.error('Error in users API:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

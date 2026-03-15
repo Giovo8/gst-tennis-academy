@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Bell, X, Mail, Trophy, Megaphone, Check, Calendar, Video } from "lucide-react";
+import { Bell, Mail, Trophy, Megaphone, Calendar, Video } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Notification {
   id: string;
@@ -19,6 +19,7 @@ interface Notification {
 }
 
 export default function NotificationsDropdown() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -99,9 +100,11 @@ export default function NotificationsDropdown() {
     <div className="relative">
       <button
         onClick={() => {
-          setIsOpen(!isOpen);
-          if (!isOpen) {
+          const opening = !isOpen;
+          setIsOpen(opening);
+          if (opening) {
             loadNotifications();
+            void markAllAsRead();
           }
         }}
         className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -109,7 +112,7 @@ export default function NotificationsDropdown() {
       >
         <Bell className="h-5 w-5 text-gray-600" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+          <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -122,15 +125,6 @@ export default function NotificationsDropdown() {
             {/* Header */}
             <div className="px-4 py-3 bg-secondary flex items-center justify-between rounded-t-lg">
               <h3 className="font-semibold text-white">Notifiche</h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="text-xs text-white/80 hover:text-white hover:underline flex items-center gap-1"
-                >
-                  <Check className="h-3 w-3" />
-                  Segna tutte come lette
-                </button>
-              )}
             </div>
 
             {/* Notifications List */}
@@ -145,7 +139,11 @@ export default function NotificationsDropdown() {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                      onClick={() => {
+                        if (notification.link) router.push(notification.link);
+                        setIsOpen(false);
+                      }}
+                      className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                         !notification.is_read ? "bg-blue-50/50" : ""
                       }`}
                     >
@@ -154,45 +152,18 @@ export default function NotificationsDropdown() {
                           {getNotificationIcon(notification.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-gray-900 mb-1">
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-gray-600 mb-2">
-                                {notification.message}
-                              </p>
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs text-gray-400">
-                                  {formatDistanceToNow(new Date(notification.created_at), {
-                                    addSuffix: true,
-                                    locale: it,
-                                  })}
-                                </span>
-                                {notification.link && (
-                                  <Link
-                                    href={notification.link}
-                                    className="text-xs text-secondary hover:underline"
-                                    onClick={() => {
-                                      markAsRead(notification.id);
-                                      setIsOpen(false);
-                                    }}
-                                  >
-                                    Vai
-                                  </Link>
-                                )}
-                              </div>
-                            </div>
-                            {!notification.is_read && (
-                              <button
-                                onClick={() => markAsRead(notification.id)}
-                                className="flex-shrink-0 p-1 hover:bg-gray-200 rounded"
-                                title="Segna come letto"
-                              >
-                                <Check className="h-4 w-4 text-gray-400" />
-                              </button>
-                            )}
-                          </div>
+                          <p className="text-sm font-semibold text-gray-900 mb-1">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-gray-600 mb-2">
+                            {notification.message}
+                          </p>
+                          <span className="text-xs text-gray-400">
+                            {formatDistanceToNow(new Date(notification.created_at), {
+                              addSuffix: true,
+                              locale: it,
+                            })}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -227,7 +198,11 @@ export default function NotificationsDropdown() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`px-4 py-3 rounded-lg border transition-colors ${
+                    onClick={() => {
+                      if (notification.link) router.push(notification.link);
+                      setIsOpen(false);
+                    }}
+                    className={`px-4 py-3 rounded-lg border transition-colors cursor-pointer ${
                       !notification.is_read ? "bg-blue-50 border-secondary/20" : "bg-white border-gray-200 hover:bg-gray-50"
                     }`}
                   >
@@ -242,23 +217,12 @@ export default function NotificationsDropdown() {
                         <p className="text-xs text-gray-600 mb-2">
                           {notification.message}
                         </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">
-                            {formatDistanceToNow(new Date(notification.created_at), {
-                              addSuffix: true,
-                              locale: it,
-                            })}
-                          </span>
-                          {!notification.is_read && (
-                            <button
-                              onClick={() => markAsRead(notification.id)}
-                              className="p-1"
-                              title="Segna come letto"
-                            >
-                              <Check className="h-4 w-4 text-secondary" />
-                            </button>
-                          )}
-                        </div>
+                        <span className="text-xs text-gray-400">
+                          {formatDistanceToNow(new Date(notification.created_at), {
+                            addSuffix: true,
+                            locale: it,
+                          })}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -266,18 +230,7 @@ export default function NotificationsDropdown() {
               </div>
             )}
 
-            {/* Actions */}
-            {unreadCount > 0 && (
-              <div className="p-4 border-t border-gray-100 space-y-2">
-                <button
-                  onClick={markAllAsRead}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
-                >
-                  <Check className="h-5 w-5" />
-                  <span className="text-sm font-medium">Segna tutte come lette</span>
-                </button>
-              </div>
-            )}
+
           </div>
 
           {/* Overlay per chiudere il dropdown */}

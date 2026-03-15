@@ -99,24 +99,34 @@ export default function BookingDetailPage() {
 
   async function cancelBooking() {
     if (!booking) return;
-    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
+    if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
 
     setActionLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", booking.id);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      if (!error) {
-        loadBooking();
-      } else {
-        alert("Errore durante l'annullamento");
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
+
+      const response = await fetch(`/api/bookings?id=${encodeURIComponent(booking.id)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      }
+
+      router.push("/dashboard/atleta/bookings");
     } catch (error) {
       console.error("Errore:", error);
-      alert("Errore durante l'annullamento");
+      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     } finally {
       setActionLoading(false);
     }

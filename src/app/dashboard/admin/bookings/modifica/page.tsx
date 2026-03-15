@@ -8,7 +8,7 @@ import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/lib/supabase/client";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { type UserRole } from "@/lib/roles";
+import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 
 interface Booking {
   id: string;
@@ -361,10 +361,16 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   useEffect(() => {
     const loadCoachesAndAthletes = async () => {
       const [coachRes, athleteRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name").eq("role", "maestro").order("full_name"),
+        supabase.from("profiles").select("id, full_name, role, metadata").in("role", ["maestro", "gestore"]).order("full_name"),
         supabase.from("profiles").select("id, full_name, email, phone, role").eq("role", "atleta").order("full_name"),
       ]);
-      if (coachRes.data) setCoaches(coachRes.data as { id: string; full_name: string }[]);
+      if (coachRes.data) {
+        const eligibleCoaches = coachRes.data
+          .filter((coach) => isBookableCoachProfile(coach))
+          .map(({ id, full_name }) => ({ id, full_name }));
+
+        setCoaches(eligibleCoaches as { id: string; full_name: string }[]);
+      }
       if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
     };
 
@@ -630,7 +636,13 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         throw new Error("Seleziona un maestro per le lezioni");
       }
 
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+      }
+
       const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
       const bookingUserId = registeredAthlete?.userId ?? booking?.user_id ?? sessionData?.session?.user?.id;
 
@@ -651,9 +663,13 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
       const durationMinutes = orderedSlots.length * 30; // ogni slot dura 30 minuti
       endDate.setMinutes(startDate.getMinutes() + durationMinutes);
 
-      const { error } = await supabase
-        .from("bookings")
-        .update({
+      const bookingResponse = await fetch(`/api/bookings?id=${encodeURIComponent(bookingId)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           user_id: bookingUserId,
           court: selectedCourt,
           type: bookingType || "campo",
@@ -664,10 +680,13 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
           notes: notes || null,
-        })
-        .eq("id", bookingId);
+        }),
+      });
 
-      if (error) throw error;
+      if (!bookingResponse.ok) {
+        const payload = await bookingResponse.json().catch(() => ({}));
+        throw new Error(payload?.error || "Errore durante l'aggiornamento della prenotazione");
+      }
 
       const { error: deleteParticipantsError } = await supabase
         .from("booking_participants")

@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
+import { isBookableCoachProfile } from "@/lib/roles";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 
@@ -216,6 +217,10 @@ export default function EditBookingPage() {
         return;
       }
 
+      setError("La modifica della prenotazione non è consentita agli atleti");
+      router.replace("/dashboard/atleta/bookings");
+      return;
+
       // Carica prenotazione esistente
       const { data: bookingData, error: bookingError } = await supabase
         .from("bookings")
@@ -268,11 +273,17 @@ export default function EditBookingPage() {
 
       const { data: coachData } = await supabase
         .from("profiles")
-        .select("id, full_name")
-        .eq("role", "maestro")
+        .select("id, full_name, role, metadata")
+        .in("role", ["maestro", "gestore"])
         .order("full_name");
 
-      if (coachData) setCoaches(coachData);
+      if (coachData) {
+        const eligibleCoaches = coachData
+          .filter((coach) => isBookableCoachProfile(coach))
+          .map(({ id, full_name }) => ({ id, full_name }));
+
+        setCoaches(eligibleCoaches);
+      }
 
     } catch (err) {
       console.error("Error loading data:", err);

@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
+import { isBookableCoachProfile } from "@/lib/roles";
 
 interface Coach {
   id: string;
@@ -169,11 +170,17 @@ export default function NewBookingPage() {
   async function loadCoaches() {
     const { data: coachData } = await supabase
       .from("profiles")
-      .select("id, full_name")
-      .eq("role", "maestro")
+      .select("id, full_name, role, metadata")
+      .in("role", ["maestro", "gestore"])
       .order("full_name");
 
-    if (coachData) setCoaches(coachData);
+    if (coachData) {
+      const eligibleCoaches = coachData
+        .filter((coach) => isBookableCoachProfile(coach))
+        .map(({ id, full_name }) => ({ id, full_name }));
+
+      setCoaches(eligibleCoaches);
+    }
   }
 
   async function loadAvailableSlots() {

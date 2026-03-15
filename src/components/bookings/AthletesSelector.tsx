@@ -25,7 +25,7 @@ interface AthletesSelectorProps {
   selectedAthletes: SelectedAthlete[];
   onAthleteAdd: (athlete: SelectedAthlete) => void;
   onAthleteRemove: (index: number) => void;
-  maxAthletes?: number;
+  maxAthletes?: number | null;
   useSecondaryParticipantBorder?: boolean;
 }
 
@@ -44,7 +44,8 @@ export default function AthletesSelector({
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const canAddMore = selectedAthletes.length < maxAthletes;
+  const hasMaxLimit = typeof maxAthletes === "number" && Number.isFinite(maxAthletes);
+  const canAddMore = !hasMaxLimit || selectedAthletes.length < maxAthletes;
 
   const filteredAthletes = athletes.filter((athlete) => {
     if (!searchTerm) return true;
@@ -98,7 +99,9 @@ export default function AthletesSelector({
         >
           <span className={selectedAthletes.length > 0 ? "" : "text-secondary/40"}>
             {selectedAthletes.length > 0
-              ? `Partecipanti selezionati (${selectedAthletes.length}/${maxAthletes})`
+              ? hasMaxLimit
+                ? `Partecipanti selezionati (${selectedAthletes.length}/${maxAthletes})`
+                : `Partecipanti selezionati (${selectedAthletes.length})`
               : "Seleziona partecipanti"}
           </span>
           <ChevronDown
@@ -241,18 +244,13 @@ export default function AthletesSelector({
           </div>
 
           {selectedAthletes.map((athlete, index) => {
-            const borderColor = useSecondaryParticipantBorder
-              ? "var(--secondary)"
-              : athlete.isRegistered
-                ? "#08b3f7"
-                : "#056c94";
             const contacts = [athlete.email, athlete.phone].filter(Boolean).join(" ");
 
             return (
               <div
                 key={`${athlete.userId || athlete.fullName}-${index}`}
-                className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4"
-                style={{ borderLeftColor: borderColor }}
+                 className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4"
+                 style={{ borderLeftColor: "var(--secondary)" }}
               >
                 <div className="grid grid-cols-[40px_1fr_1fr_64px] items-center gap-4">
                   <div className="flex items-center justify-center">

@@ -21,7 +21,11 @@ type Profile = {
   created_at: string;
 };
 
-export default function ModificaUtentePage() {
+type ModificaUtentePageProps = {
+  basePath?: string;
+};
+
+export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: ModificaUtentePageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userId = searchParams.get("id");
@@ -47,6 +51,7 @@ export default function ModificaUtentePage() {
     arena_rank: "Bronzo" as "Bronzo" | "Argento" | "Oro" | "Platino" | "Diamante",
     notes: "",
     role: "atleta" as "admin" | "gestore" | "maestro" | "atleta",
+    also_maestro: false,
     subscription_type: "",
     email_notifications_enabled: true
   });
@@ -62,9 +67,9 @@ export default function ModificaUtentePage() {
     if (userId) {
       loadUser();
     } else {
-      router.push("/dashboard/admin/users");
+      router.push(`${basePath}/users`);
     }
-  }, [userId]);
+  }, [basePath, userId]);
 
   async function loadUser() {
     if (!userId) return;
@@ -78,7 +83,7 @@ export default function ModificaUtentePage() {
 
       if (error || !data) {
         alert("Utente non trovato");
-        router.push("/dashboard/admin/users");
+        router.push(`${basePath}/users`);
         return;
       }
 
@@ -93,6 +98,10 @@ export default function ModificaUtentePage() {
       setArenaStats(arenaData);
 
       const metadata = data.metadata || {};
+      const secondaryRoles = Array.isArray(metadata.secondary_roles)
+        ? metadata.secondary_roles.map((value: unknown) => String(value).toLowerCase())
+        : [];
+
       setFormData({
         full_name: data.full_name || "",
         email: data.email,
@@ -107,13 +116,14 @@ export default function ModificaUtentePage() {
         arena_rank: arenaData?.level || "Bronzo",
         notes: data.bio || "",
         role: data.role,
+        also_maestro: data.role === "gestore" && secondaryRoles.includes("maestro"),
         subscription_type: data.subscription_type || "",
         email_notifications_enabled: data.email_notifications_enabled ?? true
       });
     } catch (error) {
       console.error("Error loading user:", error);
       alert("Errore nel caricamento dell'utente");
-      router.push("/dashboard/admin/users");
+      router.push(`${basePath}/users`);
     } finally {
       setLoading(false);
     }
@@ -129,6 +139,13 @@ export default function ModificaUtentePage() {
 
     setUpdating(true);
     try {
+      const existingMetadata = user?.metadata && typeof user.metadata === "object"
+        ? user.metadata
+        : {};
+      const secondaryRoles = formData.role === "gestore" && formData.also_maestro
+        ? ["maestro"]
+        : [];
+
       // Aggiorna il profilo
       const { error } = await supabase
         .from("profiles")
@@ -142,12 +159,14 @@ export default function ModificaUtentePage() {
           subscription_type: formData.subscription_type || null,
           email_notifications_enabled: formData.email_notifications_enabled,
           metadata: {
+            ...(existingMetadata as Record<string, unknown>),
             birth_city: formData.birth_city,
             fiscal_code: formData.fiscal_code,
             address: formData.address,
             city: formData.city,
             province: formData.province,
-            postal_code: formData.postal_code
+            postal_code: formData.postal_code,
+            secondary_roles: secondaryRoles,
           }
         })
         .eq("id", userId);
@@ -202,7 +221,7 @@ export default function ModificaUtentePage() {
       }
 
       alert("Profilo aggiornato con successo!");
-      router.push("/dashboard/admin/users");
+      router.push(`${basePath}/users`);
     } catch (error: any) {
       console.error("Error updating user:", error);
       alert(error.message || "Errore durante l'aggiornamento del profilo");
@@ -341,7 +360,7 @@ export default function ModificaUtentePage() {
     return (
       <div className="text-center py-20">
         <p className="text-secondary">Utente non trovato</p>
-        <Link href="/dashboard/admin/users" className="text-secondary hover:underline mt-4 inline-block">
+        <Link href={`${basePath}/users`} className="text-secondary hover:underline mt-4 inline-block">
           Torna agli utenti
         </Link>
       </div>
@@ -355,7 +374,7 @@ export default function ModificaUtentePage() {
         <div>
           <p className="breadcrumb text-secondary/60 mb-1">
             <Link
-              href="/dashboard/admin/users"
+              href={`${basePath}/users`}
               className="hover:text-secondary/80 transition-colors"
             >
               Gestione Utenti
@@ -591,7 +610,13 @@ export default function ModificaUtentePage() {
                   <button
                     key={role}
                     type="button"
-                    onClick={() => setFormData({ ...formData, role: role as any })}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        role: role as any,
+                        also_maestro: role === "gestore" ? prev.also_maestro : false,
+                      }))
+                    }
                     className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                       formData.role === role
                         ? 'bg-secondary text-white border-secondary'
@@ -603,6 +628,26 @@ export default function ModificaUtentePage() {
                 ))}
               </div>
             </div>
+
+            {formData.role === "gestore" && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo Aggiuntivo</label>
+                <div className="flex-1">
+                  <label className="inline-flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary cursor-pointer hover:border-secondary transition-all">
+                    <input
+                      type="checkbox"
+                      checked={formData.also_maestro}
+                      onChange={(e) => setFormData({ ...formData, also_maestro: e.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-secondary focus:ring-secondary/30"
+                    />
+                    <span>Anche Maestro (selezionabile nelle prenotazioni)</span>
+                  </label>
+                  <p className="text-xs text-secondary/50 mt-3">
+                    Mantiene i permessi da gestore e abilita il profilo come maestro nelle prenotazioni.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Note */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
