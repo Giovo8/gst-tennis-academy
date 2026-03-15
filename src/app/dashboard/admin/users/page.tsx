@@ -26,6 +26,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
   const [sortBy, setSortBy] = useState<"name" | "role" | "email" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -89,6 +90,28 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
       setSortBy(column);
       setSortOrder("asc");
     }
+  };
+
+  const closeActionMenu = () => {
+    setOpenMenuId(null);
+    setMenuPosition(null);
+  };
+
+  const openActionMenu = (userId: string, buttonRect: DOMRect) => {
+    const menuWidth = 176;
+    const menuHeight = 100;
+    const viewportPadding = 8;
+
+    let left = buttonRect.right - menuWidth;
+    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuWidth - viewportPadding));
+
+    let top = buttonRect.bottom + 6;
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = Math.max(viewportPadding, buttonRect.top - menuHeight - 6);
+    }
+
+    setOpenMenuId(userId);
+    setMenuPosition({ top, left });
   };
 
   const roleLabels = {
@@ -193,10 +216,10 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
               display: none;
             }
           `}</style>
-          <div className="space-y-3 min-w-[700px]">
+          <div className="space-y-3 min-w-[980px]">
           {/* Header Row */}
           <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="grid grid-cols-[48px_1fr_90px_260px_130px_40px] items-center gap-3">
+            <div className="grid grid-cols-[48px_220px_120px_260px_150px_1fr_64px] items-center gap-4">
               <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
               <button
                 onClick={() => handleSort("name")}
@@ -233,6 +256,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
               </button>
               <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
               <div></div>
+              <div></div>
             </div>
           </div>
 
@@ -261,7 +285,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
               >
                 <Link
                   href={`${basePath}/users/${user.id}`}
-                  className="grid grid-cols-[48px_1fr_90px_260px_130px_40px] items-center gap-3 no-underline"
+                  className="grid grid-cols-[48px_220px_120px_260px_150px_1fr_64px] items-center gap-4 no-underline"
                 >
                     {/* Avatar */}
                     <div className="flex items-center justify-center">
@@ -279,7 +303,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
                     </div>
 
                     {/* Nome */}
-                    <div className="font-bold text-secondary truncate">
+                    <div className="font-bold text-secondary text-sm whitespace-nowrap">
                       {user.full_name || "Nome non impostato"}
                     </div>
 
@@ -300,6 +324,8 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
                       )}
                     </div>
 
+                    <div></div>
+
                     {/* Azioni - 3 puntini */}
                     <div className="relative flex items-center justify-center">
                       <button
@@ -307,22 +333,30 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setOpenMenuId(openMenuId === user.id ? null : user.id);
+                          if (openMenuId === user.id) {
+                            closeActionMenu();
+                            return;
+                          }
+
+                          openActionMenu(user.id, e.currentTarget.getBoundingClientRect());
                         }}
                         className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      {openMenuId === user.id && (
+                      {openMenuId === user.id && menuPosition && (
                         <>
-                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                          <div
+                            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                            style={{ top: menuPosition.top, left: menuPosition.left }}
+                          >
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setOpenMenuId(null);
+                                closeActionMenu();
                                 window.location.href = `${basePath}/users/modifica?id=${user.id}`;
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
@@ -335,7 +369,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setOpenMenuId(null);
+                                closeActionMenu();
                                 deleteUser(user.id, user.email);
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"

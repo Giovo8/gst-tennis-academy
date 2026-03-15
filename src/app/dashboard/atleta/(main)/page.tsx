@@ -203,6 +203,26 @@ export default function AtletaDashboard() {
     return date.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
   }
 
+  function formatAnnouncementModalDate(dateString: string) {
+    const formatter = new Intl.DateTimeFormat("it-IT", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return formatter
+      .formatToParts(new Date(dateString))
+      .map((part) => {
+        if ((part.type === "weekday" || part.type === "month") && part.value.length > 0) {
+          return part.value.charAt(0).toUpperCase() + part.value.slice(1);
+        }
+
+        return part.value;
+      })
+      .join("");
+  }
+
   async function loadDashboardData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -852,14 +872,8 @@ export default function AtletaDashboard() {
               {/* Date and Priority */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sm text-secondary/70">
-                  <Clock className="w-4 h-4" />
                   <span>
-                    {new Date(selectedAnnouncement.created_at).toLocaleDateString("it-IT", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric"
-                    })}
+                    {formatAnnouncementModalDate(selectedAnnouncement.created_at)}
                   </span>
                 </div>
                 {selectedAnnouncement.priority === "urgent" && (

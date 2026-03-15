@@ -164,6 +164,26 @@ export default function AnnouncementsBoard() {
     });
   }
 
+  function formatAnnouncementModalDate(dateString: string) {
+    const formatter = new Intl.DateTimeFormat("it-IT", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return formatter
+      .formatToParts(new Date(dateString))
+      .map((part) => {
+        if ((part.type === "weekday" || part.type === "month") && part.value.length > 0) {
+          return part.value.charAt(0).toUpperCase() + part.value.slice(1);
+        }
+
+        return part.value;
+      })
+      .join("");
+  }
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -357,8 +377,7 @@ export default function AnnouncementsBoard() {
                     {selectedAnnouncement.title}
                   </h2>
                   <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{formatDate(selectedAnnouncement.created_at)}</span>
+                    <span>{formatAnnouncementModalDate(selectedAnnouncement.created_at)}</span>
                     {selectedAnnouncement.is_pinned && (
                       <>
                         <span>•</span>

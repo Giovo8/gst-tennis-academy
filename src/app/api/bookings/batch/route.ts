@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { sendBookingCreatedEmailToGestore } from "@/lib/email/booking-notifications";
+import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -122,12 +123,15 @@ export async function POST(request: Request) {
       const bookingCount = insertedBookings.length;
       const athleteName = userProfile?.full_name || "Un utente";
       const countLabel = bookingCount > 1 ? `${bookingCount} prenotazioni` : "una prenotazione";
+      const notificationLink = bookingCount === 1
+        ? getAdminBookingNotificationLink(firstBooking.id)
+        : getAdminBookingNotificationLink();
 
       await notifyAdmins({
         type: "booking",
         title: bookingCount > 1 ? "Nuove prenotazioni multiple" : "Nuova prenotazione",
         message: `${athleteName} ha creato ${countLabel} sul ${firstBooking.court} a partire dal ${startDate} alle ${startTime}`,
-        link: "/dashboard/admin/bookings",
+        link: notificationLink,
       });
 
       if (userProfile?.role === "atleta") {

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { FileText, Mail, Phone, MapPin } from 'lucide-react'
+import PublicNavbar from '@/components/layout/PublicNavbar'
 
 export const metadata: Metadata = {
   title: 'Termini e Condizioni | GST Tennis Academy',
@@ -8,54 +8,51 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-frozen-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-white">
+      <PublicNavbar />
+
       <div className="container mx-auto px-4 py-8 sm:py-12 md:py-16">
-        {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-frozen-600 rounded-full mb-4 sm:mb-6">
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 px-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-secondary mb-3 sm:mb-4 px-2">
             Termini e Condizioni
           </h1>
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-4">
+          <p className="text-lg sm:text-xl text-secondary/70 max-w-2xl mx-auto px-4">
             Regole e condizioni per l&apos;utilizzo dei servizi GST Tennis Academy
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+          <p className="text-sm text-secondary/60 mt-4">
             Ultimo aggiornamento: 1 Gennaio 2026
           </p>
         </div>
 
-        {/* Content */}
-        <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 lg:p-12">
-          <div className="prose prose-lg dark:prose-invert max-w-none">
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
+          <div className="space-y-8">
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
                 1. Accettazione dei Termini
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p className="text-secondary/80 leading-relaxed">
                 Accedendo e utilizzando i servizi di GST Tennis Academy (&quot;Servizio&quot;), accetti di essere vincolato da questi Termini e Condizioni (&quot;Termini&quot;). Se non accetti tutti i termini e le condizioni, non dovresti utilizzare questo Servizio.
               </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
                 2. Descrizione del Servizio
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p className="text-secondary/80 leading-relaxed">
                 GST Tennis Academy fornisce una piattaforma online per la prenotazione di campi da tennis, la partecipazione a tornei, l&apos;accesso a corsi e lezioni, e altri servizi correlati al tennis. Il Servizio include anche funzionalità di chat, notifiche e gestione del profilo utente.
               </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
                 3. Registrazione e Account
               </h2>
               <div className="space-y-4">
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-secondary/80">
                   Per utilizzare alcuni servizi, devi registrarti e creare un account. Accetti di:
                 </p>
-                <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
+                <ul className="list-disc list-inside text-secondary/80 space-y-2">
                   <li>Fornire informazioni accurate, attuali e complete</li>
                   <li>Mantenere e aggiornare tempestivamente le informazioni del tuo account</li>
                   <li>Mantenere la riservatezza della password e dell&apos;account</li>
@@ -65,43 +62,43 @@ export default function TermsPage() {
               </div>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                4. Prenotazioni e Pagamenti
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
+                4. Prenotazioni e Iscrizioni
               </h2>
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                  <h3 className="text-lg font-medium text-secondary mb-2">
                     Prenotazioni Campi:
                   </h3>
-                  <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                  <ul className="list-disc list-inside text-secondary/80 space-y-1">
                     <li>Le prenotazioni sono soggette a disponibilità</li>
                     <li>Le cancellazioni devono essere effettuate almeno 24 ore prima</li>
                     <li>Tariffe di cancellazione tardiva applicabili</li>
                     <li>Non è permesso il subaffitto o la cessione delle prenotazioni</li>
                   </ul>
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Pagamenti:
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                  <h3 className="text-lg font-medium text-secondary mb-2">
+                    Iscrizioni a corsi e tornei:
                   </h3>
-                  <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                    <li>Tutti i pagamenti sono elaborati in modo sicuro</li>
-                    <li>Le tariffe sono indicate chiaramente prima della conferma</li>
-                    <li>I pagamenti sono non rimborsabili salvo eccezioni specifiche</li>
+                  <ul className="list-disc list-inside text-secondary/80 space-y-1">
+                    <li>Le iscrizioni sono soggette a disponibilità e conferma del circolo</li>
+                    <li>Le informazioni richieste devono essere corrette e aggiornate</li>
+                    <li>Eventuali quote o condizioni organizzative vengono comunicate separatamente dalla segreteria</li>
                   </ul>
                 </div>
               </div>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
                 5. Comportamento dell&apos;Utente
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
+              <p className="text-secondary/80 mb-4">
                 Accetti di non utilizzare il Servizio per:
               </p>
-              <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
+              <ul className="list-disc list-inside text-secondary/80 space-y-2">
                 <li>Viola leggi o regolamenti applicabili</li>
                 <li>Infastidire, minacciare o violare i diritti di altri</li>
                 <li>Trasmettere contenuti dannosi, offensivi o inappropriati</li>
@@ -111,75 +108,51 @@ export default function TermsPage() {
               </ul>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
                 6. Proprietà Intellettuale
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p className="text-secondary/80 leading-relaxed">
                 Il Servizio e tutti i suoi contenuti originali, caratteristiche e funzionalità sono di proprietà di GST Tennis Academy e sono protetti da copyright, marchio e altre leggi sulla proprietà intellettuale. Non puoi copiare, modificare, distribuire o creare opere derivate senza autorizzazione scritta.
               </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
                 7. Limitazione di Responsabilità
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                GST Tennis Academy non sarà responsabile per danni indiretti, incidentali, speciali o consequenziali derivanti dall&apos;uso del Servizio. La nostra responsabilità totale non supererà l&apos;importo pagato per il Servizio negli ultimi 12 mesi.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                8. Risoluzione
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Possiamo terminare o sospendere il tuo account e l&apos;accesso al Servizio immediatamente, senza preavviso, per qualsiasi motivo, incluso se violi questi Termini. In caso di risoluzione, il tuo diritto di utilizzare il Servizio cesserà immediatamente.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                9. Modifiche ai Termini
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Possiamo modificare questi Termini in qualsiasi momento. Ti informeremo di eventuali modifiche pubblicandole sul nostro sito. L&apos;uso continuato del Servizio dopo le modifiche costituisce accettazione dei nuovi Termini.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                10. Legge Applicabile
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Questi Termini sono regolati e interpretati in conformità con le leggi italiane. Eventuali controversie saranno risolte dai tribunali competenti di Roma, Italia.
+              <p className="text-secondary/80 leading-relaxed">
+                GST Tennis Academy non sarà responsabile per danni indiretti, incidentali, speciali o consequenziali derivanti dall&apos;uso del Servizio. La nostra responsabilità totale sarà comunque limitata nei limiti massimi consentiti dalla legge applicabile.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                11. Contatti
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
+                8. Risoluzione
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
-                Per domande sui Termini e Condizioni, contattaci:
+              <p className="text-secondary/80 leading-relaxed">
+                Possiamo terminare o sospendere il tuo account e l&apos;accesso al Servizio immediatamente, senza preavviso, per qualsiasi motivo, incluso se violi questi Termini. In caso di risoluzione, il tuo diritto di utilizzare il Servizio cesserà immediatamente.
               </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <Mail className="w-5 h-5 text-frozen-600" />
-                    <span className="text-gray-700 dark:text-gray-300">info@gsttennis.com</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-frozen-600" />
-                    <span className="text-gray-700 dark:text-gray-300">+39 123 456 7890</span>
-                  </div>
-                  <div className="flex items-center space-x-3 md:col-span-2">
-                    <MapPin className="w-5 h-5 text-frozen-600" />
-                    <span className="text-gray-700 dark:text-gray-300">Via del Tennis 123, 00100 Roma, Italia</span>
-                  </div>
-                </div>
-              </div>
             </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
+                9. Modifiche ai Termini
+              </h2>
+              <p className="text-secondary/80 leading-relaxed">
+                Possiamo modificare questi Termini in qualsiasi momento. Ti informeremo di eventuali modifiche pubblicandole sul nostro sito. L&apos;uso continuato del Servizio dopo le modifiche costituisce accettazione dei nuovi Termini.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-secondary mb-4">
+                10. Legge Applicabile
+              </h2>
+              <p className="text-secondary/80 leading-relaxed">
+                Questi Termini sono regolati e interpretati in conformità con le leggi italiane. Eventuali controversie saranno risolte dai tribunali competenti di Roma, Italia.
+              </p>
+            </section>
+
           </div>
         </div>
       </div>

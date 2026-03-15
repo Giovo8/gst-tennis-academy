@@ -11,48 +11,9 @@ export default function Footer() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
             <img src="/images/logo-tennis.png" alt="GST Academy" className="h-10 w-10" />
-            <span className="text-2xl font-bold" style={{ color: 'var(--secondary)', fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
+            <span className="text-2xl font-bold" style={{ color: 'var(--secondary)', fontFamily: 'var(--font-urbanist)' }}>GST Academy</span>
           </div>
           
-          {/* Navigation Links centered */}
-          <nav className="flex flex-wrap items-center justify-center gap-6 mb-6">
-            <Link 
-              href="/bookings" 
-              className="text-base transition-opacity hover:opacity-70"
-              style={{ color: 'var(--secondary)' }}
-            >
-              Prenota campo
-            </Link>
-            <Link 
-              href="/services" 
-              className="text-base transition-opacity hover:opacity-70"
-              style={{ color: 'var(--secondary)' }}
-            >
-              I nostri corsi
-            </Link>
-            <Link 
-              href="/tornei" 
-              className="text-base transition-opacity hover:opacity-70"
-              style={{ color: 'var(--secondary)' }}
-            >
-              Tornei
-            </Link>
-            <Link 
-              href="#contatti" 
-              className="text-base transition-opacity hover:opacity-70"
-              style={{ color: 'var(--secondary)' }}
-            >
-              Contattaci
-            </Link>
-            <Link 
-              href="#chi-siamo" 
-              className="text-base transition-opacity hover:opacity-70"
-              style={{ color: 'var(--secondary)' }}
-            >
-              Chi siamo
-            </Link>
-          </nav>
-
           {/* Social Icons centered */}
           <div className="flex gap-3 justify-center">
             <a
@@ -99,7 +60,7 @@ export default function Footer() {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             {/* Copyright - Left */}
             <p className="text-sm" style={{ color: 'var(--secondary)' }}>
-              © 2025 Area GST. Tutti i diritti riservati.
+              © 2026 GST Academy. Tutti i diritti riservati.
             </p>
 
             {/* Bottom Links - Right */}

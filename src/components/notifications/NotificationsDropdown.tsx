@@ -6,6 +6,7 @@ import { Bell, Mail, Trophy, Megaphone, Calendar, Video } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
+import { getMessageNotificationLink } from "@/lib/notifications/links";
 
 interface Notification {
   id: string;
@@ -23,10 +24,23 @@ export default function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   async function loadNotifications() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    if (!currentUserRole) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.role) {
+        setCurrentUserRole(profile.role);
+      }
+    }
 
     const { data, error } = await supabase
       .from("notifications")
@@ -39,6 +53,38 @@ export default function NotificationsDropdown() {
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     }
+  }
+
+  function resolveNotificationLink(notification: Notification): string | null {
+    if (notification.type === "message" && currentUserRole) {
+      return getMessageNotificationLink(currentUserRole);
+    }
+
+    if (notification.type === "booking" && notification.link === "/dashboard/admin/bookings") {
+      const bookingSearchLink = buildBookingSearchLink(notification.message);
+      if (bookingSearchLink) {
+        return bookingSearchLink;
+      }
+    }
+
+    return notification.link || null;
+  }
+
+  function buildBookingSearchLink(message: string): string | null {
+    const bookingPattern = /campo\s+(.+?)\s+per\s+il\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
+    const batchBookingPattern = /sul\s+(.+?)\s+a partire dal\s+(\d{2}\/\d{2}\/\d{4})\s+alle\s+(\d{2}:\d{2})/i;
+
+    const bookingMatch = message.match(bookingPattern) || message.match(batchBookingPattern);
+    if (!bookingMatch) {
+      return null;
+    }
+
+    const [, court, date, time] = bookingMatch;
+    const params = new URLSearchParams({
+      search: `${court} ${date} ${time}`,
+    });
+
+    return `/dashboard/admin/bookings?${params.toString()}`;
   }
 
   useEffect(() => {
@@ -82,17 +128,17 @@ export default function NotificationsDropdown() {
   function getNotificationIcon(type: string) {
     switch (type) {
       case "message":
-        return <Mail className="h-5 w-5" style={{ color: '#08b3f7' }} />;
+        return <Mail className="h-5 w-5 text-secondary" />;
       case "tournament":
-        return <Trophy className="h-5 w-5" style={{ color: '#39c3f9' }} />;
+        return <Trophy className="h-5 w-5 text-secondary" />;
       case "announcement":
-        return <Megaphone className="h-5 w-5" style={{ color: '#0690c6' }} />;
+        return <Megaphone className="h-5 w-5 text-secondary" />;
       case "booking":
-        return <Calendar className="h-5 w-5" style={{ color: '#056c94' }} />;
+        return <Calendar className="h-5 w-5 text-secondary" />;
       case "video":
-        return <Video className="h-5 w-5" style={{ color: '#6bd2fa' }} />;
+        return <Video className="h-5 w-5 text-secondary" />;
       default:
-        return <Bell className="h-5 w-5" style={{ color: '#034863' }} />;
+        return <Bell className="h-5 w-5 text-secondary" />;
     }
   }
 
@@ -140,7 +186,8 @@ export default function NotificationsDropdown() {
                     <div
                       key={notification.id}
                       onClick={() => {
-                        if (notification.link) router.push(notification.link);
+                        const targetLink = resolveNotificationLink(notification);
+                        if (targetLink) router.push(targetLink);
                         setIsOpen(false);
                       }}
                       className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
@@ -199,7 +246,8 @@ export default function NotificationsDropdown() {
                   <div
                     key={notification.id}
                     onClick={() => {
-                      if (notification.link) router.push(notification.link);
+                      const targetLink = resolveNotificationLink(notification);
+                      if (targetLink) router.push(targetLink);
                       setIsOpen(false);
                     }}
                     className={`px-4 py-3 rounded-lg border transition-colors cursor-pointer ${

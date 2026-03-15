@@ -11,6 +11,7 @@ import {
   buildAdminsNotificationForAthleteBookingDeletion,
   shouldNotifyAdminsForAthleteBookingDeletion,
 } from "@/lib/bookings/bookingDeletionNotifications";
+import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
@@ -324,7 +325,7 @@ export async function POST(req: Request) {
         type: "booking",
         title: "Nuova prenotazione",
         message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTimeLabel}`,
-        link: "/dashboard/admin/bookings",
+        link: getAdminBookingNotificationLink(booking.id),
       });
 
       // Send email only when an athlete creates the booking

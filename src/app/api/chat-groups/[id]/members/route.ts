@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
-import { createClient } from "@/lib/supabase/server";
+import { verifyAuth } from "@/lib/auth/verifyAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +11,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     // Check if user is an admin of this group
     const { data: membership } = await supabaseServer
@@ -67,8 +64,10 @@ export async function POST(
     }
 
     return NextResponse.json(newMembers, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -79,12 +78,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     const searchParams = request.nextUrl.searchParams;
     const targetUserId = searchParams.get("user_id");
@@ -137,8 +133,10 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -149,12 +147,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     // Check if user is an admin of this group
     const { data: membership } = await supabaseServer
@@ -194,7 +189,9 @@ export async function PATCH(
     }
 
     return NextResponse.json(updatedMember);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

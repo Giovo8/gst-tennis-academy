@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { 
@@ -66,6 +66,7 @@ type BookingsPageProps = {
 
 export default function BookingsPage({ mode = "default", basePath = "/dashboard/admin" }: BookingsPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -103,6 +104,13 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   useEffect(() => {
     loadBookings();
   }, []);
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearch(initialSearch);
+    }
+  }, [searchParams]);
 
   async function loadBookings() {
     try {

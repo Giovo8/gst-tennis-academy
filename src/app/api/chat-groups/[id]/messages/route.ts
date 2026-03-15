@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
-import { createClient } from "@/lib/supabase/server";
+import { verifyAuth } from "@/lib/auth/verifyAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +11,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     // Check if user is a member of this group
     const { data: membership } = await supabaseServer
@@ -49,8 +46,10 @@ export async function GET(
     }
 
     return NextResponse.json(messages || []);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -61,12 +60,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     // Check if user is a member of this group
     const { data: membership } = await supabaseServer
@@ -90,22 +86,55 @@ export async function POST(
       );
     }
 
-    const { data: message, error } = await supabaseServer
-      .from("internal_messages")
-      .insert({
-        sender_id: user.id,
-        recipient_id: null,
-        group_id: id,
-        subject: "",
-        content: content.trim(),
-        attachment_url: attachment_url || null,
-        attachment_type: attachment_type || null,
-      })
-      .select(`
-        *,
-        sender:sender_id(id, full_name, avatar_url)
-      `)
-      .single();
+    const baseInsertPayload: Record<string, any> = {
+      sender_id: user.id,
+      recipient_id: null,
+      group_id: id,
+      subject: "",
+      content: content.trim(),
+    };
+
+    if (attachment_url) {
+      baseInsertPayload.attachment_url = attachment_url;
+    }
+
+    if (attachment_type) {
+      baseInsertPayload.attachment_type = attachment_type;
+    }
+
+    let insertPayload: Record<string, any> = { ...baseInsertPayload };
+    let message: any = null;
+    let error: any = null;
+
+    // Handle schema drift between environments by retrying without missing optional columns.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const result = await supabaseServer
+        .from("internal_messages")
+        .insert(insertPayload)
+        .select(`
+          *,
+          sender:sender_id(id, full_name, avatar_url)
+        `)
+        .single();
+
+      message = result.data;
+      error = result.error;
+
+      if (!error) {
+        break;
+      }
+
+      const missingColumnMatch = error.message?.match(
+        /Could not find the '([^']+)' column/i
+      );
+      const missingColumn = missingColumnMatch?.[1];
+
+      if (!missingColumn || !(missingColumn in insertPayload)) {
+        break;
+      }
+
+      delete insertPayload[missingColumn];
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -118,7 +147,9 @@ export async function POST(
       .eq("id", id);
 
     return NextResponse.json(message, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

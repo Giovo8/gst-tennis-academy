@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
+import { getMessageNotificationLink } from "@/lib/notifications/links";
 import {
   Mail,
   Search,
@@ -396,12 +397,18 @@ export default function AdminChatPage() {
             .eq("id", user.id)
             .single();
 
+          const { data: recipientProfile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", selectedConversation.userId)
+            .single();
+
           await createNotification({
             userId: selectedConversation.userId,
             type: "message",
             title: `Nuovo messaggio da ${senderProfile?.full_name || "Admin"}`,
             message: messageContent.substring(0, 100) + (messageContent.length > 100 ? "..." : ""),
-            link: "/dashboard/atleta/mail",
+            link: getMessageNotificationLink(recipientProfile?.role),
           });
         }
       }
@@ -464,7 +471,7 @@ export default function AdminChatPage() {
   }
 
   async function createGroup() {
-    if (!groupName.trim() || selectedMembers.length === 0) return;
+    if (!groupName.trim() || selectedMembers.length < 2) return;
 
     setCreatingGroup(true);
     try {
@@ -489,12 +496,41 @@ export default function AdminChatPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Error creating group:", errorData);
-        if (errorData.error?.includes("does not exist")) {
+        const rawError = await res.text();
+        let errorData: {
+          error?: string;
+          message?: string;
+          details?: string;
+          hint?: string;
+        } = {};
+
+        if (rawError) {
+          try {
+            errorData = JSON.parse(rawError);
+          } catch {
+            errorData = { error: rawError };
+          }
+        }
+
+        const errorMessage = [
+          errorData.error,
+          errorData.message,
+          errorData.details,
+          errorData.hint,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        console.warn("Create group request failed", {
+          status: res.status,
+          error: errorMessage || "Unknown error",
+        });
+
+        if (errorMessage.toLowerCase().includes("does not exist")) {
           alert("La funzionalità gruppi non è ancora disponibile. Esegui la migration del database.");
         } else {
-          alert(errorData.error || "Errore nella creazione del gruppo");
+          alert(errorMessage || "Errore nella creazione del gruppo");
         }
         return;
       }
@@ -884,8 +920,14 @@ export default function AdminChatPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
-                {selectedMembers.length > 0 ? <Users className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
-                <h3 className="text-lg font-bold text-white">{selectedMembers.length > 0 ? `Nuovo Gruppo (${selectedMembers.length} membri)` : 'Nuova Chat'}</h3>
+                  {selectedMembers.length > 1 ? <Users className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
+                  <h3 className="text-lg font-bold text-white">
+                    {selectedMembers.length > 1
+                      ? `Nuovo Gruppo (${selectedMembers.length} membri)`
+                      : selectedMembers.length === 1
+                      ? "Nuova Chat (1 persona)"
+                      : "Nuova Chat"}
+                  </h3>
               </div>
               <button
                 onClick={closeModal}
@@ -897,7 +939,7 @@ export default function AdminChatPage() {
 
             {/* Search */}
             <div className="p-6 border-b border-gray-200 bg-gray-50 space-y-4">
-              {selectedMembers.length > 0 && (
+              {selectedMembers.length > 1 && (
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-2">
                     Nome del gruppo *
@@ -913,7 +955,9 @@ export default function AdminChatPage() {
               )}
               <div>
                 <label className="block text-sm font-medium text-secondary mb-2">
-                  {selectedMembers.length > 0 ? `Membri selezionati (${selectedMembers.length})` : 'Cerca persone'}
+                  {selectedMembers.length > 0
+                    ? `Membri selezionati (${selectedMembers.length})`
+                    : "Cerca persone"}
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
@@ -1200,13 +1244,18 @@ export default function AdminChatPage() {
             <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
               <button
                 onClick={createGroup}
-                disabled={!groupName.trim() || selectedMembers.length === 0 || creatingGroup}
+                disabled={!groupName.trim() || selectedMembers.length < 2 || creatingGroup}
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creatingGroup ? (
                   <>
                     <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Creazione in corso...
+                  </>
+                ) : selectedMembers.length < 2 ? (
+                  <>
+                    <Users className="h-5 w-5" />
+                    Seleziona almeno 2 membri
                   </>
                 ) : (
                   <>

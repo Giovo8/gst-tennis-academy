@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
-import { createClient } from "@/lib/supabase/server";
+import { verifyAuth } from "@/lib/auth/verifyAuth";
 
 export const dynamic = "force-dynamic";
 
 // GET - Fetch user's chat groups
 export async function GET(request: NextRequest) {
   try {
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     // Get groups where user is a member
     const { data: memberships, error: membershipError } = await supabaseServer
@@ -51,20 +48,19 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(groups || []);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
 // POST - Create a new chat group
 export async function POST(request: NextRequest) {
   try {
-    const supabaseSession = await createClient();
-    const { data: { user } } = await supabaseSession.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
-    }
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
+    const user = authResult.data.user;
 
     const body = await request.json();
     const { name, description, member_ids } = body;
@@ -141,7 +137,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(completeGroup, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Errore interno del server";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

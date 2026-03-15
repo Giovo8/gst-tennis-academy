@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
+import { getMessageNotificationLink } from "@/lib/notifications/links";
 import {
   Mail,
   Search,
@@ -391,12 +392,18 @@ export default function AtletaMailPage() {
             .eq("id", user.id)
             .single();
 
+          const { data: recipientProfile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", selectedConversation.userId)
+            .single();
+
           await createNotification({
             userId: selectedConversation.userId,
             type: "message",
             title: `Nuovo messaggio da ${senderProfile?.full_name || "un utente"}`,
             message: messageContent.substring(0, 100) + (messageContent.length > 100 ? "..." : ""),
-            link: "/dashboard/atleta/mail",
+            link: getMessageNotificationLink(recipientProfile?.role),
           });
         }
       }
