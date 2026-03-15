@@ -56,7 +56,6 @@ interface Challenge {
     start_time: string;
     end_time: string;
     status: string;
-    manager_confirmed: boolean;
   };
 }
 
@@ -635,7 +634,7 @@ export default function ChallengePage() {
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
-                  {challenge.booking.manager_confirmed === true ? "Confermata" : "In attesa di conferma"}
+                  Prenotazione registrata
                 </p>
               </div>
             </div>

@@ -41,9 +41,10 @@ export async function POST(request: Request) {
     for (const booking of bookings) {
       const { data: existingBookings, error: conflictError } = await supabase
         .from("bookings")
-        .select("id, start_time, end_time, court, manager_confirmed")
+        .select("id, start_time, end_time, court, status")
         .eq("court", booking.court)
         .neq("status", "cancelled")
+        .neq("status", "rejected")
         .or(`and(start_time.lt.${booking.end_time},end_time.gt.${booking.start_time})`);
 
       if (conflictError) {
@@ -53,16 +54,11 @@ export async function POST(request: Request) {
         );
       }
 
-      // Filtra solo prenotazioni confermate
-      const confirmedConflicts = existingBookings?.filter(
-        (b: any) => b.manager_confirmed === true
-      ) || [];
-
-      if (confirmedConflicts.length > 0) {
+      if ((existingBookings || []).length > 0) {
         conflicts.push({
           start_time: booking.start_time,
           court: booking.court,
-          conflict_count: confirmedConflicts.length,
+          conflict_count: existingBookings?.length || 0,
         });
       }
     }
@@ -89,9 +85,9 @@ export async function POST(request: Request) {
           type: b.type || "campo",
           start_time: b.start_time,
           end_time: b.end_time,
-          status: b.status || "pending",
-          coach_confirmed: b.coach_confirmed ?? false,
-          manager_confirmed: b.manager_confirmed ?? false,
+          status: b.status === "cancelled" || b.status === "cancellation_requested" ? b.status : "confirmed",
+          coach_confirmed: true,
+          manager_confirmed: true,
           notes: b.notes || null,
         }))
       )

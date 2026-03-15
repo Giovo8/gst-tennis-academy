@@ -41,6 +41,7 @@ export default function NewCourtBlockPage() {
   const router = useRouter();
   const [selectedCourt, setSelectedCourt] = useState("");
   const [blockType, setBlockType] = useState("");
+  const [customBlockType, setCustomBlockType] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("07:00");
@@ -57,6 +58,21 @@ export default function NewCourtBlockPage() {
     );
   };
 
+  const toMinutes = (time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const getBlockReason = () => {
+    const selectedType = BLOCK_TYPES.find(t => t.value === blockType);
+    let typeLabel = selectedType?.label || blockType;
+
+    if (blockType === "altro" && customBlockType.trim()) {
+      typeLabel = `Altro (${customBlockType.trim()})`;
+    }
+
+    return notes ? `${typeLabel} - ${notes}` : typeLabel;
+  };
   async function handleCreateBlock() {
     if (!selectedCourt) {
       setError("Seleziona un campo");
@@ -68,6 +84,11 @@ export default function NewCourtBlockPage() {
       return;
     }
 
+    if (blockType === "altro" && !customBlockType.trim()) {
+      setError("Specifica in cosa consiste il blocco 'Altro'");
+      return;
+    }
+
     if (!startDate || !endDate) {
       setError("Seleziona data inizio e data fine");
       return;
@@ -75,6 +96,13 @@ export default function NewCourtBlockPage() {
 
     if (selectedWeekDays.length === 0) {
       setError("Seleziona almeno un giorno della settimana");
+      return;
+    }
+
+    const baseStartMinutes = toMinutes(startTime);
+    const baseEndMinutes = toMinutes(endTime);
+    if (baseEndMinutes <= baseStartMinutes) {
+      setError("L'orario fine deve essere successivo all'orario inizio");
       return;
     }
 
@@ -89,9 +117,16 @@ export default function NewCourtBlockPage() {
     try {
       setSubmitting(true);
       setError("");
+
+      const reasonText = getBlockReason();
       
       // Crea un blocco per ogni giorno nel range che corrisponde ai giorni selezionati
-      const blocksToInsert = [];
+      const blocksToInsert: Array<{
+        court_id: string;
+        start_time: string;
+        end_time: string;
+        reason: string;
+      }> = [];
       const currentDate = new Date(start);
       
       while (currentDate <= end) {
@@ -99,20 +134,15 @@ export default function NewCourtBlockPage() {
         
         // Controlla se questo giorno della settimana è selezionato
         if (selectedWeekDays.includes(dayOfWeek)) {
-          // Crea timestamp con orari specifici
           const [startHour, startMinute] = startTime.split(':').map(Number);
           const [endHour, endMinute] = endTime.split(':').map(Number);
-          
+
           const dayStart = new Date(currentDate);
           dayStart.setHours(startHour, startMinute, 0, 0);
-          
+
           const dayEnd = new Date(currentDate);
           dayEnd.setHours(endHour, endMinute, 0, 0);
-          
-          // Trova il label del tipo
-          const typeLabel = BLOCK_TYPES.find(t => t.value === blockType)?.label || blockType;
-          const reasonText = notes ? `${typeLabel} - ${notes}` : typeLabel;
-          
+
           blocksToInsert.push({
             court_id: selectedCourt,
             start_time: dayStart.toISOString(),
@@ -122,6 +152,12 @@ export default function NewCourtBlockPage() {
         }
         
         currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      if (blocksToInsert.length === 0) {
+        setError("Nessun blocco da creare: verifica periodo e giorni selezionati");
+        setSubmitting(false);
+        return;
       }
       
       const { error: insertError } = await supabase
@@ -146,14 +182,14 @@ export default function NewCourtBlockPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2">
+      <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/admin/courts">Blocco Campi</Link>
-          <span className="mx-2">›</span>
+          <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">Blocco Campi</Link>
+          {" › "}
           <span>Crea Blocco</span>
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea blocco campo</h1>
-        <p className="text-secondary/70 text-sm max-w-2xl">
+        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
           Blocca uno o più campi per un periodo di tempo.
         </p>
       </div>
@@ -226,6 +262,18 @@ export default function NewCourtBlockPage() {
                   </button>
                 ))}
               </div>
+              {blockType === "altro" && (
+                <div className="mt-4">
+                  <label className="block text-xs text-secondary/60 mb-2">Specifica in cosa consiste</label>
+                  <input
+                    type="text"
+                    value={customBlockType}
+                    onChange={(e) => setCustomBlockType(e.target.value)}
+                    placeholder="Es. intervento tecnico esterno"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -333,7 +381,15 @@ export default function NewCourtBlockPage() {
       {/* Pulsante Crea Blocco */}
       <button
         onClick={handleCreateBlock}
-        disabled={submitting || !selectedCourt || !blockType || !startDate || !endDate || selectedWeekDays.length === 0}
+        disabled={
+          submitting ||
+          !selectedCourt ||
+          !blockType ||
+          !startDate ||
+          !endDate ||
+          selectedWeekDays.length === 0 ||
+          (blockType === "altro" && !customBlockType.trim())
+        }
         className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
       >
           {submitting ? (

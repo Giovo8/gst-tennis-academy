@@ -90,9 +90,10 @@ export async function GET(request: Request) {
 
     const { data: overlappingBookings, error } = await supabase
       .from("bookings")
-      .select("id, user_id, court, start_time, end_time, status, manager_confirmed")
+      .select("id, user_id, court, start_time, end_time, status")
       .eq("court", court)
       .neq("status", "cancelled")
+      .neq("status", "rejected")
       .or(`and(start_time.lt.${slotEnd.toISOString()},end_time.gt.${slotStart.toISOString()})`);
 
     if (error) {
@@ -100,17 +101,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
 
-    const confirmedBookings =
-      overlappingBookings?.filter((b) => b.manager_confirmed === true) ?? [];
-
     return NextResponse.json({
-      available: confirmedBookings.length === 0,
+      available: (overlappingBookings?.length ?? 0) === 0,
       slot: {
         court,
         start_time: slotStart.toISOString(),
         end_time: slotEnd.toISOString(),
       },
-      conflicting_bookings: confirmedBookings.length,
+      conflicting_bookings: overlappingBookings?.length ?? 0,
     });
   } catch (error) {
     console.error("Error in availability check:", error);

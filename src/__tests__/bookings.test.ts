@@ -25,7 +25,6 @@ interface ExistingBooking {
   start_time: string;
   end_time: string;
   status: string;
-  manager_confirmed: boolean;
 }
 
 /**
@@ -98,9 +97,8 @@ export function findConflicts(
     // Solo stessa corte
     if (existing.court !== newBooking.court) return false;
 
-    // Solo prenotazioni confermate non cancellate
-    if (existing.status === "cancelled") return false;
-    if (!existing.manager_confirmed) return false;
+    // Le prenotazioni attive bloccano sempre lo slot
+    if (existing.status === "cancelled" || existing.status === "rejected") return false;
 
     // Check sovrapposizione temporale
     const existingStart = new Date(existing.start_time);
@@ -305,7 +303,6 @@ describe("Booking Validation", () => {
         start_time: "2025-01-20T10:00:00Z",
         end_time: "2025-01-20T11:00:00Z",
         status: "confirmed",
-        manager_confirmed: true,
       },
       {
         id: "booking-2",
@@ -313,7 +310,6 @@ describe("Booking Validation", () => {
         start_time: "2025-01-20T14:00:00Z",
         end_time: "2025-01-20T15:00:00Z",
         status: "confirmed",
-        manager_confirmed: true,
       },
       {
         id: "booking-3",
@@ -321,7 +317,6 @@ describe("Booking Validation", () => {
         start_time: "2025-01-20T10:00:00Z",
         end_time: "2025-01-20T11:00:00Z",
         status: "confirmed",
-        manager_confirmed: true,
       },
       {
         id: "booking-4",
@@ -329,7 +324,6 @@ describe("Booking Validation", () => {
         start_time: "2025-01-20T16:00:00Z",
         end_time: "2025-01-20T17:00:00Z",
         status: "cancelled",
-        manager_confirmed: true,
       },
       {
         id: "booking-5",
@@ -337,11 +331,10 @@ describe("Booking Validation", () => {
         start_time: "2025-01-20T18:00:00Z",
         end_time: "2025-01-20T19:00:00Z",
         status: "pending",
-        manager_confirmed: false, // Non confermato
       },
     ];
 
-    it("finds conflicts with overlapping confirmed booking", () => {
+    it("finds conflicts with overlapping active booking", () => {
       const newBooking: BookingData = {
         user_id: "user-123",
         court: "Campo 1",
@@ -378,7 +371,7 @@ describe("Booking Validation", () => {
       expect(conflicts).toHaveLength(0);
     });
 
-    it("ignores unconfirmed bookings", () => {
+    it("treats pending bookings as blocking conflicts", () => {
       const newBooking: BookingData = {
         user_id: "user-123",
         court: "Campo 1",
@@ -387,7 +380,8 @@ describe("Booking Validation", () => {
       };
 
       const conflicts = findConflicts(newBooking, existingBookings);
-      expect(conflicts).toHaveLength(0);
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].id).toBe("booking-5");
     });
 
     it("returns no conflicts for available slot", () => {

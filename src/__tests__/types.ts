@@ -14,7 +14,6 @@ export interface Booking {
   user_id: string;
   court: string;
   status: string;
-  manager_confirmed: boolean;
 }
 
 export interface Profile {

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { createNotification } from "@/lib/notifications/createNotification";
 import Link from "next/link";
 import {
   Calendar,
@@ -30,8 +29,6 @@ type Booking = {
   end_time: string;
   status: string;
   type: string;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   notes: string | null;
   created_at: string;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
@@ -164,92 +161,6 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     }
   }
 
-  async function confirmBooking() {
-    if (!booking) return;
-    setActionLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({
-          manager_confirmed: true,
-          status: "confirmed",
-        })
-        .eq("id", booking.id);
-
-      if (!error) {
-        const startDate = new Date(booking.start_time).toLocaleDateString("it-IT", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-        const startTime = new Date(booking.start_time).toLocaleTimeString("it-IT", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        await createNotification({
-          userId: booking.user_id,
-          type: "booking",
-          title: "Prenotazione confermata",
-          message: `La tua prenotazione per il campo ${booking.court} del ${startDate} alle ${startTime} è stata confermata.`,
-          link: "/dashboard/atleta/bookings",
-        });
-
-        router.push(`${basePath}/bookings`);
-      }
-    } catch (error) {
-      console.error("Errore:", error);
-      alert("Errore durante la conferma");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function rejectBooking() {
-    if (!booking) return;
-    if (!confirm("Sei sicuro di voler rifiutare questa prenotazione?")) return;
-    
-    setActionLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({
-          status: "cancelled",
-          manager_confirmed: false,
-        })
-        .eq("id", booking.id);
-
-      if (!error) {
-        const startDate = new Date(booking.start_time).toLocaleDateString("it-IT", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-        const startTime = new Date(booking.start_time).toLocaleTimeString("it-IT", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        await createNotification({
-          userId: booking.user_id,
-          type: "booking",
-          title: "Prenotazione rifiutata",
-          message: `La tua prenotazione per il campo ${booking.court} del ${startDate} alle ${startTime} è stata rifiutata.`,
-          link: "/dashboard/atleta/bookings",
-        });
-
-        router.push(`${basePath}/bookings`);
-      }
-    } catch (error) {
-      console.error("Errore:", error);
-      alert("Errore durante il rifiuto");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
   async function deleteBooking() {
     if (!booking) return;
     if (!confirm("Sei sicuro di voler eliminare questa prenotazione? Questa azione è irreversibile.")) return;
@@ -284,7 +195,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   };
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-    confirmed: { label: "Confermata", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
+    confirmed: { label: "Attiva", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
     pending: { label: "In attesa", color: "bg-amber-100 text-amber-700", icon: Clock },
     cancelled: { label: "Annullata", color: "bg-red-100 text-red-700", icon: XCircle },
   };
@@ -306,7 +217,6 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   const StatusIcon = status.icon;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
   const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
-  const needsApproval = !booking.manager_confirmed && booking.status !== "cancelled";
   const displayParticipants = getDisplayParticipants(booking);
 
   // Determina icona e stile in base al tipo
@@ -353,18 +263,6 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   const bookingStyle = getBookingStyle();
   const BookingIcon = bookingStyle.icon;
 
-  // Determina colore bordo in base allo stato
-  function getStatusBorderColor() {
-    if (!booking) return "border-gray-400";
-    if (booking.status === "cancelled") {
-      return "border-red-500";
-    } else if (needsApproval) {
-      return "border-amber-500";
-    } else {
-      return "border-emerald-500";
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -391,8 +289,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         }
         style={{ borderLeftColor: (() => {
           if (booking.status === "cancelled" || booking.status === "cancellation_requested") return "#022431"; // frozen-900
-          if (!booking.manager_confirmed && booking.status !== "cancelled") return "#056c94"; // frozen-700
-          return "#08b3f7"; // frozen-500
+          return "var(--secondary)"; // secondary
         })() }}
       >
         <div className="flex items-start gap-6">
@@ -419,7 +316,11 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
           </div>
 
           {displayParticipants.map((participant, index) => (
-            <div key={`${participant.fullName}-${index}`} className="bg-white rounded-lg px-4 py-3 border border-gray-200 min-w-[640px]">
+            <div
+              key={`${participant.fullName}-${index}`}
+              className="bg-white rounded-lg px-4 py-3 border border-gray-200 border-l-4 min-w-[640px]"
+              style={{ borderLeftColor: "var(--secondary)" }}
+            >
               <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
                 <div className="text-sm text-secondary/60 text-center">{index + 1}</div>
                 <div className="text-secondary font-semibold text-sm">{participant.fullName}</div>
@@ -524,7 +425,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
           )}
 
           {/* Data creazione */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creata il</label>
             <div className="flex-1">
               <p className="text-secondary/70">
@@ -538,55 +439,10 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Stato Prenotazione */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Stato Prenotazione</h2>
-        
-        <div className="space-y-6">
-          {/* Conferma Manager */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Conferma Manager</label>
-            <div className="flex-1">
-              {booking.manager_confirmed ? (
-                <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Confermata
-                </span>
-              ) : (
-                <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
-                  <Clock className="h-5 w-5" />
-                  In attesa
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Conferma Maestro - visibile solo per lezioni */}
-          {isLesson && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Conferma Maestro</label>
-              <div className="flex-1">
-                {booking.coach_confirmed ? (
-                  <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Confermata
-                  </span>
-                ) : (
-                  <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
-                    <Clock className="h-5 w-5" />
-                    In attesa
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Stato Generale */}
+          {/* Stato Prenotazione */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato Generale</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
             <div className="flex-1">
               <span className="flex items-center gap-2 text-secondary font-semibold">
                 <StatusIcon className="h-5 w-5" />
@@ -615,35 +471,6 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               <Edit className="h-5 w-5" />
               Modifica
             </Link>
-          )}
-
-          {needsApproval && (
-            <>
-              <button
-                onClick={confirmBooking}
-                disabled={actionLoading}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#08b3f7] rounded-lg hover:bg-[#08b3f7]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5" />
-                )}
-                Conferma
-              </button>
-              <button
-                onClick={rejectBooking}
-                disabled={actionLoading}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg hover:bg-[#056c94]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <XCircle className="h-5 w-5" />
-                )}
-                Rifiuta
-              </button>
-            </>
           )}
 
           <button

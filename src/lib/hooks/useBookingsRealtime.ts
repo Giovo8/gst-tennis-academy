@@ -14,8 +14,6 @@ type BookingRecord = {
   start_time: string;
   end_time: string;
   status?: string;
-  coach_confirmed?: boolean;
-  manager_confirmed?: boolean;
 };
 
 /**
@@ -41,7 +39,7 @@ export function useBookingsRealtime(
     const fetchBookings = async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("id,user_id,coach_id,court,type,start_time,end_time,status,coach_confirmed,manager_confirmed")
+        .select("id,user_id,coach_id,court,type,start_time,end_time,status")
         .neq("status", "cancelled")
         .gte("start_time", startDay.toISOString())
         .lt("start_time", endDay.toISOString());
@@ -86,7 +84,7 @@ export function useBookingsRealtime(
 
     const { data, error } = await supabase
       .from("bookings")
-      .select("id,user_id,coach_id,court,type,start_time,end_time,status,coach_confirmed,manager_confirmed")
+      .select("id,user_id,coach_id,court,type,start_time,end_time,status")
       .neq("status", "cancelled")
       .gte("start_time", startDay.toISOString())
       .lt("start_time", endDay.toISOString());

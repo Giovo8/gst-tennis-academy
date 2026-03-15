@@ -575,9 +575,7 @@ function NewBookingPageInner() {
         type: bookingType,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: "pending",
-        manager_confirmed: false,
-        coach_confirmed: false,
+        status: "confirmed",
         notes: notes || null,
         participants: selectedAthletes.map((athlete) => ({
           user_id: athlete.userId || null,
@@ -608,7 +606,7 @@ function NewBookingPageInner() {
         throw new Error(errorMessage);
       }
 
-      setSuccess("Prenotazione creata con successo! In attesa di conferma.");
+      setSuccess("Prenotazione creata con successo!");
       setTimeout(() => {
         router.push("/dashboard/atleta/bookings");
       }, 1500);

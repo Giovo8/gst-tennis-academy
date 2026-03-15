@@ -31,7 +31,6 @@ interface Booking {
   end_time: string;
   status: string;
   type: string;
-  coach_confirmed: boolean;
   notes: string | null;
   user: {
     full_name: string;
@@ -48,9 +47,8 @@ export default function AgendaPage() {
   const [weekBookings, setWeekBookings] = useState<DayBookings[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"week" | "list">("week");
-  const [filterStatus, setFilterStatus] = useState<"all" | "confirmed" | "pending">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "today" | "upcoming">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   async function loadWeekBookings() {
@@ -104,31 +102,6 @@ export default function AgendaPage() {
     loadWeekBookings();
   }, [currentWeek]);
 
-  async function updateBookingConfirmation(id: string, confirmed: boolean) {
-    setUpdatingId(id);
-
-    const { error } = await supabase
-      .from("bookings")
-      .update({ 
-        coach_confirmed: confirmed,
-        status: confirmed ? "confirmed" : "pending"
-      })
-      .eq("id", id);
-
-    if (!error) {
-      setWeekBookings(prev => 
-        prev.map(day => ({
-          ...day,
-          bookings: day.bookings.map(b => 
-            b.id === id ? { ...b, coach_confirmed: confirmed, status: confirmed ? "confirmed" : "pending" } : b
-          )
-        }))
-      );
-    }
-
-    setUpdatingId(null);
-  }
-
   function formatTime(dateString: string) {
     return new Date(dateString).toLocaleTimeString("it-IT", {
       hour: "2-digit",
@@ -151,7 +124,7 @@ export default function AgendaPage() {
     );
     
     const csv = [
-      ["Data", "Ora Inizio", "Ora Fine", "Campo", "Atleta", "Email", "Tipo", "Stato Conferma"].join(","),
+      ["Data", "Ora Inizio", "Ora Fine", "Campo", "Atleta", "Email", "Tipo", "Stato"].join(","),
       ...allBookings.map((b) => [
         formatDate(b.start_time),
         formatTime(b.start_time),
@@ -160,7 +133,7 @@ export default function AgendaPage() {
         b.user?.full_name || "N/A",
         b.user?.email || "N/A",
         typeConfig[b.type]?.label || b.type,
-        b.coach_confirmed ? "Confermata" : "Da confermare",
+        b.status === "completed" ? "Completata" : "In programma",
       ].join(","))
     ].join("\n");
 
@@ -177,6 +150,7 @@ export default function AgendaPage() {
 
   const weekStart = new Date(currentWeek);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+  const now = new Date();
 
   // All bookings flattened for filtering
   const allBookings = weekBookings.flatMap(day => 
@@ -187,8 +161,8 @@ export default function AgendaPage() {
   const filteredAllBookings = allBookings.filter(booking => {
     const matchesStatus = 
       filterStatus === "all" ||
-      (filterStatus === "confirmed" && booking.coach_confirmed) ||
-      (filterStatus === "pending" && !booking.coach_confirmed);
+      (filterStatus === "today" && booking.date.toDateString() === today.toDateString()) ||
+      (filterStatus === "upcoming" && new Date(booking.start_time) >= now);
     
     const matchesSearch = 
       !searchQuery ||
@@ -201,11 +175,13 @@ export default function AgendaPage() {
 
   // Stats for the week
   const totalLessons = allBookings.length;
-  const confirmedLessons = allBookings.filter(b => b.coach_confirmed).length;
-  const pendingLessons = totalLessons - confirmedLessons;
   const todayLessons = allBookings.filter(b => 
     b.date.toDateString() === today.toDateString()
   ).length;
+  const upcomingLessons = allBookings.filter((b) => new Date(b.start_time) >= now).length;
+  const uniqueAthletes = new Set(
+    allBookings.map((b) => b.user?.email || b.user?.full_name || b.id)
+  ).size;
 
   const typeConfig: Record<string, { label: string; color: string }> = {
     campo: { label: "Campo", color: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -233,7 +209,7 @@ export default function AgendaPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestione Lezioni</h1>
           <p className="text-gray-600 font-medium">
-            Visualizza e conferma le tue lezioni settimanali
+            Visualizza le tue lezioni settimanali
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -303,24 +279,24 @@ export default function AgendaPage() {
             Tutte
           </button>
           <button
-            onClick={() => setFilterStatus("confirmed")}
+            onClick={() => setFilterStatus("today")}
             className={`px-4 py-2.5 rounded-md text-sm font-semibold transition-all ${
-              filterStatus === "confirmed"
+              filterStatus === "today"
                 ? "text-white bg-green-600 hover:bg-green-700"
                 : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
             }`}
           >
-            Confermate
+            Oggi
           </button>
           <button
-            onClick={() => setFilterStatus("pending")}
+            onClick={() => setFilterStatus("upcoming")}
             className={`px-4 py-2.5 rounded-md text-sm font-semibold transition-all ${
-              filterStatus === "pending"
+              filterStatus === "upcoming"
                 ? "text-white bg-yellow-600 hover:bg-yellow-700"
                 : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
             }`}
           >
-            Da Confermare
+            Future
           </button>
         </div>
       </div>
@@ -348,17 +324,17 @@ export default function AgendaPage() {
               <CheckCircle2 className="h-6 w-6 text-green-600" />
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Confermate</p>
-          <p className="text-3xl font-bold text-green-600">{confirmedLessons}</p>
+          <p className="text-sm font-medium text-gray-600 mb-1">Future</p>
+          <p className="text-3xl font-bold text-green-600">{upcomingLessons}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <AlertCircle className="h-6 w-6 text-yellow-600" />
+              <Users className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Da Confermare</p>
-          <p className="text-3xl font-bold text-yellow-600">{pendingLessons}</p>
+          <p className="text-sm font-medium text-gray-600 mb-1">Atleti</p>
+          <p className="text-3xl font-bold text-yellow-600">{uniqueAthletes}</p>
         </div>
       </div>
 
@@ -430,11 +406,7 @@ export default function AgendaPage() {
                       day.bookings.map((booking) => (
                         <div
                           key={booking.id}
-                          className={`p-3 rounded-lg text-xs border transition-all hover:shadow-md ${
-                            booking.coach_confirmed
-                              ? "bg-green-50 border-green-200"
-                              : "bg-yellow-50 border-yellow-200"
-                          }`}
+                          className="p-3 rounded-lg text-xs border transition-all hover:shadow-md bg-blue-50 border-blue-200"
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-bold text-gray-900">
@@ -453,32 +425,14 @@ export default function AgendaPage() {
                             <MapPin className="h-3 w-3" />
                             {booking.court}
                           </p>
-                          
-                          {!isPast && !booking.coach_confirmed && (
-                            <div className="flex gap-1.5 mt-2">
-                              <button
-                                onClick={() => updateBookingConfirmation(booking.id, true)}
-                                disabled={updatingId === booking.id}
-                                className="flex-1 flex items-center justify-center gap-1 py-2 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-all"
-                              >
-                                {updatingId === booking.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Check className="h-3.5 w-3.5" />
-                                    Conferma
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                onClick={() => updateBookingConfirmation(booking.id, false)}
-                                disabled={updatingId === booking.id}
-                                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border ${
+                            isPast || booking.status === "completed"
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : "bg-blue-100 text-blue-700 border-blue-200"
+                          }`}>
+                            {isPast || booking.status === "completed" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                            {isPast || booking.status === "completed" ? "Completata" : "In programma"}
+                          </span>
                         </div>
                       ))
                     )}
@@ -592,46 +546,18 @@ export default function AgendaPage() {
 
                         {/* Stato */}
                         <div className="w-32">
-                          {booking.coach_confirmed ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md bg-green-100 text-green-700 border border-green-200">
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              Confermata
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200">
-                              <AlertCircle className="h-3.5 w-3.5" />
-                              Da confermare
-                            </span>
-                          )}
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border ${
+                            isPast || booking.status === "completed"
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : "bg-blue-100 text-blue-700 border-blue-200"
+                          }`}>
+                            {isPast || booking.status === "completed" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                            {isPast || booking.status === "completed" ? "Completata" : "In programma"}
+                          </span>
                         </div>
 
                         {/* Azioni */}
-                        <div className="flex gap-2 w-36 justify-end">
-                          {!isPast && !booking.coach_confirmed && (
-                            <>
-                              <button
-                                onClick={() => updateBookingConfirmation(booking.id, true)}
-                                disabled={updatingId === booking.id}
-                                className="p-2 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors disabled:opacity-50"
-                                title="Conferma"
-                              >
-                                {updatingId === booking.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Check className="h-4 w-4" />
-                                )}
-                              </button>
-                              <button
-                                onClick={() => updateBookingConfirmation(booking.id, false)}
-                                disabled={updatingId === booking.id}
-                                className="p-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
-                                title="Rifiuta"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        <div className="w-36"></div>
                       </div>
                     </div>
                   );
@@ -688,17 +614,14 @@ export default function AgendaPage() {
                     }`}>
                       {typeConfig[booking.type]?.label || booking.type}
                     </span>
-                    {booking.coach_confirmed ? (
-                      <span className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-green-700 bg-green-100 rounded-lg border border-green-200">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Confermata
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-yellow-700 bg-yellow-100 rounded-lg border border-yellow-200">
-                        <AlertCircle className="h-4 w-4" />
-                        Da confermare
-                      </span>
-                    )}
+                    <span className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border ${
+                      booking.status === "completed"
+                        ? "text-green-700 bg-green-100 border-green-200"
+                        : "text-blue-700 bg-blue-100 border-blue-200"
+                    }`}>
+                      {booking.status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                      {booking.status === "completed" ? "Completata" : "In programma"}
+                    </span>
                   </div>
                 </div>
               ))}

@@ -227,7 +227,7 @@ export default function CreateChallengePage() {
     // Get existing bookings for this court and date
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, user_id, coach_id, start_time, end_time, type, status, manager_confirmed, coach_confirmed")
+      .select("id, user_id, coach_id, start_time, end_time, type, status")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
       .gte("start_time", `${dateStr}T00:00:00`)
@@ -467,8 +467,7 @@ export default function CreateChallengePage() {
           type: "campo",
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
-          status: "pending",
-          manager_confirmed: false,
+          status: "confirmed",
           notes: `Sfida Arena (creata da admin): ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singles" ? "Singolo" : "Doppio"} - ${matchFormat.replace("_", " ")}`,
         }),
       });

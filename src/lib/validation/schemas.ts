@@ -107,8 +107,6 @@ export const baseBookingSchema = z.object({
   end_time: dateStringSchema,
   notes: z.string().max(500, 'Note troppo lunghe').optional().nullable(),
   status: bookingStatusSchema.optional(),
-  coach_confirmed: z.boolean().optional(),
-  manager_confirmed: z.boolean().optional(),
   participants: z.array(bookingParticipantSchema).max(4, 'Massimo 4 partecipanti').optional().default([]),
 });
 

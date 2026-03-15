@@ -9,6 +9,7 @@ import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sani
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
+import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -183,12 +184,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check for overlapping confirmed bookings on the same court
+    // Check for overlapping active bookings on the same court
     const { data: conflicts, error: conflictError } = await supabaseServer
       .from("bookings")
-      .select("id, user_id, status, manager_confirmed, start_time, end_time")
+      .select("id, user_id, status, start_time, end_time")
       .eq("court", court)
       .neq("status", BOOKING_STATUS.CANCELLED)
+      .neq("status", BOOKING_STATUS.REJECTED)
       .or(`and(start_time.lt.${end_time},end_time.gt.${start_time})`);
 
     if (conflictError) {
@@ -202,10 +204,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Filter to only confirmed bookings (manager_confirmed = true)
-    const confirmedConflicts = conflicts?.filter(b => b.manager_confirmed === true) || [];
-
-    if (confirmedConflicts.length > 0) {
+    if ((conflicts || []).length > 0) {
       logger.warn('Booking conflict detected', {
         userId: user.id,
         court,
@@ -220,10 +219,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Determine status and confirmation flags
-    const bookingStatus = bookingData.status || BOOKING_STATUS.PENDING;
-    const coachConfirmed = bookingData.coach_confirmed ?? false;
-    const managerConfirmed = bookingData.manager_confirmed ?? false;
+    const normalizedBooking = normalizeBookingMutation(bookingData);
 
     const { data, error } = await supabaseServer
       .from("bookings")
@@ -235,9 +231,9 @@ export async function POST(req: Request) {
           type: type || "campo",
           start_time,
           end_time,
-          status: bookingStatus,
-          coach_confirmed: coachConfirmed,
-          manager_confirmed: managerConfirmed,
+          status: normalizedBooking.status,
+          coach_confirmed: normalizedBooking.coach_confirmed,
+          manager_confirmed: normalizedBooking.manager_confirmed,
           notes: bookingData.notes || null,
         },
       ])
@@ -435,9 +431,11 @@ export async function PUT(req: Request) {
     const rawBody = await req.json();
     const sanitized = sanitizeObject(rawBody);
     
+    const normalizedUpdate = normalizeBookingMutation(sanitized);
+
     const { data, error } = await supabaseServer
       .from("bookings")
-      .update(sanitized)
+      .update(normalizedUpdate)
       .eq("id", id)
       .select();
     

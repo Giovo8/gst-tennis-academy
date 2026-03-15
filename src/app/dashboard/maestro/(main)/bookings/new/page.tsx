@@ -330,9 +330,7 @@ export default function NewBookingPage() {
           type: bookingType,
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
-          status: "pending",
-          manager_confirmed: false,
-          coach_confirmed: false,
+          status: "confirmed",
           notes: notes || null,
         };
       });

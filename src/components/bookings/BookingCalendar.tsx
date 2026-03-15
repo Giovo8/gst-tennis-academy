@@ -26,8 +26,6 @@ type BookingRecord = {
   start_time: string;
   end_time: string;
   status?: string;
-  coach_confirmed?: boolean;
-  manager_confirmed?: boolean;
   notes?: string;
 };
 
@@ -198,23 +196,10 @@ export default function BookingCalendar() {
     void fetchData();
   }, [userRole]);
 
-  const isSlotConfirmed = (slot: Date) => {
+  const isSlotOccupied = (slot: Date) => {
     const slotEnd = new Date(slot);
     slotEnd.setHours(slot.getHours(), 59, 0, 0); // 59 minuti invece di 60
-    return bookings.some((b) => {
-      if (!overlaps(b, selectedCourt, slot, slotEnd)) return false;
-      return b.manager_confirmed === true;
-    });
-  };
-
-  const isSlotPending = (slot: Date) => {
-    if (!currentUserId) return false;
-    const slotEnd = new Date(slot);
-    slotEnd.setHours(slot.getHours(), 59, 0, 0); // 59 minuti invece di 60
-    return bookings.some((b) => {
-      if (!overlaps(b, selectedCourt, slot, slotEnd)) return false;
-      return b.user_id === currentUserId && b.manager_confirmed !== true;
-    });
+    return bookings.some((b) => overlaps(b, selectedCourt, slot, slotEnd));
   };
 
   const isSlotAvailable = (slot: Date) => {
@@ -223,15 +208,13 @@ export default function BookingCalendar() {
     
     // Admin e gestore non hanno limitazioni
     if (isAdminOrGestore) {
-      // Solo gli slot confermati li bloccano
-      return !isSlotConfirmed(slot);
+      return !isSlotOccupied(slot);
     }
     
     // Per altri utenti: slot nel passato non disponibile
     if (slot < now) return false;
 
-    // Slot è confermato (solo confermate bloccano per tutti)
-    if (isSlotConfirmed(slot)) return false;
+    if (isSlotOccupied(slot)) return false;
     
     return true;
   };
@@ -332,7 +315,7 @@ export default function BookingCalendar() {
     }
 
     // Verifica che tutti gli slot siano disponibili
-    const occupiedSlots = slotsToBook.filter(slot => isSlotConfirmed(slot));
+    const occupiedSlots = slotsToBook.filter(slot => isSlotOccupied(slot));
     if (occupiedSlots.length > 0) {
       setError(`⚠️ ${occupiedSlots.length} slot selezionato/i non disponibile/i. Rimuovili dalla selezione.`);
       setSaving(false);
@@ -352,9 +335,7 @@ export default function BookingCalendar() {
           type: bookingType,
           start_time: slot.toISOString(),
           end_time: slotEnd.toISOString(),
-          status: bookingType === "lezione_privata" && !isAdminOrGestore ? "pending" : "confirmed",
-          coach_confirmed: bookingType !== "lezione_privata" || isAdminOrGestore,
-          manager_confirmed: isAdminOrGestore,
+          status: "confirmed",
           notes: null,
           participants: selectedAthletes,
         };
@@ -398,9 +379,7 @@ export default function BookingCalendar() {
           type: bookingType,
           start_time: slot.toISOString(),
           end_time: slotEnd.toISOString(),
-          status: bookingType === "lezione_privata" && !isAdminOrGestore ? "pending" : "confirmed",
-          coach_confirmed: bookingType !== "lezione_privata" || isAdminOrGestore,
-          manager_confirmed: isAdminOrGestore,
+          status: "confirmed",
           notes: null,
           participants: selectedAthletes,
         };
@@ -652,10 +631,6 @@ export default function BookingCalendar() {
               <div className="w-3 h-3 rounded border border-red-400/50 bg-red-500/20"></div>
               <span className="text-gray-400">Occupato</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded border border-yellow-400/30 bg-yellow-400/10"></div>
-              <span className="text-gray-400">In attesa</span>
-            </div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" aria-busy={loading}>
@@ -669,8 +644,7 @@ export default function BookingCalendar() {
               const slotEnd = new Date(slot);
               slotEnd.setHours(slot.getHours(), 59, 0, 0); // 59 minuti
               const available = isSlotAvailable(slot);
-              const confirmed = isSlotConfirmed(slot);
-              const pending = isSlotPending(slot);
+              const occupied = isSlotOccupied(slot);
               const isPast = slot < new Date();
               
               // Check selezione (sia singola che multipla)
@@ -683,12 +657,9 @@ export default function BookingCalendar() {
               if (isPast) {
                 statusLabel = "Passato";
                 statusIcon = <Clock className="inline h-3 w-3 mr-1" />;
-              } else if (confirmed) {
+              } else if (occupied) {
                 statusLabel = "Occupato";
                 statusIcon = <Lock className="inline h-3 w-3 mr-1" />;
-              } else if (pending) {
-                statusLabel = "In attesa";
-                statusIcon = <Clock className="inline h-3 w-3 mr-1" />;
               }
 
               return (
@@ -697,18 +668,16 @@ export default function BookingCalendar() {
                   disabled={!available}
                   onClick={() => handleSlotClick(slot)}
                   aria-pressed={isSelected ? "true" : "false"}
-                  aria-label={`${format(slot, "HH:mm")}-${format(slotEnd, "HH:mm")} ${selectedCourt} ${!available ? "(non disponibile)" : pending ? "(in attesa conferma)" : "(disponibile)"}`}
+                  aria-label={`${format(slot, "HH:mm")}-${format(slotEnd, "HH:mm")} ${selectedCourt} ${!available ? "(non disponibile)" : "(disponibile)"}`}
                   className={`flex flex-col rounded-lg sm:rounded-xl border px-2.5 sm:px-3 py-2.5 sm:py-3 text-left text-xs sm:text-sm transition min-h-[60px] ${
-                    confirmed || isPast
+                    occupied || isPast
                       ? "cursor-not-allowed border-red-400/50 bg-red-500/20 text-red-200 relative overflow-hidden"
-                      : pending
-                      ? "cursor-pointer border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:border-yellow-400/50 hover:bg-yellow-400/20"
                       : isSelected
                       ? "border-tournament-border bg-tournament-border/20 text-white ring-2 ring-tournament-border/50"
                       : "border-white/10 bg-tournament-bg-card/60 text-white hover:border-tournament-border/50 hover:bg-tournament-bg-card/80 hover:scale-105"
                    } focus:outline-none focus-ring-accent`}
                 >
-                  {(confirmed || isPast) && (
+                  {(occupied || isPast) && (
                     <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-red-800/10 pointer-events-none"></div>
                   )}
                   <span className="font-semibold text-base relative z-10">{format(slot, "HH:mm")}</span>
@@ -716,14 +685,8 @@ export default function BookingCalendar() {
                     <Clock className="mr-1 inline h-3 w-3" />
                     1h · {selectedCourt}
                   </span>
-                  {(confirmed || isPast) && (
+                  {(occupied || isPast) && (
                     <span className="mt-1 text-xs font-semibold text-red-300 relative z-10 flex items-center">
-                      {statusIcon}
-                      {statusLabel}
-                    </span>
-                  )}
-                  {pending && (
-                    <span className="mt-1 text-xs text-yellow-400 relative z-10 flex items-center">
                       {statusIcon}
                       {statusLabel}
                     </span>

@@ -72,7 +72,6 @@ interface Challenge {
     start_time: string;
     end_time: string;
     status: string;
-    manager_confirmed: boolean;
   };
 }
 
@@ -144,50 +143,6 @@ export default function AdminChallengeDetailPage() {
       }
     } catch (error) {
       console.error("Error deleting challenge:", error);
-    }
-  }
-
-  async function handleConfirmBooking() {
-    if (!challenge?.booking_id) return;
-
-    // Controlla se la data è passata
-    if (challenge.booking?.start_time) {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const bookingDate = new Date(challenge.booking.start_time);
-      const bookingDay = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
-
-      if (bookingDay < today) {
-        alert("❌ Non puoi confermare una prenotazione con data passata. La sfida è stata spostata nello storico.");
-        return;
-      }
-    }
-
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const response = await fetch(`/api/bookings?id=${challenge.booking_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          manager_confirmed: true,
-        }),
-      });
-
-      if (response.ok) {
-        loadChallengeDetails();
-        alert("✅ Prenotazione confermata!");
-      } else {
-        const errorData = await response.json();
-        alert(`❌ Errore: ${errorData.error || "Impossibile confermare la prenotazione"}`);
-      }
-    } catch (error) {
-      console.error("Error confirming booking:", error);
-      alert("❌ Errore nella conferma della prenotazione");
     }
   }
 
@@ -806,7 +761,7 @@ export default function AdminChallengeDetailPage() {
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
-                  {challenge.booking.manager_confirmed === true ? "Confermata" : "In attesa di conferma"}
+                  Prenotazione registrata
                 </p>
               </div>
             </div>
@@ -826,15 +781,6 @@ export default function AdminChallengeDetailPage() {
 
       {/* Bottoni Azione - Alla fine */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {challenge.booking && !challenge.booking.manager_confirmed && (
-          <button
-            onClick={handleConfirmBooking}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#08b3f7] rounded-lg hover:bg-[#08b3f7]/90 transition-all font-medium"
-          >
-            <Check className="h-5 w-5" />
-            Conferma
-          </button>
-        )}
         <button
           onClick={() => router.push(`/dashboard/admin/arena/challenge/${id}/edit`)}
           className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"

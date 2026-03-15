@@ -39,7 +39,6 @@ interface Stats {
   todayBookings: number;
   activeTournaments: number;
   videoLessonsCount: number;
-  pendingBookings: number;
   unreadMessages: number;
   pendingArena: number;
   pendingJobApplications: number;
@@ -52,7 +51,6 @@ interface TodayBooking {
   end_time: string;
   type: string;
   status: string;
-  manager_confirmed: boolean;
   user_profile?: { full_name: string } | null;
 }
 
@@ -65,8 +63,6 @@ interface TimelineBooking {
   end_time: string;
   status: string;
   type: string;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   notes: string | null;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
@@ -129,7 +125,6 @@ export default function AdminDashboard() {
     todayBookings: 0,
     activeTournaments: 0,
     videoLessonsCount: 0,
-    pendingBookings: 0,
     unreadMessages: 0,
     pendingArena: 0,
     pendingJobApplications: 0,
@@ -250,7 +245,6 @@ export default function AdminDashboard() {
       const [
         usersResult,
         todayBookingsCount,
-        pendingBookingsCount,
         activeTournamentsCount,
         unreadMessagesCount,
         videoLessonsResult,
@@ -259,7 +253,6 @@ export default function AdminDashboard() {
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("bookings").select("*", { count: "exact", head: true }).gte("start_time", `${todayStr}T00:00:00`).lte("start_time", `${todayStr}T23:59:59`),
-        supabase.from("bookings").select("*", { count: "exact", head: true }).eq("manager_confirmed", false).neq("status", "cancelled"),
         supabase.from("tournaments").select("*", { count: "exact", head: true }).in("status", ["active", "Aperto", "In Corso"]),
         supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("is_read", false),
         supabase.from("video_lessons").select("*", { count: "exact", head: true }),
@@ -270,7 +263,7 @@ export default function AdminDashboard() {
       // Get today's bookings with details
       const { data: todayBookingsData } = await supabase
         .from("bookings")
-        .select("id, court, start_time, end_time, type, status, manager_confirmed, user_id")
+        .select("id, court, start_time, end_time, type, status, user_id")
         .gte("start_time", `${todayStr}T00:00:00`)
         .lte("start_time", `${todayStr}T23:59:59`)
         .order("start_time", { ascending: true })
@@ -324,7 +317,6 @@ export default function AdminDashboard() {
         todayBookings: todayBookingsCount.count || 0,
         activeTournaments: activeTournamentsCount.count || 0,
         videoLessonsCount: videoLessonsResult.count || 0,
-        pendingBookings: pendingBookingsCount.count || 0,
         unreadMessages: unreadMessagesCount.count || 0,
         pendingArena: pendingArenaResult.count || 0,
         pendingJobApplications: jobApplicationsResult.count || 0,
@@ -424,7 +416,7 @@ export default function AdminDashboard() {
   }
 
   // Count alerts
-  const alertsCount = stats.pendingBookings + stats.unreadMessages + stats.pendingArena + stats.pendingJobApplications;
+  const alertsCount = stats.unreadMessages + stats.pendingArena + stats.pendingJobApplications;
 
   if (loading) {
     return (
@@ -694,25 +686,6 @@ export default function AdminDashboard() {
             <div className="space-y-3 pt-3 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-secondary">Richiede Attenzione</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.pendingBookings > 0 && (
-                  <Link
-                    href="/dashboard/admin/bookings?filter=pending"
-                    className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all flex flex-row items-center gap-3"
-                  >
-                    <div className="flex-shrink-0">
-                      <Calendar className="h-8 w-8 sm:h-6 sm:w-6 text-white" />
-                    </div>
-                    <div className="flex-1 hidden sm:block">
-                      <p className="text-xs text-white/70">Prenotazioni</p>
-                      <h3 className="text-2xl font-bold text-white">{stats.pendingBookings}</h3>
-                    </div>
-                    <div className="flex sm:hidden items-center gap-2 flex-1">
-                      <h3 className="text-2xl font-bold text-white">{stats.pendingBookings}</h3>
-                      <p className="text-xs text-white/70">Pren.</p>
-                    </div>
-                  </Link>
-                )}
-
                 {stats.unreadMessages > 0 && (
                   <Link
                     href="/dashboard/admin/chat"

@@ -206,7 +206,6 @@ describe("RLS Policy Validation", () => {
       user_id: "atleta-1",
       court: "Campo 1",
       status: "confirmed",
-      manager_confirmed: true,
     };
 
     const otherBooking: Booking = {
@@ -214,7 +213,6 @@ describe("RLS Policy Validation", () => {
       user_id: "atleta-2",
       court: "Campo 2",
       status: "confirmed",
-      manager_confirmed: true,
     };
 
     describe("SELECT Policy", () => {

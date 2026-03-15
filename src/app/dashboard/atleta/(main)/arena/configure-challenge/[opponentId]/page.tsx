@@ -537,8 +537,7 @@ export default function ConfigureChallengePage() {
               type: "campo",
               start_time: startTime.toISOString(),
               end_time: endTime.toISOString(),
-              status: "pending",
-              manager_confirmed: false,
+              status: "confirmed",
               notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"} - ${matchFormat.replace("_", " ")}`,
             }),
           });
@@ -595,8 +594,7 @@ export default function ConfigureChallengePage() {
           type: "campo",
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
-          status: "pending",
-          manager_confirmed: false,
+          status: "confirmed",
           notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"} - ${matchFormat.replace("_", " ")}`,
         }),
       });

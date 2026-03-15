@@ -16,8 +16,6 @@ type Booking = {
   end_time: string;
   status: string;
   type: string;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   notes: string | null;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
@@ -191,8 +189,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         end_time: block.end_time,
         status: "blocked",
         type: "blocco",
-        manager_confirmed: true,
-        coach_confirmed: true,
         notes: block.reason,
         reason: block.reason,
         isBlock: true,
@@ -622,9 +618,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
                                     {getBookingLabel(booking)}
                                   </div>
-                                  {!booking.manager_confirmed && booking.status !== "cancelled" && (
-                                    <div className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full shadow-sm" title="Da approvare" />
-                                  )}
                                 </>
                               )}
                             </div>

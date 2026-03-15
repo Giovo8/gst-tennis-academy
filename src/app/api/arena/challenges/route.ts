@@ -71,7 +71,7 @@ export async function GET(req: Request) {
       if (challenge.booking_id) {
         const { data: bookingData } = await supabaseServer
           .from("bookings")
-          .select("id, court, start_time, end_time, status, manager_confirmed")
+          .select("id, court, start_time, end_time, status")
           .eq("id", challenge.booking_id)
           .single();
         booking = bookingData;
@@ -182,7 +182,7 @@ export async function GET(req: Request) {
       try {
         const result = await supabaseServer
           .from("bookings")
-          .select("id, court, start_time, end_time, status, manager_confirmed")
+          .select("id, court, start_time, end_time, status")
           .in("id", bookingIds);
         bookings = result.data || [];
         console.log("✅ Fetched bookings:", bookings.length);

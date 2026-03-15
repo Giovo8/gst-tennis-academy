@@ -29,8 +29,6 @@ interface Booking {
   type: string;
   coach_id: string | null;
   notes: string | null;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   coach?: {
     full_name: string;
   };
@@ -216,14 +214,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return 0;
     });
 
-  const now = new Date().toISOString();
-  const stats = {
-    total: bookings.length,
-    upcoming: bookings.filter((b) => b.start_time >= now && b.status !== "cancelled").length,
-    confirmed: bookings.filter((b) => b.status === "confirmed").length,
-    pending: bookings.filter((b) => b.status === "pending").length,
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -404,26 +394,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                       <StatusIcon className="h-3.5 w-3.5" />
                       {statusConfig[booking.status]?.label || booking.status}
                     </span>
-                  </div>
-
-                  {/* Conferme */}
-                  <div className="flex items-center gap-2 w-20 flex-shrink-0">
-                    <div title="Manager">
-                      {booking.manager_confirmed ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-orange-600" />
-                      )}
-                    </div>
-                    {booking.coach_id && (
-                      <div title="Maestro">
-                        {booking.coach_confirmed ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Clock className="h-4 w-4 text-orange-600" />
-                        )}
-                      </div>
-                    )}
                   </div>
 
                   {/* Azioni - 3 puntini */}

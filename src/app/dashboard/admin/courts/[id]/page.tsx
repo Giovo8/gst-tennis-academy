@@ -5,15 +5,14 @@ import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import {
-  ArrowLeft,
+  Pencil,
   Trash2,
   Loader2,
-  Save,
+  X,
   GraduationCap,
   Wrench,
   Flag,
   Shield,
-  Calendar,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -27,108 +26,61 @@ type Block = {
   created_at: string;
 };
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
-const BLOCK_TYPES = [
-  { value: "corsi_tennis", label: "Corsi Tennis" },
-  { value: "corso_adulti", label: "Corso Adulti" },
-  { value: "manutenzione", label: "Manutenzione" },
-  { value: "evento", label: "Evento" },
-];
-const WEEK_DAYS = [
-  { value: 1, label: "Lun" },
-  { value: 2, label: "Mar" },
-  { value: 3, label: "Mer" },
-  { value: 4, label: "Gio" },
-  { value: 5, label: "Ven" },
-  { value: 6, label: "Sab" },
-  { value: 0, label: "Dom" },
-];
-
-// Genera slot ogni 30 minuti dalle 07:00 alle 22:00
-const TIME_SLOTS: string[] = [];
-for (let hour = 7; hour <= 22; hour++) {
-  TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:00`);
-  if (hour < 22) {
-    TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
-  }
-}
-
 export default function CourtBlockDetailPage() {
   const router = useRouter();
   const params = useParams();
   const blockId = params.id as string;
 
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
-  // Dati blocco corrente
+  const [deletingDateId, setDeletingDateId] = useState<string | null>(null);
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
-  const [selectedCourt, setSelectedCourt] = useState("");
-  const [blockType, setBlockType] = useState("");
-  const [notes, setNotes] = useState("");
-  const [startTime, setStartTime] = useState("07:00");
-  const [endTime, setEndTime] = useState("22:00");
-  const [selectedWeekDays, setSelectedWeekDays] = useState<number[]>([]);
 
-  // Determina tipo, colore e icona
   function getBlockStyle(reason?: string) {
     const reasonLower = (reason || "").toLowerCase();
 
     if (reasonLower.includes("corso adulti")) {
       return {
         type: "Corso Adulti",
-        borderColor: "border-frozen-lake-700",
-        bgColor: "bg-frozen-lake-700",
-        iconColor: "text-frozen-lake-700",
-        icon: GraduationCap
+        icon: GraduationCap,
       };
     }
-    
+
     if (reasonLower.includes("corsi") || reasonLower.includes("tennis")) {
       return {
         type: "Corsi Tennis",
-        borderColor: "border-frozen-lake-700",
-        bgColor: "bg-frozen-lake-700",
-        iconColor: "text-frozen-lake-700",
-        icon: GraduationCap
-      };
-    } else if (reasonLower.includes("manutenzione")) {
-      return {
-        type: "Manutenzione",
-        borderColor: "border-frozen-lake-800",
-        bgColor: "bg-frozen-lake-800",
-        iconColor: "text-frozen-lake-800",
-        icon: Wrench
-      };
-    } else if (reasonLower.includes("evento")) {
-      return {
-        type: "Evento",
-        borderColor: "border-frozen-lake-600",
-        bgColor: "bg-frozen-lake-600",
-        iconColor: "text-frozen-lake-600",
-        icon: Flag
+        icon: GraduationCap,
       };
     }
-    
+
+    if (reasonLower.includes("manutenzione")) {
+      return {
+        type: "Manutenzione",
+        icon: Wrench,
+      };
+    }
+
+    if (reasonLower.includes("evento")) {
+      return {
+        type: "Evento",
+        icon: Flag,
+      };
+    }
+
     return {
       type: "Blocco",
-      borderColor: "border-frozen-lake-700",
-      bgColor: "bg-frozen-lake-700",
-      iconColor: "text-frozen-lake-700",
-      icon: Shield
+      icon: Shield,
     };
   }
 
   useEffect(() => {
-    loadBlockDetails();
+    void loadBlockDetails();
   }, [blockId]);
 
   async function loadBlockDetails() {
     try {
       setLoading(true);
 
-      // Carica il blocco principale
       const { data: mainBlock, error: mainError } = await supabase
         .from("court_blocks")
         .select("*")
@@ -136,7 +88,6 @@ export default function CourtBlockDetailPage() {
         .single();
 
       if (mainError || !mainBlock) {
-        console.error("Block not found");
         router.push("/dashboard/admin/courts");
         return;
       }
@@ -146,73 +97,22 @@ export default function CourtBlockDetailPage() {
       const mainStartTime = mainDate.getHours() * 60 + mainDate.getMinutes();
       const mainEndTime = mainEndDate.getHours() * 60 + mainEndDate.getMinutes();
 
-      // Trova tutti i blocchi con stesso campo, motivo e orario
-      const { data: relatedBlocks, error: relatedError } = await supabase
+      const { data: relatedBlocks } = await supabase
         .from("court_blocks")
         .select("*")
         .eq("court_id", mainBlock.court_id)
         .eq("reason", mainBlock.reason || "")
         .order("start_time", { ascending: true });
 
-      if (!relatedError && relatedBlocks) {
-        // Filtra solo blocchi con stesso orario
-        const filtered = relatedBlocks.filter(b => {
-          const bStart = new Date(b.start_time);
-          const bEnd = new Date(b.end_time);
-          const bStartTime = bStart.getHours() * 60 + bStart.getMinutes();
-          const bEndTime = bEnd.getHours() * 60 + bEnd.getMinutes();
-          return bStartTime === mainStartTime && bEndTime === mainEndTime;
-        });
+      const filteredBlocks = (relatedBlocks || []).filter((item) => {
+        const itemStart = new Date(item.start_time);
+        const itemEnd = new Date(item.end_time);
+        const itemStartTime = itemStart.getHours() * 60 + itemStart.getMinutes();
+        const itemEndTime = itemEnd.getHours() * 60 + itemEnd.getMinutes();
+        return itemStartTime === mainStartTime && itemEndTime === mainEndTime;
+      });
 
-        setAllBlocks(filtered);
-
-        // Estrai giorni della settimana dai blocchi
-        const weekDays = new Set<number>();
-        filtered.forEach(block => {
-          const date = new Date(block.start_time);
-          weekDays.add(date.getDay());
-        });
-        setSelectedWeekDays(Array.from(weekDays));
-      }
-
-      // Imposta i campi del form
-      setSelectedCourt(mainBlock.court_id);
-      
-      // Estrai tipo e note dal reason
-      const reason = mainBlock.reason || "";
-      let extractedType = "";
-      let extractedNotes = "";
-      
-      if (reason.includes(" - ")) {
-        const parts = reason.split(" - ");
-        const typeLabel = parts[0];
-        extractedNotes = parts.slice(1).join(" - ");
-        
-        // Trova il valore del tipo
-        const foundType = BLOCK_TYPES.find(t => t.label === typeLabel);
-        if (foundType) {
-          extractedType = foundType.value;
-        }
-      } else {
-        // Cerca se il reason contiene uno dei tipi
-        const foundType = BLOCK_TYPES.find(t => reason.toLowerCase().includes(t.label.toLowerCase()));
-        if (foundType) {
-          extractedType = foundType.value;
-        }
-      }
-      
-      setBlockType(extractedType);
-      setNotes(extractedNotes);
-      
-      // Imposta orari
-      const startHour = mainDate.getHours();
-      const startMin = mainDate.getMinutes();
-      const endHour = mainEndDate.getHours();
-      const endMin = mainEndDate.getMinutes();
-      
-      setStartTime(`${startHour.toString().padStart(2, "0")}:${startMin.toString().padStart(2, "0")}`);
-      setEndTime(`${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`);
-
+      setAllBlocks(filteredBlocks.length > 0 ? filteredBlocks : [mainBlock]);
     } catch (err) {
       console.error("Error loading block:", err);
       router.push("/dashboard/admin/courts");
@@ -221,76 +121,9 @@ export default function CourtBlockDetailPage() {
     }
   }
 
-  async function handleUpdate() {
-    if (!selectedCourt || !blockType || selectedWeekDays.length === 0) {
-      alert("Compila tutti i campi obbligatori");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      // Elimina tutti i blocchi del gruppo corrente
-      await supabase
-        .from("court_blocks")
-        .delete()
-        .in("id", allBlocks.map(b => b.id));
-
-      // Trova il range di date dai blocchi esistenti
-      const dates = allBlocks.map(b => new Date(b.start_time));
-      const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-      const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-
-      // Crea nuovi blocchi con i nuovi parametri
-      const typeLabel = BLOCK_TYPES.find(t => t.value === blockType)?.label || blockType;
-      const reasonText = notes ? `${typeLabel} - ${notes}` : typeLabel;
-
-      const newBlocks: Array<{
-        court_id: string;
-        start_time: string;
-        end_time: string;
-        reason: string;
-      }> = [];
-
-      const currentDate = new Date(minDate);
-      while (currentDate <= maxDate) {
-        const dayOfWeek = currentDate.getDay();
-
-        if (selectedWeekDays.includes(dayOfWeek)) {
-          const [startHour, startMinute] = startTime.split(':').map(Number);
-          const [endHour, endMinute] = endTime.split(':').map(Number);
-          
-          const dayStart = new Date(currentDate);
-          dayStart.setHours(startHour, startMinute, 0, 0);
-          
-          const dayEnd = new Date(currentDate);
-          dayEnd.setHours(endHour, endMinute, 0, 0);
-
-          newBlocks.push({
-            court_id: selectedCourt,
-            start_time: dayStart.toISOString(),
-            end_time: dayEnd.toISOString(),
-            reason: reasonText,
-          });
-        }
-
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      const { error } = await supabase.from("court_blocks").insert(newBlocks);
-
-      if (error) throw error;
-
-      router.push("/dashboard/admin/courts");
-    } catch (err) {
-      console.error("Error updating blocks:", err);
-      alert("Errore durante l'aggiornamento del blocco");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function handleDelete() {
+    if (!allBlocks.length) return;
+
     if (!confirm(`Sei sicuro di voler eliminare tutti i ${allBlocks.length} giorni di questo blocco?`)) {
       return;
     }
@@ -301,7 +134,7 @@ export default function CourtBlockDetailPage() {
       const { error } = await supabase
         .from("court_blocks")
         .delete()
-        .in("id", allBlocks.map(b => b.id));
+        .in("id", allBlocks.map((item) => item.id));
 
       if (error) throw error;
 
@@ -314,11 +147,37 @@ export default function CourtBlockDetailPage() {
     }
   }
 
-  const toggleWeekDay = (day: number) => {
-    setSelectedWeekDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+  async function handleDeleteDateTab(block: Block) {
+    const dateLabel = format(new Date(block.start_time), "dd/MM/yyyy", { locale: it });
+    const shouldDelete = confirm(
+      `Vuoi eliminare il tab del ${dateLabel}? Questa azione crea un'eccezione per questa data.`
     );
-  };
+
+    if (!shouldDelete) return;
+
+    try {
+      setDeletingDateId(block.id);
+
+      const { error } = await supabase
+        .from("court_blocks")
+        .delete()
+        .eq("id", block.id);
+
+      if (error) throw error;
+
+      if (allBlocks.length === 1) {
+        router.push("/dashboard/admin/courts");
+        return;
+      }
+
+      setAllBlocks((prev) => prev.filter((item) => item.id !== block.id));
+    } catch (err) {
+      console.error("Error creating block exception:", err);
+      alert("Errore durante la creazione dell'eccezione");
+    } finally {
+      setDeletingDateId(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -329,60 +188,101 @@ export default function CourtBlockDetailPage() {
     );
   }
 
-  const blockStyle = getBlockStyle(allBlocks[0]?.reason);
+  if (!allBlocks.length) {
+    return (
+      <div className="space-y-4">
+        <p className="text-secondary/70">Blocco non trovato.</p>
+        <Link href="/dashboard/admin/courts" className="text-secondary font-medium hover:underline">
+          Torna a Blocco Campi
+        </Link>
+      </div>
+    );
+  }
+
+  const firstBlock = allBlocks[0];
+  const blockStyle = getBlockStyle(firstBlock.reason);
   const BlockIcon = blockStyle.icon;
+
+  const firstDate = new Date(allBlocks[0].start_time);
+  const lastDate = new Date(allBlocks[allBlocks.length - 1].end_time);
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider">
-        <Link href="/dashboard/admin/bookings" className="hover:text-secondary/80 transition-colors">
-          Prenotazioni
-        </Link>
-        <span className="mx-2">›</span>
-        <button
-          onClick={() => router.push("/dashboard/admin/courts")}
-          className="hover:text-secondary/80 transition-colors uppercase"
-        >
+      <p className="breadcrumb text-secondary/60">
+        <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">
           Blocco Campi
-        </button>
-        <span className="mx-2">›</span>
+        </Link>
+        {" › "}
         <span>Dettagli Blocco</span>
+      </p>
+
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-secondary">Dettagli Blocco</h1>
+        <p className="text-secondary/70 font-medium">
+          Visualizza e gestisci i dettagli del blocco campi
+        </p>
       </div>
 
-      {/* Header con info blocco */}
-      <div className={`bg-white rounded-xl border-l-4 ${blockStyle.borderColor} p-6`}>
-        <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-lg ${blockStyle.bgColor} text-white`}>
-            <BlockIcon className="h-6 w-6" strokeWidth={2} />
-          </div>
+      <div
+        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
+        style={{ borderLeftColor: "var(--secondary)" }}
+      >
+        <div className="flex items-start gap-6">
+          <BlockIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-secondary">{selectedCourt}</h1>
-            <p className="text-sm text-secondary/70 mt-1">
-              {allBlocks.length} {allBlocks.length === 1 ? "giorno bloccato" : "giorni bloccati"}
-            </p>
+            <h1 className="text-2xl font-bold text-white">{firstBlock.court_id}</h1>
           </div>
         </div>
       </div>
 
-      {/* Date bloccate */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-4 flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-secondary mb-6">
           Date bloccate
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {allBlocks.map((block) => {
+
+        <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[560px]">
+            <div className="grid grid-cols-[40px_2fr_1fr_64px] items-center gap-4">
+              <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+              <div className="text-xs font-bold text-white/80 uppercase">Orario</div>
+              <div className="text-xs font-bold text-white/80 uppercase text-center">&nbsp;</div>
+            </div>
+          </div>
+
+          {allBlocks.map((block, index) => {
             const dateStart = new Date(block.start_time);
             const dateEnd = new Date(block.end_time);
-            
+
             return (
-              <div key={block.id} className="bg-gray-50 rounded-lg px-4 py-3">
-                <div className="font-semibold text-secondary text-sm">
-                  {format(dateStart, "EEEE d MMM", { locale: it })}
-                </div>
-                <div className="text-secondary/60 text-xs mt-1">
-                  {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+              <div
+                key={block.id}
+                className="bg-white rounded-lg px-4 py-3 border border-gray-200 border-l-4 min-w-[560px]"
+                style={{ borderLeftColor: "var(--secondary)" }}
+              >
+                <div className="grid grid-cols-[40px_2fr_1fr_64px] items-center gap-4">
+                  <div className="text-sm text-secondary/60 text-center">{index + 1}</div>
+                  <div className="text-secondary font-semibold text-sm">
+                    {format(dateStart, "EEEE d MMMM yyyy", { locale: it }).replace(/^./, (letter) => letter.toUpperCase())}
+                  </div>
+                  <div className="text-secondary/70 text-sm">
+                    {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteDateTab(block)}
+                      disabled={deletingDateId === block.id}
+                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8 disabled:opacity-50"
+                      aria-label={`Elimina ${format(dateStart, "dd/MM/yyyy", { locale: it })}`}
+                    >
+                      {deletingDateId === block.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -390,167 +290,66 @@ export default function CourtBlockDetailPage() {
         </div>
       </div>
 
-      {/* Form modifica */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Modifica blocco</h2>
-        
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli blocco</h2>
+
         <div className="space-y-6">
-          {/* Campo */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Motivo</label>
             <div className="flex-1">
-              <div className="flex flex-wrap gap-2">
-                {COURTS.map((court) => (
-                  <button
-                    key={court}
-                    type="button"
-                    onClick={() => setSelectedCourt(court)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                      selectedCourt === court
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                    }`}
-                  >
-                    {court}
-                  </button>
-                ))}
-              </div>
+              <p className="text-secondary font-semibold">{firstBlock.reason || "Non specificato"}</p>
             </div>
           </div>
 
-          {/* Tipo blocco */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo blocco *</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Intervallo date</label>
             <div className="flex-1">
-              <div className="flex flex-wrap gap-2">
-                {BLOCK_TYPES.map((type) => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => setBlockType(type.value)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                      blockType === type.value
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Giorni settimana */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana *</label>
-            <div className="flex-1">
-              <div className="flex flex-wrap gap-2">
-                {WEEK_DAYS.map((day) => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => toggleWeekDay(day.value)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                      selectedWeekDays.includes(day.value)
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                    }`}
-                  >
-                    {day.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-secondary/60 mt-2">
-                {selectedWeekDays.length === 7 ? "Tutti i giorni" : selectedWeekDays.length === 0 ? "Nessun giorno selezionato" : `${selectedWeekDays.length} giorno/i selezionato/i`}
+              <p className="text-secondary font-semibold">
+                {format(firstDate, "dd/MM/yyyy", { locale: it })} - {format(lastDate, "dd/MM/yyyy", { locale: it })}
               </p>
             </div>
           </div>
 
-          {/* Orario Inizio */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario inizio *</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni bloccati</label>
             <div className="flex-1">
-              <select
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-              >
-                {TIME_SLOTS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
+              <p className="text-secondary font-semibold">
+                {allBlocks.length} {allBlocks.length === 1 ? "giorno" : "giorni"}
+              </p>
             </div>
           </div>
 
-          {/* Orario Fine */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Orario fine *</label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creato il</label>
             <div className="flex-1">
-              <select
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-              >
-                {TIME_SLOTS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Note */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
-            <div className="flex-1">
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Aggiungi dettagli aggiuntivi..."
-                rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-              />
+              <p className="text-secondary/70">
+                {format(new Date(firstBlock.created_at), "dd/MM/yyyy HH:mm", { locale: it })}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Azioni */}
-      <div className="flex items-center justify-between gap-4">
-        <button
-          onClick={handleDelete}
-          disabled={deleting || submitting}
-          className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href={`/dashboard/admin/courts/modifica?id=${blockId}`}
+          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
         >
-          {deleting ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Eliminazione...
-            </>
-          ) : (
-            <>
-              <Trash2 className="h-5 w-5" />
-              Elimina Blocco
-            </>
-          )}
-        </button>
+          <Pencil className="h-5 w-5" />
+          Modifica
+        </Link>
 
         <button
-          onClick={handleUpdate}
-          disabled={!selectedCourt || !blockType || selectedWeekDays.length === 0 || submitting || deleting}
-          className="px-6 py-2.5 bg-secondary hover:opacity-90 text-white text-sm font-medium rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {submitting ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Salvataggio...
-            </>
+          {deleting ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <>
-              <Save className="h-5 w-5" />
-              Salva Modifiche
-            </>
+            <Trash2 className="h-5 w-5" />
           )}
+          Elimina
         </button>
       </div>
     </div>

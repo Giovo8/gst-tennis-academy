@@ -238,13 +238,6 @@ export default function EditBookingPage() {
         return;
       }
 
-      // Non si può modificare una prenotazione già confermata
-      if (bookingData.manager_confirmed) {
-        setError("Non puoi modificare una prenotazione già confermata dalla segreteria");
-        router.push("/dashboard/atleta/bookings");
-        return;
-      }
-
       setOriginalBooking(bookingData);
 
       // Popola il form con i dati esistenti
@@ -487,9 +480,7 @@ export default function EditBookingPage() {
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         notes: notes || null,
-        // Reset conferme quando la prenotazione viene modificata
-        manager_confirmed: false,
-        coach_confirmed: false,
+        status: "confirmed",
       };
 
       const { error: updateError } = await supabase
@@ -502,7 +493,7 @@ export default function EditBookingPage() {
         throw new Error(updateError.message);
       }
 
-      setSuccess("Prenotazione modificata con successo! In attesa di nuova conferma.");
+      setSuccess("Prenotazione modificata con successo!");
       setTimeout(() => {
         router.push("/dashboard/atleta/bookings");
       }, 1500);
@@ -534,7 +525,7 @@ export default function EditBookingPage() {
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica Prenotazione</h1>
           <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Modifica i dettagli della tua prenotazione. Le conferme verranno resettate.
+            Modifica i dettagli della tua prenotazione.
           </p>
         </div>
         <Link

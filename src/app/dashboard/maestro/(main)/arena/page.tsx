@@ -66,7 +66,6 @@ interface Challenge {
     start_time: string;
     end_time: string;
     status: string;
-    manager_confirmed: boolean;
   };
 }
 
@@ -434,11 +433,6 @@ export default function ArenaPage() {
                               {isChallenger ? "Hai sfidato" : "Sei stato sfidato da"}{" "}
                               {opponent?.full_name}
                             </p>
-                            {needsConfirmation && (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 bg-orange-100 text-orange-700 animate-pulse">
-                                ⚠️ Da confermare
-                              </span>
-                            )}
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
                                 challenge.status === "accepted"
@@ -493,16 +487,6 @@ export default function ArenaPage() {
                                 <span className="text-gray-300">•</span>
                                 <span>{challenge.booking.court}</span>
                               </div>
-                              {!challenge.booking.manager_confirmed && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
-                                    <svg className="mr-1 h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                    </svg>
-                                    In attesa conferma gestore
-                                  </span>
-                                </div>
-                              )}
                             </div>
                           )}
                         </div>

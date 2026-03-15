@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { createNotification } from "@/lib/notifications/createNotification";
 import Link from "next/link";
 import { 
   Calendar, 
@@ -45,8 +44,6 @@ type Booking = {
   end_time: string;
   status: string;
   type: string;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   notes: string | null;
   created_at: string;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
@@ -139,26 +136,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
         return;
       }
 
-      // Auto-annulla prenotazioni pending con data passata
-      const now = new Date();
-      const expiredPendingIds = bookingsData
-        .filter(b => b.status !== "cancelled" && !b.manager_confirmed && new Date(b.start_time) < now)
-        .map(b => b.id);
-
-      if (expiredPendingIds.length > 0) {
-        await supabase
-          .from("bookings")
-          .update({ status: "cancelled" })
-          .in("id", expiredPendingIds);
-
-        // Aggiorna lo stato locale
-        for (const b of bookingsData) {
-          if (expiredPendingIds.includes(b.id)) {
-            b.status = "cancelled";
-          }
-        }
-      }
-
       // Seconda query: prendi tutti i profili necessari
       const userIds = [...new Set([
         ...bookingsData.map(b => b.user_id),
@@ -244,94 +221,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     }
   }
 
-  async function confirmBooking(bookingId: string) {
-    try {
-      // Get booking details first
-      const { data: booking } = await supabase
-        .from("bookings")
-        .select("user_id, court, start_time, end_time")
-        .eq("id", bookingId)
-        .single();
-
-      const { error } = await supabase
-        .from("bookings")
-        .update({ 
-          manager_confirmed: true,
-          status: "confirmed" 
-        })
-        .eq("id", bookingId);
-
-      if (!error && booking) {
-        // Send notification to user
-        const startDate = new Date(booking.start_time).toLocaleDateString("it-IT", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-        const startTime = new Date(booking.start_time).toLocaleTimeString("it-IT", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        
-        await createNotification({
-          userId: booking.user_id,
-          type: "booking",
-          title: "Prenotazione confermata",
-          message: `La tua prenotazione per il campo ${booking.court} del ${startDate} alle ${startTime} è stata confermata.`,
-          link: "/dashboard/atleta/bookings",
-        });
-
-        loadBookings();
-      }
-    } catch (error) {
-      console.error("Error confirming booking:", error);
-    }
-  }
-
-  async function rejectBooking(bookingId: string) {
-    try {
-      // Get booking details first
-      const { data: booking } = await supabase
-        .from("bookings")
-        .select("user_id, court, start_time, end_time")
-        .eq("id", bookingId)
-        .single();
-
-      const { error } = await supabase
-        .from("bookings")
-        .update({ 
-          status: "cancelled",
-          manager_confirmed: false
-        })
-        .eq("id", bookingId);
-
-      if (!error && booking) {
-        // Send notification to user
-        const startDate = new Date(booking.start_time).toLocaleDateString("it-IT", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-        const startTime = new Date(booking.start_time).toLocaleTimeString("it-IT", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        await createNotification({
-          userId: booking.user_id,
-          type: "booking",
-          title: "Prenotazione rifiutata",
-          message: `La tua prenotazione per il campo ${booking.court} del ${startDate} alle ${startTime} è stata rifiutata.`,
-          link: "/dashboard/atleta/bookings",
-        });
-
-        loadBookings();
-      }
-    } catch (error) {
-      console.error("Error rejecting booking:", error);
-    }
-  }
-
   async function deleteBooking(bookingId: string) {
     if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
     
@@ -351,7 +240,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
   function exportToCSV() {
     const csv = [
-      ["Data", "Ora Inizio", "Ora Fine", "Campo", "Atleta", "Maestro", "Tipo", "Status", "Conferma Manager"].join(","),
+      ["Data", "Ora Inizio", "Ora Fine", "Campo", "Atleta", "Maestro", "Tipo", "Status"].join(","),
       ...filteredBookings.map((b) => [
         formatDate(b.start_time),
         formatTime(b.start_time),
@@ -361,7 +250,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
         b.coach_profile?.full_name || "N/A",
         typeConfig[b.type]?.label || b.type,
         statusConfig[b.status]?.label || b.status,
-        b.manager_confirmed ? "Sì" : "No",
       ].join(","))
     ].join("\n");
 
@@ -526,14 +414,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     setMenuPosition({ top, left });
   };
 
-  const stats = {
-    total: mergedBaseBookings.length,
-    confirmed: mergedBaseBookings.filter((b) => b.status === "confirmed").length,
-    pending: mergedBaseBookings.filter((b) => b.status === "pending" || !b.manager_confirmed).length,
-    cancelled: mergedBaseBookings.filter((b) => b.status === "cancelled").length,
-    needsApproval: mergedBaseBookings.filter((b) => !b.manager_confirmed && b.status !== "cancelled").length,
-  };
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const formatted = date.toLocaleDateString("it-IT", {
@@ -575,7 +455,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           <p className="text-secondary/70 font-medium">
             {mode === "history"
               ? "Consulta l'elenco completo delle prenotazioni effettuate"
-              : "Visualizza, conferma e gestisci le prenotazioni dei campi da oggi in avanti"}
+              : "Visualizza e gestisci le prenotazioni dei campi da oggi in avanti"}
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -745,12 +625,9 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             if (booking.status === "cancelled" || booking.status === "cancellation_requested") {
               borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
               statusColor = "#022431";
-            } else if (!booking.manager_confirmed) {
-              borderStyle = { borderLeftColor: "#056c94" }; // frozen-700 - in attesa
-              statusColor = "#056c94";
             } else {
-              borderStyle = { borderLeftColor: "#08b3f7" }; // frozen-500 - confermata
-              statusColor = "#08b3f7";
+              borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary - stato positivo
+              statusColor = "var(--secondary)";
             }
 
             return (
@@ -817,10 +694,8 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                         <XCircle className="h-4 w-4" style={{ color: statusColor }} />
                       ) : booking.status === "cancellation_requested" ? (
                         <AlertCircle className="h-4 w-4" style={{ color: statusColor }} />
-                      ) : booking.manager_confirmed ? (
-                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
                       ) : (
-                        <Clock className="h-4 w-4" style={{ color: statusColor }} />
+                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
                       )}
                     </div>
 

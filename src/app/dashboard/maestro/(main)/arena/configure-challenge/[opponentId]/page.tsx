@@ -191,23 +191,21 @@ export default function ConfigureChallengePage() {
     // Get existing bookings for this court and date
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("start_time, end_time, manager_confirmed")
+      .select("start_time, end_time")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
+      .neq("status", "rejected")
       .gte("start_time", `${dateStr}T00:00:00`)
       .lte("start_time", `${dateStr}T23:59:59`);
 
-    // Build occupied time ranges for confirmed bookings
+    // Build occupied time ranges for active bookings
     const occupiedRanges: { start: Date; end: Date }[] = [];
     
     bookings?.forEach(b => {
-      // Only consider confirmed bookings
-      if (b.manager_confirmed) {
-        occupiedRanges.push({
-          start: new Date(b.start_time),
-          end: new Date(b.end_time)
-        });
-      }
+      occupiedRanges.push({
+        start: new Date(b.start_time),
+        end: new Date(b.end_time)
+      });
     });
 
     // Generate slots (8:00 - 22:00)
@@ -224,7 +222,7 @@ export default function ConfigureChallengePage() {
       const slotEnd = new Date(slotStart);
       slotEnd.setHours(hour + 1, 0, 0, 0);
 
-      // Check if occupied by any confirmed booking
+      // Check if occupied by any active booking
       const isOccupied = occupiedRanges.some(range => {
         return (slotStart < range.end && slotEnd > range.start);
       });
@@ -360,8 +358,7 @@ export default function ConfigureChallengePage() {
               type: "campo",
               start_time: startTime.toISOString(),
               end_time: endTime.toISOString(),
-              status: "pending",
-              manager_confirmed: false,
+              status: "confirmed",
               notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"} - ${matchFormat.replace("_", " ")}`,
             }),
           });
@@ -418,8 +415,7 @@ export default function ConfigureChallengePage() {
           type: "campo",
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
-          status: "pending",
-          manager_confirmed: false,
+          status: "confirmed",
           notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"} - ${matchFormat.replace("_", " ")}`,
         }),
       });
@@ -760,7 +756,7 @@ export default function ConfigureChallengePage() {
             <div className="flex items-start gap-2">
               <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-blue-700">
-                <span className="font-semibold">Nota:</span> La prenotazione del campo verrà creata ma dovrà essere confermata dal gestore/amministratore prima di essere definitiva. Riceverai una notifica quando sarà confermata.
+                <span className="font-semibold">Nota:</span> La prenotazione del campo viene registrata subito e blocca immediatamente lo slot selezionato.
               </p>
             </div>
           </div>        </div>

@@ -35,8 +35,6 @@ interface Booking {
   type: string;
   coach_id: string | null;
   notes: string | null;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   coach?: {
     full_name: string;
   };
@@ -126,25 +124,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return;
     }
 
-    // Auto-annulla prenotazioni pending con data passata
-    const now = new Date();
-    const expiredPendingIds = bookingsData
-      .filter(b => b.status !== "cancelled" && !b.manager_confirmed && new Date(b.start_time) < now)
-      .map(b => b.id);
-
-    if (expiredPendingIds.length > 0) {
-      await supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .in("id", expiredPendingIds);
-
-      for (const b of bookingsData) {
-        if (expiredPendingIds.includes(b.id)) {
-          b.status = "cancelled";
-        }
-      }
-    }
-
     // Seconda query: prendi i profili dei coach se esistono
     const coachIds = [...new Set(bookingsData.map(b => b.coach_id).filter(Boolean))];
 
@@ -194,21 +173,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
     if (!error) {
       loadBookings();
-    }
-  }
-
-  async function requestCancellation(id: string) {
-    if (!confirm("Vuoi richiedere la cancellazione di questa prenotazione? La segreteria dovrà approvarla.")) return;
-
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "cancellation_requested" })
-      .eq("id", id);
-
-    if (!error) {
-      loadBookings();
-    } else {
-      alert("Errore durante la richiesta di cancellazione");
     }
   }
 
@@ -287,14 +251,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-
-  const now = new Date().toISOString();
-  const stats = {
-    total: bookings.length,
-    upcoming: bookings.filter((b) => b.start_time >= now && b.status !== "cancelled").length,
-    confirmed: bookings.filter((b) => b.status === "confirmed").length,
-    pending: bookings.filter((b) => b.status === "pending").length,
-  };
 
   if (loading) {
     return (
@@ -455,12 +411,10 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             {/* Data Rows */}
             {filteredBookings.map((booking) => {
               const isPast = new Date(booking.start_time) < new Date();
-              const isConfirmed = booking.manager_confirmed;
               const isCancelled = booking.status === "cancelled";
               const isCancellationRequested = booking.status === "cancellation_requested";
-              const canCancel = !isCancelled && !isCancellationRequested && !isPast && !isConfirmed;
+              const canCancel = !isCancelled && !isCancellationRequested && !isPast;
               const canEdit = canCancel;
-              const canRequestCancellation = isConfirmed && !isPast && !isCancelled && !isCancellationRequested;
 
               // Determina il colore del bordo in base allo stato (palette frozen-lake)
               let borderStyle = {};
@@ -468,12 +422,9 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               if (booking.status === "cancelled" || booking.status === "cancellation_requested") {
                 borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
                 statusColor = "#022431";
-              } else if (!booking.manager_confirmed) {
-                borderStyle = { borderLeftColor: "#056c94" }; // frozen-700 - in attesa
-                statusColor = "#056c94";
               } else {
-                borderStyle = { borderLeftColor: "#08b3f7" }; // frozen-500 - confermata
-                statusColor = "#08b3f7";
+                borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary - stato positivo
+                statusColor = "var(--secondary)";
               }
 
               return (
@@ -532,16 +483,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                         <XCircle className="h-4 w-4" style={{ color: statusColor }} />
                       ) : booking.status === "cancellation_requested" ? (
                         <AlertCircle className="h-4 w-4" style={{ color: statusColor }} />
-                      ) : booking.manager_confirmed ? (
-                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
                       ) : (
-                        <Clock className="h-4 w-4" style={{ color: statusColor }} />
+                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
                       )}
                     </div>
 
                     {/* Azioni - 3 puntini */}
                     <div className="relative flex items-center justify-center">
-                      {(canEdit || canCancel || canRequestCancellation) ? (
+                      {(canEdit || canCancel) ? (
                         <>
                           <button
                             type="button"
@@ -601,22 +550,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
                                     Annulla
-                                  </button>
-                                )}
-                                {canRequestCancellation && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOpenMenuId(null);
-                                      setMenuPosition(null);
-                                      requestCancellation(booking.id);
-                                    }}
-                                    className="flex items-center gap-2 px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors w-full"
-                                  >
-                                    <AlertCircle className="h-3.5 w-3.5" />
-                                    Richiedi cancellazione
                                   </button>
                                 )}
                               </div>

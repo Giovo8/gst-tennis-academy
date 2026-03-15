@@ -413,7 +413,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     // Get existing bookings for this court and date
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, user_id, coach_id, start_time, end_time, type, status, manager_confirmed, coach_confirmed")
+      .select("id, user_id, coach_id, start_time, end_time, type, status")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
       .gte("start_time", `${dateStr}T00:00:00`)
@@ -671,8 +671,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         status: "confirmed",
-        manager_confirmed: true,
-        coach_confirmed: bookingType === "campo" ? true : false,
         notes: notes || null,
         participants: selectedAthletes.map((athlete) => ({
           user_id: athlete.userId || null,

@@ -219,7 +219,7 @@ export default function CourtsBlockPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="breadcrumb text-secondary/60">
             <Link
@@ -236,13 +236,15 @@ export default function CourtsBlockPage() {
             Gestisci i blocchi sui campi per impedire le prenotazioni.
           </p>
         </div>
-        <Link
-          href="/dashboard/admin/courts/new"
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-secondary hover:opacity-90 text-white text-sm font-medium rounded-md transition-opacity"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Crea Blocco</span>
-        </Link>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Link
+            href="/dashboard/admin/courts/new"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Crea Blocco
+          </Link>
+        </div>
       </div>
 
       {/* Lista blocchi */}
@@ -324,7 +326,8 @@ export default function CourtsBlockPage() {
                 {/* Blocco principale - CLICCABILE */}
                 <div
                   onClick={() => router.push(`/dashboard/admin/courts/${block.id}`)}
-                  className={`bg-white rounded-md px-4 py-3 ${blockStyle.bgHover} transition-all border-l-4 ${blockStyle.borderColor} cursor-pointer`}
+                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                  style={{ borderLeftColor: "var(--secondary)" }}
                 >
                   <div className="grid grid-cols-[40px_100px_80px_60px_80px_60px_80px_1fr] gap-4 items-center">
                     {/* Icona */}

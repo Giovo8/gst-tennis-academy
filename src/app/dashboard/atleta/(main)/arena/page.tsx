@@ -55,7 +55,6 @@ interface Challenge {
     start_time: string;
     end_time: string;
     status: string;
-    manager_confirmed: boolean;
   };
 }
 

@@ -939,6 +939,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                               setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
                             }}
                             maxAthletes={maxAthletesAllowed}
+                            useSecondaryParticipantBorder
                           />
                         </div>
                       </div>

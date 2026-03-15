@@ -26,6 +26,7 @@ interface AthletesSelectorProps {
   onAthleteAdd: (athlete: SelectedAthlete) => void;
   onAthleteRemove: (index: number) => void;
   maxAthletes?: number;
+  useSecondaryParticipantBorder?: boolean;
 }
 
 export default function AthletesSelector({
@@ -34,6 +35,7 @@ export default function AthletesSelector({
   onAthleteAdd,
   onAthleteRemove,
   maxAthletes = 4,
+  useSecondaryParticipantBorder = false,
 }: AthletesSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
@@ -239,7 +241,11 @@ export default function AthletesSelector({
           </div>
 
           {selectedAthletes.map((athlete, index) => {
-            const borderColor = athlete.isRegistered ? "#08b3f7" : "#056c94";
+            const borderColor = useSecondaryParticipantBorder
+              ? "var(--secondary)"
+              : athlete.isRegistered
+                ? "#08b3f7"
+                : "#056c94";
             const contacts = [athlete.email, athlete.phone].filter(Boolean).join(" ");
 
             return (

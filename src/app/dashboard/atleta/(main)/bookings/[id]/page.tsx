@@ -26,8 +26,6 @@ type Booking = {
   end_time: string;
   status: string;
   type: string;
-  manager_confirmed: boolean;
-  coach_confirmed: boolean;
   notes: string | null;
   created_at: string;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
@@ -124,31 +122,6 @@ export default function BookingDetailPage() {
     }
   }
 
-  async function requestCancellation() {
-    if (!booking) return;
-    if (!confirm("Vuoi richiedere la cancellazione di questa prenotazione? La segreteria dovrà approvarla.")) return;
-
-    setActionLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancellation_requested" })
-        .eq("id", booking.id);
-
-      if (!error) {
-        loadBooking();
-      } else {
-        alert("Errore durante la richiesta di cancellazione");
-      }
-    } catch (error) {
-      console.error("Errore:", error);
-      alert("Errore durante la richiesta di cancellazione");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
   const typeConfig: Record<string, { label: string }> = {
     campo: { label: "Campo" },
     lezione_privata: { label: "Lezione Privata" },
@@ -191,9 +164,7 @@ export default function BookingDetailPage() {
   const isPast = new Date(booking.start_time) < new Date();
   const isCancelled = booking.status === "cancelled";
   const isCancellationRequested = booking.status === "cancellation_requested";
-  const isConfirmed = booking.manager_confirmed;
-  const canCancel = !isCancelled && !isCancellationRequested && !isPast && !isConfirmed;
-  const canRequestCancellation = isConfirmed && !isPast && !isCancelled && !isCancellationRequested;
+  const canCancel = !isCancelled && !isCancellationRequested && !isPast;
 
   // Determina icona in base al tipo
   function getBookingIcon() {
@@ -230,8 +201,7 @@ export default function BookingDetailPage() {
         className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
         style={{ borderLeftColor: (() => {
           if (booking.status === "cancelled" || booking.status === "cancellation_requested") return "#022431";
-          if (!booking.manager_confirmed && booking.status !== "cancelled") return "#056c94";
-          return "#08b3f7";
+          return "var(--secondary)";
         })() }}
       >
         <div className="flex items-start gap-6">
@@ -337,60 +307,15 @@ export default function BookingDetailPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Stato Prenotazione</h2>
         
-        <div className="space-y-6">
-          {/* Conferma Segreteria */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Conferma Segreteria
-            </label>
-            <div className="flex-1">
-              {booking.manager_confirmed ? (
-                <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Confermata
-                </span>
-              ) : (
-                <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
-                  <Clock className="h-5 w-5" />
-                  In attesa di approvazione
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Conferma Maestro - visibile solo per lezioni */}
-          {isLesson && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Conferma Maestro
-              </label>
-              <div className="flex-1">
-                {booking.coach_confirmed ? (
-                  <span className="text-[#08b3f7] font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Confermata
-                  </span>
-                ) : (
-                  <span className="text-[#056c94] font-semibold flex items-center gap-1.5">
-                    <Clock className="h-5 w-5" />
-                    In attesa
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Stato Generale */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Stato Generale
-            </label>
-            <div className="flex-1">
-              <span className="flex items-center gap-2 text-secondary font-semibold">
-                <StatusIcon className="h-5 w-5" />
-                {status.label}
-              </span>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+          <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+            Stato Generale
+          </label>
+          <div className="flex-1">
+            <span className="flex items-center gap-2 text-secondary font-semibold">
+              <StatusIcon className="h-5 w-5" />
+              {status.label}
+            </span>
           </div>
         </div>
       </div>
@@ -417,20 +342,6 @@ export default function BookingDetailPage() {
               <XCircle className="h-5 w-5" />
             )}
             Annulla Prenotazione
-          </button>
-        )}
-        {canRequestCancellation && (
-          <button
-            onClick={requestCancellation}
-            disabled={actionLoading}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg hover:bg-[#056c94]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <AlertCircle className="h-5 w-5" />
-            )}
-            Richiedi Annullamento Prenotazione
           </button>
         )}
         {isCancellationRequested && (

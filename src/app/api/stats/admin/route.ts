@@ -49,12 +49,8 @@ export async function GET(request: NextRequest) {
       .gte("start_time", now)
       .neq("status", "cancelled");
 
-    // 7. Count pending confirmations
-    const { count: pendingBookings } = await supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .eq("manager_confirmed", false)
-      .gte("start_time", now);
+    // 7. Booking confirmations were removed from the booking flow.
+    const pendingBookings = 0;
 
     // 8. Count active courses
     const { count: activeCourses } = await supabase
