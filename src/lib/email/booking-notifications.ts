@@ -213,8 +213,14 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
     const subject = `Nuova prenotazione registrata - ${params.court} - ${dateLabel} ${startLabel}`;
     const athleteRecipient = recipients.find((recipient) => recipient.role === "atleta");
     const gestoriRecipients = recipients.filter((recipient) => recipient.role === "gestore");
+    const maestriRecipients = recipients.filter((recipient) => recipient.role === "maestro");
     const segreteriaRecipient = gestoriRecipients[0];
-    const gestoriCcRecipients = gestoriRecipients.slice(1).map((recipient) => recipient.email);
+    const ccRecipientsForSegreteria = Array.from(
+      new Set([
+        ...gestoriRecipients.slice(1).map((recipient) => recipient.email),
+        ...maestriRecipients.map((recipient) => recipient.email),
+      ])
+    ).filter((email) => email !== segreteriaRecipient?.email);
 
     const deliveryTargets: Array<{ recipient: BookingEmailRecipient; cc?: string[] }> = [];
     if (athleteRecipient) {
@@ -223,7 +229,7 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
     if (segreteriaRecipient) {
       deliveryTargets.push({
         recipient: segreteriaRecipient,
-        cc: gestoriCcRecipients,
+        cc: ccRecipientsForSegreteria,
       });
     }
 
@@ -379,7 +385,7 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
       bookingId: params.bookingId,
       recipients: sentResults.length,
       actorEmail: params.athleteEmail || null,
-      gestoriCcRecipients,
+      ccRecipientsForSegreteria,
       providerMessageIds: sentResults.map((result) => result.providerMessageId).filter(Boolean),
     });
   } catch (error) {
@@ -447,8 +453,14 @@ export async function sendBookingDeletedEmailToRecipients(
     const subject = `Prenotazione eliminata - ${params.court} - ${dateLabel} ${startLabel}`;
     const athleteRecipient = recipients.find((recipient) => recipient.role === "atleta");
     const gestoriRecipients = recipients.filter((recipient) => recipient.role === "gestore");
+    const maestriRecipients = recipients.filter((recipient) => recipient.role === "maestro");
     const segreteriaRecipient = gestoriRecipients[0];
-    const gestoriCcRecipients = gestoriRecipients.slice(1).map((recipient) => recipient.email);
+    const ccRecipientsForSegreteria = Array.from(
+      new Set([
+        ...gestoriRecipients.slice(1).map((recipient) => recipient.email),
+        ...maestriRecipients.map((recipient) => recipient.email),
+      ])
+    ).filter((email) => email !== segreteriaRecipient?.email);
 
     const deliveryTargets: Array<{ recipient: BookingEmailRecipient; cc?: string[] }> = [];
     if (athleteRecipient) {
@@ -457,7 +469,7 @@ export async function sendBookingDeletedEmailToRecipients(
     if (segreteriaRecipient) {
       deliveryTargets.push({
         recipient: segreteriaRecipient,
-        cc: gestoriCcRecipients,
+        cc: ccRecipientsForSegreteria,
       });
     }
 
@@ -617,7 +629,7 @@ export async function sendBookingDeletedEmailToRecipients(
       bookingId: params.bookingId,
       recipients: sentResults.length,
       actorRole: deletedByRole,
-      gestoriCcRecipients,
+      ccRecipientsForSegreteria,
       providerMessageIds: sentResults.map((result) => result.providerMessageId).filter(Boolean),
     });
   } catch (error) {
