@@ -2,6 +2,10 @@ import {
   buildAdminsNotificationForUserBookingDeletion,
   shouldNotifyAdminsForUserBookingDeletion,
 } from "@/lib/bookings/bookingDeletionNotifications";
+import {
+  BOOKING_DELETE_SNAPSHOT_FIELDS,
+  getBookingDeletionMode,
+} from "@/lib/bookings/bookingDeletionEmail";
 
 describe("bookingDeletionNotifications", () => {
   describe("shouldNotifyAdminsForUserBookingDeletion", () => {
@@ -83,6 +87,24 @@ describe("bookingDeletionNotifications", () => {
 
       expect(notification.message).toContain("Un utente");
       expect(notification.message).toContain("prenotazione campo");
+    });
+  });
+
+  describe("booking deletion email helpers", () => {
+    it("loads the full booking snapshot needed for deletion emails", () => {
+      expect(BOOKING_DELETE_SNAPSHOT_FIELDS).toContain("coach_id");
+      expect(BOOKING_DELETE_SNAPSHOT_FIELDS).toContain("type");
+      expect(BOOKING_DELETE_SNAPSHOT_FIELDS).toContain("end_time");
+      expect(BOOKING_DELETE_SNAPSHOT_FIELDS).toContain("notes");
+    });
+
+    it("does not assign a booking mode to private lessons", () => {
+      expect(getBookingDeletionMode("lezione_privata", 4)).toBeUndefined();
+    });
+
+    it("keeps booking mode only for court bookings", () => {
+      expect(getBookingDeletionMode("campo", 2)).toBe("singolo");
+      expect(getBookingDeletionMode("campo", 4)).toBe("doppio");
     });
   });
 });

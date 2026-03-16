@@ -18,6 +18,10 @@ import {
   buildCoachNotificationForPrivateLesson,
   shouldNotifyCoachForPrivateLesson,
 } from "@/lib/bookings/privateLessonNotifications";
+import {
+  BOOKING_DELETE_SNAPSHOT_FIELDS,
+  getBookingDeletionMode,
+} from "@/lib/bookings/bookingDeletionEmail";
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
@@ -615,7 +619,7 @@ export async function DELETE(req: Request) {
     // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
-      .select("user_id, court, start_time")
+      .select(BOOKING_DELETE_SNAPSHOT_FIELDS)
       .eq("id", id)
       .single();
 
@@ -730,9 +734,7 @@ export async function DELETE(req: Request) {
       }
     }
 
-    const bookingMode = booking.type === "campo"
-      ? ((bookingParticipants?.length || 0) > 2 ? "doppio" : "singolo")
-      : undefined;
+    const bookingMode = getBookingDeletionMode(booking.type, bookingParticipants?.length || 0);
 
     await sendBookingDeletedEmailToRecipients({
       bookingId: id,
