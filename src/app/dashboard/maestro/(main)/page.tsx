@@ -1,55 +1,232 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
-  Users,
+  Trophy,
   Video,
-  Clock,
-  ArrowRight,
-  CheckCircle,
-  AlertCircle,
   TrendingUp,
-  Sparkles,
+  Clock,
+  Plus,
+  ArrowRight,
+  Target,
+  Award,
+  BookOpen,
   Zap,
+  Megaphone,
+  Bell,
   Swords,
+  MessageSquare,
+  Users,
+  CheckCircle,
+  Info,
+  AlertCircle,
+  XCircle,
+  X,
+  ExternalLink,
+  Cloud,
+  Sun,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  Wind,
+  Droplets,
+  Thermometer,
+  ChevronRight,
 } from "lucide-react";
 
+
 interface Stats {
-  todayLessons: number;
-  weekLessons: number;
-  studentsCount: number;
-  videosShared: number;
+  upcomingBookings: number;
+  activeTournaments: number;
+  completedLessons: number;
+  arenaActivities: number;
 }
 
-interface Lesson {
+interface Booking {
   id: string;
   court: string;
   type: string;
   start_time: string;
   end_time: string;
   status: string;
-  athlete?: {
+  coach_id?: string | null;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  announcement_type: string;
+  priority: string;
+  created_at: string;
+  is_pinned: boolean;
+  has_viewed?: boolean;
+  link_url?: string | null;
+  link_text?: string | null;
+  expiry_date?: string | null;
+  profiles?: {
     full_name: string;
   };
 }
 
-export default function CoachHomePage() {
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  action_url: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+interface WeatherData {
+  temperature: number;
+  apparentTemperature: number;
+  humidity: number;
+  windSpeed: number;
+  weatherCode: number;
+  isDay: boolean;
+}
+
+interface ForecastDay {
+  date: string;
+  tempMax: number;
+  tempMin: number;
+  weatherCode: number;
+  sunrise: string;
+  sunset: string;
+  uvIndexMax: number;
+  precipitationSum: number;
+  hourly: { time: string; temp: number; weatherCode: number }[];
+}
+
+export default function AtletaDashboard() {
   const [stats, setStats] = useState<Stats>({
-    todayLessons: 0,
-    weekLessons: 0,
-    studentsCount: 0,
-    videosShared: 0,
+    upcomingBookings: 0,
+    activeTournaments: 0,
+    completedLessons: 0,
+    arenaActivities: 0,
   });
-  const [todayLessons, setTodayLessons] = useState<Lesson[]>([]);
+  const [nextBookings, setNextBookings] = useState<Booking[]>([]);
+  const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
+  const [nextEvents, setNextEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState<string>("");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+
+  async function loadWeatherData() {
+    try {
+      const response = await fetch(
+        "https://api.open-meteo.com/v1/forecast?latitude=42.07631852280004&longitude=12.373061355799356&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,uv_index_max,precipitation_sum&hourly=temperature_2m,weather_code&timezone=Europe%2FRome&forecast_days=7"
+      );
+      const data = await response.json();
+
+      if (data.current) {
+        setWeather({
+          temperature: Math.round(data.current.temperature_2m),
+          apparentTemperature: Math.round(data.current.apparent_temperature),
+          humidity: data.current.relative_humidity_2m,
+          windSpeed: Math.round(data.current.wind_speed_10m),
+          weatherCode: data.current.weather_code,
+          isDay: data.current.is_day === 1,
+        });
+      }
+
+      if (data.daily && data.hourly) {
+        const days: ForecastDay[] = data.daily.time.map((date: string, i: number) => {
+          const dayHourly = data.hourly.time
+            .map((t: string, hi: number) => ({ time: t, temp: Math.round(data.hourly.temperature_2m[hi]), weatherCode: data.hourly.weather_code[hi] }))
+            .filter((h: { time: string }) => h.time.startsWith(date));
+          return {
+            date,
+            tempMax: Math.round(data.daily.temperature_2m_max[i]),
+            tempMin: Math.round(data.daily.temperature_2m_min[i]),
+            weatherCode: data.daily.weather_code[i],
+            sunrise: data.daily.sunrise[i],
+            sunset: data.daily.sunset[i],
+            uvIndexMax: Math.round(data.daily.uv_index_max[i]),
+            precipitationSum: data.daily.precipitation_sum[i],
+            hourly: dayHourly,
+          };
+        });
+        setForecast(days);
+      }
+    } catch (error) {
+      console.error("Error loading weather data:", error);
+    }
+    setWeatherLoading(false);
+  }
+
+  function getWeatherInfo(code: number, iconClass = "h-12 w-12 sm:h-8 sm:w-8") {
+    const weatherLabels: Record<number, string> = {
+      0: "Sereno", 1: "Prevalentemente sereno",
+      2: "Parzialmente nuvoloso", 3: "Nuvoloso",
+      45: "Nebbia", 48: "Nebbia con brina",
+      51: "Pioggerella leggera", 53: "Pioggerella", 55: "Pioggerella intensa",
+      61: "Pioggia leggera", 63: "Pioggia", 65: "Pioggia intensa",
+      71: "Neve leggera", 73: "Neve", 75: "Neve intensa",
+      80: "Rovesci leggeri", 81: "Rovesci", 82: "Rovesci violenti",
+      95: "Temporale", 96: "Temporale con grandine", 99: "Temporale con grandine",
+    };
+    const label = weatherLabels[code] || "Sconosciuto";
+
+    const getIcon = (c: number) => {
+      if (c <= 1) return <Sun className={iconClass} />;
+      if (c <= 48) return <Cloud className={iconClass} />;
+      if (c <= 67 || (c >= 80 && c <= 82)) return <CloudRain className={iconClass} />;
+      if (c <= 77) return <CloudSnow className={iconClass} />;
+      return <CloudLightning className={iconClass} />;
+    };
+
+    return { label, icon: getIcon(code) };
+  }
+
+  function formatForecastDate(dateStr: string) {
+    const date = new Date(dateStr + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.getTime() === today.getTime()) return "Oggi";
+    if (date.getTime() === tomorrow.getTime()) return "Domani";
+    return date.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
+  }
+
+  function formatAnnouncementModalDate(dateString: string) {
+    const formatter = new Intl.DateTimeFormat("it-IT", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return formatter
+      .formatToParts(new Date(dateString))
+      .map((part) => {
+        if ((part.type === "weekday" || part.type === "month") && part.value.length > 0) {
+          return part.value.charAt(0).toUpperCase() + part.value.slice(1);
+        }
+
+        return part.value;
+      })
+      .join("");
+  }
 
   async function loadDashboardData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserId(user.id);
 
     // Load profile
     const { data: profile } = await supabase
@@ -58,91 +235,255 @@ export default function CoachHomePage() {
       .eq("id", user.id)
       .single();
 
-    if (profile) setUserName(profile.full_name || "");
+    if (profile) setUserName(profile.full_name || "Atleta");
 
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-    const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7).toISOString();
-
-    // Load today's lessons
-    const { data: todayData, count: todayCount } = await supabase
+    // Load upcoming bookings
+    const now = new Date().toISOString();
+    const { data: bookings, count: bookingsCount } = await supabase
       .from("bookings")
-      .select("id, court, type, start_time, end_time, status, user_id", { count: "exact" })
-      .eq("coach_id", user.id)
+      .select("id, court, type, start_time, end_time, status, coach_id", { count: "exact" })
+      .eq("user_id", user.id)
       .neq("status", "cancelled")
-      .gte("start_time", todayStart)
-      .lt("start_time", todayEnd)
-      .order("start_time", { ascending: true });
+      .gte("start_time", now)
+      .order("start_time", { ascending: true })
+      .limit(3);
 
-    // Load week lessons count
-    const { count: weekCount } = await supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .eq("coach_id", user.id)
-      .neq("status", "cancelled")
-      .gte("start_time", todayStart)
-      .lt("start_time", weekEnd);
+    const bookingIds = (bookings || []).map((booking) => booking.id);
+    const coachIds = Array.from(
+      new Set((bookings || []).map((booking) => booking.coach_id).filter(Boolean))
+    ) as string[];
 
-    // Load athlete names for today's lessons
-    let lessonsWithAthletes: Lesson[] = [];
-    if (todayData && todayData.length > 0) {
-      const athleteIds = todayData.map(l => l.user_id);
-      const { data: athletes } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", athleteIds);
+    const participantsCountByBooking = new Map<string, number>();
+    if (bookingIds.length > 0) {
+      const { data: participants } = await supabase
+        .from("booking_participants")
+        .select("booking_id")
+        .in("booking_id", bookingIds);
 
-      const athleteMap = new Map(athletes?.map(a => [a.id, a.full_name]) || []);
-      
-      lessonsWithAthletes = todayData.map(lesson => ({
-        ...lesson,
-        athlete: { full_name: athleteMap.get(lesson.user_id) || "Atleta" }
-      }));
+      for (const participant of participants || []) {
+        const bookingId = participant.booking_id as string;
+        participantsCountByBooking.set(bookingId, (participantsCountByBooking.get(bookingId) || 0) + 1);
+      }
     }
 
-    // Count shared videos
-    const { count: videosCount } = await supabase
-      .from("video_lessons")
-      .select("*", { count: "exact", head: true })
-      .eq("coach_id", user.id);
+    const coachNameById = new Map<string, string>();
+    if (coachIds.length > 0) {
+      const { data: coaches } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", coachIds);
+
+      for (const coach of coaches || []) {
+        coachNameById.set(coach.id, coach.full_name || "-");
+      }
+    }
+
+    // Load tournament participations
+    const { data: participations } = await supabase
+      .from("tournament_participants")
+      .select("tournament_id")
+      .eq("user_id", user.id);
+    // Load upcoming tournaments
+    const { data: tournaments } = await supabase
+      .from("tournaments")
+      .select("id, title, start_date, category, tournament_type")
+      .in("status", ["Aperto", "Aperte le Iscrizioni", "In Corso"])
+      .gte("start_date", now)
+      .order("start_date", { ascending: true })
+      .limit(10);
+
+
+    // Load completed video lessons count (total assignments)
+    const { count: videoCount } = await supabase
+      .from("video_assignments")
+      .select("id", { count: "exact" })
+      .eq("user_id", user.id);
+
+    // Load arena activities (active challenges)
+    const { count: arenaCount } = await supabase
+      .from("arena_challenges")
+      .select("id", { count: "exact" })
+      .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
+      .in("status", ["pending", "accepted"]);
 
     setStats({
-      todayLessons: todayCount || 0,
-      weekLessons: weekCount || 0,
-      studentsCount: 0,
-      videosShared: videosCount || 0,
+      upcomingBookings: bookingsCount || 0,
+      activeTournaments: participations?.length || 0,
+      completedLessons: videoCount || 0,
+      arenaActivities: arenaCount || 0,
     });
 
-    setTodayLessons(lessonsWithAthletes);
+    // Combine bookings and tournaments into events
+    const events: Event[] = [];
+    
+    // Add bookings as events
+    if (bookings) {
+      bookings.forEach(booking => {
+        events.push({
+          id: booking.id,
+          title: booking.court,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          court: booking.court,
+          type: booking.type,
+          eventType: 'booking',
+          coachName: booking.coach_id ? coachNameById.get(booking.coach_id) || "-" : "-",
+          participantsCount: participantsCountByBooking.get(booking.id) || 0,
+        });
+      });
+    }
+
+    // Add tournaments as events
+    if (tournaments) {
+      tournaments.forEach(tournament => {
+        events.push({
+          id: tournament.id,
+          title: tournament.title,
+          start_time: tournament.start_date,
+          eventType: 'tournament',
+          type: tournament.category || tournament.tournament_type
+        });
+      });
+    }
+
+    // Sort by start_time and limit to 5
+    events.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+    setNextEvents(events.slice(0, 5));
+
+    // Load recent announcements
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: HeadersInit = {};
+    if (session) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+
+    try {
+      const response = await fetch("/api/announcements", { headers });
+      if (response.ok) {
+        const data = await response.json();
+        // Get only the first 3 announcements
+        setRecentAnnouncements((data.announcements || []).slice(0, 3));
+      }
+    } catch (error) {
+      console.error("Error loading announcements:", error);
+    }
+
+    // Load notifications center
+    try {
+      const { data: notifs, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (!error) {
+        setNotifications(notifs || []);
+        setUnreadNotifications((notifs || []).filter((n: any) => !n.is_read).length);
+      }
+    } catch (error) {
+      console.error("Error loading notifications:", error);
+    }
+
     setLoading(false);
   }
 
   useEffect(() => {
     loadDashboardData();
+    loadWeatherData();
   }, []);
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("it-IT", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const weekday = date.toLocaleDateString("it-IT", { weekday: "short" });
+    const day = date.getDate();
+    const month = date.toLocaleDateString("it-IT", { month: "short" });
+
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+
+    return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Buongiorno";
-    if (hour < 18) return "Buon pomeriggio";
-    return "Buonasera";
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
   };
+
+  const formatBookingType = (type?: string) => {
+    if (type === "lezione_privata") return "Lezione Privata";
+    if (type === "lezione_gruppo") return "Lezione Gruppo";
+    return "Campo";
+  };
+
+  const formatBookingMode = (event: Event) => {
+    if (event.eventType !== "booking") return "-";
+    if (event.type === "lezione_privata") return "";
+    return (event.participantsCount || 0) > 2 ? "Doppio" : "Singolo";
+  };
+
+  async function handleAnnouncementClick(announcement: Announcement) {
+    setSelectedAnnouncement(announcement);
+
+    if (!announcement.has_viewed) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: HeadersInit = {};
+        if (session) headers["Authorization"] = `Bearer ${session.access_token}`;
+        await fetch(`/api/announcements/${announcement.id}`, {
+          method: "PATCH",
+          headers,
+        });
+        setRecentAnnouncements(prev => prev.map(a => a.id === announcement.id ? { ...a, has_viewed: true } : a));
+      } catch (e) {
+        console.error("Error marking announcement viewed", e);
+      }
+    }
+  }
+
+  async function handleNotificationClick(notification: Notification) {
+    setSelectedNotification(notification);
+
+    if (!notification.is_read) {
+      try {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("id", notification.id);
+        if (!error) {
+          setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+          setUnreadNotifications(prev => Math.max(0, prev - 1));
+        }
+      } catch (e) {
+        console.error("Error marking notification read", e);
+      }
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+      if (!error) {
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        setUnreadNotifications(0);
+      }
+    } catch (e) {
+      console.error("Error marking all notifications read", e);
+    }
+  }
 
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-24 bg-gray-200 rounded-2xl" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="h-24 bg-gray-200 rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-2xl" />
+            <div key={i} className="h-32 bg-gray-200 rounded-xl" />
           ))}
         </div>
       </div>
@@ -151,202 +492,510 @@ export default function CoachHomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-frozen-200 bg-frozen-50 p-6 sm:p-8">
-        <div className="pointer-events-none absolute left-10 top-5 h-32 w-32 rounded-full blur-3xl bg-frozen-200/40 animate-pulse" />
-        <div className="pointer-events-none absolute right-10 bottom-5 h-24 w-24 rounded-full blur-3xl bg-frozen-200/30 animate-pulse" style={{animationDelay: '1s'}} />
-        
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-frozen-300 bg-frozen-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-frozen-700 mb-3">
-            <Sparkles className="h-3.5 w-3.5" />
-            Area Maestro
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            {getGreeting()}, Coach {userName}! 🎾
+      {/* Modern Header */}
+      <div className="flex flex-col gap-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-1">
+            Bentornato, {userName}
           </h1>
-          <p className="text-gray-600">
-            Gestisci le tue lezioni e i tuoi allievi
+          <p className="text-secondary/70 font-medium text-sm sm:text-base">
+            Ecco il riepilogo della tua attività
           </p>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs text-gray-500">Oggi</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.todayLessons}</p>
-            <p className="text-sm text-gray-600 mt-1">lezioni</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <Link href="/dashboard/maestro/bookings" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <Calendar className="h-8 w-8 text-white" />
           </div>
-        </div>
-
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs text-gray-500">Settimana</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.weekLessons}</p>
-            <p className="text-sm text-gray-600 mt-1">lezioni programmate</p>
+          <div className="flex-1">
+            <p className="text-sm text-white/70">Prenotazioni</p>
+            <h3 className="text-2xl font-bold text-white">{stats.upcomingBookings}</h3>
           </div>
-        </div>
-
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
-                <Users className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs text-gray-500">Allievi</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.studentsCount}</p>
-            <p className="text-sm text-gray-600 mt-1">totali</p>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 hover:border-frozen-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-frozen-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
-                <Video className="h-5 w-5 text-frozen-600" />
-              </div>
-              <span className="text-xs text-gray-500">Video</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.videosShared}</p>
-            <p className="text-sm text-gray-600 mt-1">condivisi</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Link
-          href="/dashboard/maestro/arena"
-          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 hover:shadow-lg transition-all duration-300"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-orange-200 transition-all">
-              <Swords className="h-7 w-7 text-orange-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-lg">Arena</h3>
-              <p className="text-sm text-gray-600">Sfida altri giocatori e scala la classifica</p>
-            </div>
-          </div>
-          <ArrowRight className="relative h-5 w-5 text-gray-400 group-hover:text-orange-600 group-hover:translate-x-1 transition-all" />
         </Link>
 
-        <Link
-          href="/dashboard/maestro/video-lab"
-          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-red-300 hover:shadow-lg transition-all duration-300"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-red-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-red-200 transition-all">
-              <Video className="h-7 w-7 text-red-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-lg">Video Lab</h3>
-              <p className="text-sm text-gray-600">Carica e assegna video ai tuoi allievi</p>
-            </div>
+        <Link href="/dashboard/maestro/tornei" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <Trophy className="h-8 w-8 text-white" />
           </div>
-          <ArrowRight className="relative h-5 w-5 text-gray-400 group-hover:text-red-600 group-hover:translate-x-1 transition-all" />
+          <div className="flex-1">
+            <p className="text-sm text-white/70">Tornei Attivi</p>
+            <h3 className="text-2xl font-bold text-white">{stats.activeTournaments}</h3>
+          </div>
         </Link>
 
-        <Link
-          href="/dashboard/maestro/students"
-          className="group relative overflow-hidden flex items-center justify-between p-5 rounded-2xl border border-gray-200 bg-white hover:border-purple-300 hover:shadow-lg transition-all duration-300"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-200 transition-all">
-              <Users className="h-7 w-7 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-lg">I Miei Allievi</h3>
-              <p className="text-sm text-gray-600">Gestisci i tuoi allievi e le note</p>
-            </div>
+        <Link href="/dashboard/maestro/videos" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <Video className="h-8 w-8 text-white" />
           </div>
-          <ArrowRight className="relative h-5 w-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+          <div className="flex-1">
+            <p className="text-sm text-white/70">Video Completati</p>
+            <h3 className="text-2xl font-bold text-white">{stats.completedLessons}</h3>
+          </div>
+        </Link>
+
+        <Link href="/dashboard/maestro/arena" className="bg-secondary rounded-lg p-4 hover:shadow-md transition-all group flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <Swords className="h-8 w-8 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs text-white/70">Arena</p>
+            <h3 className="text-xl font-bold text-white">{stats.arenaActivities}</h3>
+          </div>
         </Link>
       </div>
 
-      {/* Today's Schedule */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-frozen-100 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-frozen-600" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-gray-900">Lezioni di Oggi</h2>
-              <p className="text-xs text-gray-600">Il tuo programma giornaliero</p>
-            </div>
+      {/* Meteo */}
+      <div className="bg-secondary rounded-xl p-5 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg sm:text-lg">Tennis Club GST</h3>
+            <p className="text-xs sm:text-sm text-white/80">Formello, RM</p>
           </div>
-          <Link
-            href="/dashboard/maestro/agenda"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-frozen-600 bg-frozen-50 border border-frozen-200 hover:bg-frozen-100 transition-all"
-          >
-            Agenda
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+
+          {weatherLoading ? (
+            <div className="flex items-center gap-6 animate-pulse">
+              <div className="h-12 w-24 bg-white/20 rounded" />
+              <div className="h-8 w-8 bg-white/20 rounded-full" />
+            </div>
+          ) : weather ? (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 flex-shrink-0">
+              {/* Mobile Layout */}
+              <div className="sm:hidden flex items-center justify-between gap-4 w-full">
+                <div className="text-left">
+                  <div className="text-4xl font-bold leading-none mb-1">{weather.temperature}°C</div>
+                  <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
+                </div>
+                <div className="text-white flex-shrink-0">
+                  {getWeatherInfo(weather.weatherCode).icon}
+                </div>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center gap-4">
+                <div className="text-left">
+                  <div className="text-4xl font-bold">{weather.temperature}°C</div>
+                  <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
+                </div>
+                <div className="text-white">
+                  {getWeatherInfo(weather.weatherCode).icon}
+                </div>
+              </div>
+
+              {/* Info aggiuntive */}
+              <div className="hidden sm:flex items-center gap-4 pl-6 border-l border-white/20">
+                <div className="text-center">
+                  <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Percepita</p>
+                  <p className="text-sm font-semibold">{weather.apparentTemperature}°C</p>
+                </div>
+                <div className="text-center">
+                  <Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Umidità</p>
+                  <p className="text-sm font-semibold">{weather.humidity}%</p>
+                </div>
+                <div className="text-center">
+                  <Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Vento</p>
+                  <p className="text-sm font-semibold">{weather.windSpeed} km/h</p>
+                </div>
+              </div>
+
+              {/* Mobile info */}
+              <div className="sm:hidden grid grid-cols-3 gap-3 w-full pt-2 border-t border-white/20">
+                <div className="text-center">
+                  <Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Percepita</p>
+                  <p className="text-sm font-semibold">{weather.apparentTemperature}°C</p>
+                </div>
+                <div className="text-center">
+                  <Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Umidità</p>
+                  <p className="text-sm font-semibold">{weather.humidity}%</p>
+                </div>
+                <div className="text-center">
+                  <Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />
+                  <p className="text-xs text-white/70">Vento</p>
+                  <p className="text-sm font-semibold">{weather.windSpeed} km/h</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-white/80">
+              <Cloud className="h-6 w-6" />
+              <p className="text-sm">Meteo non disponibile</p>
+            </div>
+          )}
         </div>
-        
-        {todayLessons.length === 0 ? (
-          <div className="p-8 text-center">
-            <Calendar className="h-14 w-14 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Nessuna lezione oggi</p>
+      </div>
+
+
+      {/* Bacheca */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Annunci */}
+        <div className="px-4 sm:px-6 pt-5 pb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Annunci</h2>
+          {recentAnnouncements.length === 0 ? (
+            <p className="text-sm text-gray-500">Nessun annuncio al momento</p>
+          ) : (
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3 min-w-[500px]">
+
+                {recentAnnouncements.map((announcement) => {
+                  const isUnread = !announcement.has_viewed;
+
+                  return (
+                    <button
+                      key={announcement.id}
+                      type="button"
+                      className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                      style={{ borderLeftColor: isUnread ? "var(--secondary)" : "#9ca3af" }}
+                      onClick={() => handleAnnouncementClick(announcement)}
+                    >
+                      <div className="grid grid-cols-[40px_112px_1fr] items-center gap-4">
+                        <div className="flex items-center justify-center">
+                          <Megaphone className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        </div>
+
+                        <div className="text-sm font-semibold text-secondary">
+                          {formatDate(announcement.created_at)}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-secondary text-sm truncate">{announcement.title}</p>
+                            {announcement.is_pinned && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                                <Zap className="h-3 w-3" />
+                                In evidenza
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <hr className="border-gray-200" />
+
+        {/* Centro Notifiche */}
+        <div className="px-4 sm:px-6 pt-5 pb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Centro Notifiche</h2>
+            {unreadNotifications > 0 && (
+              <button
+                onClick={markAllNotificationsRead}
+                className="text-xs font-semibold text-secondary hover:opacity-80 flex items-center gap-1"
+              >
+                <CheckCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">Segna tutte come lette</span> ({unreadNotifications})
+              </button>
+            )}
           </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {todayLessons.map((lesson) => (
-              <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gray-100 border border-gray-200 flex flex-col items-center justify-center">
-                    <Clock className="h-5 w-5 text-cyan-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {lesson.athlete?.full_name || "Atleta"}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span>{lesson.court}</span>
-                      <span className="text-gray-300">•</span>
-                      <span>{formatTime(lesson.start_time)} - {formatTime(lesson.end_time)}</span>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-500">Nessuna notifica al momento</p>
+          ) : (
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3 min-w-[500px]">
+              {notifications.map((n) => {
+                const isUnread = !n.is_read;
+                const icon = (() => {
+                  switch (n.type) {
+                    case "booking": return <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "tournament": return <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "message": return <MessageSquare className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "course": return <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "success": return <CheckCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "warning": return <AlertCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    case "error": return <XCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                    default: return <Info className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+                  }
+                })();
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                    style={{ borderLeftColor: "var(--secondary)" }}
+                    onClick={() => handleNotificationClick(n)}
+                  >
+                    <div className="grid grid-cols-[40px_112px_1fr] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {icon}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary">
+                        {formatDate(n.created_at)}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-secondary text-sm truncate">{n.title}</p>
+                          {isUnread && (
+                            <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                              Nuova
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  </button>
+                );
+              })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <hr className="border-gray-200" />
+
+        {/* Prossimi Eventi */}
+        <div className="px-4 sm:px-6 pt-5 pb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Prossimi Eventi</h2>
+          {nextEvents.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-500 mb-4">Non hai prossimi appuntamenti</p>
+              <Link
+                href="/dashboard/maestro/bookings/new"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                Prenota Ora
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="space-y-3 min-w-[1040px]">
+                <div className="bg-secondary rounded-lg px-4 py-3 mb-3 border border-secondary">
+                  <div className="grid grid-cols-[40px_1fr_80px_120px_160px_120px_160px] items-center gap-4">
+                    <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Tipo</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Modalità</div>
+                    <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {lesson.status === "confirmed" ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-frozen-100 text-frozen-700 border border-frozen-300">
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      Confermata
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-frozen-100 text-frozen-700 border border-frozen-300">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      In attesa
-                    </span>
-                  )}
-                </div>
+
+                {nextEvents.map((event) => (
+                  <Link
+                    key={event.id}
+                    href={event.eventType === 'booking' ? `/dashboard/maestro/bookings/${event.id}` : `/dashboard/maestro/tornei/${event.id}`}
+                    className="block bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
+                    style={{ borderLeftColor: 'var(--secondary)' }}
+                  >
+                    <div className="grid grid-cols-[40px_1fr_80px_120px_160px_120px_160px] items-center gap-4">
+                      <div className="flex items-center justify-center">
+                        {event.eventType === 'booking' ? (
+                          <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        ) : (
+                          <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        )}
+                      </div>
+
+                      <div className="font-bold text-secondary text-sm">{formatDate(event.start_time)}</div>
+
+                      <div className="text-sm font-semibold text-secondary">{formatTime(event.start_time)}</div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {event.eventType === "booking" ? event.court || "-" : "-"}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {event.eventType === "booking" ? formatBookingType(event.type) : "-"}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {formatBookingMode(event)}
+                      </div>
+
+                      <div className="text-sm font-semibold text-secondary truncate">
+                        {event.eventType === "booking" ? event.coachName || "-" : "-"}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Modal Annuncio */}
+      {selectedAnnouncement && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedAnnouncement(null);
+          }}
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3 min-w-0">
+                <Megaphone className="h-6 w-6 text-white flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedAnnouncement.title}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedAnnouncement(null)}
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 space-y-4">
+              {/* Date and Priority */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm text-secondary/70">
+                  <span>
+                    {formatAnnouncementModalDate(selectedAnnouncement.created_at)}
+                  </span>
+                </div>
+                {selectedAnnouncement.priority === "urgent" && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    URGENTE
+                  </span>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <p className="text-secondary whitespace-pre-wrap leading-relaxed">
+                  {selectedAnnouncement.content}
+                </p>
+              </div>
+
+              {/* Link */}
+              {selectedAnnouncement.link_url && (
+                <a
+                  href={selectedAnnouncement.link_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-lg hover:opacity-90 transition-colors font-medium text-sm"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  {selectedAnnouncement.link_text || "Apri link"}
+                </a>
+              )}
+
+              {/* Author */}
+              {selectedAnnouncement.profiles?.full_name && (
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-xs text-secondary/60 uppercase tracking-wider font-semibold mb-1">Pubblicato da</p>
+                  <p className="text-sm font-medium text-secondary">
+                    {selectedAnnouncement.profiles.full_name}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Notifica */}
+      {selectedNotification && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedNotification(null);
+          }}
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 bg-secondary rounded-t-xl">
+              <div className="flex items-center gap-3 min-w-0">
+                <Bell className="h-6 w-6 text-white flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedNotification.title}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 space-y-4">
+              {/* Date */}
+              <div className="flex items-center gap-2 text-sm text-secondary/70">
+                <Clock className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  {new Date(selectedNotification.created_at).toLocaleDateString("it-IT", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                  })}
+                </span>
+              </div>
+
+              {/* Message */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <p className="text-secondary whitespace-pre-wrap leading-relaxed">
+                  {selectedNotification.message}
+                </p>
+              </div>
+
+              {/* Action Link */}
+              {selectedNotification.action_url && (
+                <a
+                  href={selectedNotification.action_url}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-lg hover:opacity-90 transition-colors font-medium text-sm"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Vai alla pagina
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+interface Tournament {
+  id: string;
+  name: string;
+  start_date: string;
+  category?: string;
+  type?: string;
+}
+
+interface Event {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time?: string;
+  court?: string;
+  type?: string;
+  eventType: 'booking' | 'tournament';
+  coachName?: string;
+  participantsCount?: number;
 }

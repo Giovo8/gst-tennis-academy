@@ -101,7 +101,7 @@ export default function BookingDetailPage() {
       if (error || !bookingData) {
         console.error("Errore caricamento prenotazione:", error);
         alert("Prenotazione non trovata");
-        router.push("/dashboard/atleta/bookings");
+        router.push("/dashboard/maestro/bookings");
         return;
       }
 
@@ -148,7 +148,7 @@ export default function BookingDetailPage() {
     } catch (error) {
       console.error("Errore:", error);
       alert("Errore nel caricamento della prenotazione");
-      router.push("/dashboard/atleta/bookings");
+      router.push("/dashboard/maestro/bookings");
     } finally {
       setLoading(false);
     }
@@ -180,7 +180,7 @@ export default function BookingDetailPage() {
         throw new Error(payload?.error || "Errore durante l'eliminazione");
       }
 
-      router.push("/dashboard/atleta/bookings");
+      router.push("/dashboard/maestro/bookings");
     } catch (error) {
       console.error("Errore:", error);
       alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
@@ -227,11 +227,9 @@ export default function BookingDetailPage() {
   const canCancel = !isCancelled && !isCancellationRequested && !isPast;
   const displayParticipants = getDisplayParticipants(booking);
 
-  // Determina icona e stile in base al tipo
+  // Determina icona in base al tipo
   function getBookingStyle() {
-    if (!booking) {
-      return { icon: Calendar };
-    }
+    if (!booking) return { icon: Calendar };
     if (booking.type === "lezione_privata") return { icon: User };
     if (booking.type === "lezione_gruppo") return { icon: Users };
     if (booking.type === "arena") return { icon: Trophy };
@@ -244,7 +242,7 @@ export default function BookingDetailPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+        <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
         {" › "}
         <span>Dettagli Prenotazione</span>
       </p>

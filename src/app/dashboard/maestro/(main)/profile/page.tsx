@@ -275,7 +275,7 @@ export default function ProfilePage() {
 
       {/* Profile Card */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="relative bg-frozen-500 h-40">
+        <div className="relative bg-secondary h-40">
           {/* Badge Ruolo */}
           <div className="absolute top-4 right-4">
             <span className="px-4 py-2 text-sm font-bold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full rounded-full bg-frozen-500 flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center">
                     <span className="text-4xl font-bold text-white">
                       {getInitials(profile.full_name, profile.email)}
                     </span>
@@ -305,7 +305,7 @@ export default function ProfilePage() {
               <button 
                 onClick={() => setShowAvatarModal(true)}
                 disabled={uploadingAvatar}
-                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-frozen-500 text-white hover:bg-frozen-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-secondary text-white hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadingAvatar ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -326,13 +326,13 @@ export default function ProfilePage() {
       {/* Account Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-frozen-600" />
+          <Shield className="h-5 w-5 text-secondary" />
           Informazioni Account
         </h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-frozen-50 rounded-lg">
-              <Mail className="h-5 w-5 text-frozen-600" />
+            <div className="p-2 bg-secondary/10 rounded-lg">
+              <Mail className="h-5 w-5 text-secondary" />
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Email</p>
@@ -340,8 +340,8 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-frozen-50 rounded-lg">
-              <Calendar className="h-5 w-5 text-frozen-600" />
+            <div className="p-2 bg-secondary/10 rounded-lg">
+              <Calendar className="h-5 w-5 text-secondary" />
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Membro dal</p>
@@ -349,8 +349,8 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-frozen-50 rounded-lg">
-              <CreditCard className="h-5 w-5 text-frozen-600" />
+            <div className="p-2 bg-secondary/10 rounded-lg">
+              <CreditCard className="h-5 w-5 text-secondary" />
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Abbonamento</p>
@@ -360,8 +360,8 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-frozen-50 rounded-lg">
-              <User className="h-5 w-5 text-frozen-600" />
+            <div className="p-2 bg-secondary/10 rounded-lg">
+              <User className="h-5 w-5 text-secondary" />
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Ruolo</p>
@@ -374,7 +374,7 @@ export default function ProfilePage() {
       {/* Edit Form */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <User className="h-5 w-5 text-frozen-600" />
+          <User className="h-5 w-5 text-secondary" />
           Dati Personali
         </h3>
 
@@ -388,7 +388,7 @@ export default function ProfilePage() {
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               placeholder="Mario Rossi"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
             />
           </div>
 
@@ -401,7 +401,7 @@ export default function ProfilePage() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+39 123 456 7890"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
             />
           </div>
 
@@ -413,7 +413,7 @@ export default function ProfilePage() {
               type="date"
               value={formData.birth_date}
               onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
             />
           </div>
 
@@ -426,14 +426,14 @@ export default function ProfilePage() {
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               rows={3}
               placeholder="Scrivi qualcosa su di te..."
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500 resize-none"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary resize-none"
             />
           </div>
 
           <button
             onClick={saveProfile}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -477,7 +477,7 @@ export default function ProfilePage() {
                 </label>
                 <button
                   onClick={() => document.getElementById('avatar-upload')?.click()}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all"
                 >
                   <Upload className="h-5 w-5" />
                   Scegli File
@@ -515,13 +515,13 @@ export default function ProfilePage() {
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-frozen-500 focus:border-frozen-500"
+                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
                     onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
                   />
                   <button
                     onClick={handleAvatarUrl}
                     disabled={!avatarUrl}
-                    className="px-4 py-3 bg-frozen-500 text-white rounded-xl font-semibold hover:bg-frozen-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <LinkIcon className="h-5 w-5" />
                   </button>

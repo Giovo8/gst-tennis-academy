@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -10,35 +10,19 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
+import { isBookableCoachProfile } from "@/lib/roles";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 
 interface Coach {
   id: string;
   full_name: string;
 }
-
-interface Athlete {
-  id: string;
-  full_name: string;
-  email: string;
-  phone?: string | null;
-  role: UserRole;
-}
-
-type SelectedAthlete = {
-  userId?: string;
-  fullName: string;
-  email?: string;
-  phone?: string;
-  isRegistered: boolean;
-};
 
 interface TimeSlot {
   time: string;
@@ -140,36 +124,30 @@ function SearchableSelect({
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", shortLabel: "Campo", icon: "🎾" },
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata", icon: "👤" },
+  { value: "lezione_gruppo", label: "Lezione Gruppo", shortLabel: "Gruppo", icon: "👥" },
 ];
 
-const MATCH_FORMATS = [
-  { value: "singolo", label: "Singolo" },
-  { value: "doppio", label: "Doppio" },
-] as const;
-
-type MatchFormat = (typeof MATCH_FORMATS)[number]["value"];
-
-function NewBookingPageInner() {
+export default function EditBookingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
+  const bookingId = params?.id as string;
+
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [coaches, setCoaches] = useState<Coach[]>([]);
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  const [originalBooking, setOriginalBooking] = useState<any>(null);
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
-  const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourt, setSelectedCourt] = useState("");
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectedCoach, setSelectedCoach] = useState("");
   const [notes, setNotes] = useState("");
-  const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -214,173 +192,85 @@ function NewBookingPageInner() {
       handleMouseUp();
     }
   };
-  const pendingSlotsSelection = useRef<string[]>([]);
-  const urlParamsApplied = useRef<boolean>(false);
-
-  const maxAthletesAllowed =
-    bookingType === "lezione_privata"
-      ? null
-      : bookingType === "campo" && matchFormat === "singolo"
-        ? 2
-        : 4;
 
   // Validation
   const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
-    ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoach));
+    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoach));
 
   useEffect(() => {
-    loadCourtsAndCoaches();
-  }, []);
+    loadInitialData();
+  }, [bookingId]);
 
   useEffect(() => {
-    const loadCurrentUser = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      if (!user) return;
-
-      setCurrentUserId(user.id);
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, phone")
-        .eq("id", user.id)
-        .single();
-
-      const fullName = profile?.full_name || user.email || "Atleta";
-
-      setSelectedAthletes((prev) => {
-        if (prev.some((athlete) => athlete.userId === user.id)) {
-          return prev;
-        }
-        return [
-          {
-            userId: user.id,
-            fullName,
-            email: user.email || undefined,
-            phone: profile?.phone || undefined,
-            isRegistered: true,
-          },
-          ...prev,
-        ];
-      });
-    };
-
-    void loadCurrentUser();
-  }, []);
-
-  // Mantiene il numero partecipanti coerente con il tipo prenotazione selezionato.
-  useEffect(() => {
-    setSelectedAthletes((prev) => {
-      if (maxAthletesAllowed === null) {
-        return prev;
-      }
-
-      if (prev.length <= maxAthletesAllowed) {
-        return prev;
-      }
-
-      const currentAthlete = currentUserId
-        ? prev.find((athlete) => athlete.userId === currentUserId)
-        : undefined;
-      const otherAthletes = currentAthlete
-        ? prev.filter((athlete) => athlete.userId !== currentUserId)
-        : prev;
-
-      if (!currentAthlete) {
-        return prev.slice(0, maxAthletesAllowed);
-      }
-
-      return [currentAthlete, ...otherAthletes.slice(0, maxAthletesAllowed - 1)];
-    });
-  }, [currentUserId, maxAthletesAllowed]);
-
-  // Apply URL parameters after courts are loaded
-  useEffect(() => {
-    if (courtsLoading || urlParamsApplied.current) return;
-
-    const courtParam = searchParams.get('court');
-    const dateParam = searchParams.get('date');
-    const timesParam = searchParams.get('times');
-
-    // Only apply if there are URL parameters to apply
-    if (!courtParam && !dateParam && !timesParam) {
-      // No URL params, just set default court
-      if (courts.length > 0 && !selectedCourt) {
-        setSelectedCourt(courts[0]);
-      }
-      return;
-    }
-
-    if (courtParam && courts.includes(courtParam)) {
-      setSelectedCourt(courtParam);
-    } else if (courts.length > 0 && !selectedCourt) {
-      setSelectedCourt(courts[0]);
-    }
-
-    if (dateParam) {
-      const parsedDate = new Date(dateParam + 'T12:00:00');
-      if (!isNaN(parsedDate.getTime())) {
-        setSelectedDate(parsedDate);
-      }
-    }
-
-    if (timesParam) {
-      const times = timesParam.split(',').filter(Boolean);
-      pendingSlotsSelection.current = times;
-    }
-
-    urlParamsApplied.current = true;
-  }, [courtsLoading, courts, searchParams]);
-
-  useEffect(() => {
-    if (selectedDate && selectedCourt) {
-      // Reset selected slots when date or court changes (unless we have pending slots from URL)
-      if (pendingSlotsSelection.current.length === 0) {
-        setSelectedSlots([]);
-      }
+    if (selectedDate && selectedCourt && !loading) {
       loadAvailableSlots();
     }
-  }, [selectedDate, selectedCourt]);
+  }, [selectedDate, selectedCourt, loading]);
 
-  // Apply pending slots selection after slots are loaded
-  useEffect(() => {
-    // Only proceed if we have pending slots
-    if (pendingSlotsSelection.current.length === 0) return;
-
-    // Wait for slots to finish loading
-    if (loadingSlots) return;
-
-    // Must have slots loaded to proceed
-    if (slots.length === 0) return;
-
-    // Filter only available slots
-    const slotsToSelect = pendingSlotsSelection.current;
-    const availableSlots = slotsToSelect.filter(time => {
-      const slot = slots.find(s => s.time === time);
-      return slot && slot.available;
-    });
-
-    // Clear pending slots after attempting selection
-    pendingSlotsSelection.current = [];
-
-    if (availableSlots.length > 0) {
-      setSelectedSlots(availableSlots);
-
-      // Remove URL parameters after successfully applying the slots
-      setTimeout(() => {
-        router.replace('/dashboard/maestro/bookings/new', { scroll: false });
-      }, 100);
-    }
-  }, [slots, loadingSlots, router]);
-
-  async function loadCourtsAndCoaches() {
-    setCourtsLoading(true);
+  async function loadInitialData() {
+    setLoading(true);
     try {
-      // Load courts
+      // Verifica utente
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setError("La modifica della prenotazione non è consentita agli atleti");
+      router.replace("/dashboard/maestro/bookings");
+      return;
+
+      // Carica prenotazione esistente
+      const { data: bookingData, error: bookingError } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("id", bookingId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (bookingError || !bookingData) {
+        setError("Prenotazione non trovata");
+        router.push("/dashboard/maestro/bookings");
+        return;
+      }
+
+      // Verifica che la prenotazione sia modificabile
+      const isPast = new Date(bookingData.start_time) < new Date();
+      if (bookingData.status === "cancelled" || isPast) {
+        setError("Questa prenotazione non può essere modificata");
+        router.push("/dashboard/maestro/bookings");
+        return;
+      }
+
+      setOriginalBooking(bookingData);
+
+      // Popola il form con i dati esistenti
+      setBookingType(bookingData.type);
+      setSelectedCourt(bookingData.court);
+      setSelectedCoach(bookingData.coach_id || "");
+      setNotes(bookingData.notes || "");
+
+      // Estrai data e slot dalla prenotazione esistente
+      const startTime = new Date(bookingData.start_time);
+      const endTime = new Date(bookingData.end_time);
+      setSelectedDate(startTime);
+
+      // Calcola gli slot selezionati
+      const slotsFromBooking: string[] = [];
+      const current = new Date(startTime);
+      while (current < endTime) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        slotsFromBooking.push(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+      setSelectedSlots(slotsFromBooking);
+
+      // Carica campi e maestri
       const courtsData = await getCourts();
       setCourts(courtsData);
 
-      // Load coaches
       const { data: coachData } = await supabase
         .from("profiles")
         .select("id, full_name, role, metadata")
@@ -395,18 +285,12 @@ function NewBookingPageInner() {
         setCoaches(eligibleCoaches);
       }
 
-      // Load athletes for participant selection
-      const { data: athleteData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone, role")
-        .eq("role", "atleta")
-        .order("full_name");
-
-      if (athleteData) setAthletes(athleteData);
-    } catch (error) {
-      console.error("Error loading data:", error);
+    } catch (err) {
+      console.error("Error loading data:", err);
+      setError("Errore nel caricamento dei dati");
     } finally {
       setCourtsLoading(false);
+      setLoading(false);
     }
   }
 
@@ -417,29 +301,69 @@ function NewBookingPageInner() {
 
     const dateStr = selectedDate.toISOString().split("T")[0];
 
-    // Usa l'API server-side (service role) per ottenere tutte le occupazioni del campo,
-    // aggirando la RLS che limiterebbe l'atleta a vedere solo le proprie prenotazioni.
-    let allOccupations: any[] = [];
-    try {
-      const res = await fetch(
-        `/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(selectedCourt)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        allOccupations = data.bookings ?? [];
-      }
-    } catch (err) {
-      console.error("Error fetching availability:", err);
-    }
+    // Get existing bookings for this court and date (excluding current booking)
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("id, user_id, coach_id, start_time, end_time, type, status")
+      .eq("court", selectedCourt)
+      .neq("status", "cancelled")
+      .neq("id", bookingId) // Escludi la prenotazione corrente
+      .gte("start_time", `${dateStr}T00:00:00`)
+      .lte("start_time", `${dateStr}T23:59:59`);
 
-    setExistingBookings(allOccupations);
+    // Get court blocks for this court and date
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: courtBlocks } = await supabase
+      .from("court_blocks")
+      .select("id, start_time, end_time, reason")
+      .eq("court_id", selectedCourt)
+      .gte("start_time", startOfDay.toISOString())
+      .lte("start_time", endOfDay.toISOString());
+
+    // Build enriched bookings for display
+    const enrichedBookings = bookings?.map(booking => ({
+      ...booking,
+      isBlock: false
+    })) || [];
+
+    // Add court blocks as fake bookings
+    const blocksAsBookings = courtBlocks?.map(block => ({
+      id: block.id,
+      start_time: block.start_time,
+      end_time: block.end_time,
+      type: "blocco",
+      status: "blocked",
+      reason: block.reason,
+      isBlock: true
+    })) || [];
+
+    setExistingBookings([...enrichedBookings, ...blocksAsBookings]);
 
     // Build occupied half-hour slots set
     const occupiedSlots = new Set<string>();
 
-    allOccupations.forEach(b => {
+    // Mark slots occupied by bookings (excluding current)
+    bookings?.forEach(b => {
       const start = new Date(b.start_time);
       const end = new Date(b.end_time);
+
+      const current = new Date(start);
+      while (current < end) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        occupiedSlots.add(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+    });
+
+    // Mark slots occupied by court blocks
+    courtBlocks?.forEach(block => {
+      const start = new Date(block.start_time);
+      const end = new Date(block.end_time);
 
       const current = new Date(start);
       while (current < end) {
@@ -526,26 +450,16 @@ function NewBookingPageInner() {
     const newDate = new Date(selectedDate);
     newDate.setFullYear(year, month - 1, day);
     setSelectedDate(newDate);
+    setSelectedSlots([]); // Reset slot quando cambia la data
   };
 
   async function handleSubmit() {
-    if (selectedAthletes.length === 0 || !selectedDate || !selectedCourt || selectedSlots.length === 0) {
+    if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
       setError("Completa tutti i campi obbligatori");
       return;
     }
 
-    if (maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
-      setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
-      return;
-    }
-
-    const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
-    if (!registeredAthlete || !registeredAthlete.userId) {
-      setError("Completa tutti i campi obbligatori");
-      return;
-    }
-
-    if (bookingType === "lezione_privata" && !selectedCoach) {
+    if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !selectedCoach) {
       setError("Seleziona un maestro per le lezioni");
       return;
     }
@@ -556,13 +470,6 @@ function NewBookingPageInner() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Utente non autenticato");
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      if (!token) {
-        throw new Error("Sessione scaduta, effettua di nuovo il login.");
-      }
 
       const orderedSlots = [...selectedSlots].sort((a, b) => {
         const [hA, mA] = a.split(":").map(Number);
@@ -577,68 +484,68 @@ function NewBookingPageInner() {
       const durationMinutes = orderedSlots.length * 30;
       endTime.setMinutes(startTime.getMinutes() + durationMinutes);
 
-      const bookingData = {
-        user_id: user.id,
+      const updateData = {
         coach_id: selectedCoach || null,
         court: selectedCourt,
         type: bookingType,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: "confirmed",
         notes: notes || null,
-        participants: selectedAthletes.map((athlete) => ({
-          user_id: athlete.userId || null,
-          full_name: athlete.fullName,
-          email: athlete.email || null,
-          phone: athlete.phone || null,
-          is_registered: athlete.isRegistered,
-        })),
+        status: "confirmed",
       };
 
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(bookingData),
-      });
+      const { error: updateError } = await supabase
+        .from("bookings")
+        .update(updateData)
+        .eq("id", bookingId)
+        .eq("user_id", user.id);
 
-      if (!response.ok) {
-        let errorMessage = "Errore nella creazione della prenotazione";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // ignore
-        }
-        throw new Error(errorMessage);
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
-      setSuccess("Prenotazione creata con successo!");
+      setSuccess("Prenotazione modificata con successo!");
       setTimeout(() => {
         router.push("/dashboard/maestro/bookings");
       }, 1500);
     } catch (err: any) {
-      setError(err.message || "Errore nella creazione della prenotazione");
+      setError(err.message || "Errore nella modifica della prenotazione");
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+        <p className="mt-4 text-secondary/60">Caricamento...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-          {" › "}
-          <span>Nuova Prenotazione</span>
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Nuova Prenotazione</h1>
-        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-          Seleziona giorno, campo e slot. Per le lezioni private scegli il maestro.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p className="breadcrumb text-secondary/60">
+            <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+            {" › "}
+            <span>Modifica</span>
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica Prenotazione</h1>
+          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
+            Modifica i dettagli della tua prenotazione.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/maestro/bookings"
+          className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all self-start"
+          title="Torna alla lista"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
       </div>
 
       {/* Messages */}
@@ -672,7 +579,10 @@ function NewBookingPageInner() {
           {/* Selettore Data */}
           <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
             <button
-              onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+              onClick={() => {
+                setSelectedDate(addDays(selectedDate, -1));
+                setSelectedSlots([]);
+              }}
               className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
@@ -698,14 +608,17 @@ function NewBookingPageInner() {
                 onChange={(e) => handleDateInputChange(e.target.value)}
                 className="absolute opacity-0 pointer-events-none"
               />
-              <h2 className="text-base sm:text-lg font-bold text-white">
-                <span className="hidden sm:inline capitalize">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
-                <span className="sm:hidden capitalize">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
+              <h2 className="text-base sm:text-lg font-bold capitalize text-white">
+                <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
+                <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
               </h2>
             </div>
 
             <button
-              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              onClick={() => {
+                setSelectedDate(addDays(selectedDate, 1));
+                setSelectedSlots([]);
+              }}
               className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
@@ -730,14 +643,14 @@ function NewBookingPageInner() {
                 <div className="space-y-6 mt-6">
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
-                    <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
+                    <div className="flex-1 flex gap-2 sm:gap-3">
                       {BOOKING_TYPES.map((type) => (
                         <button
                           key={type.value}
                           type="button"
                           onClick={() => setBookingType(type.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                          className={`px-3 sm:px-5 py-2 text-sm rounded-lg border transition-all ${
                             bookingType === type.value
                               ? 'bg-secondary text-white border-secondary'
                               : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -750,62 +663,41 @@ function NewBookingPageInner() {
                     </div>
                   </div>
 
-                  {/* Modalita campo */}
-                  {bookingType === "campo" && (
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
-                      <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                        {MATCH_FORMATS.map((formatOption) => (
+                  {/* Campo */}
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo *</label>
+                    <div className="flex-1 flex flex-wrap gap-2 sm:gap-3">
+                      {courtsLoading ? (
+                        <div className="flex items-center gap-2 text-secondary/60">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm">Caricamento campi...</span>
+                        </div>
+                      ) : (
+                        courts.map((court) => (
                           <button
-                            key={formatOption.value}
+                            key={court}
                             type="button"
-                            onClick={() => setMatchFormat(formatOption.value)}
-                            className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                              matchFormat === formatOption.value
+                            onClick={() => {
+                              setSelectedCourt(court);
+                              setSelectedSlots([]);
+                            }}
+                            className={`px-4 sm:px-5 py-2 text-sm rounded-lg border transition-all ${
+                              selectedCourt === court
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
                             }`}
                           >
-                            {formatOption.label}
+                            {court}
                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Partecipanti */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
-                    <div className="flex-1">
-                      <AthletesSelector
-                        athletes={athletes.filter((a) => a.id !== currentUserId)}
-                        selectedAthletes={selectedAthletes}
-                        onAthleteAdd={(athlete) => {
-                          if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
-                            setSelectedAthletes([...selectedAthletes, athlete]);
-                          }
-                        }}
-                        onAthleteRemove={(index) => {
-                          const athlete = selectedAthletes[index];
-                          if (athlete?.userId && athlete.userId === currentUserId) {
-                            return;
-                          }
-                          setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                        }}
-                        maxAthletes={maxAthletesAllowed}
-                      />
-                      <p className="mt-2 text-xs text-gray-500">
-                        {maxAthletesAllowed === null
-                          ? "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
-                          : `Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a ${maxAthletesAllowed - 1} ${(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.`}
-                      </p>
+                        ))
+                      )}
                     </div>
                   </div>
 
-                  {/* Maestro - solo per lezione privata */}
-                  {bookingType === "lezione_privata" && (
+                  {/* Maestro se necessario */}
+                  {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
+                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro *</label>
                       <div className="flex-1">
                         <SearchableSelect
                           value={selectedCoach}
@@ -820,34 +712,6 @@ function NewBookingPageInner() {
                       </div>
                     </div>
                   )}
-
-                  {/* Campo */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                    <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                      {courtsLoading ? (
-                        <div className="flex items-center gap-2 text-secondary/60">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-sm">Caricamento campi...</span>
-                        </div>
-                      ) : (
-                        courts.map((court) => (
-                          <button
-                            key={court}
-                            type="button"
-                            onClick={() => setSelectedCourt(court)}
-                            className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                              selectedCourt === court
-                                ? 'bg-secondary text-white border-secondary'
-                                : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                            }`}
-                          >
-                            {court}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
 
                   {/* Note */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -907,23 +771,34 @@ function NewBookingPageInner() {
                         const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
                         const duration = endSlot - startSlot;
 
-                        const getBookingStyle = () => ({
-                          background: "var(--secondary)",
-                        });
+                        const getBookingStyle = () => {
+                          if (booking.isBlock) {
+                            return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
+                          }
+                          return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
+                        };
+
+                        const getBookingLabel = () => {
+                          if (booking.isBlock) return booking.reason || "BLOCCATO";
+                          return "Occupato";
+                        };
 
                         return (
                           <div
                             key={booking.id}
-                            className="absolute rounded-md z-10"
+                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10"
                             style={{
                               ...getBookingStyle(),
                               left: `${(startSlot / 32) * 100}%`,
-                              width: `calc(${(duration / 32) * 100}% - 4px)`,
+                              width: `${(duration / 32) * 100}%`,
                               top: '4px',
-                              bottom: '4px',
-                              marginLeft: '2px'
+                              bottom: '4px'
                             }}
-                          />
+                          >
+                            <div className="truncate leading-tight uppercase tracking-wider">
+                              {getBookingLabel()}
+                            </div>
+                          </div>
                         );
                       })}
 
@@ -1001,12 +876,12 @@ function NewBookingPageInner() {
             {submitting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Creazione...</span>
+                <span>Salvataggio...</span>
               </>
             ) : (
               <>
                 <CheckCircle className="h-5 w-5" />
-                <span>Conferma Prenotazione</span>
+                <span>Salva Modifiche</span>
               </>
             )}
           </button>
@@ -1016,17 +891,5 @@ function NewBookingPageInner() {
       {/* Bottom Spacer */}
       <div className="h-8" />
     </div>
-  );
-}
-
-export default function NewBookingPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
-      </div>
-    }>
-      <NewBookingPageInner />
-    </Suspense>
   );
 }

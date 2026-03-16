@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
+﻿import { ReactNode } from "react";
 
-export default function CoachMainLayout({ children }: { children: ReactNode }) {
-  // CoachLayout is now applied at the parent level (/dashboard/maestro/layout.tsx)
+export default function MaestroMainLayout({ children }: { children: ReactNode }) {
+  // MaestroAthleteLayout is now applied at the parent level (/dashboard/maestro/layout.tsx)
   return children;
 }
