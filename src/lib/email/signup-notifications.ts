@@ -75,7 +75,7 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
 
     const recipientEmails = recipients.map((recipient) => recipient.email);
     const registeredAtLabel = new Date().toLocaleString("it-IT");
-    const appBaseUrl = env.appUrl.replace(/\/$/, "");
+    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const userUrl = `${appBaseUrl}${getUsersDashboardLinkForRole("gestore", params.userId)}`;
     const usersUrl = `${appBaseUrl}${getUsersDashboardLinkForRole("gestore")}`;
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;

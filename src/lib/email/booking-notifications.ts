@@ -159,7 +159,7 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
     });
     const createdAtLabel = new Date().toLocaleString("it-IT");
 
-    const appBaseUrl = env.appUrl.replace(/\/$/, "");
+    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
@@ -356,7 +356,7 @@ export async function sendBookingDeletedEmailToRecipients(
     });
     const deletedAtLabel = new Date().toLocaleString("it-IT");
 
-    const appBaseUrl = env.appUrl.replace(/\/$/, "");
+    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
