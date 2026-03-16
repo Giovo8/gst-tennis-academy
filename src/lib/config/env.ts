@@ -5,6 +5,9 @@
 
 import { z } from 'zod';
 
+const DEFAULT_PRODUCTION_APP_URL = 'https://www.gstacademy.it';
+const DEFAULT_DEVELOPMENT_APP_URL = 'http://localhost:3000';
+
 // Check if we're on the client side
 const isClient = typeof window !== 'undefined';
 
@@ -131,7 +134,7 @@ class EnvironmentConfig {
   }
 
   public get appUrl(): string {
-    return this.get('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+    return this.get('NEXT_PUBLIC_APP_URL') || (this.isProduction ? DEFAULT_PRODUCTION_APP_URL : DEFAULT_DEVELOPMENT_APP_URL);
   }
 
   // Supabase

@@ -6,7 +6,10 @@ import { Bell, Mail, Trophy, Megaphone, Calendar, Video } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
-import { getMessageNotificationLink } from "@/lib/notifications/links";
+import {
+  getMessageNotificationLink,
+  resolveDashboardLinkForRole,
+} from "@/lib/notifications/links";
 
 interface Notification {
   id: string;
@@ -60,14 +63,16 @@ export default function NotificationsDropdown() {
       return getMessageNotificationLink(currentUserRole);
     }
 
+    let targetLink = notification.link || null;
+
     if (notification.type === "booking" && notification.link === "/dashboard/admin/bookings") {
       const bookingSearchLink = buildBookingSearchLink(notification.message);
       if (bookingSearchLink) {
-        return bookingSearchLink;
+        targetLink = bookingSearchLink;
       }
     }
 
-    return notification.link || null;
+    return resolveDashboardLinkForRole(targetLink, currentUserRole);
   }
 
   function buildBookingSearchLink(message: string): string | null {

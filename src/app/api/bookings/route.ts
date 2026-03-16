@@ -3,14 +3,21 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { logActivityServer } from "@/lib/activity/logActivity";
-import { sendBookingCreatedEmailToGestore } from "@/lib/email/booking-notifications";
+import {
+  sendBookingCreatedEmailToGestore,
+  sendBookingDeletedEmailToRecipients,
+} from "@/lib/email/booking-notifications";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
 import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import {
-  buildAdminsNotificationForAthleteBookingDeletion,
-  shouldNotifyAdminsForAthleteBookingDeletion,
+  buildAdminsNotificationForUserBookingDeletion,
+  shouldNotifyAdminsForUserBookingDeletion,
 } from "@/lib/bookings/bookingDeletionNotifications";
+import {
+  buildCoachNotificationForPrivateLesson,
+  shouldNotifyCoachForPrivateLesson,
+} from "@/lib/bookings/privateLessonNotifications";
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
@@ -321,6 +328,30 @@ export async function POST(req: Request) {
         .eq("id", user_id)
         .single();
 
+      if (shouldNotifyCoachForPrivateLesson({ bookingType: booking.type, coachId: booking.coach_id })) {
+        const coachNotification = buildCoachNotificationForPrivateLesson({
+          athleteName: userProfile?.full_name || profile?.full_name || user.email || "Un utente",
+          court: booking.court,
+          startTime: booking.start_time,
+        });
+
+        const { error: coachNotificationError } = await supabaseServer
+          .from("notifications")
+          .insert({
+            user_id: booking.coach_id,
+            ...coachNotification,
+            is_read: false,
+          });
+
+        if (coachNotificationError) {
+          logger.warn("Failed to create coach private lesson notification", {
+            bookingId: booking.id,
+            coachId: booking.coach_id,
+            error: coachNotificationError.message,
+          });
+        }
+      }
+
       await notifyAdmins({
         type: "booking",
         title: "Nuova prenotazione",
@@ -330,12 +361,46 @@ export async function POST(req: Request) {
 
       // Send email only when an athlete creates the booking
       if (profile?.role === "atleta") {
-        const bookingMode = participants && participants.length > 2 ? "doppio" : "singolo";
+        const athleteDisplayName = userProfile?.full_name || profile.full_name || "Un atleta";
+        const bookingMode = booking.type === "campo"
+          ? (participants && participants.length > 2 ? "doppio" : "singolo")
+          : undefined;
+        const normalizedAthleteName = athleteDisplayName.trim().toLowerCase();
+        const additionalAthleteNames = Array.from(
+          new Set(
+            (participants || [])
+              .map((participant) => participant.full_name?.trim())
+              .filter((name): name is string => Boolean(name))
+              .filter((name) => name.toLowerCase() !== normalizedAthleteName)
+          )
+        );
+
+        let coachName: string | null = null;
+        if (booking.type === "lezione_privata" && booking.coach_id) {
+          const { data: coachProfile, error: coachProfileError } = await supabaseServer
+            .from("profiles")
+            .select("full_name")
+            .eq("id", booking.coach_id)
+            .single();
+
+          if (coachProfileError) {
+            logger.warn("Failed to resolve coach name for booking email", {
+              bookingId: booking.id,
+              coachId: booking.coach_id,
+              error: coachProfileError.message,
+            });
+          } else {
+            coachName = coachProfile?.full_name?.trim() || null;
+          }
+        }
 
         await sendBookingCreatedEmailToGestore({
           bookingId: booking.id,
-          athleteName: userProfile?.full_name || profile.full_name || "Un atleta",
+          athleteName: athleteDisplayName,
           athleteEmail: userProfile?.email || user.email || null,
+          additionalAthleteNames,
+          coachId: booking.coach_id || null,
+          coachName,
           court: booking.court,
           type: booking.type || "campo",
           bookingMode,
@@ -409,7 +474,7 @@ export async function PUT(req: Request) {
     // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
-      .select("user_id, court, start_time")
+      .select("user_id, coach_id, court, type, start_time, end_time, notes")
       .eq("id", id)
       .single();
 
@@ -578,14 +643,28 @@ export async function DELETE(req: Request) {
     const deletedByManager = isAdminOrGestore(profile?.role) && booking.user_id !== user.id;
     const deletedByOwner = booking.user_id === user.id;
 
+    const { data: bookingParticipants, error: bookingParticipantsError } = await supabaseServer
+      .from("booking_participants")
+      .select("full_name, order_index")
+      .eq("booking_id", id)
+      .order("order_index", { ascending: true });
+
+    if (bookingParticipantsError) {
+      logger.warn("Failed to fetch booking participants before deletion email", {
+        bookingId: id,
+        error: bookingParticipantsError.message,
+      });
+    }
+
     let shouldNotifyAthlete = false;
     let bookingOwnerRole: string | null = null;
     let bookingOwnerFullName: string | null = null;
+    let bookingOwnerEmail: string | null = null;
 
     if (deletedByManager || deletedByOwner) {
       const { data: ownerProfile, error: ownerProfileError } = await supabaseServer
         .from("profiles")
-        .select("role, full_name")
+        .select("role, full_name, email")
         .eq("id", booking.user_id)
         .single();
 
@@ -598,12 +677,13 @@ export async function DELETE(req: Request) {
       } else {
         bookingOwnerRole = ownerProfile?.role || null;
         bookingOwnerFullName = ownerProfile?.full_name || null;
+        bookingOwnerEmail = ownerProfile?.email || null;
       }
 
       shouldNotifyAthlete = deletedByManager && ownerProfile?.role === "atleta";
     }
 
-    const shouldNotifyAdmins = shouldNotifyAdminsForAthleteBookingDeletion({
+    const shouldNotifyAdmins = shouldNotifyAdminsForUserBookingDeletion({
       actorUserId: user.id,
       bookingOwnerId: booking.user_id,
       actorRole: profile?.role,
@@ -619,6 +699,57 @@ export async function DELETE(req: Request) {
         { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
+
+    const bookingOwnerDisplayName = bookingOwnerFullName || user.email || "Un utente";
+    const normalizedOwnerName = bookingOwnerDisplayName.trim().toLowerCase();
+    const additionalAthleteNames: string[] = Array.from(
+      new Set<string>(
+        (bookingParticipants || [])
+          .map((participant) => participant.full_name?.trim())
+          .filter((name): name is string => Boolean(name))
+          .filter((name) => name.toLowerCase() !== normalizedOwnerName)
+      )
+    );
+
+    let coachName: string | null = null;
+    if (booking.type === "lezione_privata" && booking.coach_id) {
+      const { data: coachProfile, error: coachProfileError } = await supabaseServer
+        .from("profiles")
+        .select("full_name")
+        .eq("id", booking.coach_id)
+        .single();
+
+      if (coachProfileError) {
+        logger.warn("Failed to resolve coach name for booking deletion email", {
+          bookingId: id,
+          coachId: booking.coach_id,
+          error: coachProfileError.message,
+        });
+      } else {
+        coachName = coachProfile?.full_name?.trim() || null;
+      }
+    }
+
+    const bookingMode = booking.type === "campo"
+      ? ((bookingParticipants?.length || 0) > 2 ? "doppio" : "singolo")
+      : undefined;
+
+    await sendBookingDeletedEmailToRecipients({
+      bookingId: id,
+      athleteName: bookingOwnerDisplayName,
+      athleteEmail: bookingOwnerEmail || (deletedByOwner ? user.email : null),
+      additionalAthleteNames,
+      coachId: booking.coach_id || null,
+      coachName,
+      court: booking.court,
+      type: booking.type || "campo",
+      bookingMode,
+      startTime: booking.start_time,
+      endTime: booking.end_time || booking.start_time,
+      notes: booking.notes || null,
+      deletedByName: profile?.full_name || user.email || "Utente piattaforma",
+      deletedByRole: profile?.role || "utente",
+    });
     
     if (shouldNotifyAthlete) {
       const actorRoleLabel = profile?.role === "admin" ? "admin" : "gestore";
@@ -654,8 +785,8 @@ export async function DELETE(req: Request) {
     }
 
     if (shouldNotifyAdmins) {
-      const notification = buildAdminsNotificationForAthleteBookingDeletion({
-        athleteName: bookingOwnerFullName || profile?.full_name || user.email || "Un atleta",
+      const notification = buildAdminsNotificationForUserBookingDeletion({
+        userName: bookingOwnerFullName || profile?.full_name || user.email || "Un utente",
         court: booking.court,
         startTime: booking.start_time,
       });

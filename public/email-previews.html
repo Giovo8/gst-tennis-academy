@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutte le Anteprime Email - GST Academy</title>
+  <style>
+    :root {
+      --primary: #034863;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #dbe7ef;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; color: var(--text); padding: 28px 16px; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 { margin: 0 0 10px; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: 0 10px 30px rgba(3,72,99,.08); }
+    .card h2 { margin: 0 0 8px; font-size: 18px; }
+    .card p { margin: 0 0 14px; font-size: 14px; }
+    .link { display: block; width: 100%; text-align: center; text-decoration: none; background: var(--primary); color: #fff; padding: 11px 14px; border-radius: 10px; font-weight: 600; margin-bottom: 10px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Tutte le anteprime email</h1>
+    <p>Indice rapido delle preview disponibili per registrazione utente, prenotazione creata ed eliminazione prenotazione.</p>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Prenotazione creata</h2>
+        <p>Anteprima singola e pagina con tutti i casi.</p>
+        <a class="link" href="/booking-email-preview.html">Apri anteprima singola</a>
+        <a class="link" href="/booking-email-preview-all-cases.html">Apri tutti i casi</a>
+      </article>
+
+      <article class="card">
+        <h2>Prenotazione eliminata</h2>
+        <p>Anteprima singola e pagina con tutti i casi.</p>
+        <a class="link" href="/booking-deletion-email-preview.html">Apri anteprima singola</a>
+        <a class="link" href="/booking-deletion-email-preview-all-cases.html">Apri tutti i casi</a>
+      </article>
+
+      <article class="card">
+        <h2>Registrazione utente</h2>
+        <p>Mail inviata ai gestori quando un utente si registra.</p>
+        <a class="link" href="/signup-email-preview.html">Apri anteprima registrazione</a>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

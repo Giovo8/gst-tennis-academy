@@ -1,13 +1,13 @@
 import {
-  buildAdminsNotificationForAthleteBookingDeletion,
-  shouldNotifyAdminsForAthleteBookingDeletion,
+  buildAdminsNotificationForUserBookingDeletion,
+  shouldNotifyAdminsForUserBookingDeletion,
 } from "@/lib/bookings/bookingDeletionNotifications";
 
 describe("bookingDeletionNotifications", () => {
-  describe("shouldNotifyAdminsForAthleteBookingDeletion", () => {
+  describe("shouldNotifyAdminsForUserBookingDeletion", () => {
     it("returns true when the athlete deletes their own booking", () => {
       expect(
-        shouldNotifyAdminsForAthleteBookingDeletion({
+        shouldNotifyAdminsForUserBookingDeletion({
           actorUserId: "user-1",
           bookingOwnerId: "user-1",
           actorRole: "atleta",
@@ -15,9 +15,19 @@ describe("bookingDeletionNotifications", () => {
       ).toBe(true);
     });
 
+    it("returns true when a maestro deletes their own booking", () => {
+      expect(
+        shouldNotifyAdminsForUserBookingDeletion({
+          actorUserId: "user-1",
+          bookingOwnerId: "user-1",
+          actorRole: "maestro",
+        })
+      ).toBe(true);
+    });
+
     it("returns true when owner role resolves to atleta", () => {
       expect(
-        shouldNotifyAdminsForAthleteBookingDeletion({
+        shouldNotifyAdminsForUserBookingDeletion({
           actorUserId: "user-1",
           bookingOwnerId: "user-1",
           actorRole: null,
@@ -26,9 +36,19 @@ describe("bookingDeletionNotifications", () => {
       ).toBe(true);
     });
 
+    it("returns false when an admin deletes their own booking", () => {
+      expect(
+        shouldNotifyAdminsForUserBookingDeletion({
+          actorUserId: "admin-1",
+          bookingOwnerId: "admin-1",
+          actorRole: "admin",
+        })
+      ).toBe(false);
+    });
+
     it("returns false when a manager deletes another user's booking", () => {
       expect(
-        shouldNotifyAdminsForAthleteBookingDeletion({
+        shouldNotifyAdminsForUserBookingDeletion({
           actorUserId: "manager-1",
           bookingOwnerId: "user-1",
           actorRole: "gestore",
@@ -38,17 +58,17 @@ describe("bookingDeletionNotifications", () => {
     });
   });
 
-  describe("buildAdminsNotificationForAthleteBookingDeletion", () => {
+  describe("buildAdminsNotificationForUserBookingDeletion", () => {
     it("builds the admin notification payload", () => {
-      const notification = buildAdminsNotificationForAthleteBookingDeletion({
-        athleteName: "Mario Rossi",
+      const notification = buildAdminsNotificationForUserBookingDeletion({
+        userName: "Mario Rossi",
         court: "Campo 2",
         startTime: "2026-03-15T18:30:00.000Z",
       });
 
       expect(notification).toEqual({
         type: "booking",
-        title: "Prenotazione eliminata da atleta",
+        title: "Prenotazione eliminata da utente",
         message: expect.stringContaining("Mario Rossi ha eliminato la prenotazione Campo 2"),
         link: "/dashboard/admin/bookings",
       });
@@ -57,11 +77,11 @@ describe("bookingDeletionNotifications", () => {
     });
 
     it("uses safe fallbacks when booking data is partial", () => {
-      const notification = buildAdminsNotificationForAthleteBookingDeletion({
+      const notification = buildAdminsNotificationForUserBookingDeletion({
         startTime: "2026-03-15T08:00:00.000Z",
       });
 
-      expect(notification.message).toContain("Un atleta");
+      expect(notification.message).toContain("Un utente");
       expect(notification.message).toContain("prenotazione campo");
     });
   });

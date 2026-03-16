@@ -3,6 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { sendBookingCreatedEmailToGestore } from "@/lib/email/booking-notifications";
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
+import {
+  buildCoachNotificationForPrivateLesson,
+  buildCoachNotificationForPrivateLessonBatch,
+  shouldNotifyCoachForPrivateLesson,
+} from "@/lib/bookings/privateLessonNotifications";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -134,19 +139,109 @@ export async function POST(request: Request) {
         link: notificationLink,
       });
 
+      const privateLessonBookings = insertedBookings.filter((booking) =>
+        shouldNotifyCoachForPrivateLesson({
+          bookingType: booking.type,
+          coachId: booking.coach_id,
+        })
+      );
+
+      const bookingsByCoach = new Map<string, typeof privateLessonBookings>();
+      for (const booking of privateLessonBookings) {
+        const coachId = booking.coach_id as string;
+        const coachBookings = bookingsByCoach.get(coachId) || [];
+        coachBookings.push(booking);
+        bookingsByCoach.set(coachId, coachBookings);
+      }
+
+      for (const [coachId, coachBookings] of bookingsByCoach.entries()) {
+        const sortedCoachBookings = [...coachBookings].sort(
+          (left, right) => new Date(left.start_time).getTime() - new Date(right.start_time).getTime()
+        );
+        const firstCoachBooking = sortedCoachBookings[0];
+
+        const coachNotification = sortedCoachBookings.length === 1
+          ? buildCoachNotificationForPrivateLesson({
+              athleteName,
+              court: firstCoachBooking.court,
+              startTime: firstCoachBooking.start_time,
+            })
+          : buildCoachNotificationForPrivateLessonBatch({
+              athleteName,
+              court: firstCoachBooking.court,
+              lessonCount: sortedCoachBookings.length,
+              firstStartTime: firstCoachBooking.start_time,
+            });
+
+        const { error: coachNotificationError } = await supabase
+          .from("notifications")
+          .insert({
+            user_id: coachId,
+            ...coachNotification,
+            is_read: false,
+          });
+
+        if (coachNotificationError) {
+          console.error("Failed to create coach private lesson notification:", coachNotificationError);
+        }
+      }
+
       if (userProfile?.role === "atleta") {
+        const privateLessonCoachIds = Array.from(
+          new Set(
+            insertedBookings
+              .filter((booking) => booking.type === "lezione_privata" && Boolean(booking.coach_id))
+              .map((booking) => booking.coach_id as string)
+          )
+        );
+        const coachNamesById = new Map<string, string>();
+
+        if (privateLessonCoachIds.length > 0) {
+          const { data: coachProfiles, error: coachProfilesError } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", privateLessonCoachIds);
+
+          if (coachProfilesError) {
+            console.warn("Failed to resolve coach names for booking emails:", coachProfilesError.message);
+          } else {
+            for (const coachProfile of coachProfiles || []) {
+              const normalizedName = coachProfile.full_name?.trim();
+              if (!normalizedName) continue;
+              coachNamesById.set(coachProfile.id, normalizedName);
+            }
+          }
+        }
+
         await Promise.all(
           insertedBookings.map((booking, index) => {
             const sourceBooking = bookings[index];
             const participantsCount = Array.isArray(sourceBooking?.participants)
               ? sourceBooking.participants.length
               : 0;
-            const bookingMode = participantsCount > 2 ? "doppio" : "singolo";
+            const bookingMode = booking.type === "campo"
+              ? (participantsCount > 2 ? "doppio" : "singolo")
+              : undefined;
+            const normalizedAthleteName = athleteName.trim().toLowerCase();
+            const additionalAthleteNames: string[] = Array.from(
+              new Set<string>(
+                (Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [])
+                  .map((participant: { full_name?: string | null }) => participant?.full_name?.trim())
+                  .filter((name): name is string => Boolean(name))
+                  .filter((name) => name.toLowerCase() !== normalizedAthleteName)
+              )
+            );
+            const coachName = booking.type === "lezione_privata" && booking.coach_id
+              ? coachNamesById.get(booking.coach_id as string) || null
+              : null;
 
             return sendBookingCreatedEmailToGestore({
               bookingId: booking.id,
               athleteName,
               athleteEmail: userProfile.email || null,
+              additionalAthleteNames,
+              coachId: booking.coach_id || null,
+              coachName,
               court: booking.court,
               type: booking.type || "campo",
               bookingMode,

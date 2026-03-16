@@ -1,22 +1,26 @@
-type AthleteBookingDeletionNotificationParams = {
-  athleteName?: string | null;
+type UserBookingDeletionNotificationParams = {
+  userName?: string | null;
   court?: string | null;
   startTime: string | Date;
 };
 
-type AthleteBookingDeletionNotificationContext = {
+type UserBookingDeletionNotificationContext = {
   actorUserId: string;
   bookingOwnerId: string;
   actorRole?: string | null;
   ownerRole?: string | null;
 };
 
-export function shouldNotifyAdminsForAthleteBookingDeletion({
+function isStaffRole(role: string): boolean {
+  return role === "admin" || role === "gestore";
+}
+
+export function shouldNotifyAdminsForUserBookingDeletion({
   actorUserId,
   bookingOwnerId,
   actorRole,
   ownerRole,
-}: AthleteBookingDeletionNotificationContext): boolean {
+}: UserBookingDeletionNotificationContext): boolean {
   if (actorUserId !== bookingOwnerId) {
     return false;
   }
@@ -24,14 +28,22 @@ export function shouldNotifyAdminsForAthleteBookingDeletion({
   const normalizedActorRole = String(actorRole || "").toLowerCase();
   const normalizedOwnerRole = String(ownerRole || "").toLowerCase();
 
-  return normalizedActorRole === "atleta" || normalizedOwnerRole === "atleta";
+  if (normalizedActorRole) {
+    return !isStaffRole(normalizedActorRole);
+  }
+
+  if (normalizedOwnerRole) {
+    return !isStaffRole(normalizedOwnerRole);
+  }
+
+  return false;
 }
 
-export function buildAdminsNotificationForAthleteBookingDeletion({
-  athleteName,
+export function buildAdminsNotificationForUserBookingDeletion({
+  userName,
   court,
   startTime,
-}: AthleteBookingDeletionNotificationParams) {
+}: UserBookingDeletionNotificationParams) {
   const bookingDate = new Date(startTime);
   const dateLabel = bookingDate.toLocaleDateString("it-IT", {
     day: "2-digit",
@@ -45,8 +57,11 @@ export function buildAdminsNotificationForAthleteBookingDeletion({
 
   return {
     type: "booking" as const,
-    title: "Prenotazione eliminata da atleta",
-    message: `${athleteName?.trim() || "Un atleta"} ha eliminato la prenotazione ${court?.trim() || "campo"} del ${dateLabel} alle ${timeLabel}.`,
+    title: "Prenotazione eliminata da utente",
+    message: `${userName?.trim() || "Un utente"} ha eliminato la prenotazione ${court?.trim() || "campo"} del ${dateLabel} alle ${timeLabel}.`,
     link: "/dashboard/admin/bookings",
   };
 }
+
+export const shouldNotifyAdminsForAthleteBookingDeletion = shouldNotifyAdminsForUserBookingDeletion;
+export const buildAdminsNotificationForAthleteBookingDeletion = buildAdminsNotificationForUserBookingDeletion;

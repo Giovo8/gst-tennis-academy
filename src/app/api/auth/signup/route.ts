@@ -1,12 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { signupSchema } from "@/lib/validation/schemas";
-import { sanitizeEmail, sanitizeObject } from "@/lib/security/sanitize-server";
+import { sanitizeObject } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
+import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
+import { getAdminUsersNotificationLink } from "@/lib/notifications/links";
+import { sendSignupEmailToGestori } from "@/lib/email/signup-notifications";
 import logger from "@/lib/logger/secure-logger";
 import env from "@/lib/config/env";
 import { HTTP_STATUS, ERROR_MESSAGES, USER_ROLES } from "@/lib/constants/app";
-import { z } from "zod";
 
 /**
  * POST /api/auth/signup
@@ -208,6 +210,22 @@ export async function POST(request: NextRequest) {
         role,
         invite_code: inviteCode || null,
       },
+    });
+
+    await notifyAdmins({
+      type: "general",
+      title: "Nuova registrazione utente",
+      message: `${fullName} (${email}) si è registrato come ${role}.`,
+      link: getAdminUsersNotificationLink(userId),
+    });
+
+    await sendSignupEmailToGestori({
+      userId,
+      fullName,
+      email,
+      role,
+      phone: phone || null,
+      inviteCode: inviteCode || null,
     });
 
     const duration = Date.now() - startTime;

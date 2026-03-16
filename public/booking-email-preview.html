@@ -9,7 +9,7 @@
       --secondary: #034863;
       --secondary-hover: #022431;
       --surface: #ffffff;
-      --background: #f3f7fa;
+      --background: #ffffff;
       --border: #dbe7ef;
       --text: #0f172a;
       --muted: #475569;
@@ -21,7 +21,7 @@
 
     body {
       margin: 0;
-      background: radial-gradient(circle at 20% 0%, #e8f3f9 0%, #f6f9fc 45%, #eef4f9 100%);
+      background: #ffffff;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: var(--text);
       padding: 28px 16px;
@@ -51,7 +51,7 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 14px 40px rgba(3, 72, 99, 0.14);
+      box-shadow: 0 14px 40px rgba(3, 72, 99, 0.08);
     }
 
     .mail-header {
@@ -131,7 +131,10 @@
     }
 
     .cta {
-      display: inline-block;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
       background: var(--secondary);
       color: #ffffff;
       text-decoration: none;
@@ -197,8 +200,9 @@
           <tr><td>Prenotata da</td><td>Mario Rossi</td></tr>
           <tr><td>Email atleta</td><td>mario.rossi@email.it</td></tr>
           <tr><td>Campo</td><td>Campo 2</td></tr>
-          <tr><td>Tipo</td><td>Campo</td></tr>
-          <tr><td>Modalità</td><td>Singolo</td></tr>
+          <tr><td>Tipo</td><td>Lezione privata</td></tr>
+          <tr><td>Altri atleti</td><td>Luca Bianchi, Andrea Verdi</td></tr>
+          <tr><td>Maestro</td><td>Marco Neri</td></tr>
           <tr><td>Data</td><td>13/03/2026</td></tr>
           <tr><td>Orario</td><td>18:00 - 19:00</td></tr>
           <tr><td>ID prenotazione</td><td>7fd6e0ab-84f5-4a11-87e7-aed70f7f3d3a</td></tr>
@@ -208,9 +212,6 @@
         <a id="booking-link" class="cta" href="/dashboard/admin/bookings">Apri gestione prenotazioni</a>
         <p class="target-url" id="target-url"></p>
 
-        <p class="footer-note">
-          Questa notifica è stata inviata automaticamente agli account admin e gestore della piattaforma.
-        </p>
       </div>
     </section>
   </main>

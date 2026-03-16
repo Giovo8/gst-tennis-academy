@@ -134,13 +134,30 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   async function cancelBooking(id: string) {
     if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
 
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "cancelled" })
-      .eq("id", id);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-    if (!error) {
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+      }
+
+      const response = await fetch(`/api/bookings?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      }
+
       loadBookings();
+    } catch (error) {
+      console.error("Errore durante l'eliminazione della prenotazione:", error);
+      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     }
   }
 
