@@ -70,18 +70,6 @@ export default function DashboardShell({
     localStorage.removeItem('darkMode');
   }, []);
 
-  // Blocca lo scroll del body quando la sidebar mobile Ã¨ aperta
-  useEffect(() => {
-    if (sidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [sidebarOpen]);
-
   // Search handler
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -248,7 +236,7 @@ export default function DashboardShell({
 
         {/* Mobile Dropdown Menu - appare dall'alto */}
         {sidebarOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top duration-300">
+          <div className="fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300">
             {/* User Info Mobile */}
             <div className="p-4 border-b border-gray-100 bg-gray-50">
               <Link

@@ -227,7 +227,7 @@ export default function NotificationsDropdown() {
 
           {/* Mobile Modal - stile come menu hamburger */}
           <div
-            className="lg:hidden fixed top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top duration-300 z-[100]"
+            className="lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300 z-[100]"
           >
             {/* Header */}
             <div className="px-4 py-3 bg-secondary flex items-center justify-between">
