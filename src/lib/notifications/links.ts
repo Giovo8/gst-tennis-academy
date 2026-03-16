@@ -33,6 +33,14 @@ export function getAdminUsersNotificationLink(userId?: string | null): string {
 export function getBookingDashboardLinkForRole(role?: string | null, bookingId?: string | null): string {
   const normalizedRole = String(role || "").toLowerCase();
 
+  if (normalizedRole === "atleta") {
+    if (bookingId && bookingId.trim().length > 0) {
+      return `/dashboard/atleta/bookings/${bookingId}`;
+    }
+
+    return "/dashboard/atleta/bookings";
+  }
+
   if (normalizedRole === "maestro") {
     return "/dashboard/maestro/agenda";
   }
@@ -50,6 +58,10 @@ export function getBookingDashboardLinkForRole(role?: string | null, bookingId?:
 
 export function getUsersDashboardLinkForRole(role?: string | null, userId?: string | null): string {
   const normalizedRole = String(role || "").toLowerCase();
+
+  if (normalizedRole === "atleta") {
+    return userId ? "/dashboard/atleta/profile" : "/dashboard/atleta";
+  }
 
   if (normalizedRole === "gestore") {
     if (userId && userId.trim().length > 0) {

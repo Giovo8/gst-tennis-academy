@@ -12,14 +12,26 @@ type SendSignupNotificationInput = {
   role: string;
   phone?: string | null;
   inviteCode?: string | null;
+  notifyAthlete?: boolean;
 };
 
-type GestoreRecipient = {
-  id: string;
+type SignupRecipientRole = "gestore" | "atleta";
+
+type SignupRecipient = {
+  id?: string | null;
   email: string;
   full_name?: string | null;
-  role: "gestore";
+  role: SignupRecipientRole;
 };
+
+function normalizeEmail(value?: string | null): string | null {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) {
+    return null;
+  }
+
+  return normalized;
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -30,7 +42,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#039;");
 }
 
-async function getGestoreRecipients(): Promise<GestoreRecipient[]> {
+async function getGestoreRecipients(): Promise<SignupRecipient[]> {
   const { data, error } = await supabaseServer
     .from("profiles")
     .select("id, email, full_name, role")
@@ -42,11 +54,11 @@ async function getGestoreRecipients(): Promise<GestoreRecipient[]> {
     return [];
   }
 
-  const byEmail = new Map<string, GestoreRecipient>();
+  const byEmail = new Map<string, SignupRecipient>();
 
   for (const item of data || []) {
-    const normalizedEmail = item.email?.trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+    const normalizedEmail = normalizeEmail(item.email);
+    if (!normalizedEmail) continue;
     if (byEmail.has(normalizedEmail)) continue;
 
     byEmail.set(normalizedEmail, {
@@ -60,102 +72,140 @@ async function getGestoreRecipients(): Promise<GestoreRecipient[]> {
   return Array.from(byEmail.values());
 }
 
+function getAthleteRecipient(params: SendSignupNotificationInput): SignupRecipient | null {
+  const normalizedRole = String(params.role || "").toLowerCase();
+  if (!params.notifyAthlete || normalizedRole !== "atleta") {
+    return null;
+  }
+
+  const normalizedEmail = normalizeEmail(params.email);
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  return {
+    id: params.userId,
+    email: normalizedEmail,
+    full_name: params.fullName,
+    role: "atleta",
+  };
+}
+
+async function resolveSignupRecipients(params: SendSignupNotificationInput): Promise<SignupRecipient[]> {
+  const recipientsByEmail = new Map<string, SignupRecipient>();
+
+  const gestoriRecipients = await getGestoreRecipients();
+  for (const recipient of gestoriRecipients) {
+    recipientsByEmail.set(recipient.email, recipient);
+  }
+
+  const athleteRecipient = getAthleteRecipient(params);
+  if (athleteRecipient && !recipientsByEmail.has(athleteRecipient.email)) {
+    recipientsByEmail.set(athleteRecipient.email, athleteRecipient);
+  }
+
+  return Array.from(recipientsByEmail.values());
+}
+
 export async function sendSignupEmailToGestori(params: SendSignupNotificationInput): Promise<void> {
   try {
     const resend = getResendClient();
     if (!resend) return;
 
-    const recipients = await getGestoreRecipients();
+    const recipients = await resolveSignupRecipients(params);
     if (recipients.length === 0) {
-      logger.warn("No gestore recipients found for signup email", {
+      logger.warn("No recipients found for signup email", {
         userId: params.userId,
       });
       return;
     }
 
-    const recipientEmails = recipients.map((recipient) => recipient.email);
     const registeredAtLabel = new Date().toLocaleString("it-IT");
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
-    const userUrl = `${appBaseUrl}${getUsersDashboardLinkForRole("gestore", params.userId)}`;
-    const usersUrl = `${appBaseUrl}${getUsersDashboardLinkForRole("gestore")}`;
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const safePhone = params.phone?.trim() || "n/d";
     const safeInviteCode = params.inviteCode?.trim() || "n/d";
 
     const subject = `Nuova registrazione utente - ${params.fullName}`;
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
-        <div style="background: #034863; padding: 14px 18px;">
-          <table role="presentation" style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="width: 44px; vertical-align: middle;">
-                <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
-              </td>
-              <td style="vertical-align: middle; padding-left: 10px;">
-                <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">Notifica registrazione utente</div>
-              </td>
-            </tr>
-          </table>
-        </div>
-        <div style="padding: 18px; background: #ffffff;">
-          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova registrazione completata</h2>
-          <p style="margin: 0 0 16px 0; color: #334155;">Un nuovo utente si è registrato con successo sulla piattaforma.</p>
-          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
-            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Nome completo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.fullName)}</td></tr>
-            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.email)}</td></tr>
-            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Ruolo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.role)}</td></tr>
-            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Telefono</strong></td><td style="padding: 8px 10px;">${escapeHtml(safePhone)}</td></tr>
-            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Invite code</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeInviteCode)}</td></tr>
-            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID utente</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.userId)}</td></tr>
-            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Registrato il</strong></td><td style="padding: 8px 10px;">${escapeHtml(registeredAtLabel)}</td></tr>
-          </table>
-          <p style="margin: 10px 0 0 0;">
-            <a href="${userUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri dettaglio utente</a>
-          </p>
-          <p style="margin: 10px 0 0 0;">
-            <a href="${usersUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri elenco utenti</a>
-          </p>
-        </div>
-      </div>
-    `;
+    const results = await Promise.all(
+      recipients.map(async (recipient) => {
+        const userUrl = `${appBaseUrl}${getUsersDashboardLinkForRole(recipient.role, params.userId)}`;
+        const usersUrl = `${appBaseUrl}${getUsersDashboardLinkForRole(recipient.role)}`;
+        const primaryCtaLabel = recipient.role === "atleta" ? "Apri il tuo profilo" : "Apri dettaglio utente";
+        const secondaryCtaLabel = recipient.role === "atleta" ? "Apri dashboard atleta" : "Apri elenco utenti";
 
-    const text = [
-      "Nuova registrazione completata",
-      "",
-      `Nome completo: ${params.fullName}`,
-      `Email: ${params.email}`,
-      `Ruolo: ${params.role}`,
-      `Telefono: ${safePhone}`,
-      `Invite code: ${safeInviteCode}`,
-      `ID utente: ${params.userId}`,
-      `Registrato il: ${registeredAtLabel}`,
-      "",
-      `Apri dettaglio utente: ${userUrl}`,
-      `Apri elenco utenti: ${usersUrl}`,
-    ].join("\n");
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+            <div style="background: #034863; padding: 14px 18px;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="width: 44px; vertical-align: middle;">
+                    <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-left: 10px;">
+                    <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">Notifica registrazione utente</div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div style="padding: 18px; background: #ffffff;">
+              <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova registrazione completata</h2>
+              <p style="margin: 0 0 16px 0; color: #334155;">Un nuovo utente si è registrato con successo sulla piattaforma.</p>
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Nome completo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.fullName)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.email)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Ruolo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.role)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Telefono</strong></td><td style="padding: 8px 10px;">${escapeHtml(safePhone)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Invite code</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeInviteCode)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID utente</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.userId)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Registrato il</strong></td><td style="padding: 8px 10px;">${escapeHtml(registeredAtLabel)}</td></tr>
+              </table>
+              <p style="margin: 10px 0 0 0;">
+                <a href="${userUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">${primaryCtaLabel}</a>
+              </p>
+              <p style="margin: 10px 0 0 0;">
+                <a href="${usersUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">${secondaryCtaLabel}</a>
+              </p>
+            </div>
+          </div>
+        `;
 
-    const { data, error } = await resend.emails.send({
-      from: getEmailFromAddress(),
-      to: recipientEmails,
-      subject,
-      html,
-      text,
-    });
+        const text = [
+          "Nuova registrazione completata",
+          "",
+          `Nome completo: ${params.fullName}`,
+          `Email: ${params.email}`,
+          `Ruolo: ${params.role}`,
+          `Telefono: ${safePhone}`,
+          `Invite code: ${safeInviteCode}`,
+          `ID utente: ${params.userId}`,
+          `Registrato il: ${registeredAtLabel}`,
+          "",
+          `${primaryCtaLabel}: ${userUrl}`,
+          `${secondaryCtaLabel}: ${usersUrl}`,
+        ].join("\n");
 
-    if (error) {
-      logger.error("Failed to send signup email notification", error, {
-        userId: params.userId,
-        recipients: recipientEmails.length,
-      });
+        const { data, error } = await resend.emails.send({
+          from: getEmailFromAddress(),
+          to: recipient.email,
+          subject,
+          html,
+          text,
+        });
 
-      await Promise.all(
-        recipients.map((recipient) =>
-          logEmailDispatch({
+        if (error) {
+          logger.error("Failed to send signup email notification", error, {
+            userId: params.userId,
+            recipientEmail: recipient.email,
+            recipientRole: recipient.role,
+          });
+
+          await logEmailDispatch({
             recipientEmail: recipient.email,
             recipientName: recipient.full_name || null,
-            recipientUserId: recipient.id,
+            recipientUserId: recipient.id || null,
             subject,
             templateName: "user_registered_gestore_notification",
             status: "failed",
@@ -167,18 +217,15 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
               recipientRole: recipient.role,
               registeredRole: params.role,
             },
-          })
-        )
-      );
-      return;
-    }
+          });
 
-    await Promise.all(
-      recipients.map((recipient) =>
-        logEmailDispatch({
+          return { success: false, providerMessageId: null };
+        }
+
+        await logEmailDispatch({
           recipientEmail: recipient.email,
           recipientName: recipient.full_name || null,
-          recipientUserId: recipient.id,
+          recipientUserId: recipient.id || null,
           subject,
           templateName: "user_registered_gestore_notification",
           status: "sent",
@@ -189,14 +236,18 @@ export async function sendSignupEmailToGestori(params: SendSignupNotificationInp
             recipientRole: recipient.role,
             registeredRole: params.role,
           },
-        })
-      )
+        });
+
+        return { success: true, providerMessageId: data?.id || null };
+      })
     );
+
+    const sentResults = results.filter((result) => result.success);
 
     logger.info("Signup email notification sent", {
       userId: params.userId,
-      recipients: recipientEmails.length,
-      providerMessageId: data?.id || null,
+      recipients: sentResults.length,
+      providerMessageIds: sentResults.map((result) => result.providerMessageId).filter(Boolean),
     });
   } catch (error) {
     logger.error("Unexpected error while sending signup email", error, {

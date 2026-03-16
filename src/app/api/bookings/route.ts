@@ -369,6 +369,49 @@ export async function POST(req: Request) {
         const bookingMode = booking.type === "campo"
           ? (participants && participants.length > 2 ? "doppio" : "singolo")
           : undefined;
+        const participantUserIds: string[] = Array.from(
+          new Set<string>(
+            (participants || [])
+              .map((participant) => participant.user_id)
+              .filter((participantUserId): participantUserId is string => Boolean(participantUserId))
+          )
+        );
+        const participantEmailsFromPayload = (participants || [])
+          .map((participant) => participant.email?.trim().toLowerCase())
+          .filter((email): email is string => Boolean(email && email.includes("@")));
+
+        const participantEmailsFromProfilesById = new Map<string, string>();
+        if (participantUserIds.length > 0) {
+          const { data: participantProfiles, error: participantProfilesError } = await supabaseServer
+            .from("profiles")
+            .select("id, email")
+            .in("id", participantUserIds);
+
+          if (participantProfilesError) {
+            logger.warn("Failed to resolve participant emails for booking email", {
+              bookingId: booking.id,
+              error: participantProfilesError.message,
+            });
+          } else {
+            for (const participantProfile of participantProfiles || []) {
+              const normalizedEmail = participantProfile.email?.trim().toLowerCase();
+              if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+              participantEmailsFromProfilesById.set(participantProfile.id, normalizedEmail);
+            }
+          }
+        }
+
+        const athleteRecipientEmails = Array.from(
+          new Set(
+            [
+              userProfile?.email?.trim().toLowerCase() || user.email?.trim().toLowerCase(),
+              ...participantEmailsFromPayload,
+              ...participantUserIds
+                .map((participantUserId) => participantEmailsFromProfilesById.get(participantUserId))
+                .filter((email): email is string => Boolean(email)),
+            ].filter((email): email is string => Boolean(email && email.includes("@")))
+          )
+        );
         const normalizedAthleteName = athleteDisplayName.trim().toLowerCase();
         const additionalAthleteNames = Array.from(
           new Set(
@@ -402,6 +445,7 @@ export async function POST(req: Request) {
           bookingId: booking.id,
           athleteName: athleteDisplayName,
           athleteEmail: userProfile?.email || user.email || null,
+          athleteRecipientEmails,
           additionalAthleteNames,
           coachId: booking.coach_id || null,
           coachName,
@@ -649,7 +693,7 @@ export async function DELETE(req: Request) {
 
     const { data: bookingParticipants, error: bookingParticipantsError } = await supabaseServer
       .from("booking_participants")
-      .select("full_name, order_index")
+      .select("user_id, full_name, email, is_registered, order_index")
       .eq("booking_id", id)
       .order("order_index", { ascending: true });
 
@@ -705,6 +749,51 @@ export async function DELETE(req: Request) {
     }
 
     const bookingOwnerDisplayName = bookingOwnerFullName || user.email || "Un utente";
+    const bookingOwnerNormalizedEmail = bookingOwnerEmail?.trim().toLowerCase();
+    const participantUserIds: string[] = Array.from(
+      new Set<string>(
+        (bookingParticipants || [])
+          .map((participant: { user_id?: string | null }) => participant.user_id)
+          .filter((participantUserId): participantUserId is string => Boolean(participantUserId))
+      )
+    );
+    const participantEmailsFromRows = (bookingParticipants || [])
+      .map((participant) => participant.email?.trim().toLowerCase())
+      .filter((email): email is string => Boolean(email && email.includes("@")));
+    const participantEmailsFromProfilesById = new Map<string, string>();
+
+    if (participantUserIds.length > 0) {
+      const { data: participantProfiles, error: participantProfilesError } = await supabaseServer
+        .from("profiles")
+        .select("id, email")
+        .in("id", participantUserIds);
+
+      if (participantProfilesError) {
+        logger.warn("Failed to resolve participant emails before deletion email", {
+          bookingId: id,
+          error: participantProfilesError.message,
+        });
+      } else {
+        for (const participantProfile of participantProfiles || []) {
+          const normalizedEmail = participantProfile.email?.trim().toLowerCase();
+          if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+          participantEmailsFromProfilesById.set(participantProfile.id, normalizedEmail);
+        }
+      }
+    }
+
+    const athleteRecipientEmails = Array.from(
+      new Set(
+        [
+          bookingOwnerNormalizedEmail || (deletedByOwner ? user.email?.trim().toLowerCase() : null),
+          ...participantEmailsFromRows,
+          ...participantUserIds
+            .map((participantUserId) => participantEmailsFromProfilesById.get(participantUserId))
+            .filter((email): email is string => Boolean(email)),
+        ].filter((email): email is string => Boolean(email && email.includes("@")))
+      )
+    );
+
     const normalizedOwnerName = bookingOwnerDisplayName.trim().toLowerCase();
     const additionalAthleteNames: string[] = Array.from(
       new Set<string>(
@@ -740,6 +829,7 @@ export async function DELETE(req: Request) {
       bookingId: id,
       athleteName: bookingOwnerDisplayName,
       athleteEmail: bookingOwnerEmail || (deletedByOwner ? user.email : null),
+      athleteRecipientEmails,
       additionalAthleteNames,
       coachId: booking.coach_id || null,
       coachName,

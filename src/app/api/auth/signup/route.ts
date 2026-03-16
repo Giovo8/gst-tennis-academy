@@ -226,6 +226,7 @@ export async function POST(request: NextRequest) {
       role,
       phone: phone || null,
       inviteCode: inviteCode || null,
+      notifyAthlete: role === "atleta",
     });
 
     const duration = Date.now() - startTime;

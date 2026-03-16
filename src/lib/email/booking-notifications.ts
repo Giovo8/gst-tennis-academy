@@ -9,6 +9,7 @@ type SendBookingNotificationInput = {
   bookingId: string;
   athleteName: string;
   athleteEmail?: string | null;
+  athleteRecipientEmails?: string[];
   additionalAthleteNames?: string[];
   coachId?: string | null;
   coachName?: string | null;
@@ -25,14 +26,23 @@ type SendBookingDeletionNotificationInput = SendBookingNotificationInput & {
   deletedByRole?: string | null;
 };
 
-type BookingEmailRecipientRole = "gestore" | "maestro";
+type BookingEmailRecipientRole = "gestore" | "maestro" | "atleta";
 
 type BookingEmailRecipient = {
-  id: string;
+  id?: string | null;
   email: string;
   full_name?: string | null;
   role: BookingEmailRecipientRole;
 };
+
+function normalizeEmail(value?: string | null): string | null {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) {
+    return null;
+  }
+
+  return normalized;
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -58,8 +68,8 @@ async function getGestoreRecipients(): Promise<BookingEmailRecipient[]> {
   const byEmail = new Map<string, BookingEmailRecipient>();
 
   for (const item of data || []) {
-    const normalizedEmail = item.email?.trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+    const normalizedEmail = normalizeEmail(item.email);
+    if (!normalizedEmail) continue;
     if (byEmail.has(normalizedEmail)) continue;
 
     byEmail.set(normalizedEmail, {
@@ -91,8 +101,8 @@ async function getCoachRecipient(coachId: string): Promise<BookingEmailRecipient
     return null;
   }
 
-  const normalizedEmail = data?.email?.trim().toLowerCase();
-  if (!normalizedEmail || !normalizedEmail.includes("@")) {
+  const normalizedEmail = normalizeEmail(data?.email);
+  if (!normalizedEmail) {
     logger.warn("Coach email missing or invalid for booking email", {
       coachId: normalizedCoachId,
     });
@@ -105,6 +115,21 @@ async function getCoachRecipient(coachId: string): Promise<BookingEmailRecipient
     full_name: data.full_name || null,
     role: data.role === "gestore" ? "gestore" : "maestro",
   };
+}
+
+function getAthleteRecipientsFromInput(params: SendBookingNotificationInput): BookingEmailRecipient[] {
+  const emails = [params.athleteEmail, ...(params.athleteRecipientEmails || [])]
+    .map((email) => normalizeEmail(email))
+    .filter((email): email is string => Boolean(email));
+
+  const uniqueEmails = Array.from(new Set(emails));
+
+  return uniqueEmails.map((email) => ({
+    id: null,
+    email,
+    full_name: null,
+    role: "atleta",
+  }));
 }
 
 async function resolveBookingEmailRecipients(
@@ -121,6 +146,13 @@ async function resolveBookingEmailRecipients(
     const coachRecipient = await getCoachRecipient(params.coachId);
     if (coachRecipient && !byEmail.has(coachRecipient.email)) {
       byEmail.set(coachRecipient.email, coachRecipient);
+    }
+  }
+
+  const athleteRecipients = getAthleteRecipientsFromInput(params);
+  for (const recipient of athleteRecipients) {
+    if (!byEmail.has(recipient.email)) {
+      byEmail.set(recipient.email, recipient);
     }
   }
 

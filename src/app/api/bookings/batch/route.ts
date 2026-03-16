@@ -194,7 +194,22 @@ export async function POST(request: Request) {
               .map((booking) => booking.coach_id as string)
           )
         );
+
+        const participantUserIds = Array.from(
+          new Set(
+            bookings
+              .flatMap((sourceBooking) =>
+                Array.isArray(sourceBooking?.participants)
+                  ? sourceBooking.participants
+                      .map((participant: { user_id?: string | null }) => participant?.user_id)
+                      .filter((participantUserId): participantUserId is string => Boolean(participantUserId))
+                  : []
+              )
+          )
+        );
+
         const coachNamesById = new Map<string, string>();
+        const participantEmailsById = new Map<string, string>();
 
         if (privateLessonCoachIds.length > 0) {
           const { data: coachProfiles, error: coachProfilesError } = await supabase
@@ -209,6 +224,23 @@ export async function POST(request: Request) {
               const normalizedName = coachProfile.full_name?.trim();
               if (!normalizedName) continue;
               coachNamesById.set(coachProfile.id, normalizedName);
+            }
+          }
+        }
+
+        if (participantUserIds.length > 0) {
+          const { data: participantProfiles, error: participantProfilesError } = await supabase
+            .from("profiles")
+            .select("id, email")
+            .in("id", participantUserIds);
+
+          if (participantProfilesError) {
+            console.warn("Failed to resolve participant emails for booking emails:", participantProfilesError.message);
+          } else {
+            for (const participantProfile of participantProfiles || []) {
+              const normalizedEmail = participantProfile.email?.trim().toLowerCase();
+              if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+              participantEmailsById.set(participantProfile.id, normalizedEmail);
             }
           }
         }
@@ -231,6 +263,21 @@ export async function POST(request: Request) {
                   .filter((name) => name.toLowerCase() !== normalizedAthleteName)
               )
             );
+            const athleteRecipientEmails = Array.from(
+              new Set(
+                [
+                  userProfile.email?.trim().toLowerCase(),
+                  ...(Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [])
+                    .map((participant: { email?: string | null }) => participant?.email?.trim().toLowerCase())
+                    .filter((email): email is string => Boolean(email && email.includes("@"))),
+                  ...(Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [])
+                    .map((participant: { user_id?: string | null }) => participant?.user_id)
+                    .filter((participantUserId): participantUserId is string => Boolean(participantUserId))
+                    .map((participantUserId) => participantEmailsById.get(participantUserId))
+                    .filter((email): email is string => Boolean(email)),
+                ].filter((email): email is string => Boolean(email && email.includes("@")))
+              )
+            );
             const coachName = booking.type === "lezione_privata" && booking.coach_id
               ? coachNamesById.get(booking.coach_id as string) || null
               : null;
@@ -239,6 +286,7 @@ export async function POST(request: Request) {
               bookingId: booking.id,
               athleteName,
               athleteEmail: userProfile.email || null,
+              athleteRecipientEmails,
               additionalAthleteNames,
               coachId: booking.coach_id || null,
               coachName,

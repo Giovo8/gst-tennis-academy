@@ -27,6 +27,9 @@ describe("notification links", () => {
   });
 
   it("builds booking dashboard links by recipient role", () => {
+    expect(getBookingDashboardLinkForRole("atleta", "booking-1")).toBe(
+      "/dashboard/atleta/bookings/booking-1"
+    );
     expect(getBookingDashboardLinkForRole("gestore", "booking-1")).toBe(
       "/dashboard/gestore/bookings/booking-1"
     );
@@ -39,6 +42,9 @@ describe("notification links", () => {
   });
 
   it("builds users dashboard links by recipient role", () => {
+    expect(getUsersDashboardLinkForRole("atleta", "user-123")).toBe(
+      "/dashboard/atleta/profile"
+    );
     expect(getUsersDashboardLinkForRole("gestore", "user-123")).toBe(
       "/dashboard/gestore/users/user-123"
     );
