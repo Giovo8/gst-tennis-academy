@@ -4,6 +4,11 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { getEmailFromAddress, getResendClient } from "@/lib/email/resend-client";
 import { logEmailDispatch } from "@/lib/email/email-log";
 import { getBookingDashboardLinkForRole } from "@/lib/notifications/links";
+import {
+  getBookingEmailCopy,
+  getBookingTypeLabel,
+  isPrivateLessonType,
+} from "@/lib/email/booking-email-copy";
 
 type SendBookingNotificationInput = {
   bookingId: string;
@@ -195,6 +200,8 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
+    const bookingTypeLabel = getBookingTypeLabel(params.type);
+    const bookingEmailCopy = getBookingEmailCopy({ action: "created", bookingType: params.type });
     const isCourtBooking = params.type === "campo";
     const bookingMode = isCourtBooking ? (params.bookingMode || "singolo") : null;
     const normalizedAthleteName = params.athleteName.trim().toLowerCase();
@@ -207,10 +214,10 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
       )
     );
     const additionalAthletesLabel = additionalAthleteNames.join(", ");
-    const isPrivateLesson = params.type === "lezione_privata";
+    const isPrivateLesson = isPrivateLessonType(params.type);
     const safeCoachName = isPrivateLesson ? (params.coachName?.trim() || "Non specificato") : "";
 
-    const subject = `Nuova prenotazione registrata - ${params.court} - ${dateLabel} ${startLabel}`;
+    const subject = `${bookingEmailCopy.subjectPrefix} - ${params.court} - ${dateLabel} ${startLabel}`;
     const athleteRecipient = recipients.find((recipient) => recipient.role === "atleta");
     const gestoriRecipients = recipients.filter((recipient) => recipient.role === "gestore");
     const maestriRecipients = recipients.filter((recipient) => recipient.role === "maestro");
@@ -256,19 +263,19 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
                   </td>
                   <td style="vertical-align: middle; padding-left: 10px;">
                     <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">Notifica prenotazione</div>
+                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
                   </td>
                 </tr>
               </table>
             </div>
             <div style="padding: 18px; background: #ffffff;">
-              <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova prenotazione registrata</h2>
-              <p style="margin: 0 0 16px 0; color: #334155;">È stata registrata una nuova prenotazione e il calendario campi è stato aggiornato.</p>
+              <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
+              <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
                 <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.type)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
                 ${bookingMode ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingMode)}</td></tr>` : ""}
                 ${additionalAthleteNames.length > 0 ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Altri atleti</strong></td><td style="padding: 8px 10px;">${escapeHtml(additionalAthletesLabel)}</td></tr>` : ""}
                 ${isPrivateLesson ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeCoachName)}</td></tr>` : ""}
@@ -285,12 +292,12 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
           </div>
         `;
         const text = [
-          "Nuova prenotazione registrata",
+          bookingEmailCopy.textLead,
           "",
           `Atleta: ${params.athleteName}`,
           `Email atleta: ${safeAthleteEmail}`,
           `Campo: ${params.court}`,
-          `Tipo: ${params.type}`,
+          `Tipo: ${bookingTypeLabel}`,
           bookingMode ? `Modalità: ${bookingMode}` : "",
           additionalAthleteNames.length > 0 ? `Altri atleti: ${additionalAthletesLabel}` : "",
           isPrivateLesson ? `Maestro: ${safeCoachName}` : "",
@@ -433,6 +440,8 @@ export async function sendBookingDeletedEmailToRecipients(
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
+    const bookingTypeLabel = getBookingTypeLabel(params.type);
+    const bookingEmailCopy = getBookingEmailCopy({ action: "deleted", bookingType: params.type });
     const deletedByName = (params.deletedByName || "Utente piattaforma").trim();
     const deletedByRole = (params.deletedByRole || "utente").trim();
     const isCourtBooking = params.type === "campo";
@@ -447,10 +456,10 @@ export async function sendBookingDeletedEmailToRecipients(
       )
     );
     const additionalAthletesLabel = additionalAthleteNames.join(", ");
-    const isPrivateLesson = params.type === "lezione_privata";
+    const isPrivateLesson = isPrivateLessonType(params.type);
     const safeCoachName = isPrivateLesson ? (params.coachName?.trim() || "Non specificato") : "";
 
-    const subject = `Prenotazione eliminata - ${params.court} - ${dateLabel} ${startLabel}`;
+    const subject = `${bookingEmailCopy.subjectPrefix} - ${params.court} - ${dateLabel} ${startLabel}`;
     const athleteRecipient = recipients.find((recipient) => recipient.role === "atleta");
     const gestoriRecipients = recipients.filter((recipient) => recipient.role === "gestore");
     const maestriRecipients = recipients.filter((recipient) => recipient.role === "maestro");
@@ -496,20 +505,20 @@ export async function sendBookingDeletedEmailToRecipients(
                   </td>
                   <td style="vertical-align: middle; padding-left: 10px;">
                     <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">Notifica eliminazione prenotazione</div>
+                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
                   </td>
                 </tr>
               </table>
             </div>
             <div style="padding: 18px; background: #ffffff;">
-              <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #034863;">Prenotazione eliminata</h2>
-              <p style="margin: 0 0 16px 0; color: #334155;">Una prenotazione è stata eliminata dal calendario campi.</p>
+              <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #034863;">${bookingEmailCopy.title}</h2>
+              <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
                 <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(deletedByName)} (${escapeHtml(deletedByRole)})</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.type)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
                 ${bookingMode ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingMode)}</td></tr>` : ""}
                 ${additionalAthleteNames.length > 0 ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Altri atleti</strong></td><td style="padding: 8px 10px;">${escapeHtml(additionalAthletesLabel)}</td></tr>` : ""}
                 ${isPrivateLesson ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeCoachName)}</td></tr>` : ""}
@@ -526,13 +535,13 @@ export async function sendBookingDeletedEmailToRecipients(
           </div>
         `;
         const text = [
-          "Prenotazione eliminata",
+          bookingEmailCopy.textLead,
           "",
           `Atleta: ${params.athleteName}`,
           `Email atleta: ${safeAthleteEmail}`,
           `Eliminata da: ${deletedByName} (${deletedByRole})`,
           `Campo: ${params.court}`,
-          `Tipo: ${params.type}`,
+          `Tipo: ${bookingTypeLabel}`,
           bookingMode ? `Modalità: ${bookingMode}` : "",
           additionalAthleteNames.length > 0 ? `Altri atleti: ${additionalAthletesLabel}` : "",
           isPrivateLesson ? `Maestro: ${safeCoachName}` : "",
