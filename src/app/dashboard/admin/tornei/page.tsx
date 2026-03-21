@@ -46,6 +46,7 @@ function AdminTorneiPageInner() {
   const [filterType, setFilterType] = useState<'all' | 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'>('all');
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
     load();
@@ -302,21 +303,29 @@ function AdminTorneiPageInner() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setOpenMenuId(openMenuId === tournament.id ? null : tournament.id);
+                          if (openMenuId === tournament.id) {
+                            setOpenMenuId(null);
+                            setMenuPosition(null);
+                          } else {
+                            const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                            setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                            setOpenMenuId(tournament.id);
+                          }
                         }}
                         className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      {openMenuId === tournament.id && (
+                      {openMenuId === tournament.id && menuPosition && (
                         <>
-                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setMenuPosition(null); }} />
+                          <div className="fixed z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1" style={{ top: menuPosition.top, right: menuPosition.right }}>
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId(null);
+                                setMenuPosition(null);
                                 router.push(`/dashboard/admin/tornei/${tournament.id}`);
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
@@ -330,6 +339,7 @@ function AdminTorneiPageInner() {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 setOpenMenuId(null);
+                                setMenuPosition(null);
                                 handleDeleteTournament(tournament.id);
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"

@@ -188,6 +188,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
@@ -404,6 +405,26 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         .order("full_name");
 
       if (athleteData) setAthletes(athleteData);
+
+      // Load previous unregistered guests (deduplicated by name)
+      const { data: guestsData } = await supabase
+        .from("booking_participants")
+        .select("full_name, email, phone")
+        .eq("is_registered", false)
+        .order("full_name");
+
+      if (guestsData) {
+        const seen = new Set<string>();
+        const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce((acc: { fullName: string; email?: string; phone?: string }[], g) => {
+          const key = g.full_name.trim().toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
+          }
+          return acc;
+        }, []);
+        setPreviousGuests(deduped);
+      }
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -834,25 +855,19 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
             </button>
             
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (dateInputRef.current) {
-                    dateInputRef.current.showPicker();
-                  }
-                }}
-                className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              <label
+                className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
                 title="Scegli data"
               >
-                <Calendar className="h-5 w-5 text-white" />
-              </button>
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={format(selectedDate, "yyyy-MM-dd")}
-                onChange={(e) => handleDateInputChange(e.target.value)}
-                className="absolute opacity-0 pointer-events-none"
-              />
+                <Calendar className="h-5 w-5 text-white pointer-events-none" />
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={format(selectedDate, "yyyy-MM-dd")}
+                  onChange={(e) => handleDateInputChange(e.target.value)}
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                />
+              </label>
               <h2 className="text-base sm:text-lg font-bold text-white">
                 <span className="hidden sm:inline capitalize">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
                 <span className="sm:hidden capitalize">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
@@ -950,6 +965,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                               setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
                             }}
                             maxAthletes={maxAthletesAllowed}
+                            previousGuests={previousGuests}
                           />
                         </div>
                       </div>

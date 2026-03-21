@@ -21,6 +21,8 @@ import {
   Trash2,
   AlertCircle,
   MoreVertical,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import Link from "next/link";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
@@ -391,7 +393,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           bookings={filteredBookings}
           loading={loading}
           basePath="/dashboard/atleta"
-          fetchOccupied={false}
+          fetchOccupied={true}
           swapAxes={true}
           showBlockReason={false}
           showCourtBlocks={false}
@@ -431,11 +433,51 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-4 py-3 mb-3 border border-secondary">
               <div className="grid grid-cols-[40px_80px_56px_80px_1fr_56px_64px] items-center gap-4">
-                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-                <div className="text-xs font-bold text-white/80 uppercase">Data</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">
+                  <button
+                    onClick={() => handleSort("type")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                  >
+                    #
+                    {sortField === "type" && (
+                      sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs font-bold text-white/80 uppercase">
+                  <button
+                    onClick={() => handleSort("start_time")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Data
+                    {sortField === "start_time" && (
+                      sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
                 <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
-                <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
-                <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
+                <div className="text-xs font-bold text-white/80 uppercase">
+                  <button
+                    onClick={() => handleSort("court")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Campo
+                    {sortField === "court" && (
+                      sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs font-bold text-white/80 uppercase">
+                  <button
+                    onClick={() => handleSort("coach")}
+                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Maestro
+                    {sortField === "coach" && (
+                      sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
               </div>
@@ -487,7 +529,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     </div>
 
                     {/* Data */}
-                    <div className="font-bold text-secondary text-sm">
+                    <div className="font-bold text-secondary text-sm whitespace-nowrap">
                       {formatDate(booking.start_time)}
                     </div>
 

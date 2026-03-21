@@ -38,7 +38,11 @@ export async function GET(req: Request) {
       (profiles || []).forEach((p: any) => profilesMap.set(p.id, p));
     }
 
-    const enriched = (data || []).map((r: any) => ({ ...r, profiles: profilesMap.get(r.user_id) || null }));
+    const enriched = (data || []).map((r: any) => ({
+      ...r,
+      profiles: profilesMap.get(r.user_id) || null,
+      // player_name is already in r for external players without an app account
+    }));
     return NextResponse.json({ participants: enriched });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -122,6 +126,72 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ participant: data?.[0] }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, user_id } = body;
+
+    if (!id || !user_id) {
+      return NextResponse.json({ error: "Missing id or user_id" }, { status: 400 });
+    }
+
+    const { user, profile } = await getUserProfileFromRequest(req);
+    if (!profile) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const roleLower = String(profile.role).toLowerCase();
+    if (!["gestore", "admin"].includes(roleLower)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Verify the target user exists in profiles
+    const { data: targetProfile, error: tpErr } = (await supabaseServer
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("id", user_id)
+      .single()) as any;
+
+    if (tpErr || !targetProfile) {
+      return NextResponse.json({ error: "Utente non trovato" }, { status: 404 });
+    }
+
+    // Verify participant exists
+    const { data: participant, error: pErr } = (await supabaseServer
+      .from("tournament_participants")
+      .select("id, tournament_id, user_id")
+      .eq("id", id)
+      .single()) as any;
+
+    if (pErr || !participant) {
+      return NextResponse.json({ error: "Partecipante non trovato" }, { status: 404 });
+    }
+
+    // Check no duplicate: the target user_id must not already be in the tournament
+    const { data: existing } = await supabaseServer
+      .from("tournament_participants")
+      .select("id")
+      .eq("tournament_id", participant.tournament_id)
+      .eq("user_id", user_id)
+      .neq("id", id)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return NextResponse.json({ error: "Questo utente è già iscritto al torneo" }, { status: 409 });
+    }
+
+    const { data, error } = await supabaseServer
+      .from("tournament_participants")
+      .update({ user_id })
+      .eq("id", id)
+      .select();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+    return NextResponse.json({ participant: data?.[0] });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

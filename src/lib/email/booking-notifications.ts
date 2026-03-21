@@ -402,6 +402,204 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
   }
 }
 
+/**
+ * Invia una email di conferma prenotazione direttamente all'atleta quando la
+ * prenotazione è creata da un gestore o admin.
+ */
+export async function sendBookingCreatedEmailToAthlete(params: SendBookingNotificationInput): Promise<void> {
+  try {
+    const resend = getResendClient();
+    if (!resend) return;
+
+    const athleteRecipients = getAthleteRecipientsFromInput(params);
+    if (athleteRecipients.length === 0) {
+      logger.warn("No athlete recipients for booking confirmation email", {
+        bookingId: params.bookingId,
+        bookingType: params.type,
+      });
+      return;
+    }
+
+    const start = new Date(params.startTime);
+    const end = new Date(params.endTime);
+    const dateLabel = start.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const startLabel = start.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const endLabel = end.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const createdAtLabel = new Date().toLocaleString("it-IT");
+
+    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
+    const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
+    const notes = params.notes?.trim();
+    const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
+    const bookingTypeLabel = getBookingTypeLabel(params.type);
+    const bookingEmailCopy = getBookingEmailCopy({ action: "created", bookingType: params.type });
+    const isCourtBooking = params.type === "campo";
+    const bookingMode = isCourtBooking ? (params.bookingMode || "singolo") : null;
+    const normalizedAthleteName = params.athleteName.trim().toLowerCase();
+    const additionalAthleteNames = Array.from(
+      new Set(
+        (params.additionalAthleteNames || [])
+          .map((name) => name.trim())
+          .filter((name) => name.length > 0)
+          .filter((name) => name.toLowerCase() !== normalizedAthleteName)
+      )
+    );
+    const additionalAthletesLabel = additionalAthleteNames.join(", ");
+    const isPrivateLesson = isPrivateLessonType(params.type);
+    const safeCoachName = isPrivateLesson ? (params.coachName?.trim() || "Non specificato") : "";
+
+    const subject = `${bookingEmailCopy.subjectPrefix} - ${params.court} - ${dateLabel} ${startLabel}`;
+
+    const results = await Promise.all(
+      athleteRecipients.map(async (recipient) => {
+        const bookingPath = getBookingDashboardLinkForRole("atleta", params.bookingId);
+        const bookingUrl = `${appBaseUrl}${bookingPath}`;
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+            <div style="background: #034863; padding: 14px 18px;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="width: 44px; vertical-align: middle;">
+                    <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-left: 10px;">
+                    <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div style="padding: 18px; background: #ffffff;">
+              <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
+              <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
+                ${bookingMode ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingMode)}</td></tr>` : ""}
+                ${additionalAthleteNames.length > 0 ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Altri atleti</strong></td><td style="padding: 8px 10px;">${escapeHtml(additionalAthletesLabel)}</td></tr>` : ""}
+                ${isPrivateLesson ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeCoachName)}</td></tr>` : ""}
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">${escapeHtml(dateLabel)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">${escapeHtml(startLabel)} - ${escapeHtml(endLabel)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.bookingId)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Creata il</strong></td><td style="padding: 8px 10px;">${escapeHtml(createdAtLabel)}</td></tr>
+              </table>
+              ${notes ? `<p style="margin: 0 0 16px 0;"><strong>Note:</strong> ${escapeHtml(notes)}</p>` : ""}
+              <p style="margin: 10px 0 0 0;">
+                <a href="${bookingUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri le mie prenotazioni</a>
+              </p>
+            </div>
+          </div>
+        `;
+        const text = [
+          bookingEmailCopy.textLead,
+          "",
+          `Atleta: ${params.athleteName}`,
+          `Email atleta: ${safeAthleteEmail}`,
+          `Campo: ${params.court}`,
+          `Tipo: ${bookingTypeLabel}`,
+          bookingMode ? `Modalità: ${bookingMode}` : "",
+          additionalAthleteNames.length > 0 ? `Altri atleti: ${additionalAthletesLabel}` : "",
+          isPrivateLesson ? `Maestro: ${safeCoachName}` : "",
+          `Data: ${dateLabel}`,
+          `Orario: ${startLabel} - ${endLabel}`,
+          `ID prenotazione: ${params.bookingId}`,
+          `Creata il: ${createdAtLabel}`,
+          notes ? `Note: ${notes}` : "",
+          "",
+          `Apri le mie prenotazioni: ${bookingUrl}`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        const { data, error } = await resend.emails.send({
+          from: getEmailFromAddress(),
+          to: recipient.email,
+          subject,
+          html,
+          text,
+        });
+
+        if (error) {
+          logger.error("Failed to send booking confirmation email to athlete", error, {
+            bookingId: params.bookingId,
+            recipientEmail: recipient.email,
+          });
+
+          await logEmailDispatch({
+            recipientEmail: recipient.email,
+            recipientName: recipient.full_name || null,
+            recipientUserId: recipient.id,
+            subject,
+            templateName: "booking_created_athlete_notification",
+            status: "failed",
+            provider: "resend",
+            providerMessageId: null,
+            errorMessage: (error as { message?: string })?.message || "send_failed",
+            metadata: {
+              bookingId: params.bookingId,
+              actorRole: "gestore",
+              recipientRole: "atleta",
+              bookingPath,
+              court: params.court,
+              bookingMode,
+              startTime: params.startTime,
+              endTime: params.endTime,
+            },
+          });
+
+          return { success: false, providerMessageId: null };
+        }
+
+        await logEmailDispatch({
+          recipientEmail: recipient.email,
+          recipientName: recipient.full_name || null,
+          recipientUserId: recipient.id,
+          subject,
+          templateName: "booking_created_athlete_notification",
+          status: "sent",
+          provider: "resend",
+          providerMessageId: data?.id || null,
+          metadata: {
+            bookingId: params.bookingId,
+            actorRole: "gestore",
+            recipientRole: "atleta",
+            bookingPath,
+            court: params.court,
+            bookingMode,
+            startTime: params.startTime,
+            endTime: params.endTime,
+          },
+        });
+
+        return { success: true, providerMessageId: data?.id || null };
+      })
+    );
+
+    const sentResults = results.filter((r) => r.success);
+    logger.info("Booking confirmation email sent to athlete", {
+      bookingId: params.bookingId,
+      recipients: sentResults.length,
+      providerMessageIds: sentResults.map((r) => r.providerMessageId).filter(Boolean),
+    });
+  } catch (error) {
+    logger.error("Unexpected error while sending booking confirmation email to athlete", error, {
+      bookingId: params.bookingId,
+    });
+  }
+}
+
 export async function sendBookingDeletedEmailToRecipients(
   params: SendBookingDeletionNotificationInput
 ): Promise<void> {
@@ -643,6 +841,187 @@ export async function sendBookingDeletedEmailToRecipients(
     });
   } catch (error) {
     logger.error("Unexpected error while sending booking deletion email", error, {
+      bookingId: params.bookingId,
+    });
+  }
+}
+
+/**
+ * Invia una email di notifica direttamente al maestro quando una lezione privata
+ * viene creata da un gestore o admin (non da un atleta).
+ */
+export async function sendBookingCreatedEmailToMaestro(params: SendBookingNotificationInput): Promise<void> {
+  try {
+    const resend = getResendClient();
+    if (!resend) return;
+
+    if (!params.coachId?.trim()) {
+      logger.warn("sendBookingCreatedEmailToMaestro called without coachId", {
+        bookingId: params.bookingId,
+      });
+      return;
+    }
+
+    const coachRecipient = await getCoachRecipient(params.coachId);
+    if (!coachRecipient) {
+      logger.warn("Coach recipient not found for maestro email", {
+        bookingId: params.bookingId,
+        coachId: params.coachId,
+      });
+      return;
+    }
+
+    const start = new Date(params.startTime);
+    const end = new Date(params.endTime);
+    const dateLabel = start.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const startLabel = start.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const endLabel = end.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const createdAtLabel = new Date().toLocaleString("it-IT");
+
+    const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
+    const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
+    const notes = params.notes?.trim();
+    const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
+    const bookingTypeLabel = getBookingTypeLabel(params.type);
+    const bookingEmailCopy = getBookingEmailCopy({ action: "created", bookingType: params.type });
+    const safeCoachName = params.coachName?.trim() || "Non specificato";
+
+    const subject = `${bookingEmailCopy.subjectPrefix} - ${params.court} - ${dateLabel} ${startLabel}`;
+    const bookingPath = getBookingDashboardLinkForRole("maestro", params.bookingId);
+    const bookingUrl = `${appBaseUrl}${bookingPath}`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+                <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
+          <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeCoachName)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">${escapeHtml(dateLabel)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">${escapeHtml(startLabel)} - ${escapeHtml(endLabel)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.bookingId)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Creata il</strong></td><td style="padding: 8px 10px;">${escapeHtml(createdAtLabel)}</td></tr>
+          </table>
+          ${notes ? `<p style="margin: 0 0 16px 0;"><strong>Note:</strong> ${escapeHtml(notes)}</p>` : ""}
+          <p style="margin: 10px 0 0 0;">
+            <a href="${bookingUrl}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri la tua agenda</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    const text = [
+      bookingEmailCopy.textLead,
+      "",
+      `Atleta: ${params.athleteName}`,
+      `Email atleta: ${safeAthleteEmail}`,
+      `Campo: ${params.court}`,
+      `Tipo: ${bookingTypeLabel}`,
+      `Maestro: ${safeCoachName}`,
+      `Data: ${dateLabel}`,
+      `Orario: ${startLabel} - ${endLabel}`,
+      `ID prenotazione: ${params.bookingId}`,
+      `Creata il: ${createdAtLabel}`,
+      notes ? `Note: ${notes}` : "",
+      "",
+      `Apri la tua agenda: ${bookingUrl}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const { data, error } = await resend.emails.send({
+      from: getEmailFromAddress(),
+      to: coachRecipient.email,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      logger.error("Failed to send booking email notification to maestro", error, {
+        bookingId: params.bookingId,
+        coachId: params.coachId,
+        recipientEmail: coachRecipient.email,
+      });
+
+      await logEmailDispatch({
+        recipientEmail: coachRecipient.email,
+        recipientName: coachRecipient.full_name || null,
+        recipientUserId: coachRecipient.id,
+        subject,
+        templateName: "booking_created_maestro_notification",
+        status: "failed",
+        provider: "resend",
+        providerMessageId: null,
+        errorMessage: (error as { message?: string })?.message || "send_failed",
+        metadata: {
+          bookingId: params.bookingId,
+          actorRole: "gestore",
+          recipientRole: "maestro",
+          bookingPath,
+          court: params.court,
+          startTime: params.startTime,
+          endTime: params.endTime,
+        },
+      });
+
+      return;
+    }
+
+    await logEmailDispatch({
+      recipientEmail: coachRecipient.email,
+      recipientName: coachRecipient.full_name || null,
+      recipientUserId: coachRecipient.id,
+      subject,
+      templateName: "booking_created_maestro_notification",
+      status: "sent",
+      provider: "resend",
+      providerMessageId: data?.id || null,
+      metadata: {
+        bookingId: params.bookingId,
+        actorRole: "gestore",
+        recipientRole: "maestro",
+        bookingPath,
+        court: params.court,
+        startTime: params.startTime,
+        endTime: params.endTime,
+      },
+    });
+
+    logger.info("Booking email notification sent to maestro", {
+      bookingId: params.bookingId,
+      coachId: params.coachId,
+      maestroEmail: coachRecipient.email,
+    });
+  } catch (error) {
+    logger.error("Unexpected error while sending booking email to maestro", error, {
       bookingId: params.bookingId,
     });
   }

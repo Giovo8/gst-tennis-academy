@@ -214,7 +214,7 @@ export default function DashboardShell({
         <div className="h-16 px-4 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-3 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center touch-manipulation"
+            className="p-3 rounded-lg hover:bg-gray-100 active:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center touch-manipulation"
             aria-label={sidebarOpen ? "Chiudi menu" : "Apri menu"}
           >
             {sidebarOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}

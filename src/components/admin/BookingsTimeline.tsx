@@ -65,7 +65,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
   const [blocksLoading, setBlocksLoading] = useState(false);
   const [allOccupiedBookings, setAllOccupiedBookings] = useState<any[]>([]);
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
@@ -315,10 +314,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     router.push(`${basePath}/bookings/new?${params.toString()}`);
   }
 
-  function openDatePicker() {
-    dateInputRef.current?.showPicker();
-  }
-
   // Build a map of time slots for each court
   const courtTimeline = useMemo(() => {
     const timeline: Record<string, TimeSlotInfo[]> = {};
@@ -489,6 +484,28 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return { startSlot, duration };
   }
 
+  function mergeForeignSlotRanges(bookings: any[]): { startSlot: number; duration: number }[] {
+    const ranges = bookings
+      .map(b => getBookingSlotRange(b))
+      .filter(r => r.startSlot >= 0 && r.duration > 0)
+      .sort((a, b) => a.startSlot - b.startSlot);
+    if (ranges.length === 0) return [];
+    const merged: { startSlot: number; duration: number }[] = [];
+    let current = { ...ranges[0] };
+    for (let i = 1; i < ranges.length; i++) {
+      const next = ranges[i];
+      if (next.startSlot <= current.startSlot + current.duration) {
+        const end = Math.max(current.startSlot + current.duration, next.startSlot + next.duration);
+        current = { startSlot: current.startSlot, duration: end - current.startSlot };
+      } else {
+        merged.push(current);
+        current = { ...next };
+      }
+    }
+    merged.push(current);
+    return merged;
+  }
+
   const occupiedSource = fetchOccupied && allOccupiedBookings.length > 0
     ? allOccupiedBookings
     : bookingsForSelectedDate;
@@ -506,20 +523,18 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         </button>
         
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            onClick={openDatePicker}
-            className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+          <label
+            className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
             title="Scegli data"
           >
-            <CalendarIcon className="h-5 w-5 text-white" />
-          </button>
-          <input
-            ref={dateInputRef}
-            type="date"
-            onChange={handleDateChange}
-            value={selectedDate.toISOString().split('T')[0]}
-            className="absolute opacity-0 pointer-events-none"
-          />
+            <CalendarIcon className="h-5 w-5 text-white pointer-events-none" />
+            <input
+              type="date"
+              onChange={handleDateChange}
+              value={selectedDate.toISOString().split('T')[0]}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            />
+          </label>
           <h2 className="text-base sm:text-lg font-bold capitalize text-white">
             <span className="hidden sm:inline">{formatDateHeader()}</span>
             <span className="sm:hidden">{formatDateHeader(true)}</span>
@@ -585,71 +600,76 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                     <div className="flex-1 grid timeline-grid relative" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
                       {/* Prenotazioni esistenti come blocchi sovrapposti */}
                       {(() => {
-                        // When fetchOccupied, merge own bookings with API-fetched ones (deduplicated by id)
                         const ownIds = new Set(bookingsForSelectedDate.filter(b => b.court === court).map(b => b.id));
                         const foreignBlocks: any[] = fetchOccupied
                           ? allOccupiedBookings.filter(b => b.court === court && !ownIds.has(b.id))
                           : [];
-                        const allBlocks = [
-                          ...bookingsForSelectedDate.filter(b => b.court === court),
-                          ...foreignBlocks
-                        ];
-                        return allBlocks.map((booking) => {
-                          const isForeign = !ownIds.has(booking.id);
-                          const { startSlot, duration } = getBookingSlotRange(booking);
-
-                          if (startSlot < 0 || duration <= 0) return null;
-
-                          const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
-
-                          return (
+                        const ownBlocks = bookingsForSelectedDate.filter(b => b.court === court);
+                        const mergedForeign = mergeForeignSlotRanges(foreignBlocks);
+                        return [
+                          ...ownBlocks.map((booking) => {
+                            const { startSlot, duration } = getBookingSlotRange(booking);
+                            if (startSlot < 0 || duration <= 0) return null;
+                            const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+                            return (
+                              <div
+                                key={booking.id}
+                                onClick={() => {
+                                  if (booking.isBlock) {
+                                    router.push(`${basePath}/courts/${booking.id}`);
+                                  } else {
+                                    router.push(`${basePath}/bookings/${booking.id}`);
+                                  }
+                                }}
+                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all hover:scale-[1.02] cursor-pointer active:scale-95"
+                                style={{
+                                  ...getBookingStyle(booking),
+                                  left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
+                                  width: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
+                                  top: '4px',
+                                  bottom: '4px',
+                                  marginLeft: '2px'
+                                }}
+                                title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
+                              >
+                                {booking.isBlock ? (
+                                  <div className="truncate leading-tight uppercase tracking-wider">
+                                    {getBookingLabel(booking)}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="truncate leading-tight">
+                                      {getBookingDisplayName(booking)}
+                                    </div>
+                                    {isLesson && booking.coach_profile && (
+                                      <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                        {booking.coach_profile.full_name}
+                                      </div>
+                                    )}
+                                    <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                      {getBookingLabel(booking)}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          }),
+                          ...mergedForeign.map((interval, i) => (
                             <div
-                              key={booking.id}
-                              onClick={() => {
-                                if (isForeign) return; // non navigare per prenotazioni altrui
-                                if (booking.isBlock) {
-                                  router.push(`${basePath}/courts/${booking.id}`);
-                                } else {
-                                  router.push(`${basePath}/bookings/${booking.id}`);
-                                }
-                              }}
-                              className={`absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all ${isForeign ? 'cursor-default' : 'hover:scale-[1.02] cursor-pointer active:scale-95'}`}
+                              key={`foreign-${i}`}
+                              className="absolute rounded-md z-10 cursor-default"
                               style={{
-                                ...getBookingStyle(booking),
-                                left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
-                                width: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
+                                background: '#d1d5db',
+                                left: `${(interval.startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
+                                width: `calc(${(interval.duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
                                 top: '4px',
                                 bottom: '4px',
                                 marginLeft: '2px'
                               }}
-                              title={isForeign ? 'Slot occupato' : `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
-                            >
-                              {booking.isBlock ? (
-                                <div className="truncate leading-tight uppercase tracking-wider">
-                                  {getBookingLabel(booking)}
-                                </div>
-                              ) : isForeign ? (
-                                <div className="truncate leading-tight uppercase tracking-wider">
-                                  {getBookingLabel(booking)}
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="truncate leading-tight">
-                                    {getBookingDisplayName(booking)}
-                                  </div>
-                                  {isLesson && booking.coach_profile && (
-                                    <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
-                                      {booking.coach_profile.full_name}
-                                    </div>
-                                  )}
-                                  <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
-                                    {getBookingLabel(booking)}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          );
-                        });
+                              title="Slot occupato"
+                            />
+                          ))
+                        ];
                       })()}
 
                       {/* Slot cliccabili - sempre 16 */}
@@ -824,66 +844,70 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         const foreignBlocks: any[] = fetchOccupied
                           ? allOccupiedBookings.filter(b => b.court === court && !ownIds.has(b.id))
                           : [];
-                        const allBlocks = [
-                          ...bookingsForSelectedDate.filter(b => b.court === court),
-                          ...foreignBlocks
-                        ];
-
-                        return allBlocks.map((booking) => {
-                          const isForeign = !ownIds.has(booking.id);
-                          const { startSlot, duration } = getBookingSlotRange(booking);
-
-                          if (startSlot < 0 || duration <= 0) return null;
-
-                          const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
-
-                          return (
-                            <div
-                              key={`swap-${court}-${booking.id}`}
-                              onClick={() => {
-                                if (isForeign) return;
-                                if (booking.isBlock) {
-                                  router.push(`${basePath}/courts/${booking.id}`);
-                                } else {
-                                  router.push(`${basePath}/bookings/${booking.id}`);
-                                }
-                              }}
-                              className={`absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all ${isForeign ? 'cursor-default' : 'hover:scale-[1.01] cursor-pointer active:scale-95'}`}
-                              style={{
-                                ...getBookingStyle(booking),
-                                left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
-                                width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
-                                top: `calc(${(startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
-                                height: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
-                              }}
-                              title={isForeign ? 'Slot occupato' : `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
-                            >
-                              {booking.isBlock ? (
-                                <div className="truncate leading-tight uppercase tracking-wider">
-                                  {getBookingLabel(booking)}
-                                </div>
-                              ) : isForeign ? (
-                                <div className="truncate leading-tight uppercase tracking-wider">
-                                  {getBookingLabel(booking)}
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="truncate leading-tight">
-                                    {getBookingDisplayName(booking)}
-                                  </div>
-                                  {isLesson && booking.coach_profile && (
-                                    <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
-                                      {booking.coach_profile.full_name}
-                                    </div>
-                                  )}
-                                  <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                        const ownBlocks = bookingsForSelectedDate.filter(b => b.court === court);
+                        const mergedForeign = mergeForeignSlotRanges(foreignBlocks);
+                        return [
+                          ...ownBlocks.map((booking) => {
+                            const { startSlot, duration } = getBookingSlotRange(booking);
+                            if (startSlot < 0 || duration <= 0) return null;
+                            const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+                            return (
+                              <div
+                                key={`swap-${court}-${booking.id}`}
+                                onClick={() => {
+                                  if (booking.isBlock) {
+                                    router.push(`${basePath}/courts/${booking.id}`);
+                                  } else {
+                                    router.push(`${basePath}/bookings/${booking.id}`);
+                                  }
+                                }}
+                                className="absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all hover:scale-[1.01] cursor-pointer active:scale-95"
+                                style={{
+                                  ...getBookingStyle(booking),
+                                  left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
+                                  width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
+                                  top: `calc(${(startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
+                                  height: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
+                                }}
+                                title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
+                              >
+                                {booking.isBlock ? (
+                                  <div className="truncate leading-tight uppercase tracking-wider">
                                     {getBookingLabel(booking)}
                                   </div>
-                                </>
-                              )}
-                            </div>
-                          );
-                        });
+                                ) : (
+                                  <>
+                                    <div className="truncate leading-tight">
+                                      {getBookingDisplayName(booking)}
+                                    </div>
+                                    {isLesson && booking.coach_profile && (
+                                      <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                        {booking.coach_profile.full_name}
+                                      </div>
+                                    )}
+                                    <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                      {getBookingLabel(booking)}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          }),
+                          ...mergedForeign.map((interval, i) => (
+                            <div
+                              key={`swap-foreign-${court}-${i}`}
+                              className="absolute pointer-events-auto rounded-md z-10 cursor-default"
+                              style={{
+                                background: '#d1d5db',
+                                left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
+                                width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
+                                top: `calc(${(interval.startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
+                                height: `calc(${(interval.duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
+                              }}
+                              title="Slot occupato"
+                            />
+                          ))
+                        ];
                       })}
                     </div>
                   </div>

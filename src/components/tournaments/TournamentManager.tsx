@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, Users, Target, Loader2, Trash2, Calendar } from 'lucide-react';
+import { Trophy, Users, Target, Loader2, Trash2, Calendar, Link2, X, Search, MoreVertical } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
@@ -44,6 +44,12 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'bracket' | 'groups' | 'calendar' | 'standings'>('overview');
+  const [linkingParticipant, setLinkingParticipant] = useState<any | null>(null);
+  const [linkUsers, setLinkUsers] = useState<any[]>([]);
+  const [linkSearch, setLinkSearch] = useState('');
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [openParticipantMenuId, setOpenParticipantMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -89,6 +95,54 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
       console.error('Error loading tournament data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenLinkModal = async (participant: any) => {
+    setLinkingParticipant(participant);
+    setLinkSearch('');
+    setLinkLoading(true);
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const res = await fetch('/api/users', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLinkUsers(data.users || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleLinkAccount = async (userId: string) => {
+    if (!linkingParticipant) return;
+    setLinking(true);
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { alert('Sessione non valida'); return; }
+      const res = await fetch('/api/tournament_participants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ id: linkingParticipant.id, user_id: userId })
+      });
+      if (res.ok) {
+        setLinkingParticipant(null);
+        loadData();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Errore durante il collegamento');
+      }
+    } catch (e) {
+      alert('Errore di rete');
+    } finally {
+      setLinking(false);
     }
   };
 
@@ -294,16 +348,6 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       {isAdmin && (
-                        <>
-                          <div className="w-48 hidden md:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                          </div>
-                        </>
-                      )}
-                      {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                         <div className="w-10 flex-shrink-0 flex items-center justify-center">
                           <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
                         </div>
@@ -313,7 +357,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
 
                   {/* Data Rows */}
                   {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
                     const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
 
                     return (
@@ -342,39 +386,35 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                             </div>
                           </div>
                           {isAdmin && (
-                            <>
-                              <div className="w-48 hidden md:block">
-                                {participant.profiles?.email ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.email}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                              <div className="w-32 hidden lg:block">
-                                {participant.profiles?.phone ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.phone}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                          {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
-                            <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                            <div className="relative flex-shrink-0">
                               <button
-                                onClick={() => handleRemoveParticipant(
-                                  participant.id,
-                                  fullName
-                                )}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                title="Rimuovi partecipante"
+                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
+                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <MoreVertical className="h-4 w-4" />
                               </button>
+                              {openParticipantMenuId === participant.id && (
+                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                                  {!participant.user_id && (
+                                    <button
+                                      onClick={() => handleOpenLinkModal(participant)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                                    >
+                                      <Link2 className="h-4 w-4" />
+                                      Collega Account
+                                    </button>
+                                  )}
+                                  {(tournament.current_phase as string) === 'iscrizioni' && (
+                                    <button
+                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Rimuovi
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -424,21 +464,16 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       {isAdmin && (
-                        <>
-                          <div className="w-48 hidden md:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                          </div>
-                        </>
+                        <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                          <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* Data Rows */}
                   {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
                     const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
 
                     return (
@@ -472,26 +507,36 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                             )}
                           </div>
                           {isAdmin && (
-                            <>
-                              <div className="w-48 hidden md:block">
-                                {participant.profiles?.email ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.email}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                              <div className="w-32 hidden lg:block">
-                                {participant.profiles?.phone ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.phone}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                            </>
+                            <div className="relative flex-shrink-0">
+                              <button
+                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
+                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                              {openParticipantMenuId === participant.id && (
+                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                                  {!participant.user_id && (
+                                    <button
+                                      onClick={() => handleOpenLinkModal(participant)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                                    >
+                                      <Link2 className="h-4 w-4" />
+                                      Collega Account
+                                    </button>
+                                  )}
+                                  {(tournament.current_phase as string) === 'iscrizioni' && (
+                                    <button
+                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Rimuovi
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -585,21 +630,16 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       {isAdmin && (
-                        <>
-                          <div className="w-48 hidden md:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                          </div>
-                        </>
+                        <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                          <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* Data Rows - Tutti i partecipanti */}
                   {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
                     const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
 
                     return (
@@ -637,26 +677,36 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                             )}
                           </div>
                           {isAdmin && (
-                            <>
-                              <div className="w-48 hidden md:block">
-                                {participant.profiles?.email ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.email}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                              <div className="w-32 hidden lg:block">
-                                {participant.profiles?.phone ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.phone}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                            </>
+                            <div className="relative flex-shrink-0">
+                              <button
+                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
+                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                              {openParticipantMenuId === participant.id && (
+                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                                  {!participant.user_id && (
+                                    <button
+                                      onClick={() => handleOpenLinkModal(participant)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                                    >
+                                      <Link2 className="h-4 w-4" />
+                                      Collega Account
+                                    </button>
+                                  )}
+                                  {(tournament.current_phase as string) === 'iscrizioni' && (
+                                    <button
+                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Rimuovi
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -754,16 +804,6 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                         <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
                       </div>
                       {isAdmin && (
-                        <>
-                          <div className="w-48 hidden md:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                          </div>
-                          <div className="w-32 hidden lg:block">
-                            <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                          </div>
-                        </>
-                      )}
-                      {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
                         <div className="w-10 flex-shrink-0 flex items-center justify-center">
                           <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
                         </div>
@@ -773,7 +813,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
 
                   {/* Data Rows */}
                   {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
                     const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
 
                     return (
@@ -802,39 +842,35 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                             </div>
                           </div>
                           {isAdmin && (
-                            <>
-                              <div className="w-48 hidden md:block">
-                                {participant.profiles?.email ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.email}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                              <div className="w-32 hidden lg:block">
-                                {participant.profiles?.phone ? (
-                                  <div className="text-sm text-secondary/70 truncate">
-                                    {participant.profiles.phone}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-secondary/40">-</div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                          {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
-                            <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                            <div className="relative flex-shrink-0">
                               <button
-                                onClick={() => handleRemoveParticipant(
-                                  participant.id,
-                                  fullName
-                                )}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                title="Rimuovi partecipante"
+                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
+                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <MoreVertical className="h-4 w-4" />
                               </button>
+                              {openParticipantMenuId === participant.id && (
+                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                                  {!participant.user_id && (
+                                    <button
+                                      onClick={() => handleOpenLinkModal(participant)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                                    >
+                                      <Link2 className="h-4 w-4" />
+                                      Collega Account
+                                    </button>
+                                  )}
+                                  {(tournament.current_phase as string) === 'iscrizioni' && (
+                                    <button
+                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Rimuovi
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -985,13 +1021,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
               <div className="flex-1">
                 <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
               </div>
-              <div className="w-48 hidden md:block">
-                <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-              </div>
-              <div className="w-32 hidden lg:block">
-                <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-              </div>
-              {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+              {isAdmin && (
                 <div className="w-10 flex-shrink-0 flex items-center justify-center">
                   <div className="text-xs font-bold text-white/80 uppercase">Azioni</div>
                 </div>
@@ -1001,7 +1031,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
 
           {/* Data Rows */}
           {participants.map((participant: any, index: number) => {
-            const fullName = participant.profiles?.full_name || participant.user_id || 'Giocatore';
+            const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
             const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
 
             return (
@@ -1033,42 +1063,119 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
                       </div>
                     )}
                   </div>
-                  <div className="w-48 hidden md:block">
-                    {participant.profiles?.email ? (
-                      <div className="text-sm text-secondary/70 truncate">
-                        {participant.profiles.email}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-secondary/40">-</div>
-                    )}
-                  </div>
-                  <div className="w-32 hidden lg:block">
-                    {participant.profiles?.phone ? (
-                      <div className="text-sm text-secondary/70 truncate">
-                        {participant.profiles.phone}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-secondary/40">-</div>
-                    )}
-                  </div>
-                  {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                  {isAdmin && (
+                    <div className="relative flex-shrink-0">
                       <button
-                        onClick={() => handleRemoveParticipant(
-                          participant.id,
-                          fullName
-                        )}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Rimuovi partecipante"
+                        onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
+                        className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </button>
+                      {openParticipantMenuId === participant.id && (
+                        <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                          {!participant.user_id && (
+                            <button
+                              onClick={() => handleOpenLinkModal(participant)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Collega Account
+                            </button>
+                          )}
+                          {(tournament.current_phase as string) === 'iscrizioni' && (
+                            <button
+                              onClick={() => handleRemoveParticipant(participant.id, fullName)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Rimuovi
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Modal: Collega Account */}
+      {linkingParticipant && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setLinkingParticipant(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-md"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <div>
+                <h3 className="text-lg font-bold text-secondary">Collega Account</h3>
+                <p className="text-sm text-secondary/60 mt-0.5">
+                  Collega un account app a <strong>{linkingParticipant.player_name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setLinkingParticipant(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg text-secondary/60"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Cerca per nome o email..."
+                  value={linkSearch}
+                  onChange={e => setLinkSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-secondary"
+                />
+              </div>
+              {linkLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-secondary" />
+                </div>
+              ) : (
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  {linkUsers
+                    .filter(u => {
+                      if (!linkSearch) return true;
+                      const q = linkSearch.toLowerCase();
+                      return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+                    })
+                    .map(user => (
+                      <button
+                        key={user.id}
+                        onClick={() => handleLinkAccount(user.id)}
+                        disabled={linking}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all text-left disabled:opacity-50"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                          {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-secondary text-sm truncate">{user.full_name}</div>
+                          <div className="text-xs text-secondary/60 truncate">{user.email}</div>
+                        </div>
+                        {linking && <Loader2 className="h-4 w-4 animate-spin text-secondary flex-shrink-0" />}
+                      </button>
+                    ))
+                  }
+                  {linkUsers.filter(u => !linkSearch ||
+                    u.full_name?.toLowerCase().includes(linkSearch.toLowerCase()) ||
+                    u.email?.toLowerCase().includes(linkSearch.toLowerCase())
+                  ).length === 0 && !linkLoading && (
+                    <div className="text-center py-6 text-sm text-secondary/60">Nessun utente trovato</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

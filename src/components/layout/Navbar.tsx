@@ -125,7 +125,7 @@ export default function Navbar() {
             
             <Link
               href={dashboardLink}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white/10 border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300"
             >
               <Shield className="h-4 w-4 text-white" />
               <span className="text-white">Area GST</span>
@@ -142,7 +142,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden rounded-xl border border-blue-400/20 p-2.5 text-white transition-all duration-300 hover:bg-blue-500/10 hover:border-blue-400/40 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="md:hidden rounded-xl border border-white/20 p-2.5 text-white transition-all duration-300 hover:bg-white/10 hover:border-white/40 active:bg-white/20 min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -151,7 +151,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden border-t border-blue-400/20 mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
+          <div className="md:hidden border-t border-white/20 mt-2 pt-4 space-y-3 pb-4 animate-in slide-in-from-top duration-300">
             {/* Social Icons */}
             <div className="flex items-center justify-center gap-4 pb-2">
               <a
@@ -208,7 +208,7 @@ export default function Navbar() {
               <Link
                 href={dashboardLink}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/40 hover:from-blue-500/30 hover:to-cyan-500/30 hover:border-blue-400/60 transition-all duration-300 min-h-[48px] touch-manipulation"
+                className="flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold bg-white/10 border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 min-h-[48px] touch-manipulation"
               >
                 <Shield className="h-5 w-5 text-white" />
                 <span className="text-white">Area GST</span>

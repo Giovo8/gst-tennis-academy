@@ -5,6 +5,8 @@ import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { logActivityServer } from "@/lib/activity/logActivity";
 import {
   sendBookingCreatedEmailToGestore,
+  sendBookingCreatedEmailToAthlete,
+  sendBookingCreatedEmailToMaestro,
   sendBookingDeletedEmailToRecipients,
 } from "@/lib/email/booking-notifications";
 import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
@@ -456,6 +458,72 @@ export async function POST(req: Request) {
           endTime: booking.end_time,
           notes: booking.notes || null,
         });
+      } else {
+        // Gestore/admin created booking: send confirmation to athlete
+        const athleteDisplayNameForEmail = userProfile?.full_name || "Un atleta";
+        const athleteEmailForEmail = userProfile?.email || null;
+        const bookingModeForEmail = booking.type === "campo"
+          ? (participants && participants.length > 2 ? "doppio" : "singolo")
+          : undefined;
+        const normalizedAthleteNameForEmail = athleteDisplayNameForEmail.trim().toLowerCase();
+        const additionalAthleteNamesForEmail = Array.from(
+          new Set(
+            (participants || [])
+              .map((participant) => participant.full_name?.trim())
+              .filter((name): name is string => Boolean(name))
+              .filter((name) => name.toLowerCase() !== normalizedAthleteNameForEmail)
+          )
+        );
+        const participantEmailsForEmail = Array.from(
+          new Set(
+            (participants || [])
+              .map((p) => p.email?.trim().toLowerCase())
+              .filter((e): e is string => Boolean(e && e.includes("@")))
+          )
+        );
+
+        let coachNameForEmail: string | null = null;
+        if (booking.type === "lezione_privata" && booking.coach_id) {
+          const { data: coachProfileForEmail } = await supabaseServer
+            .from("profiles")
+            .select("full_name")
+            .eq("id", booking.coach_id)
+            .single();
+          coachNameForEmail = coachProfileForEmail?.full_name?.trim() || null;
+        }
+
+        if (athleteEmailForEmail) {
+          await sendBookingCreatedEmailToAthlete({
+            bookingId: booking.id,
+            athleteName: athleteDisplayNameForEmail,
+            athleteEmail: athleteEmailForEmail,
+            athleteRecipientEmails: participantEmailsForEmail,
+            additionalAthleteNames: additionalAthleteNamesForEmail,
+            coachId: booking.coach_id || null,
+            coachName: coachNameForEmail,
+            court: booking.court,
+            type: booking.type || "campo",
+            bookingMode: bookingModeForEmail,
+            startTime: booking.start_time,
+            endTime: booking.end_time,
+            notes: booking.notes || null,
+          });
+        }
+
+        if (booking.type === "lezione_privata" && booking.coach_id) {
+          await sendBookingCreatedEmailToMaestro({
+            bookingId: booking.id,
+            athleteName: athleteDisplayNameForEmail,
+            athleteEmail: athleteEmailForEmail,
+            coachId: booking.coach_id,
+            coachName: coachNameForEmail,
+            court: booking.court,
+            type: booking.type,
+            startTime: booking.start_time,
+            endTime: booking.end_time,
+            notes: booking.notes || null,
+          });
+        }
       }
 
       // Log activity

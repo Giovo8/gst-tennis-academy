@@ -630,8 +630,28 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                   )}
                 </button>
               </div>
-              <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Maestro</div>
+              <div className="text-xs font-bold text-white/80 uppercase">
+                <button
+                  onClick={() => handleSort("athlete")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Atleta
+                  {sortBy === "athlete" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div className="text-xs font-bold text-white/80 uppercase">
+                <button
+                  onClick={() => handleSort("coach")}
+                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Maestro
+                  {sortBy === "coach" && (
+                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
               <div></div>
               <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
               <div></div>
@@ -682,7 +702,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                     </div>
 
                     {/* Data */}
-                    <div className="font-bold text-secondary text-sm">
+                    <div className="font-bold text-secondary text-sm whitespace-nowrap">
                       {formatDate(booking.start_time)}
                     </div>
 

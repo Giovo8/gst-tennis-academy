@@ -47,9 +47,27 @@
   input:focus,
   select:focus,
   textarea:focus {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--secondary);
     outline-offset: 2px;
   }
+}
+
+/* Date input calendar picker indicator - covers full input area so tapping
+   anywhere on the transparent overlay opens the picker (fixes mobile Android).
+   position: relative on the input ensures the absolute indicator is contained
+   within the input's own bounds and doesn't leak over other page elements. */
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 /* Prevent zoom on input focus (iOS) */

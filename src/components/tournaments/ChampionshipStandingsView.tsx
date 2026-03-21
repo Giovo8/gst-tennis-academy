@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Trophy, TrendingUp, Calendar, RefreshCw, Users, List, Grid3x3 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { getAvatarUrl } from '@/lib/utils';
 
 interface Participant {
   id: string;
-  user_id: string;
+  user_id: string | null;
+  player_name?: string | null;
   profiles?: {
     id: string;
     full_name: string;
@@ -71,9 +72,13 @@ export default function ChampionshipStandingsView({
   const [matches, setMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const scrollStartX = useRef(0);
 
   useEffect(() => {
     loadMatches();
@@ -379,7 +384,7 @@ export default function ChampionshipStandingsView({
 
               {/* Data Rows */}
               {participants.map((participant: any, index: number) => {
-                const fullName = participant.profiles?.full_name || 'Sconosciuto';
+                const fullName = participant.profiles?.full_name || participant.player_name || 'Sconosciuto';
                 const avatarUrl = participant.profiles?.avatar_url;
 
                 return (
@@ -433,12 +438,24 @@ export default function ChampionshipStandingsView({
         <div className="space-y-4">
           {/* Round selector and view toggle */}
           {rounds.length > 0 && (
-            <div className="flex items-center justify-between gap-4">
-              {/* Round selector on left */}
-              <div className="flex gap-2">
+            <div
+              ref={tabsRef}
+              className="flex gap-2 overflow-x-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
+              onMouseDown={e => {
+                isDragging.current = true;
+                dragStartX.current = e.clientX;
+                scrollStartX.current = tabsRef.current?.scrollLeft ?? 0;
+              }}
+              onMouseMove={e => {
+                if (!isDragging.current || !tabsRef.current) return;
+                tabsRef.current.scrollLeft = scrollStartX.current - (e.clientX - dragStartX.current);
+              }}
+              onMouseUp={() => { isDragging.current = false; }}
+              onMouseLeave={() => { isDragging.current = false; }}
+            >
                 <button
                   onClick={() => setSelectedRound(null)}
-                  className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-md transition-colors text-sm font-medium ${
                     selectedRound === null
                       ? 'border border-secondary bg-secondary text-white'
                       : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
@@ -450,7 +467,7 @@ export default function ChampionshipStandingsView({
                   <button
                     key={round}
                     onClick={() => setSelectedRound(round)}
-                    className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+                    className={`flex-shrink-0 px-4 py-2 rounded-md transition-colors text-sm font-medium ${
                       selectedRound === round
                         ? 'border border-secondary bg-secondary text-white'
                         : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
@@ -459,35 +476,6 @@ export default function ChampionshipStandingsView({
                     Giornata {round}
                   </button>
                 ))}
-              </div>
-
-              {/* View toggle on right */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                    viewMode === 'list'
-                      ? 'border border-secondary bg-secondary text-white'
-                      : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
-                  }`}
-                  title="Vista Lista"
-                >
-                  <List className="h-4 w-4" />
-                  <span className="text-sm font-medium">Lista</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                    viewMode === 'grid'
-                      ? 'border border-secondary bg-secondary text-white'
-                      : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
-                  }`}
-                  title="Vista Griglia"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Griglia</span>
-                </button>
-              </div>
             </div>
           )}
 
@@ -502,7 +490,7 @@ export default function ChampionshipStandingsView({
               <p className="text-secondary/60">Nessuna partita trovata per questa giornata</p>
             </div>
           ) : (
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+            <div className="space-y-3">
               {filteredMatches.map(match => (
                 <BracketMatchCard
                   key={match.id}
@@ -547,7 +535,7 @@ export default function ChampionshipStandingsView({
               {/* Data Rows */}
               {standings.map((standing) => {
                 const avatarUrl = standing.participant.profiles?.avatar_url;
-                const fullName = standing.participant.profiles?.full_name || 'Sconosciuto';
+                const fullName = standing.participant.profiles?.full_name || standing.participant.player_name || 'Sconosciuto';
                 
                 return (
                   <div

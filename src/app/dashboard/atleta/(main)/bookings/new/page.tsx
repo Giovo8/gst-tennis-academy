@@ -679,25 +679,19 @@ function NewBookingPageInner() {
             </button>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (dateInputRef.current) {
-                    dateInputRef.current.showPicker();
-                  }
-                }}
-                className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              <label
+                className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
                 title="Scegli data"
               >
-                <Calendar className="h-5 w-5 text-white" />
-              </button>
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={format(selectedDate, "yyyy-MM-dd")}
-                onChange={(e) => handleDateInputChange(e.target.value)}
-                className="absolute opacity-0 pointer-events-none"
-              />
+                <Calendar className="h-5 w-5 text-white pointer-events-none" />
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={format(selectedDate, "yyyy-MM-dd")}
+                  onChange={(e) => handleDateInputChange(e.target.value)}
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                />
+              </label>
               <h2 className="text-base sm:text-lg font-bold text-white">
                 <span className="hidden sm:inline capitalize">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
                 <span className="sm:hidden capitalize">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
@@ -894,38 +888,7 @@ function NewBookingPageInner() {
 
                     {/* Griglia slot selezionabili */}
                     <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
-                      {/* Prenotazioni esistenti come blocchi sovrapposti */}
-                      {existingBookings.filter((booking) => booking.status !== "cancelled").map((booking) => {
-                        const start = new Date(booking.start_time);
-                        const end = new Date(booking.end_time);
-                        const startHour = start.getHours();
-                        const startMinute = start.getMinutes();
-                        const endHour = end.getHours();
-                        const endMinute = end.getMinutes();
 
-                        const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
-                        const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
-                        const duration = endSlot - startSlot;
-
-                        const getBookingStyle = () => ({
-                          background: "var(--secondary)",
-                        });
-
-                        return (
-                          <div
-                            key={booking.id}
-                            className="absolute rounded-md z-10"
-                            style={{
-                              ...getBookingStyle(),
-                              left: `${(startSlot / 32) * 100}%`,
-                              width: `calc(${(duration / 32) * 100}% - 4px)`,
-                              top: '4px',
-                              bottom: '4px',
-                              marginLeft: '2px'
-                            }}
-                          />
-                        );
-                      })}
 
                       {/* Slot cliccabili */}
                       {Array.from({ length: 16 }, (_, hourIndex) => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Bell, Mail, Trophy, Megaphone, Calendar, Video } from "lucide-react";
+import { Bell, Mail, Trophy, Megaphone, Calendar, Video, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -158,11 +158,11 @@ export default function NotificationsDropdown() {
             void markAllAsRead();
           }
         }}
-        className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="relative flex items-center justify-center p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 transition-colors"
         title="Notifiche"
       >
-        <Bell className="h-5 w-5 text-gray-600" />
-        {unreadCount > 0 && (
+        {isOpen ? <X className="h-5 w-5 text-gray-600" /> : <Bell className="h-5 w-5 text-gray-600" />}
+        {!isOpen && unreadCount > 0 && (
           <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -246,7 +246,7 @@ export default function NotificationsDropdown() {
                 <p className="text-sm text-gray-500">Nessuna notifica</p>
               </div>
             ) : (
-              <div className="p-4 space-y-2">
+              <div>
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
@@ -255,8 +255,8 @@ export default function NotificationsDropdown() {
                       if (targetLink) router.push(targetLink);
                       setIsOpen(false);
                     }}
-                    className={`px-4 py-3 rounded-lg border transition-colors cursor-pointer ${
-                      !notification.is_read ? "bg-blue-50 border-secondary/20" : "bg-white border-gray-200 hover:bg-gray-50"
+                    className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                      !notification.is_read ? "bg-blue-50/50" : ""
                     }`}
                   >
                     <div className="flex gap-3">

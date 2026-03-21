@@ -18,6 +18,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
     if (!player) return 'TBD';
     if (player.profiles?.full_name) return player.profiles.full_name;
     if (player.profiles?.[0]?.full_name) return player.profiles[0].full_name;
+    if (player.player_name) return player.player_name;
     return 'Giocatore';
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, ChevronDown, User, X } from "lucide-react";
 import { type UserRole } from "@/lib/roles";
 
@@ -20,6 +20,12 @@ interface SelectedAthlete {
   isRegistered: boolean;
 }
 
+export interface PreviousGuest {
+  fullName: string;
+  email?: string;
+  phone?: string;
+}
+
 interface AthletesSelectorProps {
   athletes: Athlete[];
   selectedAthletes: SelectedAthlete[];
@@ -27,6 +33,7 @@ interface AthletesSelectorProps {
   onAthleteRemove: (index: number) => void;
   maxAthletes?: number | null;
   useSecondaryParticipantBorder?: boolean;
+  previousGuests?: PreviousGuest[];
 }
 
 export default function AthletesSelector({
@@ -36,13 +43,16 @@ export default function AthletesSelector({
   onAthleteRemove,
   maxAthletes = 4,
   useSecondaryParticipantBorder = false,
+  previousGuests = [],
 }: AthletesSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [guestSearchTerm, setGuestSearchTerm] = useState("");
 
   const hasMaxLimit = typeof maxAthletes === "number" && Number.isFinite(maxAthletes);
   const canAddMore = !hasMaxLimit || selectedAthletes.length < maxAthletes;
@@ -54,6 +64,27 @@ export default function AthletesSelector({
       athlete.full_name?.toLowerCase().includes(term) ||
       athlete.email?.toLowerCase().includes(term) ||
       athlete.phone?.toLowerCase().includes(term)
+    );
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  const filteredPreviousGuests = previousGuests.filter((guest) => {
+    if (!guestSearchTerm) return true;
+    const term = guestSearchTerm.toLowerCase();
+    return (
+      guest.fullName.toLowerCase().includes(term) ||
+      guest.email?.toLowerCase().includes(term) ||
+      guest.phone?.toLowerCase().includes(term)
     );
   });
 
@@ -91,7 +122,7 @@ export default function AthletesSelector({
 
   return (
     <div className="space-y-4">
-      <div className="relative">
+      <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
@@ -176,6 +207,77 @@ export default function AthletesSelector({
               )}
 
               {athletes.length > 0 && (
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-white text-secondary/50">o</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Ospiti precedenti */}
+              {previousGuests.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-secondary/60 uppercase tracking-wide">Ospiti precedenti</p>
+                  {previousGuests.length > 4 && (
+                    <input
+                      type="text"
+                      placeholder="Cerca ospite..."
+                      value={guestSearchTerm}
+                      onChange={(e) => setGuestSearchTerm(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                    />
+                  )}
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {filteredPreviousGuests.map((guest, idx) => {
+                      const alreadySelected = selectedAthletes.some(
+                        (a) => !a.isRegistered && a.fullName.toLowerCase() === guest.fullName.toLowerCase()
+                      );
+                      const canToggle = alreadySelected || canAddMore;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (alreadySelected || !canAddMore) return;
+                            onAthleteAdd({
+                              fullName: guest.fullName,
+                              email: guest.email,
+                              phone: guest.phone,
+                              isRegistered: false,
+                            });
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition flex items-center gap-2 text-sm border ${
+                            alreadySelected
+                              ? "border-transparent bg-secondary/5"
+                              : "border-transparent hover:bg-secondary/5"
+                          } ${canToggle ? "" : "opacity-60 cursor-not-allowed"}`}
+                        >
+                          <span
+                            className={`flex items-center justify-center h-4 w-4 rounded border flex-shrink-0 ${
+                              alreadySelected
+                                ? "border-secondary/60 bg-secondary/10"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {alreadySelected && <Check className="h-3 w-3 text-secondary" />}
+                          </span>
+                          <span className="font-medium text-secondary truncate">{guest.fullName}</span>
+                          <span className="text-secondary/60 text-xs flex-1 text-right truncate">
+                            {[guest.email, guest.phone].filter(Boolean).join(" ")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {filteredPreviousGuests.length === 0 && guestSearchTerm && (
+                      <p className="text-xs text-secondary/50">Nessun ospite trovato</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {previousGuests.length > 0 && (
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-200"></div>

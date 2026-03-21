@@ -235,7 +235,7 @@ export default function BookingDetailPage() {
     if (booking.type === "lezione_privata") return { icon: User };
     if (booking.type === "lezione_gruppo") return { icon: Users };
     if (booking.type === "arena") return { icon: Trophy };
-    return { icon: Circle };
+    return { icon: Calendar };
   }
 
   const BookingIcon = getBookingStyle().icon;

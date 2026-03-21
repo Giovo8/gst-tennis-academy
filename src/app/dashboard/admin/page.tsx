@@ -66,6 +66,16 @@ interface TimelineBooking {
   notes: string | null;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
 }
 
 interface Announcement {
@@ -323,10 +333,43 @@ export default function AdminDashboard() {
 
         const allProfilesMap = new Map(allProfiles?.map((p) => [p.id, p]) || []);
 
+        // Load participants for timeline bookings
+        const allBookingIds = allBookingsData.map((b) => b.id);
+        let timelineParticipantsData: Array<{
+          id?: string;
+          booking_id?: string;
+          full_name: string;
+          email?: string;
+          phone?: string;
+          is_registered: boolean;
+          user_id?: string | null;
+          order_index?: number;
+        }> | null = null;
+
+        const participantsQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+          .in("booking_id", allBookingIds)
+          .order("booking_id", { ascending: true })
+          .order("order_index", { ascending: true });
+
+        if (participantsQuery.error?.message?.toLowerCase().includes('phone')) {
+          const fallbackQuery = await supabase
+            .from("booking_participants")
+            .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+            .in("booking_id", allBookingIds)
+            .order("booking_id", { ascending: true })
+            .order("order_index", { ascending: true });
+          if (!fallbackQuery.error) timelineParticipantsData = fallbackQuery.data;
+        } else if (!participantsQuery.error) {
+          timelineParticipantsData = participantsQuery.data;
+        }
+
         const enrichedTimelineBookings = allBookingsData.map((booking) => ({
           ...booking,
           user_profile: allProfilesMap.get(booking.user_id) || null,
           coach_profile: booking.coach_id ? allProfilesMap.get(booking.coach_id) || null : null,
+          participants: timelineParticipantsData?.filter((p) => p.booking_id === booking.id) || [],
         }));
 
         setTimelineBookings(enrichedTimelineBookings);

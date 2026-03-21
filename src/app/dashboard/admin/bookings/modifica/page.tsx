@@ -218,6 +218,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   const [matchFormat, setMatchFormat] = useState<MatchFormat>("singolo");
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
+  const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   
@@ -372,6 +373,25 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         setCoaches(eligibleCoaches as { id: string; full_name: string }[]);
       }
       if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
+
+      const { data: guestsData } = await supabase
+        .from("booking_participants")
+        .select("full_name, email, phone")
+        .eq("is_registered", false)
+        .order("full_name");
+
+      if (guestsData) {
+        const seen = new Set<string>();
+        const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce((acc: { fullName: string; email?: string; phone?: string }[], g) => {
+          const key = g.full_name.trim().toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
+          }
+          return acc;
+        }, []);
+        setPreviousGuests(deduped);
+      }
     };
 
     void loadCoachesAndAthletes();
@@ -959,6 +979,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                             }}
                             maxAthletes={maxAthletesAllowed}
                             useSecondaryParticipantBorder
+                            previousGuests={previousGuests}
                           />
                         </div>
                       </div>

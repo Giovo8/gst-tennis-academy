@@ -589,25 +589,19 @@ export default function EditBookingPage() {
             </button>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (dateInputRef.current) {
-                    dateInputRef.current.showPicker();
-                  }
-                }}
-                className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              <label
+                className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
                 title="Scegli data"
               >
-                <Calendar className="h-5 w-5 text-white" />
-              </button>
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={format(selectedDate, "yyyy-MM-dd")}
-                onChange={(e) => handleDateInputChange(e.target.value)}
-                className="absolute opacity-0 pointer-events-none"
-              />
+                <Calendar className="h-5 w-5 text-white pointer-events-none" />
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={format(selectedDate, "yyyy-MM-dd")}
+                  onChange={(e) => handleDateInputChange(e.target.value)}
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                />
+              </label>
               <h2 className="text-base sm:text-lg font-bold capitalize text-white">
                 <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
                 <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
