@@ -414,8 +414,11 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         .order("full_name");
 
       if (guestsData) {
+        type GuestRecord = { full_name: string; email: string | null; phone: string | null };
+        type PreviousGuest = { fullName: string; email?: string; phone?: string };
+        const guestRecords = guestsData as GuestRecord[];
         const seen = new Set<string>();
-        const deduped = guestsData.reduce<{ fullName: string; email?: string; phone?: string }[]>((acc, g) => {
+        const deduped = guestRecords.reduce((acc: PreviousGuest[], g) => {
           const key = g.full_name.trim().toLowerCase();
           if (!seen.has(key)) {
             seen.add(key);
