@@ -831,7 +831,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           <div className="space-y-6">
             {/* Selettore Data */}
             {selectedDate && (
-              <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
+              <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
                 <button
                   type="button"
                   onClick={() => {
@@ -839,43 +839,55 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                     setSelectedDate(addDays(selectedDate, -1));
                     setSelectedSlots([]);
                   }}
-                  className="p-2 rounded-md transition-colors hover:bg-white/10"
+                  className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
                 >
                   <span className="text-lg font-semibold text-white">&lt;</span>
                 </button>
                 
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="min-w-0 flex justify-center">
                   <button
                     type="button"
                     onClick={() => {
-                      if (dateInputRef.current) {
-                        dateInputRef.current.click();
-                      }
+                      dateInputRef.current?.showPicker();
                     }}
-                    className="p-2 rounded-md transition-colors hover:bg-white/10"
+                    className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                     title="Scegli data"
                   >
-                    <Calendar className="h-5 w-5 text-white" />
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      value={format(selectedDate, "yyyy-MM-dd")}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (!value) return;
+                        const [year, month, day] = value.split("-").map(Number);
+                        const newDate = new Date(selectedDate);
+                        newDate.setFullYear(year, month - 1, day);
+                        setSelectedDate(newDate);
+                        setSelectedSlots([]);
+                      }}
+                      className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
+                      tabIndex={-1}
+                    />
+                    <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px", transform: "translateX(-18px)" }}>
+                      <Calendar className="h-5 w-5 text-white shrink-0" />
+                      <span
+                        className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
+                        style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+                      >
+                        {`${format(selectedDate, "EEE", { locale: it }).slice(0, 1).toUpperCase()}${format(selectedDate, "EEE", { locale: it }).slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`}
+                      </span>
+                    </span>
+                    <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
+                      <Calendar className="h-5 w-5 text-white shrink-0" />
+                      <span
+                        className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
+                        style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+                      >
+                        {format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}
+                      </span>
+                    </span>
                   </button>
-                  <input
-                    ref={dateInputRef}
-                    type="date"
-                    value={format(selectedDate, "yyyy-MM-dd")}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (!value) return;
-                      const [year, month, day] = value.split("-").map(Number);
-                      const newDate = new Date(selectedDate);
-                      newDate.setFullYear(year, month - 1, day);
-                      setSelectedDate(newDate);
-                      setSelectedSlots([]);
-                    }}
-                    className="absolute opacity-0 pointer-events-none"
-                  />
-                  <h2 className="text-base sm:text-lg font-bold capitalize text-white">
-                    <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
-                    <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
-                  </h2>
                 </div>
 
                 <button
@@ -885,7 +897,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                     setSelectedDate(addDays(selectedDate, 1));
                     setSelectedSlots([]);
                   }}
-                  className="p-2 rounded-md transition-colors hover:bg-white/10"
+                  className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
                 >
                   <span className="text-lg font-semibold text-white">&gt;</span>
                 </button>
@@ -1109,15 +1121,6 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                               }
                             };
                             
-                            const getBookingLabel = () => {
-                              if (booking.isBlock) return booking.reason || "CAMPO BLOCCATO";
-                              if (booking.type === "lezione_privata") return "Lezione Privata";
-                              if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
-                              if (booking.type === "arena") return "Match Arena";
-                              return "Campo";
-                            };
-                            
-                            const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
                             const isBlock = booking.isBlock;
                             
                             return (
@@ -1133,32 +1136,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                                   bottom: '4px',
                                   marginLeft: '2px'
                                 }}
-                              >
-                                {isBlock ? (
-                                  <>
-                                    <div className="truncate leading-tight uppercase tracking-wider">
-                                      CAMPO BLOCCATO
-                                    </div>
-                                    <div className="text-white/90 text-[10px] mt-1 leading-tight">
-                                      {booking.reason || "Blocco campo"}
-                                    </div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="truncate leading-tight">
-                                      {getBookingDisplayName(booking)}
-                                    </div>
-                                    {isLesson && booking.coach_profile && (
-                                      <div className="truncate text-white/95 mt-1 text-[11px] leading-tight">
-                                        {booking.coach_profile.full_name}
-                                      </div>
-                                    )}
-                                    <div className="text-white/90 text-[10px] mt-1 uppercase tracking-wide leading-tight">
-                                      {getBookingLabel()}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                              />
                             );
                           })}
                           

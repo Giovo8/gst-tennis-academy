@@ -356,7 +356,7 @@ export default function AthletesSelector({
               >
                 <div className="grid grid-cols-[40px_1fr_1fr_64px] items-center gap-4">
                   <div className="flex items-center justify-center">
-                    {athlete.isRegistered ? (
+                    {athlete.isRegistered || useSecondaryParticipantBorder ? (
                       <User className="h-5 w-5 text-secondary/60" strokeWidth={2} />
                     ) : (
                       <span className="text-xs font-bold text-secondary">O</span>
