@@ -514,36 +514,51 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   return (
     <div className="space-y-4">
       {/* Date Navigation */}
-      <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
+      <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
         <button
           onClick={() => changeDate(-1)}
-          className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+          className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
         >
           <span className="text-lg font-semibold text-white">&lt;</span>
         </button>
         
-        <div className="flex items-center gap-2 sm:gap-3">
-          <label
-            className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
+        <div className="min-w-0 flex justify-center">
+          <button
+            type="button"
+            className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
             title="Scegli data"
           >
-            <CalendarIcon className="h-5 w-5 text-white pointer-events-none" />
             <input
               type="date"
               onChange={handleDateChange}
               value={selectedDate.toISOString().split('T')[0]}
-              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
+              tabIndex={-1}
             />
-          </label>
-          <h2 className="text-base sm:text-lg font-bold capitalize text-white">
-            <span className="hidden sm:inline">{formatDateHeader()}</span>
-            <span className="sm:hidden">{formatDateHeader(true)}</span>
-          </h2>
+            <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px", transform: "translateX(-18px)" }}>
+              <CalendarIcon className="h-5 w-5 text-white shrink-0" />
+              <span
+                className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
+                style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+              >
+                {formatDateHeader(true)}
+              </span>
+            </span>
+            <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
+              <CalendarIcon className="h-5 w-5 text-white shrink-0" />
+              <span
+                className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
+                style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+              >
+                {formatDateHeader()}
+              </span>
+            </span>
+          </button>
         </div>
 
         <button
           onClick={() => changeDate(1)}
-          className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+          className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
         >
           <span className="text-lg font-semibold text-white">&gt;</span>
         </button>
