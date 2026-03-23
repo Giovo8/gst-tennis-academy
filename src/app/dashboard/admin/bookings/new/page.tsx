@@ -415,7 +415,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       if (guestsData) {
         const seen = new Set<string>();
-        const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce((acc: { fullName: string; email?: string; phone?: string }[], g) => {
+        const deduped = guestsData.reduce<{ fullName: string; email?: string; phone?: string }[]>((acc, g) => {
           const key = g.full_name.trim().toLowerCase();
           if (!seen.has(key)) {
             seen.add(key);
@@ -794,6 +794,10 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     return slot ? slot.available : false;
   };
 
+  const fullDateLabel = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it });
+  const mobileWeekdayLabel = format(selectedDate, "EEE", { locale: it });
+  const mobileDateLabel = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`;
+
   const handleDateInputChange = (value: string) => {
     if (!value) return;
     const [year, month, day] = value.split("-").map(Number);
@@ -846,37 +850,53 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       <div className="py-4">
         <div className="space-y-6">
           {/* Selettore Data */}
-          <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
+          <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
             <button
               onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
             
-            <div className="flex items-center gap-2 sm:gap-3">
-              <label
-                className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
+            <div className="min-w-0 flex justify-center">
+              <button
+                type="button"
+                onClick={() => dateInputRef.current?.showPicker()}
+                className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
-                <Calendar className="h-5 w-5 text-white pointer-events-none" />
                 <input
                   ref={dateInputRef}
                   type="date"
                   value={format(selectedDate, "yyyy-MM-dd")}
                   onChange={(e) => handleDateInputChange(e.target.value)}
-                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                  className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
+                  tabIndex={-1}
                 />
-              </label>
-              <h2 className="text-base sm:text-lg font-bold text-white">
-                <span className="hidden sm:inline capitalize">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
-                <span className="sm:hidden capitalize">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
-              </h2>
+                <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px", transform: "translateX(-18px)" }}>
+                  <Calendar className="h-5 w-5 text-white shrink-0" />
+                  <span
+                    className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
+                    style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+                  >
+                    {mobileDateLabel}
+                  </span>
+                </span>
+                <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
+                  <Calendar className="h-5 w-5 text-white shrink-0" />
+                  <span
+                    className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
+                    style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+                  >
+                    {fullDateLabel}
+                  </span>
+                </span>
+              </button>
             </div>
 
             <button
               onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>

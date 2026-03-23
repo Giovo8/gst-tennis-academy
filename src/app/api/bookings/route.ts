@@ -28,6 +28,7 @@ import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
+import { validateRestrictedBookingHours } from "@/lib/bookings/bookingTimeRestrictions";
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -200,6 +201,23 @@ export async function POST(req: Request) {
         { error: "Non autorizzato a prenotare per altri utenti" },
         { status: HTTP_STATUS.FORBIDDEN }
       );
+    }
+
+    // Restrizione oraria per atleti e maestri (admin e gestore non hanno limiti)
+    if (profile?.role === 'atleta' || profile?.role === 'maestro') {
+      const timeError = validateRestrictedBookingHours(start_time, end_time);
+      if (timeError) {
+        logger.warn('Booking outside allowed hours', {
+          userId: user.id,
+          role: profile.role,
+          start_time,
+          end_time,
+        });
+        return NextResponse.json(
+          { error: timeError },
+          { status: HTTP_STATUS.FORBIDDEN }
+        );
+      }
     }
 
     // Check for overlapping active bookings on the same court
