@@ -44,7 +44,7 @@ export async function notifyBookingCreated(userId: string, bookingDetails: { cou
   return createNotification({
     userId,
     title: "Nuova Prenotazione",
-    message: `La tua prenotazione per il Campo ${bookingDetails.court} alle ${new Date(bookingDetails.startTime).toLocaleString("it-IT")} è stata creata.`,
+    message: `La tua prenotazione per il Campo ${bookingDetails.court} alle ${new Date(bookingDetails.startTime).toLocaleString("it-IT", { timeZone: "Europe/Rome" })} è stata creata.`,
     type: "booking",
     link: "/bookings",
   });
@@ -104,7 +104,7 @@ export async function notifyLessonAssigned(userId: string, coachName: string, st
   return createNotification({
     userId,
     title: "Lezione Assegnata",
-    message: `${coachName} ti ha assegnato una lezione per ${new Date(startTime).toLocaleString("it-IT")}.`,
+    message: `${coachName} ti ha assegnato una lezione per ${new Date(startTime).toLocaleString("it-IT", { timeZone: "Europe/Rome" })}.`,
     type: "booking",
     link: "/bookings",
   });

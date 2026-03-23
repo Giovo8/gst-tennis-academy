@@ -321,10 +321,12 @@ export async function POST(req: Request) {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone: "Europe/Rome",
       });
       const startTimeLabel = new Date(booking.start_time).toLocaleTimeString("it-IT", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "Europe/Rome",
       });
 
       // Get user name for notification

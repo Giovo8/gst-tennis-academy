@@ -185,16 +185,19 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "Europe/Rome",
     });
     const startLabel = start.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
     const endLabel = end.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
-    const createdAtLabel = new Date().toLocaleString("it-IT");
+    const createdAtLabel = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
 
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
@@ -426,16 +429,19 @@ export async function sendBookingCreatedEmailToAthlete(params: SendBookingNotifi
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "Europe/Rome",
     });
     const startLabel = start.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
     const endLabel = end.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
-    const createdAtLabel = new Date().toLocaleString("it-IT");
+    const createdAtLabel = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
 
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
@@ -623,16 +629,19 @@ export async function sendBookingDeletedEmailToRecipients(
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "Europe/Rome",
     });
     const startLabel = start.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
     const endLabel = end.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
-    const deletedAtLabel = new Date().toLocaleString("it-IT");
+    const deletedAtLabel = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
 
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
@@ -877,16 +886,19 @@ export async function sendBookingCreatedEmailToMaestro(params: SendBookingNotifi
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "Europe/Rome",
     });
     const startLabel = start.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
     const endLabel = end.toLocaleTimeString("it-IT", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
-    const createdAtLabel = new Date().toLocaleString("it-IT");
+    const createdAtLabel = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
 
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
