@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { sendBookingCreatedEmailToGestore, sendBookingCreatedEmailToAthlete, sendBookingCreatedEmailToMaestro } from "@/lib/email/booking-notifications";
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
+import { resolveBookingEmailAthleteContext } from "@/lib/bookings/bookingEmailAthleteContext";
 import {
   buildCoachNotificationForPrivateLesson,
   buildCoachNotificationForPrivateLessonBatch,
@@ -127,6 +128,12 @@ export async function POST(request: Request) {
 
       const bookingCount = insertedBookings.length;
       const athleteName = userProfile?.full_name || "Un utente";
+      const firstSourceBooking = bookings[0];
+      const athleteContextForBatchNotifications = resolveBookingEmailAthleteContext({
+        owner: userProfile,
+        participants: Array.isArray(firstSourceBooking?.participants) ? firstSourceBooking.participants : [],
+        fallbackName: athleteName,
+      });
       const countLabel = bookingCount > 1 ? `${bookingCount} prenotazioni` : "una prenotazione";
       const notificationLink = bookingCount === 1
         ? getAdminBookingNotificationLink(firstBooking.id)
@@ -135,7 +142,7 @@ export async function POST(request: Request) {
       await notifyAdmins({
         type: "booking",
         title: bookingCount > 1 ? "Nuove prenotazioni multiple" : "Nuova prenotazione",
-        message: `${athleteName} ha creato ${countLabel} sul ${firstBooking.court} a partire dal ${startDate} alle ${startTime}`,
+        message: `${athleteContextForBatchNotifications.athleteName} ha creato ${countLabel} sul ${firstBooking.court} a partire dal ${startDate} alle ${startTime}`,
         link: notificationLink,
       });
 
@@ -159,15 +166,24 @@ export async function POST(request: Request) {
           (left, right) => new Date(left.start_time).getTime() - new Date(right.start_time).getTime()
         );
         const firstCoachBooking = sortedCoachBookings[0];
+        const firstCoachBookingIndex = insertedBookings.findIndex((booking) => booking.id === firstCoachBooking.id);
+        const firstCoachSourceBooking = firstCoachBookingIndex >= 0 ? bookings[firstCoachBookingIndex] : null;
+        const athleteContextForCoachNotification = resolveBookingEmailAthleteContext({
+          owner: userProfile,
+          participants: Array.isArray(firstCoachSourceBooking?.participants)
+            ? firstCoachSourceBooking.participants
+            : [],
+          fallbackName: athleteName,
+        });
 
         const coachNotification = sortedCoachBookings.length === 1
           ? buildCoachNotificationForPrivateLesson({
-              athleteName,
+              athleteName: athleteContextForCoachNotification.athleteName,
               court: firstCoachBooking.court,
               startTime: firstCoachBooking.start_time,
             })
           : buildCoachNotificationForPrivateLessonBatch({
-              athleteName,
+              athleteName: athleteContextForCoachNotification.athleteName,
               court: firstCoachBooking.court,
               lessonCount: sortedCoachBookings.length,
               firstStartTime: firstCoachBooking.start_time,
@@ -284,6 +300,7 @@ export async function POST(request: Request) {
 
             return sendBookingCreatedEmailToGestore({
               bookingId: booking.id,
+              bookedByName: athleteName,
               athleteName,
               athleteEmail: userProfile.email || null,
               athleteRecipientEmails,
@@ -301,8 +318,6 @@ export async function POST(request: Request) {
         );
       } else {
         // Gestore/admin batch: send confirmation to athlete + notify maestri for private lessons
-        const athleteEmailForBatch = userProfile?.email || null;
-
         // Resolve coach names once for both athlete emails and maestro emails
         const privateLessonBookingsWithCoach = insertedBookings.filter(
           (b) => b.type === "lezione_privata" && Boolean(b.coach_id)
@@ -321,60 +336,59 @@ export async function POST(request: Request) {
           }
         }
 
-        if (athleteEmailForBatch) {
-          await Promise.all(
-            insertedBookings.map((booking) => {
-              const sourceBooking = bookings[insertedBookings.indexOf(booking)];
+        await Promise.all(
+          insertedBookings.map((booking) => {
+            const sourceBooking = bookings[insertedBookings.indexOf(booking)];
+            const athleteEmailContext = resolveBookingEmailAthleteContext({
+              owner: userProfile,
+              participants: Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [],
+              fallbackName: athleteName,
+            });
+            if (athleteEmailContext.athleteRecipientEmails.length === 0) {
+              return Promise.resolve();
+            }
               const participantsCount = Array.isArray(sourceBooking?.participants)
                 ? sourceBooking.participants.length
                 : 0;
-              const bookingModeForBatch = booking.type === "campo"
-                ? (participantsCount > 2 ? "doppio" : "singolo")
-                : undefined;
-              const normalizedAthleteNameForBatch = athleteName.trim().toLowerCase();
-              const additionalAthleteNamesForBatch: string[] = Array.from(
-                new Set<string>(
-                  (Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [])
-                    .map((p: { full_name?: string | null }) => p?.full_name?.trim())
-                    .filter((n): n is string => Boolean(n))
-                    .filter((n) => n.toLowerCase() !== normalizedAthleteNameForBatch)
-                )
-              );
-              const participantEmailsForBatch: string[] = Array.from(
-                new Set(
-                  (Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [])
-                    .map((p: { email?: string | null }) => p?.email?.trim().toLowerCase())
-                    .filter((e): e is string => Boolean(e && e.includes("@")))
-                )
-              );
-              return sendBookingCreatedEmailToAthlete({
-                bookingId: booking.id,
-                athleteName,
-                athleteEmail: athleteEmailForBatch,
-                athleteRecipientEmails: participantEmailsForBatch,
-                additionalAthleteNames: additionalAthleteNamesForBatch,
-                coachId: booking.coach_id || null,
-                coachName: booking.type === "lezione_privata" && booking.coach_id
-                  ? (coachNamesForAthleteEmail.get(booking.coach_id as string) || null)
-                  : null,
-                court: booking.court,
-                type: booking.type || "campo",
-                bookingMode: bookingModeForBatch,
-                startTime: booking.start_time,
-                endTime: booking.end_time,
-                notes: booking.notes || null,
-              });
-            })
-          );
-        }
+            const bookingModeForBatch = booking.type === "campo"
+              ? (participantsCount > 2 ? "doppio" : "singolo")
+              : undefined;
+            return sendBookingCreatedEmailToAthlete({
+              bookingId: booking.id,
+              bookedByName: userProfile?.full_name || athleteEmailContext.athleteName,
+              athleteName: athleteEmailContext.athleteName,
+              athleteEmail: athleteEmailContext.athleteEmail,
+              athleteRecipientEmails: athleteEmailContext.athleteRecipientEmails,
+              additionalAthleteNames: athleteEmailContext.additionalAthleteNames,
+              coachId: booking.coach_id || null,
+              coachName: booking.type === "lezione_privata" && booking.coach_id
+                ? (coachNamesForAthleteEmail.get(booking.coach_id as string) || null)
+                : null,
+              court: booking.court,
+              type: booking.type || "campo",
+              bookingMode: bookingModeForBatch,
+              startTime: booking.start_time,
+              endTime: booking.end_time,
+              notes: booking.notes || null,
+            });
+          })
+        );
 
         if (privateLessonBookingsWithCoach.length > 0) {
           await Promise.all(
-            privateLessonBookingsWithCoach.map((booking) =>
-              sendBookingCreatedEmailToMaestro({
+            privateLessonBookingsWithCoach.map((booking) => {
+              const sourceBooking = bookings[insertedBookings.indexOf(booking)];
+              const athleteEmailContext = resolveBookingEmailAthleteContext({
+                owner: userProfile,
+                participants: Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [],
+                fallbackName: athleteName,
+              });
+
+              return sendBookingCreatedEmailToMaestro({
                 bookingId: booking.id,
-                athleteName,
-                athleteEmail: athleteEmailForBatch,
+                bookedByName: userProfile?.full_name || athleteEmailContext.athleteName,
+                athleteName: athleteEmailContext.athleteName,
+                athleteEmail: athleteEmailContext.athleteEmail,
                 coachId: booking.coach_id as string,
                 coachName: coachNamesForAthleteEmail.get(booking.coach_id as string) || null,
                 court: booking.court,
@@ -382,8 +396,8 @@ export async function POST(request: Request) {
                 startTime: booking.start_time,
                 endTime: booking.end_time,
                 notes: booking.notes || null,
-              })
-            )
+              });
+            })
           );
         }
       }

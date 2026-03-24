@@ -12,6 +12,7 @@ import {
 
 type SendBookingNotificationInput = {
   bookingId: string;
+  bookedByName?: string | null;
   athleteName: string;
   athleteEmail?: string | null;
   athleteRecipientEmails?: string[];
@@ -202,6 +203,7 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
+    const safeBookedByName = (params.bookedByName || params.athleteName || "Utente piattaforma").trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
     const bookingTypeLabel = getBookingTypeLabel(params.type);
     const bookingEmailCopy = getBookingEmailCopy({ action: "created", bookingType: params.type });
@@ -275,7 +277,8 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
               <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
               <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
-                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
+                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeBookedByName)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
@@ -297,6 +300,7 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
         const text = [
           bookingEmailCopy.textLead,
           "",
+          `Prenotata da: ${safeBookedByName}`,
           `Atleta: ${params.athleteName}`,
           `Email atleta: ${safeAthleteEmail}`,
           `Campo: ${params.court}`,
@@ -446,6 +450,7 @@ export async function sendBookingCreatedEmailToAthlete(params: SendBookingNotifi
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
+    const safeBookedByName = (params.bookedByName || params.athleteName || "Utente piattaforma").trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
     const bookingTypeLabel = getBookingTypeLabel(params.type);
     const bookingEmailCopy = getBookingEmailCopy({ action: "created", bookingType: params.type });
@@ -489,7 +494,8 @@ export async function sendBookingCreatedEmailToAthlete(params: SendBookingNotifi
               <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
               <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
-                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
+                <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeBookedByName)}</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
@@ -511,6 +517,7 @@ export async function sendBookingCreatedEmailToAthlete(params: SendBookingNotifi
         const text = [
           bookingEmailCopy.textLead,
           "",
+          `Prenotata da: ${safeBookedByName}`,
           `Atleta: ${params.athleteName}`,
           `Email atleta: ${safeAthleteEmail}`,
           `Campo: ${params.court}`,
@@ -646,6 +653,7 @@ export async function sendBookingDeletedEmailToRecipients(
     const appBaseUrl = env.publicSiteUrl.replace(/\/$/, "");
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
+    const safeBookedByName = (params.bookedByName || params.athleteName || "Utente piattaforma").trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
     const bookingTypeLabel = getBookingTypeLabel(params.type);
     const bookingEmailCopy = getBookingEmailCopy({ action: "deleted", bookingType: params.type });
@@ -723,7 +731,7 @@ export async function sendBookingDeletedEmailToRecipients(
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
                 <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
-                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(deletedByName)} (${escapeHtml(deletedByRole)})</td></tr>
+                <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(deletedByName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
                 ${bookingMode ? `<tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingMode)}</td></tr>` : ""}
@@ -746,7 +754,7 @@ export async function sendBookingDeletedEmailToRecipients(
           "",
           `Atleta: ${params.athleteName}`,
           `Email atleta: ${safeAthleteEmail}`,
-          `Eliminata da: ${deletedByName} (${deletedByRole})`,
+          `Eliminata da: ${deletedByName}`,
           `Campo: ${params.court}`,
           `Tipo: ${bookingTypeLabel}`,
           bookingMode ? `Modalità: ${bookingMode}` : "",
@@ -931,7 +939,8 @@ export async function sendBookingCreatedEmailToMaestro(params: SendBookingNotifi
           <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
           <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
           <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
-            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeBookedByName)}</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
             <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
             <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.court)}</td></tr>
             <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">${escapeHtml(bookingTypeLabel)}</td></tr>
@@ -952,6 +961,7 @@ export async function sendBookingCreatedEmailToMaestro(params: SendBookingNotifi
     const text = [
       bookingEmailCopy.textLead,
       "",
+      `Prenotata da: ${safeBookedByName}`,
       `Atleta: ${params.athleteName}`,
       `Email atleta: ${safeAthleteEmail}`,
       `Campo: ${params.court}`,

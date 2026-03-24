@@ -24,6 +24,7 @@ import {
   BOOKING_DELETE_SNAPSHOT_FIELDS,
   getBookingDeletionMode,
 } from "@/lib/bookings/bookingDeletionEmail";
+import { resolveBookingEmailAthleteContext } from "@/lib/bookings/bookingEmailAthleteContext";
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
@@ -350,13 +351,22 @@ export async function POST(req: Request) {
       // Get user name for notification
       const { data: userProfile } = await supabaseServer
         .from("profiles")
-        .select("full_name, email")
+        .select("full_name, email, role")
         .eq("id", user_id)
         .single();
 
+      const athleteContextForNotifications = resolveBookingEmailAthleteContext({
+        owner: userProfile,
+        participants,
+        fallbackName: userProfile?.full_name || profile?.full_name || user.email || "Un utente",
+      });
+      const actorDisplayName = profile?.full_name || user.email || "Uno staff";
+      const createdByStaff = isAdminOrGestore(profile?.role);
+      const bookedForAnotherUser = user_id !== user.id;
+
       if (shouldNotifyCoachForPrivateLesson({ bookingType: booking.type, coachId: booking.coach_id })) {
         const coachNotification = buildCoachNotificationForPrivateLesson({
-          athleteName: userProfile?.full_name || profile?.full_name || user.email || "Un utente",
+          athleteName: athleteContextForNotifications.athleteName,
           court: booking.court,
           startTime: booking.start_time,
         });
@@ -381,7 +391,10 @@ export async function POST(req: Request) {
       await notifyAdmins({
         type: "booking",
         title: "Nuova prenotazione",
-        message: `${userProfile?.full_name || "Un utente"} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTimeLabel}`,
+        message:
+          createdByStaff && bookedForAnotherUser
+            ? `${actorDisplayName} ha prenotato il campo ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}`
+            : `${athleteContextForNotifications.athleteName} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTimeLabel}`,
         link: getAdminBookingNotificationLink(booking.id),
       });
 
@@ -465,6 +478,7 @@ export async function POST(req: Request) {
 
         await sendBookingCreatedEmailToGestore({
           bookingId: booking.id,
+          bookedByName: athleteDisplayName,
           athleteName: athleteDisplayName,
           athleteEmail: userProfile?.email || user.email || null,
           athleteRecipientEmails,
@@ -480,27 +494,13 @@ export async function POST(req: Request) {
         });
       } else {
         // Gestore/admin created booking: send confirmation to athlete
-        const athleteDisplayNameForEmail = userProfile?.full_name || "Un atleta";
-        const athleteEmailForEmail = userProfile?.email || null;
+        const athleteEmailContext = resolveBookingEmailAthleteContext({
+          owner: userProfile,
+          participants,
+        });
         const bookingModeForEmail = booking.type === "campo"
           ? (participants && participants.length > 2 ? "doppio" : "singolo")
           : undefined;
-        const normalizedAthleteNameForEmail = athleteDisplayNameForEmail.trim().toLowerCase();
-        const additionalAthleteNamesForEmail = Array.from(
-          new Set(
-            (participants || [])
-              .map((participant) => participant.full_name?.trim())
-              .filter((name): name is string => Boolean(name))
-              .filter((name) => name.toLowerCase() !== normalizedAthleteNameForEmail)
-          )
-        );
-        const participantEmailsForEmail = Array.from(
-          new Set(
-            (participants || [])
-              .map((p) => p.email?.trim().toLowerCase())
-              .filter((e): e is string => Boolean(e && e.includes("@")))
-          )
-        );
 
         let coachNameForEmail: string | null = null;
         if (booking.type === "lezione_privata" && booking.coach_id) {
@@ -512,13 +512,14 @@ export async function POST(req: Request) {
           coachNameForEmail = coachProfileForEmail?.full_name?.trim() || null;
         }
 
-        if (athleteEmailForEmail) {
+        if (athleteEmailContext.athleteRecipientEmails.length > 0) {
           await sendBookingCreatedEmailToAthlete({
             bookingId: booking.id,
-            athleteName: athleteDisplayNameForEmail,
-            athleteEmail: athleteEmailForEmail,
-            athleteRecipientEmails: participantEmailsForEmail,
-            additionalAthleteNames: additionalAthleteNamesForEmail,
+            bookedByName: createdByStaff && bookedForAnotherUser ? actorDisplayName : athleteEmailContext.athleteName,
+            athleteName: athleteEmailContext.athleteName,
+            athleteEmail: athleteEmailContext.athleteEmail,
+            athleteRecipientEmails: athleteEmailContext.athleteRecipientEmails,
+            additionalAthleteNames: athleteEmailContext.additionalAthleteNames,
             coachId: booking.coach_id || null,
             coachName: coachNameForEmail,
             court: booking.court,
@@ -533,8 +534,9 @@ export async function POST(req: Request) {
         if (booking.type === "lezione_privata" && booking.coach_id) {
           await sendBookingCreatedEmailToMaestro({
             bookingId: booking.id,
-            athleteName: athleteDisplayNameForEmail,
-            athleteEmail: athleteEmailForEmail,
+            bookedByName: createdByStaff && bookedForAnotherUser ? actorDisplayName : athleteEmailContext.athleteName,
+            athleteName: athleteEmailContext.athleteName,
+            athleteEmail: athleteEmailContext.athleteEmail,
             coachId: booking.coach_id,
             coachName: coachNameForEmail,
             court: booking.court,
@@ -676,7 +678,7 @@ export async function PUT(req: Request) {
     }
 
     if (shouldNotifyAthlete) {
-      const actorRoleLabel = profile?.role === "admin" ? "admin" : "gestore";
+      const actorDisplayName = profile?.full_name || user.email || "Lo staff";
       const updatedBooking = data?.[0];
       const bookingCourt = updatedBooking?.court || booking.court || "campo";
       const bookingStartTime = updatedBooking?.start_time || booking.start_time;
@@ -698,7 +700,7 @@ export async function PUT(req: Request) {
           user_id: booking.user_id,
           type: "booking",
           title: "Prenotazione modificata",
-          message: `La tua prenotazione ${bookingCourt} del ${dateLabel} alle ${timeLabel} è stata modificata da un ${actorRoleLabel}.`,
+          message: `La tua prenotazione ${bookingCourt} del ${dateLabel} alle ${timeLabel} è stata modificata da ${actorDisplayName}.`,
           link: "/dashboard/atleta/bookings",
           is_read: false,
         });
@@ -837,7 +839,6 @@ export async function DELETE(req: Request) {
     }
 
     const bookingOwnerDisplayName = bookingOwnerFullName || user.email || "Un utente";
-    const bookingOwnerNormalizedEmail = bookingOwnerEmail?.trim().toLowerCase();
     const participantUserIds: string[] = Array.from(
       new Set<string>(
         (bookingParticipants || [])
@@ -870,27 +871,22 @@ export async function DELETE(req: Request) {
       }
     }
 
-    const athleteRecipientEmails = Array.from(
-      new Set(
-        [
-          bookingOwnerNormalizedEmail || (deletedByOwner ? user.email?.trim().toLowerCase() : null),
-          ...participantEmailsFromRows,
-          ...participantUserIds
-            .map((participantUserId) => participantEmailsFromProfilesById.get(participantUserId))
-            .filter((email): email is string => Boolean(email)),
-        ].filter((email): email is string => Boolean(email && email.includes("@")))
-      )
-    );
+    const participantsForDeletionEmail = (bookingParticipants || []).map((participant) => ({
+      full_name: participant.full_name || null,
+      email:
+        participant.email ||
+        (participant.user_id ? participantEmailsFromProfilesById.get(participant.user_id) || null : null),
+    }));
 
-    const normalizedOwnerName = bookingOwnerDisplayName.trim().toLowerCase();
-    const additionalAthleteNames: string[] = Array.from(
-      new Set<string>(
-        (bookingParticipants || [])
-          .map((participant) => participant.full_name?.trim())
-          .filter((name): name is string => Boolean(name))
-          .filter((name) => name.toLowerCase() !== normalizedOwnerName)
-      )
-    );
+    const athleteContextForDeletionEmail = resolveBookingEmailAthleteContext({
+      owner: {
+        full_name: bookingOwnerFullName,
+        email: bookingOwnerEmail || (deletedByOwner ? user.email || null : null),
+        role: bookingOwnerRole,
+      },
+      participants: participantsForDeletionEmail,
+      fallbackName: bookingOwnerDisplayName,
+    });
 
     let coachName: string | null = null;
     if (booking.type === "lezione_privata" && booking.coach_id) {
@@ -915,10 +911,10 @@ export async function DELETE(req: Request) {
 
     await sendBookingDeletedEmailToRecipients({
       bookingId: id,
-      athleteName: bookingOwnerDisplayName,
-      athleteEmail: bookingOwnerEmail || (deletedByOwner ? user.email : null),
-      athleteRecipientEmails,
-      additionalAthleteNames,
+      athleteName: athleteContextForDeletionEmail.athleteName,
+      athleteEmail: athleteContextForDeletionEmail.athleteEmail,
+      athleteRecipientEmails: athleteContextForDeletionEmail.athleteRecipientEmails,
+      additionalAthleteNames: athleteContextForDeletionEmail.additionalAthleteNames,
       coachId: booking.coach_id || null,
       coachName,
       court: booking.court,
@@ -932,7 +928,7 @@ export async function DELETE(req: Request) {
     });
     
     if (shouldNotifyAthlete) {
-      const actorRoleLabel = profile?.role === "admin" ? "admin" : "gestore";
+      const actorDisplayName = profile?.full_name || user.email || "Lo staff";
       const bookingDate = new Date(booking.start_time);
       const dateLabel = bookingDate.toLocaleDateString("it-IT", {
         day: "2-digit",
@@ -950,7 +946,7 @@ export async function DELETE(req: Request) {
           user_id: booking.user_id,
           type: "booking",
           title: "Prenotazione eliminata",
-          message: `La tua prenotazione ${booking.court} del ${dateLabel} alle ${timeLabel} è stata eliminata da un ${actorRoleLabel}.`,
+          message: `La tua prenotazione ${booking.court} del ${dateLabel} alle ${timeLabel} è stata eliminata da ${actorDisplayName}.`,
           link: "/dashboard/atleta/bookings",
           is_read: false,
         });
@@ -966,7 +962,7 @@ export async function DELETE(req: Request) {
 
     if (shouldNotifyAdmins) {
       const notification = buildAdminsNotificationForUserBookingDeletion({
-        userName: bookingOwnerFullName || profile?.full_name || user.email || "Un utente",
+        userName: athleteContextForDeletionEmail.athleteName,
         court: booking.court,
         startTime: booking.start_time,
       });
