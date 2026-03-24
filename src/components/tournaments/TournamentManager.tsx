@@ -948,6 +948,7 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
           {participants.map((participant: any, index: number) => {
             const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
             const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
+            const isGuest = !participant.user_id;
 
             return (
               <div

@@ -912,6 +912,7 @@ export async function sendBookingCreatedEmailToMaestro(params: SendBookingNotifi
     const logoUrl = `${appBaseUrl}/images/logo-tennis.png`;
     const notes = params.notes?.trim();
     const safeAthleteEmail = (params.athleteEmail || "n/d").trim();
+    const safeBookedByName = (params.bookedByName || params.athleteName || "Utente piattaforma").trim();
     const bookingTypeLabel = getBookingTypeLabel(params.type);
     const bookingEmailCopy = getBookingEmailCopy({ action: "created", bookingType: params.type });
     const safeCoachName = params.coachName?.trim() || "Non specificato";
