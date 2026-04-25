@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
 
 // GET - Fetch user notifications
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("user_id");
     const unreadOnly = searchParams.get("unread_only") === "true";
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let query = supabase
+    let query = supabaseServer
       .from("notifications")
       .select("*")
       .eq("user_id", userId)
@@ -45,20 +44,20 @@ export async function GET(request: NextRequest) {
 // POST - Create new notification
 export async function POST(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const body = await request.json();
     const { user_id, title, message, type, link } = body;
 
-    console.log("📬 API: Creating notification", { user_id, title, type });
-
     if (!user_id || !title || !message) {
-      console.error("❌ API: Missing required fields");
       return NextResponse.json(
         { error: "user_id, title, and message are required" },
         { status: 400 }
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("notifications")
       .insert({
         user_id,
@@ -72,11 +71,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("❌ API: Database error", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    console.log("✅ API: Notification created successfully", data.id);
 
     return NextResponse.json({ notification: data });
   } catch (err: any) {
@@ -87,12 +83,14 @@ export async function POST(request: NextRequest) {
 // PATCH - Mark notification as read
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const body = await request.json();
     const { notification_id, user_id, mark_all_read } = body;
 
     if (mark_all_read && user_id) {
-      // Mark all notifications as read for user
-      const { error } = await supabase
+      const { error } = await supabaseServer
         .from("notifications")
         .update({ is_read: true })
         .eq("user_id", user_id)
@@ -112,7 +110,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("notifications")
       .update({ is_read: true })
       .eq("id", notification_id)
@@ -132,6 +130,9 @@ export async function PATCH(request: NextRequest) {
 // DELETE - Delete notification
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const { searchParams } = new URL(request.url);
     const notificationId = searchParams.get("notification_id");
 
@@ -142,7 +143,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseServer
       .from("notifications")
       .delete()
       .eq("id", notificationId);

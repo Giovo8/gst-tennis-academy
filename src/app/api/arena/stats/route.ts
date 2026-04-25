@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseServer = createClient(supabaseUrl, supabaseServiceKey);
+import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 // GET - Fetch arena stats
 export async function GET(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("user_id");
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 100;
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
             .single();
 
           if (createError) {
-            console.error("Error creating stats:", createError);
+            logger.error("Error creating stats:", createError);
             return NextResponse.json({ error: createError.message }, { status: 500 });
           }
 
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
           return NextResponse.json({ stats: { ...newStats, profile } });
         }
 
-        console.error("Error fetching stats:", error);
+        logger.error("Error fetching stats:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
@@ -66,7 +67,7 @@ export async function GET(req: Request) {
         .limit(limit);
 
       if (error) {
-        console.error("Error fetching leaderboard:", error);
+        logger.error("Error fetching leaderboard:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
@@ -91,7 +92,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ leaderboard: data || [] });
     }
   } catch (error: any) {
-    console.error("Error in GET /api/arena/stats:", error);
+    logger.error("Error in GET /api/arena/stats:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -99,6 +100,10 @@ export async function GET(req: Request) {
 // POST - Create or update stats (admin only)
 export async function POST(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const body = await req.json();
     const { user_id, ...statsData } = body;
 
@@ -116,13 +121,13 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error("Error upserting stats:", error);
+      logger.error("Error upserting stats:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ stats: data });
   } catch (error: any) {
-    console.error("Error in POST /api/arena/stats:", error);
+    logger.error("Error in POST /api/arena/stats:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

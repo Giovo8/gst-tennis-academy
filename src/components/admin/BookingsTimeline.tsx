@@ -296,12 +296,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       .filter(s => s.court === firstSlot.court)
       .map(s => s.time);
 
-    console.log('🚀 Navigazione verso new booking con parametri:', {
-      court: firstSlot.court,
-      date: dateStr,
-      times: allTimes,
-      selectedSlots: selectedSlots
-    });
+
 
     // Navigate to new booking page with pre-filled data
     // Pass all selected times as comma-separated values

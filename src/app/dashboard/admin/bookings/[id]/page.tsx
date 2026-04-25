@@ -144,13 +144,6 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         participants: participantsData || [],
       };
 
-      console.log("📅 Dettaglio prenotazione:", {
-        id: enrichedBooking.id,
-        start: new Date(enrichedBooking.start_time).toISOString(),
-        end: new Date(enrichedBooking.end_time).toISOString(),
-        duration: (new Date(enrichedBooking.end_time).getTime() - new Date(enrichedBooking.start_time).getTime()) / (1000 * 60) + " minuti"
-      });
-
       setBooking(enrichedBooking);
     } catch (error) {
       console.error("Errore:", error);

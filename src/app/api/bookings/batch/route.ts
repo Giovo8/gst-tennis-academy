@@ -9,6 +9,7 @@ import {
   buildCoachNotificationForPrivateLessonBatch,
   shouldNotifyCoachForPrivateLesson,
 } from "@/lib/bookings/privateLessonNotifications";
+import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -19,6 +20,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  * Body: { bookings: Array<BookingData> }
  */
 export async function POST(request: Request) {
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {

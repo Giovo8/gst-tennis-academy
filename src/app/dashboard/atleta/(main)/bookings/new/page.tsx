@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -153,6 +153,8 @@ type MatchFormat = (typeof MATCH_FORMATS)[number]["value"];
 function NewBookingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/bookings")[0];
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -369,7 +371,7 @@ function NewBookingPageInner() {
 
       // Remove URL parameters after successfully applying the slots
       setTimeout(() => {
-        router.replace('/dashboard/atleta/bookings/new', { scroll: false });
+        router.replace(`${dashboardBase}/bookings/new`, { scroll: false });
       }, 100);
     }
   }, [slots, loadingSlots, router]);
@@ -632,7 +634,7 @@ function NewBookingPageInner() {
 
       setSuccess("Prenotazione creata con successo!");
       setTimeout(() => {
-        router.push("/dashboard/atleta/bookings");
+        router.push(`${dashboardBase}/bookings`);
       }, 1500);
     } catch (err: any) {
       setError(err.message || "Errore nella creazione della prenotazione");
@@ -646,7 +648,7 @@ function NewBookingPageInner() {
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+          <Link href={`${dashboardBase}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
           {" › "}
           <span>Nuova Prenotazione</span>
         </p>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Video,
@@ -36,6 +36,8 @@ interface VideoLesson {
 
 export default function VideoPlayerPage() {
   const params = useParams();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/videos")[0];
   const videoId = params.id as string;
 
   const [video, setVideo] = useState<VideoLesson | null>(null);
@@ -180,7 +182,7 @@ export default function VideoPlayerPage() {
     return (
       <div className="space-y-6">
         <Link
-          href="/dashboard/atleta/videos"
+          href={`${dashboardBase}/videos`}
           className="inline-flex items-center gap-2 text-secondary hover:opacity-80 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -196,7 +198,7 @@ export default function VideoPlayerPage() {
             Il video richiesto non è disponibile o non hai accesso
           </p>
           <Link
-            href="/dashboard/atleta/videos"
+            href={`${dashboardBase}/videos`}
             className="inline-flex items-center gap-2 px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all"
           >
             <ArrowLeft className="h-4 w-4" />

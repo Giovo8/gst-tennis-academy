@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
@@ -131,6 +131,8 @@ const MATCH_FORMATS = [
 
 export default function ChooseOpponentPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentUserId, setCurrentUserId] = useState("");
   const [currentUserName, setCurrentUserName] = useState("");
@@ -523,7 +525,7 @@ export default function ChooseOpponentPage() {
 
       setSuccess("Sfida creata con successo!");
       setTimeout(() => {
-        router.push("/dashboard/atleta/arena");
+        router.push(`${dashboardBase}/arena`);
       }, 1500);
     } catch (error: any) {
       setError(error.message);
@@ -573,7 +575,7 @@ export default function ChooseOpponentPage() {
         <div>
           <p className="breadcrumb text-secondary/60">
             <Link
-              href="/dashboard/atleta/arena"
+              href={`${dashboardBase}/arena`}
               className="hover:text-secondary/80 transition-colors"
             >
               Arena

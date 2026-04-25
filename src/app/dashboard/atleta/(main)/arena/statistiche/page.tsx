@@ -12,7 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface PlayerStats {
   ranking: number;
@@ -27,6 +27,8 @@ interface PlayerStats {
 
 export default function StatistichePage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
   const [stats, setStats] = useState<PlayerStats>({
     ranking: 0,
     totalMatches: 0,
@@ -121,7 +123,7 @@ export default function StatistichePage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/atleta/arena" className="hover:text-secondary/80 transition-colors">Arena</Link>
+        <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">Arena</Link>
         {" › "}
         <span>Statistiche</span>
       </p>

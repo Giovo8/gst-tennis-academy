@@ -114,14 +114,10 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
   async function loadBookings() {
     try {
-      console.log("🔍 Caricamento prenotazioni...");
-      
       // Prima verifica il ruolo dell'utente
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("👤 Utente:", user?.id);
       
       const { data: roleData } = await supabase.rpc('get_my_role');
-      console.log("🎭 Ruolo:", roleData);
       
       // Prima query: prendi le ultime prenotazioni
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -138,7 +134,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       }
 
       if (!bookingsData || bookingsData.length === 0) {
-        console.log("⚠️ Nessuna prenotazione trovata");
         setBookings([]);
         setLoading(false);
         return;
@@ -219,7 +214,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
         participants: participantsData?.filter((participant) => participant.booking_id === booking.id) || []
       }));
 
-      console.log("✅ Prenotazioni caricate:", enrichedBookings.length);
       setBookings(enrichedBookings);
     } catch (error) {
       console.error("❌ Errore nel caricamento prenotazioni:", error);

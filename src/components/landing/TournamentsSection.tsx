@@ -20,19 +20,10 @@ type Tournament = {
 };
 
 
-type FilterKey = "all" | "tornei" | "campionati";
-
-const FILTERS: { id: FilterKey; label: string }[] = [
-  { id: "all", label: "Tutti" },
-  { id: "tornei", label: "Tornei" },
-  { id: "campionati", label: "Campionati" },
-];
-
 export default function TournamentsSection() {
   const [items, setItems] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
   useEffect(() => {
     let mounted = true;
@@ -156,34 +147,20 @@ export default function TournamentsSection() {
     return null;
   };
 
-  const filterByCategory = (tournament: Tournament): boolean => {
-    if (activeFilter === "all") return true;
-    const type = tournament.tournament_type || tournament.competition_type;
-    if (activeFilter === "campionati") {
-      return type === "campionato";
-    }
-    // "tornei": tutti gli altri tipi
-    return (
-      type === "eliminazione_diretta" ||
-      type === "girone_eliminazione" ||
-      !type
-    );
-  };
 
-  const filteredItems = items.filter(filterByCategory);
 
   return (
-    <section id="tornei" className="py-12 sm:py-16 md:py-20 bg-white">
+    <section id="tornei" className="py-20 sm:py-24 md:py-28 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary/70">
+        <div className="mb-14 sm:mb-16">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
             Competizioni
           </p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             Tornei e campionati
           </h2>
-          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary/70">
+          <p className="text-base sm:text-lg max-w-2xl text-gray-500">
             Scopri i prossimi eventi in programma alla GST Tennis Academy e trova il torneo giusto per il tuo livello.
           </p>
         </div>
@@ -201,7 +178,7 @@ export default function TournamentsSection() {
               Se il problema persiste, contatta l&apos;amministratore.
             </p>
           </div>
-        ) : filteredItems.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="text-sm text-secondary/70 py-10 rounded-md px-4 bg-secondary/5 border border-secondary/10">
             <p className="font-semibold mb-1">📭 Al momento non ci sono tornei in programma</p>
             <p className="text-xs text-secondary/60">
@@ -210,20 +187,18 @@ export default function TournamentsSection() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredItems.map((tournament) => {
+            {items.map((tournament) => {
               const typeLabel = getTournamentTypeLabel(tournament);
               const date = tournament.start_date ? new Date(tournament.start_date) : null;
               const weekday = date ? format(date, "EEE", { locale: it }) : "";
               const day = date ? format(date, "dd", { locale: it }) : "";
               const monthYear = date ? format(date, "MMM yyyy", { locale: it }).toUpperCase() : "DATA DA DEFINIRE";
-              
-              // Determina il colore del bordo in base allo stato
+
               const getBorderColor = () => {
                 const status = tournament.status?.toLowerCase();
-                if (status === "aperto") return "#10b981"; // verde emerald
-                if (status === "in corso") return "#0ea5e9"; // blu secondary
-                if (status === "concluso" || status === "completato" || status === "chiuso") return "#6b7280"; // grigio
-                return "#0ea5e9"; // default blu
+                if (status === "aperto") return "#10b981";
+                if (status === "concluso" || status === "completato" || status === "chiuso") return "#6b7280";
+                return "#034863";
               };
 
               return (
@@ -275,7 +250,7 @@ export default function TournamentsSection() {
         <div className="text-center mt-8 sm:mt-10">
           <Link
             href="/tornei"
-            className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 text-sm font-semibold rounded-sm bg-secondary text-white hover:opacity-90 transition-colors"
+            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
           >
             Vedi tutti i tornei
           </Link>

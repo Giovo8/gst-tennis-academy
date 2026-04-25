@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 // GET - Fetch athlete statistics
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("user_id");
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 1. Get subscription credits
-    const { data: credits } = await supabase
+    const { data: credits } = await supabaseServer
       .from("subscription_credits")
       .select("credits_available, weekly_credits")
       .eq("user_id", userId)
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Get next upcoming booking
     const now = new Date().toISOString();
-    const { data: nextBooking } = await supabase
+    const { data: nextBooking } = await supabaseServer
       .from("bookings")
       .select("start_time, end_time, court, type")
       .eq("user_id", userId)
@@ -38,26 +38,26 @@ export async function GET(request: NextRequest) {
       .single();
 
     // 3. Count total completed bookings
-    const { count: totalBookings } = await supabase
+    const { count: totalBookings } = await supabaseServer
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .neq("status", "cancelled");
 
     // 4. Count total bookings (all time)
-    const { count: allBookings } = await supabase
+    const { count: allBookings } = await supabaseServer
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
     // 5. Count tournaments participated
-    const { count: tournamentsCount } = await supabase
+    const { count: tournamentsCount } = await supabaseServer
       .from("tournament_participants")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
     // 6. Count upcoming bookings
-    const { count: upcomingBookings } = await supabase
+    const { count: upcomingBookings } = await supabaseServer
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
@@ -65,14 +65,14 @@ export async function GET(request: NextRequest) {
       .neq("status", "cancelled");
 
     // 7. Count active course enrollments
-    const { count: activeCourses } = await supabase
+    const { count: activeCourses } = await supabaseServer
       .from("enrollments")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .in("status", ["confirmed", "pending"]);
 
     // 8. Count unread notifications
-    const { count: unreadNotifications } = await supabase
+    const { count: unreadNotifications } = await supabaseServer
       .from("notifications")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       unreadNotifications: unreadNotifications || 0,
     });
   } catch (err: any) {
-    console.error("Error fetching athlete stats:", err);
+    logger.error("Error fetching athlete stats:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

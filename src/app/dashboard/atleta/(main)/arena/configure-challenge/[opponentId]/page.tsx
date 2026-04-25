@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { format, addDays } from "date-fns";
@@ -154,6 +154,8 @@ export default function ConfigureChallengePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
   const opponentId = params.opponentId as string;
   const editChallengeId = searchParams.get("edit");
   const isCounterProposal = searchParams.get("counter") === "true";
@@ -578,7 +580,7 @@ export default function ConfigureChallengePage() {
 
         setSuccess("Sfida modificata con successo!");
         setTimeout(() => {
-          router.push(`/dashboard/atleta/arena/challenge/${editChallengeId}`);
+          router.push(`${dashboardBase}/arena/challenge/${editChallengeId}`);
         }, 1500);
       } else {
         // Create new challenge (existing code)
@@ -648,7 +650,7 @@ export default function ConfigureChallengePage() {
 
       setSuccess("Sfida creata con successo!");
       setTimeout(() => {
-        router.push("/dashboard/atleta/arena?success=challenge_created");
+        router.push(`${dashboardBase}/arena?success=challenge_created`);
       }, 1500);
       }
     } catch (error: any) {
@@ -705,7 +707,7 @@ export default function ConfigureChallengePage() {
         <div>
           <p className="breadcrumb text-secondary/60 uppercase">
             <Link
-              href="/dashboard/atleta/arena"
+              href={`${dashboardBase}/arena`}
               className="hover:text-secondary/80 transition-colors uppercase"
             >
               Arena

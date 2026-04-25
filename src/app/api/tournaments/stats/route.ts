@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/serverClient';
+import { getRouteAuth, unauthorized } from '@/lib/auth/routeAuth';
+import logger from '@/lib/logger/secure-logger';
 
 export async function GET() {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const supabase = supabaseServer;
 
     // Get all tournaments
@@ -11,7 +16,7 @@ export async function GET() {
       .select('id, status, tournament_type, start_date');
 
     if (tournamentsError) {
-      console.error('Error fetching tournaments:', tournamentsError);
+      logger.error('Error fetching tournaments:', tournamentsError);
       return NextResponse.json(
         { error: 'Errore nel recupero dei tornei' },
         { status: 500 }
@@ -67,7 +72,7 @@ export async function GET() {
     return NextResponse.json({ stats });
 
   } catch (error) {
-    console.error('Error calculating stats:', error);
+    logger.error('Error calculating stats:', error);
     return NextResponse.json(
       { error: 'Errore interno del server' },
       { status: 500 }

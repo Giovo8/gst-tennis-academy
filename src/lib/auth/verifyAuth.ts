@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { type UserRole, isAdminOrGestore, canManageUsers } from "@/lib/roles";
 
-export type UserRole = "atleta" | "maestro" | "gestore" | "admin";
+export type { UserRole };
+export { isAdminOrGestore, canManageUsers };
 
 export interface AuthResult {
   user: {
@@ -112,18 +114,4 @@ export async function verifyAuth(
       ),
     };
   }
-}
-
-/**
- * Verifica se l'utente è admin o gestore
- */
-export function isAdminOrGestore(role: UserRole | undefined): boolean {
-  return role === "admin" || role === "gestore";
-}
-
-/**
- * Verifica se l'utente può gestire altri utenti (admin, gestore, maestro)
- */
-export function canManageUsers(role: UserRole | undefined): boolean {
-  return role === "admin" || role === "gestore" || role === "maestro";
 }

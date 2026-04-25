@@ -1,3 +1,7 @@
+function isManagerRole(role: string): boolean {
+  return role === "admin" || role === "gestore";
+}
+
 type UserBookingDeletionNotificationParams = {
   userName?: string | null;
   court?: string | null;
@@ -10,10 +14,6 @@ type UserBookingDeletionNotificationContext = {
   actorRole?: string | null;
   ownerRole?: string | null;
 };
-
-function isStaffRole(role: string): boolean {
-  return role === "admin" || role === "gestore";
-}
 
 export function shouldNotifyAdminsForUserBookingDeletion({
   actorUserId,
@@ -29,11 +29,11 @@ export function shouldNotifyAdminsForUserBookingDeletion({
   const normalizedOwnerRole = String(ownerRole || "").toLowerCase();
 
   if (normalizedActorRole) {
-    return !isStaffRole(normalizedActorRole);
+    return !isManagerRole(normalizedActorRole);
   }
 
   if (normalizedOwnerRole) {
-    return !isStaffRole(normalizedOwnerRole);
+    return !isManagerRole(normalizedOwnerRole);
   }
 
   return false;

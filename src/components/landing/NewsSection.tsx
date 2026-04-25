@@ -108,95 +108,64 @@ export default function NewsSection() {
   }
 
   return (
-    <section id="news" className="py-12 sm:py-16 md:py-20 bg-white">
+    <section id="news" className="py-20 sm:py-24 md:py-28 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-12">
-          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
-            News
+        <div className="mb-14 sm:mb-16">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
+            Aggiornamenti
           </p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
-            Storie dal club
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
+            Ultime news dal circolo
           </h2>
-          <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-2 text-secondary opacity-80">
-            Leggi gli ultimi aggiornamenti, i risultati delle competizioni e gli avvisi importanti.
+          <p className="text-base sm:text-lg max-w-2xl text-gray-500">
+            Risultati, orari, novità e iscrizioni.
           </p>
         </div>
 
         {/* Griglia news cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {news.map((item) => {
-            return (
-              <article
-                key={item.id}
-                className="flex flex-col group border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
-              >
-                {/* Immagine / placeholder */}
-                <div className="w-full aspect-[4/3] mb-4 overflow-hidden">
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-secondary/5">
-                      <svg
-                        className="w-16 h-16 sm:w-20 sm:h-20 text-secondary/20"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </div>
+            const relativeDate = (() => {
+              const ref = item.published_at || item.created_at;
+              if (!ref) return "";
+              const diff = Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
+              if (diff === 0) return "Oggi";
+              if (diff === 1) return "Ieri";
+              if (diff < 7) return `${diff} giorni fa`;
+              if (diff < 30) return `${Math.floor(diff / 7)} settimane fa`;
+              return formatNewsDate(ref);
+            })();
 
-                {/* Meta info */}
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-semibold text-secondary">
-                    {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-                  </span>
-                </div>
+            return (
+              <Link
+                key={item.id}
+                href={`/news/${item.id}`}
+                className="flex flex-col bg-white border border-gray-200 rounded-2xl p-7 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+              >
+                {/* Badge categoria */}
+                <span className="inline-flex self-start items-center px-3 py-1 rounded-full text-xs font-semibold border border-gray-200 bg-gray-50 text-secondary mb-5">
+                  {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+                </span>
 
                 {/* Titolo */}
-                <h3 className="text-lg sm:text-xl font-bold text-secondary mb-2 group-hover:opacity-80 transition-opacity">
+                <h3 className="text-xl sm:text-2xl font-bold text-secondary mb-3 tracking-tight leading-tight group-hover:text-secondary/80 transition-colors">
                   {item.title}
                 </h3>
 
                 {/* Descrizione */}
-                <p className="text-sm text-secondary/70 mb-4 line-clamp-2 flex-grow">
+                <p className="text-sm text-gray-500 mb-6 line-clamp-2 flex-grow">
                   {item.excerpt || `${item.content.substring(0, 120)}...`}
                 </p>
 
-                {/* Link "Read more" */}
-                <Link
-                  href={`/news/${item.id}`}
-                  className="inline-flex items-center text-sm font-semibold text-secondary hover:opacity-70 transition-opacity group/link"
-                >
-                  Leggi tutto
-                  <svg 
-                    className="w-4 h-4 ml-1 transition-transform group-hover/link:translate-x-1" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M9 5l7 7-7 7" 
-                    />
-                  </svg>
-                </Link>
-              </article>
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-5 border-t border-gray-100">
+                  <span className="text-xs text-gray-400">{relativeDate}</span>
+                  <span className="text-sm font-semibold text-secondary">
+                    Leggi di più
+                  </span>
+                </div>
+              </Link>
             );
           })}
         </div>
@@ -205,9 +174,9 @@ export default function NewsSection() {
         <div className="text-center">
           <Link
             href="/news"
-            className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-sm bg-secondary text-white hover:opacity-90 transition-colors"
+            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
           >
-            Vedi tutte le news
+            Leggi tutte le news
           </Link>
         </div>
       </div>

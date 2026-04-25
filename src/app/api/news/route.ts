@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -34,22 +35,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Get current user from supabaseServer auth
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Check if user is admin or gestore
-  const { data: profile } = await supabaseServer
-   .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (!profile || !["admin", "gestore"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // Verify auth
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
 
   const { data, error } = await supabaseServer
    .from("news")
@@ -59,7 +48,7 @@ export async function POST(request: Request) {
       summary,
       image_url,
       published: published ?? true,
-      created_by: session.user.id,
+      created_by: auth.user.id,
     })
     .select()
     .single();
@@ -79,22 +68,9 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  // Get current user from supabaseServer auth
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Check if user is admin or gestore
-  const { data: profile } = await supabaseServer
-   .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (!profile || !["admin", "gestore"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
 
   const { data, error } = await supabaseServer
    .from("news")
@@ -118,22 +94,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  // Get current user from supabaseServer auth
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Check if user is admin or gestore
-  const { data: profile } = await supabaseServer
-   .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (!profile || !["admin", "gestore"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const authDel = await getRouteAuth();
+  if (!authDel) return unauthorized();
+  if (!isAdmin(authDel.role)) return forbidden();
 
   const { error } = await supabaseServer.from("news").delete().eq("id", id);
 

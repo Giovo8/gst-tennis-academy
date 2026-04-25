@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Trophy,
@@ -23,6 +23,8 @@ interface Tournament {
 
 function StatistichePageInner() {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/tornei")[0];
   const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [archivedTournaments, setArchivedTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +110,7 @@ function StatistichePageInner() {
         <div>
           <p className="breadcrumb text-secondary/60 mb-1">
             <Link
-              href="/dashboard/atleta/tornei"
+              href={`${dashboardBase}/tornei`}
               className="hover:text-secondary/80 transition-colors"
             >
               Competizioni
@@ -174,7 +176,7 @@ function StatistichePageInner() {
               .map((tournament) => (
                 <div
                   key={tournament.id}
-                  onClick={() => router.push(`/dashboard/atleta/tornei/${tournament.id}`)}
+                  onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
                   className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-3">

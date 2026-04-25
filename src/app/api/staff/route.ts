@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -34,20 +35,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: profile } = await supabaseServer
-   .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (!profile || !["admin", "gestore"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
 
   const { data, error } = await supabaseServer
    .from("staff")
@@ -77,20 +67,9 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: profile } = await supabaseServer
-   .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (!profile || !["admin", "gestore"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const authPatch = await getRouteAuth();
+  if (!authPatch) return unauthorized();
+  if (!isAdmin(authPatch.role)) return forbidden();
 
   const { data, error } = await supabaseServer
    .from("staff")
@@ -114,20 +93,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: profile } = await supabaseServer
-   .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (!profile || !["admin", "gestore"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const authDel = await getRouteAuth();
+  if (!authDel) return unauthorized();
+  if (!isAdmin(authDel.role)) return forbidden();
 
   const { error } = await supabaseServer.from("staff").delete().eq("id", id);
 

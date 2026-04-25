@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get("limit") || "50");
 
-    // Use server client with service role to bypass RLS
     const { data: logs, error } = (await supabaseServer
       .from("activity_log")
       .select("*")
@@ -16,11 +21,10 @@ export async function GET(req: Request) {
       .limit(limit)) as any;
 
     if (error) {
-      console.error("Error loading activity logs:", error);
+      logger.error("Error loading activity logs:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Manually fetch profiles for the users
     const userIds = [...new Set(logs?.map((log: any) => log.user_id).filter(Boolean))];
     const profilesMap = new Map();
 
@@ -35,7 +39,6 @@ export async function GET(req: Request) {
       });
     }
 
-    // Enrich logs with profile data
     const enrichedLogs = logs?.map((log: any) => ({
       ...log,
       profiles: log.user_id ? profilesMap.get(log.user_id) : null
@@ -43,7 +46,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ logs: enrichedLogs });
   } catch (err: any) {
-    console.error("Exception loading activity logs:", err);
+    logger.error("Exception loading activity logs:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

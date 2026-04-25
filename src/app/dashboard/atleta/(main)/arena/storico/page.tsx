@@ -8,7 +8,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface Challenge {
   id: string;
@@ -42,6 +42,8 @@ interface Challenge {
 
 export default function StoricoPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
@@ -104,7 +106,7 @@ export default function StoricoPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/atleta/arena" className="hover:text-secondary/80 transition-colors">Arena</Link>
+        <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">Arena</Link>
         {" › "}
         <span>Storico</span>
       </p>
@@ -162,7 +164,7 @@ export default function StoricoPage() {
               return (
                 <div
                   key={challenge.id}
-                  onClick={() => router.push(`/dashboard/atleta/arena/challenge/${challenge.id}`)}
+                  onClick={() => router.push(`${dashboardBase}/arena/challenge/${challenge.id}`)}
                   className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4 border-l-secondary"
                 >
                   <div className="flex items-center gap-4">

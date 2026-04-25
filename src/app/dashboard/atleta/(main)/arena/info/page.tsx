@@ -9,13 +9,17 @@ import {
   X as XIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function InfoPage() {
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/atleta/arena" className="hover:text-secondary/80 transition-colors">Arena</Link>
+        <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">Arena</Link>
         {" › "}
         <span>Info</span>
       </p>

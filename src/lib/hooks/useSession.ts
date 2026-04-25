@@ -34,12 +34,3 @@ export function useSession() {
   return { session, user, loading };
 }
 
-/**
- * Hook to get session token for API calls
- */
-export async function getSessionToken(): Promise<string | null> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
-}

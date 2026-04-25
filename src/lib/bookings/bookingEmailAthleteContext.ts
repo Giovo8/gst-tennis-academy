@@ -22,19 +22,8 @@ type ResolveBookingEmailAthleteContextResult = {
   additionalAthleteNames: string[];
 };
 
-function normalizeEmail(value?: string | null): string | null {
-  const normalized = value?.trim().toLowerCase();
-  if (!normalized || !normalized.includes("@")) {
-    return null;
-  }
-
-  return normalized;
-}
-
-function isStaffRole(role?: string | null): boolean {
-  const normalizedRole = String(role || "").trim().toLowerCase();
-  return normalizedRole === "admin" || normalizedRole === "gestore";
-}
+import { isStaffRole } from "@/lib/roles";
+import { normalizeEmail } from "@/lib/email/email-utils";
 
 export function resolveBookingEmailAthleteContext({
   owner,

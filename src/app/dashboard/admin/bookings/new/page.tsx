@@ -688,13 +688,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       const durationMinutes = orderedSlots.length * 30; // ogni slot dura 30 minuti
       endTime.setMinutes(startTime.getMinutes() + durationMinutes);
 
-      console.log("📅 Creazione prenotazione:", {
-        slots: orderedSlots,
-        start: startTime.toISOString(),
-        end: endTime.toISOString(),
-        duration: durationMinutes + " minuti"
-      });
-
       const bookingData = {
         user_id: bookingUserId,
         coach_id: selectedCoach || null,

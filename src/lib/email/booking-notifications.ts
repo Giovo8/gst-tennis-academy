@@ -9,6 +9,7 @@ import {
   getBookingTypeLabel,
   isPrivateLessonType,
 } from "@/lib/email/booking-email-copy";
+import { normalizeEmail, escapeHtml, getGestoreRecipients, type EmailRecipient } from "@/lib/email/email-utils";
 
 type SendBookingNotificationInput = {
   bookingId: string;
@@ -32,62 +33,7 @@ type SendBookingDeletionNotificationInput = SendBookingNotificationInput & {
   deletedByRole?: string | null;
 };
 
-type BookingEmailRecipientRole = "gestore" | "maestro" | "atleta";
-
-type BookingEmailRecipient = {
-  id?: string | null;
-  email: string;
-  full_name?: string | null;
-  role: BookingEmailRecipientRole;
-};
-
-function normalizeEmail(value?: string | null): string | null {
-  const normalized = value?.trim().toLowerCase();
-  if (!normalized || !normalized.includes("@")) {
-    return null;
-  }
-
-  return normalized;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-async function getGestoreRecipients(): Promise<BookingEmailRecipient[]> {
-  const { data, error } = await supabaseServer
-    .from("profiles")
-    .select("id, email, full_name, role")
-    .eq("role", "gestore")
-    .not("email", "is", null);
-
-  if (error) {
-    logger.error("Failed to fetch gestore recipients for booking emails", error);
-    return [];
-  }
-
-  const byEmail = new Map<string, BookingEmailRecipient>();
-
-  for (const item of data || []) {
-    const normalizedEmail = normalizeEmail(item.email);
-    if (!normalizedEmail) continue;
-    if (byEmail.has(normalizedEmail)) continue;
-
-    byEmail.set(normalizedEmail, {
-      id: item.id,
-      email: normalizedEmail,
-      full_name: item.full_name || null,
-      role: "gestore",
-    });
-  }
-
-  return Array.from(byEmail.values());
-}
+type BookingEmailRecipient = EmailRecipient;
 
 async function getCoachRecipient(coachId: string): Promise<BookingEmailRecipient | null> {
   const normalizedCoachId = coachId.trim();

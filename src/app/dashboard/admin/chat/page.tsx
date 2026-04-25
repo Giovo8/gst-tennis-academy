@@ -212,7 +212,6 @@ export default function AdminChatPage() {
         }
       } catch (e) {
         // API not available yet, ignore
-        console.log("Chat groups API not available yet");
       }
 
       // Process direct conversations
@@ -272,7 +271,7 @@ export default function AdminChatPage() {
             }
           }
         } catch (e) {
-          console.log("Could not load group messages");
+          // ignore
         }
 
         const messages = groupMessages || [];
@@ -384,10 +383,7 @@ export default function AdminChatPage() {
         data = result.data;
         error = result.error;
 
-        // Debug: log the full result if insert seems to fail silently
-        if (!data && !error?.message) {
-          console.log("Insert result (debug):", JSON.stringify(result, null, 2));
-        }
+
 
         // Send notification for direct messages
         if (!error && data && selectedConversation.userId) {

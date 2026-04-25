@@ -201,18 +201,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   --sidebar-collapsed: 72px;
   --header-height: 64px;
   
-  /* Legacy variables for compatibility */
-  --accent-strong: #08b3f7;     /* frozen-500 */
-  --accent-mid: #39c3f9;        /* frozen-400 */
-  --accent-dark: #0690c6;       /* frozen-600 */
-  --accent-15: rgba(8, 179, 247, 0.15);
-  --accent-12: rgba(8, 179, 247, 0.12);
-  --accent-20: rgba(8, 179, 247, 0.2);
-  --muted: #0690c6;
-  --muted-2: #39c3f9;
-  --text-dark: #034863;
-  --border-strong: #6bd2fa;     /* frozen-300 */
-  
   --gradient-primary: linear-gradient(135deg, #08b3f7 0%, #39c3f9 50%, #6bd2fa 100%);
   --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(8, 179, 247, 0.2);

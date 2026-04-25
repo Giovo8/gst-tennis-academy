@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -51,6 +51,8 @@ type BookingsPageProps = {
 
 export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/bookings")[0];
   const isHistoryMode = mode === "history";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,7 +300,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           {isHistoryMode && (
             <p className="breadcrumb text-secondary/60">
               <Link
-                href="/dashboard/atleta/bookings"
+                href={`${dashboardBase}/bookings`}
                 className="hover:text-secondary/80 transition-colors"
               >
                 Prenotazioni
@@ -318,7 +320,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           {!isHistoryMode && (
             <Link
-              href="/dashboard/atleta/bookings/new"
+              href={`${dashboardBase}/bookings/new`}
               className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -327,7 +329,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           )}
           {!isHistoryMode && (
             <Link
-              href="/dashboard/atleta/bookings/storico"
+              href={`${dashboardBase}/bookings/storico`}
               className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
               title="Storico"
             >
@@ -392,7 +394,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         <BookingsTimeline
           bookings={filteredBookings}
           loading={loading}
-          basePath="/dashboard/atleta"
+          basePath={dashboardBase}
           fetchOccupied={true}
           swapAxes={true}
           showBlockReason={false}
@@ -414,7 +416,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           </p>
           {!search && filter === "all" && (
             <Link
-              href="/dashboard/atleta/bookings/new"
+              href={`${dashboardBase}/bookings/new`}
               className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all"
             >
               <Plus className="h-4 w-4" />
@@ -509,7 +511,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                   style={borderStyle}
                 >
                   <div
-                    onClick={() => router.push(`/dashboard/atleta/bookings/${booking.id}`)}
+                    onClick={() => router.push(`${dashboardBase}/bookings/${booking.id}`)}
                     className="grid grid-cols-[40px_80px_56px_80px_1fr_56px_64px] items-center gap-4 no-underline"
                   >
                     {/* Simbolo Tipo */}
@@ -603,7 +605,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                                       e.stopPropagation();
                                       setOpenMenuId(null);
                                       setMenuPosition(null);
-                                      router.push(`/dashboard/atleta/bookings/${booking.id}/edit`);
+                                      router.push(`${dashboardBase}/bookings/${booking.id}/edit`);
                                     }}
                                     className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                                   >

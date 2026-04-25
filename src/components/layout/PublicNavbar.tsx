@@ -143,7 +143,7 @@ export default function PublicNavbar() {
           <div className="flex items-center">
             <Link
               href={getDashboardLink()}
-              className="px-4 py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all whitespace-nowrap flex items-center justify-center"
+              className="px-5 py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm transition-all whitespace-nowrap flex items-center justify-center hover:-translate-y-0.5"
               style={{ backgroundColor: 'var(--secondary)' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary-hover)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary)'}

@@ -322,12 +322,6 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         // Pre-compila gli slot selezionati a partire da start_time / end_time (ogni 30 min)
         const existingStart = new Date(data.start_time);
         const existingEnd = new Date(data.end_time);
-        console.log("📅 Prenotazione caricata:", {
-          id: data.id,
-          start: existingStart.toISOString(),
-          end: existingEnd.toISOString(),
-          duration: (existingEnd.getTime() - existingStart.getTime()) / (1000 * 60) + " minuti"
-        });
         const initialSlots: string[] = [];
         const current = new Date(existingStart);
         while (current < existingEnd) {
@@ -336,7 +330,6 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           initialSlots.push(`${hours}:${minutes}`);
           current.setMinutes(current.getMinutes() + 30);
         }
-        console.log("🕐 Slot selezionati:", initialSlots);
         setSelectedSlots(initialSlots);
 
         setNotes(data.notes || "");

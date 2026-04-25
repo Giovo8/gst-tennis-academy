@@ -1,13 +1,28 @@
 /**
- * Input sanitization utilities
- * Protects against XSS, SQL Injection, and other injection attacks
+ * Client-side sanitization utilities
+ * Re-exports server-safe functions and adds DOMPurify-based sanitizeHtml
  */
 
 import DOMPurify from 'isomorphic-dompurify';
 
+// Re-export all server-safe functions
+export {
+  escapeSqlLike,
+  sanitizeSearchQuery,
+  sanitizeEmail,
+  sanitizePhone,
+  sanitizeUrl,
+  sanitizeFilename,
+  sanitizeUuid,
+  removeNullBytes,
+  sanitizeObject,
+  sanitizeText,
+} from './sanitize-server';
+
 /**
  * Sanitize HTML content to prevent XSS attacks
  * Uses DOMPurify to clean malicious scripts and attributes
+ * Only available client-side (requires jsdom)
  */
 export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
@@ -19,129 +34,4 @@ export function sanitizeHtml(html: string): string {
     ALLOW_DATA_ATTR: false,
     KEEP_CONTENT: true,
   });
-}
-
-/**
- * Sanitize text content by removing HTML tags
- */
-export function sanitizeText(text: string): string {
-  return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
-}
-
-/**
- * Escape special characters for SQL LIKE queries
- * Prevents SQL injection in pattern matching
- */
-export function escapeSqlLike(input: string): string {
-  return input
-    .replace(/\\/g, '\\\\')
-    .replace(/%/g, '\\%')
-    .replace(/_/g, '\\_');
-}
-
-/**
- * Sanitize search query
- * Removes potentially dangerous characters while preserving valid input
- */
-export function sanitizeSearchQuery(query: string): string {
-  // Remove HTML tags
-  let clean = sanitizeText(query);
-  
-  // Trim whitespace
-  clean = clean.trim();
-  
-  // Remove multiple spaces
-  clean = clean.replace(/\s+/g, ' ');
-  
-  // Escape SQL special characters
-  clean = escapeSqlLike(clean);
-  
-  return clean;
-}
-
-/**
- * Sanitize email address
- */
-export function sanitizeEmail(email: string): string {
-  return email.toLowerCase().trim();
-}
-
-/**
- * Sanitize phone number - keep only digits and +
- */
-export function sanitizePhone(phone: string): string {
-  return phone.replace(/[^\d+]/g, '');
-}
-
-/**
- * Sanitize URL - validate and encode
- */
-export function sanitizeUrl(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    
-    // Only allow http and https protocols
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      return null;
-    }
-    
-    return parsed.toString();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Sanitize filename - remove path traversal attempts
- */
-export function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[^a-zA-Z0-9._-]/g, '_')
-    .replace(/\.{2,}/g, '.')
-    .replace(/^\.+/, '')
-    .substring(0, 255);
-}
-
-/**
- * Sanitize UUID - validate format
- */
-export function sanitizeUuid(uuid: string): string | null {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid) ? uuid.toLowerCase() : null;
-}
-
-/**
- * Remove null bytes from string (common in injection attacks)
- */
-export function removeNullBytes(input: string): string {
-  return input.replace(/\0/g, '');
-}
-
-function sanitizeValue(value: unknown): unknown {
-  if (typeof value === 'string') {
-    return removeNullBytes(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => sanitizeValue(item));
-  }
-
-  if (value && typeof value === 'object') {
-    const sanitizedRecord: Record<string, unknown> = {};
-
-    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
-      sanitizedRecord[key] = sanitizeValue(nestedValue);
-    }
-
-    return sanitizedRecord;
-  }
-
-  return value;
-}
-
-/**
- * Sanitize object by applying sanitization to all string values
- */
-export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  return sanitizeValue(obj) as T;
 }

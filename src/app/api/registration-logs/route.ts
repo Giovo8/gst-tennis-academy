@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 export async function GET(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get("limit") || "50");
 
-    // Fetch profiles ordered by creation date (most recent registrations)
     const { data: profiles, error } = await supabaseServer
       .from("profiles")
       .select("id, full_name, email, role, phone, created_at")
@@ -14,11 +19,10 @@ export async function GET(req: Request) {
       .limit(limit);
 
     if (error) {
-      console.error("Error loading registration logs:", error);
+      logger.error("Error loading registration logs:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform profiles into registration logs format
     const logs = profiles?.map((profile) => ({
       id: profile.id,
       user_id: profile.id,
@@ -31,7 +35,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ logs });
   } catch (err: any) {
-    console.error("Exception loading registration logs:", err);
+    logger.error("Exception loading registration logs:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

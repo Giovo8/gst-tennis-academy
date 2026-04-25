@@ -1,27 +1,37 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 export async function GET() {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const { data, error } = await supabaseServer
       .from("recruitment_applications")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching applications:", error);
+      logger.error("Error fetching applications:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ applications: data });
   } catch (err: any) {
-    console.error("Exception fetching applications:", err);
+    logger.error("Exception fetching applications:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function PATCH(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const { id, status } = await req.json();
 
     if (!id || !status) {
@@ -37,19 +47,23 @@ export async function PATCH(req: Request) {
       .eq("id", id);
 
     if (error) {
-      console.error("Error updating application:", error);
+      logger.error("Error updating application:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error("Exception updating application:", err);
+    logger.error("Exception updating application:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const { id } = await req.json();
 
     if (!id) {
@@ -65,13 +79,13 @@ export async function DELETE(req: Request) {
       .eq("id", id);
 
     if (error) {
-      console.error("Error deleting application:", error);
+      logger.error("Error deleting application:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error("Exception deleting application:", err);
+    logger.error("Exception deleting application:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

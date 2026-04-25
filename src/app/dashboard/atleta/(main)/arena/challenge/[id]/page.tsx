@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Check,
@@ -74,6 +74,8 @@ function getStatusLabel(status: string): string {
 export default function ChallengePage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
   const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
@@ -167,7 +169,7 @@ export default function ChallengePage() {
       setShowResultModal(false);
       alert("Risultato registrato con successo! Le statistiche verranno aggiornate.");
       setTimeout(() => {
-        router.push("/dashboard/atleta/arena");
+        router.push(`${dashboardBase}/arena`);
       }, 1500);
     } catch (error: any) {
       console.error("Error submitting result:", error);
@@ -218,7 +220,7 @@ export default function ChallengePage() {
         <div>
           <p className="breadcrumb text-secondary/60 uppercase">
             <button
-              onClick={() => router.push('/dashboard/atleta/arena')}
+              onClick={() => router.push(`${dashboardBase}/arena`)}
               className="hover:text-secondary/80 transition-colors uppercase"
             >
               Arena
@@ -670,7 +672,7 @@ export default function ChallengePage() {
             Rifiuta Sfida
           </button>
           <button
-            onClick={() => router.push(`/dashboard/atleta/arena/configure-challenge/${challenge.challenger_id}?edit=${challenge.id}&counter=true`)}
+            onClick={() => router.push(`${dashboardBase}/arena/configure-challenge/${challenge.challenger_id}?edit=${challenge.id}&counter=true`)}
             className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-secondary bg-white border border-gray-300 rounded-lg hover:bg-secondary hover:text-white hover:border-secondary transition-all font-medium"
           >
             <MessageSquare className="h-5 w-5" />
@@ -683,7 +685,7 @@ export default function ChallengePage() {
       {isChallenger && isPending && (
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => router.push(`/dashboard/atleta/arena/configure-challenge/${challenge.opponent_id}?edit=${challenge.id}`)}
+            onClick={() => router.push(`${dashboardBase}/arena/configure-challenge/${challenge.opponent_id}?edit=${challenge.id}`)}
             className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
           >
             <MessageSquare className="h-5 w-5" />
@@ -694,7 +696,7 @@ export default function ChallengePage() {
               if (confirm("Sei sicuro di voler cancellare questa sfida?")) {
                 fetch(`/api/arena/challenges?challenge_id=${challenge.id}`, {
                   method: "DELETE",
-                }).then(() => router.push("/dashboard/atleta/arena"));
+                }).then(() => router.push(`${dashboardBase}/arena`));
               }
             }}
             className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"

@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { getEmailFromAddress, getResendClient } from "@/lib/email/resend-client";
 import { logEmailDispatch } from "@/lib/email/email-log";
 import { getUsersDashboardLinkForRole } from "@/lib/notifications/links";
+import { normalizeEmail, escapeHtml, getGestoreRecipients, type EmailRecipient } from "@/lib/email/email-utils";
 
 type SendSignupNotificationInput = {
   userId: string;
@@ -17,60 +18,9 @@ type SendSignupNotificationInput = {
 
 type SignupRecipientRole = "gestore" | "atleta";
 
-type SignupRecipient = {
-  id?: string | null;
-  email: string;
-  full_name?: string | null;
+type SignupRecipient = EmailRecipient & {
   role: SignupRecipientRole;
 };
-
-function normalizeEmail(value?: string | null): string | null {
-  const normalized = value?.trim().toLowerCase();
-  if (!normalized || !normalized.includes("@")) {
-    return null;
-  }
-
-  return normalized;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-async function getGestoreRecipients(): Promise<SignupRecipient[]> {
-  const { data, error } = await supabaseServer
-    .from("profiles")
-    .select("id, email, full_name, role")
-    .eq("role", "gestore")
-    .not("email", "is", null);
-
-  if (error) {
-    logger.error("Failed to fetch gestore recipients for signup emails", error);
-    return [];
-  }
-
-  const byEmail = new Map<string, SignupRecipient>();
-
-  for (const item of data || []) {
-    const normalizedEmail = normalizeEmail(item.email);
-    if (!normalizedEmail) continue;
-    if (byEmail.has(normalizedEmail)) continue;
-
-    byEmail.set(normalizedEmail, {
-      id: item.id,
-      email: normalizedEmail,
-      full_name: item.full_name || null,
-      role: "gestore",
-    });
-  }
-
-  return Array.from(byEmail.values());
-}
 
 function getAthleteRecipient(params: SendSignupNotificationInput): SignupRecipient | null {
   const normalizedRole = String(params.role || "").toLowerCase();
@@ -96,7 +46,7 @@ async function resolveSignupRecipients(params: SendSignupNotificationInput): Pro
 
   const gestoriRecipients = await getGestoreRecipients();
   for (const recipient of gestoriRecipients) {
-    recipientsByEmail.set(recipient.email, recipient);
+    recipientsByEmail.set(recipient.email, { ...recipient, role: "gestore" as SignupRecipientRole });
   }
 
   const athleteRecipient = getAthleteRecipient(params);

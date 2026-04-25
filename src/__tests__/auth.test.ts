@@ -4,15 +4,8 @@
  * Test per le funzioni di autenticazione e autorizzazione
  */
 
+import { isAdminOrGestore, canManageUsers } from "@/lib/roles";
 import { UserRole } from "./types";
-
-function isAdminOrGestore(role: UserRole | undefined): boolean {
-  return role === "admin" || role === "gestore";
-}
-
-function canManageUsers(role: UserRole | undefined): boolean {
-  return role === "admin" || role === "gestore" || role === "maestro";
-}
 
 describe("Auth Helper Functions", () => {
   describe("isAdminOrGestore", () => {

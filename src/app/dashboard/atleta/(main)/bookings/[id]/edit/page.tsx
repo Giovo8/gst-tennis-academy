@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -130,6 +130,8 @@ const BOOKING_TYPES = [
 export default function EditBookingPage() {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/bookings")[0];
   const bookingId = params?.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -218,7 +220,7 @@ export default function EditBookingPage() {
       }
 
       setError("La modifica della prenotazione non è consentita agli atleti");
-      router.replace("/dashboard/atleta/bookings");
+      router.replace(`${dashboardBase}/bookings`);
       return;
 
       // Carica prenotazione esistente
@@ -231,7 +233,7 @@ export default function EditBookingPage() {
 
       if (bookingError || !bookingData) {
         setError("Prenotazione non trovata");
-        router.push("/dashboard/atleta/bookings");
+        router.push(`${dashboardBase}/bookings`);
         return;
       }
 
@@ -239,7 +241,7 @@ export default function EditBookingPage() {
       const isPast = new Date(bookingData.start_time) < new Date();
       if (bookingData.status === "cancelled" || isPast) {
         setError("Questa prenotazione non può essere modificata");
-        router.push("/dashboard/atleta/bookings");
+        router.push(`${dashboardBase}/bookings`);
         return;
       }
 
@@ -506,7 +508,7 @@ export default function EditBookingPage() {
 
       setSuccess("Prenotazione modificata con successo!");
       setTimeout(() => {
-        router.push("/dashboard/atleta/bookings");
+        router.push(`${dashboardBase}/bookings`);
       }, 1500);
     } catch (err: any) {
       setError(err.message || "Errore nella modifica della prenotazione");
@@ -530,7 +532,7 @@ export default function EditBookingPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="breadcrumb text-secondary/60">
-            <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+            <Link href={`${dashboardBase}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
             {" › "}
             <span>Modifica</span>
           </p>
@@ -540,7 +542,7 @@ export default function EditBookingPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/atleta/bookings"
+          href={`${dashboardBase}/bookings`}
           className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all self-start"
           title="Torna alla lista"
         >

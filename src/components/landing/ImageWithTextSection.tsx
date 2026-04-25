@@ -1,36 +1,33 @@
 "use client";
 
-import Link from "next/link";
-
 export default function ImageWithTextSection() {
   return (
     <section
-      className="relative w-full h-[360px] sm:h-[200px] md:h-[250px] lg:h-[300px] xl:h-[350px] overflow-hidden !py-0 bg-center bg-cover"
+      className="relative w-full h-[320px] sm:h-[240px] md:h-[280px] lg:h-[340px] xl:h-[380px] overflow-hidden !py-0"
       style={{
-        backgroundImage: "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/2.jpeg')"
+        backgroundImage: "url('/images/581138917_1464130575720115_7536612966509061819_n.jpg')",
+        backgroundPosition: "center 55%",
+        backgroundSize: "cover",
       }}
     >
+      {/* Directional overlay: dark left, fades right */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(90deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.45) 60%, rgba(0,0,0,.15) 100%)" }}
+      />
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex items-center justify-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-xs sm:text-sm font-semibold mb-2 sm:mb-4 text-white/90 uppercase tracking-wider">
+      {/* Content — left aligned */}
+      <div className="relative z-10 h-full flex items-center">
+        <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 lg:px-12" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-white">
             Benvenuto
           </p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-6 text-white">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold mb-4 text-white leading-[1.05] tracking-tight">
             La tua tennis Academy
           </h2>
-          <p className="text-base sm:text-lg md:text-xl mb-6 text-white/90 max-w-2xl mx-auto px-4">
+          <p className="text-base sm:text-lg text-white max-w-xl">
             Dove la passione incontra la tecnica. Impianti moderni, lezioni di qualità e tornei che contano.
           </p>
-          
-          {/* CTA Button */}
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-secondary bg-white hover:bg-white/90 transition-colors rounded-lg shadow-lg hover:shadow-xl"
-          >
-            Accedi
-          </Link>
         </div>
       </div>
     </section>

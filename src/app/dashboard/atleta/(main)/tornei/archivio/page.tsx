@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Trophy,
@@ -34,6 +34,8 @@ interface Tournament {
 
 function ArchivioPageInner() {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/tornei")[0];
   const [archivedTournaments, setArchivedTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -114,7 +116,7 @@ function ArchivioPageInner() {
         <div>
           <p className="breadcrumb text-secondary/60 mb-1">
             <Link
-              href="/dashboard/atleta/tornei"
+              href={`${dashboardBase}/tornei`}
               className="hover:text-secondary/80 transition-colors"
             >
               Competizioni
@@ -197,7 +199,7 @@ function ArchivioPageInner() {
               return (
                 <div
                   key={tournament.id}
-                  onClick={() => router.push(`/dashboard/atleta/tornei/${tournament.id}`)}
+                  onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
                   className="bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
                   style={{ borderLeftColor: 'var(--foreground-muted)' }}
                 >

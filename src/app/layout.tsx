@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Urbanist } from "next/font/google";
+import { Inter_Tight, Urbanist } from "next/font/google";
 import "./globals.css";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import { defaultMetadata, generateOrganizationSchema } from "@/lib/seo/metadata";
 import { ThemeProvider } from "@/components/theme";
 
-const inter = Inter({
+const inter = Inter_Tight({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",

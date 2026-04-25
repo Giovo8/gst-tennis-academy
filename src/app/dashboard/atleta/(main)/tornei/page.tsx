@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Trophy,
   Users as UsersIcon,
@@ -37,6 +37,8 @@ interface Tournament {
 
 function AtletaTorneiPageInner() {
   const router = useRouter();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/tornei")[0];
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,7 @@ function AtletaTorneiPageInner() {
           type: "tournament",
           title: "Iscrizione al torneo confermata",
           message: `Ti sei iscritto con successo al torneo: ${tournament.title}`,
-          link: "/dashboard/atleta/tornei",
+          link: `${dashboardBase}/tornei`,
         });
 
         // Move tournament from available to my tournaments
@@ -192,14 +194,14 @@ function AtletaTorneiPageInner() {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link
-            href="/dashboard/atleta/tornei/archivio"
+            href={`${dashboardBase}/tornei/archivio`}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all bg-white text-secondary/70 border border-gray-200 hover:bg-secondary hover:text-white hover:border-secondary"
           >
             <Archive className="h-5 w-5" />
             <span>Archivio</span>
           </Link>
           <Link
-            href="/dashboard/atleta/tornei/statistiche"
+            href={`${dashboardBase}/tornei/statistiche`}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all bg-white text-secondary/70 border border-gray-200 hover:bg-secondary hover:text-white hover:border-secondary"
           >
             <BarChart3 className="h-5 w-5" />
@@ -332,7 +334,7 @@ function AtletaTorneiPageInner() {
                 return (
                   <div
                     key={tournament.id}
-                    onClick={() => router.push(`/dashboard/atleta/tornei/${tournament.id}`)}
+                    onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
                     className="bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
                     style={{ borderLeftColor: borderColor }}
                   >

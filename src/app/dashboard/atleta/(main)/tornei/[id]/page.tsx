@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import {
@@ -38,6 +38,8 @@ type Tournament = {
 function AtletaTournamentDetailInner() {
   const params = useParams();
   const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/tornei")[0];
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [currentParticipants, setCurrentParticipants] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -230,7 +232,7 @@ function AtletaTournamentDetailInner() {
         {/* Breadcrumb */}
         <p className="breadcrumb text-secondary/60">
           <Link
-            href="/dashboard/atleta/tornei"
+            href={`${dashboardBase}/tornei`}
             className="hover:text-secondary/80 transition-colors"
           >
             Competizioni
@@ -244,7 +246,7 @@ function AtletaTournamentDetailInner() {
           <h2 className="text-2xl font-bold text-secondary mb-2">Torneo non trovato</h2>
           <p className="text-secondary/70 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
           <button
-            onClick={() => router.push('/dashboard/atleta/tornei')}
+            onClick={() => router.push(`${dashboardBase}/tornei`)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-md font-medium hover:opacity-90 transition-all"
           >
             Torna ai Tornei
@@ -259,7 +261,7 @@ function AtletaTournamentDetailInner() {
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
         <Link
-          href="/dashboard/atleta/tornei"
+          href={`${dashboardBase}/tornei`}
           className="hover:text-secondary/80 transition-colors"
         >
           Competizioni

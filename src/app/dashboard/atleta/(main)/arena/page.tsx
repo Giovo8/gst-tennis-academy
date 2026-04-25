@@ -13,7 +13,7 @@ import {
   History,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ChallengeModal from "@/components/arena/ChallengeModal";
 import PlayerProfileModal from "@/components/arena/PlayerProfileModal";
 
@@ -91,6 +91,8 @@ interface SelectedPlayer {
 export default function ArenaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/arena")[0];
   const [stats, setStats] = useState<PlayerStats>({
     ranking: 0,
     totalMatches: 0,
@@ -203,7 +205,7 @@ export default function ArenaPage() {
     const success = searchParams.get('success');
     if (success === 'challenge_created') {
       // Remove the query param
-      router.replace('/dashboard/atleta/arena');
+      router.replace(`${dashboardBase}/arena`);
     }
   }, [searchParams]);
 
@@ -246,7 +248,7 @@ export default function ArenaPage() {
 
   function handleBookMatch(challenge: Challenge) {
     // Redirect to booking page with challenge context
-    router.push(`/dashboard/atleta/bookings/new?challenge_id=${challenge.id}`);
+    router.push(`${dashboardBase}/bookings/new?challenge_id=${challenge.id}`);
   }
 
   function handleViewProfile(player: LeaderboardEntry) {
@@ -351,28 +353,28 @@ export default function ArenaPage() {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
-            onClick={() => router.push("/dashboard/atleta/arena/choose-opponent")}
+            onClick={() => router.push(`${dashboardBase}/arena/choose-opponent`)}
             className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             <Swords className="h-4 w-4" />
             Lancia Sfida
           </button>
           <Link
-            href="/dashboard/atleta/arena/storico"
+            href={`${dashboardBase}/arena/storico`}
             className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
             title="Storico"
           >
             <History className="h-5 w-5" />
           </Link>
           <Link
-            href="/dashboard/atleta/arena/statistiche"
+            href={`${dashboardBase}/arena/statistiche`}
             className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
             title="Statistiche"
           >
             <BarChart3 className="h-5 w-5" />
           </Link>
           <Link
-            href="/dashboard/atleta/arena/info"
+            href={`${dashboardBase}/arena/info`}
             className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
             title="Info"
           >
@@ -464,7 +466,7 @@ export default function ArenaPage() {
                 return (
                   <div
                     key={challenge.id}
-                    onClick={() => router.push(`/dashboard/atleta/arena/challenge/${challenge.id}`)}
+                    onClick={() => router.push(`${dashboardBase}/arena/challenge/${challenge.id}`)}
                     className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4 border-l-secondary"
                   >
                     <div className="flex items-center gap-4">
@@ -743,7 +745,7 @@ export default function ArenaPage() {
         }}
         player={selectedPlayer}
         onChallenge={handleChallengePlayer}
-        onMessage={(playerId) => router.push(`/dashboard/atleta/mail?recipient=${playerId}`)}
+        onMessage={(playerId) => router.push(`${dashboardBase}/mail?recipient=${playerId}`)}
       />
     </div>
   );

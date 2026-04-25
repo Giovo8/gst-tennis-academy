@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Video,
@@ -35,6 +36,8 @@ export default function AtletaVideosPage() {
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const pathname = usePathname();
+  const basePath = pathname.split("/videos")[0];
 
   const categories = [
     { value: "generale", label: "Generale" },
@@ -231,7 +234,7 @@ export default function AtletaVideosPage() {
                 return (
                   <Link
                     key={video.id}
-                    href={`/dashboard/atleta/videos/${video.id}`}
+                    href={`${basePath}/videos/${video.id}`}
                     className="block bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
                     style={{ borderLeftColor: video.watched_at ? '#10b981' : '#08b3f7' }}
                   >

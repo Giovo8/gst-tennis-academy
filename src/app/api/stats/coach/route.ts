@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 // GET - Fetch coach/maestro statistics
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("user_id");
 
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
     // 1. Count lessons today
-    const { count: lessonsToday } = await supabase
+    const { count: lessonsToday } = await supabaseServer
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("coach_id", userId)
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       .lt("start_time", today + "T23:59:59");
 
     // 2. Count unique athletes assigned (based on bookings)
-    const { data: athletesData } = await supabase
+    const { data: athletesData } = await supabaseServer
       .from("bookings")
       .select("user_id")
       .eq("coach_id", userId)
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const uniqueAthletes = new Set(athletesData?.map(b => b.user_id) || []).size;
 
     // 3. Calculate total hours this month
-    const { data: monthBookings } = await supabase
+    const { data: monthBookings } = await supabaseServer
       .from("bookings")
       .select("start_time, end_time")
       .eq("coach_id", userId)
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Count upcoming lessons
-    const { count: upcomingLessons } = await supabase
+    const { count: upcomingLessons } = await supabaseServer
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("coach_id", userId)
@@ -71,14 +71,14 @@ export async function GET(request: NextRequest) {
     const pendingConfirmations = 0;
 
     // 6. Count courses managed
-    const { count: coursesManaged } = await supabase
+    const { count: coursesManaged } = await supabaseServer
       .from("courses")
       .select("*", { count: "exact", head: true })
       .eq("coach_id", userId)
       .eq("is_active", true);
 
     // 7. Count total lessons all time
-    const { count: totalLessons } = await supabase
+    const { count: totalLessons } = await supabaseServer
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("coach_id", userId)
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       totalLessons: totalLessons || 0,
     });
   } catch (err: any) {
-    console.error("Error fetching coach stats:", err);
+    logger.error("Error fetching coach stats:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

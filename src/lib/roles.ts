@@ -28,12 +28,20 @@ export function isAdmin(role: UserRole | null | undefined): boolean {
   return role === "admin" || role === "gestore";
 }
 
+/** Alias for isAdmin — checks admin or gestore */
+export const isAdminOrGestore = isAdmin;
+
 export function isCoach(role: UserRole | null | undefined): boolean {
   return role === "maestro" || isAdmin(role);
 }
 
+export function isStaffRole(role: string | null | undefined): boolean {
+  const normalized = String(role || "").toLowerCase();
+  return normalized === "admin" || normalized === "gestore" || normalized === "maestro";
+}
+
 export function canManageUsers(role: UserRole | null | undefined): boolean {
-  return isAdmin(role);
+  return role === "admin" || role === "gestore" || role === "maestro";
 }
 
 function getSecondaryRoles(metadata: unknown): string[] {

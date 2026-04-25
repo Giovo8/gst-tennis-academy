@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
@@ -45,6 +45,8 @@ type Booking = {
 export default function BookingDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
+  const dashboardBase = pathname.split("/bookings")[0];
   const bookingId = params?.id as string;
 
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -101,7 +103,7 @@ export default function BookingDetailPage() {
       if (error || !bookingData) {
         console.error("Errore caricamento prenotazione:", error);
         alert("Prenotazione non trovata");
-        router.push("/dashboard/atleta/bookings");
+        router.push(`${dashboardBase}/bookings`);
         return;
       }
 
@@ -148,7 +150,7 @@ export default function BookingDetailPage() {
     } catch (error) {
       console.error("Errore:", error);
       alert("Errore nel caricamento della prenotazione");
-      router.push("/dashboard/atleta/bookings");
+      router.push(`${dashboardBase}/bookings`);
     } finally {
       setLoading(false);
     }
@@ -180,7 +182,7 @@ export default function BookingDetailPage() {
         throw new Error(payload?.error || "Errore durante l'eliminazione");
       }
 
-      router.push("/dashboard/atleta/bookings");
+      router.push(`${dashboardBase}/bookings`);
     } catch (error) {
       console.error("Errore:", error);
       alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
@@ -244,7 +246,7 @@ export default function BookingDetailPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/atleta/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+        <Link href={`${dashboardBase}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
         {" › "}
         <span>Dettagli Prenotazione</span>
       </p>

@@ -1,13 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import env from "@/lib/config/env";
 import logger from "@/lib/logger/secure-logger";
 
 /**
  * Supabase Client for Browser
  * Uses anonymous key (safe for client-side)
+ * Uses createBrowserClient from @supabase/ssr so the session is stored
+ * in cookies and is accessible by server-side Route Handlers.
  */
 
-let supabaseInstance: ReturnType<typeof createClient> | null = null;
+let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
 
 function createSupabaseClient() {
   try {
@@ -20,7 +22,7 @@ function createSupabaseClient() {
 
     logger.debug('Initializing Supabase client');
 
-    return createClient(supabaseUrl, supabaseAnonKey);
+    return createBrowserClient(supabaseUrl, supabaseAnonKey);
   } catch (error) {
     logger.error('Failed to initialize Supabase client', error);
     throw error;
@@ -30,10 +32,10 @@ function createSupabaseClient() {
 // Lazy initialization
 function getSupabaseClient() {
   if (!supabaseInstance) {
-    supabaseInstance = createSupabaseClient() as any;
+    supabaseInstance = createSupabaseClient();
   }
-  return supabaseInstance;
+  return supabaseInstance!;
 }
 
-export const supabase = getSupabaseClient() as any;
+export const supabase = getSupabaseClient();
 

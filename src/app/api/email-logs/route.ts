@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,10 @@ type EmailLogRow = {
 
 export async function GET(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get("limit") || "50");
 
@@ -51,7 +57,7 @@ export async function GET(req: Request) {
       .limit(limit)) as any;
 
     if (fallbackError) {
-      console.error("Error loading email logs:", {
+      logger.error("Error loading email logs:", {
         primary: primaryError.message,
         fallback: fallbackError.message,
       });
@@ -81,7 +87,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ logs });
   } catch (err: any) {
-    console.error("Exception loading email logs:", err);
+    logger.error("Exception loading email logs:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

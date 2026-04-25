@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
 
 export async function GET() {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -31,7 +37,7 @@ export async function GET() {
       activeTournaments: activeTournamentsRes.count || 0,
     });
   } catch (error) {
-    console.error("Errore caricamento statistiche:", error);
+    logger.error("Errore caricamento statistiche:", error);
     return NextResponse.json(
       { error: "Errore caricamento statistiche" },
       { status: 500 }
