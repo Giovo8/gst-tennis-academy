@@ -11,12 +11,12 @@ describe("notification links", () => {
     expect(getAdminUsersNotificationLink()).toBe("/dashboard/admin/users");
   });
 
-  it("rewrites admin staff links for gestore recipients", () => {
+  it("keeps admin links unchanged for gestore recipients", () => {
     expect(resolveDashboardLinkForRole("/dashboard/admin/users/user-123", "gestore")).toBe(
-      "/dashboard/gestore/users/user-123"
+      "/dashboard/admin/users/user-123"
     );
     expect(resolveDashboardLinkForRole("/dashboard/admin/bookings/booking-1", "gestore")).toBe(
-      "/dashboard/gestore/bookings/booking-1"
+      "/dashboard/admin/bookings/booking-1"
     );
   });
 
@@ -31,7 +31,7 @@ describe("notification links", () => {
       "/dashboard/atleta/bookings/booking-1"
     );
     expect(getBookingDashboardLinkForRole("gestore", "booking-1")).toBe(
-      "/dashboard/gestore/bookings/booking-1"
+      "/dashboard/admin/bookings/booking-1"
     );
     expect(getBookingDashboardLinkForRole("maestro", "booking-1")).toBe(
       "/dashboard/maestro/agenda"
@@ -46,7 +46,7 @@ describe("notification links", () => {
       "/dashboard/atleta/profile"
     );
     expect(getUsersDashboardLinkForRole("gestore", "user-123")).toBe(
-      "/dashboard/gestore/users/user-123"
+      "/dashboard/admin/users/user-123"
     );
     expect(getUsersDashboardLinkForRole("admin", "user-123")).toBe(
       "/dashboard/admin/users/user-123"

@@ -98,8 +98,7 @@ export default function DashboardShell({
     if (
       href === "/dashboard/admin" ||
       href === "/dashboard/atleta" ||
-      href === "/dashboard/maestro" ||
-      href === "/dashboard/gestore"
+      href === "/dashboard/maestro"
     ) {
       return pathname === href;
     }

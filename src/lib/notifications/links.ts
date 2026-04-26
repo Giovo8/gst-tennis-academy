@@ -45,14 +45,6 @@ export function getBookingDashboardLinkForRole(role?: string | null, bookingId?:
     return "/dashboard/maestro/agenda";
   }
 
-  if (normalizedRole === "gestore") {
-    if (bookingId && bookingId.trim().length > 0) {
-      return `/dashboard/gestore/bookings/${bookingId}`;
-    }
-
-    return "/dashboard/gestore/bookings";
-  }
-
   return getAdminBookingNotificationLink(bookingId);
 }
 
@@ -61,14 +53,6 @@ export function getUsersDashboardLinkForRole(role?: string | null, userId?: stri
 
   if (normalizedRole === "atleta") {
     return userId ? "/dashboard/atleta/profile" : "/dashboard/atleta";
-  }
-
-  if (normalizedRole === "gestore") {
-    if (userId && userId.trim().length > 0) {
-      return `/dashboard/gestore/users/${userId}`;
-    }
-
-    return "/dashboard/gestore/users";
   }
 
   return getAdminUsersNotificationLink(userId);
@@ -80,14 +64,6 @@ export function resolveDashboardLinkForRole(link?: string | null, role?: string 
   }
 
   const normalizedRole = String(role || "").toLowerCase();
-
-  if (normalizedRole === "gestore" && link.startsWith("/dashboard/admin/")) {
-    return link.replace("/dashboard/admin/", "/dashboard/gestore/");
-  }
-
-  if (normalizedRole === "admin" && link.startsWith("/dashboard/gestore/")) {
-    return link.replace("/dashboard/gestore/", "/dashboard/admin/");
-  }
 
   return link;
 }

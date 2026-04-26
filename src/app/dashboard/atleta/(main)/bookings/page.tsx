@@ -23,9 +23,19 @@ import {
   MoreVertical,
   ArrowUp,
   ArrowDown,
+  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/ui";
 
 interface Booking {
   id: string;
@@ -43,6 +53,16 @@ interface Booking {
   // For BookingsTimeline compatibility
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
+  participants?: Array<{
+    id?: string;
+    booking_id?: string;
+    full_name: string;
+    email?: string;
+    phone?: string;
+    is_registered: boolean;
+    user_id?: string | null;
+    order_index?: number;
+  }>;
 }
 
 type BookingsPageProps = {
@@ -53,16 +73,40 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
+  const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const isHistoryMode = mode === "history";
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [timelineBookings, setTimelineBookings] = useState<Booking[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [filterVisibility, setFilterVisibility] = useState<"all" | "active" | "today" | "archived" | "cancelled" | "past">("active");
+  const [filterUser, setFilterUser] = useState<string>("all");
+  const [filterCoach, setFilterCoach] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterCourt, setFilterCourt] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const [sortField, setSortField] = useState<string>("start_time");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  const getPrimaryParticipant = (booking: Booking) =>
+    booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
+
+  const getAthleteDisplayName = (booking: Booking) =>
+    getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "N/A";
+
+  const getAthleteDisplayEmail = (booking: Booking) => {
+    if ((booking.participants?.length || 0) > 0) {
+      return getPrimaryParticipant(booking)?.email || "";
+    }
+
+    return booking.user_profile?.email || "";
+  };
 
   function handleSort(field: string) {
     if (sortField === field) {
@@ -84,7 +128,180 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return;
     }
 
+    setCurrentUserId(user.id);
+
     console.log("👤 User ID:", user.id);
+
+    if (isMaestroDashboard) {
+      const now = new Date();
+      const rangeStart = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString();
+      const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 6, 1).toISOString();
+
+      const { data: allBookingsData, error: allBookingsError } = await supabase
+        .from("bookings")
+        .select("*")
+        .neq("status", "cancelled")
+        .gte("start_time", rangeStart)
+        .lte("start_time", rangeEnd)
+        .order("start_time", { ascending: false })
+        .limit(2000);
+
+      if (allBookingsError) {
+        console.error("❌ Errore caricamento prenotazioni maestro:", allBookingsError);
+        setLoading(false);
+        return;
+      }
+
+      const allData = allBookingsData ?? [];
+      const ownBookingIds = new Set(
+        allData
+          .filter((b) => b.coach_id === user.id || b.user_id === user.id)
+          .map((b) => b.id)
+      );
+
+      const ownBookingsData = allData.filter((b) => ownBookingIds.has(b.id));
+      const allUserIds = [
+        ...new Set([
+          ...ownBookingsData.map((b) => b.user_id),
+          ...ownBookingsData.map((b) => b.coach_id).filter(Boolean),
+        ]),
+      ];
+
+      const profilesPromise = allUserIds.length > 0
+        ? supabase.from("profiles").select("id, full_name, email, phone").in("id", allUserIds)
+        : Promise.resolve({ data: [] as any[] });
+
+      const ownBookingIdsList = ownBookingsData.map((b) => b.id);
+      const participantsPromise = ownBookingIdsList.length > 0
+        ? supabase
+            .from("booking_participants")
+            .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+            .in("booking_id", ownBookingIdsList)
+            .order("booking_id", { ascending: true })
+            .order("order_index", { ascending: true })
+        : Promise.resolve({ data: [], error: null });
+
+      const [{ data: allProfiles }, participantsQuery] = await Promise.all([
+        profilesPromise,
+        participantsPromise,
+      ]);
+
+      const allProfilesMap = new Map((allProfiles ?? []).map((p: any) => [p.id, p]));
+
+      let participantsData: Booking["participants"] | null = null;
+      if ((participantsQuery as any).error?.message?.toLowerCase().includes("phone")) {
+        const fallbackQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+          .in("booking_id", ownBookingIdsList);
+        if (!fallbackQuery.error) participantsData = fallbackQuery.data || [];
+      } else if (!(participantsQuery as any).error) {
+        participantsData = (participantsQuery as any).data || [];
+      }
+
+      const enrichedBookings = allData.map((booking) => {
+        const isOwn = ownBookingIds.has(booking.id);
+        const coachData = isOwn && booking.coach_id ? allProfilesMap.get(booking.coach_id) : null;
+
+        return {
+          ...booking,
+          coach: coachData ? { full_name: coachData.full_name } : undefined,
+          user_profile: isOwn ? (allProfilesMap.get(booking.user_id) || null) : null,
+          coach_profile: coachData
+            ? {
+                full_name: coachData.full_name,
+                email: coachData.email,
+                phone: coachData.phone,
+              }
+            : null,
+          participants: isOwn
+            ? (participantsData?.filter((p) => p.booking_id === booking.id) || [])
+            : [],
+        };
+      });
+
+      // Keep timeline identical to dashboard/maestro behavior (all bookings in range).
+      setTimelineBookings(enrichedBookings);
+
+      // For list mode in maestro dashboard, always load all bookings where the maestro is involved
+      // (as coach OR as athlete), even outside the timeline date range.
+      const { data: involvedBookingsData, error: involvedBookingsError } = await supabase
+        .from("bookings")
+        .select("*")
+        .neq("status", "cancelled")
+        .or(`coach_id.eq.${user.id},user_id.eq.${user.id}`)
+        .order("start_time", { ascending: false })
+        .limit(2000);
+
+      if (involvedBookingsError) {
+        console.error("❌ Errore caricamento prenotazioni coinvolte maestro:", involvedBookingsError);
+        setLoading(false);
+        return;
+      }
+
+      const involvedData = involvedBookingsData ?? [];
+      const involvedUserIds = [
+        ...new Set([
+          ...involvedData.map((b) => b.user_id),
+          ...involvedData.map((b) => b.coach_id).filter(Boolean),
+        ]),
+      ];
+
+      const { data: involvedProfiles } = involvedUserIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name, email, phone")
+            .in("id", involvedUserIds)
+        : { data: [] as any[] };
+
+      const involvedProfilesMap = new Map((involvedProfiles ?? []).map((p: any) => [p.id, p]));
+
+      const involvedBookingIds = involvedData.map((b) => b.id);
+      let involvedParticipantsData: Booking["participants"] | null = null;
+
+      if (involvedBookingIds.length > 0) {
+        const participantsQuery = await supabase
+          .from("booking_participants")
+          .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+          .in("booking_id", involvedBookingIds)
+          .order("booking_id", { ascending: true })
+          .order("order_index", { ascending: true });
+
+        if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
+          const fallbackQuery = await supabase
+            .from("booking_participants")
+            .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
+            .in("booking_id", involvedBookingIds);
+          if (!fallbackQuery.error) involvedParticipantsData = fallbackQuery.data || [];
+        } else if (!participantsQuery.error) {
+          involvedParticipantsData = participantsQuery.data || [];
+        }
+      }
+
+      const involvedEnrichedBookings = involvedData.map((booking) => {
+        const coachData = booking.coach_id ? involvedProfilesMap.get(booking.coach_id) : null;
+
+        return {
+          ...booking,
+          coach: coachData ? { full_name: coachData.full_name } : undefined,
+          user_profile: involvedProfilesMap.get(booking.user_id) || null,
+          coach_profile: coachData
+            ? {
+                full_name: coachData.full_name,
+                email: coachData.email,
+                phone: coachData.phone,
+              }
+            : null,
+          participants: involvedParticipantsData?.filter((p) => p.booking_id === booking.id) || [],
+        };
+      });
+
+      // In dashboard maestro, show all bookings where the maestro is involved,
+      // regardless of default/history page mode.
+      setBookings(involvedEnrichedBookings);
+      setLoading(false);
+      return;
+    }
 
     // Get user profile
     const { data: userProfile } = await supabase
@@ -169,6 +386,12 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     loadBookings();
   }, []);
 
+  useEffect(() => {
+    if (filterType !== "lezione_privata" && filterCoach !== "all") {
+      setFilterCoach("all");
+    }
+  }, [filterType, filterCoach]);
+
   async function cancelBooking(id: string) {
     if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
 
@@ -232,16 +455,127 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     cancellation_requested: { label: "Richiesta cancellazione", color: "bg-secondary text-white", icon: AlertCircle },
   };
 
+  const getLocalDateInputValue = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const toTitleCaseWords = (value: string) =>
+    value
+      .replace(/_/g, " ")
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  const typeOptions = Array.from(
+    new Set(bookings.map((booking) => booking.type).filter(Boolean))
+  ).sort((a, b) => {
+    const aLabel = typeConfig[a]?.label || toTitleCaseWords(a);
+    const bLabel = typeConfig[b]?.label || toTitleCaseWords(b);
+    return aLabel.localeCompare(bLabel, "it");
+  });
+
+  const courtOptions = Array.from(
+    new Set(bookings.map((booking) => booking.court).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, "it"));
+
+  const userOptions = Array.from(
+    new Set(
+      bookings
+        .map((booking) => getAthleteDisplayName(booking))
+        .filter((name) => name && name !== "N/A")
+    )
+  ).sort((a, b) => a.localeCompare(b, "it"));
+
+  const coachOptions = Array.from(
+    new Set(
+      bookings
+        .map((booking) => booking.coach_profile?.full_name?.trim())
+        .filter((name): name is string => Boolean(name))
+    )
+  ).sort((a, b) => a.localeCompare(b, "it"));
+
+  const hasActiveFilters =
+    filterVisibility !== "active" ||
+    filterUser !== "all" ||
+    filterCoach !== "all" ||
+    filterType !== "all" ||
+    filterCourt !== "all" ||
+    Boolean(filterDateFrom) ||
+    Boolean(filterDateTo);
+
+  const effectiveViewMode = isHistoryMode ? "list" : viewMode;
+  const now = new Date();
+
   const filteredBookings = bookings
     .filter((booking) => {
-      if (booking.status === "cancelled") return false;
+      const isTimelineMode = !isHistoryMode && effectiveViewMode === "timeline";
+      const bookingStartDateObj = new Date(booking.start_time);
+      const bookingEndDateObj = new Date(booking.end_time);
+      const isPast = bookingEndDateObj < now;
+      const isPresentOrFuture = bookingEndDateObj >= now;
+      const isTodayBooking =
+        bookingStartDateObj.getDate() === now.getDate() &&
+        bookingStartDateObj.getMonth() === now.getMonth() &&
+        bookingStartDateObj.getFullYear() === now.getFullYear();
+      const isCancelled =
+        booking.status === "cancelled" || booking.status === "cancellation_requested";
+      const isSuccessful =
+        booking.status === "confirmed" ||
+        booking.status === "completed" ||
+        booking.status === "confirmed_by_coach";
 
-      const matchesStatus = filter === "all" || booking.status === filter;
+      const matchesVisibility = isTimelineMode
+        ? true
+        : filterVisibility === "all"
+        ? true
+        : filterVisibility === "active"
+        ? isPresentOrFuture
+        : filterVisibility === "today"
+        ? isTodayBooking && !isCancelled
+        : filterVisibility === "archived"
+        ? (isPast && isSuccessful) || isCancelled
+        : filterVisibility === "cancelled"
+        ? isCancelled
+        : isPast && isSuccessful && !isCancelled;
+
+      const matchesType = filterType === "all" || booking.type === filterType;
+      const matchesCourt = filterCourt === "all" || booking.court === filterCourt;
+      const matchesUser = filterUser === "all" || getAthleteDisplayName(booking) === filterUser;
+      const shouldFilterByCoach = filterType === "lezione_privata";
+      const matchesCoach =
+        !shouldFilterByCoach ||
+        filterCoach === "all" ||
+        (booking.coach_profile?.full_name || "") === filterCoach;
+      const bookingDate = getLocalDateInputValue(booking.start_time);
+      const matchesDateFrom = !filterDateFrom || bookingDate >= filterDateFrom;
+      const matchesDateTo = !filterDateTo || bookingDate <= filterDateTo;
+      const normalizedSearch = search.toLowerCase();
       const matchesSearch =
         !search ||
-        booking.court?.toLowerCase().includes(search.toLowerCase()) ||
-        booking.coach?.full_name?.toLowerCase().includes(search.toLowerCase());
-      return matchesStatus && matchesSearch;
+        getAthleteDisplayName(booking).toLowerCase().includes(normalizedSearch) ||
+        getAthleteDisplayEmail(booking).toLowerCase().includes(normalizedSearch) ||
+        booking.participants?.some(
+          (participant) =>
+            participant.full_name?.toLowerCase().includes(normalizedSearch) ||
+            participant.email?.toLowerCase().includes(normalizedSearch)
+        ) ||
+        booking.coach_profile?.full_name?.toLowerCase().includes(normalizedSearch) ||
+        booking.court?.toLowerCase().includes(normalizedSearch);
+      return (
+        matchesVisibility &&
+        matchesUser &&
+        matchesCoach &&
+        matchesType &&
+        matchesCourt &&
+        matchesDateFrom &&
+        matchesDateTo &&
+        matchesSearch
+      );
     })
     .sort((a, b) => {
       let aValue: any;
@@ -276,8 +610,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-
-  const effectiveViewMode = isHistoryMode ? "list" : viewMode;
 
   if (loading) {
     return (
@@ -327,7 +659,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               Nuova Prenotazione
             </Link>
           )}
-          {!isHistoryMode && (
+          {!isHistoryMode && !isMaestroDashboard && (
             <Link
               href={`${dashboardBase}/bookings/storico`}
               className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
@@ -336,13 +668,15 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <Clock className="h-5 w-5" />
             </Link>
           )}
-          <button
-            onClick={() => loadBookings()}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
-            title="Ricarica"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </button>
+          {!isMaestroDashboard && (
+            <button
+              onClick={() => loadBookings()}
+              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
+              title="Ricarica"
+            >
+              <RefreshCw className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -371,20 +705,35 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             }`}
           >
             <LayoutGrid className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-            Calendario
+            Timeline
           </button>
           </div>
         )}
         {effectiveViewMode === "list" && (
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-            <input
-              type="text"
-              placeholder="Cerca per campo o maestro..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-            />
+          <div className="flex items-center gap-2 w-full">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+              <input
+                type="text"
+                placeholder="Cerca per nome atleta, maestro, email o campo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(true)}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+                hasActiveFilters
+                  ? "border-secondary bg-secondary text-white hover:opacity-90"
+                  : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+              }`}
+              aria-label="Apri filtri prenotazioni"
+              title="Filtri"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </button>
           </div>
         )}
       </div>
@@ -392,13 +741,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       {/* Bookings List or Timeline */}
       {effectiveViewMode === "timeline" ? (
         <BookingsTimeline
-          bookings={filteredBookings}
+          bookings={isMaestroDashboard ? timelineBookings : filteredBookings}
           loading={loading}
           basePath={dashboardBase}
-          fetchOccupied={true}
-          swapAxes={true}
-          showBlockReason={false}
-          showCourtBlocks={false}
+          fetchOccupied={!isMaestroDashboard}
+          swapAxes={!isMaestroDashboard}
+          showBlockReason={isMaestroDashboard ? true : false}
+          showCourtBlocks={isMaestroDashboard ? true : false}
+          highlightUserId={isMaestroDashboard ? currentUserId : undefined}
         />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -410,11 +760,11 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           <Calendar className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna prenotazione trovata</h3>
           <p className="text-secondary/60 mb-6">
-            {search || filter !== "all"
+            {search || hasActiveFilters
               ? "Prova a modificare i filtri di ricerca"
               : "Prenota il tuo primo campo per iniziare"}
           </p>
-          {!search && filter === "all" && (
+          {!search && !hasActiveFilters && (
             <Link
               href={`${dashboardBase}/bookings/new`}
               className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all"
@@ -488,6 +838,11 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             {/* Data Rows */}
             {filteredBookings.map((booking) => {
               const isPast = new Date(booking.start_time) < new Date();
+              const isPastLesson =
+                (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") &&
+                new Date(booking.end_time) < new Date() &&
+                booking.status !== "cancelled" &&
+                booking.status !== "cancellation_requested";
               const isCancelled = booking.status === "cancelled";
               const isCancellationRequested = booking.status === "cancellation_requested";
               const canCancel = !isCancelled && !isCancellationRequested && !isPast;
@@ -499,6 +854,9 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               if (booking.status === "cancelled" || booking.status === "cancellation_requested") {
                 borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
                 statusColor = "#022431";
+              } else if (isPastLesson) {
+                borderStyle = { borderLeftColor: "#6b7280" };
+                statusColor = "#6b7280";
               } else {
                 borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary - stato positivo
                 statusColor = "var(--secondary)";
@@ -560,6 +918,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                         <XCircle className="h-4 w-4" style={{ color: statusColor }} />
                       ) : booking.status === "cancellation_requested" ? (
                         <AlertCircle className="h-4 w-4" style={{ color: statusColor }} />
+                      ) : isPastLesson ? (
+                        <Clock className="h-4 w-4" style={{ color: statusColor }} />
                       ) : (
                         <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
                       )}
@@ -646,6 +1006,172 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           </div>
         </div>
       )}
+
+      <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+        <ModalContent
+          size="md"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+        >
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Filtra Prenotazioni</ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Seleziona i criteri per visualizzare le prenotazioni.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="bookings-visibility-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Stato
+              </label>
+              <select
+                id="bookings-visibility-filter"
+                value={filterVisibility}
+                  onChange={(e) => setFilterVisibility(e.target.value as "all" | "active" | "today" | "archived" | "cancelled" | "past")}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                  <option value="all">Tutte</option>
+                <option value="active">Attivo (default)</option>
+                <option value="today">Oggi</option>
+                <option value="archived">Archiviate</option>
+                <option value="cancelled">Annullate</option>
+                <option value="past">Passate</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="bookings-type-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Tipo
+              </label>
+              <select
+                id="bookings-type-filter"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutti i tipi</option>
+                {typeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {typeConfig[type]?.label || toTitleCaseWords(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="bookings-user-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Utente
+              </label>
+              <select
+                id="bookings-user-filter"
+                value={filterUser}
+                onChange={(e) => setFilterUser(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutti gli utenti</option>
+                {userOptions.map((userName) => (
+                  <option key={userName} value={userName}>
+                    {userName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filterType === "lezione_privata" && (
+              <div className="space-y-1">
+                <label htmlFor="bookings-coach-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Maestro
+                </label>
+                <select
+                  id="bookings-coach-filter"
+                  value={filterCoach}
+                  onChange={(e) => setFilterCoach(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                >
+                  <option value="all">Tutti i maestri</option>
+                  {coachOptions.map((coachName) => (
+                    <option key={coachName} value={coachName}>
+                      {coachName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label htmlFor="bookings-court-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Campo
+              </label>
+              <select
+                id="bookings-court-filter"
+                value={filterCourt}
+                onChange={(e) => setFilterCourt(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutti i campi</option>
+                {courtOptions.map((court) => (
+                  <option key={court} value={court}>
+                    {court}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label htmlFor="bookings-date-from-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Data da
+                </label>
+                <input
+                  id="bookings-date-from-filter"
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="bookings-date-to-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Data a
+                </label>
+                <input
+                  id="bookings-date-to-filter"
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={() => {
+                setFilterVisibility("active");
+                setFilterUser("all");
+                setFilterCoach("all");
+                setFilterType("all");
+                setFilterCourt("all");
+                setFilterDateFrom("");
+                setFilterDateTo("");
+              }}
+              className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Rimuovi filtri
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(false)}
+              className="w-1/2 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-br-lg"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

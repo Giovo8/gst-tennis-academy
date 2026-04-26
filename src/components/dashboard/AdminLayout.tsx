@@ -15,7 +15,6 @@ import {
   Key,
   Newspaper,
   Image,
-  Bell,
   Video,
   Briefcase,
   UsersIcon,
@@ -107,11 +106,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "News",
       href: "/dashboard/admin/news",
       icon: <Newspaper className="h-5 w-5" />,
-    },
-    {
-      label: "Annunci",
-      href: "/dashboard/admin/announcements",
-      icon: <Bell className="h-5 w-5" />,
     },
     {
       label: "Staff",

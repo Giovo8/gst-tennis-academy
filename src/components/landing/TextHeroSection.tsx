@@ -25,10 +25,8 @@ export default function TextHeroSection() {
 
     const role = profile?.role || 'atleta';
 
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'gestore') {
       router.push('/dashboard/admin/bookings');
-    } else if (role === 'gestore') {
-      router.push('/dashboard/gestore/bookings');
     } else {
       router.push('/dashboard/atleta/bookings');
     }
@@ -52,10 +50,8 @@ export default function TextHeroSection() {
 
     const role = profile?.role || 'atleta';
 
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'gestore') {
       router.push('/dashboard/admin/tornei');
-    } else if (role === 'gestore') {
-      router.push('/dashboard/gestore/tornei');
     } else {
       router.push('/dashboard/atleta/tornei');
     }

@@ -217,7 +217,17 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   }
 
   const status = statusConfig[booking.status] || statusConfig.pending;
-  const StatusIcon = status.icon;
+  const isCancelledStatus =
+    booking.status === "cancelled" || booking.status === "cancellation_requested";
+  const isPastBooking = new Date(booking.end_time) < new Date();
+  const displayStatus = !isCancelledStatus && isPastBooking
+    ? {
+        label: "Passata",
+        color: "bg-gray-100 text-gray-700",
+        icon: Clock,
+      }
+    : status;
+  const StatusIcon = displayStatus.icon;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
   const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
   const displayParticipants = getDisplayParticipants(booking);
@@ -449,7 +459,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             <div className="flex-1">
               <span className="flex items-center gap-2 text-secondary font-semibold">
                 <StatusIcon className="h-5 w-5" />
-                {status.label}
+                {displayStatus.label}
               </span>
             </div>
           </div>
@@ -465,30 +475,32 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       )}
 
       {/* Pulsanti azioni */}
-      <div className="flex flex-wrap gap-3">
-          {booking.status !== "cancelled" && (
-            <Link
-              href={`${basePath}/bookings/modifica?id=${booking.id}`}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
-            >
-              <Edit className="h-5 w-5" />
-              Modifica
-            </Link>
-          )}
-
-          <button
-            onClick={deleteBooking}
-            disabled={actionLoading}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading && deleting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Trash2 className="h-5 w-5" />
+      {!isPastBooking && (
+        <div className="flex flex-wrap gap-3">
+            {booking.status !== "cancelled" && (
+              <Link
+                href={`${basePath}/bookings/modifica?id=${booking.id}`}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+              >
+                <Edit className="h-5 w-5" />
+                Modifica
+              </Link>
             )}
-            Elimina
-          </button>
-      </div>
+
+            <button
+              onClick={deleteBooking}
+              disabled={actionLoading}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {actionLoading && deleting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Trash2 className="h-5 w-5" />
+              )}
+              Elimina
+            </button>
+        </div>
+      )}
     </div>
   );
 }

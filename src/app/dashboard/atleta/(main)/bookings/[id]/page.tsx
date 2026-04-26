@@ -47,6 +47,7 @@ export default function BookingDetailPage() {
   const params = useParams();
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
+  const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const bookingId = params?.id as string;
 
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -93,12 +94,19 @@ export default function BookingDetailPage() {
         return;
       }
 
-      const { data: bookingData, error } = await supabase
+      let bookingQuery = supabase
         .from("bookings")
         .select("*")
-        .eq("id", bookingId)
-        .eq("user_id", user.id) // Solo prenotazioni dell'utente corrente
-        .single();
+        .eq("id", bookingId);
+
+      if (isMaestroDashboard) {
+        // In dashboard maestro, allow bookings where user is owner OR assigned coach.
+        bookingQuery = bookingQuery.or(`user_id.eq.${user.id},coach_id.eq.${user.id}`);
+      } else {
+        bookingQuery = bookingQuery.eq("user_id", user.id);
+      }
+
+      const { data: bookingData, error } = await bookingQuery.maybeSingle();
 
       if (error || !bookingData) {
         console.error("Errore caricamento prenotazione:", error);
@@ -219,11 +227,19 @@ export default function BookingDetailPage() {
   }
 
   const status = statusConfig[booking.status] || statusConfig.pending;
-  const StatusIcon = status.icon;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
   const isLesson =
     booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
   const isPast = new Date(booking.start_time) < new Date();
+  const isPastLesson =
+    isLesson &&
+    new Date(booking.end_time) < new Date() &&
+    booking.status !== "cancelled" &&
+    booking.status !== "cancellation_requested";
+  const effectiveStatus = isPastLesson
+    ? { label: "Passata", icon: Clock }
+    : { label: status.label, icon: status.icon };
+  const StatusIcon = effectiveStatus.icon;
   const isCancelled = booking.status === "cancelled";
   const isCancellationRequested = booking.status === "cancellation_requested";
   const canCancel = !isCancelled && !isCancellationRequested && !isPast;
@@ -442,7 +458,7 @@ export default function BookingDetailPage() {
             <div className="flex-1">
               <span className="flex items-center gap-2 text-secondary font-semibold">
                 <StatusIcon className="h-5 w-5" />
-                {status.label}
+                {effectiveStatus.label}
               </span>
             </div>
           </div>

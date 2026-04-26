@@ -1,1 +1,0 @@
-export { default } from "@/app/dashboard/atleta/(main)/subscription/page";

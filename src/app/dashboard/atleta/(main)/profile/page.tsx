@@ -23,7 +23,6 @@ interface Profile {
   email: string;
   full_name: string | null;
   role: string;
-  subscription_type: string | null;
   phone?: string | null;
   birth_date?: string | null;
   avatar_url?: string | null;
@@ -346,17 +345,6 @@ export default function ProfilePage() {
             <div>
               <p className="text-xs font-medium text-gray-500">Membro dal</p>
               <p className="text-sm font-semibold text-gray-900">{formatDate(profile.created_at)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <CreditCard className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Abbonamento</p>
-              <p className="text-sm font-semibold text-gray-900">
-                {profile.subscription_type || "Nessuno"}
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">

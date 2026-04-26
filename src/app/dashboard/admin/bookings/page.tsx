@@ -11,7 +11,6 @@ import {
   XCircle, 
   Clock, 
   Search, 
-  Filter,
   Download,
   Plus,
   Pencil,
@@ -32,8 +31,18 @@ import {
   Trophy,
   Circle,
   MoreVertical,
+  SlidersHorizontal,
 } from "lucide-react";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/ui";
 
 type Booking = {
   id: string;
@@ -69,13 +78,20 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [filterVisibility, setFilterVisibility] = useState<"active" | "today" | "archived" | "cancelled" | "past">("active");
+  const [filterUser, setFilterUser] = useState<string>("all");
+  const [filterCoach, setFilterCoach] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterCourt, setFilterCourt] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const [sortBy, setSortBy] = useState<"date" | "court" | "type" | "status" | "athlete" | "coach" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const getPrimaryParticipant = (booking: Booking) =>
     booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
@@ -111,6 +127,12 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       setSearch(initialSearch);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (filterType !== "lezione_privata" && filterCoach !== "all") {
+      setFilterCoach("all");
+    }
+  }, [filterType, filterCoach]);
 
   async function loadBookings() {
     try {
@@ -289,17 +311,44 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     cancelled: { label: "Annullata", color: "bg-secondary text-white", icon: XCircle },
   };
 
+  const hasActiveFilters =
+    filterVisibility !== "active" ||
+    filterUser !== "all" ||
+    filterCoach !== "all" ||
+    filterType !== "all" ||
+    filterCourt !== "all" ||
+    Boolean(filterDateFrom) ||
+    Boolean(filterDateTo);
+
+  const statusLabelMap: Record<string, string> = {
+    confirmed: "Confermata",
+    pending: "In attesa",
+    cancelled: "Annullata",
+    cancellation_requested: "Richiesta annullamento",
+  };
+
+  const toTitleCaseWords = (value: string) =>
+    value
+      .replace(/_/g, " ")
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  const getStatusLabel = (status: string) => statusLabelMap[status] || toTitleCaseWords(status);
+
+  const getLocalDateInputValue = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const today = new Date();
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const baseBookings =
-    mode === "history"
-      ? bookings
-      : bookings.filter(
-          (booking) =>
-            new Date(booking.start_time) >= startOfToday &&
-            booking.status !== "cancelled"
-        );
+  const baseBookings = bookings;
 
   // Merge consecutive bookings of the same user on the same court
   const mergeConsecutiveBookings = (bookings: Booking[]): Booking[] => {
@@ -352,8 +401,75 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
   const mergedBaseBookings = mergeConsecutiveBookings(baseBookings);
 
+  const typeOptions = Array.from(
+    new Set(mergedBaseBookings.map((booking) => booking.type).filter(Boolean))
+  ).sort((a, b) => {
+    const aLabel = typeConfig[a]?.label || toTitleCaseWords(a);
+    const bLabel = typeConfig[b]?.label || toTitleCaseWords(b);
+    return aLabel.localeCompare(bLabel, "it");
+  });
+
+  const courtOptions = Array.from(
+    new Set(mergedBaseBookings.map((booking) => booking.court).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, "it"));
+
+  const userOptions = Array.from(
+    new Set(
+      mergedBaseBookings
+        .map((booking) => getAthleteDisplayName(booking))
+        .filter((name) => name && name !== "N/A")
+    )
+  ).sort((a, b) => a.localeCompare(b, "it"));
+
+  const coachOptions = Array.from(
+    new Set(
+      mergedBaseBookings
+        .map((booking) => booking.coach_profile?.full_name?.trim())
+        .filter((name): name is string => Boolean(name))
+    )
+  ).sort((a, b) => a.localeCompare(b, "it"));
+
   const filteredBookings = mergedBaseBookings.filter((booking) => {
-    const matchesStatus = filter === "all" || booking.status === filter;
+    const isTimelineMode = mode !== "history" && viewMode === "timeline";
+    const now = new Date();
+    const bookingStartDateObj = new Date(booking.start_time);
+    const bookingEndDateObj = new Date(booking.end_time);
+    const isPast = bookingEndDateObj < now;
+    const isPresentOrFuture = bookingEndDateObj >= now;
+    const isTodayBooking =
+      bookingStartDateObj.getDate() === now.getDate() &&
+      bookingStartDateObj.getMonth() === now.getMonth() &&
+      bookingStartDateObj.getFullYear() === now.getFullYear();
+    const isCancelled =
+      booking.status === "cancelled" || booking.status === "cancellation_requested";
+    const isSuccessful =
+      booking.status === "confirmed" ||
+      booking.status === "completed" ||
+      booking.status === "confirmed_by_coach";
+
+    const matchesVisibility = isTimelineMode
+      ? true
+      : filterVisibility === "active"
+      ? isPresentOrFuture
+      : filterVisibility === "today"
+      ? isTodayBooking && !isCancelled
+      : filterVisibility === "archived"
+      ? (isPast && isSuccessful) || isCancelled
+      : filterVisibility === "cancelled"
+      ? isCancelled
+      : isPast && isSuccessful && !isCancelled;
+
+    const matchesType = filterType === "all" || booking.type === filterType;
+    const matchesCourt = filterCourt === "all" || booking.court === filterCourt;
+    const matchesUser = filterUser === "all" || getAthleteDisplayName(booking) === filterUser;
+    const shouldFilterByCoach = filterType === "lezione_privata";
+    const matchesCoach =
+      !shouldFilterByCoach ||
+      filterCoach === "all" ||
+      (booking.coach_profile?.full_name || "") === filterCoach;
+    const bookingDate = getLocalDateInputValue(booking.start_time);
+    const matchesDateFrom = !filterDateFrom || bookingDate >= filterDateFrom;
+    const matchesDateTo = !filterDateTo || bookingDate <= filterDateTo;
     const normalizedSearch = search.toLowerCase();
     const matchesSearch =
       !search ||
@@ -366,7 +482,16 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       ) ||
       booking.coach_profile?.full_name?.toLowerCase().includes(normalizedSearch) ||
       booking.court?.toLowerCase().includes(normalizedSearch);
-    return matchesStatus && matchesSearch;
+    return (
+      matchesVisibility &&
+      matchesUser &&
+      matchesCoach &&
+      matchesType &&
+      matchesCourt &&
+      matchesDateFrom &&
+      matchesDateTo &&
+      matchesSearch
+    );
   });
 
   // Sorting logic
@@ -451,6 +576,34 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
   };
 
+  const renderSearchWithFilter = () => (
+    <div className="flex items-center gap-2 w-full">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+        <input
+          type="text"
+          placeholder="Cerca per nome atleta, maestro, email o campo..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => setIsFilterModalOpen(true)}
+        className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+          hasActiveFilters
+            ? "border-secondary bg-secondary text-white hover:opacity-90"
+            : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+        }`}
+        aria-label="Apri filtri prenotazioni"
+        title="Filtri"
+      >
+        <SlidersHorizontal className="h-5 w-5" />
+      </button>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -487,13 +640,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                 <Plus className="h-4 w-4" />
                 Crea Prenotazione
               </Link>
-              <Link
-                href={`${basePath}/bookings/storico`}
-                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-                title="Storico"
-              >
-                <Clock className="h-5 w-5" />
-              </Link>
             </>
           )}
           {mode !== "history" && (
@@ -512,16 +658,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       <div className="flex flex-col gap-3">
         {/* Search field - solo in modalità storico non mostrare timeline */}
         {mode === "history" ? (
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-            <input
-              type="text"
-              placeholder="Cerca per nome atleta, maestro, email o campo..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-            />
-          </div>
+          renderSearchWithFilter()
         ) : (
           <>
             {/* View Mode Toggle */}
@@ -550,16 +687,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
               </button>
             </div>
             {viewMode === "list" && (
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-                <input
-                  type="text"
-                  placeholder="Cerca per nome atleta, maestro, email o campo..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                />
-              </div>
+              renderSearchWithFilter()
             )}
           </>
         )}
@@ -567,7 +695,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
       {/* Bookings List or Timeline */}
       {mode !== "history" && viewMode === "timeline" ? (
-        <BookingsTimeline bookings={sortedBookings} loading={loading} basePath={basePath} swapAxes={true} />
+        <BookingsTimeline bookings={sortedBookings} loading={loading} basePath={basePath} />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
@@ -654,16 +782,26 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
           {/* Data Rows */}
           {sortedBookings.map((booking) => {
-            const status = statusConfig[booking.status] || statusConfig.pending;
+            const status = statusConfig[booking.status] || {
+              label: getStatusLabel(booking.status),
+              color: "bg-secondary text-white",
+              icon: Circle,
+            };
             const StatusIcon = status.icon;
             const bookingType = typeConfig[booking.type] || typeConfig.campo;
+            const isCancelledBooking =
+              booking.status === "cancelled" || booking.status === "cancellation_requested";
+            const isPastBooking = new Date(booking.end_time) < new Date();
             
             // Determina il colore del bordo in base allo stato (palette frozen-lake)
             let borderStyle = {};
             let statusColor = "";
-            if (booking.status === "cancelled" || booking.status === "cancellation_requested") {
+            if (isCancelledBooking) {
               borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
               statusColor = "#022431";
+            } else if (isPastBooking) {
+              borderStyle = { borderLeftColor: "#6b7280" }; // gray-500 - passata
+              statusColor = "#6b7280";
             } else {
               borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary - stato positivo
               statusColor = "var(--secondary)";
@@ -733,6 +871,8 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                         <XCircle className="h-4 w-4" style={{ color: statusColor }} />
                       ) : booking.status === "cancellation_requested" ? (
                         <AlertCircle className="h-4 w-4" style={{ color: statusColor }} />
+                      ) : isPastBooking ? (
+                        <Clock className="h-4 w-4" style={{ color: statusColor }} />
                       ) : (
                         <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
                       )}
@@ -799,6 +939,170 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       )}
 
       {/* Modale di modifica rimosso: ora la modifica avviene su pagina dedicata */}
+
+      <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+        <ModalContent
+          size="md"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+        >
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Filtra Prenotazioni</ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Seleziona i criteri per visualizzare le prenotazioni.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="bookings-visibility-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Stato
+              </label>
+              <select
+                id="bookings-visibility-filter"
+                value={filterVisibility}
+                onChange={(e) => setFilterVisibility(e.target.value as "active" | "today" | "archived" | "cancelled" | "past")}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="active">Attivo (default)</option>
+                <option value="today">Oggi</option>
+                <option value="archived">Archiviate</option>
+                <option value="cancelled">Annullate</option>
+                <option value="past">Passate</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="bookings-type-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Tipo
+              </label>
+              <select
+                id="bookings-type-filter"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutti i tipi</option>
+                {typeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {typeConfig[type]?.label || toTitleCaseWords(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="bookings-user-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Utente
+              </label>
+              <select
+                id="bookings-user-filter"
+                value={filterUser}
+                onChange={(e) => setFilterUser(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutti gli utenti</option>
+                {userOptions.map((userName) => (
+                  <option key={userName} value={userName}>
+                    {userName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filterType === "lezione_privata" && (
+              <div className="space-y-1">
+                <label htmlFor="bookings-coach-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Maestro
+                </label>
+                <select
+                  id="bookings-coach-filter"
+                  value={filterCoach}
+                  onChange={(e) => setFilterCoach(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                >
+                  <option value="all">Tutti i maestri</option>
+                  {coachOptions.map((coachName) => (
+                    <option key={coachName} value={coachName}>
+                      {coachName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label htmlFor="bookings-court-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Campo
+              </label>
+              <select
+                id="bookings-court-filter"
+                value={filterCourt}
+                onChange={(e) => setFilterCourt(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutti i campi</option>
+                {courtOptions.map((court) => (
+                  <option key={court} value={court}>
+                    {court}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label htmlFor="bookings-date-from-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Data da
+                </label>
+                <input
+                  id="bookings-date-from-filter"
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="bookings-date-to-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                  Data a
+                </label>
+                <input
+                  id="bookings-date-to-filter"
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={() => {
+                setFilterVisibility("active");
+                setFilterUser("all");
+                setFilterCoach("all");
+                setFilterType("all");
+                setFilterCourt("all");
+                setFilterDateFrom("");
+                setFilterDateTo("");
+              }}
+              className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Rimuovi filtri
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(false)}
+              className="w-1/2 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-br-lg"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

@@ -3,9 +3,18 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Users, Swords, Lock } from "lucide-react";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui";
 
 type Booking = {
   id: string;
@@ -41,6 +50,7 @@ type BookingsTimelineProps = {
   swapAxes?: boolean; // When true, shows time on Y axis and courts on X axis
   showBlockReason?: boolean;
   showCourtBlocks?: boolean;
+  highlightUserId?: string; // When set, bookings where this user is athlete are styled differently
 };
 
 const TIME_SLOTS = [
@@ -49,8 +59,10 @@ const TIME_SLOTS = [
   "19:00", "20:00", "21:00", "22:00"
 ];
 
+const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+
 const HALF_SLOTS_PER_DAY = TIME_SLOTS.length * 2;
-const TIMELINE_ROW_HEIGHT = 72;
+const TIMELINE_ROW_HEIGHT = 92;
 
 type TimeSlotInfo = {
   booking: Booking | null;
@@ -59,7 +71,7 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
@@ -68,6 +80,18 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  const [selectedEntry, setSelectedEntry] = useState<Booking | null>(null);
+  const [entryModalOpen, setEntryModalOpen] = useState(false);
+  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    return today;
+  });
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
   
   // Drag to scroll
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +104,17 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
   const getBookingDisplayName = (booking: Booking) =>
     getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
+
+  const getParticipantNames = (booking: Booking): string[] => {
+    const names =
+      booking.participants
+        ?.map((participant) => participant.full_name?.trim())
+        .filter((name): name is string => Boolean(name && name.length > 0)) || [];
+
+    if (names.length > 0) return names;
+    if (booking.user_profile?.full_name?.trim()) return [booking.user_profile.full_name.trim()];
+    return [];
+  };
 
   const getParticipantIdentityKey = (booking: Booking) => {
     if (booking.participants && booking.participants.length > 0) {
@@ -251,18 +286,64 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   function changeDate(days: number) {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + days);
+    newDate.setHours(12, 0, 0, 0);
     setSelectedDate(newDate);
     setSelectedSlots([]); // Reset selection when changing date
   }
 
-  function goToToday() {
-    setSelectedDate(new Date());
-    setSelectedSlots([]);
+  function isSameCalendarDay(a: Date, b: Date): boolean {
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
   }
 
-  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const newDate = new Date(e.target.value + 'T12:00:00');
-    setSelectedDate(newDate);
+  function normalizeDate(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(12, 0, 0, 0);
+    return normalized;
+  }
+
+  function openDatePickerModal() {
+    const normalizedSelected = normalizeDate(selectedDate);
+    setPendingDate(normalizedSelected);
+    setCalendarViewDate(new Date(normalizedSelected.getFullYear(), normalizedSelected.getMonth(), 1));
+    setDatePickerModalOpen(true);
+  }
+
+  function changeCalendarMonth(delta: number) {
+    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  }
+
+  function selectCalendarDay(day: Date) {
+    const normalized = normalizeDate(day);
+    setPendingDate(normalized);
+    setCalendarViewDate(new Date(normalized.getFullYear(), normalized.getMonth(), 1));
+  }
+
+  function applyDateSelection() {
+    setSelectedDate(normalizeDate(pendingDate));
+    setSelectedSlots([]);
+    setDatePickerModalOpen(false);
+  }
+
+  function handleDatePickerToday() {
+    const today = normalizeDate(new Date());
+    setPendingDate(today);
+    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
+
+  function getCalendarMonthLabel(date: Date): string {
+    const label = date.toLocaleDateString("it-IT", {
+      month: "long",
+      year: "numeric"
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function goToToday() {
+    setSelectedDate(normalizeDate(new Date()));
     setSelectedSlots([]);
   }
 
@@ -406,25 +487,54 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
   
   function getBookingStyle(booking: Booking) {
-    // Blocchi campo - rosso/arancione
+    // Colori specifici per timeline maestro
+    if (highlightUserId) {
+      if (booking.isBlock) {
+        return { background: "#94a3b8" };
+      }
+
+      if (booking.status === "cancelled") {
+        return { background: "#94a3b8" };
+      }
+
+      // Prenotazione di un altro utente (anonima)
+      if (booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId) {
+        return { background: "#94a3b8" };
+      }
+
+      switch (booking.type) {
+        case "lezione_privata":
+        case "lezione_gruppo":
+          return { background: "var(--secondary)" };
+        case "campo":
+          // Mantieni il colore storico dei blocchi prima del passaggio al grigio.
+          return { background: "var(--color-frozen-lake-900)" };
+        case "arena":
+          return { background: "var(--color-frozen-lake-600)" };
+        default:
+          return { background: "var(--secondary-light)" };
+      }
+    }
+
+    // Colori default (admin/altre dashboard)
     if (booking.isBlock) {
-      return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
+      return { background: "var(--color-frozen-lake-900)" };
     }
-    
+
     if (booking.status === "cancelled") {
-      return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
+      return { background: "#6b7280" };
     }
-    
+
     switch (booking.type) {
       case "lezione_privata":
       case "lezione_gruppo":
-        return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
+        return { background: "#023047" };
       case "campo":
-        return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
+        return { background: "var(--secondary)" };
       case "arena":
-        return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
+        return { background: "var(--color-frozen-lake-600)" };
       default:
-        return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
+        return { background: "var(--secondary-light)" };
     }
   }
 
@@ -434,6 +544,66 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
     if (booking.type === "arena") return "Match Arena";
     return "Campo";
+  }
+
+  function getBlockReasonLabel(booking: Booking): string {
+    if (!showBlockReason) return "Blocco impostato";
+    const reason = booking.reason?.trim() || booking.notes?.trim();
+    return reason || "Motivazione non specificata";
+  }
+
+  function getBookingTypeIcon(booking: Booking) {
+    if (booking.isBlock) return <Lock className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.type === "lezione_privata") return <User className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.type === "lezione_gruppo") return <Users className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.type === "arena") return <Swords className="h-5 w-5 text-secondary flex-shrink-0" />;
+    return <CalendarIcon className="h-5 w-5 text-secondary flex-shrink-0" />;
+  }
+
+  function formatEntryTimeRange(booking: Booking): string {
+    const start = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    const end = new Date(booking.end_time).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    return `${start} - ${end}`;
+  }
+
+  function getEntryStatusLabel(booking: Booking): string {
+    if (booking.isBlock) return "Campo bloccato";
+    if (booking.status === "confirmed") return "Confermata";
+    if (booking.status === "pending") return "In attesa";
+    if (booking.status === "cancelled") return "Annullata";
+    return booking.status;
+  }
+
+  function getEntryDetailsPath(booking: Booking): string {
+    return booking.isBlock
+      ? `${basePath}/courts/${booking.id}`
+      : `${basePath}/bookings/${booking.id}`;
+  }
+
+  function canOpenEntry(booking: Booking): boolean {
+    // In admin views (no highlighted user), keep existing behavior.
+    if (!highlightUserId) return true;
+
+    // In maestro/athlete contextual views, only own bookings are clickable.
+    if (booking.isBlock) return false;
+    return booking.user_id === highlightUserId || booking.coach_id === highlightUserId;
+  }
+
+  function openEntryModal(booking: Booking) {
+    setSelectedEntry(booking);
+    setEntryModalOpen(true);
+  }
+
+  function goToEntryDetails() {
+    if (!selectedEntry) return;
+    setEntryModalOpen(false);
+    router.push(getEntryDetailsPath(selectedEntry));
   }
 
   function formatDateHeader(short: boolean = false): string {
@@ -505,9 +675,28 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     ? allOccupiedBookings
     : bookingsForSelectedDate;
   const timelineColumnsCount = Math.max(courts.length, 1);
+  const selectedEntryParticipants = useMemo(
+    () => (selectedEntry ? getParticipantNames(selectedEntry) : []),
+    [selectedEntry]
+  );
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
+    const gridStartDate = new Date(firstOfMonth);
+    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
+
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStartDate);
+      date.setDate(gridStartDate.getDate() + index);
+      return {
+        date,
+        isCurrentMonth: date.getMonth() === calendarViewDate.getMonth(),
+      };
+    });
+  }, [calendarViewDate]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       {/* Date Navigation */}
       <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
         <button
@@ -522,19 +711,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             type="button"
             className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
             title="Scegli data"
+            onClick={openDatePickerModal}
           >
-            <input
-              type="date"
-              onChange={handleDateChange}
-              value={selectedDate.toISOString().split('T')[0]}
-              className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
-              tabIndex={-1}
-            />
             <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px", transform: "translateX(-18px)" }}>
               <CalendarIcon className="h-5 w-5 text-white shrink-0" />
               <span
                 className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
-                style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
               >
                 {formatDateHeader(true)}
               </span>
@@ -543,7 +725,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
               <CalendarIcon className="h-5 w-5 text-white shrink-0" />
               <span
                 className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
-                style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
               >
                 {formatDateHeader()}
               </span>
@@ -576,17 +757,17 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseLeave}
             >
-              <div className="min-w-[1380px]">
+              <div className="min-w-[3400px]">
                 {/* Header Row with Time Slots */}
                 <div className="flex bg-secondary rounded-lg mb-3">
-                  <div className="w-[100px] flex-shrink-0 p-3 flex items-center justify-center">
+                  <div className="w-[120px] flex-shrink-0 p-3 flex items-center justify-center">
                     <span className="font-bold text-white uppercase tracking-wide text-[11px]">Campo</span>
                   </div>
                   <div className="flex-1 grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
                     {TIME_SLOTS.map((time) => (
                       <div
                         key={time}
-                        className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                        className="p-3 text-center font-bold text-white text-sm flex items-center justify-center"
                       >
                         {time}
                       </div>
@@ -602,12 +783,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                     className="flex hover:bg-gray-50/50 transition-colors bg-white border border-gray-200 rounded-lg"
                   >
                     {/* Court Name */}
-                    <div className="w-[100px] flex-shrink-0 p-3 bg-white font-bold text-secondary text-sm flex items-center justify-center border-r border-gray-200 rounded-l-lg">
+                    <div className="w-[120px] flex-shrink-0 p-3 bg-white font-bold text-secondary text-sm flex items-center justify-center border-r border-gray-200 rounded-l-lg">
                       {court}
                     </div>
 
                     {/* Time Slots Container */}
-                    <div className="flex-1 grid timeline-grid relative" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
+                    <div className="flex-1 grid timeline-grid relative" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '100px' }}>
                       {/* Prenotazioni esistenti come blocchi sovrapposti */}
                       {(() => {
                         const ownIds = new Set(bookingsForSelectedDate.filter(b => b.court === court).map(b => b.id));
@@ -621,17 +802,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             const { startSlot, duration } = getBookingSlotRange(booking);
                             if (startSlot < 0 || duration <= 0) return null;
                             const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+                            const isClickable = canOpenEntry(booking);
                             return (
                               <div
                                 key={booking.id}
-                                onClick={() => {
-                                  if (booking.isBlock) {
-                                    router.push(`${basePath}/courts/${booking.id}`);
-                                  } else {
-                                    router.push(`${basePath}/bookings/${booking.id}`);
-                                  }
-                                }}
-                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all hover:scale-[1.02] cursor-pointer active:scale-95"
+                                onClick={isClickable ? () => openEntryModal(booking) : undefined}
+                                className={`absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
@@ -640,15 +816,21 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   bottom: '4px',
                                   marginLeft: '2px'
                                 }}
-                                title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
+                                title={isClickable
+                                  ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
+                                  : "Prenotazione non apribile"}
                               >
                                 {booking.isBlock ? (
-                                  <div className="truncate leading-tight uppercase tracking-wider">
+                                  <div className="truncate leading-tight text-white/95 uppercase tracking-wide text-[10px]">
+                                    Blocco Campo
+                                  </div>
+                                ) : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
+                                  <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
                                     {getBookingLabel(booking)}
                                   </div>
                                 ) : (
                                   <>
-                                    <div className="truncate leading-tight">
+                                    <div className="truncate leading-tight mt-0.5">
                                       {getBookingDisplayName(booking)}
                                     </div>
                                     {isLesson && booking.coach_profile && (
@@ -861,17 +1043,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             const { startSlot, duration } = getBookingSlotRange(booking);
                             if (startSlot < 0 || duration <= 0) return null;
                             const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+                            const isClickable = canOpenEntry(booking);
                             return (
                               <div
                                 key={`swap-${court}-${booking.id}`}
-                                onClick={() => {
-                                  if (booking.isBlock) {
-                                    router.push(`${basePath}/courts/${booking.id}`);
-                                  } else {
-                                    router.push(`${basePath}/bookings/${booking.id}`);
-                                  }
-                                }}
-                                className="absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-all hover:scale-[1.01] cursor-pointer active:scale-95"
+                                onClick={isClickable ? () => openEntryModal(booking) : undefined}
+                                className={`absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
@@ -879,15 +1056,21 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   top: `calc(${(startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
                                   height: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
                                 }}
-                                title={`Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`}
+                                title={isClickable
+                                  ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
+                                  : "Prenotazione non apribile"}
                               >
                                 {booking.isBlock ? (
-                                  <div className="truncate leading-tight uppercase tracking-wider">
+                                  <div className="truncate leading-tight text-white/95 uppercase tracking-wide text-[10px]">
+                                    Blocco Campo
+                                  </div>
+                                ) : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
+                                  <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
                                     {getBookingLabel(booking)}
                                   </div>
                                 ) : (
                                   <>
-                                    <div className="truncate leading-tight">
+                                    <div className="truncate leading-tight mt-0.5">
                                       {getBookingDisplayName(booking)}
                                     </div>
                                     {isLesson && booking.coach_profile && (
@@ -940,6 +1123,170 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
           )}
         </div>
       )}
+
+      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Scegli il giorno da visualizzare nella timeline.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white font-semibold"
+                          : isCurrentMonth
+                          ? "text-gray-800 hover:bg-gray-100"
+                          : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={handleDatePickerToday}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyDateSelection}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
+        <ModalContent size="md" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">
+              {selectedEntry?.isBlock ? "Dettaglio Blocco Campo" : "Dettaglio Prenotazione"}
+            </ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Informazioni complete dello slot selezionato.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+            {selectedEntry && (
+              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+                <div className="px-4 py-3 bg-white">
+                  <div className="flex gap-3 items-center">
+                    {getBookingTypeIcon(selectedEntry)}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {selectedEntry.isBlock ? "Blocco campo" : getBookingLabel(selectedEntry)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Campo</span>
+                  <span className="text-xs text-gray-600">{selectedEntry.court}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Orario</span>
+                  <span className="text-xs text-gray-600">{formatEntryTimeRange(selectedEntry)}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Stato</span>
+                  <span className="text-xs text-gray-600">{getEntryStatusLabel(selectedEntry)}</span>
+                </div>
+
+                {!selectedEntry.isBlock && selectedEntryParticipants.length > 0 && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">
+                      {selectedEntryParticipants.length > 1 ? "Partecipanti" : "Partecipante"}
+                    </span>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      {selectedEntryParticipants.map((name, idx) => (
+                        <p key={`${selectedEntry.id}-participant-${idx}`}>{name}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!selectedEntry.isBlock && selectedEntry.coach_profile?.full_name && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Coach</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.coach_profile.full_name}</span>
+                  </div>
+                )}
+
+                {(selectedEntry.notes || selectedEntry.reason) && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Note</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.notes || selectedEntry.reason}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={goToEntryDetails}
+              className="w-full py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-b-lg"
+            >
+              Vai ai dettagli
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

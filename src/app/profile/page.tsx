@@ -11,7 +11,6 @@ type ProfileData = {
   full_name: string | null;
   email: string;
   role: UserRole;
-  subscription_type: string | null;
   email_notifications_enabled?: boolean;
 };
 
@@ -20,7 +19,6 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
-  const [subscriptionType, setSubscriptionType] = useState("");
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,7 +41,7 @@ export default function ProfilePage() {
 
       const { data, error: profileError } = await supabase
         .from("profiles")
-        .select("full_name, email, role, subscription_type, email_notifications_enabled")
+        .select("full_name, email, role, email_notifications_enabled")
         .eq("id", user.id)
         .single();
 
@@ -55,7 +53,6 @@ export default function ProfilePage() {
 
       setProfile(data as ProfileData);
       setFullName(data.full_name ?? "");
-      setSubscriptionType(data.subscription_type ?? "");
       setEmailNotificationsEnabled(data.email_notifications_enabled ?? true);
       setLoading(false);
     };
@@ -76,7 +73,6 @@ export default function ProfilePage() {
       .from("profiles")
       .update({
         full_name: fullName,
-        subscription_type: subscriptionType,
         email_notifications_enabled: emailNotificationsEnabled,
       })
       .eq("id", userId ?? "");
@@ -196,18 +192,6 @@ export default function ProfilePage() {
                 <p className="text-xs text-secondary/50 mt-1">L&apos;email non può essere modificata</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-secondary mb-2">
-                  Tipo abbonamento
-                </label>
-                <input
-                  type="text"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-secondary outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
-                  value={subscriptionType}
-                  onChange={(e) => setSubscriptionType(e.target.value)}
-                  placeholder="Es. Mensile, Annuale, Base"
-                />
-              </div>
             </div>
           </div>
 

@@ -155,6 +155,7 @@ function NewBookingPageInner() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
+  const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -173,6 +174,7 @@ function NewBookingPageInner() {
   const [notes, setNotes] = useState("");
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserAthlete, setCurrentUserAthlete] = useState<SelectedAthlete | null>(null);
 
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -251,25 +253,35 @@ function NewBookingPageInner() {
 
       const fullName = profile?.full_name || user.email || "Atleta";
 
-      setSelectedAthletes((prev) => {
-        if (prev.some((athlete) => athlete.userId === user.id)) {
-          return prev;
-        }
-        return [
-          {
-            userId: user.id,
-            fullName,
-            email: user.email || undefined,
-            phone: profile?.phone || undefined,
-            isRegistered: true,
-          },
-          ...prev,
-        ];
+      setCurrentUserAthlete({
+        userId: user.id,
+        fullName,
+        email: user.email || undefined,
+        phone: profile?.phone || undefined,
+        isRegistered: true,
       });
     };
 
     void loadCurrentUser();
   }, []);
+
+  useEffect(() => {
+    if (!currentUserAthlete?.userId) return;
+
+    const shouldAutoIncludeCurrentUser = !isMaestroDashboard || bookingType !== "lezione_privata";
+
+    setSelectedAthletes((prev) => {
+      const hasCurrentUser = prev.some((athlete) => athlete.userId === currentUserAthlete.userId);
+
+      if (shouldAutoIncludeCurrentUser) {
+        if (hasCurrentUser) return prev;
+        return [currentUserAthlete, ...prev];
+      }
+
+      if (!hasCurrentUser) return prev;
+      return prev.filter((athlete) => athlete.userId !== currentUserAthlete.userId);
+    });
+  }, [bookingType, currentUserAthlete, isMaestroDashboard]);
 
   // Mantiene il numero partecipanti coerente con il tipo prenotazione selezionato.
   useEffect(() => {
@@ -823,7 +835,9 @@ function NewBookingPageInner() {
                       />
                       <p className="mt-2 text-xs text-gray-500">
                         {maxAthletesAllowed === null
-                          ? "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
+                          ? isMaestroDashboard
+                            ? "Seleziona gli atleti partecipanti alla lezione privata."
+                            : "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
                           : `Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a ${maxAthletesAllowed - 1} ${(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.`}
                       </p>
                     </div>

@@ -26,7 +26,6 @@ interface Profile {
   email: string;
   full_name: string | null;
   role: string;
-  subscription_type: string | null;
   phone?: string | null;
   date_of_birth?: string | null;
   avatar_url?: string | null;
@@ -673,18 +672,6 @@ export default function AdminProfilePage() {
               </div>
             </div>
           )}
-
-          {/* Tipo Abbonamento */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
-            <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-              Tipo Abbonamento
-            </label>
-            <div className="flex-1">
-              <div className="px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-secondary/70 font-medium">
-                {profile.subscription_type || "Nessuno"}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

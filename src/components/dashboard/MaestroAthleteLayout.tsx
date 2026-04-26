@@ -9,6 +9,7 @@ import {
   Trophy,
   Video,
   Mail,
+  User,
   LayoutGrid,
   Swords,
 } from "lucide-react";
@@ -104,6 +105,11 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
       label: "Dashboard",
       href: "/dashboard/maestro",
       icon: <LayoutGrid className="h-5 w-5" />,
+    },
+    {
+      label: "Maestro",
+      href: "/dashboard/maestro/maestro",
+      icon: <User className="h-5 w-5" />,
     },
     {
       label: "Prenotazioni",

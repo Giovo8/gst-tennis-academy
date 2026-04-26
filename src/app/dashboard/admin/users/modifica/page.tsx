@@ -16,7 +16,6 @@ type Profile = {
   date_of_birth: string | null;
   bio: string | null;
   metadata: any;
-  subscription_type: string | null;
   email_notifications_enabled: boolean;
   created_at: string;
 };
@@ -52,7 +51,6 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     notes: "",
     role: "atleta" as "admin" | "gestore" | "maestro" | "atleta",
     also_maestro: false,
-    subscription_type: "",
     email_notifications_enabled: true
   });
 
@@ -117,7 +115,6 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         notes: data.bio || "",
         role: data.role,
         also_maestro: data.role === "gestore" && secondaryRoles.includes("maestro"),
-        subscription_type: data.subscription_type || "",
         email_notifications_enabled: data.email_notifications_enabled ?? true
       });
     } catch (error) {
@@ -156,7 +153,6 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           date_of_birth: formData.date_of_birth || null,
           bio: formData.notes || null,
           role: formData.role,
-          subscription_type: formData.subscription_type || null,
           email_notifications_enabled: formData.email_notifications_enabled,
           metadata: {
             ...(existingMetadata as Record<string, unknown>),

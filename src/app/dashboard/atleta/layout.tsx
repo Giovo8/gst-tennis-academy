@@ -3,7 +3,7 @@ import AthleteLayoutComponent from "@/components/dashboard/AthleteLayout";
 
 export const metadata: Metadata = {
   title: "Dashboard Atleta | GST Tennis Academy",
-  description: "Gestisci i tuoi allenamenti, prenotazioni e abbonamenti",
+  description: "Gestisci i tuoi allenamenti, prenotazioni e tornei",
 };
 
 export default function AthleteLayout({
