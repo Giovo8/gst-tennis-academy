@@ -7,15 +7,9 @@ import { supabase } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  Edit,
   Trash2,
-  Users,
-  Calendar,
   Clock,
-  Tag,
-  BarChart3,
   Loader2,
-  Eye,
   Play,
 } from "lucide-react";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -33,6 +27,7 @@ type VideoLesson = {
   is_active: boolean;
   watch_count: number;
   created_at: string;
+  notes?: string | null;
   assigned_users?: { id: string; full_name: string; email: string; phone?: string }[];
   creator?: { full_name: string; email: string } | null;
 };
@@ -44,6 +39,9 @@ export default function VideoDetailPage() {
 
   const [video, setVideo] = useState<VideoLesson | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState("");
+  const [notesDirty, setNotesDirty] = useState(false);
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const categories = [
     { value: "generale", label: "Generale" },
@@ -111,6 +109,8 @@ export default function VideoDetailPage() {
           assigned_users: assignedUsers,
           creator,
         });
+        setNotes(data.notes ?? "");
+        setNotesDirty(false);
       }
     } catch (error) {
       console.error("Error loading video:", error);
@@ -138,6 +138,23 @@ export default function VideoDetailPage() {
     } catch (error: any) {
       console.error("Error deleting video:", error);
       alert(error.message || "Errore durante l'eliminazione");
+    }
+  }
+
+  async function handleSaveNotes() {
+    setNotesSaving(true);
+    try {
+      const { error } = await supabase
+        .from("video_lessons")
+        .update({ notes })
+        .eq("id", videoId);
+      if (error) throw error;
+      setNotesDirty(false);
+    } catch (error: any) {
+      console.error("Error saving notes:", error);
+      alert(error.message || "Errore durante il salvataggio delle note");
+    } finally {
+      setNotesSaving(false);
     }
   }
 
@@ -200,7 +217,7 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Header con titolo video */}
-        <div className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4" style={{ borderLeftColor: video.is_active ? '#08b3f7' : '#056c94' }}>
+        <div className="bg-secondary rounded-xl border border-secondary p-6">
           <div className="flex items-start gap-6">
             <Play className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1">
@@ -210,15 +227,20 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Video Info & Details Combined */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni e Dettagli</h2>
-          
-          <div className="space-y-6">
-            {/* Visualizzazioni */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Visualizzazioni</label>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
+          </div>
+          <div className="p-6 space-y-6">
+            {/* Descrizione */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
               <div className="flex-1">
-                <p className="text-secondary font-semibold">{video.watch_count}</p>
+                {video.description ? (
+                  <p className="text-secondary/80 whitespace-pre-wrap">{video.description}</p>
+                ) : (
+                  <p className="text-secondary/40 italic">Nessuna descrizione disponibile</p>
+                )}
               </div>
             </div>
 
@@ -245,64 +267,24 @@ export default function VideoDetailPage() {
               </div>
             )}
 
-            {/* Category */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {categories.find((c) => c.value === video.category)?.label || video.category}
-                </p>
-              </div>
-            </div>
-
-            {/* Level */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Livello</label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {levels.find((l) => l.value === video.level)?.label || video.level}
-                </p>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
-              <div className="flex-1">
-                <p className={`font-semibold ${video.is_active ? 'text-[#08b3f7]' : 'text-[#056c94]'}`}>
-                  {video.is_active ? "Pubblicato" : "Bozza"}
-                </p>
-              </div>
-            </div>
-
             {/* Creator */}
             {video.creator && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creato da</label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">{video.creator.full_name}</p>
                 </div>
               </div>
             )}
-
-            {/* Descrizione */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
-              <div className="flex-1">
-                {video.description ? (
-                  <p className="text-secondary/80 whitespace-pre-wrap">{video.description}</p>
-                ) : (
-                  <p className="text-secondary/40 italic">Nessuna descrizione disponibile</p>
-                )}
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Assigned Users */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-6">Utenti Assegnati</h2>
-
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
+          </div>
+          <div className="p-6">
           {video.assigned_users && video.assigned_users.length > 0 ? (
             <div className="space-y-3">
               {/* Header Row */}
@@ -328,7 +310,7 @@ export default function VideoDetailPage() {
                 <div
                   key={user.id}
                   className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                  style={{ borderLeftColor: "#0ea5e9" }}
+                  style={{ borderLeftColor: "var(--secondary)" }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 flex-shrink-0 flex items-center justify-center">
@@ -358,6 +340,36 @@ export default function VideoDetailPage() {
               Video non assegnato a nessun utente
             </p>
           )}
+          </div>
+        </div>
+
+        {/* Note */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-3">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+            {notesDirty && (
+              <button
+                onClick={handleSaveNotes}
+                disabled={notesSaving}
+                className="px-4 py-1.5 text-xs font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-60 inline-flex items-center gap-2"
+              >
+                {notesSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Salva
+              </button>
+            )}
+          </div>
+          <div className="p-6">
+            <textarea
+              value={notes}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                setNotesDirty(true);
+              }}
+              rows={5}
+              placeholder="Aggiungi note interne su questo video..."
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 resize-y"
+            />
+          </div>
         </div>
 
         {/* Actions */}
@@ -366,14 +378,12 @@ export default function VideoDetailPage() {
             href={`/dashboard/admin/video-lessons/new?id=${videoId}`}
             className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
           >
-            <Edit className="h-5 w-4" />
             Modifica
           </Link>
           <button
             onClick={handleDelete}
             className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
           >
-            <Trash2 className="h-5 w-4" />
             Elimina
           </button>
         </div>

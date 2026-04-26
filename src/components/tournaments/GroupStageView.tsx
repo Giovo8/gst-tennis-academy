@@ -382,7 +382,7 @@ export default function GroupStageView({
                   {isAdmin && (
                     <button
                       type="button"
-                      className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-md font-medium whitespace-nowrap transition-colors"
+                      className="px-3 py-1.5 text-xs text-[#022431] hover:bg-[#022431]/10 rounded-md font-medium whitespace-nowrap transition-colors"
                       onClick={() => {
                         if (confirm(`Rimuovere ${fullName} dal torneo?`)) {
                           alert('Funzione rimozione partecipante da collegare (admin).');

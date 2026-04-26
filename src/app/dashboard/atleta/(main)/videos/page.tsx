@@ -8,9 +8,8 @@ import {
   Video,
   Loader2,
   Search,
-  Calendar,
-  CheckCircle2,
-  Clock,
+  Play,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -38,6 +37,7 @@ export default function AtletaVideosPage() {
   const [search, setSearch] = useState("");
   const pathname = usePathname();
   const basePath = pathname.split("/videos")[0];
+  const isMaestroView = pathname.startsWith("/dashboard/maestro");
 
   const categories = [
     { value: "generale", label: "Generale" },
@@ -61,61 +61,33 @@ export default function AtletaVideosPage() {
     }
 
     try {
-      const { data: assignments } = await supabase
-        .from("video_assignments")
-        .select("video_id")
-        .eq("user_id", user.id);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      if (!assignments || assignments.length === 0) {
-        const { data: allVideos } = await supabase
-          .from("video_lessons")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
-
-        if (allVideos) {
-          const creatorIds = [...new Set(allVideos.map(v => v.created_by).filter(Boolean))];
-          let creatorsMap = new Map();
-
-          if (creatorIds.length > 0) {
-            const { data: creatorsData } = await supabase
-              .from("profiles")
-              .select("id, full_name")
-              .in("id", creatorIds);
-
-            if (creatorsData) {
-              creatorsMap = new Map(creatorsData.map(c => [c.id, c]));
-            }
-          }
-
-          const enrichedVideos = allVideos.map(video => ({
-            ...video,
-            watched_at: null,
-            watch_count: 0,
-            creator: video.created_by ? creatorsMap.get(video.created_by) : null
-          }));
-
-          setVideos(enrichedVideos);
-        }
-        setLoading(false);
-        return;
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
 
-      const videoIds = assignments.map(a => a.video_id);
-      const { data: videosData } = (await supabase
-        .from("video_lessons")
-        .select("*")
-        .in("id", videoIds)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })) as any;
+      const response = await fetch("/api/video-lessons", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      if (!videosData) {
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || "Errore durante il caricamento dei video");
+      }
+
+      const videosData = payload?.videos || [];
+
+      if (videosData.length === 0) {
         setVideos([]);
-        setLoading(false);
         return;
       }
 
-      const creatorIds = [...new Set(videosData.map(v => v.created_by).filter(Boolean))];
+      const creatorIds = [...new Set(videosData.map((v: any) => v.created_by).filter(Boolean))];
       let creatorsMap = new Map();
 
       if (creatorIds.length > 0) {
@@ -129,14 +101,10 @@ export default function AtletaVideosPage() {
         }
       }
 
-      const enrichedVideos = videosData.map((video: any) => {
-        return {
-          ...video,
-          watched_at: video.watched_at || null,
-          watch_count: video.watch_count || 0,
-          creator: video.created_by ? creatorsMap.get(video.created_by) : null
-        };
-      });
+      const enrichedVideos = videosData.map((video: any) => ({
+        ...video,
+        creator: video.created_by ? creatorsMap.get(video.created_by) : null,
+      }));
 
       setVideos(enrichedVideos);
     } catch (error) {
@@ -173,17 +141,26 @@ export default function AtletaVideosPage() {
             <h1 className="text-4xl font-bold text-secondary">Video Lab</h1>
           </div>
         </div>
+        {isMaestroView && (
+          <Link
+            href={`${basePath}/videos/new`}
+            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Crea Video</span>
+          </Link>
+        )}
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
         <input
           type="text"
           placeholder="Cerca per titolo, descrizione..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
         />
       </div>
 
@@ -193,119 +170,82 @@ export default function AtletaVideosPage() {
           <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun video trovato</h3>
           <p className="text-gray-600">
-            {videos.length === 0
-              ? "I tuoi maestri non hanno ancora condiviso video con te"
-              : "Prova a modificare i filtri di ricerca"
-            }
+            {search
+              ? "Prova a modificare i filtri di ricerca"
+              : "Non hai ancora video assegnati"}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg">
-          <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <style>{`
-              .scrollbar-hide::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
-            <div className="space-y-3" style={{ minWidth: '900px' }}>
-              {/* Header Row */}
-              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="grid grid-cols-[160px_1fr_120px_100px_100px] items-center gap-4">
-                  <div className="text-xs font-bold text-white/80 uppercase">Anteprima</div>
-                  <div className="text-xs font-bold text-white/80 uppercase">Titolo</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Categoria</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Data</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+          {filteredVideos.map((video) => {
+            const getYouTubeVideoId = (url: string) => {
+              const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+              return match ? match[1] : null;
+            };
+            const videoId = getYouTubeVideoId(video.video_url);
+            const thumbnailUrl = videoId
+              ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+              : video.thumbnail_url;
 
-              {/* Data Rows */}
-              {filteredVideos.map((video) => {
-                const getYouTubeVideoId = (url: string) => {
-                  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-                  return match ? match[1] : null;
-                };
-                const videoId = getYouTubeVideoId(video.video_url);
-                const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : video.thumbnail_url;
-
-                return (
-                  <Link
-                    key={video.id}
-                    href={`${basePath}/videos/${video.id}`}
-                    className="block bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
-                    style={{ borderLeftColor: video.watched_at ? '#10b981' : '#08b3f7' }}
-                  >
-                    <div className="grid grid-cols-[160px_1fr_120px_100px_100px] items-center gap-4">
-                      {/* Thumbnail */}
-                      <div className="relative w-[140px] h-[80px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        {thumbnailUrl ? (
-                          <img
-                            src={thumbnailUrl}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-secondary/5">
-                            <Video className="w-8 h-8 text-secondary/20" />
-                          </div>
-                        )}
-                        {video.duration_minutes && (
-                          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                            {video.duration_minutes}:00
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Title & Description */}
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-secondary text-sm line-clamp-1 mb-1">
-                          {video.title}
-                        </h3>
-                        {video.description ? (
-                          <p className="text-xs text-secondary/60 line-clamp-1">
-                            {video.description}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-secondary/40 italic">
-                            Nessuna descrizione
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Category */}
-                      <div className="text-center">
-                        <span className="text-xs font-medium text-secondary">
-                          {categories.find((c) => c.value === video.category)?.label || "Nessuna"}
-                        </span>
-                      </div>
-
-                      {/* Date */}
-                      <div className="text-center">
-                        <span className="text-xs font-medium text-secondary">
-                          {format(new Date(video.created_at), "d MMM yyyy", { locale: it })}
-                        </span>
-                      </div>
-
-                      {/* Status */}
-                      <div className="text-center">
-                        {video.watched_at ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Completato
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
-                            <Clock className="h-3.5 w-3.5" />
-                            Da vedere
-                          </span>
-                        )}
-                      </div>
+            return (
+              <Link
+                key={video.id}
+                href={`${basePath}/videos/${video.id}`}
+                className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-secondary/40 hover:shadow-md transition-all cursor-pointer flex flex-col"
+              >
+                <div className="relative aspect-video bg-gray-100 overflow-hidden">
+                  {thumbnailUrl ? (
+                    <img
+                      src={thumbnailUrl}
+                      alt={video.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-secondary/5">
+                      <Video className="w-12 h-12 text-secondary/20" />
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Play className="w-5 h-5 text-secondary fill-secondary ml-0.5" />
+                    </div>
+                  </div>
+
+                  {video.duration_minutes && (
+                    <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+                      {video.duration_minutes}:00
+                    </div>
+                  )}
+
+                  {video.watched_at && (
+                    <div className="absolute top-2 left-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded bg-emerald-100 text-emerald-700">
+                        Completato
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 flex flex-col gap-2 flex-1">
+                  <h3 className="font-bold text-secondary text-xl sm:text-2xl line-clamp-2 leading-tight">
+                    {video.title}
+                  </h3>
+                  {video.description ? (
+                    <p className="text-xs text-secondary/60 line-clamp-2">
+                      {video.description}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-secondary/40 italic">Aggiungi descrizione</p>
+                  )}
+                </div>
+
+                <div className="px-4 py-2.5 bg-secondary text-xs text-white">
+                  {format(new Date(video.created_at), "d MMM yyyy", { locale: it })}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

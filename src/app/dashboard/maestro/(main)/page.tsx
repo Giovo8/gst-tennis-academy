@@ -57,6 +57,7 @@ export default function MaestroDashboardPage() {
     assignedVideos: 0,
   });
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<TimelineBooking[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -104,11 +105,12 @@ export default function MaestroDashboardPage() {
           .select("id", { count: "exact", head: true })
           .eq("assigned_to", user.id),
         // Fetch ALL bookings within a wide date range for the timeline
+        // (own ones colored, foreign ones rendered in grey via highlightUserId)
         supabase
           .from("bookings")
           .select("*")
-          .gte("start_time", new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString())
-          .lte("start_time", new Date(now.getFullYear(), now.getMonth() + 6, 1).toISOString())
+          .gte("start_time", new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString())
+          .lte("start_time", new Date(now.getFullYear() + 1, now.getMonth(), 1).toISOString())
           .order("start_time", { ascending: false })
           .limit(2000),
       ]);
@@ -125,7 +127,7 @@ export default function MaestroDashboardPage() {
 
       const allBookingsData = allBookingsRes.data ?? [];
       if (allBookingsData.length > 0) {
-        // Only enrich profiles for own bookings (where user is coach or athlete)
+        // Enrich profiles for involved bookings only (coach or athlete)
         const ownBookingIds = new Set(
           allBookingsData
             .filter((b) => b.coach_id === user.id || b.user_id === user.id)
@@ -173,8 +175,7 @@ export default function MaestroDashboardPage() {
           participantsData = (participantsQuery as any).data || [];
         }
 
-        setTimelineBookings(
-          allBookingsData.map((booking) => {
+        const enrichedBookings = allBookingsData.map((booking) => {
             const isOwn = ownBookingIds.has(booking.id);
             return {
               ...booking,
@@ -186,8 +187,23 @@ export default function MaestroDashboardPage() {
                 ? (participantsData?.filter((p) => p.booking_id === booking.id) || [])
                 : [],
             };
-          })
+          });
+
+        setTimelineBookings(enrichedBookings);
+        setUpcomingBookings(
+          enrichedBookings
+            .filter(
+              (b) =>
+                new Date(b.start_time) >= now &&
+                b.status !== "cancelled" &&
+                (b.coach_id === user.id || b.user_id === user.id)
+            )
+            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+            .slice(0, 8)
         );
+      } else {
+        setTimelineBookings([]);
+        setUpcomingBookings([]);
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -223,72 +239,90 @@ export default function MaestroDashboardPage() {
 
       {/* PROSSIMI IMPEGNI */}
       {(() => {
-        const now = new Date();
-        const upcoming = timelineBookings
-          .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled" && (b.coach_id === currentUserId || b.user_id === currentUserId))
-          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-          .slice(0, 8);
+        const upcoming = upcomingBookings;
 
         const typeLabels: Record<string, string> = {
           lezione_privata: "Lezione privata",
           lezione_gruppo: "Lezione gruppo",
           campo: "Campo",
           lezione: "Lezione",
+          arena: "Match Arena",
         };
-        const typeStyles: Record<string, string> = {
-          lezione_privata: "bg-primary/10 text-primary",
-          lezione_gruppo: "bg-secondary/10 text-secondary",
-          campo: "bg-gray-100 text-gray-600",
-          lezione: "bg-primary/10 text-primary",
-        };
+
+        function getItemBg(item: TimelineBooking): string {
+          const isCoach = item.coach_id === currentUserId;
+          if (isCoach) {
+            switch (item.type) {
+              case "lezione_privata":
+              case "lezione_gruppo":
+              case "lezione":
+                return "#023047"; // blu scuro — sei il maestro
+              case "campo":
+                return "var(--color-frozen-lake-600)"; // teal medio — campo come maestro
+              case "arena":
+                return "var(--color-frozen-lake-600)";
+              default:
+                return "#023047";
+            }
+          }
+          // sei l'atleta
+          switch (item.type) {
+            case "lezione_privata":
+            case "lezione_gruppo":
+            case "lezione":
+              return "var(--color-frozen-lake-900)"; // teal scuro — hai una lezione
+            case "campo":
+              return "var(--secondary)"; // verde secondario — hai prenotato un campo
+            case "arena":
+              return "var(--color-frozen-lake-600)";
+            default:
+              return "var(--secondary)";
+          }
+        }
 
         return (
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossimi impegni</h2>
             </div>
-            <div className="px-2 sm:px-3 py-2">
+            <div className="px-4 py-4">
               {upcoming.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
                   <CalendarClock className="h-8 w-8 mb-2" />
                   <p className="text-sm font-medium">Nessun impegno in arrivo</p>
                 </div>
               ) : (
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-1">
+                <ul className="divide-y divide-gray-100">
                   {upcoming.map((item) => {
                     const start = new Date(item.start_time);
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
-                    const dayAfter = new Date(today); dayAfter.setDate(today.getDate()+2);
-                    let pill: { text: string; cls: string } | null = null;
-                    if (start >= today && start < tomorrow) pill = { text: "Oggi", cls: "bg-primary text-white" };
-                    else if (start >= tomorrow && start < dayAfter) pill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
                     const counterpart = item.coach_id === currentUserId
-                      ? item.user_profile?.full_name
-                      : item.coach_profile?.full_name;
-                    const typeLabel = typeLabels[item.type] || item.type.replace(/_/g, " ");
-                    const typeCls = typeStyles[item.type] || "bg-secondary/10 text-secondary";
+                      ? (item.user_profile?.full_name || "Impegno")
+                      : (item.coach_profile?.full_name || item.user_profile?.full_name || "Impegno");
+                    const isCoach = item.coach_id === currentUserId;
+                    const typeLabel = isCoach && (item.type === "lezione_privata" || item.type === "lezione_gruppo" || item.type === "lezione")
+                      ? "Maestro"
+                      : (typeLabels[item.type] || item.type.replace(/_/g, " "));
+                    const typeBg = getItemBg(item);
                     const timeStr = (t: string) => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
                     return (
-                      <li key={item.id} className="px-3 py-3 rounded-xl hover:bg-secondary/5 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="flex flex-col items-center justify-center bg-secondary/5 rounded-lg w-12 py-1.5 flex-shrink-0">
-                            <span className="text-[10px] uppercase font-bold text-secondary/60 leading-none">
+                      <li key={item.id}>
+                        <Link
+                          href={`/dashboard/maestro/bookings/${item.id}`}
+                          className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+                          style={{ background: typeBg }}
+                        >
+                          <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                            <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
                               {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
                             </span>
-                            <span className="text-lg font-bold text-secondary leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
+                            <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-semibold text-secondary text-sm truncate">{counterpart || "Impegno"}</p>
-                              {pill && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${pill.cls}`}>{pill.text}</span>}
-                            </div>
-                            <p className="text-xs text-secondary/60 mt-0.5">{timeStr(item.start_time)}–{timeStr(item.end_time)} · {item.court}</p>
-                            <div className="mt-1.5">
-                              <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide ${typeCls}`}>{typeLabel}</span>
-                            </div>
+                            <p className="font-semibold text-white text-sm truncate">{counterpart}</p>
+                            <p className="text-xs text-white/70 mt-0.5">{timeStr(item.start_time)}–{timeStr(item.end_time)} · {item.court}</p>
                           </div>
-                        </div>
+                          <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">{typeLabel}</span>
+                        </Link>
                       </li>
                     );
                   })}

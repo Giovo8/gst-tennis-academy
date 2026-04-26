@@ -2,16 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
   Video,
   Play,
-  Calendar,
   Clock,
-  CheckCircle2,
-  ArrowLeft,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -25,6 +24,7 @@ interface VideoLesson {
   category: string;
   level: string;
   duration_minutes: number | null;
+  created_by?: string | null;
   is_active?: boolean;
   watched_at: string | null;
   watch_count: number;
@@ -32,17 +32,22 @@ interface VideoLesson {
   creator?: {
     full_name: string;
   };
+  assigned_users?: { id: string; full_name: string; email: string; phone?: string }[];
 }
 
 export default function VideoPlayerPage() {
+  const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
   const dashboardBase = pathname.split("/videos")[0];
+  const isMaestroView = pathname.startsWith("/dashboard/maestro");
   const videoId = params.id as string;
 
   const [video, setVideo] = useState<VideoLesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const categories = [
     { value: "generale", label: "Generale" },
@@ -75,21 +80,32 @@ export default function VideoPlayerPage() {
       setLoading(false);
       return;
     }
+    setCurrentUserId(user.id);
 
     try {
-      // Carica il video
-      const { data: videoData, error: videoError } = await supabase
-        .from("video_lessons")
-        .select("*")
-        .eq("id", videoId)
-        .eq("is_active", true)
-        .single();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      if (videoError || !videoData) {
-        setError("Video non trovato");
+      if (sessionError || !token) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+      }
+
+      const response = await fetch(`/api/video-lessons?id=${encodeURIComponent(videoId)}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.video) {
+        setError(payload?.error || "Video non trovato");
         setLoading(false);
         return;
       }
+
+      const videoData = payload.video;
 
       // Carica il creator
       let creator = null;
@@ -102,7 +118,7 @@ export default function VideoPlayerPage() {
         creator = creatorData;
       }
 
-      // Carica l'assegnazione per questo utente
+      // Carica l'assegnazione per questo utente (best effort per update watch count)
       const { data: assignment } = await supabase
         .from("video_assignments")
         .select("watched_at, watch_count")
@@ -110,11 +126,30 @@ export default function VideoPlayerPage() {
         .eq("user_id", user.id)
         .single();
 
+      let assignedUsers: { id: string; full_name: string; email: string; phone?: string }[] = [];
+      if (isMaestroView && videoData.created_by === user.id) {
+        const { data: allAssignments } = await supabase
+          .from("video_assignments")
+          .select("user_id")
+          .eq("video_id", videoId);
+
+        if (allAssignments && allAssignments.length > 0) {
+          const userIds = allAssignments.map((a) => a.user_id);
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name, email, phone")
+            .in("id", userIds);
+
+          assignedUsers = profiles || [];
+        }
+      }
+
       const enrichedVideo: VideoLesson = {
         ...videoData,
-        watched_at: assignment?.watched_at || null,
-        watch_count: assignment?.watch_count || 0,
+        watched_at: videoData.watched_at || assignment?.watched_at || null,
+        watch_count: videoData.watch_count || assignment?.watch_count || 0,
         creator: creator,
+        assigned_users: assignedUsers,
       };
 
       setVideo(enrichedVideo);
@@ -126,6 +161,36 @@ export default function VideoPlayerPage() {
       setError("Errore nel caricamento del video");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!video) return;
+    if (!confirm(`Sei sicuro di voler eliminare "${video.title}"?`)) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const { error: deleteError } = await supabase
+        .from("video_lessons")
+        .delete()
+        .eq("id", videoId);
+
+      if (deleteError) throw deleteError;
+
+      alert("Video eliminato con successo!");
+      router.push(`${dashboardBase}/videos`);
+    } catch (deleteErr: any) {
+      const dbErrorCode = deleteErr?.code;
+      const baseMessage = deleteErr?.message || "Errore durante l'eliminazione";
+      if (dbErrorCode === "42501") {
+        alert(`${baseMessage}. Verifica che sia applicata la migration 039_allow_maestro_delete_own_video_lessons.sql.`);
+      } else {
+        alert(baseMessage);
+      }
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -210,6 +275,7 @@ export default function VideoPlayerPage() {
   }
 
   const youtubeId = getYouTubeVideoId(video.video_url);
+  const canManageMaestroVideo = isMaestroView && video.created_by === currentUserId;
 
   return (
     <div className="space-y-6">
@@ -231,10 +297,7 @@ export default function VideoPlayerPage() {
       </div>
 
       {/* Header con titolo video */}
-      <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: video.watched_at ? '#10b981' : '#08b3f7' }}
-      >
+      <div className="bg-secondary rounded-xl border border-secondary p-6">
         <div className="flex items-start gap-6">
           <Play className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
@@ -244,19 +307,22 @@ export default function VideoPlayerPage() {
       </div>
 
       {/* Video Info & Details */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni e Dettagli</h2>
-
-        <div className="space-y-6">
-          {/* Visualizzazioni */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Visualizzazioni</label>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
+        </div>
+        <div className="p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
             <div className="flex-1">
-              <p className="text-secondary font-semibold">{video.watch_count}</p>
+              {video.description ? (
+                <p className="text-secondary/80 whitespace-pre-wrap">{video.description}</p>
+              ) : (
+                <p className="text-secondary/40 italic">Nessuna descrizione disponibile</p>
+              )}
             </div>
           </div>
 
-          {/* Data di creazione */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data Creazione</label>
             <div className="flex-1">
@@ -264,7 +330,6 @@ export default function VideoPlayerPage() {
             </div>
           </div>
 
-          {/* Durata */}
           {video.duration_minutes && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Durata</label>
@@ -277,59 +342,99 @@ export default function VideoPlayerPage() {
             </div>
           )}
 
-          {/* Categoria */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {categories.find((c) => c.value === video.category)?.label || video.category}
-              </p>
-            </div>
-          </div>
-
-          {/* Livello */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Livello</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {levels.find((l) => l.value === video.level)?.label || video.level}
-              </p>
-            </div>
-          </div>
-
-          {/* Stato */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
-            <div className="flex-1">
-              <p className={`font-semibold ${video.watched_at ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {video.watched_at ? "Completato" : "Da vedere"}
-              </p>
-            </div>
-          </div>
-
-          {/* Creator */}
           {video.creator && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creato da</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                {isMaestroView ? "Creato da" : "Assegnato da"}
+              </label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{video.creator.full_name}</p>
               </div>
             </div>
           )}
-
-          {/* Descrizione */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
-            <div className="flex-1">
-              {video.description ? (
-                <p className="text-secondary/80 whitespace-pre-wrap">{video.description}</p>
-              ) : (
-                <p className="text-secondary/40 italic">Nessuna descrizione disponibile</p>
-              )}
-            </div>
-          </div>
         </div>
       </div>
+
+      {isMaestroView && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
+          </div>
+          <div className="p-6">
+            {video.assigned_users && video.assigned_users.length > 0 ? (
+              <div className="space-y-3">
+                <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                      <div className="text-xs font-bold text-white/80 uppercase">#</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
+                    </div>
+                    <div className="w-48 hidden md:block">
+                      <div className="text-xs font-bold text-white/80 uppercase">Email</div>
+                    </div>
+                    <div className="w-32 hidden lg:block">
+                      <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
+                    </div>
+                  </div>
+                </div>
+
+                {video.assigned_users.map((user) => (
+                  <div
+                    key={user.id}
+                    className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                    style={{ borderLeftColor: "var(--secondary)" }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold">
+                          {user.full_name?.charAt(0)?.toUpperCase() || "U"}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-secondary">{user.full_name}</div>
+                      </div>
+                      <div className="w-48 hidden md:block">
+                        <div className="text-sm text-secondary/70 truncate">{user.email}</div>
+                      </div>
+                      <div className="w-32 hidden lg:block">
+                        {user.phone ? (
+                          <div className="text-sm text-secondary/70 truncate">{user.phone}</div>
+                        ) : (
+                          <div className="text-sm text-secondary/40">-</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-secondary/50 text-center py-8">
+                Video non assegnato a nessun utente
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {canManageMaestroVideo && (
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`${dashboardBase}/videos/new?id=${videoId}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+          >
+            Modifica
+          </Link>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Elimina"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

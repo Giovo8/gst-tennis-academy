@@ -360,7 +360,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
                                 closeActionMenu();
                                 deleteUser(user.id, user.email);
                               }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               Elimina

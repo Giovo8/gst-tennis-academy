@@ -95,7 +95,7 @@ export default function StaffSection() {
       .from("staff")
       .select("*")
       .eq("active", true)
-      .order("order_index", { ascending: true });
+      .order("order_index", { ascending: false });
 
     if (error) {
       setStaff(defaultStaff);
@@ -155,7 +155,8 @@ export default function StaffSection() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-secondary/5">
                     <svg
-                      className="w-24 h-24 text-secondary/30"
+                      className="w-24 h-24"
+                      style={{ color: "var(--secondary)", opacity: 0.35 }}
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >

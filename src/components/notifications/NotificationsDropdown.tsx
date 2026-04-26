@@ -22,6 +22,11 @@ interface Notification {
   created_at: string;
 }
 
+function isVideoNotification(notification: Pick<Notification, "type" | "title" | "message">) {
+  const text = `${notification.title} ${notification.message}`.toLowerCase();
+  return notification.type === "video" || text.includes("video");
+}
+
 export default function NotificationsDropdown() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -130,8 +135,12 @@ export default function NotificationsDropdown() {
     setUnreadCount(0);
   }
 
-  function getNotificationIcon(type: string) {
-    switch (type) {
+  function getNotificationIcon(notification: Notification) {
+    if (isVideoNotification(notification)) {
+      return <Video className="h-5 w-5 text-secondary" />;
+    }
+
+    switch (notification.type) {
       case "message":
         return <Mail className="h-5 w-5 text-secondary" />;
       case "tournament":
@@ -140,8 +149,6 @@ export default function NotificationsDropdown() {
         return <Megaphone className="h-5 w-5 text-secondary" />;
       case "booking":
         return <Calendar className="h-5 w-5 text-secondary" />;
-      case "video":
-        return <Video className="h-5 w-5 text-secondary" />;
       default:
         return <Bell className="h-5 w-5 text-secondary" />;
     }
@@ -201,7 +208,7 @@ export default function NotificationsDropdown() {
                     >
                       <div className="flex gap-3">
                         <div className="flex-shrink-0 mt-1">
-                          {getNotificationIcon(notification.type)}
+                          {getNotificationIcon(notification)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 mb-1">
@@ -261,7 +268,7 @@ export default function NotificationsDropdown() {
                   >
                     <div className="flex gap-3">
                       <div className="flex-shrink-0 mt-1">
-                        {getNotificationIcon(notification.type)}
+                        {getNotificationIcon(notification)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 mb-1">

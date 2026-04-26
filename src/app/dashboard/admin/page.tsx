@@ -273,37 +273,32 @@ export default function AdminDashboard() {
         <BookingsTimeline bookings={timelineBookings} loading={loading} />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Statistiche</h2>
-        </div>
-        <div className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatTile
-              href="/dashboard/admin/users"
-              icon={<Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-              label="Utenti Totali"
-              value={stats.totalUsers}
-            />
-            <StatTile
-              href="/dashboard/admin/bookings?filter=today"
-              icon={<Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-              label="Prenotazioni Oggi"
-              value={stats.todayBookings}
-            />
-            <StatTile
-              href="/dashboard/admin/tornei"
-              icon={<Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-              label="Tornei Attivi"
-              value={stats.activeTournaments}
-            />
-            <StatTile
-              href="/dashboard/admin/video-lessons"
-              icon={<Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-              label="Video Lezioni"
-              value={stats.videoLessonsCount}
-            />
-          </div>
+      <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatTile
+            href="/dashboard/admin/users"
+            icon={<Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+            label="Utenti Totali"
+            value={stats.totalUsers}
+          />
+          <StatTile
+            href="/dashboard/admin/bookings?filter=today"
+            icon={<Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+            label="Prenotazioni Oggi"
+            value={stats.todayBookings}
+          />
+          <StatTile
+            href="/dashboard/admin/tornei"
+            icon={<Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+            label="Tornei Attivi"
+            value={stats.activeTournaments}
+          />
+          <StatTile
+            href="/dashboard/admin/video-lessons"
+            icon={<Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+            label="Video Lezioni"
+            value={stats.videoLessonsCount}
+          />
         </div>
       </div>
 

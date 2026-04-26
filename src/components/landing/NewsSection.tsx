@@ -141,12 +141,36 @@ export default function NewsSection() {
               <Link
                 key={item.id}
                 href={`/news/${item.id}`}
-                className="flex flex-col bg-white border border-gray-200 rounded-2xl p-7 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
               >
-                {/* Badge categoria */}
-                <span className="inline-flex self-start items-center px-3 py-1 rounded-full text-xs font-semibold border border-gray-200 bg-gray-50 text-secondary mb-5">
-                  {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-                </span>
+                {/* Immagine */}
+                <div className="w-full aspect-[16/9] overflow-hidden">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-secondary/5">
+                      <svg
+                        className="w-14 h-14 text-secondary/20"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col flex-grow p-7">
 
                 {/* Titolo */}
                 <h3 className="text-xl sm:text-2xl font-bold text-secondary mb-3 tracking-tight leading-tight group-hover:text-secondary/80 transition-colors">
@@ -161,9 +185,10 @@ export default function NewsSection() {
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-5 border-t border-gray-100">
                   <span className="text-xs text-gray-400">{relativeDate}</span>
-                  <span className="text-sm font-semibold text-secondary">
-                    Leggi di più
+                  <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold border border-gray-200 bg-gray-50 text-secondary">
+                    {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
                   </span>
+                </div>
                 </div>
               </Link>
             );
@@ -174,7 +199,7 @@ export default function NewsSection() {
         <div className="text-center">
           <Link
             href="/news"
-            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
+            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-md border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
           >
             Leggi tutte le news
           </Link>

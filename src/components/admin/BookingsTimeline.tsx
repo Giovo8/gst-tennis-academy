@@ -51,6 +51,7 @@ type BookingsTimelineProps = {
   showBlockReason?: boolean;
   showCourtBlocks?: boolean;
   highlightUserId?: string; // When set, bookings where this user is athlete are styled differently
+  showBookingContent?: boolean; // When false, shows only colored slot blocks without text labels
 };
 
 const TIME_SLOTS = [
@@ -71,7 +72,7 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
@@ -505,13 +506,27 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         return { background: "#94a3b8" };
       }
 
+      const isCoach = booking.coach_id === highlightUserId;
+      if (isCoach) {
+        switch (booking.type) {
+          case "lezione_privata":
+          case "lezione_gruppo":
+            return { background: "#023047" }; // blu scuro — sei il maestro
+          case "campo":
+            return { background: "var(--color-frozen-lake-600)" }; // teal medio
+          case "arena":
+            return { background: "var(--color-frozen-lake-600)" };
+          default:
+            return { background: "#023047" };
+        }
+      }
+      // sei l'atleta
       switch (booking.type) {
         case "lezione_privata":
         case "lezione_gruppo":
-          return { background: "var(--secondary)" };
+          return { background: "var(--color-frozen-lake-900)" }; // teal scuro — hai una lezione
         case "campo":
-          // Mantieni il colore storico dei blocchi prima del passaggio al grigio.
-          return { background: "var(--color-frozen-lake-900)" };
+          return { background: "var(--secondary)" }; // verde — hai prenotato un campo
         case "arena":
           return { background: "var(--color-frozen-lake-600)" };
         default:
@@ -541,10 +556,10 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     }
   }
 
-  function getBookingLabel(booking: Booking): string {
+  function getBookingLabel(booking: Booking, asCoach?: boolean): string {
     if (booking.isBlock) return showBlockReason ? booking.reason || "Blocco Campo" : "Blocco Campo";
-    if (booking.type === "lezione_privata") return "Lezione Privata";
-    if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
+    if (booking.type === "lezione_privata") return asCoach ? "Maestro" : "Lezione Privata";
+    if (booking.type === "lezione_gruppo") return asCoach ? "Maestro" : "Lezione Gruppo";
     if (booking.type === "arena") return "Match Arena";
     return "Campo";
   }
@@ -813,7 +828,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                           ? allOccupiedBookings.filter(b => b.court === court && !ownIds.has(b.id))
                           : [];
                         const ownBlocks = bookingsForSelectedDate.filter(b => b.court === court);
-                        const mergedForeign = mergeForeignSlotRanges(foreignBlocks);
                         return [
                           ...ownBlocks.map((booking) => {
                             const { startSlot, duration } = getBookingSlotRange(booking);
@@ -837,55 +851,72 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
                                   : "Prenotazione non apribile"}
                               >
-                                {booking.isBlock ? (() => {
-                                  const { text: blockText } = getBlockReasonLabel(booking);
-                                  return (
-                                    <>
-                                      <div className="truncate leading-tight text-white/95 text-[10px] leading-tight">
-                                        {blockText}
-                                      </div>
-                                      <div className="truncate text-white/75 text-[10px] leading-tight mt-0.5 uppercase tracking-wide">
+                                {showBookingContent ? (
+                                  booking.isBlock ? (
+                                    highlightUserId ? (
+                                      <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
                                         Blocco Campo
                                       </div>
-                                    </>
-                                  );
-                                })() : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
-                                  <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
-                                    {getBookingLabel(booking)}
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="truncate leading-tight mt-0.5">
-                                      {getBookingDisplayName(booking)}
-                                    </div>
-                                    {isLesson && booking.coach_profile && (
-                                      <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
-                                        {booking.coach_profile.full_name}
-                                      </div>
-                                    )}
-                                    <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                    ) : (() => {
+                                      const { text: blockText } = getBlockReasonLabel(booking);
+                                      return (
+                                        <>
+                                          <div className="truncate leading-tight text-white/95 text-[10px] leading-tight">
+                                            {blockText}
+                                          </div>
+                                          <div className="truncate text-white/75 text-[10px] leading-tight mt-0.5 uppercase tracking-wide">
+                                            Blocco Campo
+                                          </div>
+                                        </>
+                                      );
+                                    })()
+                                  ) : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
+                                    <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
                                       {getBookingLabel(booking)}
                                     </div>
-                                  </>
-                                )}
+                                  ) : (
+                                    <>
+                                      <div className="truncate leading-tight mt-0.5">
+                                        {getBookingDisplayName(booking)}
+                                      </div>
+                                      {isLesson && booking.coach_profile && (
+                                        <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                          {booking.coach_profile.full_name}
+                                        </div>
+                                      )}
+                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                        {getBookingLabel(booking, highlightUserId ? booking.coach_id === highlightUserId : undefined)}
+                                      </div>
+                                    </>
+                                  )
+                                ) : null}
                               </div>
                             );
                           }),
-                          ...mergedForeign.map((interval, i) => (
-                            <div
-                              key={`foreign-${i}`}
-                              className="absolute rounded-md z-10 cursor-default"
-                              style={{
-                                background: '#d1d5db',
-                                left: `${(interval.startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
-                                width: `calc(${(interval.duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
-                                top: '4px',
-                                bottom: '4px',
-                                marginLeft: '2px'
-                              }}
-                              title="Slot occupato"
-                            />
-                          ))
+                          ...foreignBlocks.map((fb, i) => {
+                            const { startSlot, duration } = getBookingSlotRange(fb);
+                            if (startSlot < 0 || duration <= 0) return null;
+                            const label = fb.isBlock ? 'Blocco Campo' : getBookingLabel(fb);
+                            return (
+                              <div
+                                key={`foreign-${i}`}
+                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-default"
+                                style={{
+                                  background: '#94a3b8',
+                                  left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
+                                  width: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
+                                  top: '4px',
+                                  bottom: '4px',
+                                  marginLeft: '2px'
+                                }}
+                                title={label}
+                              >
+                                <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
+                                  {label}
+                                </div>
+                              </div>
+                            );
+                          })
                         ];
                       })()}
 
@@ -1062,7 +1093,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                           ? allOccupiedBookings.filter(b => b.court === court && !ownIds.has(b.id))
                           : [];
                         const ownBlocks = bookingsForSelectedDate.filter(b => b.court === court);
-                        const mergedForeign = mergeForeignSlotRanges(foreignBlocks);
                         return [
                           ...ownBlocks.map((booking) => {
                             const { startSlot, duration } = getBookingSlotRange(booking);
@@ -1085,54 +1115,71 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
                                   : "Prenotazione non apribile"}
                               >
-                                {booking.isBlock ? (() => {
-                                  const { text: blockText } = getBlockReasonLabel(booking);
-                                  return (
-                                    <>
-                                      <div className="truncate leading-tight text-white/95 text-[10px] leading-tight">
-                                        {blockText}
-                                      </div>
-                                      <div className="truncate text-white/75 text-[10px] leading-tight mt-0.5 uppercase tracking-wide">
+                                {showBookingContent ? (
+                                  booking.isBlock ? (
+                                    highlightUserId ? (
+                                      <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
                                         Blocco Campo
                                       </div>
-                                    </>
-                                  );
-                                })() : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
-                                  <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
-                                    {getBookingLabel(booking)}
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="truncate leading-tight mt-0.5">
-                                      {getBookingDisplayName(booking)}
-                                    </div>
-                                    {isLesson && booking.coach_profile && (
-                                      <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
-                                        {booking.coach_profile.full_name}
-                                      </div>
-                                    )}
-                                    <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                    ) : (() => {
+                                      const { text: blockText } = getBlockReasonLabel(booking);
+                                      return (
+                                        <>
+                                          <div className="truncate leading-tight text-white/95 text-[10px] leading-tight">
+                                            {blockText}
+                                          </div>
+                                          <div className="truncate text-white/75 text-[10px] leading-tight mt-0.5 uppercase tracking-wide">
+                                            Blocco Campo
+                                          </div>
+                                        </>
+                                      );
+                                    })()
+                                  ) : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
+                                    <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
                                       {getBookingLabel(booking)}
                                     </div>
-                                  </>
-                                )}
+                                  ) : (
+                                    <>
+                                      <div className="truncate leading-tight mt-0.5">
+                                        {getBookingDisplayName(booking)}
+                                      </div>
+                                      {isLesson && booking.coach_profile && (
+                                        <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                          {booking.coach_profile.full_name}
+                                        </div>
+                                      )}
+                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                        {getBookingLabel(booking, highlightUserId ? booking.coach_id === highlightUserId : undefined)}
+                                      </div>
+                                    </>
+                                  )
+                                ) : null}
                               </div>
                             );
                           }),
-                          ...mergedForeign.map((interval, i) => (
-                            <div
-                              key={`swap-foreign-${court}-${i}`}
-                              className="absolute pointer-events-auto rounded-md z-10 cursor-default"
-                              style={{
-                                background: '#d1d5db',
-                                left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
-                                width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
-                                top: `calc(${(interval.startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
-                                height: `calc(${(interval.duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
-                              }}
-                              title="Slot occupato"
-                            />
-                          ))
+                          ...foreignBlocks.map((fb, i) => {
+                            const { startSlot, duration } = getBookingSlotRange(fb);
+                            if (startSlot < 0 || duration <= 0) return null;
+                            const label = fb.isBlock ? 'Blocco Campo' : getBookingLabel(fb);
+                            return (
+                              <div
+                                key={`swap-foreign-${court}-${i}`}
+                                className="absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-default"
+                                style={{
+                                  background: '#94a3b8',
+                                  left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
+                                  width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
+                                  top: `calc(${(startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
+                                  height: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
+                                }}
+                                title={label}
+                              >
+                                <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
+                                  {label}
+                                </div>
+                              </div>
+                            );
+                          })
                         ];
                       })}
                     </div>

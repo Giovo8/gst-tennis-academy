@@ -192,6 +192,31 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     }
   }
 
+  async function cancelBooking() {
+    if (!booking) return;
+    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
+
+    setActionLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", booking.id);
+
+      if (error) {
+        throw new Error(error.message || "Errore durante l'annullamento");
+      }
+
+      await loadBooking();
+    } catch (error) {
+      console.error("Errore:", error);
+      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const typeConfig: Record<string, { label: string; color: string }> = {
     campo: { label: "Prenotazione Campo", color: "bg-secondary text-white" },
     lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
@@ -221,6 +246,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   const isCancelledStatus =
     booking.status === "cancelled" || booking.status === "cancellation_requested";
   const isPastBooking = new Date(booking.end_time) < new Date();
+  const canCancel = !isCancelledStatus && !isPastBooking;
   const displayStatus = !isCancelledStatus && isPastBooking
     ? {
         label: "Passata",
@@ -499,6 +525,19 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               >
                 Modifica
               </Link>
+            )}
+
+            {canCancel && (
+              <button
+                onClick={cancelBooking}
+                disabled={actionLoading}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading && !deleting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : null}
+                Annulla
+              </button>
             )}
 
             <button

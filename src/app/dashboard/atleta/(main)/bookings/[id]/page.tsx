@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
+import { createNotification } from "@/lib/notifications/createNotification";
 import {
   Calendar,
+  CalendarClock,
   Clock,
-  User,
   CheckCircle2,
   XCircle,
   Loader2,
@@ -166,7 +167,7 @@ export default function BookingDetailPage() {
 
   async function cancelBooking() {
     if (!booking) return;
-    if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
+    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
 
     setActionLoading(true);
 
@@ -178,22 +179,101 @@ export default function BookingDetailPage() {
         throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
 
-      const response = await fetch(`/api/bookings?id=${encodeURIComponent(booking.id)}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      if (!user) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
+
+      const updateQuery = supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", booking.id);
+
+      const { error: updateError } = isMaestroDashboard
+        ? await updateQuery.or(`user_id.eq.${user.id},coach_id.eq.${user.id}`)
+        : await updateQuery.eq("user_id", user.id);
+
+      if (updateError) {
+        throw new Error(updateError.message || "Errore durante l'annullamento");
+      }
+
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const actorName = actorProfile?.full_name?.trim() || "Un utente";
+      const dateLabel = new Date(booking.start_time).toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      const timeLabel = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const bookingLabel = booking.type === "lezione_privata"
+        ? "lezione privata"
+        : booking.type === "lezione_gruppo"
+          ? "lezione di gruppo"
+          : booking.type === "arena"
+            ? "match arena"
+            : "prenotazione";
+
+      const notifyPromises: Array<Promise<void>> = [];
+
+      if (booking.coach_id && booking.coach_id !== user.id) {
+        notifyPromises.push(
+          createNotification({
+            userId: booking.coach_id,
+            type: "booking",
+            title: "Prenotazione annullata",
+            message: `${actorName} ha annullato la ${bookingLabel} ${booking.court} del ${dateLabel} alle ${timeLabel}.`,
+            link: `/dashboard/maestro/bookings/${booking.id}`,
+          })
+        );
+      }
+
+      if (booking.user_id && booking.user_id !== user.id) {
+        notifyPromises.push(
+          createNotification({
+            userId: booking.user_id,
+            type: "booking",
+            title: "Prenotazione annullata",
+            message: `${actorName} ha annullato la ${bookingLabel} ${booking.court} del ${dateLabel} alle ${timeLabel}.`,
+            link: `/dashboard/atleta/bookings/${booking.id}`,
+          })
+        );
+      }
+
+      const { data: managers } = await supabase
+        .from("profiles")
+        .select("id")
+        .in("role", ["admin", "gestore"]);
+
+      for (const manager of managers || []) {
+        if (manager.id === user.id) continue;
+        notifyPromises.push(
+          createNotification({
+            userId: manager.id,
+            type: "booking",
+            title: "Prenotazione annullata",
+            message: `${actorName} ha annullato la ${bookingLabel} ${booking.court} del ${dateLabel} alle ${timeLabel}.`,
+            link: `/dashboard/admin/bookings/${booking.id}`,
+          })
+        );
+      }
+
+      await Promise.all(notifyPromises);
 
       router.push(`${dashboardBase}/bookings`);
     } catch (error) {
       console.error("Errore:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
+      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
     } finally {
       setActionLoading(false);
     }
@@ -248,15 +328,42 @@ export default function BookingDetailPage() {
   // Determina icona e stile in base al tipo
   function getBookingStyle() {
     if (!booking) {
-      return { icon: Calendar };
+      return {
+        icon: Calendar,
+        backgroundColor: "var(--secondary)",
+        borderColor: "var(--secondary)",
+        leftBorderColor: "var(--secondary)",
+      };
     }
-    if (booking.type === "lezione_privata") return { icon: User };
-    if (booking.type === "lezione_gruppo") return { icon: Users };
-    if (booking.type === "arena") return { icon: Trophy };
-    return { icon: Calendar };
+
+    if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
+      return {
+        icon: Users,
+        backgroundColor: "#023047",
+        borderColor: "#023047",
+        leftBorderColor: "#011a24",
+      };
+    }
+
+    if (booking.type === "arena") {
+      return {
+        icon: Trophy,
+        backgroundColor: "var(--color-frozen-lake-600)",
+        borderColor: "var(--color-frozen-lake-600)",
+        leftBorderColor: "var(--color-frozen-lake-900)",
+      };
+    }
+
+    return {
+      icon: CalendarClock,
+      backgroundColor: "var(--secondary)",
+      borderColor: "var(--secondary)",
+      leftBorderColor: "#023047",
+    };
   }
 
-  const BookingIcon = getBookingStyle().icon;
+  const bookingStyle = getBookingStyle();
+  const BookingIcon = bookingStyle.icon;
 
   return (
     <div className="space-y-6">
@@ -276,11 +383,12 @@ export default function BookingDetailPage() {
 
       {/* Header con info prenotazione */}
       <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: (() => {
-          if (booking.status === "cancelled" || booking.status === "cancellation_requested") return "#022431";
-          return "var(--secondary)";
-        })() }}
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{
+          backgroundColor: bookingStyle.backgroundColor,
+          borderColor: bookingStyle.borderColor,
+          borderLeftColor: bookingStyle.leftBorderColor,
+        }}
       >
         <div className="flex items-start gap-6">
           <BookingIcon
@@ -484,9 +592,8 @@ export default function BookingDetailPage() {
           >
             {actionLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <XCircle className="h-5 w-5" />
-            )}
+            ) : null
+            }
             Annulla Prenotazione
           </button>
         )}

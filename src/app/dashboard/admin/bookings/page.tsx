@@ -79,7 +79,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterVisibility, setFilterVisibility] = useState<"active" | "today" | "archived" | "cancelled" | "past">("active");
+  const [filterVisibility, setFilterVisibility] = useState<"active" | "today" | "archived" | "cancelled" | "past" | "all">("active");
   const [filterUser, setFilterUser] = useState<string>("all");
   const [filterCoach, setFilterCoach] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
@@ -280,6 +280,26 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     }
   }
 
+  async function cancelBooking(bookingId: string) {
+    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", bookingId);
+
+      if (error) {
+        throw new Error(error.message || "Errore durante l'annullamento");
+      }
+
+      loadBookings();
+    } catch (error) {
+      console.error("Errore durante l'annullamento:", error);
+      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
+    }
+  }
+
   function exportToCSV() {
     const csv = [
       ["Data", "Ora Inizio", "Ora Fine", "Campo", "Atleta", "Maestro", "Tipo", "Status"].join(","),
@@ -455,13 +475,15 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     const matchesVisibility = isTimelineMode
       ? true
       : filterVisibility === "active"
-      ? isPresentOrFuture
+      ? isPresentOrFuture && !isCancelled
       : filterVisibility === "today"
       ? isTodayBooking && !isCancelled
       : filterVisibility === "archived"
       ? (isPast && isSuccessful) || isCancelled
       : filterVisibility === "cancelled"
       ? isCancelled
+      : filterVisibility === "all"
+      ? true
       : isPast && isSuccessful && !isCancelled;
 
     const matchesType = filterType === "all" || booking.type === filterType;
@@ -548,7 +570,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
   const openActionMenu = (bookingId: string, buttonRect: DOMRect) => {
     const menuWidth = 176; // w-44
-    const menuHeight = 100; // 2 items + paddings
+    const menuHeight = 140; // 3 items + paddings
     const viewportPadding = 8;
 
     let left = buttonRect.right - menuWidth;
@@ -920,6 +942,21 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                               <Pencil className="h-3.5 w-3.5" />
                               Modifica
                             </Link>
+                            {!(isCancelledBooking || isPastBooking) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  closeActionMenu();
+                                  cancelBooking(booking.id);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#056c94] hover:bg-[#056c94]/10 transition-colors w-full"
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                Annulla
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -930,7 +967,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                                   deleteBooking(booking.id);
                                 }
                               }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               Elimina
@@ -969,10 +1006,11 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
               <select
                 id="bookings-visibility-filter"
                 value={filterVisibility}
-                onChange={(e) => setFilterVisibility(e.target.value as "active" | "today" | "archived" | "cancelled" | "past")}
+                onChange={(e) => setFilterVisibility(e.target.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
                 className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
               >
                 <option value="active">Attivo (default)</option>
+                <option value="all">Tutte</option>
                 <option value="today">Oggi</option>
                 <option value="archived">Archiviate</option>
                 <option value="cancelled">Annullate</option>

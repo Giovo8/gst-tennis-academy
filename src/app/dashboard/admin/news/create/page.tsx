@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
-import { Newspaper, Plus, Pencil, Loader2, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
+import { Newspaper, Plus, Pencil, Loader2, AlertCircle, CheckCircle, Upload, Link as LinkIcon, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -31,6 +31,9 @@ export default function CreateNewsPage() {
   const [category, setCategory] = useState("");
   const [summary, setSummary] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -159,6 +162,78 @@ export default function CreateNewsPage() {
     }
   }
 
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("L'immagine deve essere inferiore a 5MB");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Il file deve essere un'immagine");
+      return;
+    }
+
+    setUploadingImage(true);
+    setShowImageModal(false);
+    setError(null);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      if (imageUrl) {
+        uploadFormData.append("oldImageUrl", imageUrl);
+      }
+
+      const response = await fetch("/api/upload/news-image", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Errore upload";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Keep fallback error message
+        }
+        throw new Error(errorMessage);
+      }
+
+      const responseData = await response.json();
+      if (!responseData.url) {
+        throw new Error("Server non ha restituito un URL valido");
+      }
+
+      setImageUrl(responseData.url);
+    } catch (uploadError: any) {
+      setError(uploadError?.message || "Errore durante l'upload dell'immagine");
+    } finally {
+      setUploadingImage(false);
+      const fileInput = document.getElementById("news-image-upload") as HTMLInputElement | null;
+      if (fileInput) fileInput.value = "";
+    }
+  }
+
+  function handleImageUrl() {
+    if (!imageUrlInput) return;
+
+    try {
+      new URL(imageUrlInput);
+    } catch {
+      setError("Inserisci un URL immagine valido");
+      return;
+    }
+
+    setError(null);
+    setImageUrl(imageUrlInput);
+    setImageUrlInput("");
+    setShowImageModal(false);
+  }
+
   if (loading) {
     return (
       <AuthGuard allowedRoles={["admin", "gestore"]}>
@@ -176,18 +251,13 @@ export default function CreateNewsPage() {
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <div>
-            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-              GESTIONE NEWS › {editId ? "MODIFICA" : "CREA"} NEWS
-            </div>
-            <h1 className="text-3xl font-bold text-secondary">
-              {editId ? "Modifica News" : "Crea nuova news"}
-            </h1>
-            <p className="text-gray-600 text-sm mt-1 max-w-2xl">
-              {editId ? "Modifica i dettagli della news" : "Compila i campi per creare una nuova news"}
-            </p>
+        <div>
+          <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
+            GESTIONE NEWS › {editId ? "MODIFICA" : "CREA"} NEWS
           </div>
+          <h1 className="text-4xl font-bold text-secondary">
+            {editId ? "Modifica News" : "Crea nuova news"}
+          </h1>
         </div>
 
         {/* Messages */}
@@ -216,16 +286,18 @@ export default function CreateNewsPage() {
         )}
 
         {/* Main Content */}
-        <div className="py-4">
+        <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni News</h2>
-              
-              <div className="space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni News</h2>
+              </div>
+
+              <div className="p-6 space-y-6">
                 {/* Titolo */}
                 <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
                   <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                    Titolo <span className="text-red-600">*</span>
+                    Titolo
                   </label>
                   <div className="flex-1">
                     <input
@@ -242,7 +314,7 @@ export default function CreateNewsPage() {
                 {/* Categoria */}
                 <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
                   <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                    Categoria <span className="text-red-600">*</span>
+                    Categoria
                   </label>
                   <div className="flex-1">
                     <select
@@ -262,14 +334,31 @@ export default function CreateNewsPage() {
                 {/* URL Immagine */}
                 <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
                   <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">URL Immagine</label>
-                  <div className="flex-1">
-                    <input
-                      type="url"
-                      placeholder="https://esempio.com/immagine.jpg"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                    />
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageUrlInput(imageUrl);
+                          setShowImageModal(true);
+                        }}
+                        disabled={uploadingImage}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-secondary font-medium hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        {imageUrl ? "Cambia immagine" : "Carica immagine"}
+                      </button>
+                      {imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setImageUrl("")}
+                          className="p-2.5 rounded-lg border border-gray-300 bg-white text-secondary hover:bg-gray-50 transition-all"
+                          title="Rimuovi immagine"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                     {imageUrl && (
                       <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 bg-secondary/5 mt-3">
                         <div className="aspect-video w-full">
@@ -299,7 +388,7 @@ export default function CreateNewsPage() {
                 {/* Contenuto */}
                 <div className="flex items-start gap-8">
                   <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                    Contenuto <span className="text-red-600">*</span>
+                    Contenuto
                   </label>
                   <div className="flex-1">
                     <textarea
@@ -317,13 +406,13 @@ export default function CreateNewsPage() {
             </div>
 
             {/* Bottoni Azione */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               {editId && (
                 <button
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting || saving}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                  className="w-full flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleting ? (
                     <>
@@ -331,10 +420,7 @@ export default function CreateNewsPage() {
                       <span>Eliminazione...</span>
                     </>
                   ) : (
-                    <>
-                      <Trash2 className="h-5 w-5" />
-                      <span>Elimina</span>
-                    </>
+                    <span>Elimina</span>
                   )}
                 </button>
               )}
@@ -342,7 +428,7 @@ export default function CreateNewsPage() {
               <button
                 type="submit"
                 disabled={!title || !category || !summary || saving || deleting}
-                className="ml-auto px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
+                className="w-full flex items-center justify-center px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:bg-secondary/20 disabled:text-secondary/40 disabled:cursor-not-allowed"
               >
                 {saving ? (
                   <>
@@ -350,15 +436,92 @@ export default function CreateNewsPage() {
                     <span>Salvataggio...</span>
                   </>
                 ) : (
-                  <>
-                    <CheckCircle className="h-5 w-5" />
-                    <span>{editId ? "Aggiorna News" : "Crea News"}</span>
-                  </>
+                  <span>{editId ? "Aggiorna News" : "Crea News"}</span>
                 )}
               </button>
             </div>
           </form>
         </div>
+
+        {/* Image Modal */}
+        {showImageModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+                <h3 className="text-xl font-bold text-white">Scegli Immagine</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowImageModal(false)}
+                  className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Carica un&apos;immagine
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById("news-image-upload")?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all"
+                  >
+                    <Upload className="h-5 w-5" />
+                    Scegli File
+                  </button>
+                  <input
+                    id="news-image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Massimo 5MB - Formati: JPG, PNG, GIF
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500 font-medium">oppure</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Inserisci URL immagine
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      placeholder="https://esempio.com/immagine.jpg"
+                      className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                      onKeyDown={(e) => e.key === "Enter" && handleImageUrl()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleImageUrl}
+                      disabled={!imageUrlInput}
+                      className="px-4 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <LinkIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Incolla l&apos;URL di un&apos;immagine già caricata online
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bottom Spacer */}
         <div className="h-8" />

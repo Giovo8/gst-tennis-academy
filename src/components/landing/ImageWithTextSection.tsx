@@ -13,7 +13,7 @@ export default function ImageWithTextSection() {
       {/* Directional overlay: dark left, fades right */}
       <div
         className="absolute inset-0"
-        style={{ background: "linear-gradient(90deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.45) 60%, rgba(0,0,0,.15) 100%)" }}
+        style={{ background: "rgba(3,72,99,.55)" }}
       />
 
       {/* Content — centered */}

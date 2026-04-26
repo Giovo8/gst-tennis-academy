@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, ReactNode } from "react";
 import Link from "next/link";
@@ -148,7 +148,7 @@ export default function DashboardShell({
           >
             <div className="flex items-center gap-3">
               <span className="text-secondary/60">{item.icon}</span>
-              <span className="text-sm font-medium">{item.label}</span>
+              <span className="text-base font-semibold">{item.label}</span>
             </div>
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -187,7 +187,7 @@ export default function DashboardShell({
         </span>
         {!sidebarCollapsed && (
           <>
-            <span className="text-sm font-medium flex-1">{item.label}</span>
+            <span className="text-base font-semibold flex-1">{item.label}</span>
             {item.badge && item.badge > 0 && (
               <span className={`px-2.5 py-1 text-xs font-bold rounded-md min-w-[28px] text-center ${
                 active 
@@ -302,7 +302,7 @@ export default function DashboardShell({
               </button>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-gray-700 hover:text-red-600"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#022431]/10 hover:text-[#022431] transition-colors text-gray-700"
               >
                 <LogOut className="h-5 w-5" />
                 <span className="text-sm font-medium">Esci</span>
@@ -392,9 +392,9 @@ export default function DashboardShell({
                 <button
                   onClick={handleLogout}
                   title="Esci"
-                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                  className="p-2 rounded-lg hover:bg-[#022431]/10 transition-colors"
                 >
-                  <LogOut className="h-5 w-5 text-gray-600 hover:text-red-600" />
+                  <LogOut className="h-5 w-5 text-gray-600 hover:text-[#022431]" />
                 </button>
 
                 {/* Collapse/Expand */}
@@ -408,7 +408,7 @@ export default function DashboardShell({
               </div>
             )}
 
-            {/* Azioni in modalitÃ  collapsed */}
+            {/* Azioni in modalità collapsed */}
             {sidebarCollapsed && (
               <div className="flex flex-col gap-2">
                 {/* Search */}
@@ -427,9 +427,9 @@ export default function DashboardShell({
                 <button
                   onClick={handleLogout}
                   title="Esci"
-                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                  className="p-2 rounded-lg hover:bg-[#022431]/10 transition-colors"
                 >
-                  <LogOut className="h-5 w-5 text-gray-600 hover:text-red-600" />
+                  <LogOut className="h-5 w-5 text-gray-600 hover:text-[#022431]" />
                 </button>
 
                 {/* Collapse/Expand */}

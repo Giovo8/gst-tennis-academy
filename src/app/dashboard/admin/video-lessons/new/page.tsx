@@ -1,25 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
-import { Trash2, Save } from "lucide-react";
 import AuthGuard from "@/components/auth/AuthGuard";
+import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { type UserRole } from "@/lib/roles";
 
 type User = {
   id: string;
   full_name: string;
   email: string;
-  role: string;
+  role: UserRole;
+};
+
+type SelectedAthlete = {
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  isRegistered: boolean;
 };
 
 export default function VideoLessonFormPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const videoId = searchParams.get("id");
   const isEditMode = !!videoId;
+  const isMaestroRoute = pathname.startsWith("/dashboard/maestro");
+  const baseVideosPath = isMaestroRoute
+    ? "/dashboard/maestro/videos"
+    : "/dashboard/admin/video-lessons";
+  const allowedRoles = isMaestroRoute
+    ? (["maestro", "admin", "gestore"] as const)
+    : (["admin", "gestore"] as const);
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,20 +51,15 @@ export default function VideoLessonFormPage() {
     level: "tutti",
   });
 
-  const categories = [
-    { value: "generale", label: "Generale" },
-    { value: "tecnica", label: "Tecnica" },
-    { value: "tattica", label: "Tattica" },
-    { value: "fitness", label: "Fitness" },
-    { value: "mentale", label: "Mentale" },
-  ];
-
-  const levels = [
-    { value: "tutti", label: "Tutti" },
-    { value: "principiante", label: "Principiante" },
-    { value: "intermedio", label: "Intermedio" },
-    { value: "avanzato", label: "Avanzato" },
-  ];
+  const selectedAthletes: SelectedAthlete[] = selectedUsers
+    .map((id) => users.find((user) => user.id === id))
+    .filter((user): user is User => Boolean(user))
+    .map((user) => ({
+      userId: user.id,
+      fullName: user.full_name || "Utente",
+      email: user.email,
+      isRegistered: true,
+    }));
 
   useEffect(() => {
     loadUsers();
@@ -55,6 +67,14 @@ export default function VideoLessonFormPage() {
       loadVideo();
     }
   }, [videoId]);
+
+  function formatDbError(err: any): string {
+    if (!err) return "Errore sconosciuto";
+    if (typeof err === "string") return err;
+    const message = err.message || err.error_description || err.details;
+    const code = err.code ? ` (${err.code})` : "";
+    return message ? `${message}${code}` : `Errore durante il salvataggio${code}`;
+  }
 
   async function loadUsers() {
     try {
@@ -120,6 +140,16 @@ export default function VideoLessonFormPage() {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
+        throw new Error("Sessione utente non valida. Effettua di nuovo il login.");
+      }
+
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+      const actorDisplayName = actorProfile?.full_name || user.email || "lo staff";
 
       const videoData = {
         title: formData.title,
@@ -133,6 +163,7 @@ export default function VideoLessonFormPage() {
       };
 
       let currentVideoId = videoId;
+      let previouslyAssignedIds: string[] = [];
 
       if (isEditMode) {
         // Update video
@@ -141,13 +172,24 @@ export default function VideoLessonFormPage() {
           .update(videoData)
           .eq("id", videoId);
 
-        if (error) throw error;
+        if (error) throw new Error(formatDbError(error));
+
+        // Snapshot existing assignments to detect new ones
+        const { data: existing } = await supabase
+          .from("video_assignments")
+          .select("user_id")
+          .eq("video_id", videoId);
+        previouslyAssignedIds = (existing ?? []).map((a) => a.user_id);
 
         // Delete existing assignments
-        await supabase
+        const { error: deleteAssignmentsError } = await supabase
           .from("video_assignments")
           .delete()
           .eq("video_id", videoId);
+
+        if (deleteAssignmentsError) {
+          throw new Error(formatDbError(deleteAssignmentsError));
+        }
       } else {
         // Create new video
         const { data: newVideo, error } = await supabase
@@ -159,7 +201,7 @@ export default function VideoLessonFormPage() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) throw new Error(formatDbError(error));
         currentVideoId = newVideo.id;
       }
 
@@ -175,25 +217,66 @@ export default function VideoLessonFormPage() {
           .from("video_assignments")
           .insert(assignments);
 
-        if (assignError) throw assignError;
+        if (assignError) {
+          let hint = "";
+          if (assignError.code === "42501") {
+            hint = " Verifica le policy RLS su video_assignments (migration 038).";
+          }
+          throw new Error(`${formatDbError(assignError)}.${hint}`.trim());
+        }
 
-        // Send notifications to assigned users
-        for (const userId of selectedUsers) {
-          await createNotification({
-            userId: userId,
-            type: "general",
-            title: isEditMode ? "Video aggiornato" : "Nuovo video assegnato",
-            message: `${isEditMode ? "È stato aggiornato" : "Ti è stato assegnato"} il video: ${formData.title}`,
-            link: "/dashboard/atleta/videos",
-          });
+        // Send notifications only to newly assigned users
+        const newlyAssigned = selectedUsers.filter(
+          (id) => !previouslyAssignedIds.includes(id)
+        );
+        for (const userId of newlyAssigned) {
+          const assignedUser = users.find((u) => u.id === userId);
+          const notificationLink = assignedUser?.role === "maestro"
+            ? "/dashboard/maestro/videos"
+            : "/dashboard/atleta/videos";
+          try {
+            await createNotification({
+              userId: userId,
+              type: "general",
+              title: "Nuovo video assegnato",
+              message: `Ti è stato assegnato il video: ${formData.title} da ${actorDisplayName}`,
+              link: notificationLink,
+            });
+          } catch {
+            // Notification failures should not block video creation/update
+          }
+        }
+
+        if (isEditMode) {
+          const alreadyAssigned = selectedUsers.filter((id) =>
+            previouslyAssignedIds.includes(id)
+          );
+
+          for (const userId of alreadyAssigned) {
+            const assignedUser = users.find((u) => u.id === userId);
+            const notificationLink = assignedUser?.role === "maestro"
+              ? "/dashboard/maestro/videos"
+              : "/dashboard/atleta/videos";
+            try {
+              await createNotification({
+                userId,
+                type: "general",
+                title: "Video aggiornato",
+                message: `E stato aggiornato il video: ${formData.title} da ${actorDisplayName}`,
+                link: notificationLink,
+              });
+            } catch {
+              // Notification failures should not block video creation/update
+            }
+          }
         }
       }
 
       alert(isEditMode ? "Video aggiornato con successo!" : "Video creato con successo!");
-      router.push("/dashboard/admin/video-lessons");
+      router.push(baseVideosPath);
     } catch (error: any) {
       console.error("Error saving video:", error);
-      alert(error.message || "Errore durante il salvataggio");
+      alert(formatDbError(error));
     } finally {
       setLoading(false);
     }
@@ -210,40 +293,40 @@ export default function VideoLessonFormPage() {
         .delete()
         .eq("id", videoId);
 
-      if (error) throw error;
+      if (error) throw new Error(formatDbError(error));
 
       alert("Video eliminato con successo!");
-      router.push("/dashboard/admin/video-lessons");
+      router.push(baseVideosPath);
     } catch (error: any) {
       console.error("Error deleting video:", error);
-      alert(error.message || "Errore durante l'eliminazione");
+      alert(formatDbError(error));
     }
   }
 
   return (
-    <AuthGuard allowedRoles={["admin", "gestore"]}>
+    <AuthGuard allowedRoles={[...allowedRoles]}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <div>
-            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-              GESTIONE VIDEO › {isEditMode ? "MODIFICA" : "NUOVO"}
-            </div>
-            <h1 className="text-3xl font-bold text-secondary">
-              {isEditMode ? "Modifica Video Lezione" : "Nuovo Video Lezione"}
-            </h1>
-            <p className="text-gray-600 text-sm mt-1 max-w-2xl">
-              {isEditMode
-                ? "Modifica i dettagli del video lezione"
-                : "Crea un nuovo video lezione e assegnalo agli atleti"}
-            </p>
-          </div>
+        <div>
+          <p className="breadcrumb text-secondary/60">
+            <Link href={baseVideosPath} className="hover:text-secondary/80 transition-colors">
+              Video Lab
+            </Link>
+            {" › "}
+            <span>{isEditMode ? "Modifica Video Lezione" : "Nuovo Video Lezione"}</span>
+          </p>
+          <h1 className="text-4xl font-bold text-secondary">
+            {isEditMode ? "Modifica Video Lezione" : "Nuovo Video Lezione"}
+          </h1>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni Video</h2>
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Video</h2>
+            </div>
+            <div className="p-6 space-y-6">
             {/* Title */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
@@ -289,7 +372,7 @@ export default function VideoLessonFormPage() {
             </div>
 
             {/* Thumbnail URL */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
               <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
                 URL Thumbnail
               </label>
@@ -301,107 +384,35 @@ export default function VideoLessonFormPage() {
                 placeholder="https://..."
               />
             </div>
-
-            {/* Duration */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
-                Durata (minuti)
-              </label>
-              <input
-                type="number"
-                value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                placeholder="15"
-                min="1"
-              />
-            </div>
-
-            {/* Category */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
-                Categoria
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Level */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
-                Livello
-              </label>
-              <select
-                value={formData.level}
-                onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              >
-                {levels.map((lvl) => (
-                  <option key={lvl.value} value={lvl.value}>
-                    {lvl.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Assigned Users - Multiple Selection */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-2 flex-shrink-0">
-                Assegna a Utenti
-              </label>
-              <div className="flex-1">
-                <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                  <label className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.length === 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedUsers([]);
-                        }
-                      }}
-                      className="w-4 h-4 rounded border-gray-300 text-secondary focus:ring-secondary/20"
-                    />
-                    <span className="text-sm text-secondary font-medium">Nessuno (generale)</span>
-                  </label>
-                  <div className="border-t border-gray-200 my-2"></div>
-                  {users.map((user) => (
-                    <label key={user.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedUsers([...selectedUsers, user.id]);
-                          } else {
-                            setSelectedUsers(selectedUsers.filter((id) => id !== user.id));
-                          }
-                        }}
-                        className="w-4 h-4 rounded border-gray-300 text-secondary focus:ring-secondary/20"
-                      />
-                      <span className="text-sm text-secondary">
-                        {user.full_name} <span className="text-secondary/60">({user.role})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {selectedUsers.length > 0 && (
-                  <p className="text-xs text-secondary/60 mt-2">
-                    {selectedUsers.length} utent{selectedUsers.length === 1 ? "e" : "i"} selezionat{selectedUsers.length === 1 ? "o" : "i"}
-                  </p>
-                )}
-              </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              <AthletesSelector
+                athletes={users}
+                selectedAthletes={selectedAthletes}
+                onAthleteAdd={(athlete) => {
+                  if (athlete.userId && !selectedUsers.includes(athlete.userId)) {
+                    setSelectedUsers((prev) => [...prev, athlete.userId as string]);
+                  }
+                }}
+                onAthleteRemove={(index) => {
+                  const athleteToRemove = selectedAthletes[index];
+                  if (athleteToRemove?.userId) {
+                    setSelectedUsers((prev) => prev.filter((id) => id !== athleteToRemove.userId));
+                  }
+                }}
+                maxAthletes={null}
+                useSecondaryParticipantBorder
+                allowGuestParticipants={false}
+              />
+            </div>
+          </div>
+
         </form>
 
         {/* Actions */}
@@ -410,9 +421,8 @@ export default function VideoLessonFormPage() {
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium sm:flex-shrink-0"
+              className="w-full sm:flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
             >
-              <Trash2 className="h-5 w-5" />
               Elimina Video
             </button>
           )}
@@ -420,9 +430,8 @@ export default function VideoLessonFormPage() {
             type="submit"
             disabled={loading}
             onClick={() => document.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true }))}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+            className="w-full sm:flex-1 flex items-center justify-center px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="h-5 w-5" />
             <span>{loading ? "Salvataggio..." : isEditMode ? "Salva Modifiche" : "Crea Video"}</span>
           </button>
         </div>

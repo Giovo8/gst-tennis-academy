@@ -3,24 +3,25 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications/createNotification";
 import {
   Calendar,
+  CalendarClock,
   Clock,
   Plus,
   Loader2,
   CheckCircle2,
   XCircle,
   Search,
-  RefreshCw,
-  User,
   Users,
   Trophy,
   List,
   LayoutGrid,
+  MoreVertical,
+  Eye,
   Pencil,
   Trash2,
   AlertCircle,
-  MoreVertical,
   ArrowUp,
   ArrowDown,
   SlidersHorizontal,
@@ -86,7 +87,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [timelineBookings, setTimelineBookings] = useState<Booking[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const [filterVisibility, setFilterVisibility] = useState<"all" | "active" | "today" | "archived" | "cancelled" | "past">("active");
+  const [filterVisibility, setFilterVisibility] = useState<"active" | "today" | "archived" | "cancelled" | "past" | "all">("active");
   const [filterUser, setFilterUser] = useState<string>("all");
   const [filterCoach, setFilterCoach] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
@@ -98,7 +99,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [sortField, setSortField] = useState<string>("start_time");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const getPrimaryParticipant = (booking: Booking) =>
@@ -124,6 +125,28 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     }
   }
 
+  const closeActionMenu = () => {
+    setOpenMenuId(null);
+    setMenuPosition(null);
+  };
+
+  const openActionMenu = (bookingId: string, buttonRect: DOMRect) => {
+    const menuWidth = 176;
+    const menuHeight = 136;
+    const viewportPadding = 8;
+
+    let left = buttonRect.right - menuWidth;
+    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuWidth - viewportPadding));
+
+    let top = buttonRect.bottom + 6;
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = Math.max(viewportPadding, buttonRect.top - menuHeight - 6);
+    }
+
+    setOpenMenuId(bookingId);
+    setMenuPosition({ top, left });
+  };
+
   async function loadBookings() {
     setLoading(true);
     console.log("🔍 Caricamento prenotazioni atleta...");
@@ -141,13 +164,12 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
     if (isMaestroDashboard) {
       const now = new Date();
-      const rangeStart = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString();
-      const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 6, 1).toISOString();
+      const rangeStart = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString();
+      const rangeEnd = new Date(now.getFullYear() + 1, now.getMonth(), 1).toISOString();
 
       const { data: allBookingsData, error: allBookingsError } = await supabase
         .from("bookings")
         .select("*")
-        .neq("status", "cancelled")
         .gte("start_time", rangeStart)
         .lte("start_time", rangeEnd)
         .order("start_time", { ascending: false })
@@ -237,7 +259,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       const { data: involvedBookingsData, error: involvedBookingsError } = await supabase
         .from("bookings")
         .select("*")
-        .neq("status", "cancelled")
         .or(`coach_id.eq.${user.id},user_id.eq.${user.id}`)
         .order("start_time", { ascending: false })
         .limit(2000);
@@ -325,8 +346,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     let query = supabase
       .from("bookings")
       .select("*")
-      .eq("user_id", user.id)
-      .neq("status", "cancelled");
+      .eq("user_id", user.id);
 
     // In modalità default mostra solo dal giorno corrente in avanti
     // In modalità history mostra solo prenotazioni passate
@@ -354,6 +374,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     if (!bookingsData || bookingsData.length === 0) {
       console.log("⚠️ Nessuna prenotazione trovata");
       setBookings([]);
+      setTimelineBookings([]);
       setLoading(false);
       return;
     }
@@ -392,6 +413,10 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
     console.log("📋 Dati arricchiti:", enrichedBookings);
     setBookings(enrichedBookings);
+    // Per la timeline usa solo le prenotazioni dell'atleta;
+    // gli slot occupati dagli altri vengono caricati da BookingsTimeline
+    // tramite fetchOccupied={true} che usa l'API e bypassa la RLS.
+    setTimelineBookings(enrichedBookings);
     setLoading(false);
   }
 
@@ -406,7 +431,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   }, [filterType, filterCoach]);
 
   async function cancelBooking(id: string) {
-    if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
+    if (!confirm("Sei sicuro di voler annullare questa prenotazione?")) return;
 
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -416,22 +441,104 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
 
-      const response = await fetch(`/api/bookings?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error || "Errore durante l'eliminazione");
+      if (!user) {
+        throw new Error("Sessione non valida. Effettua nuovamente il login.");
+      }
+
+      const updateQuery = supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", id);
+
+      const { error: updateError } = isMaestroDashboard
+        ? await updateQuery.or(`user_id.eq.${user.id},coach_id.eq.${user.id}`)
+        : await updateQuery.eq("user_id", user.id);
+
+      if (updateError) {
+        throw new Error(updateError.message || "Errore durante l'annullamento");
+      }
+
+      const cancelledBooking = bookings.find((booking) => booking.id === id);
+      if (cancelledBooking) {
+        const { data: actorProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const actorName = actorProfile?.full_name?.trim() || "Un utente";
+        const dateLabel = new Date(cancelledBooking.start_time).toLocaleDateString("it-IT", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+        const timeLabel = new Date(cancelledBooking.start_time).toLocaleTimeString("it-IT", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const bookingLabel = cancelledBooking.type === "lezione_privata"
+          ? "lezione privata"
+          : cancelledBooking.type === "lezione_gruppo"
+            ? "lezione di gruppo"
+            : cancelledBooking.type === "arena"
+              ? "match arena"
+              : "prenotazione";
+
+        const notifyPromises: Array<Promise<void>> = [];
+
+        if (cancelledBooking.coach_id && cancelledBooking.coach_id !== user.id) {
+          notifyPromises.push(
+            createNotification({
+              userId: cancelledBooking.coach_id,
+              type: "booking",
+              title: "Prenotazione annullata",
+              message: `${actorName} ha annullato la ${bookingLabel} ${cancelledBooking.court} del ${dateLabel} alle ${timeLabel}.`,
+              link: `/dashboard/maestro/bookings/${cancelledBooking.id}`,
+            })
+          );
+        }
+
+        if (cancelledBooking.user_id && cancelledBooking.user_id !== user.id) {
+          notifyPromises.push(
+            createNotification({
+              userId: cancelledBooking.user_id,
+              type: "booking",
+              title: "Prenotazione annullata",
+              message: `${actorName} ha annullato la ${bookingLabel} ${cancelledBooking.court} del ${dateLabel} alle ${timeLabel}.`,
+              link: `/dashboard/atleta/bookings/${cancelledBooking.id}`,
+            })
+          );
+        }
+
+        const { data: managers } = await supabase
+          .from("profiles")
+          .select("id")
+          .in("role", ["admin", "gestore"]);
+
+        for (const manager of managers || []) {
+          if (manager.id === user.id) continue;
+          notifyPromises.push(
+            createNotification({
+              userId: manager.id,
+              type: "booking",
+              title: "Prenotazione annullata",
+              message: `${actorName} ha annullato la ${bookingLabel} ${cancelledBooking.court} del ${dateLabel} alle ${timeLabel}.`,
+              link: `/dashboard/admin/bookings/${cancelledBooking.id}`,
+            })
+          );
+        }
+
+        await Promise.all(notifyPromises);
       }
 
       await loadBookings();
     } catch (error) {
-      console.error("Errore durante l'eliminazione della prenotazione:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
+      console.error("Errore durante l'annullamento della prenotazione:", error);
+      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
     }
   }
 
@@ -544,16 +651,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       const matchesVisibility = isTimelineMode
         ? true
-        : filterVisibility === "all"
-        ? true
         : filterVisibility === "active"
-        ? isPresentOrFuture
+        ? isPresentOrFuture && !isCancelled
         : filterVisibility === "today"
         ? isTodayBooking && !isCancelled
         : filterVisibility === "archived"
         ? (isPast && isSuccessful) || isCancelled
         : filterVisibility === "cancelled"
         ? isCancelled
+        : filterVisibility === "all"
+        ? true
         : isPast && isSuccessful && !isCancelled;
 
       const matchesType = filterType === "all" || booking.type === filterType;
@@ -640,7 +747,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           {isHistoryMode && (
             <p className="breadcrumb text-secondary/60">
@@ -654,7 +761,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <span>Storico</span>
             </p>
           )}
-          <h1 className="text-4xl font-bold text-secondary mb-2">{isHistoryMode ? "Storico prenotazioni" : "Le mie Prenotazioni"}
+          <h1 className="text-4xl font-bold text-secondary">{isHistoryMode ? "Storico prenotazioni" : (isMaestroDashboard ? "Gestione Prenotazioni" : "Le mie Prenotazioni")}
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
@@ -666,24 +773,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <Plus className="h-4 w-4" />
               Nuova Prenotazione
             </Link>
-          )}
-          {!isHistoryMode && !isMaestroDashboard && (
-            <Link
-              href={`${dashboardBase}/bookings/storico`}
-              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
-              title="Storico"
-            >
-              <Clock className="h-5 w-5" />
-            </Link>
-          )}
-          {!isMaestroDashboard && (
-            <button
-              onClick={() => loadBookings()}
-              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all flex-shrink-0"
-              title="Ricarica"
-            >
-              <RefreshCw className="h-5 w-5" />
-            </button>
           )}
         </div>
       </div>
@@ -749,14 +838,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       {/* Bookings List or Timeline */}
       {effectiveViewMode === "timeline" ? (
         <BookingsTimeline
-          bookings={isMaestroDashboard ? timelineBookings : filteredBookings}
+          bookings={timelineBookings}
           loading={loading}
           basePath={dashboardBase}
           fetchOccupied={!isMaestroDashboard}
-          swapAxes={!isMaestroDashboard}
-          showBlockReason={isMaestroDashboard ? true : false}
-          showCourtBlocks={isMaestroDashboard ? true : false}
-          highlightUserId={isMaestroDashboard ? currentUserId : undefined}
+          swapAxes={false}
+          showBlockReason={true}
+          showCourtBlocks={true}
+          highlightUserId={currentUserId}
         />
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -829,13 +918,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                   </button>
                 </div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
-                <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
+                <div className="text-xs font-bold text-white/80 uppercase text-center">&nbsp;</div>
               </div>
             </div>
 
             {/* Data Rows */}
             {filteredBookings.map((booking) => {
               const isPast = new Date(booking.start_time) < new Date();
+              const isPastBooking = new Date(booking.end_time) < new Date();
               const isPastLesson =
                 (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") &&
                 new Date(booking.end_time) < new Date() &&
@@ -843,22 +933,28 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                 booking.status !== "cancellation_requested";
               const isCancelled = booking.status === "cancelled";
               const isCancellationRequested = booking.status === "cancellation_requested";
-              const canCancel = !isCancelled && !isCancellationRequested && !isPast;
-              const canEdit = false;
+              const canEdit = !isPast && !isCancelled && !isCancellationRequested;
+              const canCancel = !isPast && !isCancelled && !isCancellationRequested;
 
-              // Determina il colore del bordo in base allo stato (palette frozen-lake)
-              let borderStyle = {};
-              let statusColor = "";
-              if (booking.status === "cancelled" || booking.status === "cancellation_requested") {
-                borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
-                statusColor = "#022431";
-              } else if (isPastLesson) {
-                borderStyle = { borderLeftColor: "#6b7280" };
-                statusColor = "#6b7280";
-              } else {
-                borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary - stato positivo
-                statusColor = "var(--secondary)";
-              }
+              // Allinea colori bordo/icona alla logica admin
+              const isCancelledOrRequested =
+                booking.status === "cancelled" || booking.status === "cancellation_requested";
+              const typeColor =
+                booking.type === "lezione_privata" || booking.type === "lezione_gruppo"
+                  ? "#023047"
+                  : booking.type === "arena"
+                    ? "var(--color-frozen-lake-600)"
+                    : "var(--secondary)";
+
+              const accentColor = isCancelledOrRequested
+                ? "#6b7280"
+                : isPastBooking
+                  ? "#9ca3af"
+                  : typeColor;
+
+              const borderStyle = { borderLeftColor: accentColor };
+              const statusColor = accentColor;
+              const iconColor = accentColor;
 
               return (
                 <div
@@ -873,16 +969,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     {/* Simbolo Tipo */}
                     <div className="flex items-center justify-center">
                       {booking.type === "lezione_privata" && (
-                        <User className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Users className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
                       )}
                       {booking.type === "lezione_gruppo" && (
-                        <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Users className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
                       )}
                       {booking.type === "campo" && (
-                        <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <CalendarClock className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
                       )}
                       {booking.type === "arena" && (
-                        <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Trophy className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
                       )}
                     </div>
 
@@ -923,80 +1019,80 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                       )}
                     </div>
 
-                    {/* Azioni - 3 puntini */}
-                    <div className="relative flex items-center justify-center">
-                      {(canEdit || canCancel) ? (
+                    <div className="relative flex items-center justify-center text-gray-400">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (openMenuId === booking.id) {
+                            closeActionMenu();
+                            return;
+                          }
+
+                          openActionMenu(booking.id, e.currentTarget.getBoundingClientRect());
+                        }}
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {openMenuId === booking.id && menuPosition && (
                         <>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (openMenuId === booking.id) {
-                                setOpenMenuId(null);
-                                setMenuPosition(null);
-                              } else {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setMenuPosition({
-                                  top: rect.bottom + 4,
-                                  right: window.innerWidth - rect.right,
-                                });
-                                setOpenMenuId(booking.id);
-                              }
-                            }}
-                            className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                          <div
+                            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                            style={{ top: menuPosition.top, left: menuPosition.left }}
                           >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-                          {openMenuId === booking.id && menuPosition && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setMenuPosition(null); }} />
-                              <div
-                                className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-                                style={{ top: menuPosition.top, right: menuPosition.right }}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                closeActionMenu();
+                                router.push(`${dashboardBase}/bookings/${booking.id}`);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              Visualizza
+                            </button>
+
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  closeActionMenu();
+                                  router.push(`${dashboardBase}/bookings/modifica?id=${booking.id}`);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                               >
-                                {canEdit && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOpenMenuId(null);
-                                      setMenuPosition(null);
-                                      router.push(`${dashboardBase}/bookings/${booking.id}/edit`);
-                                    }}
-                                    className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                    Modifica
-                                  </button>
-                                )}
-                                {canCancel && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOpenMenuId(null);
-                                      setMenuPosition(null);
-                                      cancelBooking(booking.id);
-                                    }}
-                                    className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    Annulla
-                                  </button>
-                                )}
-                              </div>
-                            </>
-                          )}
+                                <Pencil className="h-3.5 w-3.5" />
+                                Modifica
+                              </button>
+                            )}
+
+                            {canCancel && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  closeActionMenu();
+                                  cancelBooking(booking.id);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Annulla
+                              </button>
+                            )}
+                          </div>
                         </>
-                      ) : isCancellationRequested ? (
-                        <span className="inline-flex items-center justify-center p-1.5 text-[#056c94]" title="Cancellazione in attesa di approvazione">
-                          <Clock className="h-4 w-4" />
-                        </span>
-                      ) : null}
+                      )}
                     </div>
+
                   </div>
                 </div>
               );
@@ -1025,11 +1121,11 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <select
                 id="bookings-visibility-filter"
                 value={filterVisibility}
-                  onChange={(e) => setFilterVisibility(e.target.value as "all" | "active" | "today" | "archived" | "cancelled" | "past")}
+                onChange={(e) => setFilterVisibility(e.target.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
                 className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
               >
-                  <option value="all">Tutte</option>
                 <option value="active">Attivo (default)</option>
+                <option value="all">Tutte</option>
                 <option value="today">Oggi</option>
                 <option value="archived">Archiviate</option>
                 <option value="cancelled">Annullate</option>

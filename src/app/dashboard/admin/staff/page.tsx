@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Plus, User, Loader2, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, User, Loader2, Search, ArrowUp, ArrowDown, CheckCircle2, XCircle, MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type StaffMember = {
   id: string;
@@ -16,11 +17,14 @@ type StaffMember = {
 };
 
 export default function AdminStaffPage() {
+  const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "role" | "order" | "status" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     loadStaff();
@@ -69,8 +73,30 @@ export default function AdminStaffPage() {
     );
   });
 
+  const maxExplicitOrder = filteredStaff.reduce(
+    (max, member) => (member.order_index > 0 ? Math.max(max, member.order_index) : max),
+    0
+  );
+
+  const membersWithoutOrder = filteredStaff
+    .filter((member) => !(member.order_index > 0))
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+  const fallbackOrderMap = new Map<string, number>();
+  membersWithoutOrder.forEach((member, index) => {
+    fallbackOrderMap.set(member.id, maxExplicitOrder + index + 1);
+  });
+
+  const normalizedStaff = filteredStaff.map((member) => ({
+    ...member,
+    effectiveOrder:
+      member.order_index > 0
+        ? member.order_index
+        : fallbackOrderMap.get(member.id) || maxExplicitOrder + 1,
+  }));
+
   // Sorting logic
-  const sortedStaff = [...filteredStaff].sort((a, b) => {
+  const sortedStaff = [...normalizedStaff].sort((a, b) => {
     if (!sortBy) return 0;
 
     let comparison = 0;
@@ -82,7 +108,7 @@ export default function AdminStaffPage() {
         comparison = a.role.localeCompare(b.role);
         break;
       case "order":
-        comparison = a.order_index - b.order_index;
+        comparison = a.effectiveOrder - b.effectiveOrder;
         break;
       case "status":
         comparison = (a.active ? 1 : 0) - (b.active ? 1 : 0);
@@ -101,15 +127,27 @@ export default function AdminStaffPage() {
     }
   };
 
+  const closeActionMenu = () => {
+    setOpenMenuId(null);
+    setMenuPosition(null);
+  };
+
+  const openActionMenu = (id: string, rect: DOMRect) => {
+    const MENU_WIDTH = 176;
+    const left = Math.max(8, Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8));
+    setOpenMenuId(id);
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Gestione Staff</h1>
-          <p className="text-secondary/70 font-medium">
-            Visualizza, modifica e gestisci i membri dello staff della homepage
-          </p>
+          <h1 className="text-4xl font-bold text-secondary">Gestione Staff</h1>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
           <Link
@@ -164,8 +202,8 @@ export default function AdminStaffPage() {
           <div className="space-y-3 min-w-[860px]">
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="grid grid-cols-[80px_90px_1fr_170px_120px] items-center gap-4">
-                <div className="text-xs font-bold text-white/80 uppercase text-center">Avatar</div>
+              <div className="grid grid-cols-[80px_90px_1fr_170px_120px_40px] items-center gap-4">
+                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                 <div className="text-xs font-bold text-white/80 uppercase text-center">
                   <button
                     onClick={() => handleSort("order")}
@@ -210,25 +248,26 @@ export default function AdminStaffPage() {
                     )}
                   </button>
                 </div>
+                <div></div>
               </div>
             </div>
 
             {/* Data Rows */}
             {sortedStaff.map((member) => {
-              const statusColor = member.active ? "#08b3f7" : "#022431";
-              const borderStyle = { borderLeftColor: statusColor };
-              const badgeClasses = member.active
-                ? "bg-[#08b3f7]/10 text-[#022431] border border-[#08b3f7]/60"
-                : "bg-[#022431]/10 text-[#022431] border border-[#022431]/60";
+              const borderStyle = {
+                borderLeftColor: member.active ? "var(--secondary)" : "#9ca3af",
+              };
+              const statusColor = member.active ? "var(--secondary)" : "#9ca3af";
+              const displayOrder = member.effectiveOrder;
 
               return (
-                <Link
+                <div
                   key={member.id}
-                  href={`/dashboard/admin/staff/new?id=${member.id}`}
+                  onClick={() => router.push(`/dashboard/admin/staff/${member.id}`)}
                   className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all block cursor-pointer border-l-4"
                   style={borderStyle}
                 >
-                  <div className="grid grid-cols-[80px_90px_1fr_170px_120px] items-center gap-4">
+                  <div className="grid grid-cols-[80px_90px_1fr_170px_120px_40px] items-center gap-4">
                     {/* Avatar */}
                     <div className="flex items-center justify-center">
                       <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/10 flex items-center justify-center">
@@ -248,7 +287,7 @@ export default function AdminStaffPage() {
 
                     {/* Ordine */}
                     <div className="text-sm font-bold text-secondary text-center">
-                      #{member.order_index}
+                      {displayOrder}
                     </div>
 
                     {/* Nome e bio */}
@@ -269,13 +308,73 @@ export default function AdminStaffPage() {
                     </div>
 
                     {/* Stato */}
+                    <div className="flex items-center justify-center gap-1">
+                      {member.active ? (
+                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
+                      ) : (
+                        <XCircle className="h-4 w-4" style={{ color: statusColor }} />
+                      )}
+                    </div>
+
+                    {/* Azioni */}
                     <div className="flex items-center justify-center">
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClasses}`}>
-                        {member.active ? "Attivo" : "Inattivo"}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (openMenuId === member.id) {
+                            closeActionMenu();
+                            return;
+                          }
+                          openActionMenu(member.id, e.currentTarget.getBoundingClientRect());
+                        }}
+                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {openMenuId === member.id && menuPosition && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                          <div
+                            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                            style={{ top: menuPosition.top, left: menuPosition.left }}
+                          >
+                            <Link
+                              href={`/dashboard/admin/staff/${member.id}`}
+                              onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              Dettagli
+                            </Link>
+                            <Link
+                              href={`/dashboard/admin/staff/new?id=${member.id}`}
+                              onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Modifica
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                closeActionMenu();
+                                handleDelete(member.id);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

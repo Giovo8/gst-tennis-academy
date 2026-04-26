@@ -142,17 +142,13 @@ export default function AdminNewsPage() {
         {/* Header */}
         <div className="flex flex-col gap-2">
           <div>
-            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-              GESTIONE NEWS
-            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-secondary">Gestione News</h1>
-                <p className="text-gray-600 font-medium mt-1">Crea e gestisci le news visibili sulla piattaforma</p>
+                <h1 className="text-4xl font-bold text-secondary">Gestione News</h1>
               </div>
               <Link
                 href="/dashboard/admin/news/create"
-                className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 Crea News
@@ -206,21 +202,19 @@ export default function AdminNewsPage() {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
               {filteredNews.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/dashboard/admin/news/create?id=${item.id}`}
-                  className="block bg-white rounded-xl border-l-4 border-secondary shadow-md hover:bg-gray-100 transition-all"
+                  href={`/dashboard/admin/news/${item.id}`}
+                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-secondary/40 hover:shadow-md transition-all cursor-pointer flex flex-col"
                 >
-                  <div className="flex flex-col sm:flex-row gap-4 p-6">
-                    {/* Image */}
-                    <div className="flex-shrink-0 w-full sm:w-48 h-32 overflow-hidden rounded-lg">
+                  <div className="relative aspect-video bg-gray-100 overflow-hidden">
                       {item.image_url ? (
                         <img
                           src={item.image_url}
                           alt={item.title}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                             const parent = e.currentTarget.parentElement;
@@ -248,36 +242,28 @@ export default function AdminNewsPage() {
                           />
                         </svg>
                       </div>
-                    </div>
+                  </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
+                  <div className="p-4 flex flex-col gap-2 flex-1">
                       {/* Category */}
-                      <span className="inline-block text-xs font-semibold text-secondary mb-2">
+                      <span className="inline-block text-xs font-semibold text-secondary">
                         {categoryLabels[item.category] || item.category}
                       </span>
 
                       {/* Title */}
-                      <h3 className="text-lg font-bold text-secondary mb-2 hover:opacity-70 transition-opacity line-clamp-2">
+                      <h3 className="font-bold text-secondary text-xl sm:text-2xl line-clamp-2 leading-tight">
                         {item.title}
                       </h3>
 
                       {/* Description */}
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-xs text-secondary/60 line-clamp-2">
                         {item.excerpt || item.content.substring(0, 150)}
                       </p>
+                  </div>
 
-                      {/* Status indicator */}
-                      <div className="flex items-center gap-4 text-xs text-secondary/50 mt-2">
-                        <span>{new Date(item.created_at).toLocaleDateString("it-IT")}</span>
-                        {!item.is_published && (
-                          <>
-                            <span>•</span>
-                            <span className="text-orange-600 font-semibold">Bozza</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                  <div className="px-4 py-2.5 bg-secondary text-xs text-white">
+                    {new Date(item.created_at).toLocaleDateString("it-IT")}
+                    {!item.is_published && <span className="ml-2 opacity-90">• Bozza</span>}
                   </div>
                 </Link>
               ))}

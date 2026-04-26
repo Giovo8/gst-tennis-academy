@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Activity,
   CalendarClock,
   CalendarDays,
-  ChevronRight,
   Clock3,
   GraduationCap,
   Timer,
@@ -15,7 +13,6 @@ import {
   Sun,
   Sunrise,
   Sunset,
-  Trophy,
   Users,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
@@ -87,7 +84,17 @@ const PERIOD_LABELS: Record<TrendPeriod, { label: string; hint: string; previous
 
 const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
-export default function MaestroOverviewPage() {
+type MaestroOverviewPageProps = {
+  upcomingStyle?: "maestro" | "admin";
+  upcomingBasePath?: string;
+  upcomingRoleFilter?: "all" | "maestro";
+};
+
+export default function MaestroOverviewPage({
+  upcomingStyle = "admin",
+  upcomingBasePath = "/dashboard/maestro",
+  upcomingRoleFilter = "maestro",
+}: MaestroOverviewPageProps) {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("Maestro");
   const [stats, setStats] = useState<Stats>({
@@ -117,11 +124,7 @@ export default function MaestroOverviewPage() {
   const [weekChartData, setWeekChartData] = useState<MonthlyPoint[]>([]);
   const [monthChartData, setMonthChartData] = useState<MonthlyPoint[]>([]);
 
-  useEffect(() => {
-    void loadData();
-  }, []);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -169,6 +172,22 @@ export default function MaestroOverviewPage() {
     const sameDayLastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
     try {
+      let upcomingRowsQuery = supabase
+        .from("bookings")
+        .select("id, user_id, coach_id, court, type, start_time, end_time, status");
+
+      if (upcomingRoleFilter === "maestro") {
+        upcomingRowsQuery = upcomingRowsQuery.eq("coach_id", user.id);
+      } else {
+        upcomingRowsQuery = upcomingRowsQuery.or(`coach_id.eq.${user.id},user_id.eq.${user.id}`);
+      }
+
+      upcomingRowsQuery = upcomingRowsQuery
+        .neq("status", "cancelled")
+        .gte("start_time", now.toISOString())
+        .order("start_time", { ascending: true })
+        .limit(8);
+
       const [
         coachLessonsDoneRes,
         coachLessonsDoneRowsRes,
@@ -224,14 +243,7 @@ export default function MaestroOverviewPage() {
           .neq("status", "cancelled")
           .gte("start_time", lastMonth.toISOString())
           .lt("end_time", now.toISOString()),
-        supabase
-          .from("bookings")
-          .select("id, user_id, coach_id, court, type, start_time, end_time, status")
-          .or(`coach_id.eq.${user.id},user_id.eq.${user.id}`)
-          .neq("status", "cancelled")
-          .gte("start_time", now.toISOString())
-          .order("start_time", { ascending: true })
-          .limit(8),
+        upcomingRowsQuery,
         // Lezioni mese corrente + precedente per MoM (solo concluse)
         supabase
           .from("bookings")
@@ -297,7 +309,7 @@ export default function MaestroOverviewPage() {
         .filter((row) => row.user_id && STAFF_ROLES.has(athleteProfileMap.get(row.user_id)?.role ?? ""))
         .map((row) => row.id);
 
-      let participantsMap = new Map<string, { user_id: string | null; full_name: string }[]>();
+      const participantsMap = new Map<string, { user_id: string | null; full_name: string }[]>();
       if (staffBookingIds.length > 0) {
         const { data: participants } = await supabase
           .from("booking_participants")
@@ -602,8 +614,7 @@ export default function MaestroOverviewPage() {
         remaining: weekRemaining,
       });
 
-      setUpcoming(
-        upcomingRows.map((row) => {
+      const mappedUpcoming: BookingRow[] = upcomingRows.map((row) => {
           const counterpartId =
             row.coach_id === user.id
               ? row.user_id
@@ -616,22 +627,24 @@ export default function MaestroOverviewPage() {
             counterpartName: counterpartId ? counterpartMap.get(counterpartId) || null : null,
             involvementRole: row.coach_id === user.id ? "maestro" : "atleta",
           };
-        })
+        });
+
+      setUpcoming(
+        upcomingRoleFilter === "maestro"
+          ? mappedUpcoming.filter((row) => row.involvementRole === "maestro")
+          : mappedUpcoming
       );
     } catch (error) {
       console.error("Errore caricamento pagina maestro:", error);
     }
 
     setLoading(false);
-  }
+  }, [upcomingRoleFilter]);
 
-  const avgPerAthlete = useMemo(
-    () =>
-      stats.totalAthletesChosen > 0
-        ? Math.round((stats.totalCoachLessonsDone / stats.totalAthletesChosen) * 10) / 10
-        : 0,
-    [stats]
-  );
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadData();
+  }, [loadData]);
 
   if (loading) {
     return <PageSkeleton />;
@@ -641,7 +654,7 @@ export default function MaestroOverviewPage() {
     <div className="space-y-6">
       {/* HERO */}
       <div>
-        <h1 className="text-4xl font-bold text-secondary mb-2">Area Maestro</h1>
+        <h1 className="text-4xl font-bold text-secondary mb-2">Area Maestro, {userName}</h1>
       </div>
 
       {/* KPI */}
@@ -671,16 +684,21 @@ export default function MaestroOverviewPage() {
             </h2>
         </div>
 
-        <div className="px-2 sm:px-3 py-2">
+        <div className="px-4 py-4">
           {upcoming.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
               <CalendarClock className="h-8 w-8 mb-2" />
               <p className="text-sm font-medium">Nessun impegno in arrivo</p>
             </div>
           ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-1">
+            <ul className="divide-y divide-gray-100">
               {upcoming.map((item) => (
-                <UpcomingItem key={item.id} item={item} />
+                <UpcomingItem
+                  key={item.id}
+                  item={item}
+                  variant={upcomingStyle}
+                  basePath={upcomingBasePath}
+                />
               ))}
             </ul>
           )}
@@ -916,8 +934,6 @@ function TrendCard({
   previousLabel: string;
 }) {
   const isUp = delta.diffPct !== null && delta.diffPct > 0;
-  const isDown = delta.diffPct !== null && delta.diffPct < 0;
-
   const badgeLabel =
     delta.diffPct === null
       ? "Nuovo"
@@ -1084,7 +1100,15 @@ const TYPE_STYLES: Record<string, string> = {
   torneo: "bg-rose-100 text-rose-700",
 };
 
-function UpcomingItem({ item }: { item: BookingRow }) {
+function UpcomingItem({
+  item,
+  variant = "maestro",
+  basePath = "/dashboard/maestro",
+}: {
+  item: BookingRow;
+  variant?: "maestro" | "admin";
+  basePath?: string;
+}) {
   const start = new Date(item.start_time);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1105,8 +1129,50 @@ function UpcomingItem({ item }: { item: BookingRow }) {
   const roleLabel =
     item.involvementRole === "maestro" ? "Come maestro" : "Come atleta";
 
+  const adminTypeColors: Record<string, string> = {
+    lezione_privata: "#023047",
+    lezione_gruppo: "#023047",
+    campo: "var(--secondary)",
+    lezione: "#023047",
+    arena: "var(--color-frozen-lake-600)",
+    torneo: "var(--color-frozen-lake-600)",
+  };
+
+  if (variant === "admin") {
+    const typeBg = adminTypeColors[item.type] || "var(--secondary)";
+    return (
+      <li>
+        <Link
+          href={`${basePath}/bookings/${item.id}`}
+          className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+          style={{ background: typeBg }}
+        >
+          <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+            <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+              {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+            </span>
+            <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+              {start.getDate()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-white text-sm truncate">
+              {item.counterpartName || "Impegno"}
+            </p>
+            <p className="text-xs text-white/70 mt-0.5">
+              {formatItalianTime(item.start_time)}–{formatItalianTime(item.end_time)} · {item.court}
+            </p>
+          </div>
+          <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
+            {typeLabel}
+          </span>
+        </Link>
+      </li>
+    );
+  }
+
   return (
-    <li className="px-3 py-3 rounded-xl hover:bg-secondary/5 transition-colors">
+    <li className="py-3 first:pt-0 last:pb-0 hover:bg-secondary/5 transition-colors">
       <div className="flex items-start gap-3">
         <div className="flex flex-col items-center justify-center bg-secondary/5 rounded-lg w-12 py-1.5 flex-shrink-0">
           <span className="text-[10px] uppercase font-bold text-secondary/60 leading-none">

@@ -143,134 +143,68 @@ export default function JobApplicationDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="inline-flex items-center text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-        <Link
-          href="/dashboard/admin/job-applications"
-          className="hover:text-secondary/80 transition-colors"
-        >
-          Candidature Lavoro
-        </Link>
-        <span className="mx-2">›</span>
-        <span>Dettaglio Candidatura</span>
-      </div>
-
-      {/* Header con titolo e descrizione */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Dettaglio Candidatura
-          </h1>
-          <p className="text-secondary/70 font-medium">
-            Visualizza e gestisci i dettagli della candidatura
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={deleteApplication}
-            disabled={deleting}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Elimina Candidatura"
+      {/* Header */}
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link
+            href="/dashboard/admin/job-applications"
+            className="hover:text-secondary/80 transition-colors"
           >
-            {deleting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Trash2 className="h-5 w-5" />
-            )}
-          </button>
-
-          <button
-            onClick={() => updateStatus("reviewed")}
-            disabled={updating || application.status === "reviewed"}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Segna come Revisionata"
-          >
-            <Clock className="h-5 w-5" />
-          </button>
-
-          <button
-            onClick={() => updateStatus("accepted")}
-            disabled={updating || application.status === "accepted"}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Accetta Candidatura"
-          >
-            <CheckCircle className="h-5 w-5" />
-          </button>
-
-          <button
-            onClick={() => updateStatus("rejected")}
-            disabled={updating || application.status === "rejected"}
-            className="p-2.5 text-secondary/70 bg-white rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Rifiuta Candidatura"
-          >
-            <XCircle className="h-5 w-5" />
-          </button>
-        </div>
+            Candidature Lavoro
+          </Link>
+          {" › "}
+          <span>Dettaglio Candidatura</span>
+        </p>
+        <h1 className="text-4xl font-bold text-secondary">Dettaglio Candidatura</h1>
       </div>
 
       {/* Header con info candidatura */}
-      <div className={`bg-white rounded-xl border-l-4 ${getStatusBorderColor()} p-6`}>
+      <div
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{
+          backgroundColor: application.role === "maestro" ? "var(--secondary)" : "#023047",
+          borderColor: application.role === "maestro" ? "var(--secondary)" : "#023047",
+          borderLeftColor: application.role === "maestro" ? "#023047" : "#011a24",
+        }}
+      >
         <div className="flex items-start gap-6">
-          <RoleIcon className="h-8 w-8 text-secondary flex-shrink-0" strokeWidth={2.5} />
+          <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-secondary mb-2">{application.full_name}</h1>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                application.role === "maestro"
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-purple-100 text-purple-700"
-              }`}>
-                {application.role === "maestro" ? "Maestro" : "Preparatore Atletico"}
-              </div>
-              <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                application.status === "pending"
-                  ? "bg-amber-100 text-amber-700"
-                  : application.status === "reviewed"
-                  ? "bg-blue-100 text-blue-700"
-                  : application.status === "accepted"
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-red-100 text-red-700"
-              }`}>
-                {application.status === "pending" && "In Attesa"}
-                {application.status === "reviewed" && "Revisionata"}
-                {application.status === "accepted" && "Accettata"}
-                {application.status === "rejected" && "Rifiutata"}
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold text-white">{application.full_name}</h1>
           </div>
         </div>
       </div>
 
       {/* Dettagli candidatura */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni candidato</h2>
-
-        <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni candidato</h2>
+        </div>
+        <div className="p-6 space-y-6">
           {/* Nome Completo */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome completo</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 md:pt-0.5 text-sm text-secondary font-medium flex-shrink-0">Nome completo</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">{application.full_name}</p>
             </div>
           </div>
 
           {/* Email */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 md:pt-0.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>
             <div className="flex-1">
               <a
                 href={`mailto:${application.email}`}
-                className="text-secondary font-semibold hover:text-secondary/70 transition-colors inline-flex items-center gap-2"
+                className="text-secondary font-semibold hover:text-secondary/70 transition-colors"
               >
-                <Mail className="h-4 w-4" />
                 {application.email}
               </a>
             </div>
           </div>
 
           {/* Ruolo */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo richiesto</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8 pb-6 border-b border-gray-200">
+            <label className="w-full md:w-48 md:pt-0.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo richiesto</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
                 {application.role === "maestro" ? "Maestro di Tennis" : "Preparatore Atletico"}
@@ -279,65 +213,61 @@ export default function JobApplicationDetailPage() {
           </div>
 
           {/* Data Candidatura */}
-          <div className="flex items-start gap-8 pb-6 border-b border-gray-200">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data candidatura</label>
+          <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8">
+            <label className="w-full md:w-48 md:pt-0.5 text-sm text-secondary font-medium flex-shrink-0">Data candidatura</label>
             <div className="flex-1">
-              <p className="text-secondary font-semibold inline-flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {new Date(application.created_at).toLocaleDateString("it-IT", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <p className="text-secondary font-semibold">
+                {(() => {
+                  const s = new Date(application.created_at).toLocaleDateString("it-IT", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  return s.replace(/^(\w)/, (c) => c.toUpperCase()).replace(/ (\w{3,})( \d)/, (_, m, rest) => ` ${m.charAt(0).toUpperCase()}${m.slice(1)}${rest}`);
+                })()}
               </p>
             </div>
           </div>
 
-          {/* Stato */}
-          <div className="flex items-start gap-8">
-            <label className="w-48 pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Stato candidatura</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {application.status === "pending" && "In Attesa di Revisione"}
-                {application.status === "reviewed" && "Revisionata"}
-                {application.status === "accepted" && "Accettata"}
-                {application.status === "rejected" && "Rifiutata"}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Messaggio di Presentazione */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Messaggio di presentazione</h2>
-        {application.message ? (
-          <p className="text-secondary/80 leading-relaxed whitespace-pre-wrap">{application.message}</p>
-        ) : (
-          <p className="text-secondary/40 italic">Nessun messaggio fornito</p>
-        )}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio di presentazione</h2>
+        </div>
+        <div className="p-6">
+          {application.message ? (
+            <p className="text-secondary/80 leading-relaxed whitespace-pre-wrap">{application.message}</p>
+          ) : (
+            <p className="text-secondary/40 italic">Nessun messaggio fornito</p>
+          )}
+        </div>
       </div>
 
-      {/* Curriculum Vitae */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Curriculum Vitae</h2>
-        {application.cv_url ? (
+      {/* Azioni */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {application.cv_url && (
           <a
             href={application.cv_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors font-medium"
+            className="w-full flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
           >
-            <FileText className="h-5 w-5" />
             Visualizza Curriculum
-            <ExternalLink className="h-4 w-4" />
           </a>
-        ) : (
-          <p className="text-secondary/40 italic">Nessun CV caricato</p>
         )}
+        <button
+          onClick={deleteApplication}
+          disabled={deleting}
+          className="w-full flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Elimina"}
+        </button>
       </div>
     </div>
   );

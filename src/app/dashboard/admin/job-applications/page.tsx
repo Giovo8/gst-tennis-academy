@@ -43,6 +43,7 @@ export default function JobApplicationsPage() {
   const [sortBy, setSortBy] = useState<"date" | "name" | "role" | "status" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
   async function loadApplications() {
     setLoading(true);
@@ -144,26 +145,7 @@ export default function JobApplicationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">Candidature Lavoro</h1>
-          <p className="text-secondary/70 font-medium">
-            Gestisci le candidature ricevute dalla pagina &quot;Lavora con noi&quot;
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => loadApplications()}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Ricarica"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </button>
-          <button
-            onClick={exportToCSV}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Esporta CSV"
-          >
-            <Download className="h-5 w-5" />
-          </button>
+          <h1 className="text-4xl font-bold text-secondary">Candidature Lavoro</h1>
         </div>
       </div>
 
@@ -201,7 +183,7 @@ export default function JobApplicationsPage() {
           <div className="space-y-3 min-w-[750px]">
             {/* Header Row */}
             <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="grid grid-cols-[40px_100px_160px_1fr_100px_100px_40px] items-center gap-4">
+              <div className="grid grid-cols-[40px_100px_160px_1fr_100px_40px] items-center gap-4">
                 <div className="flex items-center justify-center">
                   <button
                     onClick={() => handleSort("role")}
@@ -241,34 +223,15 @@ export default function JobApplicationsPage() {
                 <div className="text-center">
                   <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
                 </div>
-                <div className="text-center">
-                  <button
-                    onClick={() => handleSort("status")}
-                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                  >
-                    Stato
-                    {sortBy === "status" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
                 <div></div>
               </div>
             </div>
 
             {/* Data Rows */}
             {sortedApplications.map((app) => {
-              // Colore bordo sinistro basato sullo status
-              let borderStyle = {};
-              if (app.status === "rejected") {
-                borderStyle = { borderLeftColor: "#ef4444" }; // red
-              } else if (app.status === "pending") {
-                borderStyle = { borderLeftColor: "#f59e0b" }; // amber
-              } else if (app.status === "reviewed") {
-                borderStyle = { borderLeftColor: "#3b82f6" }; // blue
-              } else if (app.status === "accepted") {
-                borderStyle = { borderLeftColor: "#10b981" }; // green
-              }
+              // Colore bordo sinistro e icona basato sul ruolo
+              const roleColor = app.role === "maestro" ? "var(--secondary)" : "#023047";
+              const borderStyle = { borderLeftColor: roleColor };
 
               return (
                 <div
@@ -278,14 +241,14 @@ export default function JobApplicationsPage() {
                 >
                   <Link
                     href={`/dashboard/admin/job-applications/${app.id}`}
-                    className="grid grid-cols-[40px_100px_160px_1fr_100px_100px_40px] items-center gap-4 no-underline"
+                    className="grid grid-cols-[40px_100px_160px_1fr_100px_40px] items-center gap-4 no-underline"
                   >
                     {/* Icon Ruolo */}
                     <div className="flex items-center justify-center">
                       {app.role === "maestro" ? (
-                        <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Users className="h-5 w-5" style={{ color: roleColor }} strokeWidth={2} />
                       ) : (
-                        <Dumbbell className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Dumbbell className="h-5 w-5" style={{ color: roleColor }} strokeWidth={2} />
                       )}
                     </div>
 
@@ -300,8 +263,7 @@ export default function JobApplicationsPage() {
                     </div>
 
                     {/* Email */}
-                    <div className="text-sm text-secondary/70 truncate flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-secondary/40 flex-shrink-0" />
+                    <div className="text-sm text-secondary/70 truncate">
                       {app.email}
                     </div>
 
@@ -312,62 +274,26 @@ export default function JobApplicationsPage() {
                       </span>
                     </div>
 
-                    {/* Stato */}
-                    <div className="text-center">
-                      <span className="text-sm font-bold text-secondary">
-                        {app.status === "pending" && "In Attesa"}
-                        {app.status === "reviewed" && "Revisionata"}
-                        {app.status === "accepted" && "Accettata"}
-                        {app.status === "rejected" && "Rifiutata"}
-                      </span>
-                    </div>
-
                     {/* Azioni - 3 puntini */}
-                    <div className="relative flex items-center justify-center">
+                    <div className="flex items-center justify-center">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setOpenMenuId(openMenuId === app.id ? null : app.id);
+                          if (openMenuId === app.id) {
+                            setOpenMenuId(null);
+                            setMenuPosition(null);
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                            setOpenMenuId(app.id);
+                          }
                         }}
                         className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
-                      {openMenuId === app.id && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-                          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                window.location.href = `/dashboard/admin/job-applications/${app.id}`;
-                              }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Visualizza
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                // Delete not implemented for job applications
-                              }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Elimina
-                            </button>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </Link>
                 </div>
@@ -375,6 +301,54 @@ export default function JobApplicationsPage() {
             })}
           </div>
         </div>
+      )}
+
+      {/* Dropdown menu fisso - fuori dal container per evitare clipping */}
+      {openMenuId && menuPosition && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => { setOpenMenuId(null); setMenuPosition(null); }}
+          />
+          <div
+            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+            style={{ top: menuPosition.top, right: menuPosition.right }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setOpenMenuId(null);
+                setMenuPosition(null);
+                window.location.href = `/dashboard/admin/job-applications/${openMenuId}`;
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Visualizza
+            </button>
+            {applications.find(a => a.id === openMenuId)?.cv_url && (
+              <a
+                href={applications.find(a => a.id === openMenuId)!.cv_url!}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => { setOpenMenuId(null); setMenuPosition(null); }}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Curriculum
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => { setOpenMenuId(null); setMenuPosition(null); }}
+              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors w-full"
+              style={{ color: "#022431" }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Elimina
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
-import { CheckCircle, AlertCircle, Loader2, Trash2, Upload, Link as LinkIcon, X } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2, Upload, Link as LinkIcon, X } from "lucide-react";
 
 type FormData = {
   full_name: string;
@@ -279,18 +280,17 @@ export default function NewStaffPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <div>
-          <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-            GESTIONE STAFF › {isEditMode ? "MODIFICA" : "NUOVO"} MEMBRO
-          </div>
-          <h1 className="text-3xl font-bold text-secondary">
-            {isEditMode ? "Modifica membro" : "Crea membro"}
-          </h1>
-          <p className="text-gray-600 text-sm mt-1 max-w-2xl">
-            {isEditMode ? "Modifica i dati del membro dello staff" : "Aggiungi un nuovo membro al team"}
-          </p>
-        </div>
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/admin/staff" className="hover:text-secondary/80 transition-colors">
+            Staff
+          </Link>
+          {" › "}
+          <span>{isEditMode ? "Modifica Membro" : "Nuovo Membro"}</span>
+        </p>
+        <h1 className="text-4xl font-bold text-secondary">
+          {isEditMode ? "Modifica Membro" : "Nuovo Membro"}
+        </h1>
       </div>
 
       {/* Messages */}
@@ -319,16 +319,17 @@ export default function NewStaffPage() {
       )}
 
       {/* Main Content */}
-      <div className="py-4">
+      <div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-secondary mb-6">Informazioni Membro</h2>
-            
-            <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Membro</h2>
+            </div>
+            <div className="p-6 space-y-6">
               {/* Nome Completo */}
               <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Nome Completo <span className="text-red-600">*</span>
+                  Nome Completo
                 </label>
                 <div className="flex-1">
                   <input
@@ -345,7 +346,7 @@ export default function NewStaffPage() {
               {/* Ruolo */}
               <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                  Ruolo <span className="text-red-600">*</span>
+                  Ruolo
                 </label>
                 <div className="flex-1">
                   <input
@@ -376,7 +377,7 @@ export default function NewStaffPage() {
               </div>
 
               {/* Immagine */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Immagine
                 </label>
@@ -419,10 +420,11 @@ export default function NewStaffPage() {
           </div>
 
           {/* Social Links */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-secondary mb-6">Link Social</h2>
-            
-            <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Link Social</h2>
+            </div>
+            <div className="p-6 space-y-6">
               {/* Facebook */}
               <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -472,7 +474,7 @@ export default function NewStaffPage() {
               </div>
 
               {/* Twitter */}
-              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
+              <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
                   Twitter
                 </label>
@@ -490,10 +492,11 @@ export default function NewStaffPage() {
           </div>
 
           {/* Ordine e Stato */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-secondary mb-6">Impostazioni</h2>
-            
-            <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Impostazioni</h2>
+            </div>
+            <div className="p-6 space-y-6">
               {/* Ordine */}
               <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4 md:gap-8 pb-6 border-b border-gray-200">
                 <label className="w-full md:w-48 pt-0 md:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -530,22 +533,21 @@ export default function NewStaffPage() {
           </div>
 
           {/* Submit and Delete Buttons */}
-          <div className="flex justify-between items-center pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             {isEditMode && (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 px-6 py-4 text-base font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 className="h-5 w-5" />
-                Elimina Membro
+                Elimina
               </button>
             )}
             <button
               type="submit"
               disabled={loading}
-              className={`inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px] ${!isEditMode ? 'ml-auto' : ''}`}
+              className={`w-full ${isEditMode ? "sm:flex-1" : "sm:w-full"} flex items-center justify-center px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {loading ? (
                 <>
@@ -553,10 +555,7 @@ export default function NewStaffPage() {
                   Salvataggio...
                 </>
               ) : (
-                <>
-                  <CheckCircle className="h-5 w-5" />
-                  {isEditMode ? "Aggiorna Membro" : "Crea Membro"}
-                </>
+                <>{isEditMode ? "Aggiorna Membro" : "Crea Membro"}</>
               )}
             </button>
           </div>

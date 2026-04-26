@@ -40,11 +40,16 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, role, avatar_url")
+        .select("full_name, role, avatar_url, metadata")
         .eq("id", user.id)
         .single();
 
-      if (!profile || profile.role !== "maestro") {
+      const secondaryRoles = Array.isArray((profile as any)?.metadata?.secondary_roles)
+        ? (profile as any).metadata.secondary_roles.map((value: unknown) => String(value).toLowerCase())
+        : [];
+      const canAccessMaestro = profile?.role === "maestro" || secondaryRoles.includes("maestro");
+
+      if (!profile || !canAccessMaestro) {
         router.push("/login");
         return;
       }

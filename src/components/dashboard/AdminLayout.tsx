@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Calendar,
   Trophy,
+  User,
   Users,
   MessageSquare,
   Mail,
@@ -17,7 +18,6 @@ import {
   Image,
   Video,
   Briefcase,
-  UsersIcon,
   Swords,
   FileText,
   Activity,
@@ -33,6 +33,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [userEmail, setUserEmail] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [userRole, setUserRole] = useState<"admin" | "gestore">("admin");
+  const [hasSecondaryMaestroRole, setHasSecondaryMaestroRole] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, role, avatar_url")
+        .select("full_name, role, avatar_url, metadata")
         .eq("id", user.id)
         .single();
 
@@ -60,6 +61,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setUserName(profile.full_name || "Admin");
       setUserAvatar(profile.avatar_url || "");
       setUserRole(profile.role as "admin" | "gestore");
+
+      const secondaryRoles = Array.isArray((profile as any).metadata?.secondary_roles)
+        ? (profile as any).metadata.secondary_roles.map((value: unknown) => String(value).toLowerCase())
+        : [];
+      setHasSecondaryMaestroRole(secondaryRoles.includes("maestro"));
+
       setLoading(false);
     }
 
@@ -83,9 +90,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: <Trophy className="h-5 w-5" />,
     },
     {
-      label: "Arena",
+      label: "Arena GST",
       href: "/dashboard/admin/arena",
       icon: <Swords className="h-5 w-5" />,
+    },
+    {
+      label: "Video Lab",
+      href: "/dashboard/admin/video-lessons",
+      icon: <Video className="h-5 w-5" />,
+    },
+    ...(hasSecondaryMaestroRole
+      ? [
+          {
+            label: "Maestro",
+            href: "/dashboard/admin/maestro",
+            icon: <User className="h-5 w-5" />,
+          } as NavItem,
+        ]
+      : []),
+    {
+      label: "Chat",
+      href: "/dashboard/admin/chat",
+      icon: <Mail className="h-5 w-5" />,
     },
     {
       label: "Utenti",
@@ -93,24 +119,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: <Users className="h-5 w-5" />,
     },
     {
-      label: "Video Lezioni",
-      href: "/dashboard/admin/video-lessons",
-      icon: <Video className="h-5 w-5" />,
-    },
-    {
-      label: "Chat",
-      href: "/dashboard/admin/chat",
-      icon: <Mail className="h-5 w-5" />,
-    },
-    {
-      label: "News",
-      href: "/dashboard/admin/news",
-      icon: <Newspaper className="h-5 w-5" />,
-    },
-    {
       label: "Staff",
       href: "/dashboard/admin/staff",
-      icon: <UsersIcon className="h-5 w-5" />,
+      icon: <Briefcase className="h-5 w-5" />,
     },
     {
       label: "Candidature",
@@ -118,7 +129,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: <FileText className="h-5 w-5" />,
     },
     {
-      label: "Log Piattaforma",
+      label: "News",
+      href: "/dashboard/admin/news",
+      icon: <Newspaper className="h-5 w-5" />,
+    },
+    {
+      label: "Log",
       href: "/dashboard/admin/platform-logs",
       icon: <Activity className="h-5 w-5" />,
     },

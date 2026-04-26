@@ -15,6 +15,7 @@ import {
   SlidersHorizontal,
   Trophy,
   Users,
+  Video,
   XCircle,
 } from "lucide-react";
 import {
@@ -81,7 +82,12 @@ interface NotificationsListProps {
   maxVisibleRows?: number;
 }
 
-function getNotificationIcon(type: string) {
+function getNotificationIcon(type: string, title?: string, message?: string) {
+  const text = `${title || ""} ${message || ""}`.toLowerCase();
+  if (type === "video" || text.includes("video")) {
+    return <Video className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+  }
+
   switch (type) {
     case "booking":
       return <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
@@ -350,7 +356,7 @@ export default function NotificationsList({
               >
                 <div className="grid grid-cols-[40px_112px_180px_1fr] items-center gap-4">
                   <div className="flex items-center justify-center">
-                    {getNotificationIcon(n.type)}
+                    {getNotificationIcon(n.type, n.title, n.message)}
                   </div>
                   <div className="font-bold text-secondary text-sm whitespace-nowrap">
                     {formatShortItalianDate(n.created_at)}
@@ -388,7 +394,7 @@ export default function NotificationsList({
               <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
                 <div className="px-4 py-3 bg-white">
                   <div className="flex gap-3 items-center">
-                    {getNotificationIcon(selected.type)}
+                    {getNotificationIcon(selected.type, selected.title, selected.message)}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900">{selected.title}</p>
                     </div>

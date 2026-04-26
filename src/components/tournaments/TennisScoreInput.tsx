@@ -176,7 +176,7 @@ export default function TennisScoreInput({
                 {sets.length > 1 && (
                   <button
                     onClick={() => removeSet(index)}
-                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    className="p-1 text-[#022431] hover:bg-[#022431]/10 rounded transition-colors"
                     type="button"
                     title="Rimuovi set"
                   >

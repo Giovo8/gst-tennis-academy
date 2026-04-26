@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Check, ChevronDown, User, X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { type UserRole } from "@/lib/roles";
 
 interface Athlete {
@@ -34,6 +34,7 @@ interface AthletesSelectorProps {
   maxAthletes?: number | null;
   useSecondaryParticipantBorder?: boolean;
   previousGuests?: PreviousGuest[];
+  allowGuestParticipants?: boolean;
 }
 
 export default function AthletesSelector({
@@ -44,6 +45,7 @@ export default function AthletesSelector({
   maxAthletes = 4,
   useSecondaryParticipantBorder = false,
   previousGuests = [],
+  allowGuestParticipants = true,
 }: AthletesSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -77,7 +79,9 @@ export default function AthletesSelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  const filteredPreviousGuests = previousGuests.filter((guest) => {
+  const visiblePreviousGuests = allowGuestParticipants ? previousGuests : [];
+
+  const filteredPreviousGuests = visiblePreviousGuests.filter((guest) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -128,11 +132,7 @@ export default function AthletesSelector({
           className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none"
         >
           <span className={selectedAthletes.length > 0 ? "" : "text-secondary/40"}>
-            {selectedAthletes.length > 0
-              ? hasMaxLimit
-                ? `Partecipanti selezionati (${selectedAthletes.length}/${maxAthletes})`
-                : `Partecipanti selezionati (${selectedAthletes.length})`
-              : "Seleziona partecipanti"}
+            Cerca Utenti
           </span>
           <ChevronDown
             className={`h-4 w-4 text-secondary/60 ml-2 flex-shrink-0 transition-transform ${
@@ -147,7 +147,7 @@ export default function AthletesSelector({
               {/* Unica barra di ricerca */}
               <input
                 type="text"
-                placeholder="Cerca atleta o ospite..."
+                placeholder={allowGuestParticipants ? "Cerca atleta o ospite..." : "Cerca atleta..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
@@ -157,7 +157,7 @@ export default function AthletesSelector({
                 {/* Atleti registrati */}
                 {athletes.length > 0 && (
                   <>
-                    {(previousGuests.length > 0 || filteredAthletes.length > 0) && (
+                    {(visiblePreviousGuests.length > 0 || filteredAthletes.length > 0) && (
                       <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wide px-1 pt-1">Atleti</p>
                     )}
                     {filteredAthletes.map((athlete) => {
@@ -209,7 +209,7 @@ export default function AthletesSelector({
                 )}
 
                 {/* Ospiti precedenti */}
-                {previousGuests.length > 0 && filteredPreviousGuests.length > 0 && (
+                {allowGuestParticipants && visiblePreviousGuests.length > 0 && filteredPreviousGuests.length > 0 && (
                   <>
                     <div className="pt-1 pb-0.5">
                       <div className="border-t border-gray-100" />
@@ -263,49 +263,53 @@ export default function AthletesSelector({
                 )}
               </div>
 
-              <div className="border-t border-gray-200" />
+              {allowGuestParticipants && (
+                <>
+                  <div className="border-t border-gray-200" />
 
-              <div>
-                <button
-                  onClick={() => setShowGuestForm((prev) => !prev)}
-                  className="text-sm font-medium text-secondary hover:text-secondary/80 mb-2 pl-3"
-                >
-                  {showGuestForm ? "Annulla" : "+ Aggiungi ospite non registrato"}
-                </button>
-
-                {showGuestForm && (
-                  <div className="space-y-2 p-3 bg-white border border-gray-200 rounded-lg">
-                    <input
-                      type="text"
-                      placeholder="Nome e cognome"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email (facoltativo)"
-                      value={guestEmail}
-                      onChange={(e) => setGuestEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Telefono (facoltativo)"
-                      value={guestPhone}
-                      onChange={(e) => setGuestPhone(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
-                    />
+                  <div>
                     <button
-                      onClick={handleAddGuest}
-                      disabled={!canAddMore}
-                      className="w-full px-3 py-2 bg-secondary text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={() => setShowGuestForm((prev) => !prev)}
+                      className="text-sm font-medium text-secondary hover:text-secondary/80 mb-2 pl-3"
                     >
-                      Aggiungi
+                      {showGuestForm ? "Annulla" : "+ Aggiungi ospite non registrato"}
                     </button>
+
+                    {showGuestForm && (
+                      <div className="space-y-2 p-3 bg-white border border-gray-200 rounded-lg">
+                        <input
+                          type="text"
+                          placeholder="Nome e cognome"
+                          value={guestName}
+                          onChange={(e) => setGuestName(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email (facoltativo)"
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                        />
+                        <input
+                          type="tel"
+                          placeholder="Telefono (facoltativo)"
+                          value={guestPhone}
+                          onChange={(e) => setGuestPhone(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                        />
+                        <button
+                          onClick={handleAddGuest}
+                          disabled={!canAddMore}
+                          className="w-full px-3 py-2 bg-secondary text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          Aggiungi
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -334,11 +338,7 @@ export default function AthletesSelector({
                 >
                   <div className="grid grid-cols-[32px_1fr_180px_40px] items-center gap-4">
                     <div className="flex items-center justify-center">
-                      {athlete.isRegistered || useSecondaryParticipantBorder ? (
-                        <User className="h-5 w-5 text-secondary/60" strokeWidth={2} />
-                      ) : (
-                        <span className="text-xs font-bold text-secondary">O</span>
-                      )}
+                      <span className="text-xs font-bold text-secondary">{index + 1}</span>
                     </div>
                     <div className="font-semibold text-secondary text-sm truncate">
                       {athlete.fullName}
