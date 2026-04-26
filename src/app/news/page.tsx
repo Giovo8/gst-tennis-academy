@@ -9,14 +9,14 @@ export default function NewsPage() {
       <PublicNavbar />
       <main className="bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-          <div className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
+          <div className="text-center mb-8 sm:mb-12 flex flex-col items-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
               News
             </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
               Aggiornamenti dall&apos;Academy
             </h1>
-            <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+            <p className="text-base sm:text-lg max-w-2xl text-gray-500">
               Tutte le novità, gli eventi e le storie dal nostro circolo tennis.
             </p>
           </div>

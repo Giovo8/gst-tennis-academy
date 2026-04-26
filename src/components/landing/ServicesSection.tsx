@@ -4,12 +4,12 @@ export default function ServicesSection() {
   return (
     <section className="bg-white py-20 sm:py-24 md:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-14 sm:mb-16">
+        <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
             Cosa offriamo
           </p>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
-            Tre modi per vivere il tennis
+            Diversi modi per vivere il tennis
           </h2>
           <p className="text-base sm:text-lg max-w-2xl text-gray-500">
             Dalla prenotazione di un campo per una partita tra amici, fino al percorso completo di scuola tennis.

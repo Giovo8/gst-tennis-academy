@@ -105,14 +105,14 @@ export default function TorneiPage() {
         <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3 text-secondary">
+          <div className="text-center mb-8 sm:mb-12 flex flex-col items-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
               Competizioni
             </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-secondary">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
               Tornei e campionati
             </h1>
-            <p className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto text-secondary opacity-80">
+            <p className="text-base sm:text-lg max-w-2xl text-gray-500">
               Scopri tutti i tornei e i campionati organizzati dalla GST Tennis Academy e trova la competizione giusta per te.
             </p>
           </div>

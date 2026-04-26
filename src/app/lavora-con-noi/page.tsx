@@ -7,6 +7,30 @@ import PublicNavbar from "@/components/layout/PublicNavbar";
 
 type RoleOption = "maestro" | "preparatore";
 
+const ALLOWED_CV_DOMAINS = [
+  "linkedin.com",
+  "drive.google.com",
+  "docs.google.com",
+  "dropbox.com",
+  "onedrive.live.com",
+  "1drv.ms",
+  "github.com",
+];
+
+function validateCvUrl(url: string): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return "Il link deve usare HTTPS.";
+    const hostname = parsed.hostname.replace(/^www\./, "");
+    const allowed = ALLOWED_CV_DOMAINS.some((d) => hostname === d || hostname.endsWith("." + d));
+    if (!allowed) return "Dominio non consentito. Usa LinkedIn, Google Drive, Dropbox o OneDrive.";
+    return null;
+  } catch {
+    return "Inserisci un URL valido (es. https://...)";
+  }
+}
+
 export default function WorkWithUsPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,11 +40,21 @@ export default function WorkWithUsPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cvUrlError, setCvUrlError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setCvUrlError(null);
+
+    const cvErr = validateCvUrl(cvUrl);
+    if (cvErr) {
+      setCvUrlError(cvErr);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     const { error: insertError } = await supabase.from("recruitment_applications").insert({
@@ -53,14 +87,14 @@ export default function WorkWithUsPage() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         {/* Header */}
-        <div className="text-center mb-12 sm:mb-16">
-          <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-secondary/60 mb-3">
+        <div className="text-center mb-12 sm:mb-16 flex flex-col items-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
             Entra nel Team
           </p>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-4">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             Lavora con noi
           </h1>
-          <p className="text-base sm:text-lg text-secondary/80 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-gray-500 max-w-2xl leading-relaxed">
             Unisciti al team GST Tennis Academy! Cerchiamo professionisti appassionati
             per far crescere la nostra community sportiva.
           </p>
@@ -145,11 +179,11 @@ export default function WorkWithUsPage() {
         {/* Form Candidatura - stile admin users/new */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Dati Personali */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-secondary">Dati Personali</h2>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Personali</h2>
             </div>
-
+            <div className="p-6">
             <div className="space-y-0">
               {/* Nome Completo */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -218,14 +252,15 @@ export default function WorkWithUsPage() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
 
           {/* Candidatura */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-secondary">Candidatura</h2>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Candidatura</h2>
             </div>
-
+            <div className="p-6">
             <div className="space-y-0">
               {/* Link CV */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -234,15 +269,21 @@ export default function WorkWithUsPage() {
                 </label>
                 <div className="flex-1">
                   <input
-                    type="text"
+                    type="url"
                     value={cvUrl}
-                    onChange={(e) => setCvUrl(e.target.value)}
-                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    onChange={(e) => { setCvUrl(e.target.value); setCvUrlError(null); }}
+                    className={`w-full px-4 py-2 text-sm rounded-lg border bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 ${
+                      cvUrlError ? "border-red-400" : "border-gray-300"
+                    }`}
                     placeholder="https://drive.google.com/... o LinkedIn"
                   />
-                  <p className="text-xs text-secondary/50 mt-2">
-                    Inserisci un link al tuo CV su Google Drive, LinkedIn o altro servizio
-                  </p>
+                  {cvUrlError ? (
+                    <p className="text-xs text-red-500 mt-2">{cvUrlError}</p>
+                  ) : (
+                    <p className="text-xs text-secondary/50 mt-2">
+                      Accettiamo link da LinkedIn, Google Drive, Dropbox o OneDrive
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -261,6 +302,7 @@ export default function WorkWithUsPage() {
                   />
                 </div>
               </div>
+            </div>
             </div>
           </div>
 

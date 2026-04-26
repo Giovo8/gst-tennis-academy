@@ -16,9 +16,9 @@ export default function ImageWithTextSection() {
         style={{ background: "linear-gradient(90deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.45) 60%, rgba(0,0,0,.15) 100%)" }}
       />
 
-      {/* Content — left aligned */}
+      {/* Content — centered */}
       <div className="relative z-10 h-full flex items-center">
-        <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 lg:px-12" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+        <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 lg:px-12 text-center flex flex-col items-center" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-white">
             Benvenuto
           </p>

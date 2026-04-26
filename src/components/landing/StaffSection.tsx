@@ -125,7 +125,7 @@ export default function StaffSection() {
     <section id="staff" className="py-20 sm:py-24 md:py-28 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-14 sm:mb-16">
+        <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
             Il team
           </p>
@@ -241,7 +241,7 @@ export default function StaffSection() {
           </p>
           <Link
             href="/lavora-con-noi"
-            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
+            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-md border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
           >
             Candidati
           </Link>

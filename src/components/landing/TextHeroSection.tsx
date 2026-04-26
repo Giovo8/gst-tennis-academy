@@ -69,13 +69,13 @@ export default function TextHeroSection() {
           <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-4">
             <button
               onClick={handleBookingClick}
-              className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold text-white bg-secondary hover:bg-secondary/90 transition-all rounded-full whitespace-nowrap hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold text-white bg-secondary hover:bg-secondary/90 transition-all rounded-md whitespace-nowrap hover:-translate-y-0.5"
             >
               Prenota un campo
             </button>
             <button
               onClick={handleTournamentClick}
-              className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold text-secondary bg-white hover:bg-gray-50 transition-all rounded-full border border-secondary whitespace-nowrap hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold text-secondary bg-white hover:bg-gray-50 transition-all rounded-md border border-secondary whitespace-nowrap hover:-translate-y-0.5"
             >
               Iscriviti ad un torneo
             </button>

@@ -96,10 +96,10 @@ export default function AdminNewsBoard() {
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button
           onClick={() => setActiveCategory("tutte")}
-          className={`text-sm px-4 py-2 border transition-colors ${
+          className={`text-sm px-4 py-2 rounded-md font-medium transition-colors ${
             activeCategory === "tutte"
-              ? "border-secondary bg-white text-secondary font-medium"
-              : "border-transparent text-secondary/70 hover:text-secondary"
+              ? "bg-secondary text-white"
+              : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
           }`}
         >
           Tutte
@@ -108,10 +108,10 @@ export default function AdminNewsBoard() {
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`text-sm px-4 py-2 border transition-colors ${
+            className={`text-sm px-4 py-2 rounded-md font-medium transition-colors ${
               activeCategory === cat
-                ? "border-secondary bg-white text-secondary font-medium"
-                : "border-transparent text-secondary/70 hover:text-secondary"
+                ? "bg-secondary text-white"
+                : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
             }`}
           >
             {cat}

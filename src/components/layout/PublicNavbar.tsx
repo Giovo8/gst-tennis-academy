@@ -101,7 +101,7 @@ export default function PublicNavbar() {
                 href="/tornei"
                 className="font-semibold transition-colors"
                 style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-frozen-lake-900)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
                 Tornei
@@ -110,7 +110,7 @@ export default function PublicNavbar() {
                 href="/news"
                 className="font-semibold transition-colors"
                 style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-frozen-lake-900)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
                 News
@@ -119,7 +119,7 @@ export default function PublicNavbar() {
                 href="/lavora-con-noi"
                 className="font-semibold transition-colors"
                 style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-frozen-lake-900)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               >
                 Lavora con Noi
@@ -143,10 +143,7 @@ export default function PublicNavbar() {
           <div className="flex items-center">
             <Link
               href={getDashboardLink()}
-              className="px-5 py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm transition-all whitespace-nowrap flex items-center justify-center hover:-translate-y-0.5"
-              style={{ backgroundColor: 'var(--secondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary-hover)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary)'}
+              className="px-4 py-2.5 rounded-md text-white font-medium text-sm transition-all whitespace-nowrap flex items-center justify-center bg-secondary hover:opacity-90"
             >
               Area GST
             </Link>

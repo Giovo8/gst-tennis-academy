@@ -111,7 +111,7 @@ export default function NewsSection() {
     <section id="news" className="py-20 sm:py-24 md:py-28 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-14 sm:mb-16">
+        <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
             Aggiornamenti
           </p>
