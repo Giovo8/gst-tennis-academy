@@ -69,6 +69,13 @@ type BookingsPageProps = {
   mode?: "default" | "history";
 };
 
+type ProfileLite = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string | null;
+};
+
 export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -186,7 +193,9 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         participantsPromise,
       ]);
 
-      const allProfilesMap = new Map((allProfiles ?? []).map((p: any) => [p.id, p]));
+      const allProfilesMap = new Map<string, ProfileLite>(
+        ((allProfiles ?? []) as ProfileLite[]).map((p) => [p.id, p])
+      );
 
       let participantsData: Booking["participants"] | null = null;
       if ((participantsQuery as any).error?.message?.toLowerCase().includes("phone")) {
@@ -254,7 +263,9 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             .in("id", involvedUserIds)
         : { data: [] as any[] };
 
-      const involvedProfilesMap = new Map((involvedProfiles ?? []).map((p: any) => [p.id, p]));
+      const involvedProfilesMap = new Map<string, ProfileLite>(
+        ((involvedProfiles ?? []) as ProfileLite[]).map((p) => [p.id, p])
+      );
 
       const involvedBookingIds = involvedData.map((b) => b.id);
       let involvedParticipantsData: Booking["participants"] | null = null;
@@ -350,7 +361,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     // Seconda query: prendi i profili dei coach se esistono
     const coachIds = [...new Set(bookingsData.map(b => b.coach_id).filter(Boolean))];
 
-    let coachesMap = new Map();
+    let coachesMap = new Map<string, ProfileLite>();
     if (coachIds.length > 0) {
       const { data: coachesData } = await supabase
         .from("profiles")
@@ -358,7 +369,9 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         .in("id", coachIds);
 
       if (coachesData) {
-        coachesMap = new Map(coachesData.map(c => [c.id, c]));
+        coachesMap = new Map<string, ProfileLite>(
+          (coachesData as ProfileLite[]).map((c) => [c.id, c])
+        );
       }
     }
 
