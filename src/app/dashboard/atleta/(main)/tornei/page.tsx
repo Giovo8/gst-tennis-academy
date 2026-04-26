@@ -187,10 +187,7 @@ function AtletaTorneiPageInner() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary">Competizioni</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Partecipa ai tornei e campionati della GST Tennis Academy
-          </p>
+          <h1 className="text-4xl font-bold text-secondary">Competizioni</h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link

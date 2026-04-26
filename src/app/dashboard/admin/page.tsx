@@ -8,6 +8,7 @@ import {
   Calendar,
   Trophy,
   Video,
+  CalendarClock,
 } from "lucide-react";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
 import WeatherCard from "@/components/dashboard/WeatherCard";
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
   const [userName, setUserName] = useState("");
+
 
   useEffect(() => {
     void loadDashboardData();
@@ -185,49 +187,132 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Bentornato, {userName}</h1>
-          <p className="text-secondary/70 font-medium">Pannello di controllo amministratore</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatTile
-          href="/dashboard/admin/users"
-          icon={<Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Utenti Totali"
-          value={stats.totalUsers}
-        />
-        <StatTile
-          href="/dashboard/admin/bookings"
-          icon={<Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Prenotazioni Oggi"
-          value={stats.todayBookings}
-        />
-        <StatTile
-          href="/dashboard/admin/tornei"
-          icon={<Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Tornei Attivi"
-          value={stats.activeTournaments}
-        />
-        <StatTile
-          href="/dashboard/admin/video-lessons"
-          icon={<Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Video Lezioni"
-          value={stats.videoLessonsCount}
-        />
-      </div>
+      <h1 className="text-4xl font-bold text-secondary">Bentornato,{" "}<br className="sm:hidden" />{userName}</h1>
 
       <WeatherCard />
+
+      {/* PROSSIMI IMPEGNI */}
+      {(() => {
+        const now = new Date();
+        const upcoming = timelineBookings
+          .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled")
+          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+          .slice(0, 4);
+
+        const typeLabels: Record<string, string> = {
+          lezione_privata: "Lezione privata",
+          lezione_gruppo: "Lezione gruppo",
+          campo: "Campo",
+          lezione: "Lezione",
+          arena: "Match Arena",
+        };
+        const typeColors: Record<string, string> = {
+          lezione_privata: "#023047",
+          lezione_gruppo: "#023047",
+          campo: "var(--secondary)",
+          lezione: "#023047",
+          arena: "var(--color-frozen-lake-600)",
+        };
+        const timeStr = (t: string) => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+
+        return (
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossime prenotazioni</h2>
+            </div>
+            <div className="px-4 py-4">
+              {upcoming.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
+                  <CalendarClock className="h-8 w-8 mb-2" />
+                  <p className="text-sm font-medium">Nessun impegno in arrivo</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {upcoming.map((item) => {
+                    const start = new Date(item.start_time);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+                    const dayAfter = new Date(today); dayAfter.setDate(today.getDate()+2);
+                    let pill: { text: string; cls: string } | null = null;
+                    if (start >= today && start < tomorrow) pill = { text: "Oggi", cls: "bg-primary text-white" };
+                    else if (start >= tomorrow && start < dayAfter) pill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
+                    const displayName = (() => {
+                      if (item.participants && item.participants.length > 0) {
+                        return item.participants.map(p => p.full_name).slice(0, 2).join(", ");
+                      }
+                      return item.user_profile?.full_name || item.coach_profile?.full_name || "Prenotazione";
+                    })();
+                    const typeLabel = typeLabels[item.type] || item.type.replace(/_/g, " ");
+                    const typeBg = typeColors[item.type] || "var(--secondary)";
+                    return (
+                      <li key={item.id}>
+                        <Link href={`/dashboard/admin/bookings/${item.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: typeBg }}>
+                        <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                          <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                            {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                          </span>
+                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white text-sm truncate">{displayName}</p>
+                          <p className="text-xs text-white/70 mt-0.5">{timeStr(item.start_time)}–{timeStr(item.end_time)} · {item.court}</p>
+                        </div>
+                        <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">{typeLabel}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="w-full">
         <BookingsTimeline bookings={timelineBookings} loading={loading} />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-6">
-          <NotificationsList limit={0} showSearch={true} showTableHeader={true} maxVisibleRows={12} />
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Statistiche</h2>
+        </div>
+        <div className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatTile
+              href="/dashboard/admin/users"
+              icon={<Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+              label="Utenti Totali"
+              value={stats.totalUsers}
+            />
+            <StatTile
+              href="/dashboard/admin/bookings?filter=today"
+              icon={<Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+              label="Prenotazioni Oggi"
+              value={stats.todayBookings}
+            />
+            <StatTile
+              href="/dashboard/admin/tornei"
+              icon={<Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+              label="Tornei Attivi"
+              value={stats.activeTournaments}
+            />
+            <StatTile
+              href="/dashboard/admin/video-lessons"
+              icon={<Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
+              label="Video Lezioni"
+              value={stats.videoLessonsCount}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
+        </div>
+        <div className="px-6 py-4">
+          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={12} />
         </div>
       </div>
     </div>

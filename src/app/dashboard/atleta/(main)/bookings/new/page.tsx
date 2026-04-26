@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
@@ -10,7 +10,18 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui";
 import Link from "next/link";
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -172,6 +183,9 @@ function NewBookingPageInner() {
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectedCoach, setSelectedCoach] = useState("");
   const [notes, setNotes] = useState("");
+  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAthlete, setCurrentUserAthlete] = useState<SelectedAthlete | null>(null);
@@ -388,6 +402,61 @@ function NewBookingPageInner() {
     }
   }, [slots, loadingSlots, router]);
 
+  const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
+    const gridStartDate = new Date(firstOfMonth);
+    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStartDate);
+      date.setDate(gridStartDate.getDate() + index);
+      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
+    });
+  }, [calendarViewDate]);
+
+  function normalizeDate(date: Date): Date {
+    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
+  }
+
+  function isSameCalendarDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function openDatePickerModal() {
+    const n = normalizeDate(selectedDate);
+    setPendingDate(n);
+    setCalendarViewDate(new Date(n.getFullYear(), n.getMonth(), 1));
+    setDatePickerModalOpen(true);
+  }
+
+  function changeCalendarMonth(delta: number) {
+    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  }
+
+  function selectCalendarDay(day: Date) {
+    const n = normalizeDate(day);
+    setPendingDate(n);
+    setCalendarViewDate(new Date(n.getFullYear(), n.getMonth(), 1));
+  }
+
+  function applyDateSelection() {
+    setSelectedDate(normalizeDate(pendingDate));
+    setDatePickerModalOpen(false);
+  }
+
+  function handleDatePickerToday() {
+    const today = normalizeDate(new Date());
+    setPendingDate(today);
+    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
+
+  function getCalendarMonthLabel(date: Date): string {
+    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
   async function loadCourtsAndCoaches() {
     setCourtsLoading(true);
     try {
@@ -545,9 +614,9 @@ function NewBookingPageInner() {
     return slot ? slot.available : false;
   };
 
-  const fullDateLabel = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it });
+  const fullDateLabel = (() => { const s = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it }); return s.charAt(0).toUpperCase() + s.slice(1); })();
   const mobileWeekdayLabel = format(selectedDate, "EEE", { locale: it });
-  const mobileDateLabel = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`;
+  const mobileDateLabel = (() => { const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`; return raw.replace(/(\d{2} )(\w)/, (_, d, c) => d + c.toUpperCase()); })();
 
   const handleDateInputChange = (value: string) => {
     if (!value) return;
@@ -664,10 +733,7 @@ function NewBookingPageInner() {
           {" › "}
           <span>Nuova Prenotazione</span>
         </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Nuova Prenotazione</h1>
-        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-          Seleziona giorno, campo e slot. Per le lezioni private scegli il maestro.
-        </p>
+        <h1 className="text-4xl font-bold text-secondary">Nuova Prenotazione</h1>
       </div>
 
       {/* Messages */}
@@ -696,7 +762,7 @@ function NewBookingPageInner() {
       )}
 
       {/* Main Content */}
-      <div className="py-4">
+      <div>
         <div className="space-y-6">
           {/* Selettore Data */}
           <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
@@ -710,19 +776,11 @@ function NewBookingPageInner() {
             <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center sm:static sm:inset-auto sm:translate-x-0 sm:min-w-0 sm:justify-center">
               <button
                 type="button"
-                onClick={() => dateInputRef.current?.showPicker()}
+                onClick={openDatePickerModal}
                 className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  value={format(selectedDate, "yyyy-MM-dd")}
-                  onChange={(e) => handleDateInputChange(e.target.value)}
-                  className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
-                  tabIndex={-1}
-                />
-                <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px", transform: "translateX(-18px)" }}>
+                <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
                   <Calendar className="h-5 w-5 text-white shrink-0" />
                   <span
                     className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
@@ -752,7 +810,7 @@ function NewBookingPageInner() {
           </div>
 
           {/* Area Principale */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-6">
+          <div className="bg-white border border-gray-200 rounded-xl">
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
@@ -761,12 +819,12 @@ function NewBookingPageInner() {
             ) : (
               <>
                 {/* Titolo form */}
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+                  <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
                 </div>
 
                 {/* Dettagli prenotazione */}
-                <div className="space-y-6 mt-6">
+                <div className="space-y-6 p-4 sm:p-6">
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
@@ -812,36 +870,7 @@ function NewBookingPageInner() {
                     </div>
                   )}
 
-                  {/* Partecipanti */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
-                    <div className="flex-1">
-                      <AthletesSelector
-                        athletes={athletes.filter((a) => a.id !== currentUserId)}
-                        selectedAthletes={selectedAthletes}
-                        onAthleteAdd={(athlete) => {
-                          if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
-                            setSelectedAthletes([...selectedAthletes, athlete]);
-                          }
-                        }}
-                        onAthleteRemove={(index) => {
-                          const athlete = selectedAthletes[index];
-                          if (athlete?.userId && athlete.userId === currentUserId) {
-                            return;
-                          }
-                          setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                        }}
-                        maxAthletes={maxAthletesAllowed}
-                      />
-                      <p className="mt-2 text-xs text-gray-500">
-                        {maxAthletesAllowed === null
-                          ? isMaestroDashboard
-                            ? "Seleziona gli atleti partecipanti alla lezione privata."
-                            : "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
-                          : `Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a ${maxAthletesAllowed - 1} ${(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.`}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Partecipanti — estratto in card separata */}
 
                   {/* Maestro - solo per lezione privata */}
                   {bookingType === "lezione_privata" && (
@@ -863,7 +892,7 @@ function NewBookingPageInner() {
                   )}
 
                   {/* Campo */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
                     <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
                       {courtsLoading ? (
@@ -889,118 +918,159 @@ function NewBookingPageInner() {
                       )}
                     </div>
                   </div>
-
-                  {/* Note */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Note</label>
-                    <div className="flex-1">
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Eventuali note..."
-                        rows={3}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
-                      />
-                    </div>
-                  </div>
                 </div>
+              </>
+            )}
+          </div>
 
-                <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
-                <p className="text-xs text-secondary/60 mb-3">
-                  Orario di apertura campi: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
-                </p>
-                <div 
-                  ref={timelineScrollRef}
-                  className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-                  style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div className="min-w-[1280px]">
-                    {/* Header con orari */}
-                    <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
-                      {Array.from({ length: 16 }, (_, i) => {
-                        const hour = 7 + i;
+          {/* Card Partecipanti */}
+          <div className="bg-white border border-gray-200 rounded-xl">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              <AthletesSelector
+                athletes={athletes.filter((a) => a.id !== currentUserId)}
+                selectedAthletes={selectedAthletes}
+                onAthleteAdd={(athlete) => {
+                  if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
+                    setSelectedAthletes([...selectedAthletes, athlete]);
+                  }
+                }}
+                onAthleteRemove={(index) => {
+                  const athlete = selectedAthletes[index];
+                  if (athlete?.userId && athlete.userId === currentUserId) {
+                    return;
+                  }
+                  setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
+                }}
+                maxAthletes={maxAthletesAllowed}
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                {maxAthletesAllowed === null
+                  ? isMaestroDashboard
+                    ? "Seleziona gli atleti partecipanti alla lezione privata."
+                    : "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
+                  : `Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a ${maxAthletesAllowed - 1} ${(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.`}
+              </p>
+            </div>
+          </div>
+
+          {/* Card Orari disponibili */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
+              <p className="text-xs text-secondary/60">
+                Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
+              </p>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div 
+                ref={timelineScrollRef}
+                className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="min-w-[1280px]">
+                  {/* Header con orari */}
+                  <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                    {Array.from({ length: 16 }, (_, i) => {
+                      const hour = 7 + i;
+                      return (
+                        <div
+                          key={hour}
+                          className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                        >
+                          {hour.toString().padStart(2, '0')}:00
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Griglia slot selezionabili */}
+                  <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+
+
+                    {/* Slot cliccabili */}
+                    {Array.from({ length: 16 }, (_, hourIndex) => {
+                      const hour = 7 + hourIndex;
+                      const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                      const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
+                      const available1 = isSlotAvailable(time1);
+                      const available2 = time2 ? isSlotAvailable(time2) : false;
+                      const isSelected1 = selectedSlots.includes(time1);
+                      const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
+
+                      if (!time2) {
                         return (
                           <div
                             key={hour}
-                            className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                            className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
+                              isSelected1
+                                ? 'bg-secondary hover:bg-secondary/90'
+                                : available1
+                                ? 'bg-white hover:bg-emerald-50/40'
+                                : 'bg-gray-100 cursor-not-allowed'
+                            }`}
+                            onClick={() => toggleSlotSelection(time1, available1)}
+                            title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
                           >
-                            {hour.toString().padStart(2, '0')}:00
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Griglia slot selezionabili */}
-                    <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
-
-
-                      {/* Slot cliccabili */}
-                      {Array.from({ length: 16 }, (_, hourIndex) => {
-                        const hour = 7 + hourIndex;
-                        const time1 = `${hour.toString().padStart(2, '0')}:00`;
-                        const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
-                        const available1 = isSlotAvailable(time1);
-                        const available2 = time2 ? isSlotAvailable(time2) : false;
-                        const isSelected1 = selectedSlots.includes(time1);
-                        const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
-
-                        if (!time2) {
-                          return (
-                            <div
-                              key={hour}
-                              className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
-                                isSelected1
-                                  ? 'bg-secondary hover:bg-secondary/90'
-                                  : available1
-                                  ? 'bg-white hover:bg-emerald-50/40'
-                                  : 'bg-gray-100 cursor-not-allowed'
-                              }`}
-                              onClick={() => toggleSlotSelection(time1, available1)}
-                              title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                            >
-                              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
-                            <div
-                              className={`flex-1 relative transition-colors cursor-pointer ${
-                                isSelected1
-                                  ? 'bg-secondary hover:bg-secondary/90'
-                                  : available1
-                                  ? 'bg-white hover:bg-emerald-50/40'
-                                  : 'bg-gray-100 cursor-not-allowed'
-                              }`}
-                              onClick={() => toggleSlotSelection(time1, available1)}
-                              title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                            />
-                            <div
-                              className={`flex-1 relative transition-colors cursor-pointer ${
-                                isSelected2
-                                  ? 'bg-secondary hover:bg-secondary/90'
-                                  : available2
-                                  ? 'bg-white hover:bg-emerald-50/40'
-                                  : 'bg-gray-100 cursor-not-allowed'
-                              }`}
-                              onClick={() => toggleSlotSelection(time2, available2)}
-                              title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                            />
                             <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                           </div>
                         );
-                      })}
-                    </div>
+                      }
+
+                      return (
+                        <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                          <div
+                            className={`flex-1 relative transition-colors cursor-pointer ${
+                              isSelected1
+                                ? 'bg-secondary hover:bg-secondary/90'
+                                : available1
+                                ? 'bg-white hover:bg-emerald-50/40'
+                                : 'bg-gray-100 cursor-not-allowed'
+                            }`}
+                            onClick={() => toggleSlotSelection(time1, available1)}
+                            title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                          />
+                          <div
+                            className={`flex-1 relative transition-colors cursor-pointer ${
+                              isSelected2
+                                ? 'bg-secondary hover:bg-secondary/90'
+                                : available2
+                                ? 'bg-white hover:bg-emerald-50/40'
+                                : 'bg-gray-100 cursor-not-allowed'
+                            }`}
+                            onClick={() => toggleSlotSelection(time2, available2)}
+                            title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                          />
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-              </>
-            )}
+          {/* Card Note */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Eventuali note..."
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+              />
+            </div>
           </div>
 
           {/* Bottone Conferma */}
@@ -1015,10 +1085,7 @@ function NewBookingPageInner() {
                 <span>Creazione...</span>
               </>
             ) : (
-              <>
-                <CheckCircle className="h-5 w-5" />
-                <span>Conferma Prenotazione</span>
-              </>
+              <span>Conferma Prenotazione</span>
             )}
           </button>
         </div>
@@ -1026,6 +1093,86 @@ function NewBookingPageInner() {
 
       {/* Bottom Spacer */}
       <div className="h-8" />
+
+      {/* Date Picker Modal */}
+      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Scegli il giorno da visualizzare.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white font-semibold"
+                          : isCurrentMonth
+                          ? "text-gray-800 hover:bg-gray-100"
+                          : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={handleDatePickerToday}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyDateSelection}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

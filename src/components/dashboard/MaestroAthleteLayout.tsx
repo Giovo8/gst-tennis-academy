@@ -133,7 +133,7 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
       icon: <Swords className="h-5 w-5" />,
     },
     {
-      label: "Messaggi",
+      label: "Chat",
       href: "/dashboard/maestro/mail",
       icon: <Mail className="h-5 w-5" />,
       badge: unreadMessages > 0 ? unreadMessages : undefined,

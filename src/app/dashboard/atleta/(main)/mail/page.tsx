@@ -614,15 +614,12 @@ export default function AtletaMailPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">Chat</h1>
-          <p className="text-secondary/70 font-medium">
-            Messaggi con coach e altri atleti
-          </p>
+          <h1 className="text-4xl font-bold text-secondary">Chat</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             onClick={() => setActiveModal("newChat")}
-            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center gap-2"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Nuova Chat

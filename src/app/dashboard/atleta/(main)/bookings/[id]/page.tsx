@@ -268,13 +268,10 @@ export default function BookingDetailPage() {
       </p>
 
       {/* Header con titolo e descrizione */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-secondary">
+      <div>
+        <h1 className="text-4xl font-bold text-secondary">
           Dettagli Prenotazione
         </h1>
-        <p className="text-secondary/70 font-medium">
-          Visualizza i dettagli della tua prenotazione
-        </p>
       </div>
 
       {/* Header con info prenotazione */}
@@ -297,10 +294,11 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">
-          Partecipanti
-        </h2>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+        </div>
+        <div className="p-6">
         <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[640px]">
             <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
@@ -326,14 +324,16 @@ export default function BookingDetailPage() {
             </div>
           ))}
         </div>
+        </div>
       </div>
 
       {/* Dettagli prenotazione */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">
-          Dettagli prenotazione
-        </h2>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+        </div>
 
+        <div className="p-6">
         <div className="space-y-6">
           {/* Data */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -462,6 +462,7 @@ export default function BookingDetailPage() {
               </span>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

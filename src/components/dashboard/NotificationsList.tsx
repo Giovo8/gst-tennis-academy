@@ -258,7 +258,7 @@ export default function NotificationsList({
   return (
     <div className="space-y-3">
       {showHeader && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <h3 className="text-2xl sm:text-3xl font-bold text-secondary">Centro Notifiche</h3>
           {unreadCount > 0 && (
             <button
@@ -319,7 +319,7 @@ export default function NotificationsList({
           `}</style>
           <div className="min-w-[620px] space-y-3">
             {showTableHeader && filteredNotifications.length > 0 && (
-              <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary">
+              <div className="bg-secondary rounded-lg px-4 py-2 sm:py-3 border border-secondary">
                 <div className="grid grid-cols-[40px_112px_180px_1fr] items-center gap-4">
                   <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
                   <button

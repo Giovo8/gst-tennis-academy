@@ -654,13 +654,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               <span>Storico</span>
             </p>
           )}
-          <h1 className="text-3xl font-bold text-secondary mb-2">{isHistoryMode ? "Storico prenotazioni" : "Le mie Prenotazioni"}
+          <h1 className="text-4xl font-bold text-secondary mb-2">{isHistoryMode ? "Storico prenotazioni" : "Le mie Prenotazioni"}
           </h1>
-          <p className="text-secondary/70 font-medium">
-            {isHistoryMode
-              ? "Consulta l'elenco completo delle tue prenotazioni effettuate"
-              : "Visualizza e gestisci le tue prenotazioni dei campi da oggi in avanti"}
-          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           {!isHistoryMode && (
@@ -769,23 +764,13 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           <p className="mt-4 text-secondary/60">Caricamento prenotazioni...</p>
         </div>
       ) : filteredBookings.length === 0 ? (
-        <div className="text-center py-20 rounded-md bg-white">
-          <Calendar className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
-          <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna prenotazione trovata</h3>
-          <p className="text-secondary/60 mb-6">
+        <div className="rounded-xl bg-white border border-gray-200 flex flex-col items-center justify-center py-8 text-secondary/40">
+          <Calendar className="h-8 w-8 mb-2" />
+          <p className="text-sm font-medium">
             {search || hasActiveFilters
-              ? "Prova a modificare i filtri di ricerca"
-              : "Prenota il tuo primo campo per iniziare"}
+              ? "Nessuna prenotazione corrisponde ai filtri"
+              : "Nessuna prenotazione trovata"}
           </p>
-          {!search && !hasActiveFilters && (
-            <Link
-              href={`${dashboardBase}/bookings/new`}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              Prenota Ora
-            </Link>
-          )}
         </div>
       ) : (
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
   Calendar,
+  CalendarClock,
   Clock,
   User,
   CheckCircle2,
@@ -192,7 +193,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   }
 
   const typeConfig: Record<string, { label: string; color: string }> = {
-    campo: { label: "Campo", color: "bg-secondary text-white" },
+    campo: { label: "Prenotazione Campo", color: "bg-secondary text-white" },
     lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
     lezione_gruppo: { label: "Lezione Gruppo", color: "bg-secondary text-white" },
   };
@@ -244,7 +245,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     }
     if (booking.type === "lezione_privata") {
       return {
-        icon: User,
+        icon: Users,
         borderColor: "border-frozen-lake-900",
         bgColor: "bg-frozen-lake-900",
         iconColor: "text-frozen-lake-900",
@@ -265,10 +266,10 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       };
     } else {
       return {
-        icon: Calendar,
-        borderColor: "border-frozen-lake-700",
-        bgColor: "bg-frozen-lake-700",
-        iconColor: "text-frozen-lake-700",
+        icon: CalendarClock,
+        borderColor: "border-secondary",
+        bgColor: "bg-secondary",
+        iconColor: "text-secondary",
       };
     }
   }
@@ -279,31 +280,35 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <p className="breadcrumb text-secondary/60">
-        <Link href={`${basePath}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-        {" › "}
-        <span>Dettagli Prenotazione</span>
-      </p>
-
-      {/* Header con titolo e descrizione */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-secondary">
-          Dettagli Prenotazione
-        </h1>
-        <p className="text-secondary/70 font-medium">
-          Visualizza e gestisci i dettagli della prenotazione
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href={`${basePath}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+          {" › "}
+          <span>Dettagli Prenotazione</span>
         </p>
+        <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
       </div>
 
       {/* Header con info prenotazione */}
       <div
-        className={
-          `bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4`
-        }
-        style={{ borderLeftColor: (() => {
-          if (booking.status === "cancelled" || booking.status === "cancellation_requested") return "#022431"; // frozen-900
-          return "var(--secondary)"; // secondary
-        })() }}
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{
+          backgroundColor: (() => {
+            if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") return "#023047";
+            if (booking.type === "arena") return "var(--color-frozen-lake-600)";
+            return "var(--secondary)";
+          })(),
+          borderColor: (() => {
+            if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") return "#023047";
+            if (booking.type === "arena") return "var(--color-frozen-lake-600)";
+            return "var(--secondary)";
+          })(),
+          borderLeftColor: (() => {
+            if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") return "#011a24";
+            if (booking.type === "arena") return "var(--color-frozen-lake-900)";
+            return "#023047";
+          })(),
+        }}
       >
         <div className="flex items-start gap-6">
           <BookingIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -314,10 +319,11 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">
-          Partecipanti
-        </h2>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+        </div>
+        <div className="px-6 py-6">
         <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[640px]">
             <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
@@ -343,11 +349,15 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             </div>
           ))}
         </div>
+        </div>
       </div>
 
       {/* Dettagli prenotazione */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli prenotazione</h2>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+        </div>
+        <div className="px-6 py-6">
         
         <div className="space-y-6">
           {/* Data */}
@@ -464,13 +474,18 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Note */}
       {booking.notes && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-4">Note</h2>
-          <p className="text-secondary/70">{booking.notes}</p>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+          </div>
+          <div className="px-6 py-6">
+            <p className="text-secondary/70">{booking.notes}</p>
+          </div>
         </div>
       )}
 
@@ -482,7 +497,6 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
                 href={`${basePath}/bookings/modifica?id=${booking.id}`}
                 className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
               >
-                <Edit className="h-5 w-5" />
                 Modifica
               </Link>
             )}
@@ -494,9 +508,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             >
               {actionLoading && deleting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Trash2 className="h-5 w-5" />
-              )}
+              ) : null}
               Elimina
             </button>
         </div>

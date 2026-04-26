@@ -360,7 +360,10 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function handleBookSlots() {
-    if (selectedSlots.length === 0) return;
+    if (selectedSlots.length === 0) {
+      router.push(`${basePath}/bookings/new`);
+      return;
+    }
 
     // Sort slots by time to get the earliest
     const sortedSlots = [...selectedSlots].sort((a, b) => {
@@ -546,10 +549,24 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return "Campo";
   }
 
-  function getBlockReasonLabel(booking: Booking): string {
-    if (!showBlockReason) return "Blocco impostato";
-    const reason = booking.reason?.trim() || booking.notes?.trim();
-    return reason || "Motivazione non specificata";
+  function getBlockReasonLabel(booking: Booking): { text: string; isAltro: boolean } {
+    if (!showBlockReason) return { text: "Blocco impostato", isAltro: false };
+    const reason = (booking.reason?.trim() || booking.notes?.trim()) ?? "";
+    if (!reason) return { text: "Motivazione non specificata", isAltro: false };
+    // "Altro (custom)" or "Altro (custom) - notes"
+    const altroParens = reason.match(/^Altro\s*\(([^)]+)\)(?:\s*-\s*(.+))?$/i);
+    if (altroParens) {
+      const custom = altroParens[1]?.trim() || "";
+      const notes = altroParens[2]?.trim() || "";
+      return { text: notes ? `${custom} - ${notes}` : custom, isAltro: true };
+    }
+    // "Altro - notes" or just "Altro"
+    const altroSimple = reason.match(/^Altro(?:\s*[-–]\s*(.+))?$/i);
+    if (altroSimple) {
+      const notes = altroSimple[1]?.trim() || "";
+      return { text: notes || "Altro", isAltro: true };
+    }
+    return { text: reason, isAltro: false };
   }
 
   function getBookingTypeIcon(booking: Booking) {
@@ -713,7 +730,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             title="Scegli data"
             onClick={openDatePickerModal}
           >
-            <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px", transform: "translateX(-18px)" }}>
+            <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
               <CalendarIcon className="h-5 w-5 text-white shrink-0" />
               <span
                 className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
@@ -820,11 +837,19 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
                                   : "Prenotazione non apribile"}
                               >
-                                {booking.isBlock ? (
-                                  <div className="truncate leading-tight text-white/95 uppercase tracking-wide text-[10px]">
-                                    Blocco Campo
-                                  </div>
-                                ) : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
+                                {booking.isBlock ? (() => {
+                                  const { text: blockText } = getBlockReasonLabel(booking);
+                                  return (
+                                    <>
+                                      <div className="truncate leading-tight text-white/95 text-[10px] leading-tight">
+                                        {blockText}
+                                      </div>
+                                      <div className="truncate text-white/75 text-[10px] leading-tight mt-0.5 uppercase tracking-wide">
+                                        Blocco Campo
+                                      </div>
+                                    </>
+                                  );
+                                })() : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
                                   <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
                                     {getBookingLabel(booking)}
                                   </div>
@@ -1060,11 +1085,19 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
                                   : "Prenotazione non apribile"}
                               >
-                                {booking.isBlock ? (
-                                  <div className="truncate leading-tight text-white/95 uppercase tracking-wide text-[10px]">
-                                    Blocco Campo
-                                  </div>
-                                ) : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
+                                {booking.isBlock ? (() => {
+                                  const { text: blockText } = getBlockReasonLabel(booking);
+                                  return (
+                                    <>
+                                      <div className="truncate leading-tight text-white/95 text-[10px] leading-tight">
+                                        {blockText}
+                                      </div>
+                                      <div className="truncate text-white/75 text-[10px] leading-tight mt-0.5 uppercase tracking-wide">
+                                        Blocco Campo
+                                      </div>
+                                    </>
+                                  );
+                                })() : highlightUserId && booking.user_id !== highlightUserId && booking.coach_id !== highlightUserId ? (
                                   <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
                                     {getBookingLabel(booking)}
                                   </div>
@@ -1110,17 +1143,18 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
           )}
 
           {/* Book Button */}
-          {selectedSlots.length > 0 && (
-            <div className="mt-6">
+          <div className="mt-6">
               <button
                 onClick={handleBookSlots}
+                disabled={false}
                 className="w-full px-6 py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
-                <CalendarIcon className="h-5 w-5" />
-                Prenota Campo ({selectedSlots.length} slot selezionat{selectedSlots.length === 1 ? 'o' : 'i'})
+                Prenota Campo
+                {selectedSlots.length > 0 && (
+                  <span className="text-white/70 font-normal text-sm">· {selectedSlots.length} slot selezionat{selectedSlots.length === 1 ? 'o' : 'i'}</span>
+                )}
               </button>
             </div>
-          )}
         </div>
       )}
 

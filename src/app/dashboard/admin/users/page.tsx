@@ -160,12 +160,9 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">
+          <h1 className="text-4xl font-bold text-secondary">
             Anagrafica Utenti
           </h1>
-          <p className="text-secondary/70 font-medium">
-            Gestisci tutti gli utenti registrati sulla piattaforma
-          </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link
@@ -266,16 +263,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
             const Icon = roleInfo.icon;
             
             // Determina il colore del bordo in base al ruolo usando palette frozen-lake
-            let borderColor = "#08b3f7"; // frozen-500 - default atleta
-            if (user.role === "admin") {
-              borderColor = "#022431"; // frozen-900 - admin
-            } else if (user.role === "gestore") {
-              borderColor = "#044462"; // frozen-800 - gestore
-            } else if (user.role === "maestro") {
-              borderColor = "#056c94"; // frozen-700 - maestro
-            } else if (user.role === "atleta") {
-              borderColor = "#08b3f7"; // frozen-500 - atleta
-            }
+            const borderColor = "var(--secondary)";
 
             return (
               <div

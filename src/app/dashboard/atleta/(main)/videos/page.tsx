@@ -170,10 +170,7 @@ export default function AtletaVideosPage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div>
-            <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
-              LA TUA LIBRERIA
-            </div>
-            <h1 className="text-3xl font-bold text-secondary">Video Lezioni</h1>
+            <h1 className="text-4xl font-bold text-secondary">Video Lab</h1>
           </div>
         </div>
       </div>

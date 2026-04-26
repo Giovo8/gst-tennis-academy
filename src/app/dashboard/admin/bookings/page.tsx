@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { 
   Calendar, 
+  CalendarClock,
   Loader2, 
   CheckCircle2, 
   XCircle, 
@@ -125,6 +126,10 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     const initialSearch = searchParams.get("search");
     if (initialSearch) {
       setSearch(initialSearch);
+    }
+    const initialFilter = searchParams.get("filter");
+    if (initialFilter === "today") {
+      setFilterVisibility("today");
     }
   }, [searchParams]);
 
@@ -621,14 +626,9 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
               <span>Storico</span>
             </div>
           )}
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">
+          <h1 className="text-4xl font-bold text-secondary">
             {mode === "history" ? "Storico prenotazioni" : "Gestione Prenotazioni"}
           </h1>
-          <p className="text-secondary/70 font-medium">
-            {mode === "history"
-              ? "Consulta l'elenco completo delle prenotazioni effettuate"
-              : "Visualizza e gestisci le prenotazioni dei campi da oggi in avanti"}
-          </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {mode !== "history" && (
@@ -797,14 +797,23 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             let borderStyle = {};
             let statusColor = "";
             if (isCancelledBooking) {
-              borderStyle = { borderLeftColor: "#022431" }; // frozen-900 - annullata/richiesta cancellazione
-              statusColor = "#022431";
-            } else if (isPastBooking) {
-              borderStyle = { borderLeftColor: "#6b7280" }; // gray-500 - passata
+              borderStyle = { borderLeftColor: "#6b7280" };
               statusColor = "#6b7280";
+            } else if (isPastBooking) {
+              borderStyle = { borderLeftColor: "#9ca3af" };
+              statusColor = "#9ca3af";
             } else {
-              borderStyle = { borderLeftColor: "var(--secondary)" }; // secondary - stato positivo
-              statusColor = "var(--secondary)";
+              // Colore dinamico in base al tipo (stesso schema timeline)
+              if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
+                borderStyle = { borderLeftColor: "#023047" };
+                statusColor = "#023047";
+              } else if (booking.type === "arena") {
+                borderStyle = { borderLeftColor: "var(--color-frozen-lake-600)" };
+                statusColor = "var(--color-frozen-lake-600)";
+              } else {
+                borderStyle = { borderLeftColor: "var(--secondary)" };
+                statusColor = "var(--secondary)";
+              }
             }
 
             return (
@@ -820,16 +829,16 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                     {/* Simbolo Tipo */}
                     <div className="flex items-center justify-center">
                       {booking.type === "lezione_privata" && (
-                        <User className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Users className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "#023047" }} />
                       )}
                       {booking.type === "lezione_gruppo" && (
-                        <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Users className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "#023047" }} />
                       )}
                       {booking.type === "campo" && (
-                        <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <CalendarClock className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "var(--secondary)" }} />
                       )}
                       {booking.type === "arena" && (
-                        <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+                        <Trophy className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "var(--color-frozen-lake-600)" }} />
                       )}
                     </div>
 
