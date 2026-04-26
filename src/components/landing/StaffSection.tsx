@@ -9,6 +9,7 @@ type StaffMember = {
   id: string;
   full_name: string;
   role: string;
+  order_index?: number | null;
   bio: string | null;
   image_url: string | null;
   facebook_url: string | null;
@@ -95,12 +96,27 @@ export default function StaffSection() {
       .from("staff")
       .select("*")
       .eq("active", true)
-      .order("order_index", { ascending: false });
+      .order("order_index", { ascending: true, nullsFirst: false });
 
     if (error) {
       setStaff(defaultStaff);
     } else if (data && data.length > 0) {
-      setStaff(data);
+      const sortedData = [...data].sort((a, b) => {
+        const aParsed = Number(a.order_index);
+        const bParsed = Number(b.order_index);
+        const aOrder = Number.isFinite(aParsed) ? aParsed : Number.MAX_SAFE_INTEGER;
+        const bOrder = Number.isFinite(bParsed) ? bParsed : Number.MAX_SAFE_INTEGER;
+
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+
+        return (a.full_name || "").localeCompare(b.full_name || "", "it", {
+          sensitivity: "base",
+        });
+      });
+
+      setStaff(sortedData);
     } else {
       setStaff(defaultStaff);
     }
