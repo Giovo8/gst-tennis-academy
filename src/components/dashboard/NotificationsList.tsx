@@ -8,12 +8,14 @@ import {
   AlertCircle,
   Bell,
   Calendar,
+  CalendarClock,
   CheckCircle,
   Info,
   MessageSquare,
   Search,
   SlidersHorizontal,
   Trophy,
+  User,
   Users,
   Video,
   XCircle,
@@ -82,29 +84,33 @@ interface NotificationsListProps {
   maxVisibleRows?: number;
 }
 
-function getNotificationIcon(type: string, title?: string, message?: string) {
+function getNotificationIcon(type: string, title?: string, message?: string, white?: boolean) {
+  const cls = white ? "h-6 w-6 text-white" : "h-5 w-5 text-secondary/60";
+  const sw = white ? 2.5 : 2;
   const text = `${title || ""} ${message || ""}`.toLowerCase();
   if (type === "video" || text.includes("video")) {
-    return <Video className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+    return <Video className={cls} strokeWidth={sw} />;
   }
 
   switch (type) {
-    case "booking":
-      return <Calendar className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+    case "booking": {
+      if (text.includes("lezione")) return <Users className={cls} strokeWidth={sw} />;
+      return <CalendarClock className={cls} strokeWidth={sw} />;
+    }
     case "tournament":
-      return <Trophy className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <Trophy className={cls} strokeWidth={sw} />;
     case "message":
-      return <MessageSquare className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <MessageSquare className={cls} strokeWidth={sw} />;
     case "course":
-      return <Users className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <Users className={cls} strokeWidth={sw} />;
     case "success":
-      return <CheckCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <CheckCircle className={cls} strokeWidth={sw} />;
     case "warning":
-      return <AlertCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <AlertCircle className={cls} strokeWidth={sw} />;
     case "error":
-      return <XCircle className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <XCircle className={cls} strokeWidth={sw} />;
     default:
-      return <Info className="h-5 w-5 text-secondary/60" strokeWidth={2} />;
+      return <Info className={cls} strokeWidth={sw} />;
   }
 }
 
@@ -123,7 +129,6 @@ export default function NotificationsList({
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [userFilter, setUserFilter] = useState("");
-  const [dateSortOrder, setDateSortOrder] = useState<"asc" | "desc">("desc");
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const notificationTypes = Array.from(new Set(notifications.map((n) => n.type))).sort();
@@ -167,7 +172,7 @@ export default function NotificationsList({
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
     const aTs = new Date(a.created_at).getTime();
     const bTs = new Date(b.created_at).getTime();
-    return dateSortOrder === "asc" ? aTs - bTs : bTs - aTs;
+    return bTs - aTs;
   });
 
   function handleClick(n: DashboardNotification) {
@@ -317,66 +322,65 @@ export default function NotificationsList({
           <p className="text-sm text-gray-600">Nessuna notifica trovata</p>
         </div>
       ) : (
-        <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <div className="min-w-[620px] space-y-3">
-            {showTableHeader && filteredNotifications.length > 0 && (
-              <div className="bg-secondary rounded-lg px-4 py-2 sm:py-3 border border-secondary">
-                <div className="grid grid-cols-[40px_112px_180px_1fr] items-center gap-4">
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
+        <div>
+          <ul
+            className={maxVisibleRows ? "overflow-y-auto scrollbar-hide space-y-2" : "space-y-2"}
+            style={maxVisibleRows ? { maxHeight: `${maxVisibleRows * 78}px`, scrollbarWidth: "none", msOverflowStyle: "none" } : undefined}
+          >
+            {sortedNotifications.map((n) => {
+              const typeColorMap: Record<string, string> = {
+                booking: "var(--secondary)",
+                tournament: "#6d28d9",
+                message: "#0369a1",
+                success: "#15803d",
+                warning: "#b45309",
+                error: "#b91c1c",
+              };
+              const typeLabelMap: Record<string, string> = {
+                booking: "Prenotazione",
+                tournament: "Torneo",
+                message: "Messaggio",
+                success: "Successo",
+                warning: "Avviso",
+                error: "Errore",
+              };
+              const isLezione = n.type === "booking" && `${n.title || ""} ${n.message || ""}`.toLowerCase().includes("lezione");
+              const bg = isLezione ? "#023047" : (typeColorMap[n.type] ?? "var(--secondary)");
+              const typeLabel = typeLabelMap[n.type] ?? n.type;
+              const notifDate = new Date(n.created_at);
+              const users = extractInterestedUsers(n);
+              return (
+                <li key={n.id}>
                   <button
                     type="button"
-                    onClick={() => setDateSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
+                    className="w-full text-left rounded-lg bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all"
+                    style={{}}
+                    onClick={() => handleClick(n)}
                   >
-                    Data
-                    {dateSortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                    <div className="flex items-center gap-4 py-3 px-3">
+                      <div className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0" style={{ background: bg }}>
+                        {getNotificationIcon(n.type, n.title, n.message, true)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-secondary text-sm truncate">{n.title}</p>
+                          {!n.is_read && (
+                            <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold flex-shrink-0 text-white" style={{ background: bg }}>
+                              Nuova
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-secondary/60 mt-0.5 truncate">
+                          {notifDate.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "").replace(/([a-z])/i, (c) => c.toUpperCase())}
+                          {users !== "Sistema" ? ` · ${users}` : ""}
+                        </p>
+                      </div>
+                                          </div>
                   </button>
-                  <div className="text-xs font-bold text-white/80 uppercase">Utenti</div>
-                  <div className="text-xs font-bold text-white/80 uppercase">Notifica</div>
-                </div>
-              </div>
-            )}
-
-            <div
-              className={maxVisibleRows ? "overflow-y-auto pr-1 scrollbar-hide space-y-3" : "space-y-3"}
-              style={maxVisibleRows ? { maxHeight: `${maxVisibleRows * 72}px`, scrollbarWidth: "none", msOverflowStyle: "none" } : undefined}
-            >
-              {sortedNotifications.map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                className="w-full text-left bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
-                style={{ borderLeftColor: "var(--secondary)" }}
-                onClick={() => handleClick(n)}
-              >
-                <div className="grid grid-cols-[40px_112px_180px_1fr] items-center gap-4">
-                  <div className="flex items-center justify-center">
-                    {getNotificationIcon(n.type, n.title, n.message)}
-                  </div>
-                  <div className="font-bold text-secondary text-sm whitespace-nowrap">
-                    {formatShortItalianDate(n.created_at)}
-                  </div>
-                  <div className="font-semibold text-secondary text-sm whitespace-nowrap truncate">{extractInterestedUsers(n)}</div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-secondary text-sm truncate">{n.title}</p>
-                      {!n.is_read && (
-                        <span className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-semibold text-secondary">
-                          Nuova
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </button>
-              ))}
-            </div>
-          </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 

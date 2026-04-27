@@ -5,21 +5,15 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
   Users,
-  Calendar,
-  Trophy,
-  Video,
   CalendarClock,
+  CalendarPlus,
+  UserPlus,
+  Video,
+  Newspaper,
 } from "lucide-react";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 import NotificationsList from "@/components/dashboard/NotificationsList";
-
-interface Stats {
-  totalUsers: number;
-  todayBookings: number;
-  activeTournaments: number;
-  videoLessonsCount: number;
-}
 
 interface TimelineBooking {
   id: string;
@@ -46,12 +40,6 @@ interface TimelineBooking {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({
-    totalUsers: 0,
-    todayBookings: 0,
-    activeTournaments: 0,
-    videoLessonsCount: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
   const [userName, setUserName] = useState("");
@@ -79,27 +67,6 @@ export default function AdminDashboard() {
     if (profile) setUserName(profile.full_name || "Admin");
 
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
-
-      const [
-        usersResult,
-        todayBookingsCount,
-        activeTournamentsCount,
-        videoLessonsResult,
-      ] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase
-          .from("bookings")
-          .select("*", { count: "exact", head: true })
-          .gte("start_time", `${todayStr}T00:00:00`)
-          .lte("start_time", `${todayStr}T23:59:59`),
-        supabase
-          .from("tournaments")
-          .select("*", { count: "exact", head: true })
-          .in("status", ["active", "Aperto", "In Corso"]),
-        supabase.from("video_lessons").select("*", { count: "exact", head: true }),
-      ]);
-
       // Bookings per timeline (include anche giorni precedenti)
       const { data: allBookingsData } = await supabase
         .from("bookings")
@@ -157,12 +124,6 @@ export default function AdminDashboard() {
         setTimelineBookings(enrichedTimelineBookings);
       }
 
-      setStats({
-        totalUsers: usersResult.count || 0,
-        todayBookings: todayBookingsCount.count || 0,
-        activeTournaments: activeTournamentsCount.count || 0,
-        videoLessonsCount: videoLessonsResult.count || 0,
-      });
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     }
@@ -191,13 +152,18 @@ export default function AdminDashboard() {
 
       <WeatherCard />
 
-      {/* PROSSIMI IMPEGNI */}
+      <div className="w-full">
+        <BookingsTimeline bookings={timelineBookings} loading={loading} />
+      </div>
+
+      {/* PROSSIMI IMPEGNI + CENTRO NOTIFICHE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {(() => {
         const now = new Date();
         const upcoming = timelineBookings
           .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled")
           .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-          .slice(0, 4);
+          .slice(0, 5);
 
         const typeLabels: Record<string, string> = {
           lezione_privata: "Lezione privata",
@@ -216,18 +182,18 @@ export default function AdminDashboard() {
         const timeStr = (t: string) => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 
         return (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossime prenotazioni</h2>
             </div>
-            <div className="px-4 py-4">
+            <div className="px-6 py-4">
               {upcoming.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
                   <CalendarClock className="h-8 w-8 mb-2" />
                   <p className="text-sm font-medium">Nessun impegno in arrivo</p>
                 </div>
               ) : (
-                <ul className="divide-y divide-gray-100">
+                <ul className="flex flex-col gap-2">
                   {upcoming.map((item) => {
                     const start = new Date(item.start_time);
                     const today = new Date(); today.setHours(0,0,0,0);
@@ -269,77 +235,51 @@ export default function AdminDashboard() {
         );
       })()}
 
-      <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} />
-      </div>
-
-      <div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatTile
-            href="/dashboard/admin/users"
-            icon={<Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Utenti Totali"
-            value={stats.totalUsers}
-          />
-          <StatTile
-            href="/dashboard/admin/bookings?filter=today"
-            icon={<Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Prenotazioni Oggi"
-            value={stats.todayBookings}
-          />
-          <StatTile
-            href="/dashboard/admin/tornei"
-            icon={<Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Tornei Attivi"
-            value={stats.activeTournaments}
-          />
-          <StatTile
-            href="/dashboard/admin/video-lessons"
-            icon={<Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Video Lezioni"
-            value={stats.videoLessonsCount}
-          />
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={4} />
+          </div>
         </div>
       </div>
 
+      {/* AZIONI RAPIDE */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Azioni Rapide</h2>
         </div>
-        <div className="px-6 py-4">
-          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={12} />
+        <div className="px-6 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <Link href="/dashboard/admin/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <CalendarPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Crea Prenotazione</span>
+            </Link>
+            <Link href="/dashboard/admin/users/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <UserPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Crea Utente</span>
+            </Link>
+            <Link href="/dashboard/admin/video-lessons/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Crea Video Lab</span>
+            </Link>
+            <Link href="/dashboard/admin/news/create" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <Newspaper className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Crea News</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function StatTile({
-  href,
-  icon,
-  label,
-  value,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <Link
-      href={href}
-      className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4"
-    >
-      <div className="flex-shrink-0">{icon}</div>
-      <div className="flex-1 hidden sm:block">
-        <p className="text-sm text-white/70">{label}</p>
-        <h3 className="text-2xl font-bold text-white">{value}</h3>
-      </div>
-      <div className="flex sm:hidden items-center gap-3 flex-1">
-        <h3 className="text-3xl font-bold text-white">{value}</h3>
-        <p className="text-base text-white/70">{label}</p>
-      </div>
-    </Link>
   );
 }
 
