@@ -144,8 +144,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       // Prima verifica il ruolo dell'utente
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { data: roleData } = await supabase.rpc('get_my_role');
-      
       // Prima query: prendi le ultime prenotazioni
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")

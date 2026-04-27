@@ -819,8 +819,11 @@ function NewBookingPageInner() {
             ) : (
               <>
                 {/* Titolo form */}
-                <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
-                  <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+                  <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+                    <p className="text-xs text-secondary/60 sm:text-right">
+                      Il Campo 4 ha superficie sintetica
+                    </p>
                 </div>
 
                 {/* Dettagli prenotazione */}
@@ -958,9 +961,9 @@ function NewBookingPageInner() {
 
           {/* Card Orari disponibili */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
-              <p className="text-xs text-secondary/60">
+              <p className="text-xs text-secondary/60 sm:text-right">
                 Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
               </p>
             </div>

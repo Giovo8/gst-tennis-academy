@@ -310,7 +310,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 html {
-  scroll-behavior: smooth;
+  /* scroll-behavior gestito da Next.js via data-scroll-behavior sull'elemento html */
 }
 
 body {
