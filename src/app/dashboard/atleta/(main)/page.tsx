@@ -4,21 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
-  Calendar,
   CalendarClock,
+  CalendarPlus,
   Trophy,
   Video,
   Swords,
 } from "lucide-react";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 import NotificationsList from "@/components/dashboard/NotificationsList";
-
-interface Stats {
-  upcomingBookings: number;
-  activeTournaments: number;
-  completedLessons: number;
-  arenaActivities: number;
-}
 
 interface UpcomingBooking {
   id: string;
@@ -31,12 +24,6 @@ interface UpcomingBooking {
 }
 
 export default function AtletaDashboard() {
-  const [stats, setStats] = useState<Stats>({
-    upcomingBookings: 0,
-    activeTournaments: 0,
-    completedLessons: 0,
-    arenaActivities: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
@@ -64,33 +51,16 @@ export default function AtletaDashboard() {
 
     const now = new Date().toISOString();
 
-    const [bookingsRes, participationsRes, videoRes, arenaRes] =
-      await Promise.all([
-        supabase
-          .from("bookings")
-          .select("id, court, type, start_time, end_time, coach_id", { count: "exact" })
-          .eq("user_id", user.id)
-          .neq("status", "cancelled")
-          .gte("start_time", now)
-          .order("start_time", { ascending: true })
-          .limit(20),
-        supabase.from("tournament_participants").select("tournament_id").eq("user_id", user.id),
-        supabase.from("video_assignments").select("id", { count: "exact" }).eq("user_id", user.id),
-        supabase
-          .from("arena_challenges")
-          .select("id", { count: "exact" })
-          .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
-          .in("status", ["pending", "accepted"]),
-      ]);
+    const { data: bookingsData } = await supabase
+      .from("bookings")
+      .select("id, court, type, start_time, end_time, coach_id")
+      .eq("user_id", user.id)
+      .neq("status", "cancelled")
+      .gte("start_time", now)
+      .order("start_time", { ascending: true })
+      .limit(20);
 
-    setStats({
-      upcomingBookings: bookingsRes.count || 0,
-      activeTournaments: participationsRes.data?.length || 0,
-      completedLessons: videoRes.count || 0,
-      arenaActivities: arenaRes.count || 0,
-    });
-
-    const bookings = (bookingsRes.data || []) as UpcomingBooking[];
+    const bookings = (bookingsData || []) as UpcomingBooking[];
     const coachIds = Array.from(new Set(bookings.map((b) => b.coach_id).filter(Boolean))) as string[];
 
     const coachNameById = new Map<string, string>();
@@ -217,41 +187,46 @@ export default function AtletaDashboard() {
         </div>
       </div>
 
-      <div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatTile
-            href="/dashboard/atleta/bookings"
-            icon={<Calendar className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Prenotazioni"
-            value={stats.upcomingBookings}
-          />
-          <StatTile
-            href="/dashboard/atleta/tornei"
-            icon={<Trophy className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Competizioni in corso"
-            value={stats.activeTournaments}
-          />
-          <StatTile
-            href="/dashboard/atleta/videos"
-            icon={<Video className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Video Assegnati"
-            value={stats.completedLessons}
-          />
-          <StatTile
-            href="/dashboard/atleta/arena"
-            icon={<Swords className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-            label="Sfide Arena"
-            value={stats.arenaActivities}
-          />
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
         </div>
         <div className="px-6 py-4">
           <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Azioni Rapide</h2>
+        </div>
+        <div className="px-6 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Link href="/dashboard/atleta/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <CalendarPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Nuova Prenotazione</span>
+            </Link>
+            <Link href="/dashboard/atleta/arena" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <Swords className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Vai ad Arena</span>
+            </Link>
+            <Link href="/dashboard/atleta/videos" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Apri Video Lab</span>
+            </Link>
+            <Link href="/dashboard/atleta/tornei" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-medium text-white">Vai ai Tornei</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -275,33 +250,4 @@ function formatBookingTimeRange(startTime: string, endTime: string) {
     });
 
   return `${toTime(startTime)}-${toTime(endTime)}`;
-}
-
-function StatTile({
-  href,
-  icon,
-  label,
-  value,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <Link
-      href={href}
-      className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all group flex flex-row items-center gap-4"
-    >
-      <div className="flex-shrink-0">{icon}</div>
-      <div className="flex-1 hidden sm:block">
-        <p className="text-sm text-white/70">{label}</p>
-        <h3 className="text-2xl font-bold text-white">{value}</h3>
-      </div>
-      <div className="flex sm:hidden items-center gap-3 flex-1">
-        <h3 className="text-3xl font-bold text-white">{value}</h3>
-        <p className="text-base text-white/70">{label}</p>
-      </div>
-    </Link>
-  );
 }

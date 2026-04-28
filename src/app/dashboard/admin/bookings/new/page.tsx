@@ -547,6 +547,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       .from("court_blocks")
       .select("id, start_time, end_time, reason")
       .eq("court_id", selectedCourt)
+      .eq("is_disabled", false)
       .gte("start_time", startOfDay.toISOString())
       .lte("start_time", endOfDay.toISOString());
 

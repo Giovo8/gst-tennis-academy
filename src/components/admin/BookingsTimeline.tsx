@@ -228,6 +228,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       const { data: blocksData } = await supabase
         .from("court_blocks")
         .select("*")
+        .eq("is_disabled", false)
         .gte("start_time", startOfDay.toISOString())
         .lte("start_time", endOfDay.toISOString())
         .order("start_time", { ascending: true });

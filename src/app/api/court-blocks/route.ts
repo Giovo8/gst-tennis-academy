@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       *,
       created_by_profile:profiles!court_blocks_created_by_fkey(full_name)
     `)
+    .eq("is_disabled", false)
     .order("start_time", { ascending: true });
 
   if (court_id) {
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Remove a court block
+// DELETE - Soft-disable a court block
 export async function DELETE(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace('Bearer ', '');
@@ -169,7 +170,7 @@ export async function DELETE(request: NextRequest) {
 
   const { error } = await supabase
     .from("court_blocks")
-    .delete()
+    .update({ is_disabled: true })
     .eq("id", id);
 
   if (error) {

@@ -289,6 +289,7 @@ export default function CourtBlockEditPage() {
         .select("*")
         .eq("court_id", mainBlock.court_id)
         .eq("reason", mainBlock.reason || "")
+        .eq("is_disabled", false)
         .order("start_time", { ascending: true });
 
       let filteredBlocks: Block[] = [];
@@ -479,10 +480,10 @@ export default function CourtBlockEditPage() {
         return;
       }
 
-      // Elimina tutti i blocchi del gruppo corrente
+      // Disattiva i blocchi correnti (soft-delete)
       await supabase
         .from("court_blocks")
-        .delete()
+        .update({ is_disabled: true })
         .in("id", allBlocks.map(b => b.id));
 
       const { error } = await supabase.from("court_blocks").insert(newBlocks);
@@ -499,7 +500,7 @@ export default function CourtBlockEditPage() {
   }
 
   async function handleDelete() {
-    if (!confirm(`Sei sicuro di voler eliminare tutti i ${allBlocks.length} giorni di questo blocco?`)) {
+    if (!confirm(`Sei sicuro di voler disattivare tutti i ${allBlocks.length} giorni di questo blocco?`)) {
       return;
     }
 
@@ -508,7 +509,7 @@ export default function CourtBlockEditPage() {
 
       const { error } = await supabase
         .from("court_blocks")
-        .delete()
+        .update({ is_disabled: true })
         .in("id", allBlocks.map(b => b.id));
 
       if (error) throw error;

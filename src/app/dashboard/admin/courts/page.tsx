@@ -63,6 +63,7 @@ export default function CourtsBlockPage() {
       const { data, error } = await supabase
         .from("court_blocks")
         .select("*")
+        .eq("is_disabled", false)
         .order("start_time", { ascending: false });
 
       if (!error && data) {
@@ -76,12 +77,12 @@ export default function CourtsBlockPage() {
   }
 
   async function handleDeleteBlock(blockIds: string[]) {
-    if (!confirm("Sei sicuro di voler eliminare questo blocco?")) return;
+    if (!confirm("Sei sicuro di voler disattivare questo blocco?")) return;
 
     try {
       const { error } = await supabase
         .from("court_blocks")
-        .delete()
+        .update({ is_disabled: true })
         .in("id", blockIds);
 
       if (!error) {

@@ -13,7 +13,6 @@ import {
   XCircle,
   Loader2,
   Users,
-  Circle,
   Trophy,
   AlertCircle,
 } from "lucide-react";
@@ -49,7 +48,7 @@ export default function BookingDetailPage() {
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
-  const bookingId = params?.id as string;
+  const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,21 +60,35 @@ export default function BookingDetailPage() {
   const getDisplayParticipants = (currentBooking: Booking | null) => {
     if (!currentBooking) return [];
 
-    if (hasParticipants(currentBooking)) {
-      return (currentBooking.participants || []).map((participant) => ({
-        fullName: participant.full_name,
-        email: participant.email || null,
-        phone: participant.phone || null,
-      }));
+    const athletes = hasParticipants(currentBooking)
+      ? (currentBooking.participants || []).map((participant) => ({
+          fullName: participant.full_name,
+          email: participant.email || null,
+          phone: participant.phone || null,
+          isCoach: false,
+          isGuest: !participant.is_registered,
+        }))
+      : [
+          {
+            fullName: currentBooking.user_profile?.full_name || "Nome non disponibile",
+            email: currentBooking.user_profile?.email || null,
+            phone: currentBooking.user_profile?.phone || null,
+            isCoach: false,
+            isGuest: false,
+          },
+        ];
+
+    if (currentBooking.type === "lezione_privata" && currentBooking.coach_profile) {
+      athletes.push({
+        fullName: currentBooking.coach_profile.full_name,
+        email: currentBooking.coach_profile.email || null,
+        phone: currentBooking.coach_profile.phone || null,
+        isCoach: true,
+        isGuest: false,
+      });
     }
 
-    return [
-      {
-        fullName: currentBooking.user_profile?.full_name || "Nome non disponibile",
-        email: currentBooking.user_profile?.email || null,
-        phone: currentBooking.user_profile?.phone || null,
-      },
-    ];
+    return athletes;
   };
 
   useEffect(() => {
@@ -280,17 +293,17 @@ export default function BookingDetailPage() {
   }
 
   const typeConfig: Record<string, { label: string; color: string }> = {
-    campo: { label: "Campo", color: "bg-secondary text-white" },
+    campo: { label: "Prenotazione Campo", color: "bg-secondary text-white" },
     lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
     lezione_gruppo: { label: "Lezione Gruppo", color: "bg-secondary text-white" },
     arena: { label: "Arena", color: "bg-secondary text-white" },
   };
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-    confirmed: { label: "Confermata", color: "text-emerald-600", icon: CheckCircle2 },
-    pending: { label: "In attesa", color: "text-amber-600", icon: Clock },
-    cancelled: { label: "Annullata", color: "text-red-600", icon: XCircle },
-    cancellation_requested: { label: "Richiesta cancellazione", color: "text-orange-600", icon: AlertCircle },
+    confirmed: { label: "Attiva", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
+    pending: { label: "In attesa", color: "bg-amber-100 text-amber-700", icon: Clock },
+    cancelled: { label: "Annullata", color: "bg-red-100 text-red-700", icon: XCircle },
+    cancellation_requested: { label: "Richiesta cancellazione", color: "bg-orange-100 text-orange-700", icon: AlertCircle },
   };
 
   if (loading) {
@@ -374,11 +387,8 @@ export default function BookingDetailPage() {
         <span>Dettagli Prenotazione</span>
       </p>
 
-      {/* Header con titolo e descrizione */}
       <div>
-        <h1 className="text-4xl font-bold text-secondary">
-          Dettagli Prenotazione
-        </h1>
+        <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
       </div>
 
       {/* Header con info prenotazione */}
@@ -406,32 +416,36 @@ export default function BookingDetailPage() {
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
-        <div className="p-6">
-        <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[640px]">
-            <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
-              <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-            </div>
-          </div>
+        <div className="px-6 py-4">
+          <ul className="flex flex-col gap-2">
+            {displayParticipants.map((participant, index) => {
+              const bg = participant.isCoach ? "#023047" : participant.isGuest ? "#023b52" : "var(--secondary)";
 
-          {displayParticipants.map((participant, index) => (
-            <div
-              key={`${participant.fullName}-${index}`}
-              className="bg-white rounded-lg px-4 py-3 border border-gray-200 border-l-4 min-w-[640px]"
-              style={{ borderLeftColor: "var(--secondary)" }}
-            >
-              <div className="grid grid-cols-[40px_1.5fr_1.5fr_1fr] items-center gap-4">
-                <div className="text-sm text-secondary/60 text-center">{index + 1}</div>
-                <div className="text-secondary font-semibold text-sm">{participant.fullName}</div>
-                <div className="text-secondary/70 text-sm">{participant.email || "Non disponibile"}</div>
-                <div className="text-secondary/70 text-sm">{participant.phone || "Non disponibile"}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+              return (
+                <li key={`${participant.fullName}-${index}`}>
+                  <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: bg }}>
+                    <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-white leading-none">
+                        {participant.fullName.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white text-sm truncate">{participant.fullName}</p>
+                      {participant.email && (
+                        <p className="text-xs text-white/60 truncate mt-0.5">{participant.email}</p>
+                      )}
+                      {participant.phone && (
+                        <p className="text-xs text-white/60 mt-0.5">{participant.phone}</p>
+                      )}
+                    </div>
+                    <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
+                      {participant.isCoach ? "MAESTRO" : participant.isGuest ? "OSPITE" : "ATLETA"}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
 
@@ -504,42 +518,6 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Maestro - visibile solo per lezioni */}
-          {isLesson && (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                  Maestro
-                </label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold">
-                    {booking.coach_profile?.full_name || "Non assegnato"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Email Maestro */}
-              {booking.coach_profile?.email && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email Maestro</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{booking.coach_profile.email}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Telefono Maestro */}
-              {booking.coach_profile?.phone && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono Maestro</label>
-                  <div className="flex-1">
-                    <p className="text-secondary/70">{booking.coach_profile.phone}</p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
           {/* Data creazione */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
@@ -558,16 +536,12 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Stato */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Stato
             </label>
             <div className="flex-1">
-              <span className="flex items-center gap-2 text-secondary font-semibold">
-                <StatusIcon className="h-5 w-5" />
-                {effectiveStatus.label}
-              </span>
+              <span className="text-secondary font-semibold">{effectiveStatus.label}</span>
             </div>
           </div>
         </div>
@@ -576,25 +550,29 @@ export default function BookingDetailPage() {
 
       {/* Note */}
       {booking.notes && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-4">Note</h2>
-          <p className="text-secondary/70">{booking.notes}</p>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+          </div>
+          <div className="px-6 py-6">
+            <p className="text-secondary/70">{booking.notes}</p>
+          </div>
         </div>
       )}
 
       {/* Pulsanti azioni */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         {canCancel && (
           <button
             onClick={cancelBooking}
             disabled={actionLoading}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {actionLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : null
             }
-            Annulla Prenotazione
+            Annulla
           </button>
         )}
         {isCancellationRequested && (

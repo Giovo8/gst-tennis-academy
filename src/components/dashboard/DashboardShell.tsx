@@ -243,76 +243,78 @@ export default function DashboardShell({
         {/* Mobile Dropdown Menu - appare dall'alto */}
         {sidebarOpen && (
           <div className="fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto scrollbar-hide overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300">
-            {/* Navigation Mobile */}
-            <nav className="p-4 space-y-1">
-              {renderNavItem(dashboardItem)}
-              {hasPrimarySection ? (
-                <>
-                  {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => (
-                    <div key={item.href} onClick={() => setSidebarOpen(false)}>
-                      {renderNavItem(item)}
-                    </div>
-                  ))}
-                  {menuItemsWithPrimary.map((item) => (
-                    <div key={item.href} onClick={() => setSidebarOpen(false)}>
-                      {renderNavItem(item)}
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {otherItems.map((item) => (
-                    <div key={item.href} onClick={() => setSidebarOpen(false)}>
-                      {renderNavItem(item)}
-                    </div>
-                  ))}
-                </>
-              )}
-            </nav>
+            <div className="min-h-full flex flex-col">
+              {/* Navigation Mobile */}
+              <nav className="p-4 space-y-1">
+                {renderNavItem(dashboardItem)}
+                {hasPrimarySection ? (
+                  <>
+                    {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => (
+                      <div key={item.href} onClick={() => setSidebarOpen(false)}>
+                        {renderNavItem(item)}
+                      </div>
+                    ))}
+                    {menuItemsWithPrimary.map((item) => (
+                      <div key={item.href} onClick={() => setSidebarOpen(false)}>
+                        {renderNavItem(item)}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {otherItems.map((item) => (
+                      <div key={item.href} onClick={() => setSidebarOpen(false)}>
+                        {renderNavItem(item)}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </nav>
 
-            {/* Actions Mobile */}
-            <div className="p-4 border-t border-gray-100 space-y-2">
-              <button
-                onClick={() => {
-                  setSidebarOpen(false);
-                  setShowSearchModal(true);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
-              >
-                <Search className="h-5 w-5" />
-                <span className="text-sm font-medium">Cerca</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#022431]/10 hover:text-[#022431] transition-colors text-gray-700"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="text-sm font-medium">Esci</span>
-              </button>
-
-              {/* User Info Mobile (in fondo al menu) */}
-              <div className="pt-3 mt-2 border-t border-gray-100">
-                <Link
-                  href={profileHref}
-                  onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              {/* Actions Mobile */}
+              <div className="p-4 border-t border-gray-100 space-y-2 mt-auto">
+                <button
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    setShowSearchModal(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
                 >
-                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-base font-semibold flex-shrink-0">
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt={userName || "User"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-base font-bold text-secondary leading-tight truncate">{userName || "User"}</span>
-                    <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
-                  </div>
-                </Link>
+                  <Search className="h-5 w-5" />
+                  <span className="text-sm font-medium">Cerca</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#022431]/10 hover:text-[#022431] transition-colors text-gray-700"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span className="text-sm font-medium">Esci</span>
+                </button>
+
+                {/* User Info Mobile (in fondo al menu) */}
+                <div className="pt-3 mt-2 border-t border-gray-100">
+                  <Link
+                    href={profileHref}
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex w-full items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors min-w-0"
+                  >
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                      {userAvatar ? (
+                        <img
+                          src={userAvatar}
+                          alt={userName || "User"}
+                          className="w-full h-full object-cover scale-110 object-center"
+                        />
+                      ) : (
+                        <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-base font-bold text-secondary leading-tight truncate">{userName || "User"}</span>
+                      <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
