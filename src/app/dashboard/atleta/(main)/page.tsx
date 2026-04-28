@@ -134,7 +134,7 @@ export default function AtletaDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-4xl font-bold text-secondary">Bentornato,{" "}<br className="sm:hidden" />{userName}</h1>
+      <h1 className="text-4xl font-bold text-secondary">Bentornato, {userName}</h1>
 
       <WeatherCard />
 
@@ -251,7 +251,7 @@ export default function AtletaDashboard() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
         </div>
         <div className="px-6 py-4">
-          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={12} />
+          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
         </div>
       </div>
 

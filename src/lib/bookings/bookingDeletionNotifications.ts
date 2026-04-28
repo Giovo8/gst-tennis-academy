@@ -6,6 +6,7 @@ type UserBookingDeletionNotificationParams = {
   userName?: string | null;
   court?: string | null;
   startTime: string | Date;
+  bookingType?: string | null;
 };
 
 type UserBookingDeletionNotificationContext = {
@@ -43,6 +44,7 @@ export function buildAdminsNotificationForUserBookingDeletion({
   userName,
   court,
   startTime,
+  bookingType,
 }: UserBookingDeletionNotificationParams) {
   const bookingDate = new Date(startTime);
   const dateLabel = bookingDate.toLocaleDateString("it-IT", {
@@ -57,7 +59,7 @@ export function buildAdminsNotificationForUserBookingDeletion({
 
   return {
     type: "booking" as const,
-    title: "Prenotazione eliminata da utente",
+    title: bookingType === "lezione_privata" ? "Lezione privata eliminata da utente" : "Prenotazione campo eliminata da utente",
     message: `${userName?.trim() || "Un utente"} ha eliminato la prenotazione ${court?.trim() || "campo"} del ${dateLabel} alle ${timeLabel}.`,
     link: "/dashboard/admin/bookings",
   };

@@ -37,6 +37,7 @@ interface DashboardShellProps {
   userEmail?: string;
   userAvatar?: string;
   primaryNavItems?: NavItem[];
+  userId?: string;
 }
 
 const roleColors: Record<UserRole, string> = {
@@ -54,8 +55,12 @@ export default function DashboardShell({
   userEmail,
   userAvatar,
   primaryNavItems,
+  userId,
 }: DashboardShellProps) {
   const pathname = usePathname();
+  const profileHref = (role === "admin" || role === "gestore") && userId
+    ? `/dashboard/admin/users/${userId}`
+    : `/dashboard/${role}/profile`;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -147,8 +152,8 @@ export default function DashboardShell({
             className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className="text-secondary/60">{item.icon}</span>
-              <span className="text-base font-semibold">{item.label}</span>
+              <span className="text-secondary/60 [&>svg]:!h-6 [&>svg]:!w-6">{item.icon}</span>
+              <span className="text-lg font-semibold">{item.label}</span>
             </div>
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -183,11 +188,13 @@ export default function DashboardShell({
         `}
       >
         <span className={`${active ? "text-white" : "text-gray-600"} flex-shrink-0`}>
-          {item.icon}
+          <span className="[&>svg]:!h-6 [&>svg]:!w-6">
+            {item.icon}
+          </span>
         </span>
         {!sidebarCollapsed && (
           <>
-            <span className="text-base font-semibold flex-1">{item.label}</span>
+            <span className="text-lg font-semibold flex-1">{item.label}</span>
             {item.badge && item.badge > 0 && (
               <span className={`px-2.5 py-1 text-xs font-bold rounded-md min-w-[28px] text-center ${
                 active 
@@ -227,7 +234,7 @@ export default function DashboardShell({
               height={32}
               className="h-8 w-8"
             />
-            <span className="font-bold text-gray-900 text-2xl" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
+            <span className="font-bold text-secondary text-2xl" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
           </Link>
           
           <NotificationsDropdown />
@@ -235,32 +242,7 @@ export default function DashboardShell({
 
         {/* Mobile Dropdown Menu - appare dall'alto */}
         {sidebarOpen && (
-          <div className="fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300">
-            {/* User Info Mobile */}
-            <div className="p-4 border-b border-gray-100 bg-gray-50">
-              <Link
-                href={`/dashboard/${role}/profile`}
-                onClick={() => setSidebarOpen(false)}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors"
-              >
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                  {userAvatar ? (
-                    <img
-                      src={userAvatar}
-                      alt={userName || "User"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
-                  )}
-                </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-sm font-semibold text-secondary leading-tight truncate">{userName || "User"}</span>
-                  <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
-                </div>
-              </Link>
-            </div>
-
+          <div className="fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto scrollbar-hide overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300">
             {/* Navigation Mobile */}
             <nav className="p-4 space-y-1">
               {renderNavItem(dashboardItem)}
@@ -307,6 +289,31 @@ export default function DashboardShell({
                 <LogOut className="h-5 w-5" />
                 <span className="text-sm font-medium">Esci</span>
               </button>
+
+              {/* User Info Mobile (in fondo al menu) */}
+              <div className="pt-3 mt-2 border-t border-gray-100">
+                <Link
+                  href={profileHref}
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-base font-semibold flex-shrink-0">
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt={userName || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-base font-bold text-secondary leading-tight truncate">{userName || "User"}</span>
+                    <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
+                  </div>
+                </Link>
+              </div>
             </div>
           </div>
         )}
@@ -382,7 +389,7 @@ export default function DashboardShell({
                   title="Cerca"
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <Search className="h-5 w-5 text-gray-600" />
+                  <Search className="h-6 w-6 text-gray-600" />
                 </button>
 
                 {/* Notifiche */}
@@ -394,7 +401,7 @@ export default function DashboardShell({
                   title="Esci"
                   className="p-2 rounded-lg hover:bg-[#022431]/10 transition-colors"
                 >
-                  <LogOut className="h-5 w-5 text-gray-600 hover:text-[#022431]" />
+                  <LogOut className="h-6 w-6 text-gray-600 hover:text-[#022431]" />
                 </button>
 
                 {/* Collapse/Expand */}
@@ -403,7 +410,7 @@ export default function DashboardShell({
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                   title="Riduci menu"
                 >
-                  <ChevronLeft className="h-5 w-5 text-gray-600" />
+                  <ChevronLeft className="h-6 w-6 text-gray-600" />
                 </button>
               </div>
             )}
@@ -417,7 +424,7 @@ export default function DashboardShell({
                   title="Cerca"
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <Search className="h-5 w-5 text-gray-600" />
+                  <Search className="h-6 w-6 text-gray-600" />
                 </button>
 
                 {/* Notifiche */}
@@ -429,7 +436,7 @@ export default function DashboardShell({
                   title="Esci"
                   className="p-2 rounded-lg hover:bg-[#022431]/10 transition-colors"
                 >
-                  <LogOut className="h-5 w-5 text-gray-600 hover:text-[#022431]" />
+                  <LogOut className="h-6 w-6 text-gray-600 hover:text-[#022431]" />
                 </button>
 
                 {/* Collapse/Expand */}
@@ -438,20 +445,20 @@ export default function DashboardShell({
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                   title="Espandi menu"
                 >
-                  <ChevronRight className="h-5 w-5 text-gray-600" />
+                  <ChevronRight className="h-6 w-6 text-gray-600" />
                 </button>
               </div>
             )}
 
             {/* Profilo Utente - cliccabile Desktop */}
             <Link
-              href={`/dashboard/${role}/profile`}
+              href={profileHref}
               title={sidebarCollapsed ? "Profilo" : undefined}
               className="block"
             >
               {!sidebarCollapsed ? (
                 <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/5 transition-colors cursor-pointer">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-base font-semibold flex-shrink-0">
                     {userAvatar ? (
                       <img
                         src={userAvatar}
@@ -463,13 +470,13 @@ export default function DashboardShell({
                     )}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-secondary leading-tight truncate">{userName || "User"}</span>
+                    <span className="text-base font-bold text-secondary leading-tight truncate">{userName || "User"}</span>
                     <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
                   </div>
                 </div>
               ) : (
                 <div className="flex justify-center">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold hover:ring-2 hover:ring-secondary/20 transition-all">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-base font-semibold hover:ring-2 hover:ring-secondary/20 transition-all">
                     {userAvatar ? (
                       <img
                         src={userAvatar}

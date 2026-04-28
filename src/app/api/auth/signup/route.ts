@@ -174,17 +174,29 @@ export async function POST(request: NextRequest) {
 
     // Mark invite code as used if provided
     if (inviteCode) {
-      const { error: inviteError } = await supabaseAdmin
+      // Fetch the invite code record to get its ID and uses_remaining
+      const { data: inviteCodeRecord } = await supabaseAdmin
         .from('invite_codes')
-        .update({
-          used_by: userId,
-          used_at: new Date().toISOString(),
-        })
+        .select('id, uses_remaining')
         .eq('code', inviteCode)
-        .eq('used_by', null); // Only update if not already used
+        .single();
 
-      if (!inviteError) {
-        // Log invite code usage
+      if (inviteCodeRecord) {
+        // Decrement uses_remaining if applicable
+        if (inviteCodeRecord.uses_remaining !== null) {
+          await supabaseAdmin
+            .from('invite_codes')
+            .update({ uses_remaining: inviteCodeRecord.uses_remaining - 1 })
+            .eq('id', inviteCodeRecord.id);
+        }
+
+        // Record usage in invite_code_uses
+        await supabaseAdmin.from('invite_code_uses').insert({
+          invite_code_id: inviteCodeRecord.id,
+          user_id: userId,
+        });
+
+        // Log invite code usage in activity_logs
         await supabaseAdmin.from('activity_logs').insert({
           action: 'invite_code_used',
           entity_type: 'invite_code',

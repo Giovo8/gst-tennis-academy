@@ -390,7 +390,7 @@ export async function POST(req: Request) {
 
       await notifyAdmins({
         type: "booking",
-        title: "Nuova prenotazione",
+        title: booking.type === "lezione_privata" ? "Nuova lezione privata" : "Nuova prenotazione campo",
         message:
           createdByStaff && bookedForAnotherUser
             ? `${actorDisplayName} ha prenotato il campo ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}`
@@ -694,13 +694,15 @@ export async function PUT(req: Request) {
         minute: "2-digit",
       });
 
+      const bookingTypeForPut = updatedBooking?.type || booking.type;
       const { error: notificationError } = await supabaseServer
         .from("notifications")
         .insert({
           user_id: booking.user_id,
           type: "booking",
-          title: "Prenotazione modificata",
+          title: bookingTypeForPut === "lezione_privata" ? "Lezione privata modificata" : "Prenotazione campo modificata",
           message: `La tua prenotazione ${bookingCourt} del ${dateLabel} alle ${timeLabel} è stata modificata da ${actorDisplayName}.`,
+
           link: "/dashboard/atleta/bookings",
           is_read: false,
         });
@@ -945,8 +947,9 @@ export async function DELETE(req: Request) {
         .insert({
           user_id: booking.user_id,
           type: "booking",
-          title: "Prenotazione eliminata",
+          title: booking.type === "lezione_privata" ? "Lezione privata eliminata" : "Prenotazione campo eliminata",
           message: `La tua prenotazione ${booking.court} del ${dateLabel} alle ${timeLabel} è stata eliminata da ${actorDisplayName}.`,
+
           link: "/dashboard/atleta/bookings",
           is_read: false,
         });
@@ -965,6 +968,7 @@ export async function DELETE(req: Request) {
         userName: athleteContextForDeletionEmail.athleteName,
         court: booking.court,
         startTime: booking.start_time,
+        bookingType: booking.type,
       });
 
       await notifyAdmins(notification);

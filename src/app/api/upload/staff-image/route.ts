@@ -6,6 +6,22 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const oldImageUrl = formData.get("oldImageUrl") as string | null;
+    const deleteOnly = formData.get("deleteOnly") === "true";
+
+    if (deleteOnly) {
+      if (oldImageUrl) {
+        try {
+          const oldPath = oldImageUrl.split("/avatars/").pop();
+          if (oldPath) {
+            await supabaseServer.storage.from("avatars").remove([oldPath]);
+          }
+        } catch (deleteError) {
+          console.warn("Warning: Could not delete old image:", deleteError);
+        }
+      }
+
+      return NextResponse.json({ ok: true });
+    }
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -40,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Upload file directly (Supabase handles the conversion)
     // For mobile compatibility, upload File object directly instead of converting to Buffer
-    const { error: uploadError, data: uploadData } = await supabaseServer.storage
+    const { error: uploadError } = await supabaseServer.storage
       .from("avatars")
       .upload(fileName, file, {
         contentType: file.type || "image/jpeg",

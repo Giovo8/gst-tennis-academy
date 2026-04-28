@@ -5,9 +5,8 @@ import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import {
-  Pencil,
-  Trash2,
   Loader2,
+  Check,
   X,
   GraduationCap,
   Wrench,
@@ -24,6 +23,7 @@ type Block = {
   end_time: string;
   reason?: string;
   created_at: string;
+  is_disabled: boolean;
 };
 
 export default function CourtBlockDetailPage() {
@@ -33,11 +33,12 @@ export default function CourtBlockDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const [deletingDateId, setDeletingDateId] = useState<string | null>(null);
+  const [togglingDateId, setTogglingDateId] = useState<string | null>(null);
   const [allBlocks, setAllBlocks] = useState<Block[]>([]);
 
   function getBlockStyle(reason?: string) {
-    const reasonLower = (reason || "").toLowerCase();
+    const reasonText = (reason || "").trim();
+    const reasonLower = reasonText.toLowerCase();
 
     if (reasonLower.includes("corso adulti")) {
       return {
@@ -67,10 +68,26 @@ export default function CourtBlockDetailPage() {
       };
     }
 
+    if (reasonLower.startsWith("altro")) {
+      return {
+        type: "Altro",
+        icon: Shield,
+      };
+    }
+
     return {
-      type: "Blocco",
+      type: reasonText ? "Altro" : "Blocco",
       icon: Shield,
     };
+  }
+
+  function getBlockCardBg(type: string) {
+    if (type === "Corso Adulti") return "#023047";
+    if (type === "Corsi Tennis") return "#05384c";
+    if (type === "Manutenzione") return "var(--color-frozen-lake-900)";
+    if (type === "Evento") return "var(--color-frozen-lake-900)";
+    if (type === "Altro") return "var(--secondary)";
+    return "var(--color-frozen-lake-800)";
   }
 
   useEffect(() => {
@@ -147,35 +164,34 @@ export default function CourtBlockDetailPage() {
     }
   }
 
-  async function handleDeleteDateTab(block: Block) {
+  async function handleToggleDateTab(block: Block) {
+    const isCurrentlyDisabled = block.is_disabled;
     const dateLabel = format(new Date(block.start_time), "dd/MM/yyyy", { locale: it });
-    const shouldDelete = confirm(
-      `Vuoi eliminare il tab del ${dateLabel}? Questa azione crea un'eccezione per questa data.`
+    const shouldToggle = confirm(
+      isCurrentlyDisabled
+        ? `Vuoi riattivare il giorno ${dateLabel}?`
+        : `Vuoi disattivare il giorno ${dateLabel}?`
     );
 
-    if (!shouldDelete) return;
+    if (!shouldToggle) return;
 
     try {
-      setDeletingDateId(block.id);
-
+      setTogglingDateId(block.id);
       const { error } = await supabase
         .from("court_blocks")
-        .delete()
+        .update({ is_disabled: !isCurrentlyDisabled })
         .eq("id", block.id);
 
       if (error) throw error;
 
-      if (allBlocks.length === 1) {
-        router.push("/dashboard/admin/courts");
-        return;
-      }
-
-      setAllBlocks((prev) => prev.filter((item) => item.id !== block.id));
+      setAllBlocks((prev) =>
+        prev.map((b) => b.id === block.id ? { ...b, is_disabled: !isCurrentlyDisabled } : b)
+      );
     } catch (err) {
-      console.error("Error creating block exception:", err);
-      alert("Errore durante la creazione dell'eccezione");
+      console.error("Error toggling date:", err);
+      alert("Errore durante la modifica");
     } finally {
-      setDeletingDateId(null);
+      setTogglingDateId(null);
     }
   }
 
@@ -202,6 +218,7 @@ export default function CourtBlockDetailPage() {
   const firstBlock = allBlocks[0];
   const blockStyle = getBlockStyle(firstBlock.reason);
   const BlockIcon = blockStyle.icon;
+  const headerCardBg = getBlockCardBg(blockStyle.type);
 
   const firstDate = new Date(allBlocks[0].start_time);
   const lastDate = new Date(allBlocks[allBlocks.length - 1].end_time);
@@ -216,16 +233,17 @@ export default function CourtBlockDetailPage() {
         <span>Dettagli Blocco</span>
       </p>
 
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-secondary">Dettagli Blocco</h1>
-        <p className="text-secondary/70 font-medium">
-          Visualizza e gestisci i dettagli del blocco campi
-        </p>
+      <div>
+        <h1 className="text-4xl font-bold text-secondary">Dettagli Blocco</h1>
       </div>
 
       <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: "var(--secondary)" }}
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{
+          backgroundColor: headerCardBg,
+          borderColor: headerCardBg,
+          borderLeftColor: headerCardBg,
+        }}
       >
         <div className="flex items-start gap-6">
           <BlockIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -240,54 +258,53 @@ export default function CourtBlockDetailPage() {
           Date bloccate
         </h2>
 
-        <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[560px]">
-            <div className="grid grid-cols-[40px_2fr_1fr_64px] items-center gap-4">
-              <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Orario</div>
-              <div className="text-xs font-bold text-white/80 uppercase text-center">&nbsp;</div>
-            </div>
-          </div>
-
+        <ul className="flex flex-col gap-2">
           {allBlocks.map((block, index) => {
             const dateStart = new Date(block.start_time);
             const dateEnd = new Date(block.end_time);
+            const isDisabledDate = block.is_disabled;
 
             return (
-              <div
-                key={block.id}
-                className="bg-white rounded-lg px-4 py-3 border border-gray-200 border-l-4 min-w-[560px]"
-                style={{ borderLeftColor: "var(--secondary)" }}
-              >
-                <div className="grid grid-cols-[40px_2fr_1fr_64px] items-center gap-4">
-                  <div className="text-sm text-secondary/60 text-center">{index + 1}</div>
-                  <div className="text-secondary font-semibold text-sm">
-                    {format(dateStart, "EEEE d MMMM yyyy", { locale: it }).replace(/^./, (letter) => letter.toUpperCase())}
+              <li key={block.id}>
+                <div
+                  className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                  style={{ background: isDisabledDate ? "#9ca3af" : "var(--secondary)" }}
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                    <span className="text-sm font-bold leading-none text-white">{index + 1}</span>
                   </div>
-                  <div className="text-secondary/70 text-sm">
-                    {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate text-white">
+                      {format(dateStart, "EEEE d MMMM yyyy", { locale: it }).replace(/^./, (letter) => letter.toUpperCase())}
+                    </p>
+                    <p className="text-xs truncate mt-0.5 text-white/70">
+                      {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-center">
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       type="button"
-                      onClick={() => void handleDeleteDateTab(block)}
-                      disabled={deletingDateId === block.id}
-                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8 disabled:opacity-50"
-                      aria-label={`Elimina ${format(dateStart, "dd/MM/yyyy", { locale: it })}`}
+                      onClick={() => void handleToggleDateTab(block)}
+                      disabled={togglingDateId === block.id}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded transition-all focus:outline-none disabled:opacity-50 hover:bg-white/10 text-white/70 hover:text-white"
+                      aria-label={`${isDisabledDate ? "Riattiva" : "Disattiva"} ${format(dateStart, "dd/MM/yyyy", { locale: it })}`}
                     >
-                      {deletingDateId === block.id ? (
+                      {togglingDateId === block.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : isDisabledDate ? (
+                        <Check className="h-4 w-4" />
                       ) : (
                         <X className="h-4 w-4" />
                       )}
                     </button>
                   </div>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -302,6 +319,15 @@ export default function CourtBlockDetailPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni bloccati</label>
+            <div className="flex-1">
+              <p className="text-secondary font-semibold">
+                {allBlocks.length} {allBlocks.length === 1 ? "giorno" : "giorni"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Intervallo date</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
@@ -311,10 +337,10 @@ export default function CourtBlockDetailPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni bloccati</label>
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
             <div className="flex-1">
               <p className="text-secondary font-semibold">
-                {allBlocks.length} {allBlocks.length === 1 ? "giorno" : "giorni"}
+                {format(new Date(firstBlock.start_time), "HH:mm")} - {format(new Date(firstBlock.end_time), "HH:mm")}
               </p>
             </div>
           </div>
@@ -330,25 +356,22 @@ export default function CourtBlockDetailPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <Link
           href={`/dashboard/admin/courts/modifica?id=${blockId}`}
-          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
         >
-          <Pencil className="h-5 w-5" />
           Modifica
         </Link>
 
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {deleting ? (
             <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Trash2 className="h-5 w-5" />
-          )}
+          ) : null}
           Elimina
         </button>
       </div>

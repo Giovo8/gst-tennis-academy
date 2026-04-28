@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifiche – Anteprima Completa</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      padding: 32px 16px;
+      color: #023047;
+    }
+    h1 { font-size: 22px; font-weight: 700; color: #023047; margin-bottom: 6px; }
+    .page-subtitle { font-size: 13px; color: #6b7280; margin-bottom: 40px; }
+
+    /* ─── SECTIONS ───────────────────────────────────── */
+    .section { margin-bottom: 48px; }
+    .section-title { font-size: 18px; font-weight: 700; color: #023047; margin-bottom: 4px; }
+    .section-desc { font-size: 12px; color: #6b7280; margin-bottom: 12px; }
+
+    /* ─── TWO COLUMN ─────────────────────────────────── */
+    .two-col { display: flex; gap: 48px; flex-wrap: wrap; align-items: flex-start; }
+    .col-left  { flex: 1; min-width: 320px; }
+    .col-right { flex: 0 0 auto; }
+
+    /* ─── GROUP LABEL ────────────────────────────────── */
+    .group-label {
+      font-size: 11px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 14px 0 5px; max-width: 560px;
+    }
+
+    /* ─── CENTRO NOTIFICHE CARDS ─────────────────────── */
+    .notif-list { display: flex; flex-direction: column; gap: 8px; max-width: 560px; }
+    .card {
+      display: flex; align-items: center; gap: 16px;
+      border-radius: 10px; padding: 12px; background: white;
+      border: 1px solid #f3f4f6; cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .card:hover { border-color: #e5e7eb; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .icon-box {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; width: 44px; height: 44px; flex-shrink: 0;
+    }
+    .icon-box svg { width: 24px; height: 24px; stroke: white; stroke-width: 2.5; fill: none; }
+    .content { flex: 1; min-width: 0; }
+    .title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .title { font-weight: 600; font-size: 14px; color: #023047; }
+    .badge {
+      display: inline-flex; align-items: center; border-radius: 5px;
+      padding: 1px 8px; font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
+    }
+    .subtitle { font-size: 12px; color: rgba(2,48,71,0.5); margin-top: 3px; }
+
+    /* color tokens */
+    .c-booking    { background: #034863; }
+    .c-lezione    { background: #023047; }
+    .c-tournament { background: #6d28d9; }
+    .c-message    { background: #0369a1; }
+    .c-success    { background: #15803d; }
+    .c-warning    { background: #b45309; }
+    .c-error      { background: #b91c1c; }
+
+    /* ─── CAMPANA DROPDOWN ───────────────────────────── */
+    .dropdown-wrap {
+      max-width: 384px; width: 384px; background: white;
+      border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+      border: 1px solid #e5e7eb; overflow: hidden;
+    }
+    .dropdown-header {
+      background: #023047; padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .dropdown-header span { font-weight: 600; font-size: 14px; color: white; }
+    .dropdown-header .cnt {
+      background: rgba(255,255,255,0.25); border-radius: 999px;
+      padding: 2px 10px; font-size: 12px; font-weight: 600; color: white;
+    }
+    .dropdown-list { max-height: 520px; overflow-y: auto; }
+    .drop-item {
+      display: flex; gap: 12px; padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .drop-item:last-child { border-bottom: none; }
+    .drop-item:hover { background: #f9fafb; }
+    .drop-item.unread { background: rgba(219,234,254,0.35); }
+    .drop-icon { flex-shrink: 0; margin-top: 2px; }
+    .drop-icon svg { width: 20px; height: 20px; stroke: #023047; stroke-width: 2; fill: none; }
+    .drop-body { flex: 1; min-width: 0; }
+    .drop-title { font-size: 13px; font-weight: 600; color: #111827; margin-bottom: 3px; }
+    .drop-msg {
+      font-size: 11px; color: #4b5563; margin-bottom: 4px;
+      overflow: hidden; text-overflow: ellipsis;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .drop-time { font-size: 11px; color: #9ca3af; }
+    .unread-dot {
+      width: 8px; height: 8px; background: #023047;
+      border-radius: 50%; flex-shrink: 0; margin-top: 6px;
+    }
+    .empty-state { padding: 40px 16px; text-align: center; }
+    .empty-state svg { width: 48px; height: 48px; stroke: #d1d5db; stroke-width: 1.5; fill: none; margin: 0 auto 8px; display: block; }
+    .empty-state p { font-size: 13px; color: #6b7280; }
+  </style>
+</head>
+<body>
+
+  <h1>Notifiche – Anteprima Completa</h1>
+  <p class="page-subtitle">Tutti i tipi di notifica esistenti: Centro Notifiche (sinistra) · Campana dropdown (destra)</p>
+
+  <div class="two-col">
+
+    <!-- ══════════════════════════════════════════════════
+         SINISTRA – CENTRO NOTIFICHE (NotificationsList.tsx)
+    ══════════════════════════════════════════════════ -->
+    <div class="col-left section">
+      <div class="section-title">Centro Notifiche</div>
+      <p class="section-desc">NotificationsList.tsx · icona colorata + titolo + badge "Nuova" + data</p>
+
+      <!-- PRENOTAZIONI CAMPO -->
+      <div class="group-label">Prenotazioni Campo</div>
+      <div class="notif-list">
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="calendar-clock"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Nuova prenotazione campo</span>
+              <span class="badge c-booking">Nuova</span>
+            </div>
+            <div class="subtitle">27 Apr 2026 · Mario Rossi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="calendar-clock"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Nuove prenotazioni campo</span>
+              <span class="badge c-booking">Nuova</span>
+            </div>
+            <div class="subtitle">26 Apr 2026 · Mario Rossi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="calendar-clock"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Prenotazione campo modificata</span></div>
+            <div class="subtitle">25 Apr 2026 · Mario Rossi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="calendar-clock"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Prenotazione campo eliminata</span></div>
+            <div class="subtitle">24 Apr 2026 · Mario Rossi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="calendar-clock"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Prenotazione campo eliminata da utente</span>
+              <span class="badge c-booking">Nuova</span>
+            </div>
+            <div class="subtitle">23 Apr 2026 · Mario Rossi</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEZIONI PRIVATE -->
+      <div class="group-label">Lezioni Private</div>
+      <div class="notif-list">
+        <div class="card">
+          <div class="icon-box c-lezione"><i data-lucide="users"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Nuova lezione privata</span>
+              <span class="badge c-lezione">Nuova</span>
+            </div>
+            <div class="subtitle">27 Apr 2026 · Anna Verdi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-lezione"><i data-lucide="users"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Nuove lezioni private</span>
+              <span class="badge c-lezione">Nuova</span>
+            </div>
+            <div class="subtitle">26 Apr 2026 · Anna Verdi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-lezione"><i data-lucide="users"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Lezione privata modificata</span></div>
+            <div class="subtitle">25 Apr 2026 · Anna Verdi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-lezione"><i data-lucide="users"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Lezione privata eliminata</span></div>
+            <div class="subtitle">24 Apr 2026 · Anna Verdi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-lezione"><i data-lucide="users"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Lezione privata eliminata da utente</span>
+              <span class="badge c-lezione">Nuova</span>
+            </div>
+            <div class="subtitle">23 Apr 2026 · Anna Verdi</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALTRI TIPI -->
+      <div class="group-label">Tornei · Messaggi · Sistema</div>
+      <div class="notif-list">
+        <div class="card">
+          <div class="icon-box c-tournament"><i data-lucide="trophy"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Torneo Primavera – Iscrizioni aperte</span>
+              <span class="badge c-tournament">Nuova</span>
+            </div>
+            <div class="subtitle">22 Apr 2026</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-message"><i data-lucide="message-square"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Nuovo messaggio da Luca</span>
+              <span class="badge c-message">Nuova</span>
+            </div>
+            <div class="subtitle">21 Apr 2026 · Luca Bianchi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-success"><i data-lucide="check-circle"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Pagamento confermato</span></div>
+            <div class="subtitle">20 Apr 2026</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-warning"><i data-lucide="alert-circle"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Campo in manutenzione</span>
+              <span class="badge c-warning">Nuova</span>
+            </div>
+            <div class="subtitle">19 Apr 2026</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-error"><i data-lucide="x-circle"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Prenotazione campo annullata</span></div>
+            <div class="subtitle">18 Apr 2026</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="video"></i></div>
+          <div class="content">
+            <div class="title-row">
+              <span class="title">Video lezione disponibile</span>
+              <span class="badge c-booking">Nuova</span>
+            </div>
+            <div class="subtitle">17 Apr 2026</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="users"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Corso tennistico – Iscrizione confermata</span></div>
+            <div class="subtitle">16 Apr 2026</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="icon-box c-booking"><i data-lucide="info"></i></div>
+          <div class="content">
+            <div class="title-row"><span class="title">Aggiornamento di sistema</span></div>
+            <div class="subtitle">15 Apr 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         DESTRA – CAMPANA DROPDOWN (NotificationsDropdown.tsx)
+    ══════════════════════════════════════════════════ -->
+    <div class="col-right section">
+      <div class="section-title">Campana (Dropdown)</div>
+      <p class="section-desc">NotificationsDropdown.tsx · icona semplice + titolo + messaggio + tempo</p>
+
+      <div class="dropdown-wrap">
+        <div class="dropdown-header">
+          <span>Notifiche</span>
+          <span class="cnt">4</span>
+        </div>
+        <div class="dropdown-list">
+
+          <!-- booking campo – non letta -->
+          <div class="drop-item unread">
+            <div class="drop-icon"><i data-lucide="calendar-clock"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Nuova prenotazione campo</div>
+              <div class="drop-msg">Mario Rossi ha prenotato Campo 1 per il 27/04/2026 alle 10:00</div>
+              <div class="drop-time">2 minuti fa</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <!-- booking lezione – non letta -->
+          <div class="drop-item unread">
+            <div class="drop-icon"><i data-lucide="users"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Nuova lezione privata</div>
+              <div class="drop-msg">Anna Verdi ti ha selezionato per una lezione privata su Campo 2 il 27/04/2026 alle 14:00</div>
+              <div class="drop-time">15 minuti fa</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <!-- torneo – non letta -->
+          <div class="drop-item unread">
+            <div class="drop-icon"><i data-lucide="trophy"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Torneo Primavera – Iscrizioni aperte</div>
+              <div class="drop-msg">Le iscrizioni per il Torneo Primavera 2026 sono ora aperte. Scadenza: 05/05/2026</div>
+              <div class="drop-time">1 ora fa</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <!-- messaggio – non letta -->
+          <div class="drop-item unread">
+            <div class="drop-icon"><i data-lucide="mail"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Nuovo messaggio da Luca</div>
+              <div class="drop-msg">Ciao, possiamo spostare l'allenamento di domani?</div>
+              <div class="drop-time">3 ore fa</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <!-- comunicato – letta -->
+          <div class="drop-item">
+            <div class="drop-icon"><i data-lucide="megaphone"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Comunicato ufficiale</div>
+              <div class="drop-msg">L'accademia resterà chiusa il 1° maggio per la Festa del Lavoro.</div>
+              <div class="drop-time">ieri</div>
+            </div>
+          </div>
+
+          <!-- lezione eliminata – letta -->
+          <div class="drop-item">
+            <div class="drop-icon"><i data-lucide="users"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Lezione privata eliminata</div>
+              <div class="drop-msg">La tua prenotazione Campo 3 del 24/04/2026 alle 09:00 è stata eliminata da Lo staff.</div>
+              <div class="drop-time">2 giorni fa</div>
+            </div>
+          </div>
+
+          <!-- prenotazione campo modificata – letta -->
+          <div class="drop-item">
+            <div class="drop-icon"><i data-lucide="calendar-clock"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Prenotazione campo modificata</div>
+              <div class="drop-msg">La tua prenotazione Campo 1 del 20/04/2026 alle 11:00 è stata modificata da Lo staff.</div>
+              <div class="drop-time">7 giorni fa</div>
+            </div>
+          </div>
+
+          <!-- video – letta -->
+          <div class="drop-item">
+            <div class="drop-icon"><i data-lucide="video"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Video lezione disponibile</div>
+              <div class="drop-msg">La registrazione della tua lezione del 22/04/2026 è ora disponibile.</div>
+              <div class="drop-time">5 giorni fa</div>
+            </div>
+          </div>
+
+          <!-- default/sistema – letta -->
+          <div class="drop-item">
+            <div class="drop-icon"><i data-lucide="bell"></i></div>
+            <div class="drop-body">
+              <div class="drop-title">Aggiornamento di sistema</div>
+              <div class="drop-msg">La piattaforma è stata aggiornata alla versione 2.4.</div>
+              <div class="drop-time">2 settimane fa</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- STATO VUOTO -->
+      <p class="section-desc" style="margin-top: 24px; margin-bottom: 8px;">Stato vuoto</p>
+      <div class="dropdown-wrap">
+        <div class="dropdown-header"><span>Notifiche</span></div>
+        <div class="empty-state">
+          <i data-lucide="bell"></i>
+          <p>Nessuna notifica</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
+

@@ -143,9 +143,13 @@ export async function POST(request: Request) {
         ? getAdminBookingNotificationLink(firstBooking.id)
         : getAdminBookingNotificationLink();
 
+      const firstBookingType = insertedBookings[0]?.type;
       await notifyAdmins({
         type: "booking",
-        title: bookingCount > 1 ? "Nuove prenotazioni multiple" : "Nuova prenotazione",
+        title: bookingCount > 1
+          ? (firstBookingType === "lezione_privata" ? "Nuove lezioni private" : "Nuove prenotazioni campo")
+          : (firstBookingType === "lezione_privata" ? "Nuova lezione privata" : "Nuova prenotazione campo"),
+
         message: `${athleteContextForBatchNotifications.athleteName} ha creato ${countLabel} sul ${firstBooking.court} a partire dal ${startDate} alle ${startTime}`,
         link: notificationLink,
       });

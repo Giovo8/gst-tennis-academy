@@ -231,7 +231,7 @@ export default function MaestroDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-secondary mb-2">Bentornato,{" "}<br className="sm:hidden" />{userName}</h1>
+          <h1 className="text-4xl font-bold text-secondary mb-2">Bentornato, {userName}</h1>
         </div>
       </div>
 
@@ -342,7 +342,7 @@ export default function MaestroDashboardPage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
         </div>
         <div className="px-6 py-4">
-          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={12} />
+          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
         </div>
       </div>
     </div>

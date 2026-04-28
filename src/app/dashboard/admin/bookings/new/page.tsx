@@ -11,6 +11,10 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  User,
+  Users,
+  Swords,
+  Lock,
 } from "lucide-react";
 import {
   Modal,
@@ -213,6 +217,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [existingBookings, setExistingBookings] = useState<ExistingBooking[]>([]);
+  const [selectedEntry, setSelectedEntry] = useState<ExistingBooking | null>(null);
+  const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
@@ -231,6 +237,17 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const getBookingDisplayName = (booking: ExistingBooking) =>
     getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
 
+  const getParticipantNames = (booking: ExistingBooking): string[] => {
+    const names =
+      booking.participants
+        ?.map((participant) => participant.full_name?.trim())
+        .filter((name): name is string => Boolean(name && name.length > 0)) || [];
+
+    if (names.length > 0) return names;
+    if (booking.user_profile?.full_name?.trim()) return [booking.user_profile.full_name.trim()];
+    return [];
+  };
+
   const getParticipantIdentityKey = (booking: ExistingBooking) => {
     if (booking.participants && booking.participants.length > 0) {
       return booking.participants
@@ -241,9 +258,67 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     return booking.user_id || "";
   };
 
+  const selectedEntryParticipants = useMemo(
+    () => (selectedEntry ? getParticipantNames(selectedEntry) : []),
+    [selectedEntry]
+  );
+
+  function getBookingTypeIcon(booking: ExistingBooking) {
+    if (booking.isBlock) return <Lock className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.type === "lezione_privata") return <User className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.type === "lezione_gruppo") return <Users className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.type === "arena") return <Swords className="h-5 w-5 text-secondary flex-shrink-0" />;
+    return <Calendar className="h-5 w-5 text-secondary flex-shrink-0" />;
+  }
+
+  function getBookingLabel(booking: ExistingBooking): string {
+    if (booking.isBlock) return "Blocco Campo";
+    if (booking.type === "lezione_privata") return "Lezione Privata";
+    if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
+    if (booking.type === "arena") return "Match Arena";
+    return "Campo";
+  }
+
+  function formatEntryTimeRange(booking: ExistingBooking): string {
+    const start = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    const end = new Date(booking.end_time).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    return `${start} - ${end}`;
+  }
+
+  function getEntryStatusLabel(booking: ExistingBooking): string {
+    if (booking.isBlock) return "Campo bloccato";
+    if (booking.status === "confirmed") return "Confermata";
+    if (booking.status === "pending") return "In attesa";
+    if (booking.status === "cancelled") return "Annullata";
+    return booking.status;
+  }
+
+  function getEntryDetailsPath(booking: ExistingBooking): string {
+    return booking.isBlock
+      ? `${basePath}/courts/${booking.id}`
+      : `${basePath}/bookings/${booking.id}`;
+  }
+
+  function openEntryModal(booking: ExistingBooking) {
+    setSelectedEntry(booking);
+    setEntryModalOpen(true);
+  }
+
+  function goToEntryDetails() {
+    if (!selectedEntry) return;
+    setEntryModalOpen(false);
+    router.push(getEntryDetailsPath(selectedEntry));
+  }
+
   const maxAthletesAllowed =
     bookingType === "lezione_privata"
-      ? null
+      ? 4
       : bookingType === "campo" && matchFormat === "singolo"
         ? 2
         : 4;
@@ -1122,30 +1197,28 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
                         const getBookingStyle = () => {
                           if (booking.isBlock) {
-                            return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
+                            return { background: "var(--color-frozen-lake-900)" };
                           }
                           if (booking.status === "cancelled") {
-                            return { background: "linear-gradient(to bottom right, #6b7280, #4b5563)" };
+                            return { background: "#6b7280" };
                           }
                           switch (booking.type) {
                             case "lezione_privata":
                             case "lezione_gruppo":
-                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
+                              return { background: "#023047" };
                             case "campo":
-                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
+                              return { background: "var(--secondary)" };
                             case "arena":
-                              return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
+                              return { background: "var(--color-frozen-lake-600)" };
                             default:
-                              return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
+                              return { background: "var(--secondary-light)" };
                           }
                         };
-
-                        const isBlock = booking.isBlock;
 
                         return (
                           <div
                             key={booking.id}
-                            onClick={() => router.push(isBlock ? `${basePath}/courts/${booking.id}` : `${basePath}/bookings/${booking.id}`)}
+                            onClick={() => openEntryModal(booking)}
                             className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-pointer hover:opacity-90 transition-opacity"
                             style={{
                               ...getBookingStyle(),
@@ -1155,6 +1228,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                               bottom: '4px',
                               marginLeft: '2px'
                             }}
+                            title="Clicca per vedere i dettagli"
                           />
                         );
                       })}
@@ -1335,6 +1409,86 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
               className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
             >
               Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
+        <ModalContent size="md" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">
+              {selectedEntry?.isBlock ? "Dettaglio Blocco Campo" : "Dettaglio Prenotazione"}
+            </ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Informazioni complete dello slot selezionato.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+            {selectedEntry && (
+              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+                <div className="px-4 py-3 bg-white">
+                  <div className="flex gap-3 items-center">
+                    {getBookingTypeIcon(selectedEntry)}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {selectedEntry.isBlock ? "Blocco campo" : getBookingLabel(selectedEntry)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Campo</span>
+                  <span className="text-xs text-gray-600">{selectedCourt}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Orario</span>
+                  <span className="text-xs text-gray-600">{formatEntryTimeRange(selectedEntry)}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Stato</span>
+                  <span className="text-xs text-gray-600">{getEntryStatusLabel(selectedEntry)}</span>
+                </div>
+
+                {!selectedEntry.isBlock && selectedEntryParticipants.length > 0 && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">
+                      {selectedEntryParticipants.length > 1 ? "Partecipanti" : "Partecipante"}
+                    </span>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      {selectedEntryParticipants.map((name, idx) => (
+                        <p key={`${selectedEntry.id}-participant-${idx}`}>{name}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!selectedEntry.isBlock && selectedEntry.coach_profile?.full_name && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Coach</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.coach_profile.full_name}</span>
+                  </div>
+                )}
+
+                {selectedEntry.reason && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Note</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.reason}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={goToEntryDetails}
+              className="w-full py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-b-lg"
+            >
+              Vai ai dettagli
             </button>
           </ModalFooter>
         </ModalContent>

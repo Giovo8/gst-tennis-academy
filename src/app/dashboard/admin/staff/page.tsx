@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Plus, User, Loader2, Search, ArrowUp, ArrowDown, CheckCircle2, XCircle, MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, User, Loader2, Search, MoreVertical, Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -21,8 +21,6 @@ export default function AdminStaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "role" | "order" | "status" | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -43,6 +41,22 @@ export default function AdminStaffPage() {
       // Handle error silently
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleActive(member: StaffMember) {
+    const newActive = !member.active;
+    try {
+      const { error } = await supabase
+        .from("staff")
+        .update({ active: newActive })
+        .eq("id", member.id);
+      if (error) throw error;
+      setStaff((prev) =>
+        prev.map((m) => (m.id === member.id ? { ...m, active: newActive } : m))
+      );
+    } catch {
+      alert("Errore durante l'aggiornamento dello stato");
     }
   }
 
@@ -73,59 +87,8 @@ export default function AdminStaffPage() {
     );
   });
 
-  const maxExplicitOrder = filteredStaff.reduce(
-    (max, member) => (member.order_index > 0 ? Math.max(max, member.order_index) : max),
-    0
-  );
-
-  const membersWithoutOrder = filteredStaff
-    .filter((member) => !(member.order_index > 0))
-    .sort((a, b) => a.full_name.localeCompare(b.full_name));
-
-  const fallbackOrderMap = new Map<string, number>();
-  membersWithoutOrder.forEach((member, index) => {
-    fallbackOrderMap.set(member.id, maxExplicitOrder + index + 1);
-  });
-
-  const normalizedStaff = filteredStaff.map((member) => ({
-    ...member,
-    effectiveOrder:
-      member.order_index > 0
-        ? member.order_index
-        : fallbackOrderMap.get(member.id) || maxExplicitOrder + 1,
-  }));
-
-  // Sorting logic
-  const sortedStaff = [...normalizedStaff].sort((a, b) => {
-    if (!sortBy) return 0;
-
-    let comparison = 0;
-    switch (sortBy) {
-      case "name":
-        comparison = a.full_name.localeCompare(b.full_name);
-        break;
-      case "role":
-        comparison = a.role.localeCompare(b.role);
-        break;
-      case "order":
-        comparison = a.effectiveOrder - b.effectiveOrder;
-        break;
-      case "status":
-        comparison = (a.active ? 1 : 0) - (b.active ? 1 : 0);
-        break;
-    }
-
-    return sortOrder === "asc" ? comparison : -comparison;
-  });
-
-  const handleSort = (column: "name" | "role" | "order" | "status") => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder("asc");
-    }
-  };
+  // Ordine identico alla home: order_index ascending
+  const sortedStaff = filteredStaff.slice().sort((a, b) => a.order_index - b.order_index);
 
   const closeActionMenu = () => {
     setOpenMenuId(null);
@@ -189,195 +152,120 @@ export default function AdminStaffPage() {
           </p>
         </div>
       ) : (
-        <div
-          className="overflow-x-auto scrollbar-hide"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
+        <div className="space-y-2">
+          {sortedStaff.map((member) => {
+            const cardBg = member.active ? "var(--secondary)" : "#9ca3af";
 
-          <div className="space-y-3 min-w-[860px]">
-            {/* Header Row */}
-            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="grid grid-cols-[80px_90px_1fr_170px_120px_40px] items-center gap-4">
-                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-                <div className="text-xs font-bold text-white/80 uppercase text-center">
-                  <button
-                    onClick={() => handleSort("order")}
-                    className="flex items-center justify-center gap-1 hover:text-white transition-colors mx-auto"
-                  >
-                    Ordine
-                    {sortBy === "order" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="text-xs font-bold text-white/80 uppercase">
-                  <button
-                    onClick={() => handleSort("name")}
-                    className="flex items-center gap-1 hover:text-white transition-colors"
-                  >
-                    Nome
-                    {sortBy === "name" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="text-xs font-bold text-white/80 uppercase">
-                  <button
-                    onClick={() => handleSort("role")}
-                    className="flex items-center gap-1 hover:text-white transition-colors"
-                  >
-                    Ruolo
-                    {sortBy === "role" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div className="text-xs font-bold text-white/80 uppercase text-center">
-                  <button
-                    onClick={() => handleSort("status")}
-                    className="flex items-center justify-center gap-1 hover:text-white transition-colors mx-auto"
-                  >
-                    Stato
-                    {sortBy === "status" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div></div>
-              </div>
-            </div>
-
-            {/* Data Rows */}
-            {sortedStaff.map((member) => {
-              const borderStyle = {
-                borderLeftColor: member.active ? "var(--secondary)" : "#9ca3af",
-              };
-              const statusColor = member.active ? "var(--secondary)" : "#9ca3af";
-              const displayOrder = member.effectiveOrder;
-
-              return (
+            return (
+              <div
+                key={member.id}
+                className="rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity"
+                style={{ background: cardBg }}
+              >
                 <div
-                  key={member.id}
+                  className="flex items-center gap-4 py-3 px-3"
                   onClick={() => router.push(`/dashboard/admin/staff/${member.id}`)}
-                  className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all block cursor-pointer border-l-4"
-                  style={borderStyle}
                 >
-                  <div className="grid grid-cols-[80px_90px_1fr_170px_120px_40px] items-center gap-4">
-                    {/* Avatar */}
-                    <div className="flex items-center justify-center">
-                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/10 flex items-center justify-center">
-                        {member.image_url ? (
-                          <img
-                            src={member.image_url}
-                            alt={member.full_name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="font-bold text-lg text-secondary">
-                            {member.full_name.charAt(0).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                  {/* Avatar */}
+                  <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 overflow-hidden flex items-center justify-center">
+                    {member.image_url ? (
+                      <img
+                        src={member.image_url}
+                        alt={member.full_name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-white leading-none">
+                        {member.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                      </span>
+                    )}
+                  </div>
 
-                    {/* Ordine */}
-                    <div className="text-sm font-bold text-secondary text-center">
-                      {displayOrder}
-                    </div>
+                  {/* Info principale */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{member.full_name}</p>
+                    <p className="text-xs text-white/70 mt-0.5 truncate">{member.role}</p>
+                  </div>
 
-                    {/* Nome e bio */}
-                    <div className="min-w-0">
-                      <div className="font-bold text-secondary text-sm truncate">
-                        {member.full_name}
-                      </div>
-                      {member.bio && (
-                        <div className="text-xs text-secondary/60 truncate mt-0.5">
-                          {member.bio}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Ruolo */}
-                    <div className="font-semibold text-sm text-secondary truncate">
-                      {member.role}
-                    </div>
-
-                    {/* Stato */}
-                    <div className="flex items-center justify-center gap-1">
-                      {member.active ? (
-                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
-                      ) : (
-                        <XCircle className="h-4 w-4" style={{ color: statusColor }} />
-                      )}
-                    </div>
-
-                    {/* Azioni */}
-                    <div className="flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (openMenuId === member.id) {
-                            closeActionMenu();
-                            return;
-                          }
-                          openActionMenu(member.id, e.currentTarget.getBoundingClientRect());
-                        }}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {openMenuId === member.id && menuPosition && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
-                          <div
-                            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-                            style={{ top: menuPosition.top, left: menuPosition.left }}
+                  {/* Azioni */}
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (openMenuId === member.id) {
+                          closeActionMenu();
+                          return;
+                        }
+                        openActionMenu(member.id, e.currentTarget.getBoundingClientRect());
+                      }}
+                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {openMenuId === member.id && menuPosition && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                        <div
+                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                          style={{ top: menuPosition.top, left: menuPosition.left }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link
+                            href={`/dashboard/admin/staff/${member.id}`}
+                            onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
                           >
-                            <Link
-                              href={`/dashboard/admin/staff/${member.id}`}
-                              onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Dettagli
-                            </Link>
-                            <Link
-                              href={`/dashboard/admin/staff/new?id=${member.id}`}
-                              onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Modifica
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                closeActionMenu();
-                                handleDelete(member.id);
-                              }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Elimina
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                            <Eye className="h-3.5 w-3.5" />
+                            Dettagli
+                          </Link>
+                          <Link
+                            href={`/dashboard/admin/staff/new?id=${member.id}`}
+                            onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Modifica
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              closeActionMenu();
+                              handleToggleActive(member);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                          >
+                            {member.active ? (
+                              <ToggleLeft className="h-3.5 w-3.5" />
+                            ) : (
+                              <ToggleRight className="h-3.5 w-3.5" />
+                            )}
+                            {member.active ? "Disattiva" : "Attiva"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              closeActionMenu();
+                              handleDelete(member.id);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Elimina
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

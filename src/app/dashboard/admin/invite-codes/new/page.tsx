@@ -97,38 +97,34 @@ export default function NewInviteCodePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="breadcrumb text-secondary/60 mb-1">
-            <Link
-              href="/dashboard/admin/users"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Gestione Utenti
-            </Link>
-            {" › "}
-            <Link
-              href="/dashboard/admin/invite-codes"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Codici Invito
-            </Link>
-            {" › "}
-            <span>Nuovo Codice</span>
-          </p>
-          <h1 className="text-3xl font-bold text-secondary mb-2">
-            Crea Nuovo Codice Invito
-          </h1>
-          <p className="text-secondary/70 font-medium">
-            Genera un nuovo codice di invito per registrare utenti sulla piattaforma
-          </p>
-        </div>
+      {/* Header */}
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link
+            href="/dashboard/admin/users"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Gestione Utenti
+          </Link>
+          {" › "}
+          <Link
+            href="/dashboard/admin/invite-codes"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Codici Invito
+          </Link>
+          {" › "}
+          <span>Nuovo Codice</span>
+        </p>
+        <h1 className="text-4xl font-bold text-secondary">Nuovo Codice Invito</h1>
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-xl p-6">
-        <h2 className="text-xl font-bold text-secondary mb-6">Impostazioni Codice</h2>
-        
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Impostazioni Codice</h2>
+        </div>
+        <div className="px-6 py-6">
         <div className="space-y-6">
           {/* Ruolo */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -202,6 +198,7 @@ export default function NewInviteCodePage() {
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Actions */}
@@ -217,7 +214,6 @@ export default function NewInviteCodePage() {
           </>
         ) : (
           <>
-            <Plus className="h-4 w-4" />
             Genera Codice
           </>
         )}

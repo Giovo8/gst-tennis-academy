@@ -9,7 +9,7 @@ import {
   LayoutGrid,
   Calendar,
   Trophy,
-  User,
+  Dumbbell,
   Users,
   MessageSquare,
   Mail,
@@ -33,6 +33,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [userEmail, setUserEmail] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [userRole, setUserRole] = useState<"admin" | "gestore">("admin");
+  const [userId, setUserId] = useState<string>("");
   const [hasSecondaryMaestroRole, setHasSecondaryMaestroRole] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +47,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       }
 
       setUserEmail(user.email || "");
+      setUserId(user.id);
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -104,7 +106,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {
             label: "Maestro",
             href: "/dashboard/admin/maestro",
-            icon: <User className="h-5 w-5" />,
+            icon: <Dumbbell className="h-5 w-5" />,
           } as NavItem,
         ]
       : []),
@@ -167,6 +169,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       userName={userName}
       userEmail={userEmail}
       userAvatar={userAvatar}
+      userId={userId}
     >
       {children}
     </DashboardShell>

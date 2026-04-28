@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
@@ -15,9 +15,20 @@ import {
   Wrench,
   Flag,
   Shield,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/ui";
 
 type Block = {
   id: string;
@@ -79,6 +90,91 @@ export default function CourtBlockEditPage() {
   const [endTime, setEndTime] = useState("22:00");
   const [selectedWeekDays, setSelectedWeekDays] = useState<number[]>([]);
   const [blockExceptions, setBlockExceptions] = useState<BlockException[]>([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
+  const [activeDateField, setActiveDateField] = useState<"start" | "end">("start");
+  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  const CALENDAR_WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+
+  const parseDateInput = (value: string): Date | null => {
+    if (!value) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    if (!year || !month || !day) return null;
+    return new Date(year, month - 1, day, 12, 0, 0, 0);
+  };
+
+  const toInputDateValue = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const formatDateButtonLabel = (value: string): string => {
+    const date = parseDateInput(value);
+    if (!date) return "gg/mm/aaaa";
+    return date.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+
+  const isSameCalendarDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
+    const gridStartDate = new Date(firstOfMonth);
+    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStartDate);
+      date.setDate(gridStartDate.getDate() + index);
+      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
+    });
+  }, [calendarViewDate]);
+
+  const getCalendarMonthLabel = (date: Date) => {
+    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+
+  const changeCalendarMonth = (offset: number) => {
+    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+  };
+
+  const openDatePickerModal = (field: "start" | "end") => {
+    setActiveDateField(field);
+    const currentValue = field === "start" ? startDate : endDate;
+    const parsed = parseDateInput(currentValue) || new Date();
+    setPendingDate(parsed);
+    setCalendarViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+    setDatePickerModalOpen(true);
+  };
+
+  const handleDatePickerToday = () => {
+    const today = new Date();
+    setPendingDate(today);
+    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  };
+
+  const applyDateSelection = () => {
+    const selected = toInputDateValue(pendingDate);
+    if (activeDateField === "start") {
+      setStartDate(selected);
+      if (endDate && endDate < selected) setEndDate(selected);
+    } else {
+      if (startDate && selected < startDate) setEndDate(startDate);
+      else setEndDate(selected);
+    }
+    setDatePickerModalOpen(false);
+  };
 
   const toMinutes = (time: string) => {
     const [hours, minutes] = time.split(":").map(Number);
@@ -122,33 +218,25 @@ export default function CourtBlockEditPage() {
     const reasonLower = (reason || "").toLowerCase();
 
     if (reasonLower.includes("corso adulti")) {
-      return {
-        type: "Corso Adulti",
-        icon: GraduationCap
-      };
+      return { type: "Corso Adulti", icon: GraduationCap };
     }
-    
     if (reasonLower.includes("corsi") || reasonLower.includes("tennis")) {
-      return {
-        type: "Corsi Tennis",
-        icon: GraduationCap
-      };
+      return { type: "Corsi Tennis", icon: GraduationCap };
     } else if (reasonLower.includes("manutenzione")) {
-      return {
-        type: "Manutenzione",
-        icon: Wrench
-      };
+      return { type: "Manutenzione", icon: Wrench };
     } else if (reasonLower.includes("evento")) {
-      return {
-        type: "Evento",
-        icon: Flag
-      };
+      return { type: "Evento", icon: Flag };
     }
-    
-    return {
-      type: "Blocco",
-      icon: Shield
-    };
+    return { type: "Altro", icon: Shield };
+  }
+
+  function getBlockCardBg(type: string) {
+    if (type === "Corso Adulti") return "#023047";
+    if (type === "Corsi Tennis") return "#05384c";
+    if (type === "Manutenzione") return "var(--color-frozen-lake-900)";
+    if (type === "Evento") return "var(--color-frozen-lake-900)";
+    if (type === "Altro") return "var(--secondary)";
+    return "var(--color-frozen-lake-800)";
   }
 
   useEffect(() => {
@@ -217,6 +305,21 @@ export default function CourtBlockEditPage() {
 
         setAllBlocks(filteredBlocks);
         setBlockExceptions([]);
+
+        // Imposta startDate/endDate dal range reale
+        if (filteredBlocks.length > 0) {
+          const first = filteredBlocks[0];
+          const last = filteredBlocks[filteredBlocks.length - 1];
+          const toVal = (s: string) => {
+            const d = new Date(s);
+            const y = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, "0");
+            const da = String(d.getDate()).padStart(2, "0");
+            return `${y}-${mo}-${da}`;
+          };
+          setStartDate(toVal(first.start_time));
+          setEndDate(toVal(last.start_time));
+        }
 
         // Estrai giorni della settimana dai blocchi
         const weekDays = new Set<number>();
@@ -315,10 +418,16 @@ export default function CourtBlockEditPage() {
     try {
       setSubmitting(true);
 
-      // Trova il range di date dai blocchi esistenti
-      const dates = allBlocks.map(b => new Date(b.start_time));
-      const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-      const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      // Trova il range di date da startDate/endDate
+      const startParsed = parseDateInput(startDate);
+      const endParsed = parseDateInput(endDate);
+      if (!startParsed || !endParsed) {
+        alert("Seleziona data inizio e data fine");
+        setSubmitting(false);
+        return;
+      }
+      const minDate = startParsed;
+      const maxDate = endParsed;
 
       // Crea nuovi blocchi con i nuovi parametri
       let typeLabel = BLOCK_TYPES.find(t => t.value === blockType)?.label || blockType;
@@ -441,6 +550,7 @@ export default function CourtBlockEditPage() {
 
   const blockStyle = getBlockStyle(allBlocks[0]?.reason);
   const BlockIcon = blockStyle.icon;
+  const headerCardBg = getBlockCardBg(blockStyle.type);
 
   return (
     <div className="space-y-6">
@@ -456,15 +566,16 @@ export default function CourtBlockEditPage() {
           {" › "}
           <span>Modifica Blocco</span>
         </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica blocco campo</h1>
-        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-          Aggiorna campo, giorni e orari mantenendo il periodo originale del blocco.
-        </p>
+        <h1 className="text-4xl font-bold text-secondary">Modifica Blocco</h1>
       </div>
 
       <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: "var(--secondary)" }}
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{
+          backgroundColor: headerCardBg,
+          borderColor: headerCardBg,
+          borderLeftColor: headerCardBg,
+        }}
       >
         <div className="flex items-start gap-6">
           <BlockIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -474,60 +585,58 @@ export default function CourtBlockEditPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">
-          Date bloccate
-        </h2>
-
-        <div className="space-y-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <div className="bg-secondary rounded-lg px-4 py-3 border border-secondary min-w-[560px]">
-            <div className="grid grid-cols-[40px_2fr_1fr_64px] items-center gap-4">
-              <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-              <div className="text-xs font-bold text-white/80 uppercase">Orario</div>
-              <div className="text-xs font-bold text-white/80 uppercase text-center">&nbsp;</div>
-            </div>
-          </div>
-
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Date bloccate</h2>
+        </div>
+        <div className="p-6">
+        <ul className="flex flex-col gap-2">
           {allBlocks.map((block, index) => {
             const dateStart = new Date(block.start_time);
             const dateEnd = new Date(block.end_time);
 
             return (
-              <div
-                key={block.id}
-                className="bg-white rounded-lg px-4 py-3 border border-gray-200 border-l-4 min-w-[560px]"
-                style={{ borderLeftColor: "var(--secondary)" }}
-              >
-                <div className="grid grid-cols-[40px_2fr_1fr_64px] items-center gap-4">
-                  <div className="text-sm text-secondary/60 text-center">{index + 1}</div>
-                  <div className="text-secondary font-semibold text-sm">
-                    {format(dateStart, "EEEE d MMMM yyyy", { locale: it }).replace(/^./, (letter) => letter.toUpperCase())}
+              <li key={block.id}>
+                <div
+                  className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                  style={{ background: "var(--secondary)" }}
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                    <span className="text-sm font-bold leading-none text-white">{index + 1}</span>
                   </div>
-                  <div className="text-secondary/70 text-sm">
-                    {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate text-white">
+                      {format(dateStart, "EEEE d MMMM yyyy", { locale: it }).replace(/^./, (letter) => letter.toUpperCase())}
+                    </p>
+                    <p className="text-xs truncate mt-0.5 text-white/70">
+                      {format(dateStart, "HH:mm")} - {format(dateEnd, "HH:mm")}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-center">
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       type="button"
                       onClick={() => handleDisableDateTab(block)}
-                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded transition-all focus:outline-none hover:bg-white/10 text-white/70 hover:text-white"
                       aria-label={`Rimuovi ${format(dateStart, "dd/MM/yyyy", { locale: it })}`}
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-              </div>
+              </li>
             );
           })}
+        </ul>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli blocco</h2>
+        </div>
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-6">Modifica blocco</h2>
-
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
@@ -551,7 +660,7 @@ export default function CourtBlockEditPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo blocco</label>
               <div className="flex-1">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-2">
@@ -584,6 +693,41 @@ export default function CourtBlockEditPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Periodo</h2>
+        </div>
+        <div className="p-6">
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => openDatePickerModal("start")}
+                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  {formatDateButtonLabel(startDate)}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => openDatePickerModal("end")}
+                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  {formatDateButtonLabel(endDate)}
+                </button>
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
@@ -604,65 +748,58 @@ export default function CourtBlockEditPage() {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-secondary/60 mt-2">
-                  {selectedWeekDays.length === 7
-                    ? "Tutti i giorni"
-                    : selectedWeekDays.length === 0
-                      ? "Nessun giorno selezionato"
-                      : `${selectedWeekDays.length} giorno/i selezionato/i`}
-                </p>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ora inizio</label>
               <div className="flex-1">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-secondary/60 mb-2">Orario inizio</label>
-                    <select
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                    >
-                      {TIME_SLOTS.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-secondary/60 mb-2">Orario fine</label>
-                    <select
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                    >
-                      {TIME_SLOTS.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                <select
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  {TIME_SLOTS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Note</label>
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ora fine</label>
               <div className="flex-1">
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Aggiungi dettagli aggiuntivi..."
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                />
+                <select
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  {TIME_SLOTS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+        </div>
+        <div className="p-6">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Aggiungi dettagli aggiuntivi..."
+            rows={4}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
         <button
           onClick={handleUpdate}
           disabled={
@@ -673,7 +810,7 @@ export default function CourtBlockEditPage() {
             submitting ||
             deleting
           }
-          className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? (
             <>
@@ -681,17 +818,14 @@ export default function CourtBlockEditPage() {
               Salvataggio...
             </>
           ) : (
-            <>
-              <Save className="h-5 w-5" />
-              Salva Modifiche
-            </>
+              <span>Salva</span>
           )}
         </button>
 
         <button
           onClick={handleDelete}
           disabled={deleting || submitting}
-          className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {deleting ? (
             <>
@@ -699,13 +833,94 @@ export default function CourtBlockEditPage() {
               Eliminazione...
             </>
           ) : (
-            <>
-              <Trash2 className="h-5 w-5" />
-              Elimina Blocco
-            </>
+              <span>Elimina</span>
           )}
         </button>
       </div>
+
+      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
+        <ModalContent
+          size="sm"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10"
+        >
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">
+              {activeDateField === "start" ? "Seleziona Data Inizio" : "Seleziona Data Fine"}
+            </ModalTitle>
+            <ModalDescription className="text-white/80 text-xs">
+              Scegli il giorno da impostare.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {CALENDAR_WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => setPendingDate(date)}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white font-semibold"
+                          : isCurrentMonth
+                            ? "text-gray-800 hover:bg-gray-100"
+                            : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={handleDatePickerToday}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyDateSelection}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

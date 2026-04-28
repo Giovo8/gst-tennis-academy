@@ -316,51 +316,37 @@ export default function AthletesSelector({
       </div>
 
       {selectedAthletes.length > 0 && (
-        <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <div className="min-w-[480px] space-y-3">
-            <div className="bg-secondary rounded-lg px-4 py-2 border border-secondary">
-              <div className="grid grid-cols-[32px_1fr_180px_40px] items-center gap-4">
-                <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-                <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
-                <div className="text-xs font-bold text-white/80 uppercase">Contatti</div>
-                <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
-              </div>
-            </div>
-
-            {selectedAthletes.map((athlete, index) => {
-              const contacts = [athlete.email, athlete.phone].filter(Boolean).join(" ");
-
-              return (
-                <div
-                  key={`${athlete.userId || athlete.fullName}-${index}`}
-                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4"
-                  style={{ borderLeftColor: "var(--secondary)" }}
-                >
-                  <div className="grid grid-cols-[32px_1fr_180px_40px] items-center gap-4">
-                    <div className="flex items-center justify-center">
-                      <span className="text-xs font-bold text-secondary">{index + 1}</span>
-                    </div>
-                    <div className="font-semibold text-secondary text-sm truncate">
-                      {athlete.fullName}
-                    </div>
-                    <div className="text-xs text-secondary/60 truncate">
-                      {contacts || "-"}
-                    </div>
-                    <div className="flex items-center justify-center">
-                      <button
-                        onClick={() => onAthleteRemove(index)}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
-                        aria-label={`Rimuovi ${athlete.fullName}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+        <ul className="flex flex-col gap-2">
+          {selectedAthletes.map((athlete, index) => (
+            <li key={`${athlete.userId || athlete.fullName}-${index}`}>
+              <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "var(--secondary)" }}>
+                <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                  <span className="text-sm font-bold text-white leading-none">
+                    {athlete.fullName.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white text-sm truncate">{athlete.fullName}</p>
+                  {(athlete.email || athlete.phone) && (
+                    <p className="text-xs text-white/60 mt-0.5 truncate">
+                      {[athlete.email, athlete.phone].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </div>
+                <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
+                  {athlete.isRegistered ? "ATLETA" : "OSPITE"}
+                </span>
+                <button
+                  onClick={() => onAthleteRemove(index)}
+                  className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
+                  aria-label={`Rimuovi ${athlete.fullName}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

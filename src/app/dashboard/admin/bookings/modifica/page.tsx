@@ -16,6 +16,8 @@ import {
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/lib/supabase/client";
+import { getCourts } from "@/lib/courts/getCourts";
+import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 
@@ -164,13 +166,6 @@ function SearchableSelect({
   );
 }
 
-const COURTS = [
-  "Campo 1",
-  "Campo 2",
-  "Campo 3",
-  "Campo 4",
-];
-
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", shortLabel: "Campo" },
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata" },
@@ -211,6 +206,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [selectedCourt, setSelectedCourt] = useState("");
+  const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
+  const [courtsLoading, setCourtsLoading] = useState(true);
   const [bookingType, setBookingType] = useState<string>("campo");
   const [coaches, setCoaches] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedCoach, setSelectedCoach] = useState<string>("");
@@ -365,36 +362,46 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   // Carica elenco maestri
   useEffect(() => {
     const loadCoachesAndAthletes = async () => {
-      const [coachRes, athleteRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, role, metadata").in("role", ["maestro", "gestore"]).order("full_name"),
-        supabase.from("profiles").select("id, full_name, email, phone, role").eq("role", "atleta").order("full_name"),
-      ]);
-      if (coachRes.data) {
-        const eligibleCoaches = coachRes.data
-          .filter((coach) => isBookableCoachProfile(coach))
-          .map(({ id, full_name }) => ({ id, full_name }));
+      try {
+        const courtsData = await getCourts();
+        setCourts(courtsData);
+        if (!selectedCourt && courtsData.length > 0) {
+          setSelectedCourt(courtsData[0]);
+        }
 
-        setCoaches(eligibleCoaches as { id: string; full_name: string }[]);
-      }
-      if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
+        const [coachRes, athleteRes] = await Promise.all([
+          supabase.from("profiles").select("id, full_name, role, metadata").in("role", ["maestro", "gestore"]).order("full_name"),
+          supabase.from("profiles").select("id, full_name, email, phone, role").eq("role", "atleta").order("full_name"),
+        ]);
+        if (coachRes.data) {
+          const eligibleCoaches = coachRes.data
+            .filter((coach) => isBookableCoachProfile(coach))
+            .map(({ id, full_name }) => ({ id, full_name }));
 
-      const { data: guestsData } = await supabase
-        .from("booking_participants")
-        .select("full_name, email, phone")
-        .eq("is_registered", false)
-        .order("full_name");
+          setCoaches(eligibleCoaches as { id: string; full_name: string }[]);
+        }
+        if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
 
-      if (guestsData) {
-        const seen = new Set<string>();
-        const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce((acc: { fullName: string; email?: string; phone?: string }[], g) => {
-          const key = g.full_name.trim().toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
-            acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
-          }
-          return acc;
-        }, []);
-        setPreviousGuests(deduped);
+        const { data: guestsData } = await supabase
+          .from("booking_participants")
+          .select("full_name, email, phone")
+          .eq("is_registered", false)
+          .order("full_name");
+
+        if (guestsData) {
+          const seen = new Set<string>();
+          const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce((acc: { fullName: string; email?: string; phone?: string }[], g) => {
+            const key = g.full_name.trim().toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
+            }
+            return acc;
+          }, []);
+          setPreviousGuests(deduped);
+        }
+      } finally {
+        setCourtsLoading(false);
       }
     };
 
@@ -950,6 +957,12 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
               <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
               </div>
+              {courtsLoading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="h-10 w-10 animate-spin text-secondary mb-3" />
+                  <p className="text-secondary font-semibold">Caricamento...</p>
+                </div>
+              ) : (
               <div className="space-y-6 p-4 sm:p-6">
                 {/* Tipo prenotazione */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -961,7 +974,6 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         type="button"
                         onClick={() => {
                           setBookingType(type.value);
-                          if (type.value === "campo") setSelectedCoach("");
                         }}
                         className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                           bookingType === type.value
@@ -1022,7 +1034,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
                   <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                    {COURTS.map((c) => (
+                    {courts.map((c) => (
                       <button
                         key={c}
                         type="button"
@@ -1042,6 +1054,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   </div>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Card Partecipanti */}

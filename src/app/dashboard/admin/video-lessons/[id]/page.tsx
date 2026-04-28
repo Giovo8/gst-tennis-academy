@@ -284,57 +284,30 @@ export default function VideoDetailPage() {
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
           </div>
-          <div className="p-6">
+          <div className="px-6 py-4">
           {video.assigned_users && video.assigned_users.length > 0 ? (
-            <div className="space-y-3">
-              {/* Header Row */}
-              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-bold text-white/80 uppercase">Nome</div>
-                  </div>
-                  <div className="w-48 hidden md:block">
-                    <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                  </div>
-                  <div className="w-32 hidden lg:block">
-                    <div className="text-xs font-bold text-white/80 uppercase">Telefono</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Rows */}
+            <ul className="flex flex-col gap-2">
               {video.assigned_users.map((user: any, index: number) => (
-                <div
-                  key={user.id}
-                  className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                  style={{ borderLeftColor: "var(--secondary)" }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold">
-                        {user.full_name?.charAt(0)?.toUpperCase() || "U"}
-                      </div>
+                <li key={user.id}>
+                  <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "var(--secondary)" }}>
+                    <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-white leading-none">
+                        {user.full_name?.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() || "U"}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="font-bold text-secondary">{user.full_name}</div>
-                    </div>
-                    <div className="w-48 hidden md:block">
-                      <div className="text-sm text-secondary/70 truncate">{user.email}</div>
-                    </div>
-                    <div className="w-32 hidden lg:block">
-                      {user.phone ? (
-                        <div className="text-sm text-secondary/70 truncate">{user.phone}</div>
-                      ) : (
-                        <div className="text-sm text-secondary/40">-</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white text-sm truncate">{user.full_name}</p>
+                      {(user.email || user.phone) && (
+                        <p className="text-xs text-white/60 truncate mt-0.5">
+                          {[user.email, user.phone].filter(Boolean).join(" · ")}
+                        </p>
                       )}
                     </div>
+                    <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">ATLETA</span>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
             <p className="text-sm text-secondary/50 text-center py-8">
               Video non assegnato a nessun utente

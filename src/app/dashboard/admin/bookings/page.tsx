@@ -521,7 +521,9 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
   // Sorting logic
   const sortedBookings = [...filteredBookings].sort((a, b) => {
-    if (!sortBy) return 0;
+    if (!sortBy) {
+      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    }
 
     let comparison = 0;
     switch (sortBy) {
@@ -728,257 +730,139 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
         </div>
       ) : (
-        <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <div className="space-y-3 min-w-[1040px]">
-          {/* Header Row */}
-          <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-            <div className="grid grid-cols-[40px_80px_56px_80px_220px_120px_1fr_60px_64px] items-center gap-4">
-              <div className="text-xs font-bold text-white/80 uppercase text-center">
-                <button
-                  onClick={() => handleSort("type")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1 mx-auto"
-                >
-                  #
-                  {sortBy === "type" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="text-xs font-bold text-white/80 uppercase">
-                <button
-                  onClick={() => handleSort("date")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Data
-                  {sortBy === "date" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
-              <div className="text-xs font-bold text-white/80 uppercase">
-                <button
-                  onClick={() => handleSort("court")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Campo
-                  {sortBy === "court" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="text-xs font-bold text-white/80 uppercase">
-                <button
-                  onClick={() => handleSort("athlete")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Atleta
-                  {sortBy === "athlete" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div className="text-xs font-bold text-white/80 uppercase">
-                <button
-                  onClick={() => handleSort("coach")}
-                  className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                >
-                  Maestro
-                  {sortBy === "coach" && (
-                    sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
-              <div></div>
-              <div className="text-xs font-bold text-white/80 uppercase text-center">Stato</div>
-              <div></div>
-            </div>
-          </div>
-
+        <div className="space-y-2">
           {/* Data Rows */}
           {sortedBookings.map((booking) => {
-            const status = statusConfig[booking.status] || {
-              label: getStatusLabel(booking.status),
-              color: "bg-secondary text-white",
-              icon: Circle,
-            };
-            const StatusIcon = status.icon;
-            const bookingType = typeConfig[booking.type] || typeConfig.campo;
             const isCancelledBooking =
               booking.status === "cancelled" || booking.status === "cancellation_requested";
             const isPastBooking = new Date(booking.end_time) < new Date();
-            
-            // Determina il colore del bordo in base allo stato (palette frozen-lake)
-            let borderStyle = {};
-            let statusColor = "";
-            if (isCancelledBooking) {
-              borderStyle = { borderLeftColor: "#6b7280" };
-              statusColor = "#6b7280";
-            } else if (isPastBooking) {
-              borderStyle = { borderLeftColor: "#9ca3af" };
-              statusColor = "#9ca3af";
+            const start = new Date(booking.start_time);
+
+            let typeBg = "";
+            if (isCancelledBooking || isPastBooking) {
+              typeBg = "#9ca3af";
+            } else if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
+              typeBg = "#023047";
+            } else if (booking.type === "arena") {
+              typeBg = "var(--color-frozen-lake-600)";
             } else {
-              // Colore dinamico in base al tipo (stesso schema timeline)
-              if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
-                borderStyle = { borderLeftColor: "#023047" };
-                statusColor = "#023047";
-              } else if (booking.type === "arena") {
-                borderStyle = { borderLeftColor: "var(--color-frozen-lake-600)" };
-                statusColor = "var(--color-frozen-lake-600)";
-              } else {
-                borderStyle = { borderLeftColor: "var(--secondary)" };
-                statusColor = "var(--secondary)";
-              }
+              typeBg = "var(--secondary)";
             }
+
+            const typeLabel =
+              booking.type === "lezione_privata" ? "Lezione Priv."
+              : booking.type === "lezione_gruppo" ? "Lezione Gruppo"
+              : booking.type === "arena" ? "Arena"
+              : "Campo";
 
             return (
               <div
                 key={booking.id}
-                className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
-                style={borderStyle}
+                className="rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity"
+                style={{ background: typeBg }}
               >
                 <div
+                  className="flex items-center gap-4 py-3 px-3"
                   onClick={() => router.push(`${basePath}/bookings/${booking.id}`)}
-                  className="grid grid-cols-[40px_80px_56px_80px_220px_220px_1fr_60px_64px] items-center gap-4 no-underline"
                 >
-                    {/* Simbolo Tipo */}
-                    <div className="flex items-center justify-center">
-                      {booking.type === "lezione_privata" && (
-                        <Users className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "#023047" }} />
-                      )}
-                      {booking.type === "lezione_gruppo" && (
-                        <Users className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "#023047" }} />
-                      )}
-                      {booking.type === "campo" && (
-                        <CalendarClock className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "var(--secondary)" }} />
-                      )}
-                      {booking.type === "arena" && (
-                        <Trophy className="h-5 w-5" strokeWidth={2} style={{ color: isCancelledBooking || isPastBooking ? "#9ca3af" : "var(--color-frozen-lake-600)" }} />
-                      )}
-                    </div>
+                  {/* Date box */}
+                  <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                    <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                      {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                    </span>
+                    <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                      {start.getDate()}
+                    </span>
+                  </div>
 
-                    {/* Data */}
-                    <div className="font-bold text-secondary text-sm whitespace-nowrap">
-                      {formatDate(booking.start_time)}
-                    </div>
-
-                    {/* Orario */}
-                    <div className="text-sm font-semibold text-secondary">
-                      {formatTime(booking.start_time)}
-                    </div>
-
-                    {/* Campo */}
-                    <div className="font-bold text-secondary">{booking.court}</div>
-
-                    {/* Atleta */}
-                    <div className="font-semibold text-secondary text-sm whitespace-nowrap">
+                  {/* Info principale */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
                       {getAthleteDisplayName(booking)}
-                    </div>
-
-                    {/* Maestro */}
-                    <div>
-                      {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") ? (
-                        <div className="font-semibold text-secondary text-sm whitespace-nowrap">
-                          {booking.coach_profile?.full_name || "N/A"}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-secondary/30">-</div>
+                    </p>
+                    <p className="text-xs text-white/70 mt-0.5">
+                      {formatTime(booking.start_time)}–{formatTime(booking.end_time)} · {booking.court}
+                      {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") && booking.coach_profile?.full_name && (
+                        <span> · {booking.coach_profile.full_name}</span>
                       )}
-                    </div>
+                    </p>
+                  </div>
 
-                    {/* Spazio flessibile */}
-                    <div></div>
+                  {/* Type label */}
+                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                    {typeLabel}
+                  </span>
 
-                    {/* Stato */}
-                    <div className="flex items-center justify-center gap-1">
-                      {booking.status === "cancelled" ? (
-                        <XCircle className="h-4 w-4" style={{ color: statusColor }} />
-                      ) : booking.status === "cancellation_requested" ? (
-                        <AlertCircle className="h-4 w-4" style={{ color: statusColor }} />
-                      ) : isPastBooking ? (
-                        <Clock className="h-4 w-4" style={{ color: statusColor }} />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4" style={{ color: statusColor }} />
-                      )}
-                    </div>
-
-                    {/* Azioni - 3 puntini */}
-                    <div className="relative flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (openMenuId === booking.id) {
-                            closeActionMenu();
-                            return;
-                          }
-
-                          openActionMenu(booking.id, e.currentTarget.getBoundingClientRect());
-                        }}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {openMenuId === booking.id && menuPosition && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
-                          <div
-                            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-                            style={{ top: menuPosition.top, left: menuPosition.left }}
+                  {/* Azioni - 3 puntini */}
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (openMenuId === booking.id) {
+                          closeActionMenu();
+                          return;
+                        }
+                        openActionMenu(booking.id, e.currentTarget.getBoundingClientRect());
+                      }}
+                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {openMenuId === booking.id && menuPosition && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                        <div
+                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                          style={{ top: menuPosition.top, left: menuPosition.left }}
+                        >
+                          <Link
+                            href={`${basePath}/bookings/modifica?id=${booking.id}`}
+                            onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
                           >
-                            <Link
-                              href={`${basePath}/bookings/modifica?id=${booking.id}`}
-                              onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Modifica
-                            </Link>
-                            {!(isCancelledBooking || isPastBooking) && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  closeActionMenu();
-                                  cancelBooking(booking.id);
-                                }}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#056c94] hover:bg-[#056c94]/10 transition-colors w-full"
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                                Annulla
-                              </button>
-                            )}
+                            <Pencil className="h-3.5 w-3.5" />
+                            Modifica
+                          </Link>
+                          {!(isCancelledBooking || isPastBooking) && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 closeActionMenu();
-                                if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
-                                  deleteBooking(booking.id);
-                                }
+                                cancelBooking(booking.id);
                               }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#056c94] hover:bg-[#056c94]/10 transition-colors w-full"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Elimina
+                              <XCircle className="h-3.5 w-3.5" />
+                              Annulla
                             </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              closeActionMenu();
+                              if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
+                                deleteBooking(booking.id);
+                              }
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Elimina
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
+              </div>
             );
           })}
-          </div>
         </div>
       )}
 

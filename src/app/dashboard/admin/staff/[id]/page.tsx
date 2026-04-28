@@ -145,25 +145,13 @@ export default function AdminStaffDetailPage() {
             <div className="font-semibold text-secondary">{staff.role}</div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Ordine</label>
-            <div className="font-semibold text-secondary">{staff.order_index && staff.order_index > 0 ? staff.order_index : "Non impostato"}</div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Stato</label>
-            <div className={staff.active ? "font-semibold text-secondary" : "font-semibold text-gray-500"}>
-              {staff.active ? "Attivo" : "Disattivo"}
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="text-sm font-semibold text-secondary sm:w-48 sm:pt-1 flex-shrink-0">Bio</label>
             <div className="text-secondary/80 whitespace-pre-wrap">{staff.bio || "Nessuna biografia"}</div>
           </div>
 
           {socialLinks.length > 0 && (
-            <div className="pt-6 border-t border-gray-200">
+            <div className="pb-6 border-b border-gray-200">
               {socialLinks.map((item, index) => (
                 <div
                   key={item.label}
@@ -184,6 +172,18 @@ export default function AdminStaffDetailPage() {
               ))}
             </div>
           )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Ordine</label>
+            <div className="font-semibold text-secondary">{staff.order_index && staff.order_index > 0 ? staff.order_index : "Non impostato"}</div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Stato</label>
+            <div className={staff.active ? "font-semibold text-secondary" : "font-semibold text-gray-500"}>
+              {staff.active ? "Attivo" : "Disattivo"}
+            </div>
+          </div>
         </div>
       </div>
 

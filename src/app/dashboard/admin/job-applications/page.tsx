@@ -2,24 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
 import {
   FileText,
-  Mail,
-  ExternalLink,
   Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
   Users,
   Dumbbell,
   Search,
   Loader2,
-  ArrowUp,
-  ArrowDown,
-  RefreshCw,
-  Download,
-  Plus,
   MoreVertical,
   Pencil,
 } from "lucide-react";
@@ -43,7 +32,7 @@ export default function JobApplicationsPage() {
   const [sortBy, setSortBy] = useState<"date" | "name" | "role" | "status" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   async function loadApplications() {
     setLoading(true);
@@ -140,6 +129,26 @@ export default function JobApplicationsPage() {
     rejected: applications.filter(a => a.status === "rejected").length,
   };
 
+  const closeActionMenu = () => {
+    setOpenMenuId(null);
+    setMenuPosition(null);
+  };
+
+  const getStatusLabel = (status: JobApplication["status"]) => {
+    switch (status) {
+      case "pending":
+        return "";
+      case "reviewed":
+        return "Revisionata";
+      case "accepted":
+        return "Accettata";
+      case "rejected":
+        return "Rifiutata";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -174,182 +183,113 @@ export default function JobApplicationsPage() {
           <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
         </div>
       ) : (
-        <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <div className="space-y-3 min-w-[750px]">
-            {/* Header Row */}
-            <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-              <div className="grid grid-cols-[40px_100px_160px_1fr_100px_40px] items-center gap-4">
-                <div className="flex items-center justify-center">
-                  <button
-                    onClick={() => handleSort("role")}
-                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    #
-                    {sortBy === "role" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div>
-                  <button
-                    onClick={() => handleSort("date")}
-                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    Data
-                    {sortBy === "date" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div>
-                  <button
-                    onClick={() => handleSort("name")}
-                    className="text-xs font-bold text-white/80 uppercase hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    Nome
-                    {sortBy === "name" && (
-                      sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white/80 uppercase">Email</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Ruolo</div>
-                </div>
-                <div></div>
-              </div>
-            </div>
+        <div className="space-y-2">
+          {sortedApplications.map((app) => {
+            const roleColor = app.role === "maestro" ? "var(--secondary)" : "#023047";
+            const RoleIcon = app.role === "maestro" ? Users : Dumbbell;
 
-            {/* Data Rows */}
-            {sortedApplications.map((app) => {
-              // Colore bordo sinistro e icona basato sul ruolo
-              const roleColor = app.role === "maestro" ? "var(--secondary)" : "#023047";
-              const borderStyle = { borderLeftColor: roleColor };
-
-              return (
+            return (
+              <div
+                key={app.id}
+                className="rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity"
+                style={{ background: roleColor }}
+              >
                 <div
-                  key={app.id}
-                  className="bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer border-l-4"
-                  style={borderStyle}
+                  className="flex items-center gap-4 py-3 px-3"
+                  onClick={() => {
+                    window.location.href = `/dashboard/admin/job-applications/${app.id}`;
+                  }}
                 >
-                  <Link
-                    href={`/dashboard/admin/job-applications/${app.id}`}
-                    className="grid grid-cols-[40px_100px_160px_1fr_100px_40px] items-center gap-4 no-underline"
-                  >
-                    {/* Icon Ruolo */}
-                    <div className="flex items-center justify-center">
-                      {app.role === "maestro" ? (
-                        <Users className="h-5 w-5" style={{ color: roleColor }} strokeWidth={2} />
-                      ) : (
-                        <Dumbbell className="h-5 w-5" style={{ color: roleColor }} strokeWidth={2} />
-                      )}
-                    </div>
+                  <div className="flex items-center justify-center bg-white/10 rounded-lg w-11 h-11 flex-shrink-0">
+                    <RoleIcon className="h-5 w-5 text-white" strokeWidth={2} />
+                  </div>
 
-                    {/* Data */}
-                    <div className="font-bold text-secondary text-sm">
-                      {formatDate(app.created_at)}
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{app.full_name}</p>
+                    <p className="text-xs text-white/70 mt-0.5 truncate">
+                      {app.email} · {formatDate(app.created_at)}
+                    </p>
+                  </div>
 
-                    {/* Nome */}
-                    <div className="font-bold text-secondary text-sm truncate">
-                      {app.full_name}
-                    </div>
+                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                    {app.role === "maestro" ? "Maestro" : "Preparatore"}
+                  </span>
 
-                    {/* Email */}
-                    <div className="text-sm text-secondary/70 truncate">
-                      {app.email}
-                    </div>
+                  {app.status !== "pending" && (
+                    <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden md:block">
+                      {getStatusLabel(app.status)}
+                    </span>
+                  )}
 
-                    {/* Ruolo */}
-                    <div className="text-center">
-                      <span className="text-sm font-bold text-secondary">
-                        {app.role === "maestro" ? "Maestro" : "Preparatore"}
-                      </span>
-                    </div>
-
-                    {/* Azioni - 3 puntini */}
-                    <div className="flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (openMenuId === app.id) {
-                            setOpenMenuId(null);
-                            setMenuPosition(null);
-                          } else {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-                            setOpenMenuId(app.id);
-                          }
-                        }}
-                        className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all focus:outline-none w-8 h-8"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </Link>
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (openMenuId === app.id) {
+                          closeActionMenu();
+                          return;
+                        }
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setMenuPosition({ top: rect.bottom + 4, left: rect.left - 136 + rect.width });
+                        setOpenMenuId(app.id);
+                      }}
+                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {openMenuId === app.id && menuPosition && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                        <div
+                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                          style={{ top: menuPosition.top, left: menuPosition.left }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              closeActionMenu();
+                              window.location.href = `/dashboard/admin/job-applications/${app.id}`;
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Visualizza
+                          </button>
+                          {app.cv_url && (
+                            <a
+                              href={app.cv_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => { closeActionMenu(); }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              Curriculum
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => { closeActionMenu(); }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors w-full"
+                            style={{ color: "#022431" }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Elimina
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Dropdown menu fisso - fuori dal container per evitare clipping */}
-      {openMenuId && menuPosition && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => { setOpenMenuId(null); setMenuPosition(null); }}
-          />
-          <div
-            className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-            style={{ top: menuPosition.top, right: menuPosition.right }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setOpenMenuId(null);
-                setMenuPosition(null);
-                window.location.href = `/dashboard/admin/job-applications/${openMenuId}`;
-              }}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Visualizza
-            </button>
-            {applications.find(a => a.id === openMenuId)?.cv_url && (
-              <a
-                href={applications.find(a => a.id === openMenuId)!.cv_url!}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => { setOpenMenuId(null); setMenuPosition(null); }}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                Curriculum
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={() => { setOpenMenuId(null); setMenuPosition(null); }}
-              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors w-full"
-              style={{ color: "#022431" }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Elimina
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 }

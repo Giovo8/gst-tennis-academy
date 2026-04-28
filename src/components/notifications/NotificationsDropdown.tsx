@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Bell, Mail, Trophy, Megaphone, Calendar, Video, X } from "lucide-react";
+import { Bell, Mail, Trophy, Megaphone, Calendar, CalendarClock, Users, Video, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -136,22 +136,47 @@ export default function NotificationsDropdown() {
   }
 
   function getNotificationIcon(notification: Notification) {
+    const iconClass = "h-6 w-6 text-white";
+    const iconStroke = 2.5;
+
     if (isVideoNotification(notification)) {
-      return <Video className="h-5 w-5 text-secondary" />;
+      return <Video className={iconClass} strokeWidth={iconStroke} />;
     }
 
     switch (notification.type) {
       case "message":
-        return <Mail className="h-5 w-5 text-secondary" />;
+        return <Mail className={iconClass} strokeWidth={iconStroke} />;
       case "tournament":
-        return <Trophy className="h-5 w-5 text-secondary" />;
+        return <Trophy className={iconClass} strokeWidth={iconStroke} />;
       case "announcement":
-        return <Megaphone className="h-5 w-5 text-secondary" />;
-      case "booking":
-        return <Calendar className="h-5 w-5 text-secondary" />;
+        return <Megaphone className={iconClass} strokeWidth={iconStroke} />;
+      case "booking": {
+        const text = `${notification.title} ${notification.message}`.toLowerCase();
+        if (text.includes("lezione")) return <Users className={iconClass} strokeWidth={iconStroke} />;
+        return <CalendarClock className={iconClass} strokeWidth={iconStroke} />;
+      }
       default:
-        return <Bell className="h-5 w-5 text-secondary" />;
+        return <Bell className={iconClass} strokeWidth={iconStroke} />;
     }
+  }
+
+  function getNotificationBadgeColor(notification: Notification): string {
+    const text = `${notification.title} ${notification.message}`.toLowerCase();
+    const isLezione = notification.type === "booking" && text.includes("lezione");
+
+    if (isLezione) return "#023047";
+
+    const typeColorMap: Record<string, string> = {
+      booking: "var(--secondary)",
+      tournament: "#6d28d9",
+      message: "#0369a1",
+      success: "#15803d",
+      warning: "#b45309",
+      error: "#b91c1c",
+      announcement: "var(--secondary)",
+    };
+
+    return typeColorMap[notification.type] ?? "var(--secondary)";
   }
 
   return (
@@ -168,7 +193,11 @@ export default function NotificationsDropdown() {
         className="relative flex items-center justify-center p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 transition-colors"
         title="Notifiche"
       >
-        {isOpen ? <X className="h-5 w-5 text-gray-600" /> : <Bell className="h-5 w-5 text-gray-600" />}
+        {isOpen ? (
+          <X className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+        ) : (
+          <Bell className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+        )}
         {!isOpen && unreadCount > 0 && (
           <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -207,7 +236,10 @@ export default function NotificationsDropdown() {
                       }`}
                     >
                       <div className="flex gap-3">
-                        <div className="flex-shrink-0 mt-1">
+                        <div
+                          className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
+                          style={{ background: getNotificationBadgeColor(notification) }}
+                        >
                           {getNotificationIcon(notification)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -234,7 +266,7 @@ export default function NotificationsDropdown() {
 
           {/* Mobile Modal - stile come menu hamburger */}
           <div
-            className="lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300 z-[100]"
+            className="lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto scrollbar-hide overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300 z-[100]"
           >
             {/* Header */}
             <div className="px-4 py-3 bg-secondary flex items-center justify-between">
@@ -267,7 +299,10 @@ export default function NotificationsDropdown() {
                     }`}
                   >
                     <div className="flex gap-3">
-                      <div className="flex-shrink-0 mt-1">
+                      <div
+                        className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
+                        style={{ background: getNotificationBadgeColor(notification) }}
+                      >
                         {getNotificationIcon(notification)}
                       </div>
                       <div className="flex-1 min-w-0">

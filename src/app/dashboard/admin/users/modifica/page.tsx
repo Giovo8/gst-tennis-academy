@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Check, ArrowLeft, Crown, GraduationCap, Home, UserCheck, Camera, Upload, Link as LinkIcon, X } from "lucide-react";
+import { Loader2, ArrowLeft, Crown, Dumbbell, Home, User, Camera, Upload, Link as LinkIcon, X } from "lucide-react";
 import Link from "next/link";
 
 type Profile = {
@@ -33,6 +33,8 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   const [arenaStats, setArenaStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -55,10 +57,10 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   });
 
   const roleLabels = {
-    admin: { label: "Admin", icon: Crown, borderColor: "#022431" },
-    gestore: { label: "Gestore", icon: Home, borderColor: "#044462" },
-    maestro: { label: "Maestro", icon: GraduationCap, borderColor: "#056c94" },
-    atleta: { label: "Atleta", icon: UserCheck, borderColor: "#08b3f7" },
+    admin:   { label: "Admin",   icon: Crown,         bgColor: "#023047",          borderLeftColor: "#011a24" },
+    gestore: { label: "Gestore", icon: Home,           bgColor: "#023047",          borderLeftColor: "#011a24" },
+    maestro: { label: "Maestro", icon: Dumbbell,       bgColor: "#05384c",          borderLeftColor: "#022431" },
+    atleta:  { label: "Atleta",  icon: User,      bgColor: "var(--secondary)", borderLeftColor: "#023047" },
   };
 
   useEffect(() => {
@@ -114,7 +116,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         arena_rank: arenaData?.level || "Bronzo",
         notes: data.bio || "",
         role: data.role,
-        also_maestro: data.role === "gestore" && secondaryRoles.includes("maestro"),
+        also_maestro: ["admin", "gestore"].includes(data.role) && secondaryRoles.includes("maestro"),
         email_notifications_enabled: data.email_notifications_enabled ?? true
       });
     } catch (error) {
@@ -139,7 +141,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       const existingMetadata = user?.metadata && typeof user.metadata === "object"
         ? user.metadata
         : {};
-      const secondaryRoles = formData.role === "gestore" && formData.also_maestro
+      const secondaryRoles = ["admin", "gestore"].includes(formData.role) && formData.also_maestro
         ? ["maestro"]
         : [];
 
@@ -244,33 +246,23 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     setShowAvatarModal(false);
 
     try {
-      if (user.avatar_url && user.avatar_url.includes("/avatars/")) {
-        const oldPath = user.avatar_url.split("/avatars/").pop();
-        if (oldPath) {
-          await supabase.storage.from("avatars").remove([oldPath]);
-        }
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      if (user.avatar_url) {
+        uploadFormData.append("oldImageUrl", user.avatar_url);
       }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const uploadResponse = await fetch("/api/upload/staff-image", {
+        method: "POST",
+        body: uploadFormData,
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        alert("Errore durante l'upload dell'immagine");
-        return;
+      const uploadPayload = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || !uploadPayload?.url) {
+        throw new Error(uploadPayload?.error || "Errore durante l'upload dell'immagine");
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
+      const publicUrl = uploadPayload.url as string;
 
       const { error: updateError } = await supabase
         .from("profiles")
@@ -336,6 +328,90 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     }
   }
 
+  async function handleRemoveAvatar() {
+    if (!user?.avatar_url) return;
+
+    setUploadingAvatar(true);
+    setShowAvatarModal(false);
+
+    try {
+      const deleteFormData = new FormData();
+      deleteFormData.append("deleteOnly", "true");
+      deleteFormData.append("oldImageUrl", user.avatar_url);
+
+      const deleteResponse = await fetch("/api/upload/staff-image", {
+        method: "POST",
+        body: deleteFormData,
+      });
+
+      const deletePayload = await deleteResponse.json().catch(() => ({}));
+      if (!deleteResponse.ok) {
+        throw new Error(deletePayload?.error || "Errore durante l'eliminazione dell'immagine");
+      }
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setUser({ ...user, avatar_url: null });
+      setAvatarUrl("");
+    } catch (error) {
+      console.error("Error removing avatar:", error);
+      alert("Errore durante la rimozione dell'avatar");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!user) return;
+
+    if (!confirm(`Sei sicuro di voler resettare la password di ${user.full_name || user.email}?`)) return;
+
+    setResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      alert("Email di reset password inviata con successo.");
+    } catch (error: any) {
+      console.error("Error resetting password:", error);
+      alert(error?.message || "Errore durante l'invio dell'email di reset password");
+    } finally {
+      setResettingPassword(false);
+    }
+  }
+
+  async function handleDeleteUser() {
+    if (!user) return;
+
+    if (!confirm(`Sei sicuro di voler eliminare il profilo di ${user.full_name || user.email}? Questa azione è irreversibile.`)) return;
+
+    setDeletingUser(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      router.push(`${basePath}/users`);
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      alert(error?.message || "Errore durante l'eliminazione dell'utente");
+      setDeletingUser(false);
+    }
+  }
+
   function getInitials(name: string | null, email: string) {
     if (name) {
       return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -378,61 +454,41 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             {" › "}
             <span>Modifica Utente</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica Utente</h1>
-          <p className="text-secondary/70 text-sm mt-1">
-            Aggiorna le informazioni dell&apos;utente
-          </p>
+          <h1 className="text-4xl font-bold text-secondary">Modifica Utente</h1>
         </div>
       </div>
 
-      {/* Avatar Card */}
-      <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-4 sm:p-6 border-l-4"
-        style={{ borderLeftColor: roleLabels[formData.role].borderColor }}
-      >
-        <div className="flex items-center gap-4 sm:gap-6">
-          <button
-            type="button"
-            onClick={() => setShowAvatarModal(true)}
-            disabled={uploadingAvatar}
-            className="relative flex-shrink-0 group cursor-pointer disabled:cursor-not-allowed"
+      {/* Header card utente */}
+      {(() => {
+        const RoleIcon = roleLabels[formData.role].icon;
+        return (
+          <div
+            className="rounded-xl border-t border-r border-b p-6 border-l-4 transition-all"
+            style={{
+              backgroundColor: roleLabels[formData.role].bgColor,
+              borderColor: roleLabels[formData.role].bgColor,
+              borderLeftColor: roleLabels[formData.role].borderLeftColor,
+            }}
           >
-            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden group-hover:bg-white/30 transition-all">
-              {uploadingAvatar ? (
-                <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-white" />
-              ) : user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.full_name || "Avatar"}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-2xl sm:text-3xl font-bold text-white">
-                  {getInitials(user.full_name, user.email)}
-                </span>
-              )}
-            </div>
-            {!uploadingAvatar && (
-              <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                <Camera className="h-5 w-5 sm:h-6 sm:w-6 text-white opacity-0 group-hover:opacity-100 transition-all" />
+            <div className="flex items-start gap-6">
+              <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+              <div className="flex-1 min-w-0">
+                <h2 className="text-2xl font-bold text-white truncate">
+                  {formData.full_name || user.full_name || "Nome non impostato"}
+                </h2>
               </div>
-            )}
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-white truncate">
-              {user.full_name || "Nome non impostato"}
-            </h2>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       <form onSubmit={updateUser} className="space-y-6">
         {/* Sezione Dati Anagrafici */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-secondary">Dati Anagrafici</h2>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Anagrafici</h2>
           </div>
+          <div className="px-6 py-6">
           <div className="space-y-6">
             {/* Nome Completo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -610,7 +666,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                       setFormData((prev) => ({
                         ...prev,
                         role: role as any,
-                        also_maestro: role === "gestore" ? prev.also_maestro : false,
+                        also_maestro: ["admin", "gestore"].includes(role) ? prev.also_maestro : false,
                       }))
                     }
                     className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
@@ -625,7 +681,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
               </div>
             </div>
 
-            {formData.role === "gestore" && (
+            {["admin", "gestore"].includes(formData.role) && (
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo Aggiuntivo</label>
                 <div className="flex-1">
@@ -639,7 +695,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     <span>Anche Maestro (selezionabile nelle prenotazioni)</span>
                   </label>
                   <p className="text-xs text-secondary/50 mt-3">
-                    Mantiene i permessi da gestore e abilita il profilo come maestro nelle prenotazioni.
+                    Mantiene i permessi del ruolo principale e abilita il profilo come maestro nelle prenotazioni.
                   </p>
                 </div>
               </div>
@@ -659,13 +715,56 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
               </div>
             </div>
           </div>
+          </div>
+        </div>
+
+        {/* Sezione Avatar */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
+          </div>
+          <div className="px-6 py-6">
+            <div className="flex flex-col items-start gap-4">
+            <div className="w-80 h-80 rounded-xl bg-secondary/10 overflow-hidden flex items-center justify-center border border-gray-200 flex-shrink-0">
+              {uploadingAvatar ? (
+                <Loader2 className="h-7 w-7 animate-spin text-secondary" />
+              ) : user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.full_name || "Avatar"} className="w-full h-full object-cover" />
+              ) : (
+                <User className="h-40 w-40 text-secondary" />
+              )}
+            </div>
+            <div className={`w-80 ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
+              <button
+                type="button"
+                onClick={() => setShowAvatarModal(true)}
+                disabled={uploadingAvatar}
+                className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${user.avatar_url ? "flex-1" : "w-full"}`}
+              >
+                Cambia Avatar
+              </button>
+              {user.avatar_url && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  disabled={uploadingAvatar}
+                  aria-label="Elimina avatar"
+                  className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            </div>
+          </div>
         </div>
 
         {/* Sezione Info Sistema */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-secondary">Info Sistema</h2>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Info Sistema</h2>
           </div>
+          <div className="px-6 py-6">
           <div className="space-y-6">
             {/* ID Utente */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -681,7 +780,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             </div>
 
             {/* Data Registrazione */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
               <div className="flex-1">
                 <input
@@ -699,53 +798,38 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
               </div>
             </div>
 
-            {/* Arena Stats */}
-            {arenaStats && (
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Statistiche Arena</label>
-                <div className="flex-1">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                      <div className="text-xs text-secondary/60 mb-1">Punti</div>
-                      <div className="text-lg font-bold text-secondary">{arenaStats.points || 0}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                      <div className="text-xs text-secondary/60 mb-1">Ranking</div>
-                      <div className="text-lg font-bold text-secondary">#{arenaStats.ranking || "-"}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                      <div className="text-xs text-secondary/60 mb-1">Vittorie</div>
-                      <div className="text-lg font-bold text-green-600">{arenaStats.wins || 0}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                      <div className="text-xs text-secondary/60 mb-1">Sconfitte</div>
-                      <div className="text-lg font-bold text-red-600">{arenaStats.losses || 0}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+          </div>
           </div>
         </div>
 
         {/* Actions */}
-        <button
-          type="submit"
-          disabled={updating}
-          className="w-full px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {updating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Salvataggio...
-            </>
-          ) : (
-            <>
-              <Check className="h-4 w-4" />
-              Salva Modifiche
-            </>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="submit"
+            disabled={updating}
+            className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {updating ? "Salvataggio..." : "Salva Modifiche"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResetPassword}
+            disabled={resettingPassword}
+            className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resettingPassword ? "Invio in corso..." : "Resetta Password"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDeleteUser}
+            disabled={deletingUser}
+            className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {deletingUser ? "Eliminazione..." : "Elimina"}
+          </button>
+        </div>
       </form>
 
       {/* Avatar Modal */}
