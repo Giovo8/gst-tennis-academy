@@ -108,18 +108,18 @@ export default function AtletaDashboard() {
 
       <WeatherCard />
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossime prenotazioni</h2>
         </div>
-        <div className="px-4 py-4">
+        <div className="px-6 py-4">
           {upcomingBookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
               <CalendarClock className="h-8 w-8 mb-2" />
               <p className="text-sm font-medium">Nessun impegno in arrivo</p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="flex flex-col gap-2">
               {upcomingBookings.map((booking) => {
                 const start = new Date(booking.start_time);
                 const typeColors: Record<string, string> = {

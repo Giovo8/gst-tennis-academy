@@ -677,21 +677,21 @@ export default function MaestroOverviewPage({
       </div>
 
       {/* PROSSIMI IMPEGNI */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">
               Prossimi impegni
             </h2>
         </div>
 
-        <div className="px-4 py-4">
+        <div className="px-6 py-4">
           {upcoming.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
               <CalendarClock className="h-8 w-8 mb-2" />
               <p className="text-sm font-medium">Nessun impegno in arrivo</p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="flex flex-col gap-2">
               {upcoming.map((item) => (
                 <UpcomingItem
                   key={item.id}
@@ -778,8 +778,8 @@ export default function MaestroOverviewPage({
       </div>
 
       {/* MONTHLY BAR CHART */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">
             Andamento lezioni
           </h2>
@@ -802,7 +802,7 @@ export default function MaestroOverviewPage({
           </div>
         </div>
 
-        <div className="p-5 sm:p-6">
+        <div className="p-6">
           <MonthlyLessonsChart
             data={
               chartPeriod === "week"
@@ -899,7 +899,7 @@ function StatKpi({
 }) {
   return (
     <div className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all flex flex-row items-center gap-4">
-      <div className="flex-shrink-0">{icon}</div>
+      <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl bg-white/10 flex items-center justify-center">{icon}</div>
       <div className="flex-1 hidden sm:block">
         <p className="text-sm text-white/70">{label}</p>
         <h3 className="text-2xl font-bold text-white tabular-nums">

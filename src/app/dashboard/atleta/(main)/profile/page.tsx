@@ -1,527 +1,326 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  Camera,
-  Save,
   Loader2,
-  Check,
-  Shield,
-  CreditCard,
-  Upload,
-  Link as LinkIcon,
-  X,
+  AlertCircle,
+  User,
+  Crown,
+  Dumbbell,
+  Home,
 } from "lucide-react";
 
-interface Profile {
+type UserProfile = {
   id: string;
-  email: string;
   full_name: string | null;
-  role: string;
-  phone?: string | null;
+  email: string;
+  role: "admin" | "gestore" | "maestro" | "atleta";
+  phone: string | null;
+  date_of_birth?: string | null;
   birth_date?: string | null;
-  avatar_url?: string | null;
-  bio?: string | null;
+  bio: string | null;
+  avatar_url: string | null;
   created_at: string;
-}
+  metadata: {
+    birth_city?: string;
+    fiscal_code?: string;
+    address?: string;
+    city?: string;
+    province?: string;
+    postal_code?: string;
+  } | null;
+};
 
-export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+type ArenaStats = {
+  level: string;
+};
+
+export default function AthleteProfilePage() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [arenaStats, setArenaStats] = useState<ArenaStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState("");
-
-  const [formData, setFormData] = useState({
-    full_name: "",
-    phone: "",
-    birth_date: "",
-    bio: "",
-  });
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadProfile();
+    void loadUserProfile();
   }, []);
 
-  async function loadProfile() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    if (!error && data) {
-      setProfile(data);
-      setFormData({
-        full_name: data.full_name || "",
-        phone: data.phone || "",
-        birth_date: data.birth_date || "",
-        bio: data.bio || "",
-      });
-    }
-
-    setLoading(false);
-  }
-
-  async function saveProfile() {
-    if (!profile) return;
-    
-    setSaving(true);
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: formData.full_name || null,
-        phone: formData.phone || null,
-        birth_date: formData.birth_date || null,
-        bio: formData.bio || null,
-      })
-      .eq("id", profile.id);
-
-    if (!error) {
-      setProfile({ ...profile, ...formData });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    }
-
-    setSaving(false);
-  }
-
-  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file || !profile) return;
-
-    // Verifica dimensione (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("L'immagine deve essere inferiore a 5MB");
-      return;
-    }
-
-    // Verifica tipo file
-    if (!file.type.startsWith("image/")) {
-      alert("Il file deve essere un'immagine");
-      return;
-    }
-
-    setUploadingAvatar(true);
-    setShowAvatarModal(false);
-
+  async function loadUserProfile() {
     try {
-      // Cancella il vecchio avatar se esiste ed è nel nostro storage
-      if (profile.avatar_url && profile.avatar_url.includes("/avatars/")) {
-        const oldPath = profile.avatar_url.split("/avatars/").pop();
-        if (oldPath) {
-          await supabase.storage.from("avatars").remove([oldPath]);
-        }
-      }
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
 
-      // Genera un nome file unico
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${profile.id}/${fileName}`;
-
-      // Upload del file
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        alert("Errore durante l'upload dell'immagine");
+      if (!authUser) {
+        setError("Utente non autenticato");
+        setLoading(false);
         return;
       }
 
-      // Ottieni URL pubblico
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      // Aggiorna il profilo nel database
-      const { error: updateError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
-        .eq("id", profile.id);
+        .select("*")
+        .eq("id", authUser.id)
+        .single();
 
-      if (updateError) {
-        console.error("Update error:", updateError);
-        alert("Errore durante l'aggiornamento del profilo");
-        return;
+      if (profileError) throw profileError;
+
+      setUser(profileData);
+
+      const { data: arenaData } = await supabase
+        .from("arena_stats")
+        .select("level")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+
+      if (arenaData) {
+        setArenaStats(arenaData);
       }
-
-      // Aggiorna lo stato locale
-      setProfile({ ...profile, avatar_url: publicUrl });
-      
-    } catch (error) {
-      console.error("Error uploading avatar:", error);
-      alert("Errore durante l'upload dell'immagine");
+    } catch (err: any) {
+      console.error("Error loading profile:", err);
+      setError(err?.message || "Errore nel caricamento del profilo");
     } finally {
-      setUploadingAvatar(false);
+      setLoading(false);
     }
   }
 
-  async function handleAvatarUrl() {
-    if (!avatarUrl || !profile) return;
-
-    // Verifica che sia un URL valido
-    try {
-      new URL(avatarUrl);
-    } catch {
-      alert("Inserisci un URL valido");
-      return;
-    }
-
-    setUploadingAvatar(true);
-    setShowAvatarModal(false);
-
-    try {
-      // Cancella il vecchio avatar se esiste ed è nel nostro storage
-      if (profile.avatar_url && profile.avatar_url.includes("/avatars/")) {
-        const oldPath = profile.avatar_url.split("/avatars/").pop();
-        if (oldPath) {
-          await supabase.storage.from("avatars").remove([oldPath]);
-        }
-      }
-
-      // Aggiorna il profilo nel database con l'URL
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("id", profile.id);
-
-      if (updateError) {
-        console.error("Update error:", updateError);
-        alert("Errore durante l'aggiornamento del profilo");
-        return;
-      }
-
-      // Aggiorna lo stato locale
-      setProfile({ ...profile, avatar_url: avatarUrl });
-      setAvatarUrl("");
-      
-    } catch (error) {
-      console.error("Error updating avatar:", error);
-      alert("Errore durante l'aggiornamento dell'immagine");
-    } finally {
-      setUploadingAvatar(false);
-    }
-  }
-
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString("it-IT", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  }
-
-  function getRoleLabel(role: string) {
-    const labels: Record<string, string> = {
-      atleta: "Atleta",
-      maestro: "Maestro",
-      gestore: "Gestore",
-      admin: "Amministratore",
-    };
-    return labels[role] || role;
-  }
-
-  function getInitials(name: string | null, email: string) {
-    if (name) {
-      return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    }
-    return email.slice(0, 2).toUpperCase();
-  }
+  const roleLabels = {
+    admin: {
+      label: "Admin",
+      icon: Crown,
+      bgColor: "#023047",
+      borderLeftColor: "#011a24",
+    },
+    gestore: {
+      label: "Gestore",
+      icon: Home,
+      bgColor: "#023047",
+      borderLeftColor: "#011a24",
+    },
+    maestro: {
+      label: "Maestro",
+      icon: Dumbbell,
+      bgColor: "#05384c",
+      borderLeftColor: "#022431",
+    },
+    atleta: {
+      label: "Atleta",
+      icon: User,
+      bgColor: "var(--secondary)",
+      borderLeftColor: "#023047",
+    },
+  };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-10 bg-gray-200 rounded-lg w-48 animate-pulse" />
-        <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-96 bg-gray-200 rounded-xl animate-pulse" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-secondary" />
       </div>
     );
   }
 
-  if (!profile) {
+  if (error || !user) {
     return (
-      <div className="text-center py-16">
-        <p className="text-gray-600">Profilo non trovato</p>
+      <div className="space-y-6">
+        <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-900">Errore</p>
+            <p className="text-sm text-red-700 mt-1">{error || "Utente non trovato"}</p>
+          </div>
+        </div>
       </div>
     );
   }
+
+  const roleInfo = roleLabels[user.role];
+  const RoleIcon = roleInfo.icon;
+  const dateOfBirth = user.date_of_birth || user.birth_date;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Il Mio Profilo</h1>
-        <p className="text-sm text-gray-600">
-          Gestisci le tue informazioni personali
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/atleta" className="hover:text-secondary/80 transition-colors">
+            Dashboard
+          </Link>
+          {" › "}
+          <span>Profilo Utente</span>
         </p>
+        <h1 className="text-4xl font-bold text-secondary">Profilo Utente</h1>
       </div>
 
-      {/* Profile Card */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="relative bg-secondary h-40">
-          {/* Badge Ruolo */}
-          <div className="absolute top-4 right-4">
-            <span className="px-4 py-2 text-sm font-bold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
-              {getRoleLabel(profile.role)}
-            </span>
-          </div>
-        </div>
-        
-        <div className="px-6 pb-6 -mt-16">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name || "Avatar"}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white">
-                      {getInitials(profile.full_name, profile.email)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button 
-                onClick={() => setShowAvatarModal(true)}
-                disabled={uploadingAvatar}
-                className="absolute bottom-2 right-2 p-2.5 rounded-full bg-secondary text-white hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {uploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">
-              {profile.full_name || "Nome non impostato"}
+      <div
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{
+          backgroundColor: roleInfo.bgColor,
+          borderColor: roleInfo.bgColor,
+          borderLeftColor: roleInfo.borderLeftColor,
+        }}
+      >
+        <div className="flex items-start gap-6">
+          <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl font-bold text-white truncate">
+              {user.full_name || "Nome non impostato"}
             </h2>
-            <p className="text-gray-600 font-medium">{profile.email}</p>
           </div>
         </div>
       </div>
 
-      {/* Account Info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-secondary" />
-          Informazioni Account
-        </h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <Mail className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Email</p>
-              <p className="text-sm font-semibold text-gray-900">{profile.email}</p>
-            </div>
+      <div className="flex flex-col gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
           </div>
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <Calendar className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Membro dal</p>
-              <p className="text-sm font-semibold text-gray-900">{formatDate(profile.created_at)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <User className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Ruolo</p>
-              <p className="text-sm font-semibold text-gray-900">{getRoleLabel(profile.role)}</p>
+          <div className="px-6 py-6">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Nome Completo</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.full_name || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {dateOfBirth ? new Date(dateOfBirth).toLocaleDateString("it-IT") : "-"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta di Nascita</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.metadata?.birth_city || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.metadata?.address || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta / Provincia / CAP</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {[user.metadata?.city, user.metadata?.province, user.metadata?.postal_code]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold font-mono">{user.metadata?.fiscal_code || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.phone || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold break-all">{user.email}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Edit Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <User className="h-5 w-5 text-secondary" />
-          Dati Personali
-        </h3>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome Completo
-            </label>
-            <input
-              type="text"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              placeholder="Mario Rossi"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
-            />
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
           </div>
+          <div className="px-6 py-6">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {new Date(user.created_at).toLocaleDateString("it-IT", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Telefono
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="+39 123 456 7890"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
-            />
-          </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold break-all">{user.id}</p>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Data di Nascita
-            </label>
-            <input
-              type="date"
-              value={formData.birth_date}
-              onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
-            />
-          </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ruolo</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{roleInfo.label}</p>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bio
-            </label>
-            <textarea
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              rows={3}
-              placeholder="Scrivi qualcosa su di te..."
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary resize-none"
-            />
-          </div>
-
-          <button
-            onClick={saveProfile}
-            disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Salvataggio...
-              </>
-            ) : saved ? (
-              <>
-                <Check className="h-5 w-5" />
-                Salvato!
-              </>
-            ) : (
-              <>
-                <Save className="h-5 w-5" />
-                Salva Modifiche
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Avatar Modal */}
-      {showAvatarModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900">Cambia Avatar</h3>
-              <button
-                onClick={() => setShowAvatarModal(false)}
-                className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Rank Arena</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{arenaStats?.level || "-"}</p>
+                </div>
+              </div>
             </div>
-            
-            <div className="p-6 space-y-4">
-              {/* Upload File */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Carica un&apos;immagine
-                </label>
-                <button
-                  onClick={() => document.getElementById('avatar-upload')?.click()}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all"
-                >
-                  <Upload className="h-5 w-5" />
-                  Scegli File
-                </button>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
+          </div>
+          <div className="px-6 py-6">
+            <div className="w-80 h-80 rounded-xl bg-secondary/10 overflow-hidden flex items-center justify-center border border-gray-200">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.full_name || "Avatar"}
+                  className="w-full h-full object-cover"
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Massimo 5MB - Formati: JPG, PNG, GIF
-                </p>
-              </div>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500 font-medium">oppure</span>
-                </div>
-              </div>
-
-              {/* URL Input */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Inserisci URL immagine
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://esempio.com/immagine.jpg"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
-                  />
-                  <button
-                    onClick={handleAvatarUrl}
-                    disabled={!avatarUrl}
-                    className="px-4 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <LinkIcon className="h-5 w-5" />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Incolla l&apos;URL di un&apos;immagine già caricata online
-                </p>
-              </div>
+              ) : (
+                <User className="h-40 w-40 text-secondary" />
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+        </div>
+        <div className="px-6 py-6">
+          <p className="text-secondary whitespace-pre-wrap">{user.bio || "Nessuna nota disponibile"}</p>
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Link
+          href="/dashboard/atleta/profile/modifica"
+          className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+        >
+          Modifica Profilo
+        </Link>
+      </div>
     </div>
   );
 }

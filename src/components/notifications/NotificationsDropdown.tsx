@@ -266,10 +266,10 @@ export default function NotificationsDropdown() {
 
           {/* Mobile Modal - stile come menu hamburger */}
           <div
-            className="lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto scrollbar-hide overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300 z-[100]"
+            className="lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-hidden animate-in slide-in-from-top duration-300 z-[100] flex flex-col"
           >
             {/* Header */}
-            <div className="px-4 py-3 bg-secondary flex items-center justify-between">
+            <div className="sticky top-0 z-10 px-4 py-3 bg-secondary flex items-center justify-between flex-shrink-0">
               <h3 className="font-semibold text-white">Notifiche</h3>
               {unreadCount > 0 && (
                 <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-semibold text-white">
@@ -279,51 +279,53 @@ export default function NotificationsDropdown() {
             </div>
 
             {/* Notifications List */}
-            {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <Bell className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Nessuna notifica</p>
-              </div>
-            ) : (
-              <div>
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    onClick={() => {
-                      const targetLink = resolveNotificationLink(notification);
-                      if (targetLink) router.push(targetLink);
-                      setIsOpen(false);
-                    }}
-                    className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                      !notification.is_read ? "bg-blue-50/50" : ""
-                    }`}
-                  >
-                    <div className="flex gap-3">
-                      <div
-                        className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
-                        style={{ background: getNotificationBadgeColor(notification) }}
-                      >
-                        {getNotificationIcon(notification)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 mb-1">
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-gray-600 mb-2">
-                          {notification.message}
-                        </p>
-                        <span className="text-xs text-gray-400">
-                          {formatDistanceToNow(new Date(notification.created_at), {
-                            addSuffix: true,
-                            locale: it,
-                          })}
-                        </span>
+            <div className="flex-1 overflow-y-auto scrollbar-hide overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
+              {notifications.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <Bell className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Nessuna notifica</p>
+                </div>
+              ) : (
+                <div>
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      onClick={() => {
+                        const targetLink = resolveNotificationLink(notification);
+                        if (targetLink) router.push(targetLink);
+                        setIsOpen(false);
+                      }}
+                      className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                        !notification.is_read ? "bg-blue-50/50" : ""
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div
+                          className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
+                          style={{ background: getNotificationBadgeColor(notification) }}
+                        >
+                          {getNotificationIcon(notification)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 mb-1">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-gray-600 mb-2">
+                            {notification.message}
+                          </p>
+                          <span className="text-xs text-gray-400">
+                            {formatDistanceToNow(new Date(notification.created_at), {
+                              addSuffix: true,
+                              locale: it,
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
 
 
           </div>

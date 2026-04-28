@@ -388,13 +388,33 @@ export async function POST(req: Request) {
         }
       }
 
+      let coachDisplayName: string | null = null;
+      if (booking.type === "lezione_privata" && booking.coach_id) {
+        const { data: coachProfileForNotif } = await supabaseServer
+          .from("profiles")
+          .select("full_name")
+          .eq("id", booking.coach_id)
+          .single();
+        coachDisplayName = coachProfileForNotif?.full_name ?? null;
+      }
+
+      const buildAdminNotifMessage = (): string => {
+        const coachSuffix = coachDisplayName ? ` · Maestro: ${coachDisplayName}` : "";
+        if (booking.type === "lezione_privata") {
+          return createdByStaff && bookedForAnotherUser
+            ? `${actorDisplayName} ha prenotato il ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}${coachSuffix}`
+            : `${athleteContextForNotifications.athleteName} ha prenotato il ${booking.court} il ${startDate} alle ${startTimeLabel}${coachSuffix}`;
+        }
+        // campo
+        return createdByStaff && bookedForAnotherUser
+          ? `${actorDisplayName} ha prenotato il ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}`
+          : `${athleteContextForNotifications.athleteName} ha prenotato il ${booking.court} il ${startDate} alle ${startTimeLabel}`;
+      };
+
       await notifyAdmins({
         type: "booking",
         title: booking.type === "lezione_privata" ? "Nuova lezione privata" : "Nuova prenotazione campo",
-        message:
-          createdByStaff && bookedForAnotherUser
-            ? `${actorDisplayName} ha prenotato il campo ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}`
-            : `${athleteContextForNotifications.athleteName} ha prenotato il campo ${booking.court} per il ${startDate} alle ${startTimeLabel}`,
+        message: buildAdminNotifMessage(),
         link: getAdminBookingNotificationLink(booking.id),
       });
 

@@ -346,31 +346,33 @@ export default function NotificationsList({
               };
               const isLezione = n.type === "booking" && `${n.title || ""} ${n.message || ""}`.toLowerCase().includes("lezione");
               const bg = isLezione ? "#023047" : (typeColorMap[n.type] ?? "var(--secondary)");
-              const typeLabel = typeLabelMap[n.type] ?? n.type;
               const notifDate = new Date(n.created_at);
               const users = extractInterestedUsers(n);
+              const isUnread = !n.is_read;
               return (
                 <li key={n.id}>
                   <button
                     type="button"
-                    className="w-full text-left rounded-lg bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all"
-                    style={{}}
+                    className={`w-full text-left rounded-lg border hover:shadow-sm transition-all ${
+                      isUnread
+                        ? "text-white hover:opacity-95"
+                        : "bg-white border-gray-100 hover:border-gray-200"
+                    }`}
+                    style={isUnread ? { background: bg, borderColor: bg } : undefined}
                     onClick={() => handleClick(n)}
                   >
                     <div className="flex items-center gap-4 py-3 px-3">
-                      <div className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0" style={{ background: bg }}>
+                      <div
+                        className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
+                        style={{ background: isUnread ? "rgba(255,255,255,0.16)" : bg }}
+                      >
                         {getNotificationIcon(n.type, n.title, n.message, true)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-secondary text-sm truncate">{n.title}</p>
-                          {!n.is_read && (
-                            <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold flex-shrink-0 text-white" style={{ background: bg }}>
-                              Nuova
-                            </span>
-                          )}
+                          <p className={`font-semibold text-sm truncate ${isUnread ? "text-white" : "text-secondary"}`}>{n.title}</p>
                         </div>
-                        <p className="text-xs text-secondary/60 mt-0.5 truncate">
+                        <p className={`text-xs mt-0.5 truncate ${isUnread ? "text-white/80" : "text-secondary/60"}`}>
                           {notifDate.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "").replace(/([a-z])/i, (c) => c.toUpperCase())}
                           {users !== "Sistema" ? ` · ${users}` : ""}
                         </p>
@@ -388,20 +390,14 @@ export default function NotificationsList({
         <ModalContent size="md" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
           <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
             <ModalTitle className="text-white text-lg">Dettaglio Notifica</ModalTitle>
-            <ModalDescription className="text-white/80 text-xs">
-              Informazioni complete della notifica selezionata.
-            </ModalDescription>
           </ModalHeader>
 
           <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
             {selected && (
               <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
                 <div className="px-4 py-3 bg-white">
-                  <div className="flex gap-3 items-center">
-                    {getNotificationIcon(selected.type, selected.title, selected.message)}
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{selected.title}</p>
-                    </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">{selected.title}</p>
                   </div>
                 </div>
 

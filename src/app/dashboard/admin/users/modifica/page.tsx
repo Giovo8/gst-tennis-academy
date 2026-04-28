@@ -836,13 +836,13 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-secondary">Cambia Avatar</h3>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-secondary rounded-t-xl">
+              <h3 className="text-xl font-bold text-white">Cambia Avatar</h3>
               <button
                 onClick={() => setShowAvatarModal(false)}
-                className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <X className="h-5 w-5 text-secondary/60" />
+                <X className="h-5 w-5 text-white/80" />
               </button>
             </div>
             
