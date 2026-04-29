@@ -411,11 +411,21 @@ export async function POST(req: Request) {
           : `${athleteContextForNotifications.athleteName} ha prenotato il ${booking.court} il ${startDate} alle ${startTimeLabel}`;
       };
 
+      const notesText = (booking.notes || "").toLowerCase();
+      const isArenaChallengeBooking = notesText.includes("sfida arena");
+      const arenaDetails = booking.notes?.trim();
+
       await notifyAdmins({
-        type: "booking",
-        title: booking.type === "lezione_privata" ? "Nuova lezione privata" : "Nuova prenotazione campo",
-        message: buildAdminNotifMessage(),
-        link: getAdminBookingNotificationLink(booking.id),
+        type: isArenaChallengeBooking ? "arena_challenge_booked" : "booking",
+        title: isArenaChallengeBooking
+          ? "Sfida Arena creata con campo prenotato"
+          : booking.type === "lezione_privata"
+            ? "Nuova lezione privata"
+            : "Nuova prenotazione campo",
+        message: isArenaChallengeBooking
+          ? `${actorDisplayName} ha creato una sfida Arena per ${athleteContextForNotifications.athleteName} sul ${booking.court} il ${startDate} alle ${startTimeLabel}${arenaDetails ? ` · ${arenaDetails}` : ""}`
+          : buildAdminNotifMessage(),
+        link: isArenaChallengeBooking ? "/dashboard/admin/arena" : getAdminBookingNotificationLink(booking.id),
       });
 
       // Send email only when an athlete creates the booking

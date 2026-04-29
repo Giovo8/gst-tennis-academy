@@ -7,7 +7,14 @@ export async function notifyAdmins({
   message,
   link,
 }: {
-  type: "message" | "tournament" | "announcement" | "booking" | "general";
+  type:
+    | "message"
+    | "tournament"
+    | "announcement"
+    | "booking"
+    | "general"
+    | "arena_challenge"
+    | "arena_challenge_booked";
   title: string;
   message: string;
   link?: string;

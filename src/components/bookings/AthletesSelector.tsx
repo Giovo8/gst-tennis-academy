@@ -31,6 +31,9 @@ interface AthletesSelectorProps {
   selectedAthletes: SelectedAthlete[];
   onAthleteAdd: (athlete: SelectedAthlete) => void;
   onAthleteRemove: (index: number) => void;
+  participantLabelByIndex?: (index: number, athlete: SelectedAthlete) => string | null;
+  participantToneByIndex?: (index: number, athlete: SelectedAthlete) => "secondary" | "dark";
+  selectedDisplayOrder?: number[];
   maxAthletes?: number | null;
   useSecondaryParticipantBorder?: boolean;
   previousGuests?: PreviousGuest[];
@@ -42,6 +45,9 @@ export default function AthletesSelector({
   selectedAthletes,
   onAthleteAdd,
   onAthleteRemove,
+  participantLabelByIndex,
+  participantToneByIndex,
+  selectedDisplayOrder,
   maxAthletes = 4,
   useSecondaryParticipantBorder = false,
   previousGuests = [],
@@ -57,6 +63,11 @@ export default function AthletesSelector({
 
   const hasMaxLimit = typeof maxAthletes === "number" && Number.isFinite(maxAthletes);
   const canAddMore = !hasMaxLimit || selectedAthletes.length < maxAthletes;
+  const displayOrder = (selectedDisplayOrder || [])
+    .filter((index, position, array) => index >= 0 && index < selectedAthletes.length && array.indexOf(index) === position);
+  const orderedSelectedAthletes = displayOrder.length > 0
+    ? displayOrder.map((index) => ({ athlete: selectedAthletes[index], originalIndex: index }))
+    : selectedAthletes.map((athlete, index) => ({ athlete, originalIndex: index }));
 
   const filteredAthletes = athletes.filter((athlete) => {
     if (!searchTerm) return true;
@@ -317,9 +328,15 @@ export default function AthletesSelector({
 
       {selectedAthletes.length > 0 && (
         <ul className="flex flex-col gap-2">
-          {selectedAthletes.map((athlete, index) => (
-            <li key={`${athlete.userId || athlete.fullName}-${index}`}>
-              <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "var(--secondary)" }}>
+          {orderedSelectedAthletes.map(({ athlete, originalIndex }) => (
+            (() => {
+              const customLabel = participantLabelByIndex?.(originalIndex, athlete);
+              const participantLabel = customLabel || null;
+              const tone = participantToneByIndex?.(originalIndex, athlete) || "secondary";
+              const cardBackground = tone === "dark" ? "#023047" : "var(--secondary)";
+              return (
+            <li key={`${athlete.userId || athlete.fullName}-${originalIndex}`}>
+              <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: cardBackground }}>
                 <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                   <span className="text-sm font-bold text-white leading-none">
                     {athlete.fullName.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
@@ -333,11 +350,13 @@ export default function AthletesSelector({
                     </p>
                   )}
                 </div>
-                <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
-                  {athlete.isRegistered ? "ATLETA" : "OSPITE"}
-                </span>
+                {participantLabel && (
+                  <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
+                    {participantLabel}
+                  </span>
+                )}
                 <button
-                  onClick={() => onAthleteRemove(index)}
+                  onClick={() => onAthleteRemove(originalIndex)}
                   className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
                   aria-label={`Rimuovi ${athlete.fullName}`}
                 >
@@ -345,6 +364,8 @@ export default function AthletesSelector({
                 </button>
               </div>
             </li>
+              );
+            })()
           ))}
         </ul>
       )}

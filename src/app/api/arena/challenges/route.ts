@@ -232,6 +232,32 @@ export async function GET(req: Request) {
       }
     }
 
+    // Auto-transition accepted challenges to awaiting_score when booking time has passed
+    const challengesToAwaitScore = enrichedChallenges.filter(challenge => {
+      if (challenge.status !== "accepted") return false;
+      const refDate = challenge.booking?.start_time || challenge.scheduled_date;
+      return refDate && new Date(refDate) < now;
+    });
+
+    if (challengesToAwaitScore.length > 0) {
+      try {
+        const ids = challengesToAwaitScore.map(c => c.id);
+        await supabaseServer
+          .from("arena_challenges")
+          .update({ status: "awaiting_score" })
+          .in("id", ids);
+
+        const awaitingMap = new Map(ids.map(id => [id, true]));
+        enrichedChallenges.forEach(challenge => {
+          if (awaitingMap.has(challenge.id)) {
+            challenge.status = "awaiting_score";
+          }
+        });
+      } catch (err) {
+        console.error("❌ Error auto-transitioning to awaiting_score:", err);
+      }
+    }
+
     console.log("✅ Returning", enrichedChallenges.length, "enriched challenges");
     return NextResponse.json({ challenges: enrichedChallenges });
   } catch (error: any) {
@@ -259,6 +285,25 @@ export async function POST(req: Request) {
       opponent_partner_id,
       booking_id,
     } = body;
+
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+    let creatorRole: string | null = null;
+    if (token) {
+      const { data: authData } = await supabaseServer.auth.getUser(token);
+      const creatorId = authData.user?.id;
+      if (creatorId) {
+        const { data: creatorProfile } = await supabaseServer
+          .from("profiles")
+          .select("role")
+          .eq("id", creatorId)
+          .maybeSingle();
+        creatorRole = creatorProfile?.role || null;
+      }
+    }
+
+    const initialStatus = creatorRole === "admin" || creatorRole === "gestore" ? "accepted" : "pending";
 
     if (!challenger_id || !opponent_id) {
       return NextResponse.json(
@@ -291,7 +336,7 @@ export async function POST(req: Request) {
           my_partner_id: my_partner_id || null,
           opponent_partner_id: opponent_partner_id || null,
           booking_id: booking_id || null,
-          status: "pending",
+          status: initialStatus,
         },
       ])
       .select(`
@@ -325,16 +370,40 @@ export async function POST(req: Request) {
 
       // Determine opponent's dashboard path based on role
       const opponentDashboard = opponent?.role === "maestro" ? "maestro" : "atleta";
+      const hasBookedCourt = Boolean(booking_id);
+      const notificationType = hasBookedCourt ? "arena_challenge_booked" : "arena_challenge";
+      const notificationTitle = hasBookedCourt ? "🎾 Sfida Arena con Campo Prenotato!" : "🏆 Nuova Sfida Arena!";
+      const challengeTypeLabel = challenge_type === "amichevole" ? "Amichevole" : "Ranked";
+      const matchTypeLabel = match_type === "doppio" ? "Doppio" : "Singolo";
+      const details: string[] = [];
+      if (court) details.push(`Campo: ${court}`);
+      if (scheduled_date) {
+        const scheduled = new Date(scheduled_date);
+        details.push(
+          `Data: ${scheduled.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+        );
+        details.push(
+          `Ora: ${scheduled.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`
+        );
+      }
+      details.push(`Tipo: ${challengeTypeLabel}`);
+      details.push(`Match: ${matchTypeLabel}`);
+      const detailsSuffix = details.length > 0 ? ` (${details.join(" · ")})` : "";
+      const notificationMessage = hasBookedCourt
+        ? message
+          ? `${challenger?.full_name || "Un atleta"} ti ha sfidato e ha gia prenotato il campo!${detailsSuffix} Messaggio: "${message}"`
+          : `${challenger?.full_name || "Un atleta"} ti ha sfidato e ha gia prenotato il campo Arena!${detailsSuffix}`
+        : message
+          ? `${challenger?.full_name || "Un atleta"} ti ha sfidato!${detailsSuffix} Messaggio: "${message}"`
+          : `${challenger?.full_name || "Un atleta"} ti ha sfidato in Arena!${detailsSuffix}`;
 
       // Create notification in notifications table
       await supabaseServer.from("notifications").insert([
         {
           user_id: opponent_id,
-          type: "arena_challenge",
-          title: "🏆 Nuova Sfida Arena!",
-          message: message
-            ? `${challenger?.full_name || "Un atleta"} ti ha sfidato! Messaggio: "${message}"`
-            : `${challenger?.full_name || "Un atleta"} ti ha sfidato in Arena!`,
+          type: notificationType,
+          title: notificationTitle,
+          message: notificationMessage,
           action_url: `/dashboard/${opponentDashboard}/arena/challenge/${data.id}`,
           is_read: false,
         },
@@ -345,10 +414,8 @@ export async function POST(req: Request) {
         {
           sender_id: challenger_id,
           recipient_id: opponent_id,
-          subject: "🏆 Nuova Sfida Arena!",
-          content: message
-            ? `${challenger?.full_name || "Un atleta"} ti ha sfidato! Messaggio: "${message}"`
-            : `${challenger?.full_name || "Un atleta"} ti ha sfidato in Arena!`,
+          subject: notificationTitle,
+          content: notificationMessage,
         },
       ]);
     } catch (notifError) {
@@ -423,11 +490,12 @@ export async function PATCH(req: Request) {
     // Get the previous state BEFORE update to determine notification logic
     const { data: previousData } = await supabaseServer
       .from("arena_challenges")
-      .select("status")
+      .select("status, booking_id")
       .eq("id", challenge_id)
       .single();
 
     const previousStatus = previousData?.status;
+    const previousBookingId = previousData?.booking_id || null;
 
     const { data, error } = await supabaseServer
       .from("arena_challenges")
@@ -445,11 +513,37 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const linkedBookingId = booking_id !== undefined ? booking_id : (data.booking_id || previousBookingId);
+
+    if (status === "cancelled" && linkedBookingId) {
+      const { error: bookingCancelError } = await supabaseServer
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", linkedBookingId);
+
+      if (bookingCancelError) {
+        console.error("Error cancelling linked booking:", bookingCancelError);
+
+        if (previousStatus) {
+          const { error: rollbackError } = await supabaseServer
+            .from("arena_challenges")
+            .update({ status: previousStatus })
+            .eq("id", challenge_id);
+
+          if (rollbackError) {
+            console.error("Error rolling back challenge status after booking cancellation failure:", rollbackError);
+          }
+        }
+
+        return NextResponse.json({ error: "Failed to cancel linked booking" }, { status: 500 });
+      }
+    }
+
     // Send notification based on status change
     try {
       let notificationTitle = "";
       let notificationContent = "";
-      let recipientId = "";
+      let recipientIds: string[] = [];
 
       if (status === "accepted") {
         // Check if it was a counter_proposal being accepted (challenger confirming opponent's changes)
@@ -457,27 +551,27 @@ export async function PATCH(req: Request) {
         if (previousStatus === "counter_proposal") {
           notificationTitle = "✅ Modifiche Confermate!";
           notificationContent = `${data.challenger.full_name} ha confermato le tue modifiche alla sfida!`;
-          recipientId = data.opponent_id;
+          recipientIds = [data.opponent_id];
         } else {
           notificationTitle = "✅ Sfida Accettata!";
           notificationContent = `${data.opponent.full_name} ha accettato la tua sfida!`;
-          recipientId = data.challenger_id;
+          recipientIds = [data.challenger_id];
         }
       } else if (status === "declined") {
         // Check if it was a counter_proposal being declined
         if (previousStatus === "counter_proposal") {
           notificationTitle = "❌ Modifiche Rifiutate";
           notificationContent = `${data.challenger.full_name} ha rifiutato le tue modifiche alla sfida.`;
-          recipientId = data.opponent_id;
+          recipientIds = [data.opponent_id];
         } else {
           notificationTitle = "❌ Sfida Rifiutata";
           notificationContent = `${data.opponent.full_name} ha rifiutato la tua sfida.`;
-          recipientId = data.challenger_id;
+          recipientIds = [data.challenger_id];
         }
       } else if (status === "counter_proposal") {
         notificationTitle = "✏️ Sfida Modificata";
         notificationContent = `${data.opponent.full_name} ha proposto delle modifiche alla tua sfida. Rivedi i dettagli e conferma.`;
-        recipientId = data.challenger_id;
+        recipientIds = [data.challenger_id];
       } else if (status === "completed") {
         const winnerId = winner_id || data.winner_id;
         const loserId = winnerId === data.challenger_id ? data.opponent_id : data.challenger_id;
@@ -490,40 +584,43 @@ export async function PATCH(req: Request) {
         notificationContent = `La sfida è terminata! Vincitore: ${winnerName}${
           score ? ` (${score})` : ""
         }`;
-        recipientId = loserId; // Notify loser (winner already knows they won)
+        recipientIds = [loserId]; // Notify loser (winner already knows they won)
+      } else if (status === "cancelled") {
+        notificationTitle = "🚫 Sfida Annullata";
+        notificationContent = linkedBookingId
+          ? "La sfida Arena è stata annullata e la prenotazione collegata è stata annullata."
+          : "La sfida Arena è stata annullata.";
+        recipientIds = [data.challenger_id, data.opponent_id];
       }
 
-      if (notificationContent && recipientId) {
-        // Get recipient role to determine correct dashboard path
-        const { data: recipient } = await supabaseServer
+      if (notificationContent && recipientIds.length > 0) {
+        const uniqueRecipientIds = Array.from(new Set(recipientIds));
+        const { data: recipients } = await supabaseServer
           .from("profiles")
-          .select("role")
-          .eq("id", recipientId)
-          .single();
+          .select("id, role")
+          .in("id", uniqueRecipientIds);
 
-        const recipientDashboard = recipient?.role === "maestro" ? "maestro" : "atleta";
+        const recipientRoleMap = new Map((recipients || []).map((recipient) => [recipient.id, recipient.role]));
 
-        // Create notification in notifications table
-        await supabaseServer.from("notifications").insert([
-          {
+        await supabaseServer.from("notifications").insert(
+          uniqueRecipientIds.map((recipientId) => ({
             user_id: recipientId,
             type: "arena_challenge",
             title: notificationTitle,
             message: notificationContent,
-            action_url: `/dashboard/${recipientDashboard}/arena/challenge/${challenge_id}`,
+            action_url: `/dashboard/${recipientRoleMap.get(recipientId) === "maestro" ? "maestro" : "atleta"}/arena/challenge/${challenge_id}`,
             is_read: false,
-          },
-        ]);
+          }))
+        );
 
-        // Also create internal message for backward compatibility
-        await supabaseServer.from("internal_messages").insert([
-          {
+        await supabaseServer.from("internal_messages").insert(
+          uniqueRecipientIds.map((recipientId) => ({
             sender_id: data.challenger_id === recipientId ? data.opponent_id : data.challenger_id,
             recipient_id: recipientId,
             subject: "📢 Aggiornamento Sfida Arena",
             content: notificationContent,
-          },
-        ]);
+          }))
+        );
       }
     } catch (notifError) {
       console.error("Error creating notification:", notifError);

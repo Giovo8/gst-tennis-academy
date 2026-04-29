@@ -208,8 +208,9 @@ export default function AdminDashboard() {
                       }
                       return item.user_profile?.full_name || item.coach_profile?.full_name || "Prenotazione";
                     })();
-                    const typeLabel = typeLabels[item.type] || item.type.replace(/_/g, " ");
-                    const typeBg = typeColors[item.type] || "var(--secondary)";
+                    const isArenaBooking = item.type === "arena" || item.notes?.toLowerCase().includes("sfida arena");
+                    const typeLabel = isArenaBooking ? "Arena" : (typeLabels[item.type] || item.type.replace(/_/g, " "));
+                    const typeBg = isArenaBooking ? "#023b52" : (typeColors[item.type] || "var(--secondary)");
                     return (
                       <li key={item.id}>
                         <Link href={`/dashboard/admin/bookings/${item.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: typeBg }}>

@@ -1,17 +1,37 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, AlertCircle, Calendar, ChevronDown, CheckCircle } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { addDays, format } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/lib/supabase/client";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui";
+import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { type UserRole } from "@/lib/roles";
 
 interface Player {
   id: string;
   full_name: string;
-  role: string;
+  email: string;
+  phone?: string | null;
+  avatar_url?: string;
+  role: UserRole;
 }
 
 interface TimeSlot {
@@ -19,96 +39,34 @@ interface TimeSlot {
   available: boolean;
 }
 
-interface SearchableOption {
-  value: string;
-  label: string;
+interface SelectedParticipant {
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  isRegistered: boolean;
 }
 
-interface SearchableSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: SearchableOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-}
-
-function SearchableSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  searchPlaceholder,
-}: SearchableSelectProps) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-
-  const selectedOption = options.find((opt) => opt.value === value);
-  const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const handleSelect = (val: string) => {
-    onChange(val);
-    setOpen(false);
-  };
-
-  const handleToggle = () => {
-    setOpen((prev) => {
-      const next = !prev;
-      if (!next) {
-        setQuery("");
-      }
-      return next;
-    });
-  };
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-      >
-        <span className={selectedOption ? "" : "text-secondary/40"}>
-          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
-        </span>
-        <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
-          <div className="p-2 border-b border-gray-100">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder || "Cerca..."}
-              className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
-            />
-          </div>
-          <div className="max-h-56 overflow-auto py-1">
-            {filteredOptions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-secondary/40">
-                Nessun risultato
-              </div>
-            ) : (
-              filteredOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleSelect(opt.value)}
-                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-secondary/5 ${
-                    opt.value === value ? "bg-secondary/10 font-semibold" : ""
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+interface BookingEntry {
+  id: string;
+  user_id?: string | null;
+  coach_id?: string | null;
+  start_time: string;
+  end_time: string;
+  type: string;
+  status: string;
+  user_profile?: {
+    id: string;
+    full_name: string;
+    email?: string;
+  } | null;
+  coach_profile?: {
+    id: string;
+    full_name: string;
+    email?: string;
+  } | null;
+  reason?: string;
+  isBlock?: boolean;
 }
 
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
@@ -122,9 +80,15 @@ const CHALLENGE_TYPES = [
 ];
 const MATCH_FORMATS = [
   { value: "best_of_3", label: "Best of 3" },
-  { value: "best_of_5", label: "Best of 5" },
-  { value: "best_of_1", label: "Set Singolo" },
+  { value: "best_of_2", label: "Best of 2" },
+  { value: "single_set", label: "Set Singolo" },
 ];
+
+function normalizeMatchType(matchType?: string) {
+  const normalized = (matchType || "").toLowerCase();
+  if (normalized === "doppio" || normalized === "doubles") return "doubles";
+  return "singles";
+}
 
 export default function AdminEditChallengePage() {
   const router = useRouter();
@@ -132,24 +96,29 @@ export default function AdminEditChallengePage() {
   const challengeId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
 
   const [players, setPlayers] = useState<Player[]>([]);
-  const [challenger, setChallenger] = useState("");
-  const [opponent, setOpponent] = useState("");
+  const [selectedParticipants, setSelectedParticipants] = useState<SelectedParticipant[]>([]);
   const [matchType, setMatchType] = useState("singles");
   const [challengeType, setChallengeType] = useState("ranked");
   const [matchFormat, setMatchFormat] = useState("best_of_3");
-  const [myPartner, setMyPartner] = useState("");
-  const [opponentPartner, setOpponentPartner] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCourt, setSelectedCourt] = useState("Campo 1");
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [existingBookings, setExistingBookings] = useState<any[]>([]);
+  const [existingBookings, setExistingBookings] = useState<BookingEntry[]>([]);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<BookingEntry | null>(null);
+  const [entryModalOpen, setEntryModalOpen] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  });
   
   // Drag to scroll
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -200,11 +169,17 @@ export default function AdminEditChallengePage() {
     }
   }, [selectedDate, selectedCourt]);
 
+  useEffect(() => {
+    if (matchType === "singles" && selectedParticipants.length > 2) {
+      setSelectedParticipants((previous) => previous.slice(0, 2));
+    }
+  }, [matchType, selectedParticipants]);
+
   async function loadPlayers() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role")
+        .select("id, full_name, email, phone, avatar_url, role")
         .in("role", ["atleta", "maestro"])
         .order("full_name");
 
@@ -225,13 +200,48 @@ export default function AdminEditChallengePage() {
         const challenge = data.challenge;
 
         if (challenge) {
-          setChallenger(challenge.challenger_id);
-          setOpponent(challenge.opponent_id);
-          setMatchType(challenge.match_type === "singolo" ? "singles" : "doubles");
+          const normalizedMatchType = normalizeMatchType(challenge.match_type);
+          setSelectedParticipants([
+            challenge.challenger
+              ? {
+                  userId: challenge.challenger.id,
+                  fullName: challenge.challenger.full_name,
+                  email: challenge.challenger.email,
+                  phone: challenge.challenger.phone,
+                  isRegistered: true,
+                }
+              : null,
+            normalizedMatchType === "doubles" && challenge.my_partner
+              ? {
+                  userId: challenge.my_partner.id,
+                  fullName: challenge.my_partner.full_name,
+                  email: challenge.my_partner.email,
+                  phone: challenge.my_partner.phone,
+                  isRegistered: true,
+                }
+              : null,
+            challenge.opponent
+              ? {
+                  userId: challenge.opponent.id,
+                  fullName: challenge.opponent.full_name,
+                  email: challenge.opponent.email,
+                  phone: challenge.opponent.phone,
+                  isRegistered: true,
+                }
+              : null,
+            normalizedMatchType === "doubles" && challenge.opponent_partner
+              ? {
+                  userId: challenge.opponent_partner.id,
+                  fullName: challenge.opponent_partner.full_name,
+                  email: challenge.opponent_partner.email,
+                  phone: challenge.opponent_partner.phone,
+                  isRegistered: true,
+                }
+              : null,
+          ].filter(Boolean) as SelectedParticipant[]);
+          setMatchType(normalizedMatchType);
           setChallengeType(challenge.challenge_type || "ranked");
           setMatchFormat(challenge.match_format || "best_of_3");
-          setMyPartner(challenge.my_partner_id || "");
-          setOpponentPartner(challenge.opponent_partner_id || "");
 
           if (challenge.scheduled_date) {
             setSelectedDate(new Date(challenge.scheduled_date));
@@ -326,7 +336,7 @@ export default function AdminEditChallengePage() {
 
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, email")
         .in("id", userIds);
 
       const profilesMap = new Map(
@@ -403,9 +413,30 @@ export default function AdminEditChallengePage() {
     setSelectedSlots((prev) => {
       if (prev.includes(time)) {
         return prev.filter((t) => t !== time);
-      } else {
-        return [...prev, time].sort();
       }
+
+      if (prev.length === 0) {
+        return [time];
+      }
+
+      const allSlots = [...prev, time].sort((left, right) => {
+        const [hoursLeft, minutesLeft] = left.split(":").map(Number);
+        const [hoursRight, minutesRight] = right.split(":").map(Number);
+        return hoursLeft * 60 + minutesLeft - (hoursRight * 60 + minutesRight);
+      });
+
+      for (let index = 1; index < allSlots.length; index += 1) {
+        const [previousHours, previousMinutes] = allSlots[index - 1].split(":").map(Number);
+        const [currentHours, currentMinutes] = allSlots[index].split(":").map(Number);
+        const previousTotal = previousHours * 60 + previousMinutes;
+        const currentTotal = currentHours * 60 + currentMinutes;
+
+        if (currentTotal - previousTotal !== 30) {
+          return [time];
+        }
+      }
+
+      return allSlots;
     });
   }
 
@@ -423,6 +454,11 @@ export default function AdminEditChallengePage() {
     setError("");
     setSuccess("");
 
+    const challenger = selectedParticipants[0]?.userId || "";
+    const myPartner = selectedParticipants[1]?.userId || "";
+    const opponent = selectedParticipants[2]?.userId || "";
+    const opponentPartner = selectedParticipants[3]?.userId || "";
+
     if (!challenger || !opponent) {
       setError("Seleziona sia lo sfidante che lo sfidato");
       return;
@@ -433,8 +469,8 @@ export default function AdminEditChallengePage() {
       return;
     }
 
-    if (matchType === "doubles" && (!myPartner || !opponentPartner)) {
-      setError("Per il doppio devi selezionare i partner");
+    if (matchType === "doubles" && selectedParticipants.length < 4) {
+      setError("Per il doppio devi selezionare 4 partecipanti (2 coppie)");
       return;
     }
 
@@ -504,38 +540,128 @@ export default function AdminEditChallengePage() {
       setTimeout(() => {
         router.push(`/dashboard/admin/arena/challenge/${challengeId}`);
       }, 1500);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Errore nell'aggiornamento");
     } finally {
       setSaving(false);
     }
   }
 
-  const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
-  };
+  const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
 
-  const getMaxDate = () => {
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 90);
-    return maxDate.toISOString().split("T")[0];
-  };
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
+    const gridStartDate = new Date(firstOfMonth);
+    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStartDate);
+      date.setDate(gridStartDate.getDate() + index);
+      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
+    });
+  }, [calendarViewDate]);
 
-  const availablePartners = players.filter(
-    (p) => p.id !== challenger && p.id !== opponent && p.id !== myPartner && p.id !== opponentPartner
-  );
+  function normalizeDate(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(12, 0, 0, 0);
+    return normalized;
+  }
 
-  const playerOptions: SearchableOption[] = players.map((player) => ({
-    value: player.id,
-    label: `${player.full_name} (${player.role})`,
-  }));
+  function isSameCalendarDay(firstDate: Date, secondDate: Date): boolean {
+    return firstDate.getFullYear() === secondDate.getFullYear() && firstDate.getMonth() === secondDate.getMonth() && firstDate.getDate() === secondDate.getDate();
+  }
 
-  const partnerOptions: SearchableOption[] = availablePartners.map((player) => ({
-    value: player.id,
-    label: player.full_name,
-  }));
+  function openDatePickerModal() {
+    const normalized = normalizeDate(selectedDate);
+    setPendingDate(normalized);
+    setCalendarViewDate(new Date(normalized.getFullYear(), normalized.getMonth(), 1));
+    setDatePickerModalOpen(true);
+  }
+
+  function changeCalendarMonth(delta: number) {
+    setCalendarViewDate((previous) => new Date(previous.getFullYear(), previous.getMonth() + delta, 1));
+  }
+
+  function selectCalendarDay(day: Date) {
+    const normalized = normalizeDate(day);
+    setPendingDate(normalized);
+    setCalendarViewDate(new Date(normalized.getFullYear(), normalized.getMonth(), 1));
+  }
+
+  function applyDateSelection() {
+    setSelectedDate(normalizeDate(pendingDate));
+    setSelectedSlots([]);
+    setDatePickerModalOpen(false);
+  }
+
+  function handleDatePickerToday() {
+    const today = normalizeDate(new Date());
+    setPendingDate(today);
+    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
+
+  function getCalendarMonthLabel(date: Date): string {
+    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function getBookingLabel(booking: BookingEntry): string {
+    if (booking.isBlock) return "Blocco Campo";
+    if (booking.type === "lezione_privata") return "Lezione Privata";
+    if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
+    if (booking.type === "arena") return "Match Arena";
+    return "Prenotazione Campo";
+  }
+
+  function formatEntryTimeRange(booking: BookingEntry): string {
+    const start = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const end = new Date(booking.end_time).toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${start} - ${end}`;
+  }
+
+  function getEntryStatusLabel(booking: BookingEntry): string {
+    if (booking.isBlock) return "Campo bloccato";
+    if (booking.status === "confirmed") return "Confermata";
+    if (booking.status === "pending") return "In attesa";
+    if (booking.status === "cancelled") return "Annullata";
+    return booking.status;
+  }
+
+  function getEntryDetailsPath(booking: BookingEntry): string {
+    return booking.isBlock
+      ? `/dashboard/admin/courts/${booking.id}`
+      : `/dashboard/admin/bookings/${booking.id}`;
+  }
+
+  function openEntryModal(booking: BookingEntry) {
+    setSelectedEntry(booking);
+    setEntryModalOpen(true);
+  }
+
+  function goToEntryDetails() {
+    if (!selectedEntry) return;
+    setEntryModalOpen(false);
+    router.push(getEntryDetailsPath(selectedEntry));
+  }
+
+  const fullDateLabel = (() => {
+    const value = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it });
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  })();
+  const mobileWeekdayLabel = format(selectedDate, "EEE", { locale: it });
+  const mobileDateLabel = (() => {
+    const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`;
+    return raw.replace(/(\d{2} )(\w)/, (_, day, char) => day + char.toUpperCase());
+  })();
+
+  const challenger = selectedParticipants[0]?.userId || "";
+  const opponent = selectedParticipants[2]?.userId || selectedParticipants[1]?.userId || "";
 
   if (loading) {
     return (
@@ -549,29 +675,26 @@ export default function AdminEditChallengePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2">
+      <div>
         <div>
-          <p className="breadcrumb text-secondary/60 uppercase">
+          <p className="breadcrumb text-secondary/60">
             <Link
               href="/dashboard/admin/arena"
-              className="hover:text-secondary/80 transition-colors uppercase"
+              className="hover:text-secondary/80 transition-colors"
             >
               Gestione Arena
             </Link>
             {" › "}
             <Link
               href={`/dashboard/admin/arena/challenge/${challengeId}`}
-              className="hover:text-secondary/80 transition-colors uppercase"
+              className="hover:text-secondary/80 transition-colors"
             >
               Dettagli Sfida
             </Link>
             {" › "}
-            <span className="uppercase">Modifica</span>
+            <span>Modifica</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Modifica sfida</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Modifica i dettagli della sfida arena.
-          </p>
+          <h1 className="text-4xl font-bold text-secondary">Modifica Sfida</h1>
         </div>
       </div>
 
@@ -601,91 +724,61 @@ export default function AdminEditChallengePage() {
       )}
 
       {/* Main Content */}
-      <div className="py-4">
+      <div>
         <div className="space-y-6">
           {/* Selettore Data */}
-          <div className="rounded-lg p-3 sm:p-4 flex items-center justify-between transition-all bg-secondary">
+          <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
             <button
               onClick={() => handleDateChange(addDays(selectedDate, -1))}
-              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <label
-                className="relative p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10 cursor-pointer"
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center sm:static sm:inset-auto sm:translate-x-0 sm:min-w-0 sm:justify-center">
+              <button
+                type="button"
+                onClick={openDatePickerModal}
+                className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
-                <Calendar className="h-5 w-5 text-white pointer-events-none" />
-                <input
-                  id="date-picker"
-                  type="date"
-                  value={format(selectedDate, "yyyy-MM-dd")}
-                  onChange={(e) => handleDateChange(new Date(e.target.value))}
-                  min={getMinDate()}
-                  max={getMaxDate()}
-                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                />
-              </label>
-              <h2 className="text-base sm:text-lg font-bold capitalize text-white">
-                <span className="hidden sm:inline">{format(selectedDate, "EEEE dd MMMM yyyy", { locale: it })}</span>
-                <span className="sm:hidden">{format(selectedDate, "EEE dd MMM yyyy", { locale: it })}</span>
-              </h2>
+                <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
+                  <Calendar className="h-5 w-5 text-white shrink-0" />
+                  <span className="font-bold text-white text-lg leading-none text-center whitespace-nowrap">
+                    {mobileDateLabel}
+                  </span>
+                </span>
+                <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
+                  <Calendar className="h-5 w-5 text-white shrink-0" />
+                  <span className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize">
+                    {fullDateLabel}
+                  </span>
+                </span>
+              </button>
             </div>
 
             <button
               onClick={() => handleDateChange(addDays(selectedDate, 1))}
-              className="p-1.5 sm:p-2 rounded-md transition-colors hover:bg-white/10"
+              className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>
           </div>
 
           {/* Area Principale */}
-          <div className="bg-white rounded-xl p-6 space-y-6">
-            <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
+            </div>
+            <div className="space-y-4 p-4 sm:p-6">
               {loadingSlots ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
-                  <p className="text-secondary font-semibold">Caricamento slot...</p>
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="h-10 w-10 animate-spin text-secondary mb-3" />
+                  <p className="text-secondary font-semibold">Caricamento...</p>
                 </div>
               ) : (
                 <>
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-secondary">Dettagli sfida</h2>
-                  </div>
-
-                  <div className="space-y-6 mt-6">
-                    {/* Sfidante */}
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidante *</label>
-                      <div className="flex-1">
-                        <SearchableSelect
-                          value={challenger}
-                          onChange={setChallenger}
-                          options={playerOptions}
-                          placeholder="Seleziona sfidante"
-                          searchPlaceholder="Cerca giocatore..."
-                        />
-                      </div>
-                    </div>
-
-                    {/* Sfidato */}
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Sfidato *</label>
-                      <div className="flex-1">
-                        <SearchableSelect
-                          value={opponent}
-                          onChange={setOpponent}
-                          options={playerOptions.filter(p => p.value !== challenger)}
-                          placeholder="Seleziona sfidato"
-                          searchPlaceholder="Cerca giocatore..."
-                        />
-                      </div>
-                    </div>
-
-                    {/* Tipo Match */}
+                  <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                       <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo match *</label>
                       <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -694,7 +787,7 @@ export default function AdminEditChallengePage() {
                             key={type.value}
                             type="button"
                             onClick={() => setMatchType(type.value)}
-                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               matchType === type.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -706,37 +799,6 @@ export default function AdminEditChallengePage() {
                       </div>
                     </div>
 
-                    {/* Partners se doppio */}
-                    {matchType === "doubles" && (
-                      <>
-                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidante</label>
-                          <div className="flex-1">
-                            <SearchableSelect
-                              value={myPartner}
-                              onChange={setMyPartner}
-                              options={partnerOptions.filter(p => p.value !== opponentPartner)}
-                              placeholder="Seleziona partner"
-                              searchPlaceholder="Cerca partner..."
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                          <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Partner sfidato</label>
-                          <div className="flex-1">
-                            <SearchableSelect
-                              value={opponentPartner}
-                              onChange={setOpponentPartner}
-                              options={partnerOptions.filter(p => p.value !== myPartner)}
-                              placeholder="Seleziona partner"
-                              searchPlaceholder="Cerca partner..."
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-
                     {/* Tipo Sfida */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                       <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo sfida *</label>
@@ -746,7 +808,7 @@ export default function AdminEditChallengePage() {
                             key={type.value}
                             type="button"
                             onClick={() => setChallengeType(type.value)}
-                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               challengeType === type.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -767,7 +829,7 @@ export default function AdminEditChallengePage() {
                             key={format.value}
                             type="button"
                             onClick={() => setMatchFormat(format.value)}
-                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               matchFormat === format.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -788,7 +850,7 @@ export default function AdminEditChallengePage() {
                             key={court}
                             type="button"
                             onClick={() => handleCourtChange(court)}
-                            className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                               selectedCourt === court
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -800,169 +862,194 @@ export default function AdminEditChallengePage() {
                       </div>
                     </div>
                   </div>
-
-                  <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
-                  
-                  {/* Timeline orizzontale */}
-                  <div
-                    ref={timelineScrollRef}
-                    className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-                    style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <div className="min-w-[1280px]">
-                      {/* Header con orari */}
-                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
-                        {Array.from({ length: 16 }, (_, i) => {
-                          const hour = 7 + i;
-                          return (
-                            <div
-                              key={hour}
-                              className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
-                            >
-                              {hour.toString().padStart(2, '0')}:00
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Griglia slot selezionabili */}
-                      <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
-                        {/* Prenotazioni esistenti */}
-                        {existingBookings.map((booking) => {
-                          const start = new Date(booking.start_time);
-                          const end = new Date(booking.end_time);
-                          const startHour = start.getHours();
-                          const startMinute = start.getMinutes();
-                          const endHour = end.getHours();
-                          const endMinute = end.getMinutes();
-                          
-                          const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
-                          const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
-                          const duration = endSlot - startSlot;
-                          
-                          const getBookingStyle = () => {
-                            if (booking.isBlock) {
-                              return { background: "linear-gradient(to bottom right, #dc2626, #ea580c)" };
-                            }
-                            switch (booking.type) {
-                              case "lezione_privata":
-                              case "lezione_gruppo":
-                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-900), var(--secondary))" };
-                              case "campo":
-                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-700), var(--color-frozen-lake-800))" };
-                              case "arena":
-                                return { background: "linear-gradient(to bottom right, var(--color-frozen-lake-600), var(--color-frozen-lake-700))" };
-                              default:
-                                return { background: "linear-gradient(to bottom right, var(--secondary-light), var(--secondary))" };
-                            }
-                          };
-                          
-                          return (
-                            <div
-                              key={booking.id}
-                              className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md mx-0.5 my-1.5 z-10 pointer-events-none"
-                              style={{
-                                ...getBookingStyle(),
-                                left: `${(startSlot / 32) * 100}%`,
-                                width: `${(duration / 32) * 100}%`,
-                                top: '4px',
-                                bottom: '4px'
-                              }}
-                            >
-                              <div className="truncate leading-tight">
-                                {booking.isBlock ? "CAMPO BLOCCATO" : (booking.user_profile?.full_name || "Prenotazione")}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        
-                        {/* Slot cliccabili */}
-                        {Array.from({ length: 16 }, (_, hourIndex) => {
-                          const hour = 7 + hourIndex;
-                          const time1 = `${hour.toString().padStart(2, '0')}:00`;
-                          const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
-                          const available1 = slots.find(s => s.time === time1)?.available ?? true;
-                          const available2 = time2 ? (slots.find(s => s.time === time2)?.available ?? true) : false;
-                          const isSelected1 = selectedSlots.includes(time1);
-                          const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
-                          
-                          if (!time2) {
-                            return (
-                              <div
-                                key={hour}
-                                className={`border-r border-gray-200 relative transition-all ${
-                                  isSelected1
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
-                                    : available1
-                                    ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
-                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
-                                }`}
-                                onClick={() => handleSlotClick(time1, available1)}
-                                title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                              >
-                                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
-                                {isSelected1 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-                          
-                          return (
-                            <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
-                              <div
-                                className={`flex-1 relative transition-all ${
-                                  isSelected1
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
-                                    : available1
-                                    ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
-                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
-                                }`}
-                                onClick={() => handleSlotClick(time1, available1)}
-                                title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                              >
-                                {isSelected1 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div
-                                className={`flex-1 relative transition-all ${
-                                  isSelected2
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-inner ring-2 ring-secondary ring-inset cursor-pointer'
-                                    : available2
-                                    ? 'bg-white hover:bg-emerald-100 hover:shadow-md cursor-pointer'
-                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
-                                }`}
-                                onClick={() => handleSlotClick(time2, available2)}
-                                title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                              >
-                                {isSelected2 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
           </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              <AthletesSelector
+                athletes={players}
+                selectedAthletes={selectedParticipants}
+                onAthleteAdd={(participant) => {
+                  const maxAthletes = matchType === "doubles" ? 4 : 2;
+                  if (selectedParticipants.length >= maxAthletes) return;
+                  setSelectedParticipants([...selectedParticipants, participant]);
+                }}
+                onAthleteRemove={(index) => {
+                  setSelectedParticipants(selectedParticipants.filter((_, currentIndex) => currentIndex !== index));
+                }}
+                participantToneByIndex={(index) => {
+                  if (matchType === "doubles") {
+                    return index === 2 || index === 3 ? "dark" : "secondary";
+                  }
+
+                  return index === 1 ? "dark" : "secondary";
+                }}
+                selectedDisplayOrder={
+                  matchType === "doubles"
+                    ? [0, 1, 2, 3]
+                    : [0, 1]
+                }
+                maxAthletes={matchType === "doubles" ? 4 : 2}
+                allowGuestParticipants={false}
+              />
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              {loadingSlots ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
+                  <p className="text-secondary font-semibold">Caricamento slot...</p>
+                </div>
+              ) : (
+                <div
+                  ref={timelineScrollRef}
+                  className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                  style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <div className="min-w-[1280px]">
+                    <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                      {Array.from({ length: 16 }, (_, index) => {
+                        const hour = 7 + index;
+                        return (
+                          <div
+                            key={hour}
+                            className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
+                          >
+                            {hour.toString().padStart(2, '0')}:00
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
+                      {existingBookings.filter((booking) => booking.status !== "cancelled").map((booking) => {
+                        const start = new Date(booking.start_time);
+                        const end = new Date(booking.end_time);
+                        const startHour = start.getHours();
+                        const startMinute = start.getMinutes();
+                        const endHour = end.getHours();
+                        const endMinute = end.getMinutes();
+                        const startSlot = (startHour - 7) * 2 + (startMinute === 30 ? 1 : 0);
+                        const endSlot = (endHour - 7) * 2 + (endMinute === 30 ? 1 : 0);
+                        const duration = endSlot - startSlot;
+
+                        const getBookingStyle = () => {
+                          if (booking.isBlock) {
+                            return { background: "var(--color-frozen-lake-900)" };
+                          }
+                          switch (booking.type) {
+                            case "lezione_privata":
+                            case "lezione_gruppo":
+                              return { background: "#023047" };
+                            case "campo":
+                              return { background: "var(--secondary)" };
+                            case "arena":
+                              return { background: "var(--color-frozen-lake-600)" };
+                            default:
+                              return { background: "var(--secondary-light)" };
+                          }
+                        };
+
+                        return (
+                          <div
+                            key={booking.id}
+                            onClick={() => openEntryModal(booking)}
+                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{
+                              ...getBookingStyle(),
+                              left: `${(startSlot / 32) * 100}%`,
+                              width: `calc(${(duration / 32) * 100}% - 4px)`,
+                              top: '4px',
+                              bottom: '4px',
+                              marginLeft: '2px'
+                            }}
+                            title="Clicca per vedere i dettagli"
+                          />
+                        );
+                      })}
+
+                      {Array.from({ length: 16 }, (_, hourIndex) => {
+                        const hour = 7 + hourIndex;
+                        const time1 = `${hour.toString().padStart(2, '0')}:00`;
+                        const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
+                        const slot1 = slots.find((slot) => slot.time === time1);
+                        const slot2 = time2 ? slots.find((slot) => slot.time === time2) : null;
+                        const available1 = slot1 ? slot1.available : false;
+                        const available2 = slot2 ? slot2.available : false;
+                        const isSelected1 = selectedSlots.includes(time1);
+                        const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
+
+                        if (!time2) {
+                          return (
+                            <div
+                              key={hour}
+                              className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
+                                isSelected1
+                                  ? 'bg-secondary hover:bg-secondary/90'
+                                  : available1
+                                  ? 'bg-white hover:bg-emerald-50/40'
+                                  : 'bg-gray-100 cursor-not-allowed'
+                              }`}
+                              onClick={() => handleSlotClick(time1, available1)}
+                              title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                            >
+                              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                            <div
+                              className={`flex-1 relative transition-colors cursor-pointer ${
+                                isSelected1
+                                  ? 'bg-secondary hover:bg-secondary/90'
+                                  : available1
+                                  ? 'bg-white hover:bg-emerald-50/40'
+                                  : 'bg-gray-100 cursor-not-allowed'
+                              }`}
+                              onClick={() => handleSlotClick(time1, available1)}
+                              title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                            />
+
+                            <div
+                              className={`flex-1 relative transition-colors cursor-pointer ${
+                                isSelected2
+                                  ? 'bg-secondary hover:bg-secondary/90'
+                                  : available2
+                                  ? 'bg-white hover:bg-emerald-50/40'
+                                  : 'bg-gray-100 cursor-not-allowed'
+                              }`}
+                              onClick={() => handleSlotClick(time2, available2)}
+                              title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
+                            />
+
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Bottone Salva */}
           <button
             onClick={handleSubmit}
@@ -986,6 +1073,143 @@ export default function AdminEditChallengePage() {
 
       {/* Bottom Spacer */}
       <div className="h-8" />
+
+      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
+          </ModalHeader>
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white font-semibold"
+                          : isCurrentMonth
+                          ? "text-gray-800 hover:bg-gray-100"
+                          : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={handleDatePickerToday}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyDateSelection}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
+        <ModalContent size="md" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-base sm:text-lg">
+              {selectedEntry ? getBookingLabel(selectedEntry) : "Dettaglio Prenotazione"}
+            </ModalTitle>
+          </ModalHeader>
+
+          <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+            {selectedEntry && (
+              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Campo</span>
+                  <span className="text-xs text-gray-600">{selectedCourt}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Orario</span>
+                  <span className="text-xs text-gray-600">{formatEntryTimeRange(selectedEntry)}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Stato</span>
+                  <span className="text-xs text-gray-600">{getEntryStatusLabel(selectedEntry)}</span>
+                </div>
+
+                {!selectedEntry.isBlock && selectedEntry.user_profile?.full_name && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Partecipante</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.user_profile.full_name}</span>
+                  </div>
+                )}
+
+                {!selectedEntry.isBlock && selectedEntry.coach_profile?.full_name && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Coach</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.coach_profile.full_name}</span>
+                  </div>
+                )}
+
+                {selectedEntry.reason && (
+                  <div className="px-4 py-3 grid grid-cols-[95px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Note</span>
+                    <span className="text-xs text-gray-600">{selectedEntry.reason}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={goToEntryDetails}
+              className="w-full py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-b-lg"
+            >
+              Vai ai dettagli
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

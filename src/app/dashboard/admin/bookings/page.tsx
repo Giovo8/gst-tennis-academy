@@ -97,8 +97,17 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   const getPrimaryParticipant = (booking: Booking) =>
     booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
 
-  const getAthleteDisplayName = (booking: Booking) =>
-    getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "N/A";
+  const getAthleteDisplayName = (booking: Booking) => {
+    const validParticipants = (booking.participants || [])
+      .map((participant) => participant.full_name?.trim())
+      .filter((fullName): fullName is string => Boolean(fullName));
+
+    if (validParticipants.length === 2) {
+      return validParticipants.join(", ");
+    }
+
+    return getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "N/A";
+  };
 
   const getAthleteDisplayEmail = (booking: Booking) => {
     if ((booking.participants?.length || 0) > 0) {
@@ -737,14 +746,16 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
               booking.status === "cancelled" || booking.status === "cancellation_requested";
             const isPastBooking = new Date(booking.end_time) < new Date();
             const start = new Date(booking.start_time);
+            const isArenaBooking =
+              booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
 
             let typeBg = "";
             if (isCancelledBooking || isPastBooking) {
               typeBg = "#9ca3af";
             } else if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
               typeBg = "#023047";
-            } else if (booking.type === "arena") {
-              typeBg = "var(--color-frozen-lake-600)";
+            } else if (isArenaBooking) {
+              typeBg = "#023b52";
             } else {
               typeBg = "var(--secondary)";
             }
@@ -752,7 +763,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             const typeLabel =
               booking.type === "lezione_privata" ? "Lezione Priv."
               : booking.type === "lezione_gruppo" ? "Lezione Gruppo"
-              : booking.type === "arena" ? "Arena"
+              : isArenaBooking ? "Arena"
               : "Campo";
 
             return (

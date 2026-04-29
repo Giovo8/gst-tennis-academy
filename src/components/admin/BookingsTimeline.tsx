@@ -492,6 +492,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
   
   function getBookingStyle(booking: Booking) {
+    const isArenaBooking =
+      booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
+
     // Colori specifici per timeline maestro
     if (highlightUserId) {
       if (booking.isBlock) {
@@ -514,7 +517,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
           case "lezione_gruppo":
             return { background: "#023047" }; // blu scuro — sei il maestro
           case "campo":
-            return { background: "var(--color-frozen-lake-600)" }; // teal medio
+            return { background: isArenaBooking ? "#023b52" : "var(--color-frozen-lake-600)" }; // teal medio
           case "arena":
             return { background: "var(--color-frozen-lake-600)" };
           default:
@@ -527,7 +530,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         case "lezione_gruppo":
           return { background: "var(--color-frozen-lake-900)" }; // teal scuro — hai una lezione
         case "campo":
-          return { background: "var(--secondary)" }; // verde — hai prenotato un campo
+          return { background: isArenaBooking ? "#023b52" : "var(--secondary)" }; // verde — hai prenotato un campo
         case "arena":
           return { background: "var(--color-frozen-lake-600)" };
         default:
@@ -549,7 +552,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       case "lezione_gruppo":
         return { background: "#023047" };
       case "campo":
-        return { background: "var(--secondary)" };
+        return { background: isArenaBooking ? "#023b52" : "var(--secondary)" };
       case "arena":
         return { background: "var(--color-frozen-lake-600)" };
       default:
@@ -558,10 +561,13 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function getBookingLabel(booking: Booking, asCoach?: boolean): string {
+    const isArenaBooking =
+      booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
+
     if (booking.isBlock) return showBlockReason ? booking.reason || "Blocco Campo" : "Blocco Campo";
     if (booking.type === "lezione_privata") return asCoach ? "Maestro" : "Lezione Privata";
     if (booking.type === "lezione_gruppo") return asCoach ? "Maestro" : "Lezione Gruppo";
-    if (booking.type === "arena") return "Match Arena";
+    if (isArenaBooking) return "Arena";
     return "Campo";
   }
 

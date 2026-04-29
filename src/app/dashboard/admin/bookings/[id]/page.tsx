@@ -18,6 +18,8 @@ import {
   Users,
   Circle,
   Trophy,
+  Target,
+  Handshake,
   Mail,
   Phone,
   Save,
@@ -52,12 +54,20 @@ type BookingDetailPageProps = {
   basePath?: string;
 };
 
+type LinkedChallengeMeta = {
+  id: string;
+  status: string;
+  opponent_id: string | null;
+  opponent_partner_id: string | null;
+};
+
 export default function BookingDetailPage({ basePath = "/dashboard/admin" }: BookingDetailPageProps) {
   const router = useRouter();
   const params = useParams();
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [linkedChallenge, setLinkedChallenge] = useState<LinkedChallengeMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -138,8 +148,36 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         return;
       }
 
+      let challengeParticipantIds: string[] = [];
+
+      const { data: linkedChallenges } = await supabase
+        .from("arena_challenges")
+        .select("id, status, challenger_id, opponent_id, my_partner_id, opponent_partner_id")
+        .eq("booking_id", bookingId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const latestChallenge = linkedChallenges?.[0];
+      setLinkedChallenge(
+        latestChallenge
+          ? {
+              id: latestChallenge.id,
+              status: latestChallenge.status,
+              opponent_id: latestChallenge.opponent_id ?? null,
+              opponent_partner_id: latestChallenge.opponent_partner_id ?? null,
+            }
+          : null
+      );
+      challengeParticipantIds = [
+        latestChallenge?.challenger_id,
+        latestChallenge?.my_partner_id,
+        latestChallenge?.opponent_id,
+        latestChallenge?.opponent_partner_id,
+      ].filter((value): value is string => Boolean(value));
+
       // Carica i profili
-      const userIds = [bookingData.user_id, bookingData.coach_id].filter(Boolean);
+      const userIds = [bookingData.user_id, bookingData.coach_id, ...challengeParticipantIds]
+        .filter((value): value is string => Boolean(value));
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("id, full_name, email, phone")
@@ -165,7 +203,37 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         participantsData = fallbackParticipantsQuery.data;
       }
 
-      const profilesMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
+      type ProfileInfo = {
+        id: string;
+        full_name?: string | null;
+        email?: string | null;
+        phone?: string | null;
+      };
+
+      const profilesMap = new Map<string, ProfileInfo>(
+        ((profilesData as ProfileInfo[] | null) || []).map((p) => [p.id, p]),
+      );
+
+      const arenaChallengeParticipants = challengeParticipantIds.map((userId, index) => {
+        const profile = profilesMap.get(userId);
+        return {
+          id: `challenge-${userId}-${index}`,
+          booking_id: bookingId,
+          full_name: profile?.full_name || "Atleta",
+          email: profile?.email || undefined,
+          phone: profile?.phone || undefined,
+          is_registered: true,
+          user_id: userId,
+          order_index: index,
+        };
+      });
+
+      const resolvedParticipants =
+        (participantsData?.length || 0) > 1
+          ? participantsData
+          : arenaChallengeParticipants.length > 1
+            ? arenaChallengeParticipants
+            : participantsData || [];
 
       const enrichedBooking = {
         ...bookingData,
@@ -173,7 +241,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         coach_profile: bookingData.coach_id
           ? profilesMap.get(bookingData.coach_id) || null
           : null,
-        participants: participantsData || [],
+        participants: resolvedParticipants,
       };
 
       setBooking(enrichedBooking);
@@ -288,6 +356,12 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   const StatusIcon = displayStatus.icon;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
   const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+  const isArenaBooking =
+    booking.type === "arena" ||
+    booking.notes?.toLowerCase().includes("sfida arena") ||
+    Boolean(linkedChallenge?.id);
+  const isRankedArenaBooking = booking.notes?.toLowerCase().includes("ranked");
+  const bookingHeaderLabel = isArenaBooking ? "Sfida Arena" : bookingType.label;
   const displayParticipants = getDisplayParticipants(booking);
 
   // Determina icona e stile in base al tipo
@@ -314,9 +388,9 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         bgColor: "bg-frozen-lake-900",
         iconColor: "text-frozen-lake-900",
       };
-    } else if (booking.type === "arena") {
+    } else if (isArenaBooking) {
       return {
-        icon: Trophy,
+        icon: isRankedArenaBooking ? Target : Handshake,
         borderColor: "border-frozen-lake-600",
         bgColor: "bg-frozen-lake-600",
         iconColor: "text-frozen-lake-600",
@@ -370,7 +444,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         <div className="flex items-start gap-6">
           <BookingIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{bookingType.label}</h1>
+            <h1 className="text-2xl font-bold text-white">{bookingHeaderLabel}</h1>
           </div>
         </div>
       </div>
@@ -383,7 +457,19 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         <div className="px-6 py-4">
           <ul className="flex flex-col gap-2">
             {displayParticipants.map((participant, index) => {
-              const bg = participant.isCoach ? "#023047" : participant.isGuest ? "#023b52" : "var(--secondary)";
+              const isAwaitingAcceptance =
+                linkedChallenge?.status === "pending" &&
+                Boolean(participant.userId) &&
+                (participant.userId === linkedChallenge.opponent_id ||
+                  participant.userId === linkedChallenge.opponent_partner_id);
+
+              const bg = isAwaitingAcceptance
+                ? "#9ca3af"
+                : participant.isCoach
+                  ? "#023047"
+                  : participant.isGuest
+                    ? "#023b52"
+                    : "var(--secondary)";
               return (
                 <li key={`${participant.fullName}-${index}`}>
                   {participant.userId ? (
@@ -396,11 +482,10 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-white text-sm truncate">{participant.fullName}</p>
-                          {participant.email && (
-                            <p className="text-xs text-white/60 truncate mt-0.5">{participant.email}</p>
-                          )}
-                          {participant.phone && (
-                            <p className="text-xs text-white/60 mt-0.5">{participant.phone}</p>
+                          {(participant.email || participant.phone) && (
+                            <p className="text-xs text-white/60 truncate mt-0.5">
+                              {[participant.email, participant.phone].filter(Boolean).join(" ")}
+                            </p>
                           )}
                         </div>
                         <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
@@ -417,11 +502,10 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white text-sm truncate">{participant.fullName}</p>
-                      {participant.email && (
-                        <p className="text-xs text-white/60 truncate mt-0.5">{participant.email}</p>
-                      )}
-                      {participant.phone && (
-                        <p className="text-xs text-white/60 mt-0.5">{participant.phone}</p>
+                      {(participant.email || participant.phone) && (
+                        <p className="text-xs text-white/60 truncate mt-0.5">
+                          {[participant.email, participant.phone].filter(Boolean).join(" ")}
+                        </p>
                       )}
                     </div>
                     <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
@@ -538,9 +622,17 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       )}
 
       {/* Pulsanti azioni */}
-      {!isPastBooking && (
+      {(!isPastBooking || (isArenaBooking && Boolean(linkedChallenge?.id))) && (
         <div className="flex flex-col sm:flex-row gap-3">
-            {booking.status !== "cancelled" && (
+            {isArenaBooking && linkedChallenge?.id && (
+              <Link
+                href={`${basePath}/arena/challenge/${linkedChallenge.id}`}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
+              >
+                Dettagli Sfida
+              </Link>
+            )}
+            {!isPastBooking && booking.status !== "cancelled" && (
               <Link
                 href={`${basePath}/bookings/modifica?id=${booking.id}`}
                 className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
@@ -549,7 +641,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               </Link>
             )}
 
-            {canCancel && (
+            {!isPastBooking && canCancel && (
               <button
                 onClick={cancelBooking}
                 disabled={actionLoading}
@@ -562,16 +654,18 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               </button>
             )}
 
-            <button
-              onClick={deleteBooking}
-              disabled={actionLoading}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {actionLoading && deleting ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : null}
-              Elimina
-            </button>
+            {!isPastBooking && (
+              <button
+                onClick={deleteBooking}
+                disabled={actionLoading}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading && deleting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : null}
+                Elimina
+              </button>
+            )}
         </div>
       )}
     </div>

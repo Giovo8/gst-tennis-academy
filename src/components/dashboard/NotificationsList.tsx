@@ -13,6 +13,7 @@ import {
   Info,
   MessageSquare,
   Search,
+  Swords,
   SlidersHorizontal,
   Trophy,
   User,
@@ -45,6 +46,8 @@ import {
 
 const NOTIFICATION_MODAL_TYPE_LABELS: Record<string, string> = {
   booking: "Prenotazione",
+  arena_challenge: "Sfida Arena",
+  arena_challenge_booked: "Sfida Arena + Campo",
   tournament: "Torneo",
   message: "Messaggio",
   course: "Corso",
@@ -97,6 +100,10 @@ function getNotificationIcon(type: string, title?: string, message?: string, whi
       if (text.includes("lezione")) return <Users className={cls} strokeWidth={sw} />;
       return <CalendarClock className={cls} strokeWidth={sw} />;
     }
+    case "arena_challenge":
+      return <Swords className={cls} strokeWidth={sw} />;
+    case "arena_challenge_booked":
+      return <Calendar className={cls} strokeWidth={sw} />;
     case "tournament":
       return <Trophy className={cls} strokeWidth={sw} />;
     case "message":
@@ -330,6 +337,8 @@ export default function NotificationsList({
             {sortedNotifications.map((n) => {
               const typeColorMap: Record<string, string> = {
                 booking: "var(--secondary)",
+                arena_challenge: "#0f766e",
+                arena_challenge_booked: "#0d9488",
                 tournament: "#6d28d9",
                 message: "#0369a1",
                 success: "#15803d",
@@ -338,6 +347,8 @@ export default function NotificationsList({
               };
               const typeLabelMap: Record<string, string> = {
                 booking: "Prenotazione",
+                arena_challenge: "Sfida Arena",
+                arena_challenge_booked: "Sfida Arena + Campo",
                 tournament: "Torneo",
                 message: "Messaggio",
                 success: "Successo",

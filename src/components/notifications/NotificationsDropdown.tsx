@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Bell, Mail, Trophy, Megaphone, Calendar, CalendarClock, Users, Video, X } from "lucide-react";
+import { Bell, Mail, Trophy, Megaphone, Calendar, CalendarClock, Users, Video, X, Swords } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -155,6 +155,10 @@ export default function NotificationsDropdown() {
         if (text.includes("lezione")) return <Users className={iconClass} strokeWidth={iconStroke} />;
         return <CalendarClock className={iconClass} strokeWidth={iconStroke} />;
       }
+      case "arena_challenge":
+        return <Swords className={iconClass} strokeWidth={iconStroke} />;
+      case "arena_challenge_booked":
+        return <Calendar className={iconClass} strokeWidth={iconStroke} />;
       default:
         return <Bell className={iconClass} strokeWidth={iconStroke} />;
     }
@@ -168,6 +172,8 @@ export default function NotificationsDropdown() {
 
     const typeColorMap: Record<string, string> = {
       booking: "var(--secondary)",
+      arena_challenge: "#0f766e",
+      arena_challenge_booked: "#0d9488",
       tournament: "#6d28d9",
       message: "#0369a1",
       success: "#15803d",
