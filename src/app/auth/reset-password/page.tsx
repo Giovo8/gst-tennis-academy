@@ -14,11 +14,35 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkSession() {
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!mounted) return;
+
+      if (sessionError || !data.session) {
+        setError("Sessione reset non valida o scaduta. Richiedi un nuovo link.");
+        setSessionReady(false);
+        return;
+      }
+
+      setSessionReady(true);
+    }
+
+    checkSession();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function validatePassword(password: string): string | null {
     if (password.length < VALIDATION_RULES.PASSWORD_MIN_LENGTH) {
@@ -42,6 +66,11 @@ function ResetPasswordForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!sessionReady) {
+      setError("Sessione reset non valida o scaduta. Richiedi un nuovo link.");
+      return;
+    }
 
     const passwordError = validatePassword(formData.password);
     if (passwordError) {

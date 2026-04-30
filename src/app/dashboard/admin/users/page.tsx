@@ -93,7 +93,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
       if (error) {
