@@ -58,6 +58,11 @@ function ResetPasswordForm() {
       if (!mounted) return;
 
       if (sessionError || !data.session) {
+        if (code) {
+          setError("Link di reset non valido per questo dispositivo. Richiedi un nuovo link.");
+          setSessionReady(false);
+          return;
+        }
         setError("Sessione reset non valida o scaduta. Richiedi un nuovo link.");
         setSessionReady(false);
         return;

@@ -22,7 +22,11 @@ function createSupabaseClient() {
 
     logger.debug('Initializing Supabase client');
 
-    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+    return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        flowType: "implicit",
+      },
+    });
   } catch (error) {
     logger.error('Failed to initialize Supabase client', error);
     throw error;
