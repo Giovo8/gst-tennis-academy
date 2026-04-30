@@ -30,14 +30,14 @@ function ResetPasswordForm() {
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
 
-      // Handle query-based links (e.g. ?code=... or ?token_hash=...&type=recovery)
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      } else if (tokenHash && type) {
-        await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: type as "recovery" | "invite" | "email" | "email_change" | "magiclink",
-        });
+      // For query-based links, always exchange on server callback first.
+      // This avoids client-side race conditions where session is not persisted yet.
+      if (code || (tokenHash && type)) {
+        const callbackUrl = code
+          ? `/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset-password`
+          : `/auth/callback?token_hash=${encodeURIComponent(tokenHash!)}&type=${encodeURIComponent(type!)}&next=/auth/reset-password`;
+        router.replace(callbackUrl);
+        return;
       }
 
       // Handle hash-based links (e.g. #access_token=...&refresh_token=...)
