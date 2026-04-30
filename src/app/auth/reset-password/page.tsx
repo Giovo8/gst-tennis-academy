@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
@@ -9,6 +9,7 @@ import { VALIDATION_RULES } from "@/lib/constants/app";
 
 function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +26,20 @@ function ResetPasswordForm() {
     let mounted = true;
 
     async function bootstrapRecoverySession() {
+      const code = searchParams.get("code");
+      const tokenHash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
+
+      // Handle query-based links (e.g. ?code=... or ?token_hash=...&type=recovery)
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      } else if (tokenHash && type) {
+        await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: type as "recovery" | "invite" | "email" | "email_change" | "magiclink",
+        });
+      }
+
       // Handle hash-based links (e.g. #access_token=...&refresh_token=...)
       if (typeof window !== "undefined" && window.location.hash) {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -67,7 +82,7 @@ function ResetPasswordForm() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [searchParams]);
 
   function validatePassword(password: string): string | null {
     if (password.length < VALIDATION_RULES.PASSWORD_MIN_LENGTH) {
