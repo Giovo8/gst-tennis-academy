@@ -405,10 +405,25 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
             if (!confirm(`Sei sicuro di voler resettare la password di ${user.full_name || user.email}?`)) return;
             setResettingPassword(true);
             try {
-              const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-                redirectTo: `${window.location.origin}/auth/reset-password`,
+              const {
+                data: { session },
+              } = await supabase.auth.getSession();
+
+              if (!session?.access_token) {
+                throw new Error("Sessione non valida");
+              }
+
+              const response = await fetch("/api/admin/users/reset-password", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ email: user.email }),
               });
-              if (error) throw error;
+
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || "Impossibile inviare l'email di reset.");
               alert("Email di reset password inviata con successo.");
             } catch (err: any) {
               alert("Errore: " + (err.message || "Impossibile inviare l'email di reset."));

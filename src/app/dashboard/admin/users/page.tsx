@@ -92,12 +92,26 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Sessione non valida");
+      }
+
+      const response = await fetch("/api/admin/users/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ email: userEmail }),
       });
 
-      if (error) {
-        throw error;
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Errore durante l'invio del reset password");
       }
 
       alert("Email di reset password inviata con successo.");
