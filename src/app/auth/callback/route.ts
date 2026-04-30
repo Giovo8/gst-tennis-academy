@@ -5,9 +5,11 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/dashboard/atleta";
 
-  if (code) {
+  if (code || (tokenHash && type)) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,16 +29,29 @@ export async function GET(request: Request) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    let authError: { message?: string } | null = null;
 
-    if (!error) {
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      authError = error;
+    } else if (tokenHash && type) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: type as "recovery" | "invite" | "email" | "email_change" | "magiclink",
+      });
+      authError = error;
+    }
+
+    if (!authError) {
       // If next is an /auth/* path (e.g. reset-password), go there directly
       if (next.startsWith("/auth/")) {
         return NextResponse.redirect(`${origin}${next}`);
       }
 
       // Get user profile to determine redirect
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (user) {
         const { data: profile } = await supabase
@@ -58,8 +73,10 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${next}`);
     }
 
-    // Code exchange failed - check if user is already logged in
-    const { data: { user: existingUser } } = await supabase.auth.getUser();
+    // Auth exchange failed - check if user is already logged in
+    const {
+      data: { user: existingUser },
+    } = await supabase.auth.getUser();
     if (existingUser) {
       const { data: profile } = await supabase
         .from("profiles")

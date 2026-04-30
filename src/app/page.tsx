@@ -18,8 +18,18 @@ function AuthCodeHandler() {
 
   useEffect(() => {
     const code = searchParams.get("code");
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
+
     if (code) {
       router.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset-password`);
+      return;
+    }
+
+    if (tokenHash && type) {
+      router.replace(
+        `/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}&next=/auth/reset-password`
+      );
     }
   }, [searchParams, router]);
 
