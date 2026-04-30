@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CTASection from "@/components/landing/CTASection";
 import PublicNavbar from "@/components/layout/PublicNavbar";
@@ -12,7 +12,7 @@ import NewsSection from "@/components/landing/NewsSection";
 import StaffSection from "@/components/landing/StaffSection";
 import TournamentsSection from "@/components/landing/TournamentsSection";
 
-export default function Home() {
+function AuthCodeHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -23,8 +23,15 @@ export default function Home() {
     }
   }, [searchParams, router]);
 
+  return null;
+}
+
+export default function Home() {
   return (
     <div className="min-h-screen bg-white">
+      <Suspense fallback={null}>
+        <AuthCodeHandler />
+      </Suspense>
       <PublicNavbar />
       <main>
         {/* Accessibility skip link */}
