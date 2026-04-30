@@ -488,11 +488,12 @@ export default function AdminArenaPage() {
               const isConfirmed = challenge.status === "accepted";
               const isDeclined = challenge.status === "declined" || challenge.status === "cancelled";
               const isCancelledOnly = challenge.status === "cancelled";
+              const isCompleted = challenge.status === "completed" || challenge.status === "awaiting_score";
               const canCancel = challenge.status !== "cancelled" && challenge.status !== "declined" && challenge.status !== "completed";
-              const cardBg = isDeclined ? "#9ca3af" : isPending ? "#ffffff" : typeColor;
+              const cardBg = isDeclined ? "#9ca3af" : isPending ? "#ffffff" : isCompleted ? "#94a3b8" : typeColor;
               const iconBadgeBg = isPending
                 ? typeColor
-                : isConfirmed || isDeclined
+                : isConfirmed || isDeclined || isCompleted
                   ? "rgba(255, 255, 255, 0.1)"
                   : "rgba(255, 255, 255, 0.15)";
               const primaryTextColor = isPending ? "var(--secondary)" : "#ffffff";
