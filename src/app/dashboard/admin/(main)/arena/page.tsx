@@ -494,7 +494,7 @@ export default function AdminArenaPage() {
                 ? typeColor
                 : isConfirmed || isDeclined
                   ? "rgba(255, 255, 255, 0.1)"
-                  : "transparent";
+                  : "rgba(255, 255, 255, 0.15)";
               const primaryTextColor = isPending ? "var(--secondary)" : "#ffffff";
               const iconColor = isPending ? "#ffffff" : primaryTextColor;
               const secondaryTextColor = isPending ? "rgba(3, 72, 99, 0.75)" : "rgba(255, 255, 255, 0.7)";
