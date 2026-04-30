@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import CTASection from "@/components/landing/CTASection";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 import TextHeroSection from "@/components/landing/TextHeroSection";
@@ -11,6 +13,16 @@ import StaffSection from "@/components/landing/StaffSection";
 import TournamentsSection from "@/components/landing/TournamentsSection";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=/auth/reset-password`);
+    }
+  }, [searchParams, router]);
+
   return (
     <div className="min-h-screen bg-white">
       <PublicNavbar />

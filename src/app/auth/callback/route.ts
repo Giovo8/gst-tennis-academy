@@ -30,6 +30,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // If next is an /auth/* path (e.g. reset-password), go there directly
+      if (next.startsWith("/auth/")) {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+
       // Get user profile to determine redirect
       const { data: { user } } = await supabase.auth.getUser();
 

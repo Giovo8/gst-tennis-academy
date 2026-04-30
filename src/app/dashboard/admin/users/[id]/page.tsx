@@ -406,7 +406,7 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
             setResettingPassword(true);
             try {
               const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-                redirectTo: `${window.location.origin}/auth/reset-password`,
+                redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
               });
               if (error) throw error;
               alert("Email di reset password inviata con successo.");

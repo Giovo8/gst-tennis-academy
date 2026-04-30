@@ -376,7 +376,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     setResettingPassword(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
       });
 
       if (error) throw error;

@@ -79,80 +79,36 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
     setSuccess("");
 
     try {
-      // Crea l'utente con Supabase Auth
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          emailRedirectTo: `${siteUrl}/auth/callback`,
-          data: {
-            full_name: newUser.full_name,
-            phone: newUser.phone,
-            role: newUser.role
-          }
-        }
+      // Ottieni il token della sessione admin corrente
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessione scaduta. Effettua nuovamente il login.");
+
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: newUser.email,
+          password: newUser.password,
+          full_name: newUser.full_name,
+          role: newUser.role,
+          phone: newUser.phone,
+          date_of_birth: newUser.date_of_birth,
+          birth_city: newUser.birth_city,
+          fiscal_code: newUser.fiscal_code,
+          address: newUser.address,
+          city: newUser.city,
+          province: newUser.province,
+          postal_code: newUser.postal_code,
+          arena_rank: newUser.arena_rank,
+          notes: newUser.notes,
+        }),
       });
 
-      if (authError) throw authError;
-
-      // Attendi che il trigger crei il profilo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Aggiorna il profilo con il ruolo (usa upsert per sicurezza)
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .upsert({
-            id: authData.user.id,
-            full_name: newUser.full_name,
-            phone: newUser.phone,
-            date_of_birth: newUser.date_of_birth || null,
-            bio: newUser.notes || null,
-            role: newUser.role,
-            email: newUser.email,
-            metadata: {
-              birth_city: newUser.birth_city,
-              fiscal_code: newUser.fiscal_code,
-              address: newUser.address,
-              city: newUser.city,
-              province: newUser.province,
-              postal_code: newUser.postal_code
-            }
-          }, {
-            onConflict: 'id'
-          });
-
-        if (profileError) {
-          console.error("Errore aggiornamento profilo:", profileError);
-        }
-
-        // Inizializza arena_stats con il rank selezionato
-        const rankPoints = {
-          "Bronzo": 0,
-          "Argento": 800,
-          "Oro": 1500,
-          "Platino": 2000,
-          "Diamante": 2500
-        };
-
-        const { error: arenaError } = await supabase
-          .from("arena_stats")
-          .upsert({
-            user_id: authData.user.id,
-            points: rankPoints[newUser.arena_rank],
-            level: newUser.arena_rank,
-            wins: 0,
-            losses: 0,
-            total_matches: 0
-          }, {
-            onConflict: 'user_id'
-          });
-
-        if (arenaError) {
-          console.error("Errore inizializzazione arena:", arenaError);
-        }
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Errore durante la creazione dell'utente");
 
       setSuccess("Utente creato con successo!");
       

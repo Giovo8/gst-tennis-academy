@@ -87,7 +87,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, password, full_name, role } = body;
+    const {
+      email,
+      password,
+      full_name,
+      role,
+      phone,
+      date_of_birth,
+      birth_city,
+      fiscal_code,
+      address,
+      city,
+      province,
+      postal_code,
+      arena_rank,
+      notes,
+    } = body;
 
     // Validazione input
     if (!email || !password) {
@@ -131,40 +146,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verifica se l'email esiste già (nella tabella profiles)
-    const { data: existingProfiles, error: checkError } = await supabaseAdmin
-      .from("profiles")
-      .select("email")
-      .eq("email", email.toLowerCase())
-      .limit(1);
-
-    if (!checkError && existingProfiles && existingProfiles.length > 0) {
-      return NextResponse.json(
-        { error: "Questa email è già registrata nel sistema" },
-        { status: 400 }
-      );
-    }
-
     // Create user with admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
       email_confirm: true,
+      user_metadata: {
+        full_name: full_name?.trim() || email.toLowerCase(),
+        role: role || "atleta",
+      },
     });
 
     if (createError) {
-      console.error("Errore auth.admin.createUser:", createError);
-      let errorMessage = "Errore durante la creazione dell'utente";
-      
-      if (createError.message.includes("already") || createError.message.includes("Database error")) {
-        errorMessage = "Questa email è già registrata nel sistema";
-      } else if (createError.message.includes("password")) {
-        errorMessage = "Password non valida";
-      } else if (createError.message.includes("email")) {
-        errorMessage = "Email non valida";
-      }
-      
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
+      console.error("Errore auth.admin.createUser:", createError.message, createError);
+      return NextResponse.json({ error: createError.message }, { status: 400 });
     }
 
     if (!newUser.user) {
@@ -178,6 +173,17 @@ export async function POST(request: NextRequest) {
       email: email.toLowerCase(),
       full_name: full_name?.trim() || null,
       role: role || "atleta",
+      phone: phone || null,
+      date_of_birth: date_of_birth || null,
+      bio: notes || null,
+      metadata: {
+        birth_city: birth_city || null,
+        fiscal_code: fiscal_code || null,
+        address: address || null,
+        city: city || null,
+        province: province || null,
+        postal_code: postal_code || null,
+      },
     };
     
     const { error: profileError } = await supabaseAdmin
@@ -194,6 +200,28 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Initialize arena_stats
+    const rankPoints: Record<string, number> = {
+      Bronzo: 0,
+      Argento: 800,
+      Oro: 1500,
+      Platino: 2000,
+      Diamante: 2500,
+    };
+    await supabaseAdmin
+      .from("arena_stats")
+      .upsert(
+        {
+          user_id: newUser.user.id,
+          points: rankPoints[arena_rank] ?? 0,
+          level: arena_rank ?? "Bronzo",
+          wins: 0,
+          losses: 0,
+          total_matches: 0,
+        },
+        { onConflict: "user_id" }
+      );
 
     return NextResponse.json({
       success: true,
