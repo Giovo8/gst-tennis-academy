@@ -24,7 +24,21 @@ function ResetPasswordForm() {
   useEffect(() => {
     let mounted = true;
 
-    async function checkSession() {
+    async function bootstrapRecoverySession() {
+      // Handle hash-based links (e.g. #access_token=...&refresh_token=...)
+      if (typeof window !== "undefined" && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+      }
+
       const { data, error: sessionError } = await supabase.auth.getSession();
       if (!mounted) return;
 
@@ -37,10 +51,21 @@ function ResetPasswordForm() {
       setSessionReady(true);
     }
 
-    checkSession();
+    bootstrapRecoverySession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      if (session) {
+        setError("");
+        setSessionReady(true);
+      }
+    });
 
     return () => {
       mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 

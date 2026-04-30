@@ -95,6 +95,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // If no query params are present, this may still be a hash-based recovery link.
+  // Redirect to reset page so the browser client can process URL fragments.
+  return NextResponse.redirect(`${origin}/auth/reset-password`);
 }
