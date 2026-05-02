@@ -36,7 +36,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
     city: "",
     province: "",
     postal_code: "",
-    arena_rank: "Bronzo" as "Bronzo" | "Argento" | "Oro" | "Platino" | "Diamante",
+    arena_rank: "Bronzo" as const,
     notes: "",
     role: "atleta" as "admin" | "gestore" | "maestro" | "atleta"
   });
@@ -102,7 +102,6 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
           city: newUser.city,
           province: newUser.province,
           postal_code: newUser.postal_code,
-          arena_rank: newUser.arena_rank,
           notes: newUser.notes,
         }),
       });
@@ -132,10 +131,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
           {" › "}
           <span>Crea Utente</span>
         </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea nuovo utente</h1>
-        <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-          Inserisci i dati per creare un nuovo account utente
-        </p>
+        <h1 className="text-4xl font-bold text-secondary">Crea Utente</h1>
       </div>
 
       {/* Messages */}
@@ -165,12 +161,12 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informazioni Account */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-secondary">Informazioni Account</h2>
+        <div className="bg-white border border-gray-200 rounded-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
           </div>
 
-          <div className="space-y-0">
+          <div className="space-y-0 p-4 sm:p-6">
             {/* Email */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -249,12 +245,12 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         </div>
 
         {/* Informazioni Utente */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-secondary">Informazioni Utente</h2>
+        <div className="bg-white border border-gray-200 rounded-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
           </div>
 
-          <div className="space-y-0">
+          <div className="space-y-0 p-4 sm:p-6">
             {/* Nome Completo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -387,12 +383,12 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         </div>
 
         {/* Informazioni Piattaforma */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-secondary">Informazioni Piattaforma</h2>
+        <div className="bg-white border border-gray-200 rounded-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Piattaforma</h2>
           </div>
 
-          <div className="space-y-0">
+          <div className="space-y-0 p-4 sm:p-6">
             {/* Ruolo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -415,40 +411,6 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                     </button>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            {/* Rank Arena */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200 pt-6">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Rank Arena Iniziale
-              </label>
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {[
-                    { value: "Bronzo" },
-                    { value: "Argento" },
-                    { value: "Oro" },
-                    { value: "Platino" },
-                    { value: "Diamante" }
-                  ].map((rank) => (
-                    <button
-                      key={rank.value}
-                      type="button"
-                      onClick={() => setNewUser({ ...newUser, arena_rank: rank.value as any })}
-                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                        newUser.arena_rank === rank.value
-                          ? 'bg-secondary text-white border-secondary'
-                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                      }`}
-                    >
-                      {rank.value}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-secondary/50 mt-2">
-                  Imposta il livello Arena di partenza per questo utente
-                </p>
               </div>
             </div>
 

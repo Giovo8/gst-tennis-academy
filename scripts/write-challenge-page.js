@@ -1,4 +1,7 @@
-"use client";
+const fs = require('fs');
+const path = 'c:/Users/giova/Desktop/gst-tennis-academy/src/app/dashboard/atleta/(main)/arena/challenge/[id]/page.tsx';
+
+const content = `"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
@@ -67,7 +70,7 @@ interface Challenge {
   };
 }
 
-const SCORE_PATTERN = /^\d+-\d+(?:,\s*\d+-\d+)*$/;
+const SCORE_PATTERN = /^\\d+-\\d+(?:,\\s*\\d+-\\d+)*$/;
 
 function getPlayerInitial(name?: string) {
   return name?.trim().charAt(0).toUpperCase() || "U";
@@ -133,7 +136,7 @@ function getWinnerIdFromScore(scoreValue: string, challengerId: string, opponent
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => {
-      const match = s.match(/^(\d+)-(\d+)$/);
+      const match = s.match(/^(\\d+)-(\\d+)$/);
       if (!match) return null;
       return { challengerGames: Number(match[1]), opponentGames: Number(match[2]) };
     })
@@ -155,7 +158,7 @@ function buildScoreGrid(score?: string) {
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => {
-      const match = s.match(/^(\d+)-(\d+)$/);
+      const match = s.match(/^(\\d+)-(\\d+)$/);
       if (!match) return null;
       return { winner: Number(match[1]), loser: Number(match[2]) };
     })
@@ -168,40 +171,6 @@ function buildScoreGrid(score?: string) {
     totalWinner: sets.filter((s) => s.winner > s.loser).length,
     totalLoser: sets.filter((s) => s.loser > s.winner).length,
   };
-}
-
-function getPointsFromScore(
-  scoreValue: string,
-  winnerId: string,
-  challengerId: string,
-): { winnerPts: number; loserPts: number } | null {
-  const sets = scoreValue
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const match = s.match(/^(\d+)-(\d+)$/);
-      if (!match) return null;
-      return { left: Number(match[1]), right: Number(match[2]) };
-    })
-    .filter((s): s is { left: number; right: number } => s !== null);
-
-  if (sets.length === 0) return null;
-
-  const isWinnerChallenger = winnerId === challengerId;
-  let winnerSets = 0;
-  let loserSets = 0;
-  for (const s of sets) {
-    if (isWinnerChallenger) {
-      if (s.left > s.right) winnerSets++; else loserSets++;
-    } else {
-      if (s.right > s.left) winnerSets++; else loserSets++;
-    }
-  }
-
-  if (loserSets === 0) return { winnerPts: 30, loserPts: 0 };
-  if (winnerSets === 3 && loserSets === 1) return { winnerPts: 25, loserPts: 5 };
-  return { winnerPts: 20, loserPts: 10 };
 }
 
 export default function AtletaChallengePage() {
@@ -235,7 +204,7 @@ export default function AtletaChallengePage() {
     setUserId(user.id);
 
     try {
-      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`);
+      const response = await fetch(\`/api/arena/challenges?challenge_id=\${id}\`);
       if (response.ok) {
         const data = await response.json();
         if (data.challenge) setChallenge(data.challenge);
@@ -278,10 +247,10 @@ export default function AtletaChallengePage() {
   async function handleCancelChallenge() {
     if (!confirm("Sei sicuro di voler cancellare questa sfida?")) return;
     try {
-      const response = await fetch(`/api/arena/challenges?challenge_id=${challenge?.id}`, {
+      const response = await fetch(\`/api/arena/challenges?challenge_id=\${challenge?.id}\`, {
         method: "DELETE",
       });
-      if (response.ok) router.push(`${dashboardBase}/arena`);
+      if (response.ok) router.push(\`\${dashboardBase}/arena\`);
     } catch (error) {
       console.error("Error cancelling challenge:", error);
     }
@@ -307,7 +276,7 @@ export default function AtletaChallengePage() {
 
     try {
       setSavingScore(true);
-      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`, {
+      const response = await fetch(\`/api/arena/challenges?challenge_id=\${id}\`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -323,7 +292,7 @@ export default function AtletaChallengePage() {
         loadChallengeDetails();
       } else {
         const errorData = await response.json();
-        alert(`Errore: ${errorData.error || "Impossibile salvare il punteggio"}`);
+        alert(\`Errore: \${errorData.error || "Impossibile salvare il punteggio"}\`);
       }
     } catch (error) {
       console.error("Error saving score:", error);
@@ -370,11 +339,11 @@ export default function AtletaChallengePage() {
   const scoreGrid = buildScoreGrid(challenge.score);
   const winnerIsChallenger = challenge.winner_id === challenge.challenger_id;
   const winnerDisplayName = winnerIsChallenger
-    ? `${challenge.challenger?.full_name || "Sfidante"}${isDoubles && challenge.my_partner ? ` / ${challenge.my_partner.full_name}` : ""}`
-    : `${challenge.opponent?.full_name || "Sfidato"}${isDoubles && challenge.opponent_partner ? ` / ${challenge.opponent_partner.full_name}` : ""}`;
+    ? \`\${challenge.challenger?.full_name || "Sfidante"}\${isDoubles && challenge.my_partner ? \` / \${challenge.my_partner.full_name}\` : ""}\`
+    : \`\${challenge.opponent?.full_name || "Sfidato"}\${isDoubles && challenge.opponent_partner ? \` / \${challenge.opponent_partner.full_name}\` : ""}\`;
   const loserDisplayName = winnerIsChallenger
-    ? `${challenge.opponent?.full_name || "Sfidato"}${isDoubles && challenge.opponent_partner ? ` / ${challenge.opponent_partner.full_name}` : ""}`
-    : `${challenge.challenger?.full_name || "Sfidante"}${isDoubles && challenge.my_partner ? ` / ${challenge.my_partner.full_name}` : ""}`;
+    ? \`\${challenge.opponent?.full_name || "Sfidato"}\${isDoubles && challenge.opponent_partner ? \` / \${challenge.opponent_partner.full_name}\` : ""}\`
+    : \`\${challenge.challenger?.full_name || "Sfidante"}\${isDoubles && challenge.my_partner ? \` / \${challenge.my_partner.full_name}\` : ""}\`;
 
   const canEnterScore =
     !challenge.winner_id &&
@@ -412,7 +381,7 @@ export default function AtletaChallengePage() {
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">Arena</Link>
+          <Link href={\`\${dashboardBase}/arena\`} className="hover:text-secondary/80 transition-colors">Arena</Link>
           {" › "}
           <span>Dettagli Sfida</span>
         </p>
@@ -472,6 +441,7 @@ export default function AtletaChallengePage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white text-sm">
                         {participant.full_name}
+                        {participant.id === userId && <span className="ml-1 text-white/60 font-normal text-xs">(Tu)</span>}
                       </p>
                       {isAwaitingAcceptance ? (
                         <p className="text-xs text-white/70 mt-0.5">In attesa di accettazione</p>
@@ -578,7 +548,7 @@ export default function AtletaChallengePage() {
                       </thead>
                       <tbody className="bg-white">
                         {scoreGrid.sets.map((setScore, index) => (
-                          <tr key={`set-row-${index + 1}`} className="border-t border-gray-200">
+                          <tr key={\`set-row-\${index + 1}\`} className="border-t border-gray-200">
                             <td className="px-3 py-2 font-semibold text-secondary">Set {index + 1}</td>
                             <td className="px-3 py-2 text-center font-semibold text-secondary">{setScore.winner}</td>
                             <td className="px-3 py-2 text-center font-semibold text-secondary/70">{setScore.loser}</td>
@@ -624,28 +594,12 @@ export default function AtletaChallengePage() {
                       onChange={(e) => setScore(e.target.value)}
                       placeholder="es: 6-4, 6-3"
                       inputMode="text"
-                      pattern="\d+-\d+(,\s*\d+-\d+)*"
+                      pattern="\\d+-\\d+(,\\s*\\d+-\\d+)*"
                       className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary"
                     />
                     <p className="text-xs text-secondary/60 mt-2">
-                      Formato: 6-4, 6-3 · Il vincitore e i punti vengono calcolati automaticamente dai set.
+                      Inserisci il punteggio nel formato: 6-4, 6-3 oppure 6-4, 3-6, 6-2. Il vincitore viene calcolato automaticamente dai set.
                     </p>
-                    {(() => {
-                      if (!score.trim() || !SCORE_PATTERN.test(score.trim())) return null;
-                      const computedWinner = getWinnerIdFromScore(score.trim(), challenge.challenger_id, challenge.opponent_id);
-                      if (!computedWinner) return null;
-                      const pts = getPointsFromScore(score.trim(), computedWinner, challenge.challenger_id);
-                      if (!pts) return null;
-                      const winnerName = computedWinner === challenge.challenger_id ? challenge.challenger?.full_name : challenge.opponent?.full_name;
-                      const loserName = computedWinner === challenge.challenger_id ? challenge.opponent?.full_name : challenge.challenger?.full_name;
-                      return (
-                        <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <p className="text-xs font-semibold text-green-700 mb-1">Anteprima risultato</p>
-                          <p className="text-xs text-green-700">Vincitore: <strong>{winnerName}</strong> → <strong>+{pts.winnerPts} pt</strong></p>
-                          <p className="text-xs text-green-600">{loserName} → +{pts.loserPts} pt</p>
-                        </div>
-                      );
-                    })()}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -763,7 +717,7 @@ export default function AtletaChallengePage() {
       <div className="flex flex-col sm:flex-row gap-3">
         {challenge.booking?.id && (
           <Link
-            href={`${dashboardBase}/bookings/${challenge.booking.id}`}
+            href={\`\${dashboardBase}/bookings/\${challenge.booking.id}\`}
             className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
           >
             Prenotazione Campo
@@ -773,20 +727,23 @@ export default function AtletaChallengePage() {
           <>
             <button
               onClick={() => handleChallengeAction("accept")}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
             >
+              <Check className="h-5 w-5" />
               Accetta Sfida
             </button>
             <button
-              onClick={() => router.push(`${dashboardBase}/arena/configure-challenge/${challenge.challenger_id}?edit=${challenge.id}&counter=true`)}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-secondary bg-white border border-gray-300 rounded-lg hover:bg-secondary hover:text-white hover:border-secondary transition-all font-medium"
+              onClick={() => router.push(\`\${dashboardBase}/arena/configure-challenge/\${challenge.challenger_id}?edit=\${challenge.id}&counter=true\`)}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-secondary bg-white border border-gray-300 rounded-lg hover:bg-secondary hover:text-white hover:border-secondary transition-all font-medium"
             >
+              <MessageSquare className="h-5 w-5" />
               Proponi Modifiche
             </button>
             <button
               onClick={() => handleChallengeAction("decline")}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
             >
+              <X className="h-5 w-5" />
               Rifiuta Sfida
             </button>
           </>
@@ -794,16 +751,18 @@ export default function AtletaChallengePage() {
         {isChallenger && isPending && (
           <>
             <button
-              onClick={() => router.push(`${dashboardBase}/arena/configure-challenge/${challenge.opponent_id}?edit=${challenge.id}`)}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+              onClick={() => router.push(\`\${dashboardBase}/arena/configure-challenge/\${challenge.opponent_id}?edit=\${challenge.id}\`)}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
             >
+              <MessageSquare className="h-5 w-5" />
               Modifica Sfida
             </button>
             <button
               onClick={handleCancelChallenge}
-              className="flex-1 min-w-[140px] flex items-center justify-center px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium"
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium"
             >
-              Annulla Sfida
+              <X className="h-5 w-5" />
+              Cancella Sfida
             </button>
           </>
         )}
@@ -811,3 +770,7 @@ export default function AtletaChallengePage() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync(path, content, 'utf8');
+console.log('Done. Lines written:', content.split('\n').length);

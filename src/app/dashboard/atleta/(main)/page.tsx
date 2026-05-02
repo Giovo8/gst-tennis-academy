@@ -17,6 +17,7 @@ interface UpcomingBooking {
   id: string;
   court: string;
   type: string;
+  notes: string | null;
   start_time: string;
   end_time: string;
   coach_id: string | null;
@@ -53,7 +54,7 @@ export default function AtletaDashboard() {
 
     const { data: bookingsData } = await supabase
       .from("bookings")
-      .select("id, court, type, start_time, end_time, coach_id")
+      .select("id, court, type, notes, start_time, end_time, coach_id")
       .eq("user_id", user.id)
       .neq("status", "cancelled")
       .gte("start_time", now)
@@ -122,14 +123,16 @@ export default function AtletaDashboard() {
             <ul className="flex flex-col gap-2">
               {upcomingBookings.map((booking) => {
                 const start = new Date(booking.start_time);
+                const isArena =
+                  booking.type === "arena" ||
+                  booking.notes?.toLowerCase().includes("sfida arena");
                 const typeColors: Record<string, string> = {
                   lezione_privata: "#023047",
                   lezione_gruppo: "#023047",
                   campo: "var(--secondary)",
                   lezione: "#023047",
-                  arena: "var(--color-frozen-lake-600)",
                 };
-                const typeBg = typeColors[booking.type] || "var(--secondary)";
+                const typeBg = isArena ? "#023b52" : (typeColors[booking.type] || "var(--secondary)");
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const tomorrow = new Date(today);
@@ -163,8 +166,8 @@ export default function AtletaDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">
                           {booking.coach_name
-                            ? `${formatBookingType(booking.type)} - ${booking.coach_name}`
-                            : formatBookingType(booking.type)}
+                            ? `${formatBookingType(booking.type, isArena)} - ${booking.coach_name}`
+                            : formatBookingType(booking.type, isArena)}
                         </p>
                         <p className="text-xs text-white/70 mt-0.5">
                           {formatBookingTimeRange(booking.start_time, booking.end_time)} · {booking.court}
@@ -234,10 +237,10 @@ export default function AtletaDashboard() {
   );
 }
 
-function formatBookingType(type?: string) {
+function formatBookingType(type?: string, isArena?: boolean) {
   if (type === "lezione_privata") return "Lezione privata";
   if (type === "lezione_gruppo") return "Lezione gruppo";
-  if (type === "arena") return "Match Arena";
+  if (isArena || type === "arena") return "Sfida Arena";
   if (type === "campo") return "Campo";
   return "Prenotazione";
 }

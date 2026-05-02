@@ -870,13 +870,16 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             const canCancel = !isPast && !isCancelled && !isCancellationRequested;
             const start = new Date(booking.start_time);
 
+            const isArenaBooking =
+              booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
+
             let typeBg = "";
             if (isCancelled || isCancellationRequested || isPastBooking) {
               typeBg = "#9ca3af";
             } else if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") {
               typeBg = "#023047";
-            } else if (booking.type === "arena") {
-              typeBg = "var(--color-frozen-lake-600)";
+            } else if (isArenaBooking) {
+              typeBg = "#023b52";
             } else {
               typeBg = "var(--secondary)";
             }
@@ -884,7 +887,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             const typeLabel =
               booking.type === "lezione_privata" ? "Lezione Priv."
               : booking.type === "lezione_gruppo" ? "Lezione Gruppo"
-              : booking.type === "arena" ? "Arena"
+              : isArenaBooking ? "Arena"
               : "Campo";
 
             return (

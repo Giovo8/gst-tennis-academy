@@ -1,4 +1,7 @@
-"use client";
+const fs = require('fs');
+const path = 'c:/Users/giova/Desktop/gst-tennis-academy/src/app/dashboard/atleta/(main)/arena/configure-challenge/[opponentId]/page.tsx';
+
+const content = `"use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter, useParams, useSearchParams, usePathname } from "next/navigation";
@@ -6,12 +9,12 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { format, addDays } from "date-fns";
 import { it } from "date-fns/locale";
-import { getClosingMinutes, getCourtHoursLabel } from "@/lib/bookings/bookingTimeRestrictions";
 import {
   Calendar,
   Loader2,
   AlertCircle,
   CheckCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -23,7 +26,6 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
 
 interface OpponentProfile {
   id: string;
@@ -43,15 +45,95 @@ interface TimeSlot {
   available: boolean;
 }
 
-interface SelectedParticipant {
-  userId?: string;
-  fullName: string;
-  email?: string;
-  phone?: string;
-  isRegistered: boolean;
+interface SearchableOption {
+  value: string;
+  label: string;
 }
 
-const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
+interface SearchableSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchableOption[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+}
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+}: SearchableSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setOpen(false);
+  };
+
+  const handleToggle = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (!next) setQuery("");
+      return next;
+    });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+      >
+        <span className={selectedOption ? "" : "text-secondary/40"}>
+          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
+        </span>
+        <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+          <div className="p-2 border-b border-gray-100">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder || "Cerca..."}
+              className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
+            />
+          </div>
+          <div className="max-h-56 overflow-auto py-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-secondary/40">Nessun risultato</div>
+            ) : (
+              filteredOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleSelect(opt.value)}
+                  className={\`w-full px-3 py-1.5 text-left text-sm hover:bg-secondary/5 \${
+                    opt.value === value ? "bg-secondary/10 font-semibold" : ""
+                  }\`}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4", "Campo 5", "Campo 6", "Campo 7", "Campo 8"];
 
 const MATCH_TYPES = [
   { value: "singolo", label: "Singolo" },
@@ -82,7 +164,6 @@ export default function ConfigureChallengePage() {
   const isCounterProposal = searchParams.get("counter") === "true";
 
   const [opponent, setOpponent] = useState<OpponentProfile | null>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<Player | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -113,9 +194,6 @@ export default function ConfigureChallengePage() {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
-
-  // Booking ID to exclude from occupied slots when editing
-  const editingBookingIdRef = useRef<string | null>(null);
 
   // Drag to scroll
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -168,13 +246,6 @@ export default function ConfigureChallengePage() {
     }
   }, [selectedDate, selectedCourt]);
 
-  useEffect(() => {
-    if (matchType === "singolo") {
-      setMyPartner("");
-      setOpponentPartner("");
-    }
-  }, [matchType]);
-
   async function loadData() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -184,14 +255,10 @@ export default function ConfigureChallengePage() {
       }
       setCurrentUserId(session.user.id);
 
-      const [profileRes, playersRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, avatar_url").eq("id", session.user.id).single(),
-        fetch("/api/arena/players", { headers: { Authorization: `Bearer ${session.access_token}` } }),
-      ]);
+      const response = await fetch("/api/arena/players", {
+        headers: { Authorization: \`Bearer \${session.access_token}\` },
+      });
 
-      if (profileRes.data) setCurrentUserProfile(profileRes.data as any);
-
-      const response = playersRes;
       if (response.ok) {
         const data = await response.json();
         setPlayers(data.players);
@@ -207,7 +274,7 @@ export default function ConfigureChallengePage() {
 
   async function loadExistingChallenge() {
     try {
-      const response = await fetch(`/api/arena/challenges?challenge_id=${editChallengeId}`);
+      const response = await fetch(\`/api/arena/challenges?challenge_id=\${editChallengeId}\`);
       if (response.ok) {
         const data = await response.json();
         const challenge = data.challenge;
@@ -219,8 +286,6 @@ export default function ConfigureChallengePage() {
           setMyPartner(challenge.my_partner_id || "");
           setOpponentPartner(challenge.opponent_partner_id || "");
           if (challenge.booking) {
-            const bookingId = challenge.booking_id || challenge.booking?.id || null;
-            editingBookingIdRef.current = bookingId;
             const bookingDate = new Date(challenge.booking.start_time);
             setSelectedDate(bookingDate);
             setSelectedCourt(challenge.booking.court);
@@ -235,8 +300,6 @@ export default function ConfigureChallengePage() {
               current = new Date(current.getTime() + 30 * 60000);
             }
             setSelectedSlots(slotList);
-            // Explicitly reload slots to exclude the current booking from occupied set
-            await loadAvailableSlots(bookingDate, challenge.booking.court, bookingId);
           }
         }
       }
@@ -245,78 +308,117 @@ export default function ConfigureChallengePage() {
     }
   }
 
-  async function loadAvailableSlots(
-    overrideDate?: Date,
-    overrideCourt?: string,
-    excludeBookingId?: string | null
-  ) {
-    const dateToUse = overrideDate ?? selectedDate;
-    const courtToUse = overrideCourt ?? selectedCourt;
-    if (!dateToUse || !courtToUse) return;
+  async function loadAvailableSlots() {
+    if (!selectedDate || !selectedCourt) return;
     setLoadingSlots(true);
     try {
-      const dateStr = format(dateToUse, "yyyy-MM-dd");
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
       const response = await fetch(
-        `/api/bookings/availability?date=${encodeURIComponent(dateStr)}&court=${encodeURIComponent(courtToUse)}`
+        \`/api/bookings/availability?date=\${dateStr}&court=\${encodeURIComponent(selectedCourt)}\`
       );
-
-      if (!response.ok) {
-        setExistingBookings([]);
-        setSlots([]);
-        setLoadingSlots(false);
-        return;
+      if (response.ok) {
+        const data = await response.json();
+        setSlots(data.slots || []);
+      } else {
+        generateDefaultSlots();
       }
-
-      const payload = await response.json();
-      const allItems = Array.isArray(payload?.bookings) ? payload.bookings : [];
-      setExistingBookings(allItems);
-
-      // When editing, exclude the current booking's slots so they appear selectable
-      const bookingIdToExclude = excludeBookingId !== undefined ? excludeBookingId : editingBookingIdRef.current;
-
-      const occupiedSlots = new Set<string>();
-      allItems.forEach((item: any) => {
-        if (bookingIdToExclude && item.id === bookingIdToExclude) return;
-        const start = new Date(item.start_time);
-        const end = new Date(item.end_time);
-        const current = new Date(start);
-        while (current < end) {
-          const hours = current.getHours().toString().padStart(2, "0");
-          const minutes = current.getMinutes().toString().padStart(2, "0");
-          occupiedSlots.add(`${hours}:${minutes}`);
-          current.setMinutes(current.getMinutes() + 30);
-        }
-      });
-
-      const generatedSlots: { time: string; available: boolean }[] = [];
-      const now = new Date();
-      const isToday = dateToUse.toDateString() === now.toDateString();
-      const dayOfWeek = dateToUse.getDay();
-      const closingMinutes = getClosingMinutes(dayOfWeek);
-
-      for (let hour = 7; hour <= 22; hour++) {
-        for (const minute of [0, 30]) {
-          if (hour === 22 && minute === 30) break;
-          const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-          let available = !occupiedSlots.has(time);
-          if (hour * 60 + minute + 30 > closingMinutes) available = false;
-          if (isToday) {
-            const slotTime = new Date(dateToUse);
-            slotTime.setHours(hour, minute, 0, 0);
-            if (slotTime <= now) available = false;
-          }
-          generatedSlots.push({ time, available });
-        }
-      }
-
-      setSlots(generatedSlots);
+      await loadExistingBookings();
     } catch (error) {
       console.error("Error loading slots:", error);
-      setExistingBookings([]);
-      setSlots([]);
+      generateDefaultSlots();
     } finally {
       setLoadingSlots(false);
     }
+  }
+
+  async function loadExistingBookings() {
+    try {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const { data: bookings } = await supabase
+        .from("bookings")
+        .select("id, user_id, coach_id, start_time, end_time, type, status")
+        .eq("court", selectedCourt)
+        .neq("status", "cancelled")
+        .gte("start_time", \`\${dateStr}T00:00:00\`)
+        .lte("start_time", \`\${dateStr}T23:59:59\`);
+
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: courtBlocks } = await supabase
+        .from("court_blocks")
+        .select("id, start_time, end_time, reason")
+        .eq("court_id", selectedCourt)
+        .eq("is_disabled", false)
+        .gte("start_time", startOfDay.toISOString())
+        .lte("start_time", endOfDay.toISOString());
+
+      const userIds = [
+        ...new Set([
+          ...(bookings?.map((b) => b.user_id) || []),
+          ...(bookings?.map((b) => b.coach_id).filter(Boolean) || []),
+        ]),
+      ];
+
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      const profilesMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
+
+      const enrichedBookings =
+        bookings?.map((booking) => ({
+          ...booking,
+          user_profile: profilesMap.get(booking.user_id) || null,
+          coach_profile: booking.coach_id ? profilesMap.get(booking.coach_id) || null : null,
+        })) || [];
+
+      const blocksAsBookings =
+        courtBlocks?.map((block) => ({
+          id: block.id,
+          start_time: block.start_time,
+          end_time: block.end_time,
+          type: "blocco",
+          status: "blocked",
+          user_profile: null,
+          coach_profile: null,
+          reason: block.reason,
+          isBlock: true,
+        })) || [];
+
+      const allBookings = [...enrichedBookings, ...blocksAsBookings];
+      setExistingBookings(allBookings);
+
+      setSlots((prevSlots) =>
+        prevSlots.map((slot) => {
+          const isOccupied = allBookings.some((booking) => {
+            const start = new Date(booking.start_time);
+            const end = new Date(booking.end_time);
+            const [slotHour, slotMinute] = slot.time.split(":").map(Number);
+            const slotDate = new Date(selectedDate);
+            slotDate.setHours(slotHour, slotMinute, 0, 0);
+            return slotDate >= start && slotDate < end;
+          });
+          return { ...slot, available: !isOccupied && slot.available };
+        })
+      );
+    } catch (error) {
+      console.error("Error loading existing bookings:", error);
+      setExistingBookings([]);
+    }
+  }
+
+  function generateDefaultSlots() {
+    const timeSlots: TimeSlot[] = [];
+    for (let hour = 7; hour <= 21; hour++) {
+      timeSlots.push({ time: \`\${hour.toString().padStart(2, "0")}:00\`, available: true });
+      timeSlots.push({ time: \`\${hour.toString().padStart(2, "0")}:30\`, available: true });
+    }
+    timeSlots.push({ time: "22:00", available: true });
+    setSlots(timeSlots);
   }
 
   function handleSlotClick(time: string, available: boolean) {
@@ -449,26 +551,26 @@ export default function ConfigureChallengePage() {
       const duration = selectedSlots.length * 30;
 
       if (editChallengeId) {
-        const existingChallengeResponse = await fetch(`/api/arena/challenges?challenge_id=${editChallengeId}`);
+        const existingChallengeResponse = await fetch(\`/api/arena/challenges?challenge_id=\${editChallengeId}\`);
         const existingData = await existingChallengeResponse.json();
         const existingChallenge = existingData.challenge;
         let bookingId = existingChallenge?.booking_id;
 
         if (existingChallenge?.booking_id) {
-          await fetch(`/api/bookings/${existingChallenge.booking_id}`, {
+          await fetch(\`/api/bookings/\${existingChallenge.booking_id}\`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", Authorization: \`Bearer \${token}\` },
             body: JSON.stringify({
               court: selectedCourt,
               start_time: startTime.toISOString(),
               end_time: endTime.toISOString(),
-              notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"}`,
+              notes: \`Sfida Arena: \${challengeType === "ranked" ? "Ranked" : "Amichevole"} - \${matchType === "singolo" ? "Singolo" : "Doppio"}\`,
             }),
           });
         } else {
           const bookingResponse = await fetch("/api/bookings", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", Authorization: \`Bearer \${token}\` },
             body: JSON.stringify({
               user_id: user.id,
               court: selectedCourt,
@@ -476,7 +578,7 @@ export default function ConfigureChallengePage() {
               start_time: startTime.toISOString(),
               end_time: endTime.toISOString(),
               status: "confirmed",
-              notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"}`,
+              notes: \`Sfida Arena: \${challengeType === "ranked" ? "Ranked" : "Amichevole"} - \${matchType === "singolo" ? "Singolo" : "Doppio"}\`,
             }),
           });
           if (!bookingResponse.ok) {
@@ -513,12 +615,12 @@ export default function ConfigureChallengePage() {
 
         setSuccess("Sfida modificata con successo!");
         setTimeout(() => {
-          router.push(`${dashboardBase}/arena/challenge/${editChallengeId}`);
+          router.push(\`\${dashboardBase}/arena/challenge/\${editChallengeId}\`);
         }, 1500);
       } else {
         const bookingResponse = await fetch("/api/bookings", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json", Authorization: \`Bearer \${token}\` },
           body: JSON.stringify({
             user_id: user.id,
             court: selectedCourt,
@@ -526,7 +628,7 @@ export default function ConfigureChallengePage() {
             start_time: startTime.toISOString(),
             end_time: endTime.toISOString(),
             status: "confirmed",
-            notes: `Sfida Arena: ${challengeType === "ranked" ? "Ranked" : "Amichevole"} - ${matchType === "singolo" ? "Singolo" : "Doppio"}`,
+            notes: \`Sfida Arena: \${challengeType === "ranked" ? "Ranked" : "Amichevole"} - \${matchType === "singolo" ? "Singolo" : "Doppio"}\`,
           }),
         });
         if (!bookingResponse.ok) {
@@ -573,7 +675,7 @@ export default function ConfigureChallengePage() {
 
         setSuccess("Sfida creata con successo!");
         setTimeout(() => {
-          router.push(`${dashboardBase}/arena?success=challenge_created`);
+          router.push(\`\${dashboardBase}/arena?success=challenge_created\`);
         }, 1500);
       }
     } catch (error: any) {
@@ -583,36 +685,19 @@ export default function ConfigureChallengePage() {
     }
   }
 
-  const avatarByUserId = useMemo(() => {
-    const map: Record<string, string> = {};
-    if (currentUserProfile?.avatar_url) map[currentUserProfile.id] = currentUserProfile.avatar_url;
-    if (opponent?.avatar_url) map[opponent.id] = opponent.avatar_url;
-    players.forEach((p) => { if (p.avatar_url) map[p.id] = p.avatar_url; });
-    return map;
-  }, [currentUserProfile, opponent, players]);
-
-  const selectedParticipants = useMemo((): SelectedParticipant[] => {
-    const me: SelectedParticipant = currentUserProfile
-      ? { userId: currentUserProfile.id, fullName: currentUserProfile.full_name, isRegistered: true }
-      : { fullName: "Tu", isRegistered: true };
-    if (!opponent) return [me];
-    const opp: SelectedParticipant = { userId: opponent.id, fullName: opponent.full_name, isRegistered: true };
-    if (matchType !== "doppio") return [me, opp];
-    const parts: SelectedParticipant[] = [me];
-    if (myPartner) {
-      const p = players.find((pl) => pl.id === myPartner);
-      if (p) parts.push({ userId: p.id, fullName: p.full_name, isRegistered: true });
-    }
-    parts.push(opp);
-    return parts;
-    return parts;
-  }, [currentUserProfile, opponent, matchType, myPartner, players]);
+  const availablePartners = players.filter(
+    (p) => p.id !== currentUserId && p.id !== opponentId && p.id !== myPartner && p.id !== opponentPartner
+  );
+  const partnerOptions: SearchableOption[] = availablePartners.map((p) => ({
+    value: p.id,
+    label: p.full_name,
+  }));
 
   const canSubmit =
     selectedDate &&
     selectedCourt &&
     selectedSlots.length > 0 &&
-    (matchType === "singolo" || (matchType === "doppio" && myPartner));
+    (matchType === "singolo" || (matchType === "doppio" && myPartner && opponentPartner));
 
   const isSlotAvailable = (time: string): boolean => {
     const slot = slots.find((s) => s.time === time);
@@ -626,8 +711,8 @@ export default function ConfigureChallengePage() {
 
   const mobileWeekdayLabel = format(selectedDate, "EEE", { locale: it });
   const mobileDateLabel = (() => {
-    const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`;
-    return raw.replace(/(\d{2} )(\w)/, (_, day, char) => day + char.toUpperCase());
+    const raw = \`\${mobileWeekdayLabel.slice(0, 1).toUpperCase()}\${mobileWeekdayLabel.slice(1, 3).toLowerCase()} \${format(selectedDate, "dd MMM yyyy", { locale: it })}\`;
+    return raw.replace(/(\\d{2} )(\\w)/, (_, day, char) => day + char.toUpperCase());
   })();
 
   if (loading) {
@@ -652,13 +737,13 @@ export default function ConfigureChallengePage() {
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">
-          <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">
+          <Link href={\`\${dashboardBase}/arena\`} className="hover:text-secondary/80 transition-colors">
             Arena
           </Link>
           {" › "}
-          <span>{editChallengeId ? "Modifica Sfida" : "Configura Sfida"}</span>
+          <span>Configura Sfida</span>
         </p>
-        <h1 className="text-4xl font-bold text-secondary">{editChallengeId ? "Modifica Sfida" : "Configura Sfida"}</h1>
+        <h1 className="text-4xl font-bold text-secondary">Configura Sfida</h1>
       </div>
 
       {/* Messages */}
@@ -680,6 +765,25 @@ export default function ConfigureChallengePage() {
           </div>
         </div>
       )}
+
+      {/* Opponent Card */}
+      <div className="bg-secondary rounded-xl p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
+            {opponent.avatar_url ? (
+              <img src={opponent.avatar_url} alt={opponent.full_name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl font-bold text-secondary">
+                {opponent.full_name.charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div>
+            <p className="text-white/60 text-sm">Avversario</p>
+            <h3 className="text-xl font-bold text-white">{opponent.full_name}</h3>
+          </div>
+        </div>
+      </div>
 
       {/* Date Selector */}
       <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
@@ -726,6 +830,12 @@ export default function ConfigureChallengePage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
         </div>
         <div className="p-4 sm:p-6">
+          {loadingSlots ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 className="h-10 w-10 animate-spin text-secondary mb-3" />
+              <p className="text-secondary font-semibold">Caricamento...</p>
+            </div>
+          ) : (
             <div className="space-y-6">
               {/* Tipo Sfida */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -736,11 +846,11 @@ export default function ConfigureChallengePage() {
                       key={type.value}
                       type="button"
                       onClick={() => setChallengeType(type.value)}
-                      className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      className={\`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all \${
                         challengeType === type.value
                           ? "bg-secondary text-white border-secondary"
                           : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
+                      }\`}
                     >
                       {type.label}
                     </button>
@@ -757,11 +867,11 @@ export default function ConfigureChallengePage() {
                       key={type.value}
                       type="button"
                       onClick={() => setMatchType(type.value)}
-                      className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      className={\`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all \${
                         matchType === type.value
                           ? "bg-secondary text-white border-secondary"
                           : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
+                      }\`}
                     >
                       {type.label}
                     </button>
@@ -769,7 +879,37 @@ export default function ConfigureChallengePage() {
                 </div>
               </div>
 
-
+              {/* Partners se doppio */}
+              {matchType === "doppio" && (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Il tuo partner</label>
+                    <div className="flex-1">
+                      <SearchableSelect
+                        value={myPartner}
+                        onChange={setMyPartner}
+                        options={partnerOptions.filter((p) => p.value !== opponentPartner)}
+                        placeholder="Seleziona partner"
+                        searchPlaceholder="Cerca partner..."
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
+                      Partner di {opponent.full_name}
+                    </label>
+                    <div className="flex-1">
+                      <SearchableSelect
+                        value={opponentPartner}
+                        onChange={setOpponentPartner}
+                        options={partnerOptions.filter((p) => p.value !== myPartner)}
+                        placeholder="Seleziona partner"
+                        searchPlaceholder="Cerca partner..."
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Formato Match */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
@@ -780,11 +920,11 @@ export default function ConfigureChallengePage() {
                       key={fmt.value}
                       type="button"
                       onClick={() => setMatchFormat(fmt.value)}
-                      className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      className={\`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all \${
                         matchFormat === fmt.value
                           ? "bg-secondary text-white border-secondary"
                           : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
+                      }\`}
                     >
                       {fmt.label}
                     </button>
@@ -801,11 +941,11 @@ export default function ConfigureChallengePage() {
                       key={court}
                       type="button"
                       onClick={() => handleCourtChange(court)}
-                      className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      className={\`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all \${
                         selectedCourt === court
                           ? "bg-secondary text-white border-secondary"
                           : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
+                      }\`}
                     >
                       {court}
                     </button>
@@ -813,146 +953,135 @@ export default function ConfigureChallengePage() {
                 </div>
               </div>
             </div>
+          )}
         </div>
       </div>
 
-      {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
-        </div>
-        <div className="p-4 sm:p-6">
-          <AthletesSelector
-            athletes={players as any}
-            selectedAthletes={selectedParticipants}
-            onAthleteAdd={(participant) => {
-              if (matchType !== "doppio") return;
-              const uid = participant.userId;
-              if (!uid || uid === currentUserId || uid === opponent.id) return;
-              if (!myPartner) setMyPartner(uid);
-            }}
-            onAthleteRemove={(index) => {
-              if (index === 0) return;
-              if (matchType !== "doppio") return;
-              const oppIdx = selectedParticipants.findIndex((p) => p.userId === opponent.id);
-              if (index === oppIdx) return;
-              if (index < oppIdx) setMyPartner("");
-            }}
-            participantLabelByIndex={(index) => {
-              if (index === 0) return "Tu";
-              const oppIdx = selectedParticipants.findIndex((p) => p.userId === opponent.id);
-              if (index === oppIdx) return "Avversario";
-              return "Il tuo partner";
-            }}
-            participantToneByIndex={(index) => {
-              const oppIdx = selectedParticipants.findIndex((p) => p.userId === opponent.id);
-              return index >= oppIdx ? "dark" : "secondary";
-            }}
-            selectedDisplayOrder={matchType === "doppio" ? [0, 1, 2] : [0, 1]}
-            maxAthletes={matchType === "doppio" ? 3 : 2}
-            allowGuestParticipants={false}
-            avatarByUserId={avatarByUserId}
-          />
-        </div>
-      </div>
-
-      {/* Card Orari disponibili */}
+      {/* Orari disponibili */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
-          <p className="text-xs text-secondary/60 sm:text-right">
-            Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
-          </p>
         </div>
         <div className="p-4 sm:p-6">
-          <div
-            ref={timelineScrollRef}
-            className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-            style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="min-w-[1280px]">
-              {/* Header con orari */}
-              <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
-                {Array.from({ length: 16 }, (_, i) => {
-                  const hour = 7 + i;
-                  return (
-                    <div
-                      key={hour}
-                      className="p-3 text-center font-bold text-white text-xs flex items-center justify-center"
-                    >
-                      {hour.toString().padStart(2, '0')}:00
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Griglia slot selezionabili */}
-              <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative" style={{ minHeight: "70px" }}>
-
-                {/* Slot cliccabili */}
-                {Array.from({ length: 16 }, (_, hourIndex) => {
-                  const hour = 7 + hourIndex;
-                  const time1 = `${hour.toString().padStart(2, '0')}:00`;
-                  const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
-                  const available1 = isSlotAvailable(time1);
-                  const available2 = time2 ? isSlotAvailable(time2) : false;
-                  const isSelected1 = selectedSlots.includes(time1);
-                  const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
-
-                  if (!time2) {
+          {loadingSlots ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
+              <p className="text-secondary font-semibold">Caricamento slot...</p>
+            </div>
+          ) : (
+            <div
+              ref={timelineScrollRef}
+              className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+              style={{ overflowX: "scroll", WebkitOverflowScrolling: "touch" }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div className="min-w-[1280px]">
+                {/* Header orari */}
+                <div className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                  {Array.from({ length: 16 }, (_, i) => {
+                    const hour = 7 + i;
                     return (
-                      <div
-                        key={hour}
-                        className={`border-r border-gray-200 relative transition-colors cursor-pointer ${
-                          isSelected1
-                            ? 'bg-secondary hover:bg-secondary/90'
-                            : available1
-                            ? 'bg-white hover:bg-emerald-50/40'
-                            : 'bg-gray-100 cursor-not-allowed'
-                        }`}
-                        onClick={() => handleSlotClick(time1, available1)}
-                        title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                      >
+                      <div key={hour} className="p-3 text-center font-bold text-white text-xs flex items-center justify-center">
+                        {hour.toString().padStart(2, "0")}:00
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Griglia slot */}
+                <div
+                  className="grid timeline-grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg relative"
+                  style={{ minHeight: "70px" }}
+                >
+                  {/* Prenotazioni esistenti */}
+                  {existingBookings
+                    .filter((b) => b.status !== "cancelled")
+                    .map((booking) => {
+                      const start = new Date(booking.start_time);
+                      const end = new Date(booking.end_time);
+                      const startSlot = (start.getHours() - 7) * 2 + (start.getMinutes() === 30 ? 1 : 0);
+                      const endSlot = (end.getHours() - 7) * 2 + (end.getMinutes() === 30 ? 1 : 0);
+                      const dur = endSlot - startSlot;
+
+                      const getBg = () => {
+                        if (booking.isBlock) return { background: "var(--color-frozen-lake-900)" };
+                        switch (booking.type) {
+                          case "lezione_privata":
+                          case "lezione_gruppo": return { background: "#023047" };
+                          case "campo": return { background: "var(--secondary)" };
+                          case "arena": return { background: "var(--color-frozen-lake-600)" };
+                          default: return { background: "var(--secondary)" };
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={booking.id}
+                          className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 pointer-events-none"
+                          style={{
+                            ...getBg(),
+                            left: \`\${(startSlot / 32) * 100}%\`,
+                            width: \`calc(\${(dur / 32) * 100}% - 4px)\`,
+                            top: "4px",
+                            bottom: "4px",
+                            marginLeft: "2px",
+                          }}
+                        />
+                      );
+                    })}
+
+                  {/* Slot cliccabili */}
+                  {Array.from({ length: 16 }, (_, hourIndex) => {
+                    const hour = 7 + hourIndex;
+                    const time1 = \`\${hour.toString().padStart(2, "0")}:00\`;
+                    const time2 = hour < 22 ? \`\${hour.toString().padStart(2, "0")}:30\` : null;
+                    const available1 = isSlotAvailable(time1);
+                    const available2 = time2 ? isSlotAvailable(time2) : false;
+                    const isSelected1 = selectedSlots.includes(time1);
+                    const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
+
+                    if (!time2) {
+                      return (
+                        <div
+                          key={hour}
+                          className={\`border-r border-gray-200 relative transition-colors cursor-pointer \${
+                            isSelected1 ? "bg-secondary hover:bg-secondary/90" : available1 ? "bg-white hover:bg-emerald-50/40" : "bg-gray-100 cursor-not-allowed"
+                          }\`}
+                          onClick={() => handleSlotClick(time1, available1)}
+                          title={\`\${time1} - \${available1 ? (isSelected1 ? "Selezionato" : "Disponibile") : "Occupato"}\`}
+                        >
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
+                        <div
+                          className={\`flex-1 relative transition-colors cursor-pointer \${
+                            isSelected1 ? "bg-secondary hover:bg-secondary/90" : available1 ? "bg-white hover:bg-emerald-50/40" : "bg-gray-100 cursor-not-allowed"
+                          }\`}
+                          onClick={() => handleSlotClick(time1, available1)}
+                          title={\`\${time1} - \${available1 ? (isSelected1 ? "Selezionato" : "Disponibile") : "Occupato"}\`}
+                        />
+                        <div
+                          className={\`flex-1 relative transition-colors cursor-pointer \${
+                            isSelected2 ? "bg-secondary hover:bg-secondary/90" : available2 ? "bg-white hover:bg-emerald-50/40" : "bg-gray-100 cursor-not-allowed"
+                          }\`}
+                          onClick={() => handleSlotClick(time2, available2)}
+                          title={\`\${time2} - \${available2 ? (isSelected2 ? "Selezionato" : "Disponibile") : "Occupato"}\`}
+                        />
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
                       </div>
                     );
-                  }
-
-                  return (
-                    <div key={hour} className="border-r border-gray-200 last:border-r-0 relative flex">
-                      <div
-                        className={`flex-1 relative transition-colors cursor-pointer ${
-                          isSelected1
-                            ? 'bg-secondary hover:bg-secondary/90'
-                            : available1
-                            ? 'bg-white hover:bg-emerald-50/40'
-                            : 'bg-gray-100 cursor-not-allowed'
-                        }`}
-                        onClick={() => handleSlotClick(time1, available1)}
-                        title={`${time1} - ${available1 ? (isSelected1 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                      />
-                      <div
-                        className={`flex-1 relative transition-colors cursor-pointer ${
-                          isSelected2
-                            ? 'bg-secondary hover:bg-secondary/90'
-                            : available2
-                            ? 'bg-white hover:bg-emerald-50/40'
-                            : 'bg-gray-100 cursor-not-allowed'
-                        }`}
-                        onClick={() => handleSlotClick(time2, available2)}
-                        title={`${time2} - ${available2 ? (isSelected2 ? 'Selezionato' : 'Disponibile') : 'Occupato'}`}
-                      />
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300" />
-                    </div>
-                  );
-                })}
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1042,7 +1171,7 @@ export default function ConfigureChallengePage() {
                       type="button"
                       onClick={() => !isDisabled && selectCalendarDay(date)}
                       disabled={isDisabled}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={\`h-9 rounded-md text-sm transition-colors \${
                         isDisabled
                           ? "text-gray-300 cursor-not-allowed"
                           : isSelected
@@ -1050,7 +1179,7 @@ export default function ConfigureChallengePage() {
                           : isCurrentMonth
                           ? "text-gray-800 hover:bg-gray-100"
                           : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && !isDisabled && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                      } \${!isSelected && !isDisabled && isTodayDate ? "ring-1 ring-secondary/40" : ""}\`}
                     >
                       {date.getDate()}
                     </button>
@@ -1080,3 +1209,7 @@ export default function ConfigureChallengePage() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync(path, content, 'utf8');
+console.log('Done. Lines written:', content.split('\n').length);

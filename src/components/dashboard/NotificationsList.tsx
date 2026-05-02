@@ -7,7 +7,6 @@ import {
   ArrowUp,
   AlertCircle,
   Bell,
-  Calendar,
   CalendarClock,
   CheckCircle,
   Info,
@@ -103,7 +102,7 @@ function getNotificationIcon(type: string, title?: string, message?: string, whi
     case "arena_challenge":
       return <Swords className={cls} strokeWidth={sw} />;
     case "arena_challenge_booked":
-      return <Calendar className={cls} strokeWidth={sw} />;
+      return <Swords className={cls} strokeWidth={sw} />;
     case "tournament":
       return <Trophy className={cls} strokeWidth={sw} />;
     case "message":
@@ -337,8 +336,8 @@ export default function NotificationsList({
             {sortedNotifications.map((n) => {
               const typeColorMap: Record<string, string> = {
                 booking: "var(--secondary)",
-                arena_challenge: "#0f766e",
-                arena_challenge_booked: "#0d9488",
+                arena_challenge: "var(--secondary)",
+                arena_challenge_booked: "var(--secondary)",
                 tournament: "#6d28d9",
                 message: "#0369a1",
                 success: "#15803d",

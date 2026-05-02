@@ -12,14 +12,12 @@ import {
   Plus,
   SlidersHorizontal,
   RefreshCw,
-  AlertTriangle,
   Check,
-  X,
   Edit,
   Trash2,
   Loader2,
   Search,
-  Shield,
+  Settings,
   Target,
   Handshake,
   MoreVertical,
@@ -99,9 +97,8 @@ export default function AdminArenaPage() {
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>(DEFAULT_STATUS_FILTER);
   const [search, setSearch] = useState("");
-  const [showResetModal, setShowResetModal] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [selectedRank, setSelectedRank] = useState<"Tutti" | "Bronzo" | "Argento" | "Oro">("Tutti");
+  const [selectedRank, setSelectedRank] = useState<"Tutti">("Tutti");
   const [activeTab, setActiveTab] = useState<"gestione" | "info">("gestione");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -135,16 +132,6 @@ export default function AdminArenaPage() {
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         const filteredChallenges = allChallenges.filter((c: Challenge) => {
-          // Se la sfida è completata o cancellata, la mostriamo solo nello storico
-          if (c.status === "completed" || c.status === "cancelled" || c.status === "declined") {
-            return statusFilter === "all";
-          }
-
-          // awaiting_score: sfide giocate ma senza punteggio ancora
-          if (c.status === "awaiting_score") {
-            return true;
-          }
-
           // Se ha una data di prenotazione
           if (c.booking?.start_time) {
             const challengeDate = new Date(c.booking.start_time);
@@ -156,7 +143,7 @@ export default function AdminArenaPage() {
             }
           }
 
-          // Altrimenti mostra nella gestione
+          // Mostra tutte le sfide nella gestione
           return activeTab === "gestione";
         });
 
@@ -198,7 +185,7 @@ export default function AdminArenaPage() {
           points: entry.points || 0,
           wins: entry.wins || 0,
           losses: entry.losses || 0,
-          level: normalizeArenaRank(entry.level),
+          level: entry.level || "Bronzo",
           totalMatches: (entry.wins || 0) + (entry.losses || 0),
           winRate: entry.wins > 0 || entry.losses > 0 
             ? (entry.wins / ((entry.wins || 0) + (entry.losses || 0))) * 100 
@@ -292,7 +279,6 @@ export default function AdminArenaPage() {
 
       if (response.ok) {
         alert("✅ Stagione resettata con successo!");
-        setShowResetModal(false);
         loadChallenges();
       } else {
         const error = await response.json();
@@ -419,7 +405,7 @@ export default function AdminArenaPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("info")}
+            onClick={() => setActiveTab(activeTab === "info" ? "gestione" : "info")}
             className={`p-2.5 rounded-md transition-all ${
               activeTab === "info"
                 ? "text-white bg-secondary"
@@ -427,15 +413,9 @@ export default function AdminArenaPage() {
             }`}
             title="Info"
           >
-            <Shield className="h-5 w-5" />
+            <Settings className="h-5 w-5" />
           </button>
-          <button
-            onClick={() => setShowResetModal(true)}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
-            title="Reset Stagione"
-          >
-            <AlertTriangle className="h-5 w-5" />
-          </button>
+
         </div>
       </div>
 
@@ -488,12 +468,11 @@ export default function AdminArenaPage() {
               const isConfirmed = challenge.status === "accepted";
               const isDeclined = challenge.status === "declined" || challenge.status === "cancelled";
               const isCancelledOnly = challenge.status === "cancelled";
-              const isCompleted = challenge.status === "completed" || challenge.status === "awaiting_score";
               const canCancel = challenge.status !== "cancelled" && challenge.status !== "declined" && challenge.status !== "completed";
-              const cardBg = isDeclined ? "#9ca3af" : isPending ? "#ffffff" : isCompleted ? "#94a3b8" : typeColor;
+              const cardBg = isDeclined ? "#9ca3af" : isPending ? "#ffffff" : typeColor;
               const iconBadgeBg = isPending
                 ? typeColor
-                : isConfirmed || isDeclined || isCompleted
+                : isConfirmed || isDeclined
                   ? "rgba(255, 255, 255, 0.1)"
                   : "rgba(255, 255, 255, 0.15)";
               const primaryTextColor = isPending ? "var(--secondary)" : "#ffffff";
@@ -661,24 +640,6 @@ export default function AdminArenaPage() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica Arena</h2>
-
-          <div className="flex flex-wrap items-center gap-1 bg-secondary/5 rounded-lg p-1">
-            {(["Tutti", "Bronzo", "Argento", "Oro"] as const).map((rank) => {
-              return (
-                <button
-                  key={rank}
-                  onClick={() => setSelectedRank(rank)}
-                  className={`px-3 py-1 rounded-md text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${
-                    selectedRank === rank
-                      ? "bg-secondary text-white"
-                      : "text-secondary/60 hover:text-secondary"
-                  }`}
-                >
-                  {rank}
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         <div className="p-6">
@@ -688,23 +649,15 @@ export default function AdminArenaPage() {
             <p className="mt-4 text-secondary/70">Caricamento classifica...</p>
           </div>
         ) : (() => {
-          const filteredLeaderboard = selectedRank === "Tutti" 
-            ? leaderboard 
-            : leaderboard.filter(entry => entry.level === selectedRank);
-          
-          return filteredLeaderboard.length === 0 ? (
+          return leaderboard.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
-              <p className="text-secondary/70">
-                {selectedRank === "Tutti" 
-                  ? "Nessun giocatore in classifica" 
-                  : `Nessun giocatore nel livello ${selectedRank}`}
-              </p>
+              <p className="text-secondary/70">Nessun giocatore in classifica</p>
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
-              {filteredLeaderboard.map((entry, index) => {
-                const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
+              {leaderboard.map((entry, index) => {
+                const displayPosition = entry.ranking;
 
                 let rankBg = "var(--secondary)";
                 if (displayPosition === 1) rankBg = "var(--secondary-hover)";
@@ -742,87 +695,118 @@ export default function AdminArenaPage() {
 
       {/* Info Tab */}
       {activeTab === "info" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-secondary">Informazioni Arena</h2>
-              <p className="text-secondary/70 text-sm mt-1">Regole, punteggi aggiornati e livelli correnti</p>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
-                <Target className="h-5 w-5 text-secondary" />
-                Sistema di Punteggio (attuale)
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
-                  <Check className="h-5 w-5 text-green-600" />
+        <div className="space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Sistema di Punteggio</h2>
+              </div>
+              <div className="px-6 py-6 space-y-4">
+                <div className="space-y-4">
+                  {/* Best-of-1 */}
                   <div>
-                    <span className="font-bold text-green-700">Vittoria:</span>
-                    <span className="text-green-600 ml-2">+10 punti</span>
+                    <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Set singolo</p>
+                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left font-semibold text-secondary">Risultato</th>
+                            <th className="px-4 py-2 text-center font-semibold text-secondary">Vincitore</th>
+                            <th className="px-4 py-2 text-center font-semibold text-secondary/60">Perdente</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                          <tr>
+                            <td className="px-4 py-2 font-medium text-secondary">1 – 0</td>
+                              <td className="px-4 py-2 text-center font-bold text-secondary">+30 pt</td>
+                            <td className="px-4 py-2 text-center text-secondary/60">+0 pt</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Best-of-3 */}
+                  <div>
+                    <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 3 set</p>
+                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left font-semibold text-secondary">Risultato</th>
+                            <th className="px-4 py-2 text-center font-semibold text-secondary">Vincitore</th>
+                            <th className="px-4 py-2 text-center font-semibold text-secondary/60">Perdente</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                          <tr>
+                            <td className="px-4 py-2 font-medium text-secondary">2 – 0</td>
+                            <td className="px-4 py-2 text-center font-bold text-secondary">+30 pt</td>
+                            <td className="px-4 py-2 text-center text-secondary/60">+0 pt</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2 font-medium text-secondary">2 – 1</td>
+                            <td className="px-4 py-2 text-center font-bold text-secondary">+20 pt</td>
+                            <td className="px-4 py-2 text-center text-secondary/60">+10 pt</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Best-of-5 */}
+                  <div>
+                    <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 5 set</p>
+                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left font-semibold text-secondary">Risultato</th>
+                            <th className="px-4 py-2 text-center font-semibold text-secondary">Vincitore</th>
+                            <th className="px-4 py-2 text-center font-semibold text-secondary/60">Perdente</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                          <tr>
+                            <td className="px-4 py-2 font-medium text-secondary">3 – 0</td>
+                            <td className="px-4 py-2 text-center font-bold text-secondary">+30 pt</td>
+                            <td className="px-4 py-2 text-center text-secondary/60">+0 pt</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2 font-medium text-secondary">3 – 1</td>
+                            <td className="px-4 py-2 text-center font-bold text-secondary">+25 pt</td>
+                            <td className="px-4 py-2 text-center text-secondary/60">+5 pt</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2 font-medium text-secondary">3 – 2</td>
+                            <td className="px-4 py-2 text-center font-bold text-secondary">+20 pt</td>
+                            <td className="px-4 py-2 text-center text-secondary/60">+10 pt</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border-l-4 border-gray-400">
-                  <X className="h-5 w-5 text-gray-600" />
-                  <div>
-                    <span className="font-bold text-gray-700">Sconfitta:</span>
-                    <span className="text-gray-600 ml-2">0 punti</span>
-                  </div>
-                </div>
-                <p className="text-xs text-secondary/60 mt-2">Nel tennis non ci sono pareggi: ogni partita deve avere un vincitore.</p>
+
+                <p className="text-xs text-secondary/60">
+                  I punti vengono assegnati automaticamente al termine di ogni sfida classificata.
+                </p>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-secondary" />
-                Livelli Arena (attuali)
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                  <p className="font-bold text-orange-700">Bronzo</p>
-                  <p className="text-xs text-orange-600">0-49 punti</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border-l-4 border-gray-400">
-                  <p className="font-bold text-gray-700">Argento</p>
-                  <p className="text-xs text-gray-600">50-149 punti</p>
-                </div>
-                <div className="p-4 bg-amber-50 rounded-lg border-l-4 border-amber-500">
-                  <p className="font-bold text-amber-700">Oro</p>
-                  <p className="text-xs text-amber-600">150-299 punti</p>
-                </div>
-                <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
-                  <p className="font-bold text-purple-700">Platino</p>
-                  <p className="text-xs text-purple-600">300-499 punti</p>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                  <p className="font-bold text-blue-700">Diamante</p>
-                  <p className="text-xs text-blue-600">500+ punti</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-secondary" />
-                Flusso Sfida
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
-                  <span className="text-sm text-secondary/80">Da Confermare → Confermata dopo accettazione avversario</span>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
-                  <span className="text-sm text-secondary/80">Dopo l&apos;orario della prenotazione passa in Attesa Punteggio</span>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
-                  <span className="text-sm text-secondary/80">Inserimento punteggio valido → stato Completata e aggiornamento classifica</span>
-                </div>
-              </div>
-            </div>
-          </div>
+            <button
+              onClick={handleResetSeason}
+              disabled={resetting}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#022431] text-white text-sm font-medium rounded-lg hover:bg-[#022431]/90 transition-colors disabled:opacity-50"
+            >
+              {resetting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Reset in corso...
+                </>
+              ) : (
+                "Reset Stagione"
+              )}
+            </button>
         </div>
       )}
 
@@ -859,25 +843,6 @@ export default function AdminArenaPage() {
                 </select>
               </div>
             )}
-
-            {activeTab === "gestione" && (
-              <div className="space-y-1">
-                <label htmlFor="arena-rank-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
-                  Livello classifica
-                </label>
-                <select
-                  id="arena-rank-filter"
-                  value={selectedRank}
-                  onChange={(e) => setSelectedRank(e.target.value as "Tutti" | "Bronzo" | "Argento" | "Oro")}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                >
-                  <option value="Tutti">Tutti i livelli</option>
-                  <option value="Bronzo">Bronzo</option>
-                  <option value="Argento">Argento</option>
-                  <option value="Oro">Oro</option>
-                </select>
-              </div>
-            )}
           </ModalBody>
 
           <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
@@ -885,7 +850,6 @@ export default function AdminArenaPage() {
               type="button"
               onClick={() => {
                 setStatusFilter(DEFAULT_STATUS_FILTER);
-                setSelectedRank("Tutti");
               }}
               className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
             >
@@ -901,66 +865,6 @@ export default function AdminArenaPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      {/* Reset Season Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-secondary">Reset Stagione Arena</h3>
-            </div>
-
-            <div className="space-y-4 mb-6">
-              <p className="text-secondary/80">
-                Questa azione eliminerà <strong>TUTTE</strong> le sfide Arena e resetterà le statistiche di <strong>TUTTI</strong> gli utenti.
-              </p>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-800 font-medium">
-                  ⚠️ Verranno eliminate:
-                </p>
-                <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
-                  <li>Tutte le sfide (pending, accepted, completed)</li>
-                  <li>Tutte le statistiche Arena degli utenti</li>
-                  <li>Tutta la classifica</li>
-                </ul>
-              </div>
-              <p className="text-red-600 font-semibold">
-                Questa azione NON può essere annullata!
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowResetModal(false)}
-                disabled={resetting}
-                className="flex-1 px-4 py-2 bg-secondary/10 text-secondary rounded-md hover:bg-secondary/20 transition-all disabled:opacity-50"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleResetSeason}
-                disabled={resetting}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {resetting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Resetting...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4" />
-                    Conferma Reset
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

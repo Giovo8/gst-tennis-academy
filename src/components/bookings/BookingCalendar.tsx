@@ -336,7 +336,12 @@ export default function BookingCalendar() {
           end_time: slotEnd.toISOString(),
           status: "confirmed",
           notes: null,
-          participants: selectedAthletes,
+          participants: selectedAthletes.map((a) => ({
+            user_id: a.userId || null,
+            full_name: a.fullName,
+            email: a.email || null,
+            is_registered: a.isRegistered,
+          })),
         };
       });
 
@@ -380,7 +385,12 @@ export default function BookingCalendar() {
           end_time: slotEnd.toISOString(),
           status: "confirmed",
           notes: null,
-          participants: selectedAthletes,
+          participants: selectedAthletes.map((a) => ({
+            user_id: a.userId || null,
+            full_name: a.fullName,
+            email: a.email || null,
+            is_registered: a.isRegistered,
+          })),
         };
 
         const resp = await fetch('/api/bookings', {

@@ -295,9 +295,15 @@ export default function MaestroDashboardPage() {
                 <ul className="flex flex-col gap-2">
                   {upcoming.map((item) => {
                     const start = new Date(item.start_time);
-                    const counterpart = item.coach_id === currentUserId
-                      ? (item.user_profile?.full_name || "Impegno")
-                      : (item.coach_profile?.full_name || item.user_profile?.full_name || "Impegno");
+                    const participantNames = (item.participants ?? [])
+                      .filter((p) => !p.user_id || p.user_id !== currentUserId)
+                      .map((p) => p.full_name)
+                      .filter(Boolean);
+                    const counterpart = participantNames.length > 0
+                      ? participantNames.join(", ")
+                      : (item.coach_id === currentUserId
+                          ? (item.user_profile?.full_name || "Impegno")
+                          : (item.coach_profile?.full_name || item.user_profile?.full_name || "Impegno"));
                     const isCoach = item.coach_id === currentUserId;
                     const typeLabel = isCoach && (item.type === "lezione_privata" || item.type === "lezione_gruppo" || item.type === "lezione")
                       ? "Maestro"

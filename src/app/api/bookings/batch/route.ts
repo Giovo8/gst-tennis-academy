@@ -92,6 +92,7 @@ export async function POST(request: Request) {
         bookings.map((b) => ({
           user_id: b.user_id,
           coach_id: b.coach_id || null,
+          created_by: auth.user.id,
           court: b.court,
           type: b.type || "campo",
           start_time: b.start_time,
@@ -132,25 +133,66 @@ export async function POST(request: Request) {
 
       const bookingCount = insertedBookings.length;
       const athleteName = userProfile?.full_name || "Un utente";
-      const firstSourceBooking = bookings[0];
-      const athleteContextForBatchNotifications = resolveBookingEmailAthleteContext({
-        owner: userProfile,
-        participants: Array.isArray(firstSourceBooking?.participants) ? firstSourceBooking.participants : [],
-        fallbackName: athleteName,
-      });
-      const countLabel = bookingCount > 1 ? `${bookingCount} prenotazioni` : "una prenotazione";
-      const notificationLink = bookingCount === 1
-        ? getAdminBookingNotificationLink(firstBooking.id)
-        : getAdminBookingNotificationLink();
+
+      const normalizeName = (value: string | null | undefined): string =>
+        String(value || "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLowerCase();
+
+      const actorRole = String(auth.role || "").toLowerCase();
+      const actorIsStaff = actorRole === "admin" || actorRole === "gestore" || actorRole === "maestro";
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", auth.user.id)
+        .single();
+      const actorDisplayName = actorProfile?.full_name?.trim() || auth.user.email || "Uno staff";
+
+      const ownerIds = Array.from(new Set(bookings.map((booking) => booking.user_id).filter(Boolean)));
+      const ownerProfilesById = new Map<string, { full_name?: string | null; email?: string | null; role?: string | null }>();
+      if (ownerIds.length > 0) {
+        const { data: ownerProfiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, role")
+          .in("id", ownerIds);
+
+        for (const ownerProfile of ownerProfiles || []) {
+          ownerProfilesById.set(ownerProfile.id, ownerProfile);
+        }
+      }
+
+      const athleteNames = Array.from(
+        new Set(
+          bookings.flatMap((sourceBooking) => {
+            const ownerProfileForBooking = ownerProfilesById.get(sourceBooking.user_id) || null;
+            const athleteContext = resolveBookingEmailAthleteContext({
+              owner: ownerProfileForBooking,
+              participants: Array.isArray(sourceBooking?.participants) ? sourceBooking.participants : [],
+              fallbackName: ownerProfileForBooking?.full_name || athleteName,
+            });
+
+            return [athleteContext.athleteName, ...athleteContext.additionalAthleteNames]
+              .map((name) => name?.trim())
+              .filter((name): name is string => Boolean(name));
+          })
+        )
+      );
+      const athleteNamesLabel = athleteNames.join(", ") || athleteName;
+      const actorMatchesSingleAthlete =
+        athleteNames.length === 1 && normalizeName(athleteNames[0]) === normalizeName(actorDisplayName);
+      const shouldMentionActorExplicitly = actorIsStaff && !actorMatchesSingleAthlete;
+
+      const notificationLink = getAdminBookingNotificationLink(firstBooking.id);
 
       const firstBookingType = insertedBookings[0]?.type;
       await notifyAdmins({
         type: "booking",
-        title: bookingCount > 1
-          ? (firstBookingType === "lezione_privata" ? "Nuove lezioni private" : "Nuove prenotazioni campo")
-          : (firstBookingType === "lezione_privata" ? "Nuova lezione privata" : "Nuova prenotazione campo"),
+        title: firstBookingType === "lezione_privata" ? "Nuova lezione privata" : "Nuova prenotazione campo",
 
-        message: `${athleteContextForBatchNotifications.athleteName} ha creato ${countLabel} sul ${firstBooking.court} a partire dal ${startDate} alle ${startTime}`,
+        message: shouldMentionActorExplicitly
+          ? `${actorDisplayName} ha prenotato il ${firstBooking.court} per ${athleteNamesLabel} il ${startDate} alle ${startTime}`
+          : `${athleteNamesLabel} ha prenotato il ${firstBooking.court} il ${startDate} alle ${startTime}`,
         link: notificationLink,
       });
 

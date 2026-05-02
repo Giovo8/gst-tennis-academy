@@ -43,6 +43,7 @@ type BookingRow = {
   status: string;
   counterpartName?: string | null;
   involvementRole?: "maestro" | "atleta";
+  participants?: Array<{ user_id: string | null; full_name: string }>;
 };
 
 type AthleteSummary = {
@@ -567,6 +568,22 @@ export default function MaestroOverviewPage({
 
       const upcomingRows = (upcomingRowsRes.data ?? []) as BookingRow[];
 
+      // Fetch participants for upcoming bookings
+      const upcomingBookingIds = upcomingRows.map((r) => r.id);
+      const upcomingParticipantsMap = new Map<string, Array<{ user_id: string | null; full_name: string }>>();
+      if (upcomingBookingIds.length > 0) {
+        const { data: upcomingParticipants } = await supabase
+          .from("booking_participants")
+          .select("booking_id, user_id, full_name")
+          .in("booking_id", upcomingBookingIds)
+          .order("order_index", { ascending: true });
+        (upcomingParticipants ?? []).forEach((p) => {
+          const list = upcomingParticipantsMap.get(p.booking_id) ?? [];
+          list.push({ user_id: p.user_id ?? null, full_name: p.full_name });
+          upcomingParticipantsMap.set(p.booking_id, list);
+        });
+      }
+
       const counterpartIds = Array.from(
         new Set(
           upcomingRows
@@ -615,16 +632,29 @@ export default function MaestroOverviewPage({
       });
 
       const mappedUpcoming: BookingRow[] = upcomingRows.map((row) => {
-          const counterpartId =
-            row.coach_id === user.id
-              ? row.user_id
-              : row.user_id === user.id
-                ? row.coach_id
-                : null;
+          const participants = upcomingParticipantsMap.get(row.id) ?? [];
+          const participantNames = participants
+            .filter((p) => !p.user_id || p.user_id !== user.id)
+            .map((p) => p.full_name)
+            .filter(Boolean);
+
+          let counterpartName: string | null = null;
+          if (participantNames.length > 0) {
+            counterpartName = participantNames.join(", ");
+          } else {
+            const counterpartId =
+              row.coach_id === user.id
+                ? row.user_id
+                : row.user_id === user.id
+                  ? row.coach_id
+                  : null;
+            counterpartName = counterpartId ? counterpartMap.get(counterpartId) || null : null;
+          }
 
           return {
             ...row,
-            counterpartName: counterpartId ? counterpartMap.get(counterpartId) || null : null,
+            participants,
+            counterpartName,
             involvementRole: row.coach_id === user.id ? "maestro" : "atleta",
           };
         });

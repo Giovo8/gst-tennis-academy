@@ -29,6 +29,7 @@ type Booking = {
   id: string;
   court: string;
   user_id: string;
+  created_by?: string | null;
   coach_id: string | null;
   start_time: string;
   end_time: string;
@@ -38,6 +39,7 @@ type Booking = {
   created_at: string;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
+  created_by_profile?: { full_name: string; email: string; phone?: string } | null;
   participants?: Array<{
     id?: string;
     booking_id?: string;
@@ -176,7 +178,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       ].filter((value): value is string => Boolean(value));
 
       // Carica i profili
-      const userIds = [bookingData.user_id, bookingData.coach_id, ...challengeParticipantIds]
+      const userIds = [bookingData.user_id, bookingData.coach_id, bookingData.created_by, ...challengeParticipantIds]
         .filter((value): value is string => Boolean(value));
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -240,6 +242,9 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         user_profile: profilesMap.get(bookingData.user_id) || null,
         coach_profile: bookingData.coach_id
           ? profilesMap.get(bookingData.coach_id) || null
+          : null,
+        created_by_profile: bookingData.created_by
+          ? profilesMap.get(bookingData.created_by) || null
           : null,
         participants: resolvedParticipants,
       };
@@ -355,6 +360,10 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     : status;
   const StatusIcon = displayStatus.icon;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
+  const createdByName = booking.created_by_profile?.full_name
+    || (!booking.created_by ? booking.user_profile?.full_name : null)
+    || (booking.created_by === booking.user_id ? booking.user_profile?.full_name : null)
+    || "Non disponibile";
   const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
   const isArenaBooking =
     booking.type === "arena" ||
@@ -590,7 +599,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
           </div>
 
           {/* Data creazione */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creata il</label>
             <div className="flex-1">
               <p className="text-secondary/70">
@@ -602,6 +611,13 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
                   minute: "2-digit",
                 })}
               </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Creata da</label>
+            <div className="flex-1">
+              <p className="text-secondary/70">{createdByName}</p>
             </div>
           </div>
 

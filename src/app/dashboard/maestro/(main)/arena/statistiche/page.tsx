@@ -1,1 +1,5 @@
-export { default } from "@/app/dashboard/atleta/(main)/arena/statistiche/page";
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/dashboard/maestro/arena");
+}

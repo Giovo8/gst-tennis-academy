@@ -13,9 +13,17 @@ import {
   XCircle,
   Loader2,
   Users,
-  Trophy,
   AlertCircle,
+  Target,
+  Handshake,
 } from "lucide-react";
+
+type LinkedChallengeMeta = {
+  id: string;
+  status: string;
+  opponent_id: string | null;
+  opponent_partner_id: string | null;
+};
 
 type Booking = {
   id: string;
@@ -51,6 +59,7 @@ export default function BookingDetailPage() {
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [linkedChallenge, setLinkedChallenge] = useState<LinkedChallengeMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -67,6 +76,7 @@ export default function BookingDetailPage() {
           phone: participant.phone || null,
           isCoach: false,
           isGuest: !participant.is_registered,
+          userId: participant.user_id || null,
         }))
       : [
           {
@@ -75,6 +85,7 @@ export default function BookingDetailPage() {
             phone: currentBooking.user_profile?.phone || null,
             isCoach: false,
             isGuest: false,
+            userId: currentBooking.user_id || null,
           },
         ];
 
@@ -85,6 +96,7 @@ export default function BookingDetailPage() {
         phone: currentBooking.coach_profile.phone || null,
         isCoach: true,
         isGuest: false,
+        userId: currentBooking.coach_id || null,
       });
     }
 
@@ -131,10 +143,40 @@ export default function BookingDetailPage() {
 
       // Carica i profili (utente + coach) in una sola query
       const userIds = [bookingData.user_id, bookingData.coach_id].filter(Boolean);
-      const { data: profilesData } = await supabase
+
+      // Carica sfida arena collegata
+      let challengeParticipantIds: string[] = [];
+      const { data: linkedChallenges } = await supabase
+        .from("arena_challenges")
+        .select("id, status, challenger_id, opponent_id, my_partner_id, opponent_partner_id")
+        .eq("booking_id", bookingId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const latestChallenge = linkedChallenges?.[0];
+      setLinkedChallenge(
+        latestChallenge
+          ? {
+              id: latestChallenge.id,
+              status: latestChallenge.status,
+              opponent_id: latestChallenge.opponent_id ?? null,
+              opponent_partner_id: latestChallenge.opponent_partner_id ?? null,
+            }
+          : null
+      );
+      challengeParticipantIds = [
+        latestChallenge?.challenger_id,
+        latestChallenge?.my_partner_id,
+        latestChallenge?.opponent_id,
+        latestChallenge?.opponent_partner_id,
+      ].filter((value): value is string => Boolean(value));
+
+      const allUserIds = [...userIds, ...challengeParticipantIds].filter((value): value is string => Boolean(value));
+      const { data: profilesDataRaw } = await supabase
         .from("profiles")
         .select("id, full_name, email, phone")
-        .in("id", userIds);
+        .in("id", allUserIds);
+      const profilesData = profilesDataRaw as Array<{ id: string; full_name: string | null; email: string | null; phone: string | null }> | null;
 
       // Carica i partecipanti con fallback se la colonna phone non esiste
       let participantsData = null;
@@ -159,13 +201,34 @@ export default function BookingDetailPage() {
 
       const profilesMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
 
+      const arenaChallengeParticipants = challengeParticipantIds.map((userId, index) => {
+        const profile = profilesMap.get(userId);
+        return {
+          id: `challenge-${userId}-${index}`,
+          booking_id: bookingId,
+          full_name: profile?.full_name || "Atleta",
+          email: profile?.email || undefined,
+          phone: profile?.phone || undefined,
+          is_registered: true,
+          user_id: userId,
+          order_index: index,
+        };
+      });
+
+      const resolvedParticipants =
+        (participantsData?.length || 0) > 1
+          ? participantsData
+          : arenaChallengeParticipants.length > 1
+            ? arenaChallengeParticipants
+            : participantsData || [];
+
       const enrichedBooking = {
         ...bookingData,
         user_profile: profilesMap.get(bookingData.user_id) || null,
         coach_profile: bookingData.coach_id
           ? profilesMap.get(bookingData.coach_id) || null
           : null,
-        participants: participantsData || [],
+        participants: resolvedParticipants,
       };
 
       setBooking(enrichedBooking);
@@ -323,6 +386,12 @@ export default function BookingDetailPage() {
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
   const isLesson =
     booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
+  const isArenaBooking =
+    booking.type === "arena" ||
+    booking.notes?.toLowerCase().includes("sfida arena") ||
+    Boolean(linkedChallenge?.id);
+  const isRankedArenaBooking = booking.notes?.toLowerCase().includes("ranked");
+  const bookingHeaderLabel = isArenaBooking ? "Sfida Arena" : bookingType.label;
   const isPast = new Date(booking.start_time) < new Date();
   const isPastLesson =
     isLesson &&
@@ -358,12 +427,12 @@ export default function BookingDetailPage() {
       };
     }
 
-    if (booking.type === "arena") {
+    if (isArenaBooking) {
       return {
-        icon: Trophy,
-        backgroundColor: "var(--color-frozen-lake-600)",
-        borderColor: "var(--color-frozen-lake-600)",
-        leftBorderColor: "var(--color-frozen-lake-900)",
+        icon: isRankedArenaBooking ? Target : Handshake,
+        backgroundColor: "#023b52",
+        borderColor: "#023b52",
+        leftBorderColor: "#023b52",
       };
     }
 
@@ -406,7 +475,7 @@ export default function BookingDetailPage() {
             strokeWidth={2.5}
           />
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white">{bookingType.label}</h2>
+            <h2 className="text-2xl font-bold text-white">{bookingHeaderLabel}</h2>
           </div>
         </div>
       </div>
@@ -419,7 +488,19 @@ export default function BookingDetailPage() {
         <div className="px-6 py-4">
           <ul className="flex flex-col gap-2">
             {displayParticipants.map((participant, index) => {
-              const bg = participant.isCoach ? "#023047" : participant.isGuest ? "#023b52" : "var(--secondary)";
+              const isAwaitingAcceptance =
+                linkedChallenge?.status === "pending" &&
+                Boolean(participant.userId) &&
+                (participant.userId === linkedChallenge.opponent_id ||
+                  participant.userId === linkedChallenge.opponent_partner_id);
+
+              const bg = isAwaitingAcceptance
+                ? "#9ca3af"
+                : participant.isCoach
+                  ? "#023047"
+                  : participant.isGuest
+                    ? "#023b52"
+                    : "var(--secondary)";
 
               return (
                 <li key={`${participant.fullName}-${index}`}>
@@ -431,10 +512,13 @@ export default function BookingDetailPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white text-sm truncate">{participant.fullName}</p>
-                      {participant.email && (
+                      {isAwaitingAcceptance && (
+                        <p className="text-xs text-white/70 mt-0.5">In attesa di accettazione</p>
+                      )}
+                      {participant.email && !isAwaitingAcceptance && (
                         <p className="text-xs text-white/60 truncate mt-0.5">{participant.email}</p>
                       )}
-                      {participant.phone && (
+                      {participant.phone && !isAwaitingAcceptance && (
                         <p className="text-xs text-white/60 mt-0.5">{participant.phone}</p>
                       )}
                     </div>
@@ -536,6 +620,18 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
+          {/* Creato da — solo nel dashboard maestro */}
+          {isMaestroDashboard && booking.user_profile?.full_name && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Creato da
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{booking.user_profile.full_name}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Stato
@@ -562,6 +658,14 @@ export default function BookingDetailPage() {
 
       {/* Pulsanti azioni */}
       <div className="flex flex-col sm:flex-row gap-3">
+        {isArenaBooking && linkedChallenge?.id && (
+          <Link
+            href={`${dashboardBase}/arena/challenge/${linkedChallenge.id}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
+          >
+            Dettagli Sfida
+          </Link>
+        )}
         {canCancel && (
           <button
             onClick={cancelBooking}

@@ -34,29 +34,29 @@ export async function GET(request: Request) {
 
     // ── Modalità giornaliera: restituisce tutte le occupazioni del giorno ──
     if (!startTime) {
+      const startOfDay = `${dateStr}T00:00:00`;
+      const endOfDay = `${dateStr}T23:59:59.999`;
+
       const { data: bookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("id, court, start_time, end_time, type, status")
         .eq("court", court)
         .neq("status", "cancelled")
-        .gte("start_time", `${dateStr}T00:00:00`)
-        .lte("start_time", `${dateStr}T23:59:59`);
+        .lt("start_time", endOfDay)
+        .gt("end_time", startOfDay);
 
       if (bookingsError) {
         console.error("Error fetching daily bookings:", bookingsError);
         return NextResponse.json({ error: "Database error" }, { status: 500 });
       }
 
-      const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
-      const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
-
       const { data: courtBlocks, error: blocksError } = await supabase
         .from("court_blocks")
         .select("id, start_time, end_time, reason")
         .eq("court_id", court)
         .eq("is_disabled", false)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString());
+        .lt("start_time", endOfDay)
+        .gt("end_time", startOfDay);
 
       if (blocksError) {
         console.error("Error fetching court blocks:", blocksError);

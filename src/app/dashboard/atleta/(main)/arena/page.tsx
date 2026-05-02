@@ -1,43 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
   Swords,
   Trophy,
-  Shield,
-  Star,
-  BarChart3,
-  Eye,
+  Plus,
+  SlidersHorizontal,
+  Loader2,
   Search,
-  History,
+  Shield,
+  Target,
+  Handshake,
+  MoreVertical,
+  Eye,
+  Check,
+  X,
+  RefreshCw,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import ChallengeModal from "@/components/arena/ChallengeModal";
-import PlayerProfileModal from "@/components/arena/PlayerProfileModal";
-
-interface PlayerStats {
-  ranking: number;
-  totalMatches: number;
-  wins: number;
-  losses: number;
-  winRate: number;
-  streak: number;
-  points: number;
-  level: string;
-}
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/ui";
 
 interface Challenge {
   id: string;
   challenger_id: string;
   opponent_id: string;
-  status: "pending" | "accepted" | "declined" | "completed" | "cancelled" | "counter_proposal";
+  status: "pending" | "accepted" | "declined" | "completed" | "cancelled" | "counter_proposal" | "awaiting_score";
   scheduled_date?: string;
-  court?: string;
-  message?: string;
-  booking_id?: string;
+  match_type?: string;
   challenge_type?: string;
+  winner_id?: string;
   created_at: string;
   challenger?: {
     id: string;
@@ -58,6 +58,15 @@ interface Challenge {
   };
 }
 
+interface PlayerStats {
+  ranking: number;
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  points: number;
+}
+
 interface LeaderboardEntry {
   userId: string;
   name: string;
@@ -66,284 +75,229 @@ interface LeaderboardEntry {
   points: number;
   wins: number;
   losses: number;
-  level: string;
   totalMatches: number;
   winRate: number;
 }
 
-interface SelectedPlayer {
-  id: string;
-  full_name: string;
-  avatar_url?: string;
-  bio?: string;
-  stats?: {
-    ranking: number;
-    totalMatches: number;
-    wins: number;
-    losses: number;
-    winRate: number;
-    streak: number;
-    points: number;
-    level: string;
-  };
-}
-
-export default function ArenaPage() {
+export default function AthleteArenaPage() {
+  const DEFAULT_STATUS_FILTER = "active";
   const router = useRouter();
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const dashboardBase = pathname.split("/arena")[0];
+
+  const [userId, setUserId] = useState("");
   const [stats, setStats] = useState<PlayerStats>({
     ranking: 0,
     totalMatches: 0,
     wins: 0,
     losses: 0,
     winRate: 0,
-    streak: 0,
     points: 0,
-    level: "Bronzo",
   });
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("");
-  const [userId, setUserId] = useState<string>("");
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [selectedOpponent, setSelectedOpponent] = useState<{ id: string; full_name: string; avatar_url?: string } | null>(null);
-  const [selectedPlayer, setSelectedPlayer] = useState<SelectedPlayer | null>(null);
-  const [selectedRank, setSelectedRank] = useState<string>("Tutti");
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+  const [statusFilter, setStatusFilter] = useState<string>(DEFAULT_STATUS_FILTER);
   const [search, setSearch] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-  async function loadArenaData() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    setUserId(user.id);
-
-    // Load profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) setUserName(profile.full_name || "Atleta");
-
-    // Load user stats from API
-    try {
-      const statsRes = await fetch(`/api/arena/stats?user_id=${user.id}`);
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        if (statsData.stats) {
-          setStats({
-            ranking: statsData.stats.ranking || 0,
-            totalMatches: statsData.stats.total_matches || 0,
-            wins: statsData.stats.wins || 0,
-            losses: statsData.stats.losses || 0,
-            winRate: parseFloat(statsData.stats.win_rate || "0"),
-            streak: statsData.stats.current_streak || 0,
-            points: statsData.stats.points || 0,
-            level: statsData.stats.level || "Bronzo",
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error loading stats:", error);
+  const matchesStatusFilter = (status: Challenge["status"]) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "active") {
+      return status === "pending" || status === "accepted" || status === "counter_proposal" || status === "awaiting_score";
     }
+    if (statusFilter === "inactive") return status === "declined" || status === "cancelled";
+    if (statusFilter === "pending") return status === "pending" || status === "counter_proposal";
+    if (statusFilter === "awaiting_score") return status === "awaiting_score";
+    return status === statusFilter;
+  };
 
-    // Load challenges
-    try {
-      const challengesRes = await fetch(`/api/arena/challenges?user_id=${user.id}`);
-      console.log("❓ Challenges API response status:", challengesRes.status);
-      if (challengesRes.ok) {
-        const challengesData = await challengesRes.json();
-        console.log("✅ Challenges loaded:", challengesData.challenges?.length || 0, "challenges", challengesData.challenges);
-        setChallenges(challengesData.challenges || []);
-      } else {
-        console.error("❌ Challenges API returned status:", challengesRes.status);
-      }
-    } catch (error) {
-      console.error("❌ Error loading challenges:", error);
-    }
+  const getChallengeSortTimestamp = (challenge: Challenge) => {
+    const referenceDate = challenge.booking?.start_time || challenge.scheduled_date || challenge.created_at;
+    return new Date(referenceDate).getTime();
+  };
 
-    // Load leaderboard
-    try {
-      const leaderboardRes = await fetch("/api/arena/stats?limit=100");
-      if (leaderboardRes.ok) {
-        const leaderboardData = await leaderboardRes.json();
-        console.log("Leaderboard API response:", leaderboardData);
-        
-        // Transform data to match expected format
-        const transformedLeaderboard = (leaderboardData.leaderboard || []).map((entry: any) => ({
-          userId: entry.user_id,
-          ranking: entry.ranking || 0,
-          points: entry.points || 0,
-          wins: entry.wins || 0,
-          losses: entry.losses || 0,
-          level: entry.level || 'Bronzo',
-          totalMatches: entry.total_matches || 0,
-          winRate: entry.win_rate || 0,
-          name: entry.profile?.full_name || 'Giocatore',
-          avatar: entry.profile?.avatar_url
-        }));
-        
-        console.log("Transformed leaderboard:", transformedLeaderboard);
-        setLeaderboard(transformedLeaderboard);
-      }
-    } catch (error) {
-      console.error("Error loading leaderboard:", error);
-    }
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: "Da Confermare",
+      accepted: "Confermata",
+      declined: "Rifiutata",
+      completed: "Completata",
+      cancelled: "Annullata",
+      counter_proposal: "Controproposta",
+      awaiting_score: "Attesa Punteggio",
+    };
+    return labels[status] || status;
+  };
 
-    setLoading(false);
-  }
+  const hasActiveFilters = statusFilter !== DEFAULT_STATUS_FILTER;
+
+  const filteredChallenges = useMemo(() => {
+    return challenges
+      .filter((challenge) => {
+        const q = search.trim().toLowerCase();
+        const challengerName = challenge.challenger?.full_name?.toLowerCase() || "";
+        const opponentName = challenge.opponent?.full_name?.toLowerCase() || "";
+        const matchesSearch = !q || challengerName.includes(q) || opponentName.includes(q);
+        return matchesSearch && matchesStatusFilter(challenge.status);
+      })
+      .sort((left, right) => getChallengeSortTimestamp(left) - getChallengeSortTimestamp(right));
+  }, [challenges, search, statusFilter]);
+
+
 
   useEffect(() => {
     loadArenaData();
+  }, []);
 
-    // Check if returning from challenge creation
-    const success = searchParams.get('success');
-    if (success === 'challenge_created') {
-      // Remove the query param
-      router.replace(`${dashboardBase}/arena`);
-    }
-  }, [searchParams]);
-
-  const filteredChallenges = challenges.filter((challenge) => {
-    // Filter by search term
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const challengerName = (challenge.challenger?.full_name || "").toLowerCase();
-      const opponentName = (challenge.opponent?.full_name || "").toLowerCase();
-
-      if (!challengerName.includes(q) && !opponentName.includes(q)) {
-        return false;
-      }
-    }
-
-    // Filter by status - only show active challenges (not finalized)
-    if (["completed", "declined", "cancelled"].includes(challenge.status)) {
-      return false;
-    }
-
-    return true;
-  });
-
-  async function handleChallengeAction(challengeId: string, action: "accept" | "decline") {
+  async function loadArenaData() {
     try {
-      const status = action === "accept" ? "accepted" : "declined";
+      setLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      setUserId(user.id);
+      await Promise.all([
+        loadUserStats(user.id),
+        loadChallenges(user.id),
+        loadLeaderboard(),
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadUserStats(currentUserId: string) {
+    try {
+      const response = await fetch(`/api/arena/stats?user_id=${currentUserId}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const userStats = data.stats;
+      if (!userStats) return;
+
+      setStats({
+        ranking: userStats.ranking || 0,
+        totalMatches: userStats.total_matches || 0,
+        wins: userStats.wins || 0,
+        losses: userStats.losses || 0,
+        winRate: Number(userStats.win_rate || 0),
+        points: userStats.points || 0,
+      });
+    } catch (error) {
+      console.error("Error loading athlete arena stats:", error);
+    }
+  }
+
+  async function loadChallenges(currentUserId: string) {
+    try {
+      const response = await fetch(`/api/arena/challenges?user_id=${currentUserId}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      setChallenges(data.challenges || []);
+    } catch (error) {
+      console.error("Error loading athlete challenges:", error);
+    }
+  }
+
+  async function loadLeaderboard() {
+    setLoadingLeaderboard(true);
+    try {
+      const response = await fetch("/api/arena/stats");
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const mapped = (data.leaderboard || []).map((entry: any, index: number) => ({
+        userId: entry.user_id,
+        name: entry.profile?.full_name || "N/A",
+        avatar: entry.profile?.avatar_url,
+        ranking: entry.ranking || index + 1,
+        points: entry.points || 0,
+        wins: entry.wins || 0,
+        losses: entry.losses || 0,
+        totalMatches: (entry.wins || 0) + (entry.losses || 0),
+        winRate: entry.wins > 0 || entry.losses > 0
+          ? (entry.wins / ((entry.wins || 0) + (entry.losses || 0))) * 100
+          : 0,
+      }));
+
+      setLeaderboard(mapped);
+    } catch (error) {
+      console.error("Error loading athlete leaderboard:", error);
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  }
+
+  async function handleUpdateChallengeStatus(challengeId: string, status: "accepted" | "declined" | "cancelled") {
+    try {
       const response = await fetch("/api/arena/challenges", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challenge_id: challengeId, status }),
+        body: JSON.stringify({
+          challenge_id: challengeId,
+          status,
+        }),
       });
 
       if (response.ok) {
-        loadArenaData(); // Reload data
+        setOpenMenuId(null);
+        await loadArenaData();
       }
     } catch (error) {
-      console.error("Error updating challenge:", error);
+      console.error("Error updating athlete challenge:", error);
     }
   }
 
-  function handleBookMatch(challenge: Challenge) {
-    // Redirect to booking page with challenge context
-    router.push(`${dashboardBase}/bookings/new?challenge_id=${challenge.id}`);
-  }
-
-  function handleViewProfile(player: LeaderboardEntry) {
-    setSelectedPlayer({
-      id: player.userId,
-      full_name: player.name || "Giocatore",
-      avatar_url: player.avatar,
-      stats: {
-        ranking: player.ranking,
-        totalMatches: player.totalMatches,
-        wins: player.wins,
-        losses: player.losses,
-        winRate: player.winRate,
-        streak: 0,
-        points: player.points,
-        level: player.level,
-      },
-    });
-    setShowProfileModal(true);
-  }
-
-  function handleChallengePlayer(player: SelectedPlayer | LeaderboardEntry | { id: string; full_name: string; avatar_url?: string; stats?: any }) {
-    if ("userId" in player) {
-      // It's a LeaderboardEntry
-      setSelectedOpponent({
-        id: player.userId,
-        full_name: player.name || "Giocatore",
-        avatar_url: player.avatar,
-      });
-    } else {
-      // It's a SelectedPlayer or PlayerProfile
-      setSelectedOpponent({
-        id: player.id,
-        full_name: player.full_name,
-        avatar_url: player.avatar_url,
-      });
-    }
-    setShowChallengeModal(true);
-  }
-
-  const getLevelColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "oro":
-        return "text-yellow-600 bg-yellow-50 border-yellow-200";
-      case "argento":
-        return "text-gray-600 bg-gray-50 border-gray-200";
-      case "bronzo":
-        return "text-orange-600 bg-orange-50 border-orange-200";
-      default:
-        return "text-blue-600 bg-blue-50 border-blue-200";
-    }
-  };
-
-  const getLevelIcon = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "oro":
-        return "👑";
-      case "argento":
-        return "🥈";
-      case "bronzo":
-        return "🥉";
-      default:
-        return "⭐";
-    }
-  };
-
-  const getLevelAccentColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "oro":
-        return "#f59e0b"; // amber-500
-      case "argento":
-        return "#9ca3af"; // gray-400
-      case "bronzo":
-        return "#f97316"; // orange-500
-      default:
-        return "#0ea5e9"; // secondary
-    }
-  };
+  const renderSearchWithFilter = (placeholder: string) => (
+    <div className="flex items-center gap-2 w-full">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => setIsFilterModalOpen(true)}
+        className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+          hasActiveFilters
+            ? "border-secondary bg-secondary text-white hover:opacity-90"
+            : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+        }`}
+        aria-label="Apri filtri Arena"
+        title="Filtri"
+      >
+        <SlidersHorizontal className="h-5 w-5" />
+      </button>
+    </div>
+  );
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-24 bg-gray-200 rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-xl" />
-          ))}
-        </div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+        <p className="mt-4 text-secondary/60">Caricamento Arena...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold text-secondary">Arena GST</h1>
@@ -353,23 +307,10 @@ export default function ArenaPage() {
             onClick={() => router.push(`${dashboardBase}/arena/choose-opponent`)}
             className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
-            <Swords className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Lancia Sfida
           </button>
-          <Link
-            href={`${dashboardBase}/arena/storico`}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Storico"
-          >
-            <History className="h-5 w-5" />
-          </Link>
-          <Link
-            href={`${dashboardBase}/arena/statistiche`}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
-            title="Statistiche"
-          >
-            <BarChart3 className="h-5 w-5" />
-          </Link>
+
           <Link
             href={`${dashboardBase}/arena/info`}
             className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
@@ -380,370 +321,298 @@ export default function ArenaPage() {
         </div>
       </div>
 
-      {/* Level Badge - styled like admin tournament header - Full Width */}
       <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-        style={{ borderLeftColor: getLevelAccentColor(stats.level) }}
+        className="rounded-xl border p-6 border-l-4"
+        style={{
+          background: "#033d56",
+          borderColor: "#033d56",
+          borderLeftColor: "#033d56",
+        }}
       >
         <div className="flex items-center gap-2 text-white">
-          <span className="text-xl font-bold">Livello {stats.level}</span>
-          <span className="text-white/80">•</span>
           <span className="text-lg font-semibold">{stats.points} punti</span>
         </div>
       </div>
 
-      {/* Main Content - Sfide e Classifica */}
-      <div className="space-y-6">
-        {/* Search (no container, inline like other pages) */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-          <input
-            type="text"
-            placeholder="Cerca per nome giocatore..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
-          />
+      {renderSearchWithFilter("Cerca per nome giocatore...")}
+
+      {filteredChallenges.length === 0 ? (
+        <div className="text-center py-20 rounded-md bg-white">
+          <Swords className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
+          <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna sfida trovata</h3>
+          <p className="text-secondary/60">Lancia una sfida per iniziare</p>
         </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredChallenges.map((challenge) => {
+            const start = challenge.booking ? new Date(challenge.booking.start_time) : null;
+            const dateLabel = start
+              ? start.toLocaleDateString("it-IT", { day: "2-digit", month: "short" })
+              : "Data da definire";
+            const timeLabel = start
+              ? start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+              : "--:--";
+            const courtLabel = challenge.booking?.court || "Campo da definire";
 
-        {/* Sfide - senza container esterno */}
-        {filteredChallenges.length === 0 ? (
-          <div className="text-center py-20 rounded-xl bg-white">
-            <Swords className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
-            <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna sfida trovata</h3>
-            <p className="text-secondary/70">Lancia una sfida per iniziare</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="space-y-3 min-w-[750px]">
-              {/* Header Row */}
-              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="flex items-center gap-4">
-                  <div className="w-8 flex-shrink-0">
-                    <div className="text-xs font-bold text-white/80 uppercase"></div>
-                  </div>
-                  <div className="w-10 flex-shrink-0">
-                    <div className="text-xs font-bold text-white/80 uppercase"></div>
-                  </div>
-                  <div className="w-48 flex-shrink-0">
-                    <div className="text-xs font-bold text-white/80 uppercase">Avversario</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-                  </div>
-                  <div className="w-20 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Ora</div>
-                  </div>
-                  <div className="w-24 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Campo</div>
-                  </div>
-                  <div className="w-28 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-white/80 uppercase">Stato</div>
-                  </div>
-                </div>
-              </div>
+            const isChallenger = challenge.challenger_id === userId;
+            const otherPlayer = isChallenger ? challenge.opponent : challenge.challenger;
 
-              {/* Data Rows */}
-              {filteredChallenges.map((challenge) => {
-                const isChallenger = challenge.challenger_id === userId;
-                const opponent = isChallenger ? challenge.opponent : challenge.challenger;
+            const typeColor = challenge.challenge_type === "ranked" ? "var(--secondary)" : "#023047";
+            const isPending = challenge.status === "pending";
+            const isDeclined = challenge.status === "declined" || challenge.status === "cancelled";
+            const isConfirmed = challenge.status === "accepted";
+            const cardBg = isDeclined ? "#9ca3af" : isPending ? "#ffffff" : typeColor;
+            const iconBadgeBg = isPending
+              ? typeColor
+              : isConfirmed || isDeclined
+                ? "rgba(255, 255, 255, 0.1)"
+                : "rgba(255, 255, 255, 0.15)";
+            const primaryTextColor = isPending ? "var(--secondary)" : "#ffffff";
+            const iconColor = isPending ? "#ffffff" : primaryTextColor;
+            const secondaryTextColor = isPending ? "rgba(3, 72, 99, 0.75)" : "rgba(255, 255, 255, 0.7)";
 
-                const getStatusLabel = (status: string) => {
-                  const labels: Record<string, string> = {
-                    pending: "In Attesa",
-                    accepted: "Accettata",
-                    declined: "Rifiutata",
-                    completed: "Completata",
-                    cancelled: "Cancellata",
-                    counter_proposal: "Controproposta",
-                  };
-                  return labels[status] || status;
-                };
+            const canAccept =
+              (challenge.status === "pending" && !isChallenger) ||
+              (challenge.status === "counter_proposal" && isChallenger);
+            const canDecline = canAccept;
+            const canCancel =
+              challenge.status !== "cancelled" &&
+              challenge.status !== "declined" &&
+              challenge.status !== "completed";
 
-                return (
-                  <div
-                    key={challenge.id}
-                    onClick={() => router.push(`${dashboardBase}/arena/challenge/${challenge.id}`)}
-                    className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all cursor-pointer border-l-4 border-l-secondary"
-                  >
-                    <div className="flex items-center gap-4">
-                      {/* Icona Tipo Sfida */}
-                      <div className="w-8 flex-shrink-0 flex items-center justify-center">
-                        {challenge.challenge_type === "ranked" ? (
-                          <Shield className="h-5 w-5 text-secondary/60" strokeWidth={2} />
-                        ) : (
-                          <Star className="h-5 w-5 text-secondary/60" strokeWidth={2} />
-                        )}
-                      </div>
+            const menuButtonClassName = isPending
+              ? "inline-flex items-center justify-center p-1.5 rounded hover:bg-black/5 text-secondary/60 hover:text-secondary transition-all focus:outline-none w-8 h-8"
+              : "inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8";
 
-                      {/* Avatar Avversario */}
-                      <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
-                        {opponent?.avatar_url ? (
-                          <img
-                            src={opponent.avatar_url}
-                            alt={opponent.full_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{opponent?.full_name?.charAt(0).toUpperCase()}</span>
-                        )}
-                      </div>
-
-                      {/* Nome Avversario */}
-                      <div className="w-48 flex-shrink-0">
-                        <div className="font-bold text-secondary text-sm truncate">
-                          {opponent?.full_name}
-                        </div>
-                      </div>
-
-                      {/* Data */}
-                      <div className="w-24 flex-shrink-0 text-center">
-                        <span className="text-xs text-secondary/60">
-                          {challenge.booking
-                            ? new Date(challenge.booking.start_time).toLocaleDateString("it-IT", {
-                                day: "2-digit",
-                                month: "short",
-                              })
-                            : "-"}
-                        </span>
-                      </div>
-
-                      {/* Ora */}
-                      <div className="w-20 flex-shrink-0 text-center">
-                        <span className="text-xs text-secondary/60">
-                          {challenge.booking
-                            ? new Date(challenge.booking.start_time).toLocaleTimeString("it-IT", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "-"}
-                        </span>
-                      </div>
-
-                      {/* Campo */}
-                      <div className="w-24 flex-shrink-0 text-center">
-                        <span className="text-xs text-secondary/60">
-                          {challenge.booking?.court || "-"}
-                        </span>
-                      </div>
-
-                      {/* Stato */}
-                      <div className="w-28 flex-shrink-0 text-center">
-                        <span className="text-xs text-secondary/60">
-                          {getStatusLabel(challenge.status)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Leaderboard */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-secondary">Classifica Arena</h2>
-          </div>
-          
-          {/* Rank Filter */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:items-center gap-2 mb-6">
-            {["Tutti", "Bronzo", "Argento", "Oro", "Platino", "Diamante"].map((rank) => (
-              <button
-                key={rank}
-                onClick={() => setSelectedRank(rank)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-all border w-full ${
-                  selectedRank === rank
-                    ? "text-white bg-secondary border-secondary"
-                    : "bg-white text-secondary/70 border-gray-200 hover:bg-secondary/5 hover:border-gray-300"
+            return (
+              <div
+                key={challenge.id}
+                onClick={() => router.push(`${dashboardBase}/arena/challenge/${challenge.id}`)}
+                className={`rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity ${
+                  isPending ? "border border-gray-200" : ""
                 }`}
+                style={{ background: cardBg }}
               >
-                {rank === "Tutti" ? "Tutti" :
-                 rank === "Bronzo" ? "Bronzo" :
-                 rank === "Argento" ? "Argento" :
-                 rank === "Oro" ? "Oro" :
-                 rank === "Platino" ? "Platino" : "Diamante"}
-              </button>
-            ))}
-          </div>
-
-          {(() => {
-            const filteredLeaderboard = selectedRank === "Tutti"
-              ? leaderboard
-              : leaderboard.filter(entry => entry.level === selectedRank);
-
-            return filteredLeaderboard.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
-                <p className="text-secondary/70">
-                  {selectedRank === "Tutti"
-                    ? "Nessun giocatore in classifica"
-                    : `Nessun giocatore nel livello ${selectedRank}`}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style>{`
-                  .scrollbar-hide::-webkit-scrollbar {
-                    display: none;
-                  }
-                `}</style>
-                <div className="space-y-3" style={{ minWidth: '900px' }}>
-                {/* Header Row */}
-                <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                  <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px_80px] items-center gap-4">
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">#</div>
-                    <div className="text-xs font-bold text-white/80 uppercase">Giocatore</div>
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">Partite</div>
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">Vittorie</div>
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">Sconfitte</div>
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">Win Rate</div>
-                    <div className="text-xs font-bold text-white/80 uppercase text-center">Azioni</div>
+                <div className="flex items-center gap-4 py-3 px-3">
+                  <div
+                    className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
+                    style={{ background: iconBadgeBg }}
+                  >
+                    {challenge.challenge_type === "ranked" ? (
+                      <Target className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
+                    ) : (
+                      <Handshake className="h-5 w-5" strokeWidth={2} style={{ color: iconColor }} />
+                    )}
                   </div>
-                </div>
 
-                {/* Data Rows */}
-                {filteredLeaderboard.map((entry, index) => {
-                  const isCurrentUser = entry.userId === userId;
-                  const displayPosition = selectedRank === "Tutti" ? entry.ranking : (index + 1);
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate" style={{ color: primaryTextColor }}>
+                      {otherPlayer?.full_name || "Giocatore"}
+                    </p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: secondaryTextColor }}>
+                      {dateLabel} · {timeLabel} · {courtLabel} · {getStatusLabel(challenge.status)}
+                    </p>
+                  </div>
 
-                  // Determina il colore del bordo in base alla posizione
-                  let borderStyle = {};
-                  if (displayPosition === 1) {
-                    borderStyle = { borderLeftColor: "#eab308" }; // giallo oro
-                  } else if (displayPosition === 2) {
-                    borderStyle = { borderLeftColor: "#9ca3af" }; // grigio argento
-                  } else if (displayPosition === 3) {
-                    borderStyle = { borderLeftColor: "#f97316" }; // arancione bronzo
-                  } else {
-                    borderStyle = { borderLeftColor: "#0f4c7c" }; // secondary default
-                  }
-
-                  return (
-                    <div
-                      key={`${entry.userId}-${index}`}
-                      className={`bg-white rounded-lg px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all border-l-4 ${
-                        isCurrentUser ? "bg-secondary/5" : ""
-                      }`}
-                      style={borderStyle}
+                  <div className="relative flex items-center justify-center flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === challenge.id ? null : challenge.id);
+                      }}
+                      className={menuButtonClassName}
+                      aria-label="Azioni"
                     >
-                      <div className="grid grid-cols-[48px_200px_80px_80px_80px_80px_80px_80px] items-center gap-4">
-                        {/* Position */}
-                        <div className="text-center">
-                          <span className="text-lg font-bold text-secondary">
-                            {displayPosition}
-                          </span>
-                        </div>
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
 
-                        {/* Player */}
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 min-w-[40px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0">
-                            {entry.avatar ? (
-                              <img
-                                src={entry.avatar}
-                                alt={entry.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span>
-                                {entry.name?.charAt(0).toUpperCase() || "?"}
-                              </span>
-                            )}
-                          </div>
-                          <span className="font-bold text-secondary truncate">
-                            {entry.name || "N/A"}
-                            {isCurrentUser && (
-                              <span className="ml-1 text-xs font-medium text-secondary/60">(Tu)</span>
-                            )}
-                          </span>
-                        </div>
+                    {openMenuId === challenge.id && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                          }}
+                        />
+                        <div className="absolute right-0 top-9 z-30 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(null);
+                              router.push(`${dashboardBase}/arena/challenge/${challenge.id}`);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Visualizza
+                          </button>
 
-                        {/* Points */}
-                        <div className="text-center">
-                          <span className="text-lg font-bold text-secondary">{entry.points ?? 0}</span>
-                        </div>
+                          {canAccept && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleUpdateChallengeStatus(challenge.id, "accepted");
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              Accetta
+                            </button>
+                          )}
 
-                        {/* Total Matches */}
-                        <div className="text-center">
-                          <span className="text-sm font-semibold text-secondary">{entry.totalMatches ?? 0}</span>
-                        </div>
+                          {canDecline && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleUpdateChallengeStatus(challenge.id, "declined");
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              Rifiuta
+                            </button>
+                          )}
 
-                        {/* Wins */}
-                        <div className="text-center">
-                          <span className="text-sm font-semibold text-secondary">{entry.wins ?? 0}</span>
-                        </div>
-
-                        {/* Losses */}
-                        <div className="text-center">
-                          <span className="text-sm font-semibold text-secondary">{entry.losses ?? 0}</span>
-                        </div>
-
-                        {/* Win Rate */}
-                        <div className="text-center">
-                          <span className="text-sm font-semibold text-secondary">{entry.winRate?.toFixed(0) ?? 0}%</span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-center gap-2">
-                          {!isCurrentUser && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleChallengePlayer(entry);
-                                }}
-                                className="p-2 text-white bg-secondary hover:opacity-90 rounded-md transition-all"
-                                title="Lancia sfida"
-                              >
-                                <Swords className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewProfile(entry);
-                                }}
-                                className="p-2 text-secondary/70 hover:bg-secondary/5 rounded-md transition-all"
-                                title="Vedi profilo"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </button>
-                            </>
+                          {canCancel && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleUpdateChallengeStatus(challenge.id, "cancelled");
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              Annulla
+                            </button>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             );
-          })()}
+          })}
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica Arena</h2>
+        </div>
+
+        <div className="p-6">
+          {loadingLeaderboard ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-secondary" />
+              <p className="mt-4 text-secondary/70">Caricamento classifica...</p>
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="h-16 w-16 text-secondary/20 mx-auto mb-4" />
+              <p className="text-secondary/70">Nessun giocatore in classifica</p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {leaderboard.map((entry, index) => {
+                const displayPosition = entry.ranking;
+                const isCurrentUser = entry.userId === userId;
+
+                let rankBg = "var(--secondary)";
+                if (displayPosition === 1) rankBg = "var(--secondary-hover)";
+                else if (displayPosition === 2) rankBg = "#033247";
+                else if (displayPosition === 3) rankBg = "#033d56";
+
+                return (
+                  <li key={`${entry.userId}-${index}`}>
+                    <div
+                      className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+                      style={{ background: rankBg }}
+                    >
+                      <div className="flex items-center justify-center bg-white/10 rounded-lg w-10 h-10 flex-shrink-0">
+                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{displayPosition}</span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">
+                          {entry.name || "N/A"}
+                          {isCurrentUser && <span className="ml-1 text-xs text-white/80">(Tu)</span>}
+                        </p>
+                      </div>
+
+                      <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">{entry.points ?? 0}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
 
-      {/* Modals */}
-      <ChallengeModal
-        isOpen={showChallengeModal}
-        onClose={() => {
-          setShowChallengeModal(false);
-          setSelectedOpponent(null);
-        }}
-        opponent={selectedOpponent}
-        onChallengeCreated={loadArenaData}
-      />
+      <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+        <ModalContent
+          size="md"
+          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+        >
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Filtra Arena</ModalTitle>
+          </ModalHeader>
 
-      <PlayerProfileModal
-        isOpen={showProfileModal}
-        onClose={() => {
-          setShowProfileModal(false);
-          setSelectedPlayer(null);
-        }}
-        player={selectedPlayer}
-        onChallenge={handleChallengePlayer}
-        onMessage={(playerId) => router.push(`${dashboardBase}/mail?recipient=${playerId}`)}
-      />
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="arena-status-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Stato sfida
+              </label>
+              <select
+                id="arena-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="all">Tutte</option>
+                <option value="active">Attivo</option>
+                <option value="pending">Da confermare</option>
+                <option value="accepted">Confermate</option>
+                <option value="awaiting_score">Attesa Punteggio</option>
+                <option value="inactive">Inattive</option>
+                <option value="declined">Rifiutate</option>
+                <option value="cancelled">Annullate</option>
+                <option value="completed">Completate</option>
+              </select>
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter(DEFAULT_STATUS_FILTER);
+              }}
+              className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Rimuovi filtri
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(false)}
+              className="w-1/2 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-br-lg"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

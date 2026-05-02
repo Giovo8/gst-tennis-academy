@@ -218,6 +218,40 @@ function buildScoreGrid(score?: string) {
   };
 }
 
+function getPointsFromScore(
+  scoreValue: string,
+  winnerId: string,
+  challengerId: string,
+): { winnerPts: number; loserPts: number } | null {
+  const sets = scoreValue
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const match = s.match(/^(\d+)-(\d+)$/);
+      if (!match) return null;
+      return { left: Number(match[1]), right: Number(match[2]) };
+    })
+    .filter((s): s is { left: number; right: number } => s !== null);
+
+  if (sets.length === 0) return null;
+
+  const isWinnerChallenger = winnerId === challengerId;
+  let winnerSets = 0;
+  let loserSets = 0;
+  for (const s of sets) {
+    if (isWinnerChallenger) {
+      if (s.left > s.right) winnerSets++; else loserSets++;
+    } else {
+      if (s.right > s.left) winnerSets++; else loserSets++;
+    }
+  }
+
+  if (loserSets === 0) return { winnerPts: 30, loserPts: 0 };
+  if (winnerSets === 3 && loserSets === 1) return { winnerPts: 25, loserPts: 5 };
+  return { winnerPts: 20, loserPts: 10 };
+}
+
 export default function AdminChallengeDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -722,8 +756,24 @@ export default function AdminChallengeDetailPage() {
                       className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary"
                     />
                     <p className="text-xs text-secondary/60 mt-2">
-                      Inserisci il punteggio nel formato: 6-4, 6-3 oppure 6-4, 3-6, 6-2. Il vincitore viene calcolato automaticamente dai set.
+                      Formato: 6-4, 6-3 · Il vincitore e i punti vengono calcolati automaticamente dai set.
                     </p>
+                    {(() => {
+                      if (!score.trim() || !SCORE_PATTERN.test(score.trim())) return null;
+                      const computedWinner = getWinnerIdFromScore(score.trim(), challenge.challenger_id, challenge.opponent_id);
+                      if (!computedWinner) return null;
+                      const pts = getPointsFromScore(score.trim(), computedWinner, challenge.challenger_id);
+                      if (!pts) return null;
+                      const winnerName = computedWinner === challenge.challenger_id ? challenge.challenger?.full_name : challenge.opponent?.full_name;
+                      const loserName = computedWinner === challenge.challenger_id ? challenge.opponent?.full_name : challenge.challenger?.full_name;
+                      return (
+                        <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs font-semibold text-green-700 mb-1">Anteprima risultato</p>
+                          <p className="text-xs text-green-700">Vincitore: <strong>{winnerName}</strong> → <strong>+{pts.winnerPts} pt</strong></p>
+                          <p className="text-xs text-green-600">{loserName} → +{pts.loserPts} pt</p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

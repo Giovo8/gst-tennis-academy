@@ -49,7 +49,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     city: "",
     province: "",
     postal_code: "",
-    arena_rank: "Bronzo" as "Bronzo" | "Argento" | "Oro" | "Platino" | "Diamante",
+    arena_rank: "Bronzo" as const,
     notes: "",
     role: "atleta" as "admin" | "gestore" | "maestro" | "atleta",
     also_maestro: false,
@@ -113,7 +113,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         city: metadata.city || "",
         province: metadata.province || "",
         postal_code: metadata.postal_code || "",
-        arena_rank: arenaData?.level || "Bronzo",
+        arena_rank: "Bronzo" as const,
         notes: data.bio || "",
         role: data.role,
         also_maestro: ["admin", "gestore"].includes(data.role) && secondaryRoles.includes("maestro"),
@@ -171,43 +171,15 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
       if (error) throw error;
 
-      // Aggiorna arena_stats se il rank è cambiato
-      if (arenaStats && arenaStats.level !== formData.arena_rank) {
-        const rankPoints = {
-          "Bronzo": 0,
-          "Argento": 800,
-          "Oro": 1500,
-          "Platino": 2000,
-          "Diamante": 2500
-        };
-
-        const { error: arenaError } = await supabase
-          .from("arena_stats")
-          .update({
-            level: formData.arena_rank,
-            points: rankPoints[formData.arena_rank]
-          })
-          .eq("user_id", userId);
-
-        if (arenaError) {
-          console.error("Errore aggiornamento arena:", arenaError);
-        }
-      } else if (!arenaStats) {
+      // Aggiorna arena_stats se non esistono
+      if (!arenaStats) {
         // Crea arena_stats se non esiste
-        const rankPoints = {
-          "Bronzo": 0,
-          "Argento": 800,
-          "Oro": 1500,
-          "Platino": 2000,
-          "Diamante": 2500
-        };
-
         const { error: arenaError } = await supabase
           .from("arena_stats")
           .insert({
             user_id: userId,
-            points: rankPoints[formData.arena_rank],
-            level: formData.arena_rank,
+            points: 0,
+            level: "Bronzo",
             wins: 0,
             losses: 0,
             total_matches: 0
@@ -633,38 +605,6 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     maxLength={5}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Rank Arena */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Rank Arena</label>
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {[
-                    { value: "Bronzo" },
-                    { value: "Argento" },
-                    { value: "Oro" },
-                    { value: "Platino" },
-                    { value: "Diamante" }
-                  ].map((rank) => (
-                    <button
-                      key={rank.value}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, arena_rank: rank.value as any })}
-                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
-                        formData.arena_rank === rank.value
-                          ? 'bg-secondary text-white border-secondary'
-                          : 'bg-white text-secondary border-gray-300 hover:border-secondary'
-                      }`}
-                    >
-                      {rank.value}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-secondary/50 mt-3">
-                  Modificare il rank resetterà i punti Arena dell&apos;utente
-                </p>
               </div>
             </div>
 

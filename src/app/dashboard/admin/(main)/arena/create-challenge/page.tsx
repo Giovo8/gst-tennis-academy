@@ -255,7 +255,12 @@ export default function CreateChallengePage() {
 
     setLoadingSlots(true);
 
-    const dateStr = selectedDate.toISOString().split("T")[0];
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDayIso = startOfDay.toISOString();
+    const endOfDayIso = endOfDay.toISOString();
 
     // Get existing bookings for this court and date
     const { data: bookings } = await supabase
@@ -263,22 +268,17 @@ export default function CreateChallengePage() {
       .select("id, user_id, coach_id, start_time, end_time, type, status")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
-      .gte("start_time", `${dateStr}T00:00:00`)
-      .lte("start_time", `${dateStr}T23:59:59`);
+      .lt("start_time", endOfDayIso)
+      .gt("end_time", startOfDayIso);
 
     // Get court blocks for this court and date
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
     const { data: courtBlocks } = await supabase
       .from("court_blocks")
       .select("id, start_time, end_time, reason")
       .eq("court_id", selectedCourt)
       .eq("is_disabled", false)
-      .gte("start_time", startOfDay.toISOString())
-      .lte("start_time", endOfDay.toISOString());
+      .lt("start_time", endOfDayIso)
+      .gt("end_time", startOfDayIso);
 
     // Fetch profiles for bookings
     const userIds = [...new Set([
@@ -420,6 +420,13 @@ export default function CreateChallengePage() {
   const handleCourtChange = (court: string) => {
     setSelectedCourt(court);
     setSelectedSlots([]); // Reset slot selezionati quando cambia il campo
+  };
+
+  // Verifica disponibilità slot
+  const isSlotAvailable = (time: string): boolean => {
+    if (!selectedCourt) return true;
+    const slot = slots.find(s => s.time === time);
+    return slot ? slot.available : false;
   };
 
   const handleDateChange = (date: Date) => {
@@ -565,8 +572,8 @@ export default function CreateChallengePage() {
 
   const getMaxDate = () => {
     const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 90);
-    return maxDate.toISOString().split("T")[0];
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    return maxDate;
   };
 
   const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
@@ -759,13 +766,19 @@ export default function CreateChallengePage() {
               >
                 <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
                   <Calendar className="h-5 w-5 text-white shrink-0" />
-                  <span className="font-bold text-white text-lg leading-none text-center whitespace-nowrap">
+                  <span
+                    className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
+                    style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+                  >
                     {mobileDateLabel}
                   </span>
                 </span>
                 <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
                   <Calendar className="h-5 w-5 text-white shrink-0" />
-                  <span className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize">
+                  <span
+                    className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
+                    style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+                  >
                     {fullDateLabel}
                   </span>
                 </span>
@@ -1010,10 +1023,8 @@ export default function CreateChallengePage() {
                           const hour = 7 + hourIndex;
                           const time1 = `${hour.toString().padStart(2, '0')}:00`;
                           const time2 = hour < 22 ? `${hour.toString().padStart(2, '0')}:30` : null;
-                          const slot1 = slots.find(s => s.time === time1);
-                          const slot2 = time2 ? slots.find(s => s.time === time2) : null;
-                          const available1 = slot1 ? slot1.available : false;
-                          const available2 = slot2 ? slot2.available : false;
+                          const available1 = isSlotAvailable(time1);
+                          const available2 = time2 ? isSlotAvailable(time2) : false;
                           const isSelected1 = selectedSlots.includes(time1);
                           const isSelected2 = time2 ? selectedSlots.includes(time2) : false;
 
@@ -1147,19 +1158,26 @@ export default function CreateChallengePage() {
                 {calendarDays.map(({ date, isCurrentMonth }) => {
                   const isSelected = isSameCalendarDay(date, pendingDate);
                   const isTodayDate = isSameCalendarDay(date, new Date());
+                  const today = new Date(); today.setHours(0, 0, 0, 0);
+                  const maxDate = getMaxDate(); maxDate.setHours(23, 59, 59, 999);
+                  const normalizedDay = new Date(date); normalizedDay.setHours(12, 0, 0, 0);
+                  const isDisabled = normalizedDay < today || normalizedDay > maxDate;
 
                   return (
                     <button
                       key={date.toISOString()}
                       type="button"
-                      onClick={() => selectCalendarDay(date)}
+                      onClick={() => !isDisabled && selectCalendarDay(date)}
+                      disabled={isDisabled}
                       className={`h-9 rounded-md text-sm transition-colors ${
-                        isSelected
+                        isDisabled
+                          ? "text-gray-300 cursor-not-allowed"
+                          : isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth
                           ? "text-gray-800 hover:bg-gray-100"
                           : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                      } ${!isSelected && !isDisabled && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
                     >
                       {date.getDate()}
                     </button>

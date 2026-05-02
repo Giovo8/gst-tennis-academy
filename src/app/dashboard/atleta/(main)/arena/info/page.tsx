@@ -2,11 +2,8 @@
 
 import {
   Target,
-  Trophy,
   Swords,
   Shield,
-  Check,
-  X as XIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -41,54 +38,98 @@ export default function InfoPage() {
               <Target className="h-5 w-5 text-secondary" />
               Sistema di Punteggio (Tennis)
             </h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
-                <Check className="h-5 w-5 text-green-600" />
-                <div>
-                  <span className="font-bold text-green-700">Vittoria:</span>
-                  <span className="text-green-600 ml-2">+50 punti</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-500">
-                <XIcon className="h-5 w-5 text-red-600" />
-                <div>
-                  <span className="font-bold text-red-700">Sconfitta:</span>
-                  <span className="text-red-600 ml-2">-20 punti (minimo 0)</span>
-                </div>
-              </div>
-              <p className="text-xs text-secondary/60 mt-3">
-                Nel tennis non esistono pareggi - ogni partita deve avere un vincitore
+            <div className="space-y-4">
+              <p className="text-sm text-secondary/70">
+                I punti dipendono dal risultato al meglio dei set. Anche il perdente può guadagnare punti in base alla combattività.
               </p>
-            </div>
-          </div>
 
-          {/* Livelli */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-secondary" />
-              Livelli
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                <p className="font-bold text-orange-700">Bronzo</p>
-                <p className="text-xs text-orange-600">0-799 punti</p>
+              {/* Best-of-1 */}
+              <div>
+                <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Set singolo</p>
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-secondary">Risultato</th>
+                        <th className="px-4 py-2 text-center font-semibold text-secondary">Vincitore</th>
+                        <th className="px-4 py-2 text-center font-semibold text-secondary/60">Perdente</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      <tr>
+                        <td className="px-4 py-2 font-medium text-secondary">1 – 0</td>
+                        <td className="px-4 py-2 text-center font-bold text-secondary">+30 pt</td>
+                        <td className="px-4 py-2 text-center text-secondary/60">+0 pt</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg border-l-4 border-gray-400">
-                <p className="font-bold text-gray-700">Argento</p>
-                <p className="text-xs text-gray-600">800-1499 punti</p>
+
+              {/* Best-of-3 */}
+              <div>
+                <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 3 set</p>
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-secondary">Risultato</th>
+                        <th className="px-4 py-2 text-center font-semibold text-secondary">Vincitore</th>
+                        <th className="px-4 py-2 text-center font-semibold text-secondary/60">Perdente</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      <tr>
+                        <td className="px-4 py-2 font-medium text-secondary">2 – 0</td>
+                        <td className="px-4 py-2 text-center font-bold text-secondary">+30 pt</td>
+                        <td className="px-4 py-2 text-center text-secondary/60">+0 pt</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 font-medium text-secondary">2 – 1</td>
+                        <td className="px-4 py-2 text-center font-bold text-secondary">+20 pt</td>
+                        <td className="px-4 py-2 text-center text-secondary/60">+10 pt</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="p-4 bg-amber-50 rounded-lg border-l-4 border-amber-500">
-                <p className="font-bold text-amber-700">Oro</p>
-                <p className="text-xs text-amber-600">1500-1999 punti</p>
+
+              {/* Best-of-5 */}
+              <div>
+                <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 5 set</p>
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-secondary">Risultato</th>
+                        <th className="px-4 py-2 text-center font-semibold text-secondary">Vincitore</th>
+                        <th className="px-4 py-2 text-center font-semibold text-secondary/60">Perdente</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      <tr>
+                        <td className="px-4 py-2 font-medium text-secondary">3 – 0</td>
+                        <td className="px-4 py-2 text-center font-bold text-secondary">+30 pt</td>
+                        <td className="px-4 py-2 text-center text-secondary/60">+0 pt</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 font-medium text-secondary">3 – 1</td>
+                        <td className="px-4 py-2 text-center font-bold text-secondary">+25 pt</td>
+                        <td className="px-4 py-2 text-center text-secondary/60">+5 pt</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 font-medium text-secondary">3 – 2</td>
+                        <td className="px-4 py-2 text-center font-bold text-secondary">+20 pt</td>
+                        <td className="px-4 py-2 text-center text-secondary/60">+10 pt</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
-                <p className="font-bold text-purple-700">Platino</p>
-                <p className="text-xs text-purple-600">2000-2499 punti</p>
-              </div>
-              <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                <p className="font-bold text-blue-700">Diamante</p>
-                <p className="text-xs text-blue-600">2500+ punti</p>
-              </div>
+
+              <p className="text-xs text-secondary/60">
+                I punti vengono assegnati automaticamente al termine di ogni sfida classificata.
+              </p>
             </div>
           </div>
 

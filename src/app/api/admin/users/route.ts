@@ -100,7 +100,6 @@ export async function POST(request: NextRequest) {
       city,
       province,
       postal_code,
-      arena_rank,
       notes,
     } = body;
 
@@ -202,20 +201,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize arena_stats
-    const rankPoints: Record<string, number> = {
-      Bronzo: 0,
-      Argento: 800,
-      Oro: 1500,
-      Platino: 2000,
-      Diamante: 2500,
-    };
     await supabaseAdmin
       .from("arena_stats")
       .upsert(
         {
           user_id: newUser.user.id,
-          points: rankPoints[arena_rank] ?? 0,
-          level: arena_rank ?? "Bronzo",
+          points: 0,
+          level: "Bronzo",
           wins: 0,
           losses: 0,
           total_matches: 0,

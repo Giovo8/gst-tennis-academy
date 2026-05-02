@@ -264,6 +264,7 @@ export async function POST(req: Request) {
         {
           user_id,
           coach_id: coach_id || null,
+          created_by: user.id,
           court,
           type: type || "campo",
           start_time,
@@ -360,9 +361,29 @@ export async function POST(req: Request) {
         participants,
         fallbackName: userProfile?.full_name || profile?.full_name || user.email || "Un utente",
       });
+      const normalizeName = (value: string | null | undefined): string =>
+        String(value || "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLowerCase();
+      const athleteNames = Array.from(
+        new Set(
+          [
+            athleteContextForNotifications.athleteName,
+            ...athleteContextForNotifications.additionalAthleteNames,
+          ]
+            .map((name) => name?.trim())
+            .filter((name): name is string => Boolean(name))
+        )
+      );
+      const athleteNamesLabel = athleteNames.join(", ") || athleteContextForNotifications.athleteName;
       const actorDisplayName = profile?.full_name || user.email || "Uno staff";
-      const createdByStaff = isAdminOrGestore(profile?.role);
-      const bookedForAnotherUser = user_id !== user.id;
+      const actorRole = String(profile?.role || "").toLowerCase();
+      const actorIsStaff = actorRole === "admin" || actorRole === "gestore" || actorRole === "maestro";
+      const actorMatchesSingleAthlete =
+        athleteNames.length === 1 &&
+        normalizeName(athleteNames[0]) === normalizeName(actorDisplayName);
+      const shouldMentionActorExplicitly = actorIsStaff && !actorMatchesSingleAthlete;
 
       if (shouldNotifyCoachForPrivateLesson({ bookingType: booking.type, coachId: booking.coach_id })) {
         const coachNotification = buildCoachNotificationForPrivateLesson({
@@ -400,30 +421,27 @@ export async function POST(req: Request) {
 
       const buildAdminNotifMessage = (): string => {
         const coachSuffix = coachDisplayName ? ` · Maestro: ${coachDisplayName}` : "";
-        if (booking.type === "lezione_privata") {
-          return createdByStaff && bookedForAnotherUser
-            ? `${actorDisplayName} ha prenotato il ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}${coachSuffix}`
-            : `${athleteContextForNotifications.athleteName} ha prenotato il ${booking.court} il ${startDate} alle ${startTimeLabel}${coachSuffix}`;
+        if (shouldMentionActorExplicitly) {
+          return `${actorDisplayName} ha prenotato il ${booking.court} per ${athleteNamesLabel} il ${startDate} alle ${startTimeLabel}${booking.type === "lezione_privata" ? coachSuffix : ""}`;
         }
-        // campo
-        return createdByStaff && bookedForAnotherUser
-          ? `${actorDisplayName} ha prenotato il ${booking.court} per ${athleteContextForNotifications.athleteName} il ${startDate} alle ${startTimeLabel}`
-          : `${athleteContextForNotifications.athleteName} ha prenotato il ${booking.court} il ${startDate} alle ${startTimeLabel}`;
+
+        return `${athleteNamesLabel} ha prenotato il ${booking.court} il ${startDate} alle ${startTimeLabel}${booking.type === "lezione_privata" ? coachSuffix : ""}`;
       };
 
       const notesText = (booking.notes || "").toLowerCase();
       const isArenaChallengeBooking = notesText.includes("sfida arena");
-      const arenaDetails = booking.notes?.trim();
 
       await notifyAdmins({
         type: isArenaChallengeBooking ? "arena_challenge_booked" : "booking",
         title: isArenaChallengeBooking
-          ? "Sfida Arena creata con campo prenotato"
+          ? "Sfida Arena Creata"
           : booking.type === "lezione_privata"
             ? "Nuova lezione privata"
             : "Nuova prenotazione campo",
         message: isArenaChallengeBooking
-          ? `${actorDisplayName} ha creato una sfida Arena per ${athleteContextForNotifications.athleteName} sul ${booking.court} il ${startDate} alle ${startTimeLabel}${arenaDetails ? ` · ${arenaDetails}` : ""}`
+          ? shouldMentionActorExplicitly
+            ? `${actorDisplayName} ha creato una sfida Arena per ${athleteNamesLabel} sul ${booking.court} il ${startDate} alle ${startTimeLabel}`
+            : `${athleteNamesLabel} ha creato una sfida Arena sul ${booking.court} il ${startDate} alle ${startTimeLabel}`
           : buildAdminNotifMessage(),
         link: isArenaChallengeBooking ? "/dashboard/admin/arena" : getAdminBookingNotificationLink(booking.id),
       });
@@ -545,7 +563,7 @@ export async function POST(req: Request) {
         if (athleteEmailContext.athleteRecipientEmails.length > 0) {
           await sendBookingCreatedEmailToAthlete({
             bookingId: booking.id,
-            bookedByName: createdByStaff && bookedForAnotherUser ? actorDisplayName : athleteEmailContext.athleteName,
+            bookedByName: actorDisplayName,
             athleteName: athleteEmailContext.athleteName,
             athleteEmail: athleteEmailContext.athleteEmail,
             athleteRecipientEmails: athleteEmailContext.athleteRecipientEmails,
@@ -564,7 +582,7 @@ export async function POST(req: Request) {
         if (booking.type === "lezione_privata" && booking.coach_id) {
           await sendBookingCreatedEmailToMaestro({
             bookingId: booking.id,
-            bookedByName: createdByStaff && bookedForAnotherUser ? actorDisplayName : athleteEmailContext.athleteName,
+            bookedByName: actorDisplayName,
             athleteName: athleteEmailContext.athleteName,
             athleteEmail: athleteEmailContext.athleteEmail,
             coachId: booking.coach_id,

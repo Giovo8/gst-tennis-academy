@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anteprima Notifiche</title>
+  <style>
+    :root {
+      --secondary: #0b4f6c;
+      --surface: #f3f5f7;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --lesson: #023047;
+      --arena: var(--secondary);
+      --tournament: #6d28d9;
+      --message: #0369a1;
+      --success: #15803d;
+      --warning: #b45309;
+      --error: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #e8edf2 0%, var(--surface) 100%);
+      color: #111827;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: 28px 16px;
+    }
+
+    .wrap {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.4rem, 2.6vw, 2rem);
+      color: var(--secondary);
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      margin: 8px 0 20px;
+      color: #334155;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 14px rgba(2, 6, 23, 0.04);
+    }
+
+    .head {
+      padding: 10px 14px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .body {
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .title {
+      margin: 1px 0 4px;
+      font-size: 1.04rem;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.2;
+    }
+
+    .msg {
+      margin: 0;
+      color: #374151;
+      line-height: 1.35;
+      font-size: 0.95rem;
+    }
+
+    .time {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .secondary { background: var(--secondary); }
+    .lesson { background: var(--lesson); }
+    .arena { background: var(--arena); }
+    .tournament { background: var(--tournament); }
+    .message { background: var(--message); }
+    .success { background: var(--success); }
+    .warning { background: var(--warning); }
+    .error { background: var(--error); }
+
+    .legend {
+      margin: 18px 0 0;
+      color: #475569;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .legend strong { color: #0f172a; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Anteprima Notifiche Possibili</h1>
+    <p class="subtitle">Preview statica di titoli e testi per i principali flussi: prenotazioni, sfide Arena, tornei, messaggi e notifiche di sistema.</p>
+
+    <section class="grid">
+      <article class="card">
+        <div class="head secondary">Booking - campo</div>
+        <div class="body">
+          <div class="icon secondary">BK</div>
+          <div>
+            <p class="title">Nuova prenotazione campo</p>
+            <p class="msg">Mario Rossi ha prenotato il Campo 2 il 25/12/2026 alle 15:00</p>
+            <div class="time">2 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head secondary">Booking - staff per atleta</div>
+        <div class="body">
+          <div class="icon secondary">BK</div>
+          <div>
+            <p class="title">Nuova prenotazione campo</p>
+            <p class="msg">Admin GST ha prenotato il Campo 1 per Luca Verdi, Anna Neri il 25/12/2026 alle 15:00</p>
+            <div class="time">3 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head lesson">Booking - lezione privata</div>
+        <div class="body">
+          <div class="icon lesson">LS</div>
+          <div>
+            <p class="title">Nuova lezione privata</p>
+            <p class="msg">Giulia Bianchi ha prenotato il Campo 3 il 26/12/2026 alle 10:30 - Maestro: Patrizia Piermarini</p>
+            <div class="time">5 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head secondary">Booking batch</div>
+        <div class="body">
+          <div class="icon secondary">BT</div>
+          <div>
+            <p class="title">Nuova prenotazione campo</p>
+            <p class="msg">Gestore GST ha prenotato il Campo 1 per Luca Verdi, Anna Neri, Paolo Blu il 03/01/2027 alle 18:00</p>
+            <div class="time">7 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head arena">Arena con campo</div>
+        <div class="body">
+          <div class="icon arena">AR</div>
+          <div>
+            <p class="title">Sfida Arena Creata</p>
+            <p class="msg">Admin GST ha creato una sfida Arena per Luca Verdi, Anna Neri sul Campo 1 il 25/12/2026 alle 15:00</p>
+            <div class="time">1 minuto fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head arena">Arena self-booking</div>
+        <div class="body">
+          <div class="icon arena">AR</div>
+          <div>
+            <p class="title">Sfida Arena Creata</p>
+            <p class="msg">Mario Rossi ha creato una sfida Arena sul Campo 2 il 28/12/2026 alle 20:00</p>
+            <div class="time">9 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head arena">Arena sfida ricevuta</div>
+        <div class="body">
+          <div class="icon arena">AR</div>
+          <div>
+            <p class="title">Nuova Sfida Arena</p>
+            <p class="msg">Luca Verdi ti ha sfidato in Arena! (Campo: Campo 1 - Data: 25/12/2026 - Ora: 15:00 - Tipo: Ranked - Match: Doppio)</p>
+            <div class="time">11 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head arena">Arena accettata</div>
+        <div class="body">
+          <div class="icon arena">AR</div>
+          <div>
+            <p class="title">Sfida Accettata</p>
+            <p class="msg">Marco Ferri ha accettato la tua sfida!</p>
+            <div class="time">14 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head arena">Arena rifiutata</div>
+        <div class="body">
+          <div class="icon arena">AR</div>
+          <div>
+            <p class="title">Sfida Rifiutata</p>
+            <p class="msg">Marco Ferri ha rifiutato la tua sfida.</p>
+            <div class="time">16 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head tournament">Tornei</div>
+        <div class="body">
+          <div class="icon tournament">TR</div>
+          <div>
+            <p class="title">Nuovo torneo disponibile</p>
+            <p class="msg">Sono aperte le iscrizioni al Torneo Invernale 2027.</p>
+            <div class="time">20 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head message">Messaggi</div>
+        <div class="body">
+          <div class="icon message">MS</div>
+          <div>
+            <p class="title">Nuovo messaggio</p>
+            <p class="msg">Hai ricevuto un nuovo messaggio dal tuo coach.</p>
+            <div class="time">22 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head success">Successo</div>
+        <div class="body">
+          <div class="icon success">OK</div>
+          <div>
+            <p class="title">Operazione completata</p>
+            <p class="msg">La richiesta e stata completata con successo.</p>
+            <div class="time">25 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head warning">Avviso</div>
+        <div class="body">
+          <div class="icon warning">WR</div>
+          <div>
+            <p class="title">Avviso sistema</p>
+            <p class="msg">Controlla i tuoi dati profilo per evitare blocchi sulle prenotazioni.</p>
+            <div class="time">28 minuti fa</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="head error">Errore</div>
+        <div class="body">
+          <div class="icon error">ER</div>
+          <div>
+            <p class="title">Errore operazione</p>
+            <p class="msg">Non e stato possibile completare l'operazione. Riprova.</p>
+            <div class="time">31 minuti fa</div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <p class="legend">
+      <strong>Nota:</strong> questa e una preview visuale statica. I testi reali vengono generati dalle API in base al ruolo
+      dell'attore (admin/gestore/maestro/atleta), ai partecipanti e al tipo evento.
+    </p>
+  </main>
+</body>
+</html>

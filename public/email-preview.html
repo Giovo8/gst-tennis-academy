@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GST Academy — Anteprima Email &amp; Notifiche</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #0f172a; }
+    header { background: #034863; color: #fff; padding: 20px 32px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header p { font-size: 12px; color: #d9effb; margin-top: 2px; }
+    .logo-circle { width: 40px; height: 40px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+
+    nav { background: #fff; border-bottom: 1px solid #dbe7ef; padding: 0 32px; display: flex; gap: 0; overflow-x: auto; }
+    nav a { display: block; padding: 14px 18px; font-size: 13px; font-weight: 600; color: #64748b; text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; transition: all .15s; }
+    nav a:hover { color: #034863; }
+    nav a.active { color: #034863; border-bottom-color: #034863; }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-title { font-size: 22px; font-weight: 800; color: #034863; margin-bottom: 4px; }
+    .section-sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+
+    .email-wrapper { background: #fff; border-radius: 14px; border: 1px solid #dbe7ef; overflow: hidden; box-shadow: 0 2px 12px rgba(3,72,99,.07); }
+    .email-meta { background: #f8fbfd; border-bottom: 1px solid #edf2f7; padding: 14px 18px; font-size: 12px; color: #475569; }
+    .email-meta strong { color: #0f172a; }
+    .email-meta .subject { font-size: 14px; font-weight: 700; color: #034863; margin-bottom: 6px; }
+    .email-meta .row { display: flex; gap: 6px; margin-top: 3px; }
+    .email-meta .label { font-weight: 600; min-width: 44px; }
+    .email-body { padding: 20px; }
+
+    /* Notification cards */
+    .notif-list { display: flex; flex-direction: column; gap: 12px; }
+    .notif-card { background: #fff; border-radius: 12px; border: 1px solid #dbe7ef; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; box-shadow: 0 1px 4px rgba(3,72,99,.06); }
+    .notif-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .notif-icon.booking   { background: #e0f2fe; }
+    .notif-icon.tournament{ background: #fef9c3; }
+    .notif-icon.message   { background: #f0fdf4; }
+    .notif-icon.announce  { background: #fdf2f8; }
+    .notif-icon.arena     { background: #fff7ed; }
+    .notif-icon.general   { background: #f8fafc; }
+    .notif-body { flex: 1; }
+    .notif-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .notif-msg { font-size: 13px; color: #475569; line-height: 1.5; }
+    .notif-meta { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+    .notif-unread { width: 8px; height: 8px; background: #034863; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+    .notif-link { font-size: 12px; color: #034863; font-weight: 600; margin-top: 6px; display: inline-block; text-decoration: none; }
+
+    .divider { margin: 32px 0; border: none; border-top: 1px solid #dbe7ef; }
+
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+    .tag.gestore  { background: #e0f2fe; color: #034863; }
+    .tag.atleta   { background: #dcfce7; color: #166534; }
+    .tag.maestro  { background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-circle">🎾</div>
+  <div>
+    <h1>GST Academy — Preview Email &amp; Notifiche</h1>
+    <p>Tutte le comunicazioni inviate dalla piattaforma</p>
+  </div>
+</header>
+
+<nav>
+  <a href="#" class="active" onclick="show('booking-created', this)">Prenotazione creata</a>
+  <a href="#" onclick="show('booking-deleted', this)">Prenotazione eliminata</a>
+  <a href="#" onclick="show('maestro-email', this)">Email maestro</a>
+  <a href="#" onclick="show('signup', this)">Registrazione</a>
+  <a href="#" onclick="show('notifications', this)">Notifiche in-app</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- BOOKING CREATED                                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="container">
+
+<section id="booking-created" class="section active">
+  <div class="section-title">Prenotazione creata</div>
+  <div class="section-sub">Inviate quando viene creata una prenotazione. Due versioni: all'atleta e alla segreteria/gestore.</div>
+
+  <span class="tag atleta">→ Atleta</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Nuova prenotazione registrata — Campo 2 — 15/05/2026 10:00</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> mario.rossi@example.com</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova prenotazione registrata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">Mario Rossi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">Mario Rossi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">mario.rossi@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">Campo 2</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">Campo</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">singolo</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">15/05/2026</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">10:00 - 11:00</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">abc-123-def</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Creata il</strong></td><td style="padding: 8px 10px;">01/05/2026, 14:32:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri le mie prenotazioni</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <span class="tag gestore">→ Segreteria / Gestore</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Nuova lezione privata prenotata — Campo 1 — 16/05/2026 09:00</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> segreteriatennis.gst@gmail.com</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova lezione privata prenotata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">Segreteria GST</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">Luca Bianchi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">luca.bianchi@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">Campo 1</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">Lezione privata</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">Marco Ferretti</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">16/05/2026</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">09:00 - 10:00</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">xyz-456-ghi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Creata il</strong></td><td style="padding: 8px 10px;">01/05/2026, 15:10:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri gestione prenotazioni</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- BOOKING DELETED                                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="booking-deleted" class="section">
+  <div class="section-title">Prenotazione eliminata</div>
+  <div class="section-sub">Inviate quando una prenotazione viene cancellata — alla segreteria e all'atleta.</div>
+
+  <span class="tag gestore">→ Segreteria / Gestore</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Prenotazione eliminata — Campo 2 — 15/05/2026 10:00</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> segreteriatennis.gst@gmail.com</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #034863;">Prenotazione eliminata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">Mario Rossi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">mario.rossi@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata da</strong></td><td style="padding: 8px 10px;">Segreteria GST</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">Campo 2</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">Campo</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Modalità</strong></td><td style="padding: 8px 10px;">singolo</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">15/05/2026</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">10:00 - 11:00</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">abc-123-def</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata il</strong></td><td style="padding: 8px 10px;">01/05/2026, 16:45:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri gestione prenotazioni</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <span class="tag atleta">→ Atleta</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Lezione privata eliminata — Campo 1 — 16/05/2026 09:00</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> luca.bianchi@example.com</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #034863;">Lezione privata eliminata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">Luca Bianchi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">luca.bianchi@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata da</strong></td><td style="padding: 8px 10px;">Segreteria GST</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">Campo 1</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">Lezione privata</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">Marco Ferretti</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">16/05/2026</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">09:00 - 10:00</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">xyz-456-ghi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Eliminata il</strong></td><td style="padding: 8px 10px;">01/05/2026, 16:45:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri le mie prenotazioni</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MAESTRO EMAIL                                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="maestro-email" class="section">
+  <div class="section-title">Email al maestro</div>
+  <div class="section-sub">Inviata al maestro quando viene prenotata una lezione privata con lui assegnato.</div>
+
+  <span class="tag maestro">→ Maestro</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Nuova lezione privata prenotata — Campo 1 — 16/05/2026 09:00</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> marco.ferretti@gstennis.it</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova lezione privata prenotata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">Segreteria GST</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">Luca Bianchi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">luca.bianchi@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Campo</strong></td><td style="padding: 8px 10px;">Campo 1</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Tipo</strong></td><td style="padding: 8px 10px;">Lezione privata</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Maestro</strong></td><td style="padding: 8px 10px;">Marco Ferretti</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Data</strong></td><td style="padding: 8px 10px;">16/05/2026</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Orario</strong></td><td style="padding: 8px 10px;">09:00 - 10:00</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID prenotazione</strong></td><td style="padding: 8px 10px;">xyz-456-ghi</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Creata il</strong></td><td style="padding: 8px 10px;">01/05/2026, 15:10:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri la tua agenda</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SIGNUP                                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="signup" class="section">
+  <div class="section-title">Nuova registrazione</div>
+  <div class="section-sub">Inviata alla segreteria e (opzionalmente) all'atleta stesso quando completa la registrazione.</div>
+
+  <span class="tag gestore">→ Segreteria / Gestore</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Nuova registrazione utente — Giulia Conti</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> segreteriatennis.gst@gmail.com</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova registrazione completata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Nome completo</strong></td><td style="padding: 8px 10px;">Giulia Conti</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email</strong></td><td style="padding: 8px 10px;">giulia.conti@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Ruolo</strong></td><td style="padding: 8px 10px;">atleta</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Telefono</strong></td><td style="padding: 8px 10px;">+39 333 4455667</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Invite code</strong></td><td style="padding: 8px 10px;">GST2026</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>ID utente</strong></td><td style="padding: 8px 10px;">usr-abc-123</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Registrato il</strong></td><td style="padding: 8px 10px;">01/05/2026, 10:22:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri dettaglio utente</a>
+          </p>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri elenco utenti</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <span class="tag atleta">→ Atleta (benvenuto)</span>
+  <div class="email-wrapper">
+    <div class="email-meta">
+      <div class="subject">Nuova registrazione utente — Giulia Conti</div>
+      <div class="row"><span class="label">Da:</span> GST Academy &lt;noreply@gstennis.it&gt;</div>
+      <div class="row"><span class="label">A:</span> giulia.conti@example.com</div>
+    </div>
+    <div class="email-body">
+      <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #dbe7ef; border-radius: 12px; overflow: hidden;">
+        <div style="background: #034863; padding: 14px 18px;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 44px; vertical-align: middle;">
+                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎾</div>
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding: 18px; background: #ffffff;">
+          <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">Nuova registrazione completata</h2>
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
+            <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Nome completo</strong></td><td style="padding: 8px 10px;">Giulia Conti</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email</strong></td><td style="padding: 8px 10px;">giulia.conti@example.com</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Ruolo</strong></td><td style="padding: 8px 10px;">atleta</td></tr>
+            <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Registrato il</strong></td><td style="padding: 8px 10px;">01/05/2026, 10:22:00</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri il tuo profilo</a>
+          </p>
+          <p style="margin: 10px 0 0 0;">
+            <a href="#" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #034863; color: #ffffff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Apri dashboard atleta</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- NOTIFICHE IN-APP                                     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="notifications" class="section">
+  <div class="section-title">Notifiche in-app</div>
+  <div class="section-sub">Notifiche mostrate nella campanella della dashboard. Tipi: booking, tournament, message, announcement, arena_challenge, arena_challenge_booked, general.</div>
+
+  <div class="notif-list">
+
+    <div class="notif-card">
+      <div class="notif-icon booking">📅</div>
+      <div class="notif-body">
+        <div class="notif-title">Prenotazione confermata</div>
+        <div class="notif-msg">La tua prenotazione per Campo 2 del 15/05/2026 alle 10:00 è stata confermata.</div>
+        <div class="notif-meta">booking · 2 minuti fa</div>
+        <a href="#" class="notif-link">Vai alla prenotazione →</a>
+      </div>
+      <div class="notif-unread"></div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon booking">🗑️</div>
+      <div class="notif-body">
+        <div class="notif-title">Prenotazione eliminata</div>
+        <div class="notif-msg">La prenotazione per Campo 1 del 16/05/2026 alle 09:00 è stata eliminata dalla segreteria.</div>
+        <div class="notif-meta">booking · 1 ora fa</div>
+        <a href="#" class="notif-link">Vai alla prenotazione →</a>
+      </div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon arena">⚔️</div>
+      <div class="notif-body">
+        <div class="notif-title">Nuova sfida ricevuta</div>
+        <div class="notif-msg">Mario Rossi ti ha sfidato per una partita in Arena il 20/05/2026.</div>
+        <div class="notif-meta">arena_challenge · 30 minuti fa</div>
+        <a href="#" class="notif-link">Visualizza sfida →</a>
+      </div>
+      <div class="notif-unread"></div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon arena">✅</div>
+      <div class="notif-body">
+        <div class="notif-title">Sfida prenotata</div>
+        <div class="notif-msg">La sfida con Luca Bianchi su Campo 3 il 22/05/2026 alle 18:00 è stata confermata.</div>
+        <div class="notif-meta">arena_challenge_booked · 15 minuti fa</div>
+        <a href="#" class="notif-link">Vai all'arena →</a>
+      </div>
+      <div class="notif-unread"></div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon tournament">🏆</div>
+      <div class="notif-body">
+        <div class="notif-title">Il torneo è iniziato!</div>
+        <div class="notif-msg">Il torneo "Torneo Primavera 2026" è ora in corso. Controlla il tabellone per vedere i tuoi match.</div>
+        <div class="notif-meta">tournament · ieri</div>
+        <a href="#" class="notif-link">Vai al torneo →</a>
+      </div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon tournament">🎯</div>
+      <div class="notif-body">
+        <div class="notif-title">Nuovo match programmato</div>
+        <div class="notif-msg">Il tuo match contro Giulia Conti nel torneo "Torneo Primavera 2026" è stato programmato.</div>
+        <div class="notif-meta">tournament · ieri</div>
+        <a href="#" class="notif-link">Vai al torneo →</a>
+      </div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon message">💬</div>
+      <div class="notif-body">
+        <div class="notif-title">Nuovo messaggio</div>
+        <div class="notif-msg">Hai ricevuto un nuovo messaggio da Marco Ferretti nel canale Maestri.</div>
+        <div class="notif-meta">message · 5 minuti fa</div>
+        <a href="#" class="notif-link">Apri chat →</a>
+      </div>
+      <div class="notif-unread"></div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon announce">📢</div>
+      <div class="notif-body">
+        <div class="notif-title">Comunicazione dalla segreteria</div>
+        <div class="notif-msg">Il campo 4 sarà in manutenzione dal 10 al 12 maggio 2026. Le prenotazioni esistenti saranno riorganizzate.</div>
+        <div class="notif-meta">announcement · 2 giorni fa</div>
+      </div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-icon general">ℹ️</div>
+      <div class="notif-body">
+        <div class="notif-title">Benvenuto in GST Academy</div>
+        <div class="notif-msg">La tua registrazione è stata completata. Inizia a esplorare la piattaforma!</div>
+        <div class="notif-meta">general · 3 giorni fa</div>
+        <a href="#" class="notif-link">Vai alla dashboard →</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<script>
+  function show(sectionId, link) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+    link.classList.add('active');
+  }
+</script>
+</body>
+</html>

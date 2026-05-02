@@ -213,15 +213,13 @@ export async function sendBookingCreatedEmailToGestore(params: SendBookingNotifi
                     <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
                   </td>
                   <td style="vertical-align: middle; padding-left: 10px;">
-                    <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
+                    <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
                   </td>
                 </tr>
               </table>
             </div>
             <div style="padding: 18px; background: #ffffff;">
               <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
-              <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
                 <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeBookedByName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
@@ -430,15 +428,13 @@ export async function sendBookingCreatedEmailToAthlete(params: SendBookingNotifi
                     <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
                   </td>
                   <td style="vertical-align: middle; padding-left: 10px;">
-                    <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
+                    <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
                   </td>
                 </tr>
               </table>
             </div>
             <div style="padding: 18px; background: #ffffff;">
               <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
-              <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
                 <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeBookedByName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
@@ -665,15 +661,13 @@ export async function sendBookingDeletedEmailToRecipients(
                     <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
                   </td>
                   <td style="vertical-align: middle; padding-left: 10px;">
-                    <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                    <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
+                    <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
                   </td>
                 </tr>
               </table>
             </div>
             <div style="padding: 18px; background: #ffffff;">
               <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #034863;">${bookingEmailCopy.title}</h2>
-              <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
                 <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>
                 <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Email atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeAthleteEmail)}</td></tr>
@@ -876,15 +870,13 @@ export async function sendBookingCreatedEmailToMaestro(params: SendBookingNotifi
                 <img src="${logoUrl}" alt="Logo GST Academy" width="36" height="36" style="display: block; border: 0; outline: none; text-decoration: none; border-radius: 8px;" />
               </td>
               <td style="vertical-align: middle; padding-left: 10px;">
-                <div style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
-                <div style="color: #d9effb; font-size: 12px; margin-top: 2px;">${bookingEmailCopy.bannerLabel}</div>
+                <div style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">GST Academy</div>
               </td>
             </tr>
           </table>
         </div>
         <div style="padding: 18px; background: #ffffff;">
           <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0b1c2c;">${bookingEmailCopy.title}</h2>
-          <p style="margin: 0 0 16px 0; color: #334155;">${bookingEmailCopy.intro}</p>
           <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #edf2f7;">
             <tr><td style="padding: 8px 10px; width: 170px; background: #f8fbfd;"><strong>Prenotata da</strong></td><td style="padding: 8px 10px;">${escapeHtml(safeBookedByName)}</td></tr>
             <tr><td style="padding: 8px 10px; background: #f8fbfd;"><strong>Atleta</strong></td><td style="padding: 8px 10px;">${escapeHtml(params.athleteName)}</td></tr>

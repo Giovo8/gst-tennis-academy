@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Mail, Swords, User as UserIcon, Award, Trophy, Target } from "lucide-react";
+import { X, Mail, Swords, User as UserIcon, Trophy, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface PlayerProfile {
@@ -16,7 +16,6 @@ interface PlayerProfile {
     winRate: number;
     streak: number;
     points: number;
-    level: string;
   };
 }
 
@@ -38,23 +37,6 @@ export default function PlayerProfileModal({
   const router = useRouter();
 
   if (!isOpen || !player) return null;
-
-  const getLevelColor = (level: string) => {
-    switch (level?.toLowerCase()) {
-      case "oro":
-        return "text-yellow-600 bg-yellow-50 border-yellow-200";
-      case "argento":
-        return "text-gray-600 bg-gray-50 border-gray-200";
-      case "bronzo":
-        return "text-orange-600 bg-orange-50 border-orange-200";
-      case "platino":
-        return "text-purple-600 bg-purple-50 border-purple-200";
-      case "diamante":
-        return "text-blue-600 bg-blue-50 border-blue-200";
-      default:
-        return "text-gray-600 bg-gray-50 border-gray-200";
-    }
-  };
 
   function handleMessage() {
     if (!player) return;
@@ -100,14 +82,6 @@ export default function PlayerProfileModal({
             <h2 className="text-2xl font-bold text-gray-900 mb-1">{player.full_name}</h2>
             {player.stats && (
               <div className="flex items-center justify-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getLevelColor(
-                    player.stats.level
-                  )}`}
-                >
-                  <Award className="h-3 w-3" />
-                  {player.stats.level}
-                </span>
                 <span className="text-sm text-gray-600">#{player.stats.ranking}</span>
               </div>
             )}

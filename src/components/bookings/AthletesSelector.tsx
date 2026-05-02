@@ -38,6 +38,7 @@ interface AthletesSelectorProps {
   useSecondaryParticipantBorder?: boolean;
   previousGuests?: PreviousGuest[];
   allowGuestParticipants?: boolean;
+  avatarByUserId?: Record<string, string>;
 }
 
 export default function AthletesSelector({
@@ -52,6 +53,7 @@ export default function AthletesSelector({
   useSecondaryParticipantBorder = false,
   previousGuests = [],
   allowGuestParticipants = true,
+  avatarByUserId = {},
 }: AthletesSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -337,10 +339,14 @@ export default function AthletesSelector({
               return (
             <li key={`${athlete.userId || athlete.fullName}-${originalIndex}`}>
               <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: cardBackground }}>
-                <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                  <span className="text-sm font-bold text-white leading-none">
-                    {athlete.fullName.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
-                  </span>
+                <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
+                  {athlete.userId && avatarByUserId[athlete.userId] ? (
+                    <img src={avatarByUserId[athlete.userId]} alt={athlete.fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-white leading-none">
+                      {athlete.fullName.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm truncate">{athlete.fullName}</p>
