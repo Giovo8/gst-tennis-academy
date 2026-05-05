@@ -72,7 +72,7 @@ describe("bookingDeletionNotifications", () => {
 
       expect(notification).toEqual({
         type: "booking",
-        title: "Prenotazione eliminata da utente",
+        title: "Prenotazione campo eliminata da utente",
         message: expect.stringContaining("Mario Rossi ha eliminato la prenotazione Campo 2"),
         link: "/dashboard/admin/bookings",
       });

@@ -131,7 +131,7 @@ export async function GET(req: Request) {
     let result = data || [];
     if (includeCounts && result.length > 0 && (Date.now() - startTime < requestTimeout - 2000)) {
       result = await Promise.all(
-        result.slice(0, 10).map(async (tournament) => {
+        result.map(async (tournament) => {
           const { count } = await supabase
             .from("tournament_participants")
             .select("id", { count: "exact", head: true })

@@ -6,6 +6,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import { Newspaper, Plus, Pencil, Loader2, AlertCircle, CheckCircle, Upload, Link as LinkIcon, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
+import { createNotification } from "@/lib/notifications/createNotification";
 
 type News = {
   id: string;
@@ -112,7 +113,8 @@ export default function CreateNewsPage() {
       } else {
         // Create new
         const { data: userData } = await supabase.auth.getUser();
-        const { error } = await supabase
+        const creatorId = userData.user?.id;
+        const { data: insertedNews, error } = await supabase
           .from("news")
           .insert({
             title,
@@ -121,11 +123,36 @@ export default function CreateNewsPage() {
             excerpt: summary.substring(0, 200),
             image_url: imageUrl || null,
             is_published: true,
-            author_id: userData.user?.id,
+            author_id: creatorId,
             published_at: new Date().toISOString(),
-          });
+          })
+          .select("id")
+          .single();
 
         if (error) throw error;
+
+        // Notify all users except the creator
+        if (insertedNews?.id) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id")
+            .neq("id", creatorId ?? "");
+
+          if (profiles && profiles.length > 0) {
+            await Promise.allSettled(
+              profiles.map((p) =>
+                createNotification({
+                  userId: p.id,
+                  type: "announcement",
+                  title: "Nuova news pubblicata",
+                  message: title,
+                  link: `/news/${insertedNews.id}`,
+                })
+              )
+            );
+          }
+        }
+
         setSuccess("News creata con successo!");
         setTimeout(() => router.push("/dashboard/admin/news"), 1500);
       }

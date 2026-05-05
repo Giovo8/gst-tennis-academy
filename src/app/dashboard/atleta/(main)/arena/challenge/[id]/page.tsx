@@ -11,6 +11,13 @@ import {
   Target,
   Handshake,
 } from "lucide-react";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+} from "@/components/ui";
 
 interface Challenge {
   id: string;
@@ -217,6 +224,47 @@ export default function AtletaChallengePage() {
   const [showScoreForm, setShowScoreForm] = useState(false);
   const [score, setScore] = useState("");
   const [savingScore, setSavingScore] = useState(false);
+
+  type ParticipantStats = {
+    name: string;
+    points: number;
+    wins: number;
+    losses: number;
+    setsWon: number;
+    totalMatches: number;
+    winRate: number;
+    ranking: number;
+  };
+  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantStats | null>(null);
+  const [loadingParticipantStats, setLoadingParticipantStats] = useState(false);
+
+  async function openParticipantModal(participantId: string, name: string) {
+    setLoadingParticipantStats(true);
+    setSelectedParticipant({ name, points: 0, wins: 0, losses: 0, setsWon: 0, totalMatches: 0, winRate: 0, ranking: 0 });
+    try {
+      const res = await fetch(`/api/arena/stats?user_id=${participantId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const s = data.stats;
+        if (s) {
+          setSelectedParticipant({
+            name,
+            points: s.points || 0,
+            wins: s.wins || 0,
+            losses: s.losses || 0,
+            setsWon: s.sets_won || 0,
+            totalMatches: (s.wins || 0) + (s.losses || 0),
+            winRate: s.win_rate || 0,
+            ranking: s.ranking || 0,
+          });
+        }
+      }
+    } catch {
+      // keep placeholder
+    } finally {
+      setLoadingParticipantStats(false);
+    }
+  }
 
   useEffect(() => {
     if (id) void loadChallengeDetails();
@@ -459,30 +507,36 @@ export default function AtletaChallengePage() {
 
               return (
                 <li key={key}>
-                  <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: bg }}>
-                    <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
-                      {participant.avatar_url ? (
-                        <img src={participant.avatar_url} alt={participant.full_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-sm font-bold text-white leading-none">
-                          {getPlayerInitial(participant.full_name)}
-                        </span>
+                  <button
+                    type="button"
+                    className="w-full text-left"
+                    onClick={() => openParticipantModal(participant.id, participant.full_name)}
+                  >
+                    <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: bg }}>
+                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
+                        {participant.avatar_url ? (
+                          <img src={participant.avatar_url} alt={participant.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-bold text-white leading-none">
+                            {getPlayerInitial(participant.full_name)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm">
+                          {participant.full_name}
+                        </p>
+                        {isAwaitingAcceptance ? (
+                          <p className="text-xs text-white/70 mt-0.5">In attesa di accettazione</p>
+                        ) : participant.email ? (
+                          <p className="text-xs text-white/60 truncate mt-0.5">{participant.email}</p>
+                        ) : null}
+                      </div>
+                      {setsWon !== null && (
+                        <span className="text-white font-bold text-lg flex-shrink-0">{setsWon}</span>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white text-sm">
-                        {participant.full_name}
-                      </p>
-                      {isAwaitingAcceptance ? (
-                        <p className="text-xs text-white/70 mt-0.5">In attesa di accettazione</p>
-                      ) : participant.email ? (
-                        <p className="text-xs text-white/60 truncate mt-0.5">{participant.email}</p>
-                      ) : null}
-                    </div>
-                    {setsWon !== null && (
-                      <span className="text-white font-bold text-lg flex-shrink-0">{setsWon}</span>
-                    )}
-                  </div>
+                  </button>
                 </li>
               );
             })}
@@ -808,6 +862,68 @@ export default function AtletaChallengePage() {
           </>
         )}
       </div>
+      {/* Participant Stats Modal */}
+      {selectedParticipant && (
+        <Modal open={!!selectedParticipant} onOpenChange={(open) => { if (!open) setSelectedParticipant(null); }}>
+          <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+            <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+              <ModalTitle className="text-white text-base sm:text-lg">
+                {selectedParticipant.name}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+              {loadingParticipantStats ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+                  {selectedParticipant.ranking > 0 && (
+                    <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                      <span className="text-xs font-semibold text-gray-900">Posizione</span>
+                      <span className="text-xs text-gray-600">{selectedParticipant.ranking}</span>
+                    </div>
+                  )}
+                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Punti</span>
+                    <span className="text-xs text-gray-600">{selectedParticipant.points}</span>
+                  </div>
+                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Partite</span>
+                    <span className="text-xs text-gray-600">{selectedParticipant.totalMatches}</span>
+                  </div>
+                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Vittorie</span>
+                    <span className="text-xs text-gray-600">{selectedParticipant.wins}</span>
+                  </div>
+                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Sconfitte</span>
+                    <span className="text-xs text-gray-600">{selectedParticipant.losses}</span>
+                  </div>
+                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Set vinti</span>
+                    <span className="text-xs text-gray-600">{selectedParticipant.setsWon}</span>
+                  </div>
+                  {selectedParticipant.totalMatches > 0 && (
+                    <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 items-center bg-white">
+                      <span className="text-xs font-semibold text-gray-900">Win rate</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-secondary rounded-full transition-all"
+                            style={{ width: `${Math.round(selectedParticipant.winRate)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-600 tabular-nums w-8 text-right">{Math.round(selectedParticipant.winRate)}%</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      )}
     </div>
   );
 }

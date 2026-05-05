@@ -424,8 +424,9 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           .select("id, start_time, end_time, status, type, user_id, coach_id")
           .eq("court", selectedCourt)
           .neq("status", "cancelled")
-          .gte("start_time", `${dateStr}T00:00:00`)
-          .lte("start_time", `${dateStr}T23:59:59`);
+          .neq("status", "rejected")
+          .lt("start_time", `${dateStr}T23:59:59.999Z`)
+          .gt("end_time", `${dateStr}T00:00:00.000Z`);
 
         // Get court blocks for this court and date
         const startOfDay = new Date(selectedDate);
@@ -438,8 +439,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           .select("id, start_time, end_time, reason")
           .eq("court_id", selectedCourt)
           .eq("is_disabled", false)
-          .gte("start_time", startOfDay.toISOString())
-          .lte("start_time", endOfDay.toISOString());
+          .lt("start_time", `${dateStr}T23:59:59.999Z`)
+          .gt("end_time", `${dateStr}T00:00:00.000Z`);
 
         // Fetch profiles for bookings
         const userIds = [...new Set([

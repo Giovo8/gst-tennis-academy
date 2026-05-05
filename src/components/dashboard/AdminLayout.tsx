@@ -21,6 +21,7 @@ import {
   Swords,
   FileText,
   Activity,
+  BarChart2,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -139,6 +140,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Log",
       href: "/dashboard/admin/platform-logs",
       icon: <Activity className="h-5 w-5" />,
+    },
+    {
+      label: "Statistiche",
+      href: "/dashboard/admin/statistiche",
+      icon: <BarChart2 className="h-5 w-5" />,
     },
   ];
 

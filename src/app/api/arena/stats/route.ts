@@ -77,14 +77,23 @@ export async function GET(req: Request) {
         
         const { data: profiles } = await supabaseServer
           .from("profiles")
-          .select("id, full_name, avatar_url")
+          .select("id, full_name, avatar_url, role, metadata")
           .in("id", userIds);
 
-        // Attach profiles to stats
-        const enrichedLeaderboard = data.map(stat => ({
-          ...stat,
-          profile: profiles?.find(p => p.id === stat.user_id),
-        }));
+        // Attach profiles to stats, filtering out admin/gestore without maestro secondary role
+        const enrichedLeaderboard = data
+          .map(stat => ({
+            ...stat,
+            profile: profiles?.find(p => p.id === stat.user_id),
+          }))
+          .filter(entry => {
+            const p = entry.profile;
+            if (!p) return false;
+            if (p.role === "atleta" || p.role === "maestro") return true;
+            // admin/gestore: only include if "maestro" is in secondary_roles
+            const secondaryRoles = (p.metadata as { secondary_roles?: unknown } | null)?.secondary_roles;
+            return Array.isArray(secondaryRoles) && (secondaryRoles as string[]).map(String).includes("maestro");
+          });
 
         return NextResponse.json({ leaderboard: enrichedLeaderboard });
       }

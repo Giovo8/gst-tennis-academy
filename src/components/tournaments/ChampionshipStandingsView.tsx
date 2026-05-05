@@ -506,92 +506,63 @@ export default function ChampionshipStandingsView({
       )}
 
       {activeTab === 'standings' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {loading ? (
-            <div className="bg-white rounded-md p-12 flex items-center justify-center">
+            <div className="flex items-center justify-center p-12">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
             </div>
           ) : standings.length === 0 ? (
-            <div className="bg-white rounded-md p-12 text-center">
+            <div className="p-12 text-center">
               <Trophy className="h-16 w-16 mx-auto mb-4 text-secondary/20" />
-              <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna classifica</h3>
               <p className="text-secondary/60">Completa alcune partite per vedere la classifica</p>
             </div>
           ) : (
-            <>
-              {/* Header Row */}
-              <div className="bg-secondary rounded-lg px-5 py-3 mb-3 border border-secondary">
-                <div className="grid grid-cols-[50px_40px_1fr_80px_80px_100px_100px] gap-4 items-center">
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Pos</div>
-                  <div className="text-xs font-bold text-transparent uppercase text-center">#</div>
-                  <div className="text-xs font-bold text-white/80 uppercase">Atleta</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">PG</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Punti</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Set</div>
-                  <div className="text-xs font-bold text-white/80 uppercase text-center">Diff. Game</div>
-                </div>
-              </div>
-
-              {/* Data Rows */}
-              {standings.map((standing) => {
-                const avatarUrl = standing.participant.profiles?.avatar_url;
+            <ul className="flex flex-col gap-2 max-h-[560px] overflow-y-auto pr-1">
+              {standings.map((standing, index) => {
                 const fullName = standing.participant.profiles?.full_name || standing.participant.player_name || 'Sconosciuto';
-                
+                const pos = standing.position;
+                let rowBg = 'var(--secondary)';
+                if (pos === 1) rowBg = 'var(--secondary-hover)';
+                else if (pos === 2) rowBg = '#033247';
+                else if (pos === 3) rowBg = '#033d56';
+
                 return (
-                  <div
-                    key={standing.participant.id}
-                    className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                    style={{ borderLeftColor:
-                      standing.position === 1 ? '#eab308' :
-                      standing.position === 2 ? '#9ca3af' :
-                      standing.position === 3 ? '#f97316' :
-                      '#0f4c7c'
-                    }}
-                  >
-                    <div className="grid grid-cols-[50px_40px_1fr_80px_80px_100px_100px] gap-4 items-center">
-                      <div className="flex items-center justify-center">
-                        <span className="font-bold text-base text-secondary">
-                          {standing.position}
-                        </span>
+                  <li key={`${standing.participant.id}-${index}`}>
+                    <div
+                      className="flex items-center gap-3 py-3 px-3 rounded-lg"
+                      style={{ background: rowBg }}
+                    >
+                      {/* Posizione */}
+                      <div className="flex-shrink-0 flex items-center justify-center bg-white/10 rounded-lg w-10 h-10">
+                        <span className="text-base font-bold text-white leading-none tabular-nums">{pos}</span>
                       </div>
 
-                      <div className="flex items-center justify-center">
-                        <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={fullName}
-                              className="absolute inset-0 w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{fullName.charAt(0).toUpperCase()}</span>
-                          )}
+                      {/* Nome */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">{fullName}</p>
+                        <p className="text-xs text-white/50 mt-0.5">
+                          {standing.matchesPlayed} partite &middot; {standing.matchesWon}V {standing.matchesLost}P
+                        </p>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <div className="text-center hidden sm:block">
+                          <p className="text-xs text-white/50 uppercase tracking-wide">Set</p>
+                          <p className={`text-sm font-bold tabular-nums ${standing.setsDiff > 0 ? 'text-emerald-300' : standing.setsDiff < 0 ? 'text-red-300' : 'text-white/60'}`}>
+                            {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-white/50 uppercase tracking-wide">Pt</p>
+                          <p className="text-sm font-bold text-white tabular-nums">{standing.points}</p>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="font-bold text-secondary">
-                          {fullName}
-                        </div>
-                      </div>
-
-                    <div className="text-center text-sm font-semibold text-secondary">{standing.matchesPlayed}</div>
-                    <div className="text-center text-sm font-semibold text-secondary">{standing.points}</div>
-                    <div className="text-center text-sm font-semibold">
-                      <span className={standing.setsDiff > 0 ? 'text-emerald-600' : standing.setsDiff < 0 ? 'text-red-600' : 'text-secondary/60'}>
-                        {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
-                      </span>
                     </div>
-                    <div className="text-center text-sm font-semibold">
-                      <span className={standing.gamesDiff > 0 ? 'text-emerald-600' : standing.gamesDiff < 0 ? 'text-red-600' : 'text-secondary/60'}>
-                        {standing.gamesDiff > 0 ? '+' : ''}{standing.gamesDiff}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  </li>
                 );
               })}
-            </>
+            </ul>
           )}
         </div>
       )}

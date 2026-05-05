@@ -27,93 +27,48 @@ export default function TournamentsSection() {
 
   useEffect(() => {
     let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 2;
-    let abortController: AbortController | null = null;
 
     async function load() {
       try {
-        // Create abort controller with manual timeout (better browser support)
-        abortController = new AbortController();
-        const timeoutId = setTimeout(() => abortController?.abort(), 9000);
-
-        // Get all tournaments like /tornei page does
         const res = await fetch("/api/tournaments", {
-          signal: abortController.signal,
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: { 'Accept': 'application/json' },
         });
 
-        clearTimeout(timeoutId);
-        
         if (!res.ok) {
-          const errorText = await res.text();
-          console.error("[TournamentsSection] API error:", res.status, res.statusText, errorText);
-          
-          // Retry logic for 5xx errors
-          if (res.status >= 500 && retryCount < maxRetries) {
-            retryCount++;
-            console.warn(`[TournamentsSection] Retrying (${retryCount}/${maxRetries})...`);
-            setTimeout(load, 1000 * retryCount); // Exponential backoff
-            return;
-          }
-          
           if (mounted) {
             setError(`Errore nel caricamento (${res.status})`);
             setLoading(false);
           }
           return;
         }
-        
+
         const json = await res.json();
         const tournaments = json.tournaments || [];
-        
-        if (!Array.isArray(tournaments)) {
-          console.warn("[TournamentsSection] Unexpected response format:", json);
-        }
-        
-        // Filtra via i tornei conclusi/archiviati (backup filter)
-        const activeTournaments = tournaments.filter(
+
+        const activeTournaments = (Array.isArray(tournaments) ? tournaments : []).filter(
           (t: Tournament) =>
             t.status !== 'Concluso' &&
             t.status !== 'Completato' &&
             t.status !== 'Chiuso'
         );
-        
+
         if (mounted) {
           setItems(activeTournaments);
-          setError(null); // Clear any previous errors
+          setError(null);
           setLoading(false);
         }
-      } catch (err: any) {
-        // Handle abort specifically
-        if (err?.name === 'AbortError') {
-          console.warn("[TournamentsSection] Request aborted/timed out");
-        } else {
-          console.error("[TournamentsSection] Fetch failed:", err?.message || err);
-        }
-        
-        // Retry on timeout or network errors
-        if ((err?.name === 'AbortError' || !navigator.onLine) && retryCount < maxRetries) {
-          retryCount++;
-          console.warn(`[TournamentsSection] Retrying (${retryCount}/${maxRetries})...`);
-          setTimeout(load, 1000 * retryCount);
-          return;
-        }
-        
+      } catch (err) {
         if (mounted) {
           setError("Errore nel caricamento dei tornei");
           setLoading(false);
         }
       }
     }
-    
+
     load();
-    
+
     return () => {
       mounted = false;
-      abortController?.abort();
     };
   }, []);
 

@@ -87,6 +87,7 @@ export const bookingStatusSchema = z.enum([
   BOOKING_STATUS.CONFIRMED,
   BOOKING_STATUS.CANCELLED,
   BOOKING_STATUS.REJECTED,
+  BOOKING_STATUS.CANCELLATION_REQUESTED,
 ] as [string, ...string[]]);
 
 // Booking participant schema

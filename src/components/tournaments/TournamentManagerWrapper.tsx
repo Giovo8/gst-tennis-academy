@@ -15,10 +15,11 @@ interface TournamentManagerWrapperProps {
   tournamentId: string;
   isAdmin?: boolean;
   viewOnly?: boolean;
+  sectioned?: boolean;
   onMetaChange?: (meta: TournamentManagerMeta) => void;
 }
 
-export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, onMetaChange }: TournamentManagerWrapperProps) {
+export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, sectioned = false, onMetaChange }: TournamentManagerWrapperProps) {
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export default function TournamentManagerWrapper({ tournamentId, isAdmin = true,
     <TournamentManager
       tournament={tournament}
       isAdmin={isAdmin && !viewOnly}
+      sectioned={sectioned}
       onMetaChange={onMetaChange}
     />
   );

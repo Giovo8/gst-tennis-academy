@@ -309,9 +309,10 @@ export default function EditBookingPage() {
       .select("id, user_id, coach_id, start_time, end_time, type, status")
       .eq("court", selectedCourt)
       .neq("status", "cancelled")
+      .neq("status", "rejected")
       .neq("id", bookingId) // Escludi la prenotazione corrente
-      .gte("start_time", `${dateStr}T00:00:00`)
-      .lte("start_time", `${dateStr}T23:59:59`);
+      .lt("start_time", `${dateStr}T23:59:59.999Z`)
+      .gt("end_time", `${dateStr}T00:00:00.000Z`);
 
     // Get court blocks for this court and date
     const startOfDay = new Date(selectedDate);
@@ -324,8 +325,8 @@ export default function EditBookingPage() {
       .select("id, start_time, end_time, reason")
       .eq("court_id", selectedCourt)
       .eq("is_disabled", false)
-      .gte("start_time", startOfDay.toISOString())
-      .lte("start_time", endOfDay.toISOString());
+      .lt("start_time", `${dateStr}T23:59:59.999Z`)
+      .gt("end_time", `${dateStr}T00:00:00.000Z`);
 
     // Build enriched bookings for display
     const enrichedBookings = bookings?.map(booking => ({

@@ -75,6 +75,7 @@ interface LeaderboardEntry {
   points: number;
   wins: number;
   losses: number;
+  setsWon: number;
   totalMatches: number;
   winRate: number;
 }
@@ -103,6 +104,7 @@ export default function AthleteArenaPage() {
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedLeaderboardEntry, setSelectedLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
 
   const matchesStatusFilter = (status: Challenge["status"]) => {
     if (statusFilter === "all") return true;
@@ -221,10 +223,11 @@ export default function AthleteArenaPage() {
         userId: entry.user_id,
         name: entry.profile?.full_name || "N/A",
         avatar: entry.profile?.avatar_url,
-        ranking: entry.ranking || index + 1,
+        ranking: index + 1,
         points: entry.points || 0,
         wins: entry.wins || 0,
         losses: entry.losses || 0,
+        setsWon: entry.sets_won || 0,
         totalMatches: (entry.wins || 0) + (entry.losses || 0),
         winRate: entry.wins > 0 || entry.losses > 0
           ? (entry.wins / ((entry.wins || 0) + (entry.losses || 0))) * 100
@@ -535,23 +538,29 @@ export default function AthleteArenaPage() {
 
                 return (
                   <li key={`${entry.userId}-${index}`}>
-                    <div
-                      className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                      style={{ background: rankBg }}
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => setSelectedLeaderboardEntry(entry)}
                     >
-                      <div className="flex items-center justify-center bg-white/10 rounded-lg w-10 h-10 flex-shrink-0">
-                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{displayPosition}</span>
-                      </div>
+                      <div
+                        className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+                        style={{ background: rankBg }}
+                      >
+                        <div className="flex items-center justify-center bg-white/10 rounded-lg w-10 h-10 flex-shrink-0">
+                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{displayPosition}</span>
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">
-                          {entry.name || "N/A"}
-                          {isCurrentUser && <span className="ml-1 text-xs text-white/80">(Tu)</span>}
-                        </p>
-                      </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white text-sm truncate">
+                            {entry.name || "N/A"}
+                            {isCurrentUser && <span className="ml-1 text-xs text-white/80">(Tu)</span>}
+                          </p>
+                        </div>
 
-                      <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">{entry.points ?? 0}</span>
-                    </div>
+                        <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">{entry.points ?? 0}</span>
+                      </div>
+                    </button>
                   </li>
                 );
               })}
@@ -559,6 +568,62 @@ export default function AthleteArenaPage() {
           )}
         </div>
       </div>
+
+      {/* Leaderboard Player Modal */}
+      {selectedLeaderboardEntry && (
+        <Modal open={!!selectedLeaderboardEntry} onOpenChange={(open) => { if (!open) setSelectedLeaderboardEntry(null); }}>
+          <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+            <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+              <ModalTitle className="text-white text-base sm:text-lg">
+                {selectedLeaderboardEntry.name}
+                {selectedLeaderboardEntry.userId === userId && <span className="ml-1 text-sm text-white/70">(Tu)</span>}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
+              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+                <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Posizione</span>
+                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.ranking}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Punti</span>
+                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.points}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Partite</span>
+                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.totalMatches}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Vittorie</span>
+                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.wins}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Sconfitte</span>
+                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.losses}</span>
+                </div>
+                <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 bg-white">
+                  <span className="text-xs font-semibold text-gray-900">Set vinti</span>
+                  <span className="text-xs text-gray-600">{selectedLeaderboardEntry.setsWon}</span>
+                </div>
+                {selectedLeaderboardEntry.totalMatches > 0 && (
+                  <div className="px-4 py-3 grid grid-cols-[110px_1fr] gap-2 items-center bg-white">
+                    <span className="text-xs font-semibold text-gray-900">Win rate</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-secondary rounded-full transition-all"
+                          style={{ width: `${Math.round(selectedLeaderboardEntry.winRate)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-600 tabular-nums w-8 text-right">{Math.round(selectedLeaderboardEntry.winRate)}%</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      )}
 
       <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
         <ModalContent

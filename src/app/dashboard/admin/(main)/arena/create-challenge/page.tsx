@@ -237,12 +237,20 @@ export default function CreateChallengePage() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email, phone, avatar_url, role")
-        .in("role", ["atleta", "maestro"])
+        .select("id, full_name, email, phone, avatar_url, role, metadata")
+        .in("role", ["atleta", "maestro", "admin", "gestore"])
         .order("full_name");
 
       if (error) throw error;
-      setPlayers(data || []);
+
+      const filtered = (data || []).filter((p) => {
+        if (p.role === "atleta" || p.role === "maestro") return true;
+        // admin/gestore: include only if they have "maestro" in secondary_roles
+        const secondaryRoles = (p.metadata as { secondary_roles?: unknown } | null)?.secondary_roles;
+        return Array.isArray(secondaryRoles) && secondaryRoles.map(String).includes("maestro");
+      });
+
+      setPlayers(filtered);
     } catch (error) {
       console.error("Error loading players:", error);
     } finally {

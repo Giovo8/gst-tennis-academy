@@ -41,6 +41,7 @@ export function useBookingsRealtime(
         .from("bookings")
         .select("id,user_id,coach_id,court,type,start_time,end_time,status")
         .neq("status", "cancelled")
+        .neq("status", "rejected")
         .gte("start_time", startDay.toISOString())
         .lt("start_time", endDay.toISOString());
 
@@ -86,6 +87,7 @@ export function useBookingsRealtime(
       .from("bookings")
       .select("id,user_id,coach_id,court,type,start_time,end_time,status")
       .neq("status", "cancelled")
+      .neq("status", "rejected")
       .gte("start_time", startDay.toISOString())
       .lt("start_time", endDay.toISOString());
 

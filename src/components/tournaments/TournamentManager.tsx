@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, Users, Target, Loader2, Trash2, Calendar, MoreVertical } from 'lucide-react';
+import Link from 'next/link';
+import { Trophy, Users, Target, Loader2, Trash2, Calendar, MoreVertical, Search } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
@@ -36,15 +37,17 @@ interface TournamentManagerMeta {
 interface TournamentManagerProps {
   tournament: Tournament;
   isAdmin?: boolean;
+  sectioned?: boolean;
   onMetaChange?: (meta: TournamentManagerMeta) => void;
 }
 
-export default function TournamentManager({ tournament, isAdmin = false, onMetaChange }: TournamentManagerProps) {
+export default function TournamentManager({ tournament, isAdmin = false, sectioned = false, onMetaChange }: TournamentManagerProps) {
   const [participants, setParticipants] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'bracket' | 'groups' | 'calendar' | 'standings'>('overview');
   const [openParticipantMenuId, setOpenParticipantMenuId] = useState<string | null>(null);
+  const [participantSearch, setParticipantSearch] = useState('');
 
   useEffect(() => {
     loadData();
@@ -218,6 +221,157 @@ export default function TournamentManager({ tournament, isAdmin = false, onMetaC
     : tournament.current_phase === 'completato'
     ? 'Completato'
     : tournament.current_phase;
+
+  // Helper: render participants list as a section card (bookings/[id] style)
+  const renderParticipantsSection = () => {
+    if (participants.length === 0) return null;
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+        </div>
+        <div className="px-6 py-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary/40" />
+            <input
+              type="text"
+              placeholder="Cerca partecipante..."
+              value={participantSearch}
+              onChange={(e) => setParticipantSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-md bg-white border border-gray-200 text-secondary text-sm placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            />
+          </div>
+          <ul className="flex flex-col gap-2 max-h-[296px] overflow-y-auto pr-1">
+            {participants.filter((p: any) => {
+              if (!participantSearch) return true;
+              const name = (p.profiles?.full_name || p.player_name || '').toLowerCase();
+              return name.includes(participantSearch.toLowerCase());
+            }).map((participant: any, index: number) => {
+              const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
+              const isGuest = !participant.user_id;
+              const initials = fullName.trim().split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+              const bg = isGuest ? '#023b52' : 'var(--secondary)';
+              const rowContent = (
+                <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: bg }}>
+                  <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-white leading-none">{initials}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{fullName}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs font-bold text-white/50 uppercase tracking-wide">
+                      {isGuest ? 'OSPITE' : 'ATLETA'}
+                    </span>
+                    {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
+                      <div className="relative">
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id); }}
+                          className="p-1.5 rounded-md hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {openParticipantMenuId === participant.id && (
+                          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                            <button
+                              onClick={() => handleRemoveParticipant(participant.id, fullName)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Rimuovi
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+              return (
+                <li key={`${participant.id}-${index}`}>
+                  {participant.user_id && isAdmin ? (
+                    <Link href={`/dashboard/admin/users/${participant.user_id}`} className="block hover:opacity-90 transition-opacity">
+                      {rowContent}
+                    </Link>
+                  ) : (
+                    rowContent
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
+  if (sectioned) {
+    const phase = tournament.current_phase as string;
+    const type = tournament.tournament_type;
+    return (
+      <div className="space-y-6">
+        {renderParticipantsSection()}
+
+        {/* Tabellone - eliminazione_diretta */}
+        {type === 'eliminazione_diretta' && (phase === 'eliminazione' || phase === 'completato') && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
+            </div>
+            <div className="px-6 py-4">
+              <EliminationBracketView tournamentId={tournament.id} maxParticipants={tournament.max_participants} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} onBracketGenerated={() => {}} />
+            </div>
+          </div>
+        )}
+
+        {/* Gironi - girone_eliminazione */}
+        {type === 'girone_eliminazione' && (phase === 'gironi' || phase === 'eliminazione' || phase === 'completato') && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
+            </div>
+            <div className="px-6 py-4">
+              <GroupStageView tournamentId={tournament.id} groups={groups} participants={participants} bestOf={tournament.best_of || 3} teamsAdvancing={tournament.teams_advancing || 2} onMatchUpdate={loadData} isAdmin={isAdmin} />
+            </div>
+          </div>
+        )}
+
+        {/* Tabellone - girone_eliminazione fase eliminazione */}
+        {type === 'girone_eliminazione' && (phase === 'eliminazione' || phase === 'completato') && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
+            </div>
+            <div className="px-6 py-4">
+              <EliminationBracketView tournamentId={tournament.id} maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)} participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} />
+            </div>
+          </div>
+        )}
+
+        {/* Calendario + Classifica - campionato */}
+        {type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
+          <>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
+              </div>
+              <div className="px-6 py-4">
+                <ChampionshipStandingsView tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
+              </div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
+              </div>
+              <div className="px-6 py-4">
+                <ChampionshipStandingsView tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="standings" hideInternalTabs={true} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
   <div className="space-y-6">

@@ -256,6 +256,41 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check for court blocks overlapping the requested slot
+    const { data: blockConflicts, error: blockConflictError } = await supabaseServer
+      .from("court_blocks")
+      .select("id")
+      .eq("court_id", court)
+      .eq("is_disabled", false)
+      .lt("start_time", end_time)
+      .gt("end_time", start_time);
+
+    if (blockConflictError) {
+      logger.error('Error checking court blocks', blockConflictError, {
+        userId: user.id,
+        court,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+
+    if ((blockConflicts || []).length > 0) {
+      logger.warn('Booking blocked by court block', {
+        userId: user.id,
+        court,
+        requestedTime: start_time,
+      });
+      return NextResponse.json(
+        {
+          error: "Il campo non è disponibile in questo orario.",
+          conflict: true,
+        },
+        { status: HTTP_STATUS.CONFLICT }
+      );
+    }
+
     const normalizedBooking = normalizeBookingMutation(bookingData);
 
     const { data, error } = await supabaseServer
@@ -278,6 +313,21 @@ export async function POST(req: Request) {
       .select();
 
     if (error) {
+      // Handle race condition: DB constraint violation means slot was taken concurrently
+      const isOverlapConstraint =
+        error.message?.includes('bookings_no_overlap') ||
+        error.code === '23P01';
+      if (isOverlapConstraint) {
+        logger.warn('Booking overlap constraint violation (race condition)', {
+          userId: user.id,
+          court,
+          start_time,
+        });
+        return NextResponse.json(
+          { error: "Slot già prenotato. Seleziona un altro orario.", conflict: true },
+          { status: HTTP_STATUS.CONFLICT }
+        );
+      }
       logger.error('Failed to create booking', error, { userId: user.id });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },
@@ -708,6 +758,47 @@ export async function PUT(req: Request) {
     
     const rawBody = await req.json();
     const sanitized = sanitizeObject(rawBody);
+
+    // Check for overlapping bookings if court/time is being changed
+    const newCourt = (sanitized.court as string | undefined) || booking.court;
+    const newStartTime = (sanitized.start_time as string | undefined) || booking.start_time;
+    const newEndTime = (sanitized.end_time as string | undefined) || booking.end_time;
+
+    const { data: conflicts, error: conflictError } = await supabaseServer
+      .from("bookings")
+      .select("id")
+      .eq("court", newCourt)
+      .neq("id", id)
+      .neq("status", BOOKING_STATUS.CANCELLED)
+      .neq("status", BOOKING_STATUS.REJECTED)
+      .or(`and(start_time.lt.${newEndTime},end_time.gt.${newStartTime})`);
+
+    if (conflictError) {
+      logger.error('Error checking booking conflicts on update', conflictError, {
+        userId: user.id,
+        bookingId: id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+
+    if ((conflicts || []).length > 0) {
+      logger.warn('Booking conflict detected on update', {
+        userId: user.id,
+        bookingId: id,
+        court: newCourt,
+        requestedTime: newStartTime,
+      });
+      return NextResponse.json(
+        {
+          error: "Slot già prenotato. Seleziona un altro orario.",
+          conflict: true,
+        },
+        { status: HTTP_STATUS.CONFLICT }
+      );
+    }
     
     const normalizedUpdate = normalizeBookingMutation(sanitized);
 
@@ -718,6 +809,20 @@ export async function PUT(req: Request) {
       .select();
     
     if (error) {
+      const isOverlapConstraint =
+        error.message?.includes('bookings_no_overlap') ||
+        error.code === '23P01';
+      if (isOverlapConstraint) {
+        logger.warn('Booking overlap constraint violation on update (race condition)', {
+          userId: user.id,
+          bookingId: id,
+          court: newCourt,
+        });
+        return NextResponse.json(
+          { error: "Slot già prenotato. Seleziona un altro orario.", conflict: true },
+          { status: HTTP_STATUS.CONFLICT }
+        );
+      }
       logger.error('Failed to update booking', error, { userId: user.id, bookingId: id });
       return NextResponse.json(
         { error: ERROR_MESSAGES.SERVER_ERROR },

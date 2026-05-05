@@ -42,6 +42,7 @@ export async function GET(request: Request) {
         .select("id, court, start_time, end_time, type, status")
         .eq("court", court)
         .neq("status", "cancelled")
+        .neq("status", "rejected")
         .lt("start_time", endOfDay)
         .gt("end_time", startOfDay);
 

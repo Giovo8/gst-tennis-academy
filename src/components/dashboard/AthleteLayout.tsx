@@ -23,7 +23,6 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
   const [userEmail, setUserEmail] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [pendingBookings, setPendingBookings] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
@@ -50,15 +49,6 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
 
       setUserName(profile.full_name || "Atleta");
       setUserAvatar(profile.avatar_url || "");
-
-      // Count pending bookings
-      const { count } = await supabase
-        .from("bookings")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("status", "pending");
-      
-      setPendingBookings(count || 0);
 
       // Count unread messages
       await loadUnreadMessages();
@@ -109,7 +99,6 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: "Prenotazioni",
       href: "/dashboard/atleta/bookings",
       icon: <Calendar className="h-5 w-5" />,
-      badge: pendingBookings > 0 ? pendingBookings : undefined,
     },
     {
       label: "Competizioni",

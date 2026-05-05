@@ -387,12 +387,15 @@ function AdminTournamentDetailInner() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/admin/tornei" className="hover:text-secondary/80 transition-colors">Gestione Competizioni</Link>
-        {" › "}
-        <span>Dettagli Torneo</span>
-      </p>
+      {/* Breadcrumb + Titolo */}
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/admin/tornei" className="hover:text-secondary/80 transition-colors">Gestione Competizioni</Link>
+          {" › "}
+          <span>Dettagli Torneo</span>
+        </p>
+        <h1 className="text-4xl font-bold text-secondary">Dettagli Torneo</h1>
+      </div>
 
       {!hasValidId && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
@@ -407,145 +410,32 @@ function AdminTournamentDetailInner() {
         </div>
       )}
 
-      {/* Header con titolo e descrizione */}
-      {hasValidId && !loading && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">
-              Dettagli Competizione
-            </h1>
-            <p className="text-secondary/70 font-medium">
-              Visualizza e gestisci i dettagli della competizione
-            </p>
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={handleDeleteTournament}
-              disabled={deleting}
-            className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Elimina Torneo"
-          >
-            {deleting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Trash2 className="h-5 w-5" />
-            )}
-          </button>
 
-          {meta && meta.currentPhase === "iscrizioni" && (
-            <>
-              <ManualEnrollment
-                tournamentId={id}
-                currentParticipants={meta.participantsCount}
-                maxParticipants={meta.maxParticipants}
-                onEnrollmentSuccess={() => {
-                  setReloadKey((prev) => prev + 1);
-                }}
-              />
 
-              <button
-                onClick={handleStartTournament}
-                disabled={starting || meta.participantsCount < 2}
-                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Avvia torneo"
-              >
-                {starting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <PlayCircle className="h-5 w-5" />
-                )}
-              </button>
-            </>
-          )}
-
-          {meta && meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "gironi" && (
-            <button
-              onClick={handleAdvanceToKnockout}
-              disabled={advancing}
-              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Avanza Fase Eliminatoria"
-            >
-              {advancing ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Trophy className="h-5 w-5" />
-              )}
-            </button>
-          )}
-
-          {meta && (meta.tournamentType === "eliminazione_diretta" || 
-                    (meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "eliminazione")) && (
-            <>
-              <button
-                onClick={handleRegenerateBracket}
-                disabled={regeneratingBracket}
-                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Rigenera Bracket"
-              >
-                {regeneratingBracket ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <RotateCw className="h-5 w-5" />
-                )}
-              </button>
-              <button
-                onClick={handleCompleteTournament}
-                disabled={completing}
-                className="p-2.5 text-white bg-green-600 rounded-md hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Concludi Torneo"
-              >
-                {completing ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Trophy className="h-5 w-5" />
-                )}
-              </button>
-            </>
-          )}
-
-          {meta && meta.tournamentType === "campionato" && (meta.currentPhase === "campionato" || meta.currentPhase === "completato") && meta.status !== "Concluso" && (
-            <>
-              <button
-                onClick={handleRegenerateCalendar}
-                disabled={regeneratingCalendar}
-                className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Rigenera Calendario"
-              >
-                {regeneratingCalendar ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <RotateCw className="h-5 w-5" />
-                )}
-              </button>
-              <button
-                onClick={handleCompleteTournament}
-                disabled={completing}
-                className="p-2.5 text-white bg-green-600 rounded-md hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Concludi Campionato"
-              >
-                {completing ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Trophy className="h-5 w-5" />
-                )}
-              </button>
-            </>
-          )}
-          </div>
-        </div>
-      )}
-
-      {/* Header con info torneo */}
+      {/* Header card torneo */}
       {hasValidId && !loading && tournament && (
         <div
-          className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
-          style={{ borderLeftColor: (() => {
-            if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280"; // gray-500
-            if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#0ea5e9"; // secondary
-            if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#ef4444"; // rosso
-            if (tournament?.status === "Aperto") return "#10b981"; // emerald
-            return "#0ea5e9"; // secondary
-          })() }}
+          className="rounded-xl border-t border-r border-b p-6 border-l-4"
+          style={{
+            backgroundColor: (() => {
+              if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#9ca3af";
+              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#dc2626";
+              if (tournament?.status === "Aperto") return "#059669";
+              return "var(--secondary)";
+            })(),
+            borderColor: (() => {
+              if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#9ca3af";
+              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#dc2626";
+              if (tournament?.status === "Aperto") return "#059669";
+              return "var(--secondary)";
+            })(),
+            borderLeftColor: (() => {
+              if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280";
+              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#b91c1c";
+              if (tournament?.status === "Aperto") return "#047857";
+              return "#023047";
+            })(),
+          }}
         >
           <div className="flex items-start gap-6">
             <TournamentIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -558,8 +448,11 @@ function AdminTournamentDetailInner() {
 
       {/* Dettagli torneo */}
       {hasValidId && !loading && tournament && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
+          </div>
+          <div className="px-6 py-4">
           
           <div className="space-y-6">
             {/* Descrizione */}
@@ -659,18 +552,104 @@ function AdminTournamentDetailInner() {
               </div>
             )}
           </div>
+          </div>
         </div>
       )}
 
       {/* Main content - TournamentManager con i tab - SEMPRE VISIBILE */}
       {hasValidId && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <TournamentManagerWrapper
-            key={reloadKey}
-            tournamentId={id}
-            isAdmin={true}
-            onMetaChange={setMeta}
-          />
+        <TournamentManagerWrapper
+          key={reloadKey}
+          tournamentId={id}
+          isAdmin={true}
+          sectioned={true}
+          onMetaChange={setMeta}
+        />
+      )}
+
+      {/* Pulsanti azioni */}
+      {hasValidId && !loading && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          {meta && meta.currentPhase === "iscrizioni" && (
+            <>
+              <ManualEnrollment
+                tournamentId={id}
+                currentParticipants={meta.participantsCount}
+                maxParticipants={meta.maxParticipants}
+                onEnrollmentSuccess={() => setReloadKey((prev) => prev + 1)}
+              />
+              <button
+                onClick={handleStartTournament}
+                disabled={starting || (meta?.participantsCount ?? 0) < 2}
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {starting ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                Avvia Torneo
+              </button>
+            </>
+          )}
+
+          {meta && meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "gironi" && (
+            <button
+              onClick={handleAdvanceToKnockout}
+              disabled={advancing}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {advancing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+              Avanza Fase Eliminatoria
+            </button>
+          )}
+
+          {meta && (meta.tournamentType === "eliminazione_diretta" ||
+            (meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "eliminazione")) && (
+            <button
+              onClick={handleRegenerateBracket}
+              disabled={regeneratingBracket}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {regeneratingBracket ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+              Rigenera Bracket
+            </button>
+          )}
+
+          {meta && meta.tournamentType === "campionato" &&
+            (meta.currentPhase === "campionato" || meta.currentPhase === "completato") &&
+            meta.status !== "Concluso" && (
+            <button
+              onClick={handleRegenerateCalendar}
+              disabled={regeneratingCalendar}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {regeneratingCalendar ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+              Rigenera Calendario
+            </button>
+          )}
+
+          {meta && (
+            (meta.tournamentType === "eliminazione_diretta" ||
+              (meta.tournamentType === "girone_eliminazione" && meta.currentPhase === "eliminazione") ||
+              (meta.tournamentType === "campionato" &&
+                (meta.currentPhase === "campionato" || meta.currentPhase === "completato") &&
+                meta.status !== "Concluso"))
+          ) && (
+            <button
+              onClick={handleCompleteTournament}
+              disabled={completing}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {completing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+              Concludi
+            </button>
+          )}
+
+          <button
+            onClick={handleDeleteTournament}
+            disabled={deleting}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+            Elimina
+          </button>
         </div>
       )}
     </div>

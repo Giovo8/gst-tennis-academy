@@ -48,7 +48,7 @@ export async function GET() {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-      const [upcomingRes, monthRes, pendingRes] = await Promise.all([
+      const [upcomingRes, monthRes] = await Promise.all([
         supabaseServer
           .from("bookings")
           .select("id", { count: "exact", head: true })
@@ -60,12 +60,6 @@ export async function GET() {
           .eq("coach_id", userId)
           .gte("start_time", startOfMonth.toISOString())
           .lt("start_time", startOfNextMonth.toISOString()),
-        supabaseServer
-          .from("bookings")
-          .select("id", { count: "exact", head: true })
-          .eq("coach_id", userId)
-          .eq("coach_confirmed", false)
-          .gte("start_time", now.toISOString()),
       ]);
 
       const monthRows = (monthRes.data ?? []) as Array<{ user_id: string }>;
@@ -76,7 +70,6 @@ export async function GET() {
         upcomingLessons: upcomingRes.count || 0,
         monthlyLessons: monthRows.length,
         uniqueAthletes,
-        pendingConfirmations: pendingRes.count || 0,
       });
     }
 
