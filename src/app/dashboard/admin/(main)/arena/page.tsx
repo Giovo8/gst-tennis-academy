@@ -203,17 +203,18 @@ export default function AdminArenaPage() {
     }
   }
 
-  async function handleDeleteChallenge(id: string) {
+  async function handleDeleteChallenge(id: string, bookingId?: string) {
     if (!confirm("Sei sicuro di voler eliminare questa sfida?")) return;
 
     try {
-      const response = await fetch("/api/arena/challenges", {
+      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challenge_id: id }),
       });
 
       if (response.ok) {
+        if (bookingId) {
+          await supabase.from("bookings").delete().eq("id", bookingId);
+        }
         loadChallenges();
       }
     } catch (error) {
@@ -244,7 +245,7 @@ export default function AdminArenaPage() {
     }
   }
 
-  async function handleUpdateChallengeStatus(challengeId: string, status: "accepted" | "declined" | "cancelled") {
+  async function handleUpdateChallengeStatus(challengeId: string, status: "accepted" | "declined" | "cancelled", bookingId?: string) {
     try {
       const response = await fetch("/api/arena/challenges", {
         method: "PATCH",
@@ -256,6 +257,9 @@ export default function AdminArenaPage() {
       });
 
       if (response.ok) {
+        if (status === "cancelled" && bookingId) {
+          await supabase.from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
+        }
         setOpenMenuId(null);
         await loadChallenges();
       }
@@ -587,7 +591,7 @@ export default function AdminArenaPage() {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   if (!canCancel) return;
-                                  handleUpdateChallengeStatus(challenge.id, "cancelled");
+                                  handleUpdateChallengeStatus(challenge.id, "cancelled", challenge.booking?.id);
                                 }}
                                 className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors w-full ${
                                   canCancel
@@ -620,7 +624,7 @@ export default function AdminArenaPage() {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 setOpenMenuId(null);
-                                handleDeleteChallenge(challenge.id);
+                                handleDeleteChallenge(challenge.id, challenge.booking?.id);
                               }}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
                             >

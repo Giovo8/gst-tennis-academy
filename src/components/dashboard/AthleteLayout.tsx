@@ -11,6 +11,7 @@ import {
   Mail,
   LayoutGrid,
   Swords,
+  GraduationCap,
 } from "lucide-react";
 
 interface AthleteLayoutProps {
@@ -104,6 +105,11 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: "Competizioni",
       href: "/dashboard/atleta/tornei",
       icon: <Trophy className="h-5 w-5" />,
+    },
+    {
+      label: "Corsi",
+      href: "/dashboard/atleta/corsi",
+      icon: <GraduationCap className="h-5 w-5" />,
     },
     {
       label: "Video Lab",

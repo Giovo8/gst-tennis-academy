@@ -23,6 +23,11 @@ type UserProfile = {
     city?: string;
     province?: string;
     postal_code?: string;
+    certificato_medico_url?: string;
+    certificato_medico_scadenza?: string;
+    tesserato?: string;
+    tesserato_scadenza?: string;
+    numero_tessera?: string;
   } | null;
 };
 
@@ -298,6 +303,86 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
               </label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold break-all">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Informazioni Corsi */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+        </div>
+        <div className="px-6 py-6">
+          <div className="space-y-6">
+            {/* Certificato Medico */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Certificato Medico
+              </label>
+              <div className="flex-1">
+                {user.metadata?.certificato_medico_url ? (
+                  <a
+                    href={user.metadata.certificato_medico_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-secondary font-semibold underline"
+                  >
+                    <FileText className="h-4 w-4 flex-shrink-0" />
+                    Visualizza PDF
+                  </a>
+                ) : (
+                  <p className="text-secondary font-semibold">-</p>
+                )}
+              </div>
+            </div>
+
+            {/* Scadenza Certificato */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Scadenza Certificato
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {user.metadata?.certificato_medico_scadenza
+                    ? new Date(user.metadata.certificato_medico_scadenza).toLocaleDateString("it-IT")
+                    : "-"}
+                </p>
+              </div>
+            </div>
+
+            {/* Tesserato */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Tesserato
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{user.metadata?.tesserato || "-"}</p>
+              </div>
+            </div>
+
+            {/* Numero Tessera */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Numero Tessera
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{user.metadata?.numero_tessera || "-"}</p>
+              </div>
+            </div>
+
+            {/* Scadenza Tesseramento */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Scadenza Tesseramento
+              </label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">
+                  {user.metadata?.tesserato_scadenza
+                    ? new Date(user.metadata.tesserato_scadenza).toLocaleDateString("it-IT")
+                    : "-"}
+                </p>
               </div>
             </div>
           </div>

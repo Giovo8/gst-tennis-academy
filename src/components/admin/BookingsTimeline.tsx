@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Users, Swords, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Users, Swords, Lock, GraduationCap } from "lucide-react";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import {
@@ -39,6 +39,7 @@ type Booking = {
     order_index?: number;
   }>;
   isBlock?: boolean;
+  isCourse?: boolean;
   reason?: string;
 };
 
@@ -52,6 +53,7 @@ type BookingsTimelineProps = {
   showCourtBlocks?: boolean;
   highlightUserId?: string; // When set, bookings where this user is athlete are styled differently
   showBookingContent?: boolean; // When false, shows only colored slot blocks without text labels
+  showCourses?: boolean; // When false, hides course lessons from the timeline
 };
 
 const TIME_SLOTS = [
@@ -72,7 +74,7 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
@@ -81,6 +83,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  const [courseEntries, setCourseEntries] = useState<Booking[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<Booking | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
@@ -164,6 +167,12 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     loadCourtsFromDB();
   }, []);
 
+  // Load course lessons for the selected date
+  useEffect(() => {
+    if (!showCourses) { setCourseEntries([]); return; }
+    void loadCourseEntries();
+  }, [selectedDate, showCourses]);
+
   // Load court blocks for the selected date
   useEffect(() => {
     if (!showCourtBlocks) {
@@ -195,6 +204,51 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     };
     void fetchAll();
   }, [selectedDate, courts, fetchOccupied]);
+
+  async function loadCourseEntries() {
+    const DAY_CODES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+    const dayCode = DAY_CODES[selectedDate.getDay()];
+    const dateStr = selectedDate.toISOString().split("T")[0];
+    const { data, error } = await supabase
+      .from("courses")
+      .select("id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active")
+      .eq("is_active", true)
+      .contains("schedule_days", [dayCode]);
+    if (error || !data) return;
+    const entries: Booking[] = data
+      .filter((c) => {
+        if (!c.court_name) return false;
+        if (c.start_date && c.start_date > dateStr) return false;
+        if (c.end_date && c.end_date < dateStr) return false;
+        return true;
+      })
+      .map((c) => {
+        const timeStr = c.schedule_time || "";
+        const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+        const startHour   = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
+        const startMinute = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
+        const endHour     = rangeMatch ? parseInt(rangeMatch[3], 10) : startHour + 1;
+        const endMinute   = rangeMatch ? parseInt(rangeMatch[4], 10) : startMinute;
+        const startTime = new Date(selectedDate);
+        startTime.setHours(startHour, startMinute, 0, 0);
+        const endTime = new Date(selectedDate);
+        endTime.setHours(endHour, endMinute, 0, 0);
+        return {
+          id: c.id,
+          court: c.court_name,
+          user_id: "",
+          coach_id: null,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "confirmed",
+          type: "corso",
+          notes: c.name,
+          isCourse: true,
+          user_profile: c.instructor_name ? { full_name: c.instructor_name, email: "" } : null,
+        } as Booking;
+      });
+    setCourseEntries(entries);
+  }
 
   async function loadCourtsFromDB() {
     setCourtsLoading(true);
@@ -275,13 +329,13 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       return bookingDate >= startOfDay && bookingDate <= endOfDay;
     });
 
-    // Merge bookings and blocks
-    const allEntries = [...filteredBookings, ...courtBlocks].sort(
+    // Merge bookings, blocks and courses
+    const allEntries = [...filteredBookings, ...courtBlocks, ...courseEntries].sort(
       (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
     );
 
     return allEntries;
-  }, [allBookings, selectedDate, courtBlocks]);
+  }, [allBookings, selectedDate, courtBlocks, courseEntries]);
 
   const loading = parentLoading || blocksLoading || courtsLoading;
 
@@ -539,6 +593,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     }
 
     // Colori default (admin/altre dashboard)
+    if (booking.isCourse) return { background: "#7c3aed" };
+
     if (booking.isBlock) {
       return { background: "var(--color-frozen-lake-900)" };
     }
@@ -564,6 +620,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     const isArenaBooking =
       booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
 
+    if (booking.isCourse) return "Corso";
     if (booking.isBlock) return showBlockReason ? booking.reason || "Blocco Campo" : "Blocco Campo";
     if (booking.type === "lezione_privata") return asCoach ? "Maestro" : "Lezione Privata";
     if (booking.type === "lezione_gruppo") return asCoach ? "Maestro" : "Lezione Gruppo";
@@ -592,6 +649,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function getBookingTypeIcon(booking: Booking) {
+    if (booking.isCourse) return <GraduationCap className="h-5 w-5 text-secondary flex-shrink-0" />;
     if (booking.isBlock) return <Lock className="h-5 w-5 text-secondary flex-shrink-0" />;
     if (booking.type === "lezione_privata") return <User className="h-5 w-5 text-secondary flex-shrink-0" />;
     if (booking.type === "lezione_gruppo") return <Users className="h-5 w-5 text-secondary flex-shrink-0" />;
@@ -620,12 +678,14 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function getEntryDetailsPath(booking: Booking): string {
+    if (booking.isCourse) return `/dashboard/admin/corsi/${booking.id}`;
     return booking.isBlock
       ? `${basePath}/courts/${booking.id}`
       : `${basePath}/bookings/${booking.id}`;
   }
 
   function canOpenEntry(booking: Booking): boolean {
+    if (booking.isCourse) return true;
     // In admin views (no highlighted user), keep existing behavior.
     if (!highlightUserId) return true;
 
@@ -635,6 +695,10 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function openEntryModal(booking: Booking) {
+    if (booking.isCourse) {
+      router.push(getEntryDetailsPath(booking));
+      return;
+    }
     setSelectedEntry(booking);
     setEntryModalOpen(true);
   }
@@ -859,7 +923,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   : "Prenotazione non apribile"}
                               >
                                 {showBookingContent ? (
-                                  booking.isBlock ? (
+                                  booking.isCourse ? (
+                                    <>
+                                      <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
+                                      {booking.user_profile?.full_name && (
+                                        <div className="truncate text-white/80 mt-0.5 text-[11px] leading-tight">{booking.user_profile.full_name}</div>
+                                      )}
+                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
+                                    </>
+                                  ) : booking.isBlock ? (
                                     highlightUserId ? (
                                       <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
                                         Blocco Campo
@@ -1123,7 +1195,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   : "Prenotazione non apribile"}
                               >
                                 {showBookingContent ? (
-                                  booking.isBlock ? (
+                                  booking.isCourse ? (
+                                    <>
+                                      <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
+                                      {booking.user_profile?.full_name && (
+                                        <div className="truncate text-white/80 mt-0.5 text-[11px] leading-tight">{booking.user_profile.full_name}</div>
+                                      )}
+                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
+                                    </>
+                                  ) : booking.isBlock ? (
                                     highlightUserId ? (
                                       <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
                                         Blocco Campo

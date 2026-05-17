@@ -22,6 +22,7 @@ import {
   FileText,
   Activity,
   BarChart2,
+  GraduationCap,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -96,6 +97,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Arena GST",
       href: "/dashboard/admin/arena",
       icon: <Swords className="h-5 w-5" />,
+    },
+    {
+      label: "Corsi",
+      href: "/dashboard/admin/corsi",
+      icon: <GraduationCap className="h-5 w-5" />,
     },
     {
       label: "Video Lab",

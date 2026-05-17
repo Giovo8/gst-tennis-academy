@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
   Trophy,
+  GraduationCap,
   Video,
   Mail,
   User,
@@ -115,6 +116,11 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
       label: "Competizioni",
       href: "/dashboard/maestro/tornei",
       icon: <Trophy className="h-5 w-5" />,
+    },
+    {
+      label: "Corsi",
+      href: "/dashboard/maestro/corsi",
+      icon: <GraduationCap className="h-5 w-5" />,
     },
     {
       label: "Video Lab",

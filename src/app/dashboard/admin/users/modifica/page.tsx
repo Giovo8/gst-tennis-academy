@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, ArrowLeft, Crown, Dumbbell, Home, User, Camera, Upload, Link as LinkIcon, X } from "lucide-react";
+import { Loader2, ArrowLeft, Crown, Dumbbell, Home, User, Camera, Upload, Link as LinkIcon, X, FileText, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import Link from "next/link";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui";
+
+const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
 
 type Profile = {
   id: string;
@@ -36,7 +46,13 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   const [resettingPassword, setResettingPassword] = useState(false);
   const [deletingUser, setDeletingUser] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCertificato, setUploadingCertificato] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
+  const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita">("certificato");
+  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [dateTexts, setDateTexts] = useState({ date_of_birth: "", certificato_medico_scadenza: "", tesserato_scadenza: "" });
   const [avatarUrl, setAvatarUrl] = useState("");
   const [formData, setFormData] = useState({
     full_name: "",
@@ -53,7 +69,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     notes: "",
     role: "atleta" as "admin" | "gestore" | "maestro" | "atleta",
     also_maestro: false,
-    email_notifications_enabled: true
+    email_notifications_enabled: true,
+    certificato_medico_url: "",
+    certificato_medico_scadenza: "",
+    tesserato: "No" as "Sì" | "No" | "Agonista",
+    numero_tessera: "",
+    tesserato_scadenza: ""
   });
 
   const roleLabels = {
@@ -117,7 +138,17 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         notes: data.bio || "",
         role: data.role,
         also_maestro: ["admin", "gestore"].includes(data.role) && secondaryRoles.includes("maestro"),
-        email_notifications_enabled: data.email_notifications_enabled ?? true
+        email_notifications_enabled: data.email_notifications_enabled ?? true,
+        certificato_medico_url: metadata.certificato_medico_url || "",
+        certificato_medico_scadenza: metadata.certificato_medico_scadenza || "",
+        tesserato: metadata.tesserato || "No",
+        numero_tessera: metadata.numero_tessera || "",
+        tesserato_scadenza: metadata.tesserato_scadenza || ""
+      });
+      setDateTexts({
+        date_of_birth: isoToDisplay(data.date_of_birth || ""),
+        certificato_medico_scadenza: isoToDisplay(metadata.certificato_medico_scadenza || ""),
+        tesserato_scadenza: isoToDisplay(metadata.tesserato_scadenza || ""),
       });
     } catch (error) {
       console.error("Error loading user:", error);
@@ -165,6 +196,11 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             province: formData.province,
             postal_code: formData.postal_code,
             secondary_roles: secondaryRoles,
+            certificato_medico_url: formData.certificato_medico_url,
+            certificato_medico_scadenza: formData.certificato_medico_scadenza,
+            tesserato: formData.tesserato,
+            numero_tessera: formData.numero_tessera,
+            tesserato_scadenza: formData.tesserato_scadenza,
           }
         })
         .eq("id", userId);
@@ -337,6 +373,165 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       alert("Errore durante la rimozione dell'avatar");
     } finally {
       setUploadingAvatar(false);
+    }
+  }
+
+  async function handleCertificatoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Il file deve essere inferiore a 10MB");
+      return;
+    }
+
+    if (file.type !== "application/pdf") {
+      alert("Il file deve essere un PDF");
+      return;
+    }
+
+    setUploadingCertificato(true);
+    try {
+      // Rimuovi vecchio file se presente
+      if (formData.certificato_medico_url) {
+        const oldPath = formData.certificato_medico_url.split("/certificates/").pop();
+        if (oldPath) {
+          await supabase.storage.from("certificates").remove([oldPath]);
+        }
+      }
+
+      const filePath = `${userId}/${Date.now()}_certificato_medico.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("certificates")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("certificates")
+        .getPublicUrl(filePath);
+
+      setFormData((prev) => ({ ...prev, certificato_medico_url: urlData.publicUrl }));
+    } catch (error) {
+      console.error("Error uploading certificate:", error);
+      alert("Errore durante il caricamento del certificato");
+    } finally {
+      setUploadingCertificato(false);
+      event.target.value = "";
+    }
+  }
+
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
+    const gridStartDate = new Date(firstOfMonth);
+    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStartDate);
+      date.setDate(gridStartDate.getDate() + index);
+      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
+    });
+  }, [calendarViewDate]);
+
+  function normalizeDate(date: Date): Date {
+    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
+  }
+
+  function isSameCalendarDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function openDatePicker(field: "certificato" | "tesserato" | "nascita") {
+    const existing = field === "certificato" ? formData.certificato_medico_scadenza
+      : field === "tesserato" ? formData.tesserato_scadenza
+      : formData.date_of_birth;
+    const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
+    setActiveDateField(field);
+    setPendingDate(base);
+    setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
+    setDatePickerModalOpen(true);
+  }
+
+  function changeCalendarMonth(delta: number) {
+    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  }
+
+  function selectCalendarDay(day: Date) {
+    setPendingDate(normalizeDate(day));
+  }
+
+  function applyDateSelection() {
+    const iso = pendingDate.toISOString().split("T")[0];
+    const display = isoToDisplay(iso);
+    if (activeDateField === "certificato") {
+      setFormData((prev) => ({ ...prev, certificato_medico_scadenza: iso }));
+      setDateTexts((prev) => ({ ...prev, certificato_medico_scadenza: display }));
+    } else if (activeDateField === "tesserato") {
+      setFormData((prev) => ({ ...prev, tesserato_scadenza: iso }));
+      setDateTexts((prev) => ({ ...prev, tesserato_scadenza: display }));
+    } else {
+      setFormData((prev) => ({ ...prev, date_of_birth: iso }));
+      setDateTexts((prev) => ({ ...prev, date_of_birth: display }));
+    }
+    setDatePickerModalOpen(false);
+  }
+
+  function handleDatePickerToday() {
+    const today = normalizeDate(new Date());
+    setPendingDate(today);
+    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
+
+  function getCalendarMonthLabel(date: Date): string {
+    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function getCalendarModalTitle(): string {
+    if (activeDateField === "certificato") return "Scadenza Certificato";
+    if (activeDateField === "tesserato") return "Scadenza Tesseramento";
+    return "Data di Nascita";
+  }
+
+  function isoToDisplay(iso: string): string {
+    if (!iso) return "";
+    const parts = iso.split("-");
+    if (parts.length !== 3) return "";
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  function displayToIso(text: string): string {
+    const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return "";
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+
+  function handleDateTextChange(field: "date_of_birth" | "certificato_medico_scadenza" | "tesserato_scadenza", value: string) {
+    setDateTexts((prev) => ({ ...prev, [field]: value }));
+    const iso = displayToIso(value);
+    if (iso) setFormData((prev) => ({ ...prev, [field]: iso }));
+    else if (value === "") setFormData((prev) => ({ ...prev, [field]: "" }));
+  }
+
+  function formatDateLabel(iso: string): string {
+    if (!iso) return "Seleziona data";
+    return new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" });
+  }
+
+  async function handleRemoveCertificato() {
+    if (!formData.certificato_medico_url) return;
+    setUploadingCertificato(true);
+    try {
+      const oldPath = formData.certificato_medico_url.split("/certificates/").pop();
+      if (oldPath) {
+        await supabase.storage.from("certificates").remove([oldPath]);
+      }
+      setFormData((prev) => ({ ...prev, certificato_medico_url: "" }));
+    } catch (error) {
+      console.error("Error removing certificate:", error);
+      alert("Errore durante la rimozione del certificato");
+    } finally {
+      setUploadingCertificato(false);
     }
   }
 
@@ -524,12 +719,24 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
               <div className="flex-1">
-                <input
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                />
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker("nascita")}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                    tabIndex={-1}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="GG/MM/AAAA"
+                    value={dateTexts.date_of_birth}
+                    onChange={(e) => handleDateTextChange("date_of_birth", e.target.value)}
+                    maxLength={10}
+                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
+                </div>
               </div>
             </div>
 
@@ -672,6 +879,151 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           </div>
         </div>
 
+        {/* Sezione Informazioni Corsi */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+          </div>
+          <div className="px-6 py-6">
+            <div className="space-y-6">
+              {/* Certificato Medico */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
+                <div className="flex-1 space-y-3">
+                  {formData.certificato_medico_url ? (
+                    <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
+                      <FileText className="h-4 w-4 text-secondary flex-shrink-0" />
+                      <a
+                        href={formData.certificato_medico_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 text-sm text-secondary font-medium underline truncate"
+                      >
+                        Visualizza PDF
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleRemoveCertificato}
+                        disabled={uploadingCertificato}
+                        className="p-1 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        aria-label="Rimuovi certificato"
+                      >
+                        <X className="h-4 w-4 text-secondary/60" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('cert-upload')?.click()}
+                        disabled={uploadingCertificato}
+                        className="h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {uploadingCertificato ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {uploadingCertificato ? "Caricamento..." : "Carica PDF"}
+                      </button>
+                      <input
+                        id="cert-upload"
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleCertificatoUpload}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-secondary/50 mt-1.5">Massimo 10MB · solo PDF</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Scadenza Certificato */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                <div className="flex-1">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => openDatePicker("certificato")}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                      tabIndex={-1}
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="GG/MM/AAAA"
+                      value={dateTexts.certificato_medico_scadenza}
+                      onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
+                      maxLength={10}
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tesserato */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {(["Sì", "No", "Agonista"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, tesserato: option })}
+                      className={`px-5 py-2 text-sm rounded-lg border transition-all ${
+                        formData.tesserato === option
+                          ? "bg-secondary text-white border-secondary"
+                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Numero Tessera */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={formData.numero_tessera}
+                    onChange={(e) => setFormData({ ...formData, numero_tessera: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    placeholder="es. FIT-123456"
+                  />
+                </div>
+              </div>
+
+              {/* Scadenza Tesseramento */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
+                <div className="flex-1">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => openDatePicker("tesserato")}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                      tabIndex={-1}
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="GG/MM/AAAA"
+                      value={dateTexts.tesserato_scadenza}
+                      onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
+                      maxLength={10}
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         {/* Sezione Avatar */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
@@ -785,6 +1137,85 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           </button>
         </div>
       </form>
+
+      {/* Date Picker Modal */}
+      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">
+              {getCalendarModalTitle()}
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white font-semibold"
+                          : isCurrentMonth
+                          ? "text-gray-800 hover:bg-gray-100"
+                          : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={handleDatePickerToday}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyDateSelection}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Avatar Modal */}
       {showAvatarModal && (

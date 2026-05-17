@@ -356,13 +356,16 @@ export default function AdminChallengeDetailPage() {
     if (!confirm("Sei sicuro di voler eliminare questa sfida?")) return;
 
     try {
-      const response = await fetch("/api/arena/challenges", {
+      const bookingId = challenge?.booking_id;
+
+      const response = await fetch(`/api/arena/challenges?challenge_id=${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challenge_id: id }),
       });
 
       if (response.ok) {
+        if (bookingId) {
+          await supabase.from("bookings").delete().eq("id", bookingId);
+        }
         router.push("/dashboard/admin/arena");
         return;
       }
@@ -379,6 +382,8 @@ export default function AdminChallengeDetailPage() {
     if (!confirm("Sei sicuro di voler annullare questa sfida?")) return;
 
     try {
+      const bookingId = challenge?.booking_id;
+
       const response = await fetch("/api/arena/challenges", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -389,6 +394,9 @@ export default function AdminChallengeDetailPage() {
       });
 
       if (response.ok) {
+        if (bookingId) {
+          await supabase.from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
+        }
         await loadChallengeDetails();
         return;
       }
