@@ -560,7 +560,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         .gt("end_time", `${dateStr}T00:00:00.000Z`),
       supabase
         .from("courses")
-        .select("id, name, schedule_time, schedule_days, start_date, end_date")
+        .select("id, name, schedule_time, schedule_days, schedule_periods, start_date, end_date")
         .eq("is_active", true)
         .eq("court_name", selectedCourt)
         .contains("schedule_days", [(["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()]]),
@@ -574,9 +574,15 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     });
 
     // Build course fake-bookings for timeline
+    const _dayName = (["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()];
     const coursesAsBookings: ExistingBooking[] = activeCourses.flatMap(course => {
-      if (!course.schedule_time) return [];
-      const m = course.schedule_time.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+      let timeStr: string | null = course.schedule_time ?? null;
+      if (course.schedule_periods && course.schedule_periods.length > 0) {
+        const mp = course.schedule_periods.find((p: { days: string[]; time: string | null }) => p.days.includes(_dayName));
+        timeStr = mp?.time ?? null;
+      }
+      if (!timeStr) return [];
+      const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
       if (!m) return [];
       const courseStart = new Date(selectedDate);
       courseStart.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0);

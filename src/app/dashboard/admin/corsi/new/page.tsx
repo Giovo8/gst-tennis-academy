@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Plus,
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
@@ -132,6 +133,33 @@ function SearchableSelect({
   );
 }
 
+type SchedulePeriod = { days: string[]; slots: string[] };
+
+function slotsToTimeStr(slots: string[]): string | null {
+  if (slots.length === 0) return null;
+  const sorted = [...slots].sort();
+  const first = sorted[0];
+  const [lh, lm] = sorted[sorted.length - 1].split(":").map(Number);
+  let endH = lh, endM = lm + 30;
+  if (endM >= 60) { endH++; endM -= 60; }
+  return `${first} \u2013 ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+}
+
+function parseTimeToSlots(timeStr: string): string[] {
+  const match = timeStr.match(/(\d{1,2}:\d{2})\s*[\u2013-]\s*(\d{1,2}:\d{2})/);
+  if (!match) return [];
+  const [, start, end] = match;
+  const slots: string[] = [];
+  let [h, m] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  while (h * 60 + m < eh * 60 + em) {
+    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    m += 30;
+    if (m >= 60) { h++; m -= 60; }
+  }
+  return slots;
+}
+
 const DAYS = [
   { value: "lun", label: "Lun" },
   { value: "mar", label: "Mar" },
@@ -157,8 +185,7 @@ export default function NuovoCorsoPage() {
   const [description, setDescription] = useState("");
   const [maxParticipants, setMaxParticipants] = useState(8);
   const [pricePerMonth, setPricePerMonth] = useState(0);
-  const [scheduleDays, setScheduleDays] = useState<string[]>([]);
-  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [] }]);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -230,23 +257,16 @@ export default function NuovoCorsoPage() {
       setDescription(data.description ?? "");
       setMaxParticipants(data.max_participants ?? 8);
       setPricePerMonth(data.price_per_month ?? 0);
-      setScheduleDays(data.schedule_days ?? []);
-      // Parse schedule_time back to slots (e.g. "09:00 – 10:30")
-      const rawTime = data.schedule_time ?? "";
-      if (rawTime) {
-        const match = rawTime.match(/(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
-        if (match) {
-          const [, start, end] = match;
-          const slots: string[] = [];
-          let [h, m] = start.split(":").map(Number);
-          const [eh, em] = end.split(":").map(Number);
-          while (h * 60 + m < eh * 60 + em) {
-            slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-            m += 30;
-            if (m >= 60) { h++; m -= 60; }
-          }
-          setSelectedSlots(slots);
-        }
+      if (data.schedule_periods && data.schedule_periods.length > 0) {
+        setPeriods(data.schedule_periods.map((p: { days: string[]; time: string | null }) => ({
+          days: p.days ?? [],
+          slots: p.time ? parseTimeToSlots(p.time) : [],
+        })));
+      } else {
+        setPeriods([{
+          days: data.schedule_days ?? [],
+          slots: parseTimeToSlots(data.schedule_time ?? ""),
+        }]);
       }
       const maestroNames = (data.instructor_name ?? "").split(", ").filter(Boolean);
       setSelectedMaestros(maestroNames.map((n) => ({ id: n, full_name: n })));
@@ -380,11 +400,13 @@ export default function NuovoCorsoPage() {
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  function toggleSlot(time: string) {
-    setSelectedSlots((prev) => {
-      if (prev.includes(time)) return prev.filter((t) => t !== time);
-      if (prev.length === 0) return [time];
-      const allSlots = [...prev, time].sort((a, b) => {
+  function toggleSlot(pidx: number, time: string) {
+    setPeriods((prev) => prev.map((p, pIdx) => {
+      if (pIdx !== pidx) return p;
+      const slots = p.slots;
+      if (slots.includes(time)) return { ...p, slots: slots.filter((t) => t !== time) };
+      if (slots.length === 0) return { ...p, slots: [time] };
+      const allSlots = [...slots, time].sort((a, b) => {
         const [hA, mA] = a.split(":").map(Number);
         const [hB, mB] = b.split(":").map(Number);
         return hA * 60 + mA - (hB * 60 + mB);
@@ -392,19 +414,19 @@ export default function NuovoCorsoPage() {
       for (let i = 1; i < allSlots.length; i++) {
         const [hP, mP] = allSlots[i - 1].split(":").map(Number);
         const [hC, mC] = allSlots[i].split(":").map(Number);
-        if ((hC * 60 + mC) - (hP * 60 + mP) !== 30) return [time];
+        if ((hC * 60 + mC) - (hP * 60 + mP) !== 30) return { ...p, slots: [time] };
       }
-      return allSlots;
-    });
+      return { ...p, slots: allSlots };
+    }));
   }
 
   function handleTimelineMouseDown(e: React.MouseEvent<HTMLDivElement>) {
-    if (!timelineScrollRef.current) return;
     isDragging.current = true;
-    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
-    scrollLeft.current = timelineScrollRef.current.scrollLeft;
-    timelineScrollRef.current.style.cursor = "grabbing";
-    timelineScrollRef.current.style.userSelect = "none";
+    timelineScrollRef.current = e.currentTarget;
+    startX.current = e.pageX - e.currentTarget.offsetLeft;
+    scrollLeft.current = e.currentTarget.scrollLeft;
+    e.currentTarget.style.cursor = "grabbing";
+    e.currentTarget.style.userSelect = "none";
   }
   function handleTimelineMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!isDragging.current || !timelineScrollRef.current) return;
@@ -419,10 +441,20 @@ export default function NuovoCorsoPage() {
     }
   }
 
-  function toggleDay(day: string) {
-    setScheduleDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
+  function toggleDay(pidx: number, day: string) {
+    setPeriods((prev) => prev.map((p, pIdx) => {
+      if (pIdx !== pidx) return p;
+      const days = p.days.includes(day) ? p.days.filter((d) => d !== day) : [...p.days, day];
+      return { ...p, days };
+    }));
+  }
+
+  function addPeriod() {
+    setPeriods((prev) => [...prev, { days: [], slots: [] }]);
+  }
+
+  function removePeriod(idx: number) {
+    setPeriods((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSubmit() {
@@ -436,22 +468,16 @@ export default function NuovoCorsoPage() {
     setError("");
 
     try {
+      const allDays = [...new Set(periods.flatMap((p) => p.days))];
+      const periodsData = periods.map((p) => ({ days: p.days, time: slotsToTimeStr(p.slots) }));
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
         max_participants: maxParticipants,
         price_per_month: pricePerMonth,
-        schedule_days: scheduleDays,
-        schedule_time: (() => {
-          if (selectedSlots.length === 0) return null;
-          const sorted = [...selectedSlots].sort();
-          const first = sorted[0];
-          const [lh, lm] = sorted[sorted.length - 1].split(":").map(Number);
-          let endH = lh, endM = lm + 30;
-          if (endM >= 60) { endH++; endM -= 60; }
-          const last = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
-          return `${first} – ${last}`;
-        })(),
+        schedule_days: allDays,
+        schedule_time: periodsData[0]?.time ?? null,
+        schedule_periods: periods.length > 1 ? periodsData : null,
         instructor_name: selectedMaestros.map((m) => m.full_name).join(", ") || null,
         court_name: selectedCourt || null,
         start_date: startDate || null,
@@ -627,92 +653,100 @@ export default function NuovoCorsoPage() {
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Orario e periodo</h2>
           </div>
           <div className="p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2">
-                  {DAYS.map((day) => (
+            {periods.map((period, pidx) => (
+              <div key={pidx} className={pidx > 0 ? "border-t border-gray-200 pt-6" : ""}>
+                {periods.length > 1 && (
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-semibold text-secondary">Periodo {pidx + 1}</span>
                     <button
-                      key={day.value}
                       type="button"
-                      onClick={() => toggleDay(day.value)}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                        scheduleDays.includes(day.value)
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
+                      onClick={() => removePeriod(pidx)}
+                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      aria-label="Rimuovi periodo"
                     >
-                      {day.label}
+                      <X className="h-4 w-4" />
                     </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+                  </div>
+                )}
 
-            <div className="flex flex-col gap-3 pb-6 border-b border-gray-200">
-              <label className="text-sm text-secondary font-medium">Fascia oraria</label>
-              <div
-                ref={timelineScrollRef}
-                className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-                style={{ overflowX: "scroll", WebkitOverflowScrolling: "touch" }}
-                onMouseDown={handleTimelineMouseDown}
-                onMouseMove={handleTimelineMouseMove}
-                onMouseUp={handleTimelineMouseUp}
-                onMouseLeave={handleTimelineMouseUp}
-              >
-                <div className="min-w-[1280px]">
-                  {/* Header orari */}
-                  <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
-                    {Array.from({ length: 16 }, (_, i) => (
-                      <div key={i} className="p-3 text-center font-bold text-white text-xs flex items-center justify-center">
-                        {String(7 + i).padStart(2, "0")}:00
-                      </div>
-                    ))}
-                  </div>
-                  {/* Slot selezionabili */}
-                  <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg" style={{ minHeight: "70px" }}>
-                    {Array.from({ length: 16 }, (_, hi) => {
-                      const hour = 7 + hi;
-                      const t1 = `${String(hour).padStart(2, "0")}:00`;
-                      const t2 = hour < 22 ? `${String(hour).padStart(2, "0")}:30` : null;
-                      return (
-                        <div key={hi} className="border-r border-gray-200 last:border-r-0 relative flex">
-                          <div
-                            className={`flex-1 transition-colors cursor-pointer ${
-                              selectedSlots.includes(t1) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
-                            }`}
-                            onClick={() => toggleSlot(t1)}
-                            title={t1}
-                          >
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300 pointer-events-none" />
-                          </div>
-                          {t2 && (
-                            <div
-                              className={`flex-1 transition-colors cursor-pointer ${
-                                selectedSlots.includes(t2) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
-                              }`}
-                              onClick={() => toggleSlot(t2)}
-                              title={t2}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap gap-2">
+                      {DAYS.map((day) => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => toggleDay(pidx, day.value)}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
+                            period.days.includes(day.value)
+                              ? "bg-secondary text-white border-secondary"
+                              : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                <div className="flex flex-col gap-3 mt-6 pb-6 border-b border-gray-200">
+                  <label className="text-sm text-secondary font-medium">Fascia oraria</label>
+                  <div
+                    className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                    style={{ overflowX: "scroll", WebkitOverflowScrolling: "touch" }}
+                    onMouseDown={handleTimelineMouseDown}
+                    onMouseMove={handleTimelineMouseMove}
+                    onMouseUp={handleTimelineMouseUp}
+                    onMouseLeave={handleTimelineMouseUp}
+                  >
+                    <div className="min-w-[1280px]">
+                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                        {Array.from({ length: 16 }, (_, i) => (
+                          <div key={i} className="p-3 text-center font-bold text-white text-xs flex items-center justify-center">
+                            {String(7 + i).padStart(2, "0")}:00
+                          </div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg" style={{ minHeight: "70px" }}>
+                        {Array.from({ length: 16 }, (_, hi) => {
+                          const hour = 7 + hi;
+                          const t1 = `${String(hour).padStart(2, "0")}:00`;
+                          const t2 = hour < 22 ? `${String(hour).padStart(2, "0")}:30` : null;
+                          return (
+                            <div key={hi} className="border-r border-gray-200 last:border-r-0 relative flex">
+                              <div
+                                className={`flex-1 transition-colors cursor-pointer ${
+                                  period.slots.includes(t1) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
+                                }`}
+                                onClick={() => toggleSlot(pidx, t1)}
+                                title={t1}
+                              >
+                                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300 pointer-events-none" />
+                              </div>
+                              {t2 && (
+                                <div
+                                  className={`flex-1 transition-colors cursor-pointer ${
+                                    period.slots.includes(t2) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
+                                  }`}
+                                  onClick={() => toggleSlot(pidx, t2)}
+                                  title={t2}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  {(() => {
+                    const ts = slotsToTimeStr(period.slots);
+                    return ts ? <p className="text-sm font-medium text-secondary">{ts}</p> : null;
+                  })()}
+                </div>
               </div>
-              {selectedSlots.length > 0 && (() => {
-                const sorted = [...selectedSlots].sort();
-                const first = sorted[0];
-                const [lh, lm] = sorted[sorted.length - 1].split(":").map(Number);
-                let endH = lh, endM = lm + 30;
-                if (endM >= 60) { endH++; endM -= 60; }
-                const last = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
-                return (
-                  <p className="text-sm font-medium text-secondary">{first} – {last}</p>
-                );
-              })()}
-            </div>
+            ))}
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
@@ -738,7 +772,7 @@ export default function NuovoCorsoPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
               <div className="flex-1">
                 <div className="relative">
@@ -761,6 +795,15 @@ export default function NuovoCorsoPage() {
                 </div>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={addPeriod}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-xl transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              Aggiungi periodo
+            </button>
           </div>
         </div>
 

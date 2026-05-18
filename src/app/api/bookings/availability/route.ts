@@ -82,7 +82,7 @@ export async function GET(request: Request) {
 
       const { data: courseData } = await supabase
         .from("courses")
-        .select("id, name, schedule_time, schedule_days, start_date, end_date")
+        .select("id, name, schedule_time, schedule_days, schedule_periods, start_date, end_date")
         .eq("is_active", true)
         .eq("court_name", court)
         .contains("schedule_days", [dayName]);
@@ -94,8 +94,13 @@ export async function GET(request: Request) {
           return true;
         })
         .flatMap((c) => {
-          if (!c.schedule_time) return [];
-          const m = c.schedule_time.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+          let timeStr: string | null = c.schedule_time ?? null;
+          if (c.schedule_periods && c.schedule_periods.length > 0) {
+            const mp = c.schedule_periods.find((p: { days: string[]; time: string | null }) => p.days.includes(dayName));
+            timeStr = mp?.time ?? null;
+          }
+          if (!timeStr) return [];
+          const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
           if (!m) return [];
           const start = new Date(`${dateStr}T${m[1].padStart(2,"0")}:${m[2]}:00`);
           const end = new Date(`${dateStr}T${m[3].padStart(2,"0")}:${m[4]}:00`);

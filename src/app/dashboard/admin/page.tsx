@@ -137,7 +137,7 @@ export default function AdminDashboard() {
       // Carica prossime occorrenze dei corsi attivi
       const { data: coursesData } = await supabase
         .from("courses")
-        .select("id, name, schedule_days, schedule_time, court_name, start_date, end_date")
+        .select("id, name, schedule_days, schedule_time, schedule_periods, court_name, start_date, end_date")
         .eq("is_active", true);
 
       if (coursesData && coursesData.length > 0) {
@@ -146,11 +146,7 @@ export default function AdminDashboard() {
         const now2 = new Date();
 
         for (const course of coursesData) {
-          if (!course.schedule_time || !course.schedule_days?.length) continue;
-          const m = course.schedule_time.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
-          if (!m) continue;
-          const startH = parseInt(m[1]), startM = parseInt(m[2]);
-          const endH = parseInt(m[3]), endM = parseInt(m[4]);
+          if (!course.schedule_days?.length) continue;
           const startDate = course.start_date ? new Date(course.start_date + "T00:00:00") : null;
           const endDate = course.end_date ? new Date(course.end_date + "T23:59:59") : null;
 
@@ -160,6 +156,17 @@ export default function AdminDashboard() {
           for (let i = 0; i < 90; i++) {
             const dayName = DAY_NAMES[searchDate.getDay()];
             if (course.schedule_days.includes(dayName)) {
+              // Pick the right time for this day (multi-period support)
+              let timeStr: string | null = course.schedule_time ?? null;
+              if (course.schedule_periods && course.schedule_periods.length > 0) {
+                const mp = course.schedule_periods.find((p: { days: string[]; time: string | null }) => p.days.includes(dayName));
+                timeStr = mp?.time ?? timeStr;
+              }
+              if (!timeStr) { searchDate.setDate(searchDate.getDate() + 1); continue; }
+              const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+              if (!m) { searchDate.setDate(searchDate.getDate() + 1); continue; }
+              const startH = parseInt(m[1]), startM = parseInt(m[2]);
+              const endH = parseInt(m[3]), endM = parseInt(m[4]);
               const start = new Date(searchDate);
               start.setHours(startH, startM, 0, 0);
               if (start >= now2 && (!startDate || start >= startDate) && (!endDate || start <= endDate)) {
