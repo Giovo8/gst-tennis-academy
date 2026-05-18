@@ -364,7 +364,10 @@ export default function CorsoDetailPage() {
                       style={{ background: attendedDates.has(dateStr) ? "#023047" : "var(--secondary)" }}
                     >
                       <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
+                        {attendedDates.has(dateStr)
+                          ? <CheckCircle2 className="w-5 h-5 text-white" />
+                          : <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
+                        }
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
@@ -372,7 +375,6 @@ export default function CorsoDetailPage() {
                           <p className="text-xs text-white/70 mt-0.5">{course.schedule_time}</p>
                         )}
                       </div>
-
                     </div>
                   </Link>
                 </li>

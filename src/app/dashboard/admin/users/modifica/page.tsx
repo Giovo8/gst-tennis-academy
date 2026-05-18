@@ -48,12 +48,14 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCertificato, setUploadingCertificato] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showCertificatoModal, setShowCertificatoModal] = useState(false);
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
   const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita">("certificato");
   const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [dateTexts, setDateTexts] = useState({ date_of_birth: "", certificato_medico_scadenza: "", tesserato_scadenza: "" });
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [certificatoLinkUrl, setCertificatoLinkUrl] = useState("");
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -374,6 +376,19 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     } finally {
       setUploadingAvatar(false);
     }
+  }
+
+  function handleCertificatoUrl() {
+    if (!certificatoLinkUrl) return;
+    try {
+      new URL(certificatoLinkUrl);
+    } catch {
+      alert("Inserisci un URL valido");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, certificato_medico_url: certificatoLinkUrl }));
+    setCertificatoLinkUrl("");
+    setShowCertificatoModal(false);
   }
 
   async function handleCertificatoUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -891,13 +906,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
                 <div className="flex-1 space-y-3">
                   {formData.certificato_medico_url ? (
-                    <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
-                      <FileText className="h-4 w-4 text-secondary flex-shrink-0" />
+                    <div className="flex items-center gap-3">
                       <a
                         href={formData.certificato_medico_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 text-sm text-secondary font-medium underline truncate"
+                        className="flex items-center gap-2 h-12 px-4 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
                       >
                         Visualizza PDF
                       </a>
@@ -905,31 +919,23 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                         type="button"
                         onClick={handleRemoveCertificato}
                         disabled={uploadingCertificato}
-                        className="p-1 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Rimuovi certificato"
                       >
-                        <X className="h-4 w-4 text-secondary/60" />
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (
                     <div>
                       <button
                         type="button"
-                        onClick={() => document.getElementById('cert-upload')?.click()}
+                        onClick={() => setShowCertificatoModal(true)}
                         disabled={uploadingCertificato}
                         className="h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         {uploadingCertificato ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         {uploadingCertificato ? "Caricamento..." : "Carica PDF"}
                       </button>
-                      <input
-                        id="cert-upload"
-                        type="file"
-                        accept="application/pdf"
-                        onChange={handleCertificatoUpload}
-                        className="hidden"
-                      />
-                      <p className="text-xs text-secondary/50 mt-1.5">Massimo 10MB · solo PDF</p>
                     </div>
                   )}
                 </div>
@@ -1216,6 +1222,91 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Input file certificato sempre nel DOM */}
+      <input
+        id="cert-upload"
+        type="file"
+        accept="application/pdf"
+        onChange={handleCertificatoUpload}
+        className="hidden"
+      />
+
+      {/* Certificato Modal */}
+      {showCertificatoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-secondary rounded-t-xl">
+              <h3 className="text-xl font-bold text-white">Certificato Medico</h3>
+              <button
+                onClick={() => setShowCertificatoModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="h-5 w-5 text-white/80" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Upload File */}
+              <div>
+                <label className="block text-sm font-bold text-secondary mb-2">
+                  Carica un PDF
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCertificatoModal(false);
+                    requestAnimationFrame(() => document.getElementById('cert-upload')?.click());
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all"
+                >
+                  <Upload className="h-5 w-5" />
+                  Scegli File
+                </button>
+                <p className="text-xs text-secondary/60 mt-2">Massimo 10MB · solo PDF</p>
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-secondary/60 font-medium">oppure</span>
+                </div>
+              </div>
+
+              {/* URL Input */}
+              <div>
+                <label className="block text-sm font-bold text-secondary mb-2">
+                  Inserisci URL del certificato
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={certificatoLinkUrl}
+                    onChange={(e) => setCertificatoLinkUrl(e.target.value)}
+                    placeholder="https://esempio.com/certificato.pdf"
+                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                    onKeyDown={(e) => e.key === 'Enter' && handleCertificatoUrl()}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCertificatoUrl}
+                    disabled={!certificatoLinkUrl}
+                    className="px-4 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <LinkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-secondary/60 mt-2">
+                  Incolla l&apos;URL di un PDF già caricato online
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Avatar Modal */}
       {showAvatarModal && (

@@ -509,9 +509,15 @@ export default function PartecipantePresenzePage() {
 
             {/* Bottoni azione */}
             {!addingPayment && !settingFee && (
-              <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => setSettingFee(true)}
+                  onClick={() => {
+                    setSettingFee(true);
+                    if (feeInput === "") {
+                      const defaultFee = enrollmentFee ?? (course?.price_per_month ? Number(course.price_per_month) : null);
+                      if (defaultFee != null) setFeeInput(String(defaultFee));
+                    }
+                  }}
                   className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#023047] rounded-lg hover:opacity-90 transition-all font-medium"
                 >
                   Imposta quota

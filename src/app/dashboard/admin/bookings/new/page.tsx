@@ -81,6 +81,8 @@ interface ExistingBooking {
   }>;
   isBlock?: boolean;
   reason?: string;
+  isCourse?: boolean;
+  courseName?: string;
 }
 
 interface SearchableOption {
@@ -265,6 +267,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
   function getBookingTypeIcon(booking: ExistingBooking) {
     if (booking.isBlock) return <Lock className="h-5 w-5 text-secondary flex-shrink-0" />;
+    if (booking.isCourse) return <Calendar className="h-5 w-5 text-secondary flex-shrink-0" />;
     if (booking.type === "lezione_privata") return <User className="h-5 w-5 text-secondary flex-shrink-0" />;
     if (booking.type === "lezione_gruppo") return <Users className="h-5 w-5 text-secondary flex-shrink-0" />;
     if (booking.type === "arena") return <Swords className="h-5 w-5 text-secondary flex-shrink-0" />;
@@ -273,6 +276,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
   function getBookingLabel(booking: ExistingBooking): string {
     if (booking.isBlock) return "Blocco Campo";
+    if (booking.isCourse) return booking.courseName || "Corso";
     if (booking.type === "lezione_privata") return "Lezione Privata";
     if (booking.type === "lezione_gruppo") return "Lezione Gruppo";
     if (booking.type === "arena") return "Match Arena";
@@ -293,6 +297,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
   function getEntryStatusLabel(booking: ExistingBooking): string {
     if (booking.isBlock) return "Campo bloccato";
+    if (booking.isCourse) return "Corso";
     if (booking.status === "confirmed") return "Confermata";
     if (booking.status === "pending") return "In attesa";
     if (booking.status === "cancelled") return "Annullata";
@@ -300,6 +305,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   }
 
   function getEntryDetailsPath(booking: ExistingBooking): string {
+    if (booking.isCourse) return `${basePath}/corsi/${booking.id}`;
     return booking.isBlock
       ? `${basePath}/courts/${booking.id}`
       : `${basePath}/bookings/${booking.id}`;
@@ -544,13 +550,40 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const { data: courtBlocks } = await supabase
-      .from("court_blocks")
-      .select("id, start_time, end_time, reason")
-      .eq("court_id", selectedCourt)
-      .eq("is_disabled", false)
-      .lt("start_time", `${dateStr}T23:59:59.999Z`)
-      .gt("end_time", `${dateStr}T00:00:00.000Z`);
+    const [{ data: courtBlocks }, { data: courseData }] = await Promise.all([
+      supabase
+        .from("court_blocks")
+        .select("id, start_time, end_time, reason")
+        .eq("court_id", selectedCourt)
+        .eq("is_disabled", false)
+        .lt("start_time", `${dateStr}T23:59:59.999Z`)
+        .gt("end_time", `${dateStr}T00:00:00.000Z`),
+      supabase
+        .from("courses")
+        .select("id, name, schedule_time, schedule_days, start_date, end_date")
+        .eq("is_active", true)
+        .eq("court_name", selectedCourt)
+        .contains("schedule_days", [(["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()]]),
+    ]);
+
+    // Filter courses within date range
+    const activeCourses = (courseData || []).filter(c => {
+      if (c.start_date && new Date(c.start_date) > selectedDate) return false;
+      if (c.end_date && new Date(c.end_date) < selectedDate) return false;
+      return true;
+    });
+
+    // Build course fake-bookings for timeline
+    const coursesAsBookings: ExistingBooking[] = activeCourses.flatMap(course => {
+      if (!course.schedule_time) return [];
+      const m = course.schedule_time.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+      if (!m) return [];
+      const courseStart = new Date(selectedDate);
+      courseStart.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0);
+      const courseEnd = new Date(selectedDate);
+      courseEnd.setHours(parseInt(m[3]), parseInt(m[4]), 0, 0);
+      return [{ id: course.id, start_time: courseStart.toISOString(), end_time: courseEnd.toISOString(), type: "corso", status: "confirmed", isCourse: true, courseName: course.name }];
+    });
 
     // Fetch profiles for bookings
     const userIds = [...new Set([
@@ -659,7 +692,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       return merged;
     };
 
-    const allItems = [...enrichedBookings, ...blocksAsBookings];
+    const allItems = [...enrichedBookings, ...blocksAsBookings, ...coursesAsBookings];
     const mergedItems = mergeConsecutiveBookings(allItems);
 
     setExistingBookings(mergedItems);
@@ -688,6 +721,19 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       const end = new Date(block.end_time);
       
       // Mark all 30-minute slots as occupied
+      const current = new Date(start);
+      while (current < end) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        occupiedSlots.add(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+    });
+
+    // Mark slots occupied by courses
+    coursesAsBookings.forEach(course => {
+      const start = new Date(course.start_time);
+      const end = new Date(course.end_time);
       const current = new Date(start);
       while (current < end) {
         const hours = current.getHours().toString().padStart(2, "0");
@@ -1200,6 +1246,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                         const getBookingStyle = () => {
                           if (booking.isBlock) {
                             return { background: "var(--color-frozen-lake-900)" };
+                          }
+                          if (booking.isCourse) {
+                            return { background: "#5c7a3e" };
                           }
                           if (booking.status === "cancelled") {
                             return { background: "#6b7280" };

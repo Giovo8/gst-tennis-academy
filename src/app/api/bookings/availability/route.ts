@@ -75,8 +75,45 @@ export async function GET(request: Request) {
         isBlock: true,
       }));
 
+      // Query active courses for this court and day
+      const DAY_NAMES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+      const selectedDate = new Date(dateStr + "T12:00:00");
+      const dayName = DAY_NAMES[selectedDate.getDay()];
+
+      const { data: courseData } = await supabase
+        .from("courses")
+        .select("id, name, schedule_time, schedule_days, start_date, end_date")
+        .eq("is_active", true)
+        .eq("court_name", court)
+        .contains("schedule_days", [dayName]);
+
+      const enrichedCourses = (courseData ?? [])
+        .filter((c) => {
+          if (c.start_date && new Date(c.start_date) > selectedDate) return false;
+          if (c.end_date && new Date(c.end_date) < selectedDate) return false;
+          return true;
+        })
+        .flatMap((c) => {
+          if (!c.schedule_time) return [];
+          const m = c.schedule_time.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+          if (!m) return [];
+          const start = new Date(`${dateStr}T${m[1].padStart(2,"0")}:${m[2]}:00`);
+          const end = new Date(`${dateStr}T${m[3].padStart(2,"0")}:${m[4]}:00`);
+          return [{
+            id: c.id,
+            court,
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
+            type: "corso",
+            status: "confirmed",
+            isBlock: false,
+            isCourse: true,
+            courseName: c.name,
+          }];
+        });
+
       return NextResponse.json({
-        bookings: [...enrichedBookings, ...enrichedBlocks],
+        bookings: [...enrichedBookings, ...enrichedBlocks, ...enrichedCourses],
       });
     }
 

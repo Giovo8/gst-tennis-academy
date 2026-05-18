@@ -327,9 +327,8 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
                     href={user.metadata.certificato_medico_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-secondary font-semibold underline"
+                    className="inline-flex items-center h-12 px-4 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
                   >
-                    <FileText className="h-4 w-4 flex-shrink-0" />
                     Visualizza PDF
                   </a>
                 ) : (
