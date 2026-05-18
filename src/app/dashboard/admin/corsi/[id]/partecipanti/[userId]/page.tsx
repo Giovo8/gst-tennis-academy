@@ -13,6 +13,7 @@ type Course = {
   start_date: string | null;
   end_date: string | null;
   price_per_month: number | null;
+  cancelled_dates: string[] | null;
 };
 
 type Payment = {
@@ -44,12 +45,14 @@ const DAYS: Record<string, string> = {
 function computeLessonDates(course: Course): Date[] {
   if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
   const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
+  const cancelled = new Set(course.cancelled_dates ?? []);
   const start = new Date(course.start_date);
   const end = new Date(course.end_date);
   const result: Date[] = [];
   const cur = new Date(start);
   while (cur <= end) {
-    if (allowed.has(cur.getDay())) result.push(new Date(cur));
+    const dateStr = cur.toISOString().split("T")[0];
+    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
     cur.setDate(cur.getDate() + 1);
   }
   return result;
@@ -88,7 +91,7 @@ export default function PartecipantePresenzePage() {
       await Promise.all([
         supabase
           .from("courses")
-          .select("name, schedule_time, schedule_days, start_date, end_date, price_per_month")
+          .select("name, schedule_time, schedule_days, start_date, end_date, price_per_month, cancelled_dates")
           .eq("id", courseId)
           .single(),
         supabase

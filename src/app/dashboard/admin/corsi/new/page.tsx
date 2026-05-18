@@ -133,7 +133,7 @@ function SearchableSelect({
   );
 }
 
-type SchedulePeriod = { days: string[]; slots: string[] };
+type SchedulePeriod = { days: string[]; slots: string[]; court: string };
 
 function slotsToTimeStr(slots: string[]): string | null {
   if (slots.length === 0) return null;
@@ -185,7 +185,7 @@ export default function NuovoCorsoPage() {
   const [description, setDescription] = useState("");
   const [maxParticipants, setMaxParticipants] = useState(8);
   const [pricePerMonth, setPricePerMonth] = useState(0);
-  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [] }]);
+  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [], court: "" }]);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -193,7 +193,6 @@ export default function NuovoCorsoPage() {
   const [selectedMaestros, setSelectedMaestros] = useState<{ id: string; full_name: string }[]>([]);
   const [maestros, setMaestros] = useState<{ id: string; full_name: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
-  const [selectedCourt, setSelectedCourt] = useState("");
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
   const [startDate, setStartDate] = useState("");
@@ -258,19 +257,20 @@ export default function NuovoCorsoPage() {
       setMaxParticipants(data.max_participants ?? 8);
       setPricePerMonth(data.price_per_month ?? 0);
       if (data.schedule_periods && data.schedule_periods.length > 0) {
-        setPeriods(data.schedule_periods.map((p: { days: string[]; time: string | null }) => ({
+        setPeriods(data.schedule_periods.map((p: { days: string[]; time: string | null; court?: string }) => ({
           days: p.days ?? [],
           slots: p.time ? parseTimeToSlots(p.time) : [],
+          court: p.court ?? "",
         })));
       } else {
         setPeriods([{
           days: data.schedule_days ?? [],
           slots: parseTimeToSlots(data.schedule_time ?? ""),
+          court: data.court_name ?? "",
         }]);
       }
       const maestroNames = (data.instructor_name ?? "").split(", ").filter(Boolean);
       setSelectedMaestros(maestroNames.map((n) => ({ id: n, full_name: n })));
-      setSelectedCourt(data.court_name ?? "");
       // Load existing enrollments
       const { data: enrollments } = await supabase
         .from("course_enrollments")
@@ -450,7 +450,7 @@ export default function NuovoCorsoPage() {
   }
 
   function addPeriod() {
-    setPeriods((prev) => [...prev, { days: [], slots: [] }]);
+    setPeriods((prev) => [...prev, { days: [], slots: [], court: "" }]);
   }
 
   function removePeriod(idx: number) {
@@ -469,7 +469,7 @@ export default function NuovoCorsoPage() {
 
     try {
       const allDays = [...new Set(periods.flatMap((p) => p.days))];
-      const periodsData = periods.map((p) => ({ days: p.days, time: slotsToTimeStr(p.slots) }));
+      const periodsData = periods.map((p) => ({ days: p.days, time: slotsToTimeStr(p.slots), court: p.court || null }));
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
@@ -479,7 +479,7 @@ export default function NuovoCorsoPage() {
         schedule_time: periodsData[0]?.time ?? null,
         schedule_periods: periods.length > 1 ? periodsData : null,
         instructor_name: selectedMaestros.map((m) => m.full_name).join(", ") || null,
-        court_name: selectedCourt || null,
+        court_name: periods[0]?.court || null,
         start_date: startDate || null,
         end_date: endDate || null,
         is_active: true,
@@ -625,25 +625,54 @@ export default function NuovoCorsoPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-              <div className="flex-1 flex flex-wrap gap-2">
-                {courts.map((court) => (
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+              <div className="flex-1">
+                <div className="relative">
                   <button
-                    key={court}
                     type="button"
-                    onClick={() => setSelectedCourt(court)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                      selectedCourt === court
-                        ? "bg-secondary text-white border-secondary"
-                        : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                    }`}
+                    onClick={() => openDatePicker("start")}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                    tabIndex={-1}
                   >
-                    {court}
+                    <CalendarIcon className="h-4 w-4" />
                   </button>
-                ))}
+                  <input
+                    type="text"
+                    placeholder="GG/MM/AAAA"
+                    value={dateTexts.start_date}
+                    onChange={(e) => handleDateTextChange("start_date", e.target.value)}
+                    maxLength={10}
+                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
+                </div>
               </div>
             </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+              <div className="flex-1">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker("end")}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                    tabIndex={-1}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="GG/MM/AAAA"
+                    value={dateTexts.end_date}
+                    onChange={(e) => handleDateTextChange("end_date", e.target.value)}
+                    maxLength={10}
+                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -654,7 +683,7 @@ export default function NuovoCorsoPage() {
           </div>
           <div className="p-6 space-y-6">
             {periods.map((period, pidx) => (
-              <div key={pidx} className={pidx > 0 ? "border-t border-gray-200 pt-6" : ""}>
+              <div key={pidx} className={pidx > 0 ? "pt-6" : ""}>
                 {periods.length > 1 && (
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-semibold text-secondary">Periodo {pidx + 1}</span>
@@ -745,56 +774,28 @@ export default function NuovoCorsoPage() {
                     return ts ? <p className="text-sm font-medium text-secondary">{ts}</p> : null;
                   })()}
                 </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 mt-6 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                  <div className="flex-1 flex flex-wrap gap-2">
+                    {courts.map((court) => (
+                      <button
+                        key={court}
+                        type="button"
+                        onClick={() => setPeriods((prev) => prev.map((p, pIdx) => pIdx !== pidx ? p : { ...p, court }))}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
+                          period.court === court
+                            ? "bg-secondary text-white border-secondary"
+                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                        }`}
+                      >
+                        {court}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             ))}
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
-              <div className="flex-1">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => openDatePicker("start")}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                    tabIndex={-1}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="GG/MM/AAAA"
-                    value={dateTexts.start_date}
-                    onChange={(e) => handleDateTextChange("start_date", e.target.value)}
-                    maxLength={10}
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
-              <div className="flex-1">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => openDatePicker("end")}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                    tabIndex={-1}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="GG/MM/AAAA"
-                    value={dateTexts.end_date}
-                    onChange={(e) => handleDateTextChange("end_date", e.target.value)}
-                    maxLength={10}
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
-                </div>
-              </div>
-            </div>
 
             <button
               type="button"

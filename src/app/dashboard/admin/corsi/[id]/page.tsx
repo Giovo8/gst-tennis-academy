@@ -1,17 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   GraduationCap,
   Loader2,
+  MoreVertical,
+  Pencil,
+  Trash2,
   Users,
   Calendar,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   X,
 } from "lucide-react";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui";
 import { supabase } from "@/lib/supabase/client";
+import { getCourts } from "@/lib/courts/getCourts";
+import { DEFAULT_COURTS } from "@/lib/courts/constants";
 
 type Athlete = {
   id: string;
@@ -47,7 +63,17 @@ type Course = {
   is_active: boolean;
   created_at: string;
   cancelled_dates: string[] | null;
+  extra_dates: string[] | null;
+  lesson_overrides: Record<string, string> | null;
+  lesson_time_overrides: Record<string, string> | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
 };
+
+const TIME_SLOTS: string[] = Array.from({ length: 31 }, (_, i) => {
+  const h = 7 + Math.floor(i / 2);
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${String(h).padStart(2, "0")}:${m}`;
+});
 
 const DAYS: Record<string, string> = {
   lun: "Lunedì", mar: "Martedì", mer: "Mercoledì", gio: "Giovedì",
@@ -63,6 +89,7 @@ function computeLessonDates(course: {
   end_date: string | null;
   schedule_days: string[] | null;
   cancelled_dates?: string[] | null;
+  extra_dates?: string[] | null;
 }): Date[] {
   if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
   const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
@@ -76,6 +103,10 @@ function computeLessonDates(course: {
     if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
     cur.setDate(cur.getDate() + 1);
   }
+  for (const d of course.extra_dates ?? []) {
+    result.push(new Date(d));
+  }
+  result.sort((a, b) => a.getTime() - b.getTime());
   return result;
 }
 
@@ -91,10 +122,113 @@ export default function CorsoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState<string | null>(null);
+  const [openMenuLesson, setOpenMenuLesson] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+
+  function closeActionMenu() {
+    setOpenMenuLesson(null);
+    setMenuPosition(null);
+  }
+
+  function openActionMenu(dateStr: string, buttonRect: DOMRect) {
+    const menuWidth = 176;
+    const menuHeight = 88;
+    const pad = 8;
+    let left = buttonRect.right - menuWidth;
+    left = Math.max(pad, Math.min(left, window.innerWidth - menuWidth - pad));
+    let top = buttonRect.bottom + 6;
+    if (top + menuHeight > window.innerHeight - pad) top = Math.max(pad, buttonRect.top - menuHeight - 6);
+    setOpenMenuLesson(dateStr);
+    setMenuPosition({ top, left });
+  }
+  const [editingLesson, setEditingLesson] = useState<string | null>(null);
+  const [editingNewDate, setEditingNewDate] = useState("");
+  const [editingNewDateText, setEditingNewDateText] = useState("");
+  const [editingNewCourt, setEditingNewCourt] = useState("");
+  const [editingStartTime, setEditingStartTime] = useState("");
+  const [editingEndTime, setEditingEndTime] = useState("");
+  const [slotError, setSlotError] = useState<string | null>(null);
+  const [calPickerOpen, setCalPickerOpen] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+
+  const WEEK_DAYS_CAL = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayOffset = (firstOfMonth.getDay() + 6) % 7;
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(firstOfMonth.getDate() - mondayOffset);
+    return Array.from({ length: 42 }, (_, i) => {
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + i);
+      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
+    });
+  }, [calendarViewDate]);
+
+  function normalizeDate(date: Date): Date {
+    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
+  }
+
+  function isSameCalendarDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function getCalendarMonthLabel(date: Date): string {
+    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function openCalendar() {
+    const base = editingNewDate ? normalizeDate(new Date(editingNewDate + "T12:00:00")) : normalizeDate(new Date());
+    setPendingDate(base);
+    setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
+    setCalPickerOpen(true);
+  }
+
+  function applyCalendarDate() {
+    const iso = pendingDate.toISOString().split("T")[0];
+    setEditingNewDate(iso);
+    setEditingNewDateText(isoToDisplay(iso));
+    setCalPickerOpen(false);
+  }
+
+  function parseTimeRange(timeStr: string | null): { start: string; end: string } {
+    if (!timeStr) return { start: "", end: "" };
+    const match = timeStr.match(/(\d{1,2}:\d{2})\s*[\u2013\-]\s*(\d{1,2}:\d{2})/);
+    if (!match) return { start: timeStr.trim(), end: "" };
+    return { start: match[1], end: match[2] };
+  }
+
+  function isoToDisplay(iso: string): string {
+    if (!iso) return "";
+    const parts = iso.split("-");
+    if (parts.length !== 3) return "";
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  function displayToIso(text: string): string {
+    const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return "";
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+
+  function handleEditingDateTextChange(value: string) {
+    setEditingNewDateText(value);
+    const iso = displayToIso(value);
+    if (iso) setEditingNewDate(iso);
+    else if (value === "") setEditingNewDate("");
+  }
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
 
   useEffect(() => {
     if (courseId) loadCourse();
   }, [courseId]);
+
+  useEffect(() => {
+    getCourts().then(setCourts);
+  }, []);
 
   async function loadCourse() {
     setLoading(true);
@@ -174,6 +308,68 @@ export default function CorsoDetailPage() {
     setDeletingLesson(null);
   }
 
+  async function handleRescheduleLesson(fromDateStr: string, toDateStr: string) {
+    if (!course || !toDateStr) return;
+    setSlotError(null);
+    setSavingEdit(true);
+
+    // Conflict check
+    const targetCourt = editingNewCourt || course.court_name;
+    const rawTime = (editingStartTime && editingEndTime)
+      ? `${editingStartTime} – ${editingEndTime}`
+      : (course.lesson_time_overrides?.[toDateStr] ?? course.schedule_time ?? "");
+    const rangeMatch = rawTime.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+    if (targetCourt && rangeMatch) {
+      const startIso = `${toDateStr}T${rangeMatch[1].padStart(2,"0")}:${rangeMatch[2]}:00`;
+      const endIso   = `${toDateStr}T${rangeMatch[3].padStart(2,"0")}:${rangeMatch[4]}:00`;
+      const { data: conflicts } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("court", targetCourt)
+        .neq("status", "cancelled")
+        .neq("status", "rejected")
+        .or(`and(start_time.lt.${endIso},end_time.gt.${startIso})`);
+      if (conflicts && conflicts.length > 0) {
+        setSlotError(`Il campo ${targetCourt} è già occupato in questo orario.`);
+        setSavingEdit(false);
+        return;
+      }
+    }
+    const dateChanged = toDateStr !== fromDateStr;
+    const overrides: Record<string, string> = { ...(course.lesson_overrides ?? {}) };
+    const timeOverrides: Record<string, string> = { ...(course.lesson_time_overrides ?? {}) };
+    let newCancelled = course.cancelled_dates ?? [];
+    let newExtra = course.extra_dates ?? [];
+    if (dateChanged) {
+      newCancelled = [...newCancelled, fromDateStr];
+      newExtra = [...newExtra.filter((d) => d !== toDateStr), toDateStr];
+      delete overrides[fromDateStr];
+      delete timeOverrides[fromDateStr];
+    }
+    const targetDate = dateChanged ? toDateStr : fromDateStr;
+    if (editingNewCourt) overrides[targetDate] = editingNewCourt;
+    const newTimeStr = editingStartTime && editingEndTime ? `${editingStartTime} – ${editingEndTime}` : editingStartTime || "";
+    if (newTimeStr) timeOverrides[targetDate] = newTimeStr;
+    const { error } = await supabase
+      .from("courses")
+      .update({ cancelled_dates: newCancelled, extra_dates: newExtra, lesson_overrides: overrides, lesson_time_overrides: timeOverrides })
+      .eq("id", course.id);
+    if (error) {
+      console.error("handleRescheduleLesson error:", error);
+      setSlotError("Errore nel salvataggio: " + error.message);
+    } else {
+      setCourse({ ...course, cancelled_dates: newCancelled, extra_dates: newExtra, lesson_overrides: overrides, lesson_time_overrides: timeOverrides });
+      setEditingLesson(null);
+      setEditingNewDate("");
+      setEditingNewDateText("");
+      setEditingNewCourt("");
+      setEditingStartTime("");
+      setEditingEndTime("");
+      setSlotError(null);
+    }
+    setSavingEdit(false);
+  }
+
   async function handleDelete() {
     if (!course) return;
     if (!confirm(`Sei sicuro di voler eliminare il corso "${course.name}"?`)) return;
@@ -232,31 +428,43 @@ export default function CorsoDetailPage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
         <div className="px-6 py-6 space-y-5">
-          {course.court_name && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+          {course.description && (
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-5 border-b border-gray-100">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Campo
+                Descrizione
               </label>
-              <p className="text-secondary font-semibold">{course.court_name}</p>
+              <p className="text-secondary/70 leading-relaxed">{course.description}</p>
             </div>
           )}
 
-          {days && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Giorni
-              </label>
-              <p className="text-secondary font-semibold">{days}</p>
+          {course.schedule_periods && course.schedule_periods.length > 1 ? (
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0 sm:pt-0.5">Periodi</label>
+              <div className="space-y-1">
+                {course.schedule_periods.map((p, i) => (
+                  <p key={i} className="text-secondary font-semibold text-sm">
+                    {(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}
+                    {p.time && <span className="text-secondary/60 font-normal"> · {p.time}</span>}
+                    {p.court && <span className="text-secondary/60 font-normal"> · {p.court}</span>}
+                  </p>
+                ))}
+              </div>
             </div>
-          )}
-
-          {course.schedule_time && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Orario
-              </label>
-              <p className="text-secondary font-semibold">{course.schedule_time}</p>
-            </div>
+          ) : (
+            <>
+              {days && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
+                  <p className="text-secondary font-semibold">{days}</p>
+                </div>
+              )}
+              {course.schedule_time && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+                  <p className="text-secondary font-semibold">{course.schedule_time}</p>
+                </div>
+              )}
+            </>
           )}
 
           {course.price_per_month > 0 && (
@@ -284,7 +492,7 @@ export default function CorsoDetailPage() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8">
             <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
               Creato il
             </label>
@@ -296,15 +504,6 @@ export default function CorsoDetailPage() {
               })}
             </p>
           </div>
-
-          {course.description && (
-            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Descrizione
-              </label>
-              <p className="text-secondary/70 leading-relaxed">{course.description}</p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -406,7 +605,7 @@ export default function CorsoDetailPage() {
               }).replace(/^./, (c) => c.toUpperCase());
               const dateStr = date.toISOString().split("T")[0];
               return (
-                <li key={i}>
+                <li key={i} className="relative">
                   <Link href={`/dashboard/admin/corsi/${courseId}/lezioni/${dateStr}`}>
                     <div
                       className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
@@ -420,24 +619,49 @@ export default function CorsoDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {course.schedule_time && (
-                          <p className="text-xs text-white/70 mt-0.5">{course.schedule_time}</p>
+                        {((course.lesson_overrides?.[dateStr] ?? course.court_name) || (course.lesson_time_overrides?.[dateStr] ?? course.schedule_time)) && (
+                          <p className="text-xs text-white/70 mt-0.5">
+                            {[(course.lesson_overrides?.[dateStr] ?? course.court_name), (course.lesson_time_overrides?.[dateStr] ?? course.schedule_time)].filter(Boolean).join(" · ")}
+                          </p>
                         )}
                       </div>
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); handleDeleteLesson(dateStr); }}
-                        disabled={deletingLesson === dateStr}
-                        className="flex-shrink-0 p-1.5 rounded hover:bg-white/10 text-white/50 hover:text-white transition-all disabled:opacity-40"
-                        aria-label="Elimina lezione"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
+                        className="flex-shrink-0 p-1.5 rounded hover:bg-white/10 text-white/50 hover:text-white transition-all"
+                        aria-label="Opzioni lezione"
                       >
-                        {deletingLesson === dateStr
-                          ? <Loader2 className="h-4 w-4 animate-spin" />
-                          : <X className="h-4 w-4" />
-                        }
+                        <MoreVertical className="h-4 w-4" />
                       </button>
                     </div>
                   </Link>
+                  {openMenuLesson === dateStr && menuPosition && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
+                      <div
+                        className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                        style={{ top: menuPosition.top, left: menuPosition.left }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { closeActionMenu(); setEditingLesson(dateStr); setEditingNewDate(dateStr); setEditingNewDateText(isoToDisplay(dateStr)); setEditingNewCourt(course.lesson_overrides?.[dateStr] ?? course.court_name ?? ""); const _t = parseTimeRange(course.lesson_time_overrides?.[dateStr] ?? course.schedule_time ?? ""); setEditingStartTime(_t.start); setEditingEndTime(_t.end); }}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Modifica
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { closeActionMenu(); handleDeleteLesson(dateStr); }}
+                          disabled={deletingLesson === dateStr}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full disabled:opacity-40"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {deletingLesson === dateStr ? "Eliminando..." : "Elimina"}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </li>
               );
             })}
@@ -462,6 +686,151 @@ export default function CorsoDetailPage() {
           Elimina
         </button>
       </div>
+
+      {editingLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4" style={{ background: "#05384c" }}>
+              <h3 className="text-lg font-semibold text-white">Modifica lezione</h3>
+              <button
+                type="button"
+                onClick={() => { setEditingLesson(null); setEditingNewDate(""); setEditingNewDateText(""); setEditingNewCourt(""); setEditingStartTime(""); setEditingEndTime(""); setSlotError(null); }}
+                className="text-white/70 hover:text-white transition-colors"
+                aria-label="Chiudi"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm font-medium text-secondary flex-shrink-0">Data</span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={openCalendar}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                    tabIndex={-1}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="GG/MM/AAAA"
+                    value={editingNewDateText}
+                    onChange={(e) => handleEditingDateTextChange(e.target.value)}
+                    maxLength={10}
+                    className="w-44 rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-secondary">Ora inizio</span>
+                <select
+                  value={editingStartTime}
+                  onChange={(e) => { setEditingStartTime(e.target.value); setSlotError(null); }}
+                  className="w-44 rounded-lg border border-gray-300 px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  <option value="">—</option>
+                  {TIME_SLOTS.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-secondary">Ora fine</span>
+                <select
+                  value={editingEndTime}
+                  onChange={(e) => { setEditingEndTime(e.target.value); setSlotError(null); }}
+                  className="w-44 rounded-lg border border-gray-300 px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  <option value="">—</option>
+                  {TIME_SLOTS.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-secondary">Campo</span>
+                <select
+                  value={editingNewCourt}
+                  onChange={(e) => { setEditingNewCourt(e.target.value); setSlotError(null); }}
+                  className="w-44 rounded-lg border border-gray-300 px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                >
+                  <option value="">—</option>
+                  {courts.map((court) => (
+                    <option key={court} value={court}>{court}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="px-6 pb-6 space-y-3">
+              {slotError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-700">
+                  {slotError}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => handleRescheduleLesson(editingLesson, editingNewDate)}
+                disabled={savingEdit || !editingNewDate || (editingNewDate === editingLesson && !editingNewCourt)}
+                className="w-full py-3 rounded-xl bg-secondary text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {savingEdit
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Salvataggio...</span></>
+                  : "Conferma"
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar picker */}
+      <Modal open={calPickerOpen} onOpenChange={setCalPickerOpen}>
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
+          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalTitle className="text-white text-lg">Seleziona data</ModalTitle>
+          </ModalHeader>
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"><ChevronLeft className="h-4 w-4" /></button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">{getCalendarMonthLabel(calendarViewDate)}</p>
+                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"><ChevronRight className="h-4 w-4" /></button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS_CAL.map((d) => <span key={d} className="py-1">{d}</span>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isToday = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => setPendingDate(normalizeDate(date))}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected ? "bg-secondary text-white font-semibold" :
+                        isCurrentMonth ? "text-gray-800 hover:bg-gray-100" : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isToday ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button type="button" onClick={() => { const t = normalizeDate(new Date()); setPendingDate(t); setCalendarViewDate(new Date(t.getFullYear(), t.getMonth(), 1)); }} className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">Oggi</button>
+            <button type="button" onClick={applyCalendarDate} className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity">Applica</button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

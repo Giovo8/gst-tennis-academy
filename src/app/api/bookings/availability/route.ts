@@ -82,7 +82,7 @@ export async function GET(request: Request) {
 
       const { data: courseData } = await supabase
         .from("courses")
-        .select("id, name, schedule_time, schedule_days, schedule_periods, start_date, end_date")
+        .select("id, name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date")
         .eq("is_active", true)
         .eq("court_name", court)
         .contains("schedule_days", [dayName]);
@@ -91,6 +91,7 @@ export async function GET(request: Request) {
         .filter((c) => {
           if (c.start_date && new Date(c.start_date) > selectedDate) return false;
           if (c.end_date && new Date(c.end_date) < selectedDate) return false;
+          if (c.cancelled_dates && c.cancelled_dates.includes(dateStr)) return false;
           return true;
         })
         .flatMap((c) => {

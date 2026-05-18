@@ -209,44 +209,68 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     const DAY_CODES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
     const dayCode = DAY_CODES[selectedDate.getDay()];
     const dateStr = selectedDate.toISOString().split("T")[0];
-    const { data, error } = await supabase
-      .from("courses")
-      .select("id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active")
-      .eq("is_active", true)
-      .contains("schedule_days", [dayCode]);
-    if (error || !data) return;
-    const entries: Booking[] = data
-      .filter((c) => {
-        if (!c.court_name) return false;
-        if (c.start_date && c.start_date > dateStr) return false;
-        if (c.end_date && c.end_date < dateStr) return false;
-        return true;
-      })
-      .map((c) => {
-        const timeStr = c.schedule_time || "";
-        const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
-        const startHour   = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
-        const startMinute = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
-        const endHour     = rangeMatch ? parseInt(rangeMatch[3], 10) : startHour + 1;
-        const endMinute   = rangeMatch ? parseInt(rangeMatch[4], 10) : startMinute;
-        const startTime = new Date(selectedDate);
-        startTime.setHours(startHour, startMinute, 0, 0);
-        const endTime = new Date(selectedDate);
-        endTime.setHours(endHour, endMinute, 0, 0);
-        return {
-          id: c.id,
-          court: c.court_name,
-          user_id: "",
-          coach_id: null,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: "confirmed",
-          type: "corso",
-          notes: c.name,
-          isCourse: true,
-          user_profile: c.instructor_name ? { full_name: c.instructor_name, email: "" } : null,
-        } as Booking;
-      });
+    const selectFields = "id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, schedule_periods";
+
+    const [q1, q2] = await Promise.all([
+      supabase.from("courses").select(selectFields).eq("is_active", true).contains("schedule_days", [dayCode]),
+      supabase.from("courses").select(selectFields).eq("is_active", true).contains("extra_dates", [dateStr]),
+    ]);
+    const seen = new Set<string>();
+    const allData = [...(q1.data ?? []), ...(q2.data ?? [])].filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
+
+    const entries: Booking[] = [];
+    for (const c of allData) {
+      const isExtraDate = (c.extra_dates ?? []).includes(dateStr);
+      const isScheduledDay = (c.schedule_days ?? []).includes(dayCode);
+      if ((c.cancelled_dates ?? []).includes(dateStr)) continue;
+      if (isScheduledDay && !isExtraDate) {
+        if (c.start_date && c.start_date > dateStr) continue;
+        if (c.end_date && c.end_date < dateStr) continue;
+      }
+
+      // Determine time: lesson_time_overrides > matching period > schedule_time
+      let timeStr: string = c.schedule_time || "";
+      if (c.lesson_time_overrides?.[dateStr]) {
+        timeStr = c.lesson_time_overrides[dateStr];
+      } else if (c.schedule_periods?.length > 0) {
+        const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+        if (period?.time) timeStr = period.time;
+      }
+
+      // Determine court: lesson_overrides > matching period > court_name
+      let courtName: string | null = c.court_name;
+      if (c.lesson_overrides?.[dateStr]) {
+        courtName = c.lesson_overrides[dateStr];
+      } else if (c.schedule_periods?.length > 0) {
+        const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+        if (period?.court) courtName = period.court;
+      }
+
+      if (!courtName) continue;
+
+      const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+      const startHour   = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
+      const startMinute = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
+      const endHour     = rangeMatch ? parseInt(rangeMatch[3], 10) : startHour + 1;
+      const endMinute   = rangeMatch ? parseInt(rangeMatch[4], 10) : startMinute;
+      const startTime = new Date(selectedDate);
+      startTime.setHours(startHour, startMinute, 0, 0);
+      const endTime = new Date(selectedDate);
+      endTime.setHours(endHour, endMinute, 0, 0);
+      entries.push({
+        id: c.id,
+        court: courtName,
+        user_id: "",
+        coach_id: null,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        status: "confirmed",
+        type: "corso",
+        notes: c.name,
+        isCourse: true,
+        user_profile: c.instructor_name ? { full_name: c.instructor_name, email: "" } : null,
+      } as Booking);
+    }
     setCourseEntries(entries);
   }
 

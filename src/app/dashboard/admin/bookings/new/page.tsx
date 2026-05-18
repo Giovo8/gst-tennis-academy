@@ -560,7 +560,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         .gt("end_time", `${dateStr}T00:00:00.000Z`),
       supabase
         .from("courses")
-        .select("id, name, schedule_time, schedule_days, schedule_periods, start_date, end_date")
+        .select("id, name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date")
         .eq("is_active", true)
         .eq("court_name", selectedCourt)
         .contains("schedule_days", [(["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()]]),
@@ -570,6 +570,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     const activeCourses = (courseData || []).filter(c => {
       if (c.start_date && new Date(c.start_date) > selectedDate) return false;
       if (c.end_date && new Date(c.end_date) < selectedDate) return false;
+      if (c.cancelled_dates && c.cancelled_dates.includes(dateStr)) return false;
       return true;
     });
 
