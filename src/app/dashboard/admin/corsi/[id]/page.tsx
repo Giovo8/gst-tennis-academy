@@ -9,6 +9,7 @@ import {
   Users,
   Calendar,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 
@@ -45,6 +46,7 @@ type Course = {
   end_date: string | null;
   is_active: boolean;
   created_at: string;
+  cancelled_dates: string[] | null;
 };
 
 const DAYS: Record<string, string> = {
@@ -60,15 +62,18 @@ function computeLessonDates(course: {
   start_date: string | null;
   end_date: string | null;
   schedule_days: string[] | null;
+  cancelled_dates?: string[] | null;
 }): Date[] {
   if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
   const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
+  const cancelled = new Set(course.cancelled_dates ?? []);
   const start = new Date(course.start_date);
   const end = new Date(course.end_date);
   const result: Date[] = [];
   const cur = new Date(start);
   while (cur <= end) {
-    if (allowed.has(cur.getDay())) result.push(new Date(cur));
+    const dateStr = cur.toISOString().split("T")[0];
+    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
     cur.setDate(cur.getDate() + 1);
   }
   return result;
@@ -85,6 +90,7 @@ export default function CorsoDetailPage() {
   const [attendedDates, setAttendedDates] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [deletingLesson, setDeletingLesson] = useState<string | null>(null);
 
   useEffect(() => {
     if (courseId) loadCourse();
@@ -154,6 +160,18 @@ export default function CorsoDetailPage() {
     }
 
     setLoading(false);
+  }
+
+  async function handleDeleteLesson(dateStr: string) {
+    if (!course) return;
+    const updated = [...(course.cancelled_dates ?? []), dateStr];
+    setDeletingLesson(dateStr);
+    const { error } = await supabase
+      .from("courses")
+      .update({ cancelled_dates: updated })
+      .eq("id", course.id);
+    if (!error) setCourse({ ...course, cancelled_dates: updated });
+    setDeletingLesson(null);
   }
 
   async function handleDelete() {
@@ -406,6 +424,18 @@ export default function CorsoDetailPage() {
                           <p className="text-xs text-white/70 mt-0.5">{course.schedule_time}</p>
                         )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); handleDeleteLesson(dateStr); }}
+                        disabled={deletingLesson === dateStr}
+                        className="flex-shrink-0 p-1.5 rounded hover:bg-white/10 text-white/50 hover:text-white transition-all disabled:opacity-40"
+                        aria-label="Elimina lezione"
+                      >
+                        {deletingLesson === dateStr
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <X className="h-4 w-4" />
+                        }
+                      </button>
                     </div>
                   </Link>
                 </li>
