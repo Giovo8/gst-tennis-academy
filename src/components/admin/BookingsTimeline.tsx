@@ -593,7 +593,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     }
 
     // Colori default (admin/altre dashboard)
-    if (booking.isCourse) return { background: "#7c3aed" };
+    if (booking.isCourse) return { background: "#075985" };
 
     if (booking.isBlock) {
       return { background: "var(--color-frozen-lake-900)" };

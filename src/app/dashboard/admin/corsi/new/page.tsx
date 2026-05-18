@@ -254,25 +254,33 @@ export default function NuovoCorsoPage() {
       // Load existing enrollments
       const { data: enrollments } = await supabase
         .from("course_enrollments")
-        .select("user_id")
+        .select("user_id, guest_name")
         .eq("course_id", courseId);
       if (enrollments && enrollments.length > 0) {
-        const userIds = enrollments.map((e: { user_id: string }) => e.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, phone")
-          .in("id", userIds);
-        if (profiles) {
-          setSelectedAthletes(
-            profiles.map((p: { id: string; full_name: string; email: string; phone?: string | null }) => ({
-              userId: p.id,
-              fullName: p.full_name,
-              email: p.email,
-              phone: p.phone ?? undefined,
-              isRegistered: true,
-            }))
-          );
+        const registeredIds = enrollments.filter((e: { user_id: string | null }) => e.user_id).map((e: { user_id: string }) => e.user_id);
+        const guestEnrollments = enrollments.filter((e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name);
+        const athletes: typeof selectedAthletes = [];
+        if (registeredIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name, email, phone")
+            .in("id", registeredIds);
+          if (profiles) {
+            athletes.push(
+              ...profiles.map((p: { id: string; full_name: string; email: string; phone?: string | null }) => ({
+                userId: p.id,
+                fullName: p.full_name,
+                email: p.email,
+                phone: p.phone ?? undefined,
+                isRegistered: true,
+              }))
+            );
+          }
         }
+        for (const g of guestEnrollments) {
+          athletes.push({ fullName: g.guest_name!, isRegistered: false });
+        }
+        setSelectedAthletes(athletes);
       }
       const sd = data.start_date ?? "";
       const ed = data.end_date ?? "";
@@ -477,10 +485,13 @@ export default function NuovoCorsoPage() {
         if (delErr) throw new Error("Errore rimozione iscrizioni precedenti: " + delErr.message);
 
         const registeredAthletes = selectedAthletes.filter((a) => a.isRegistered && a.userId);
-        if (registeredAthletes.length > 0) {
-          const { error: insErr } = await supabase.from("course_enrollments").insert(
-            registeredAthletes.map((a) => ({ course_id: savedCourseId, user_id: a.userId, fee: pricePerMonth || null }))
-          );
+        const guestAthletes = selectedAthletes.filter((a) => !a.isRegistered && a.fullName.trim());
+        const rows = [
+          ...registeredAthletes.map((a) => ({ course_id: savedCourseId, user_id: a.userId, fee: pricePerMonth || null, guest_name: null })),
+          ...guestAthletes.map((a) => ({ course_id: savedCourseId, user_id: null, fee: pricePerMonth || null, guest_name: a.fullName.trim() })),
+        ];
+        if (rows.length > 0) {
+          const { error: insErr } = await supabase.from("course_enrollments").insert(rows);
           if (insErr) throw new Error("Errore salvataggio partecipanti: " + insErr.message);
         }
       }

@@ -13,6 +13,15 @@ type Athlete = {
   phone?: string | null;
 };
 
+type GuestParticipant = {
+  id: null;
+  full_name: string;
+  email?: null;
+  phone?: null;
+};
+
+type Participant = Athlete | GuestParticipant;
+
 type AttendanceMap = Record<string, boolean>;
 
 export default function LezionePresenzePage() {
@@ -22,7 +31,7 @@ export default function LezionePresenzePage() {
 
   const [courseName, setCorseName] = useState("");
   const [scheduleTime, setScheduleTime] = useState<string | null>(null);
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<Participant[]>([]);
   const [attendance, setAttendance] = useState<AttendanceMap>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,32 +67,45 @@ export default function LezionePresenzePage() {
       setScheduleTime(course.schedule_time ?? null);
     }
 
-    // Load enrolled athletes via two-step query
+    // Load enrolled participants via two-step query
     const { data: enrollments } = await supabase
       .from("course_enrollments")
-      .select("user_id")
+      .select("user_id, guest_name")
       .eq("course_id", courseId);
 
     if (enrollments && enrollments.length > 0) {
-      const userIds = enrollments.map((e: { user_id: string }) => e.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", userIds);
-      setAthletes(profiles ?? []);
+      const registeredIds = enrollments
+        .filter((e: { user_id: string | null }) => e.user_id)
+        .map((e: { user_id: string }) => e.user_id);
+      const guestEnrollments = enrollments.filter(
+        (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name
+      );
+      const all: Participant[] = [];
+      if (registeredIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, phone")
+          .in("id", registeredIds);
+        if (profiles) all.push(...(profiles as Athlete[]));
+      }
+      for (const g of guestEnrollments) {
+        all.push({ id: null, full_name: g.guest_name! });
+      }
+      setAthletes(all);
     }
 
     // Load existing attendance for this lesson date
     const { data: existingAttendance } = await supabase
       .from("lesson_attendance")
-      .select("user_id, present")
+      .select("user_id, guest_name, present")
       .eq("course_id", courseId)
       .eq("lesson_date", dateParam);
 
     if (existingAttendance) {
       const map: AttendanceMap = {};
-      existingAttendance.forEach((r: { user_id: string; present: boolean }) => {
-        map[r.user_id] = r.present;
+      existingAttendance.forEach((r: { user_id: string | null; guest_name: string | null; present: boolean }) => {
+        const key = r.user_id ?? `guest:${r.guest_name}`;
+        map[key] = r.present;
       });
       setAttendance(map);
     }
@@ -91,14 +113,17 @@ export default function LezionePresenzePage() {
     setLoading(false);
   }
 
-  function toggleAttendance(userId: string) {
-    setAttendance((prev) => ({ ...prev, [userId]: !prev[userId] }));
+  function toggleAttendance(key: string) {
+    setAttendance((prev) => ({ ...prev, [key]: !prev[key] }));
     setSaved(false);
   }
 
   function markAll(present: boolean) {
     const map: AttendanceMap = {};
-    athletes.forEach((a) => { map[a.id] = present; });
+    athletes.forEach((a) => {
+      const key = a.id ?? `guest:${a.full_name}`;
+      map[key] = present;
+    });
     setAttendance(map);
     setSaved(false);
   }
@@ -108,16 +133,31 @@ export default function LezionePresenzePage() {
     setSaving(true);
     setError("");
 
-    const rows = athletes.map((a) => ({
-      course_id: courseId,
-      lesson_date: dateParam,
-      user_id: a.id,
-      present: attendance[a.id] ?? false,
-    }));
+    const rows = athletes.map((a) => {
+      const key = a.id ?? `guest:${a.full_name}`;
+      return a.id
+        ? { course_id: courseId, lesson_date: dateParam, user_id: a.id, guest_name: null, present: attendance[key] ?? false }
+        : { course_id: courseId, lesson_date: dateParam, user_id: null, guest_name: a.full_name, present: attendance[key] ?? false };
+    });
 
-    const { error: upsertError } = await supabase
-      .from("lesson_attendance")
-      .upsert(rows, { onConflict: "course_id,lesson_date,user_id" });
+    const registeredRows = rows.filter((r) => r.user_id);
+    const guestRows = rows.filter((r) => !r.user_id);
+
+    let saveError = null;
+    if (registeredRows.length > 0) {
+      const { error } = await supabase
+        .from("lesson_attendance")
+        .upsert(registeredRows, { onConflict: "course_id,lesson_date,user_id" });
+      if (error) saveError = error;
+    }
+    if (guestRows.length > 0 && !saveError) {
+      const { error } = await supabase
+        .from("lesson_attendance")
+        .upsert(guestRows, { onConflict: "course_id,lesson_date,guest_name" });
+      if (error) saveError = error;
+    }
+
+    const upsertError = saveError;
 
     if (upsertError) {
       setError("Errore nel salvataggio: " + upsertError.message);
@@ -127,7 +167,10 @@ export default function LezionePresenzePage() {
     setSaving(false);
   }
 
-  const presentCount = athletes.filter((a) => attendance[a.id] === true).length;
+  const presentCount = athletes.filter((a) => {
+    const key = a.id ?? `guest:${a.full_name}`;
+    return attendance[key] === true;
+  }).length;
 
   if (loading) {
     return (
@@ -187,22 +230,26 @@ export default function LezionePresenzePage() {
           <div className="px-6 py-4">
             <ul className="flex flex-col gap-2">
               {athletes.map((a) => {
-                const isPresent = attendance[a.id] === true;
+                const key = a.id ?? `guest:${a.full_name}`;
+                const isPresent = attendance[key] === true;
                 const initials = a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
                 const bg = isPresent ? "#023047" : "var(--secondary)";
                 return (
-                  <li key={a.id}>
-                    <button onClick={() => toggleAttendance(a.id)} className="w-full">
+                  <li key={key}>
+                    <button onClick={() => toggleAttendance(key)} className="w-full">
                       <div className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: bg }}>
                         <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                           <span className="text-sm font-bold text-white leading-none">{initials}</span>
                         </div>
                         <div className="flex-1 min-w-0 text-left">
                           <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
-                          {(a.email || a.phone) && (
+                          {a.id && (a.email || a.phone) && (
                             <p className="text-xs text-white/60 truncate mt-0.5">
                               {[a.email, a.phone].filter(Boolean).join(" · ")}
                             </p>
+                          )}
+                          {!a.id && (
+                            <p className="text-xs text-white/50 mt-0.5">Ospite</p>
                           )}
                         </div>
                         <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">

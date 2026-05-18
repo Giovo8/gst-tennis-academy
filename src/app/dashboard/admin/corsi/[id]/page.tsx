@@ -19,6 +19,13 @@ type Athlete = {
   phone?: string | null;
 };
 
+type GuestAthlete = {
+  id: null;
+  full_name: string;
+  email?: null;
+  phone?: null;
+};
+
 type MaestroRow = {
   id?: string;
   full_name: string;
@@ -73,7 +80,7 @@ export default function CorsoDetailPage() {
   const courseId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [course, setCourse] = useState<Course | null>(null);
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<(Athlete | GuestAthlete)[]>([]);
   const [maestros, setMaestros] = useState<MaestroRow[]>([]);
   const [attendedDates, setAttendedDates] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -110,16 +117,32 @@ export default function CorsoDetailPage() {
 
     const { data: enrollments } = await supabase
       .from("course_enrollments")
-      .select("user_id")
+      .select("user_id, guest_name")
       .eq("course_id", courseId);
 
     if (enrollments && enrollments.length > 0) {
-      const userIds = enrollments.map((e: { user_id: string }) => e.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", userIds);
-      if (profiles) setAthletes(profiles as Athlete[]);
+      const registeredIds = enrollments
+        .filter((e: { user_id: string | null }) => e.user_id)
+        .map((e: { user_id: string }) => e.user_id);
+      const guestEnrollments = enrollments.filter(
+        (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name
+      );
+
+      const allParticipants: (Athlete | GuestAthlete)[] = [];
+
+      if (registeredIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, phone")
+          .in("id", registeredIds);
+        if (profiles) allParticipants.push(...(profiles as Athlete[]));
+      }
+
+      for (const g of guestEnrollments) {
+        allParticipants.push({ id: null, full_name: g.guest_name! });
+      }
+
+      setAthletes(allParticipants);
     }
 
     const { data: attendanceRecords } = await supabase
@@ -311,30 +334,38 @@ export default function CorsoDetailPage() {
           </div>
         ) : (
           <ul className="flex flex-col gap-2 px-4 py-4">
-            {athletes.map((a) => (
-              <li key={a.id}>
-                <Link href={`/dashboard/admin/corsi/${courseId}/partecipanti/${a.id}`}>
-                  <div
-                    className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                    style={{ background: "#05384c" }}
-                  >
-                    <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-white leading-none">
-                        {a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
-                      {(a.email || a.phone) && (
-                        <p className="text-xs text-white/60 truncate mt-0.5">
-                          {[a.email, a.phone].filter(Boolean).join(" · ")}
-                        </p>
-                      )}
-                    </div>
+            {athletes.map((a, idx) => {
+              const initials = a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+              const inner = (
+                <div
+                  className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+                  style={{ background: "#05384c" }}
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-white leading-none">{initials}</span>
                   </div>
-                </Link>
-              </li>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
+                    {a.id && (a.email || a.phone) && (
+                      <p className="text-xs text-white/60 truncate mt-0.5">
+                        {[a.email, a.phone].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                    {!a.id && (
+                      <p className="text-xs text-white/50 mt-0.5">Ospite</p>
+                    )}
+                  </div>
+                </div>
+              );
+              return (
+                <li key={a.id ?? `guest-${idx}`}>
+                  {a.id
+                    ? <Link href={`/dashboard/admin/corsi/${courseId}/partecipanti/${a.id}`}>{inner}</Link>
+                    : <Link href={`/dashboard/admin/corsi/${courseId}/partecipanti/ospite/${encodeURIComponent(a.full_name)}`}>{inner}</Link>
+                  }
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

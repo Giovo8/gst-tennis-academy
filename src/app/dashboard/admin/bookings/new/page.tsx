@@ -1248,7 +1248,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                             return { background: "var(--color-frozen-lake-900)" };
                           }
                           if (booking.isCourse) {
-                            return { background: "#5c7a3e" };
+                            return { background: "#075985" };
                           }
                           if (booking.status === "cancelled") {
                             return { background: "#6b7280" };

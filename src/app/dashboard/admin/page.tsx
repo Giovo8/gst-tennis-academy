@@ -39,9 +39,19 @@ interface TimelineBooking {
   }>;
 }
 
+interface UpcomingCourse {
+  id: string;
+  name: string;
+  court_name: string;
+  start_time: string;
+  end_time: string;
+  isCourse: true;
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
+  const [upcomingCourses, setUpcomingCourses] = useState<UpcomingCourse[]>([]);
   const [userName, setUserName] = useState("");
 
 
@@ -124,6 +134,54 @@ export default function AdminDashboard() {
         setTimelineBookings(enrichedTimelineBookings);
       }
 
+      // Carica prossime occorrenze dei corsi attivi
+      const { data: coursesData } = await supabase
+        .from("courses")
+        .select("id, name, schedule_days, schedule_time, court_name, start_date, end_date")
+        .eq("is_active", true);
+
+      if (coursesData && coursesData.length > 0) {
+        const DAY_NAMES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+        const occurrences: UpcomingCourse[] = [];
+        const now2 = new Date();
+
+        for (const course of coursesData) {
+          if (!course.schedule_time || !course.schedule_days?.length) continue;
+          const m = course.schedule_time.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+          if (!m) continue;
+          const startH = parseInt(m[1]), startM = parseInt(m[2]);
+          const endH = parseInt(m[3]), endM = parseInt(m[4]);
+          const startDate = course.start_date ? new Date(course.start_date + "T00:00:00") : null;
+          const endDate = course.end_date ? new Date(course.end_date + "T23:59:59") : null;
+
+          const searchDate = new Date(now2);
+          searchDate.setHours(0, 0, 0, 0);
+
+          for (let i = 0; i < 90; i++) {
+            const dayName = DAY_NAMES[searchDate.getDay()];
+            if (course.schedule_days.includes(dayName)) {
+              const start = new Date(searchDate);
+              start.setHours(startH, startM, 0, 0);
+              if (start >= now2 && (!startDate || start >= startDate) && (!endDate || start <= endDate)) {
+                const end = new Date(searchDate);
+                end.setHours(endH, endM, 0, 0);
+                occurrences.push({
+                  id: course.id,
+                  name: course.name || "Corso",
+                  court_name: course.court_name || "",
+                  start_time: start.toISOString(),
+                  end_time: end.toISOString(),
+                  isCourse: true,
+                });
+                break;
+              }
+            }
+            searchDate.setDate(searchDate.getDate() + 1);
+          }
+        }
+        setUpcomingCourses(occurrences);
+      }
+
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     }
@@ -160,8 +218,9 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {(() => {
         const now = new Date();
-        const upcoming = timelineBookings
-          .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled")
+        const upcomingBookings = timelineBookings
+          .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled");
+        const upcoming = [...upcomingBookings, ...upcomingCourses]
           .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
           .slice(0, 5);
 
@@ -195,6 +254,7 @@ export default function AdminDashboard() {
               ) : (
                 <ul className="flex flex-col gap-2">
                   {upcoming.map((item) => {
+                    const isCourseItem = "isCourse" in item && item.isCourse;
                     const start = new Date(item.start_time);
                     const today = new Date(); today.setHours(0,0,0,0);
                     const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
@@ -202,18 +262,41 @@ export default function AdminDashboard() {
                     let pill: { text: string; cls: string } | null = null;
                     if (start >= today && start < tomorrow) pill = { text: "Oggi", cls: "bg-primary text-white" };
                     else if (start >= tomorrow && start < dayAfter) pill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
+
+                    if (isCourseItem) {
+                      const c = item as UpcomingCourse;
+                      return (
+                        <li key={`corso-${c.id}-${c.start_time}`}>
+                          <Link href={`/dashboard/admin/corsi/${c.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: "#075985" }}>
+                            <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                              <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                                {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                              </span>
+                              <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-white text-sm truncate">{c.name}</p>
+                              <p className="text-xs text-white/70 mt-0.5">{timeStr(c.start_time)}–{timeStr(c.end_time)} · {c.court_name}</p>
+                            </div>
+                            <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">Corso</span>
+                          </Link>
+                        </li>
+                      );
+                    }
+
+                    const b = item as TimelineBooking;
                     const displayName = (() => {
-                      if (item.participants && item.participants.length > 0) {
-                        return item.participants.map(p => p.full_name).slice(0, 2).join(", ");
+                      if (b.participants && b.participants.length > 0) {
+                        return b.participants.map(p => p.full_name).slice(0, 2).join(", ");
                       }
-                      return item.user_profile?.full_name || item.coach_profile?.full_name || "Prenotazione";
+                      return b.user_profile?.full_name || b.coach_profile?.full_name || "Prenotazione";
                     })();
-                    const isArenaBooking = item.type === "arena" || item.notes?.toLowerCase().includes("sfida arena");
-                    const typeLabel = isArenaBooking ? "Arena" : (typeLabels[item.type] || item.type.replace(/_/g, " "));
-                    const typeBg = isArenaBooking ? "#023b52" : (typeColors[item.type] || "var(--secondary)");
+                    const isArenaBooking = b.type === "arena" || b.notes?.toLowerCase().includes("sfida arena");
+                    const typeLabel = isArenaBooking ? "Arena" : (typeLabels[b.type] || b.type.replace(/_/g, " "));
+                    const typeBg = isArenaBooking ? "#023b52" : (typeColors[b.type] || "var(--secondary)");
                     return (
-                      <li key={item.id}>
-                        <Link href={`/dashboard/admin/bookings/${item.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: typeBg }}>
+                      <li key={b.id}>
+                        <Link href={`/dashboard/admin/bookings/${b.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: typeBg }}>
                         <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                           <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
                             {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
@@ -222,7 +305,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-white text-sm truncate">{displayName}</p>
-                          <p className="text-xs text-white/70 mt-0.5">{timeStr(item.start_time)}–{timeStr(item.end_time)} · {item.court}</p>
+                          <p className="text-xs text-white/70 mt-0.5">{timeStr(b.start_time)}–{timeStr(b.end_time)} · {b.court}</p>
                         </div>
                         <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">{typeLabel}</span>
                         </Link>
