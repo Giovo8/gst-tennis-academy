@@ -26,6 +26,8 @@ import {
 
 // â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+type SchedulePeriod = { days: string[]; time: string | null; court?: string | null; start_date?: string | null; end_date?: string | null };
+
 type Course = {
   id: string;
   name: string;
@@ -36,6 +38,7 @@ type Course = {
   schedule_time: string | null;
   instructor_name: string | null;
   court_name: string | null;
+  schedule_periods: SchedulePeriod[] | null;
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
@@ -192,12 +195,7 @@ export default function CorsiAdminPage() {
         <div className="space-y-2">
           {filtered.map((course) => {
             const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
-            const subtitle = [
-              course.instructor_name,
-              course.court_name,
-            ]
-              .filter(Boolean)
-              .join("  ·  ");
+            const subtitle = course.instructor_name ?? null;
 
             return (
               <div

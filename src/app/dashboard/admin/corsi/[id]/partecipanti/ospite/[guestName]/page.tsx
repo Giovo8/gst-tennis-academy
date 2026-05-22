@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 
 type Course = {
@@ -13,6 +13,17 @@ type Course = {
   start_date: string | null;
   end_date: string | null;
   cancelled_dates: string[] | null;
+  price_per_month: number | null;
+};
+
+type Payment = {
+  id: string;
+  amount: number;
+  payment_method: string | null;
+  status: string;
+  paid_at: string | null;
+  created_at: string;
+  metadata: { note?: string } | null;
 };
 
 const DAY_INDEX: Record<string, number> = {
@@ -43,7 +54,19 @@ export default function OspitePresenzePage() {
 
   const [course, setCourse] = useState<Course | null>(null);
   const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [enrollmentFee, setEnrollmentFee] = useState<number | null>(null);
+  const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [addingPayment, setAddingPayment] = useState(false);
+  const [newAmount, setNewAmount] = useState("");
+  const [newMethod, setNewMethod] = useState("cash");
+  const [newNote, setNewNote] = useState("");
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [settingFee, setSettingFee] = useState(false);
+  const [feeInput, setFeeInput] = useState("");
+  const [savingFee, setSavingFee] = useState(false);
 
   useEffect(() => {
     if (!courseId || !guestName) return;
@@ -53,10 +76,10 @@ export default function OspitePresenzePage() {
   async function load() {
     setLoading(true);
 
-    const [{ data: courseData }, { data: attendanceData }] = await Promise.all([
+    const [{ data: courseData }, { data: attendanceData }, { data: paymentsData }, { data: enrollmentData }] = await Promise.all([
       supabase
         .from("courses")
-        .select("name, schedule_time, schedule_days, start_date, end_date, cancelled_dates")
+        .select("name, schedule_time, schedule_days, start_date, end_date, cancelled_dates, price_per_month")
         .eq("id", courseId)
         .single(),
       supabase
@@ -64,9 +87,27 @@ export default function OspitePresenzePage() {
         .select("lesson_date, present")
         .eq("course_id", courseId)
         .eq("guest_name", guestName),
+      supabase
+        .from("payments")
+        .select("id, amount, payment_method, status, paid_at, created_at, metadata")
+        .eq("reference_id", courseId)
+        .eq("guest_name", guestName)
+        .eq("payment_type", "course")
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("course_enrollments")
+        .select("id, fee")
+        .eq("course_id", courseId)
+        .eq("guest_name", guestName)
+        .maybeSingle(),
     ]);
 
     if (courseData) setCourse(courseData);
+    if (enrollmentData) {
+      setEnrollmentId(enrollmentData.id);
+      setEnrollmentFee(enrollmentData.fee != null ? Number(enrollmentData.fee) : null);
+    }
+    if (paymentsData) setPayments(paymentsData);
     if (attendanceData) {
       const map: Record<string, boolean> = {};
       attendanceData.forEach((r: { lesson_date: string; present: boolean }) => {
@@ -92,6 +133,60 @@ export default function OspitePresenzePage() {
   const lessonDates = computeLessonDates(course);
   const presentCount = lessonDates.filter((d) => attendance[d.toISOString().split("T")[0]] === true).length;
 
+  async function updateFee() {
+    if (!enrollmentId) return;
+    const fee = parseFloat(feeInput);
+    if (isNaN(fee) || fee < 0) return;
+    setSavingFee(true);
+    const { error } = await supabase
+      .from("course_enrollments")
+      .update({ fee })
+      .eq("id", enrollmentId);
+    if (!error) {
+      setEnrollmentFee(fee);
+      setSettingFee(false);
+      setFeeInput("");
+    }
+    setSavingFee(false);
+  }
+
+  async function addPayment() {
+    const amount = parseFloat(newAmount);
+    if (!amount || isNaN(amount) || amount <= 0) return;
+    setPaymentError(null);
+    setSavingPayment(true);
+    const { data, error } = await supabase
+      .from("payments")
+      .insert({
+        guest_name: guestName,
+        amount,
+        currency: "EUR",
+        payment_type: "course",
+        reference_id: courseId,
+        payment_method: newMethod,
+        status: "completed",
+        paid_at: new Date().toISOString(),
+        metadata: newNote ? { note: newNote } : null,
+      })
+      .select("id, amount, payment_method, status, paid_at, created_at, metadata")
+      .single();
+    if (error) {
+      setPaymentError(error.message);
+    } else if (data) {
+      setPayments((prev) => [...prev, data]);
+      setNewAmount("");
+      setNewNote("");
+      setNewMethod("cash");
+      setAddingPayment(false);
+    }
+    setSavingPayment(false);
+  }
+
+  async function deletePayment(id: string) {
+    await supabase.from("payments").delete().eq("id", id);
+    setPayments((prev) => prev.filter((p) => p.id !== id));
+  }
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -115,7 +210,6 @@ export default function OspitePresenzePage() {
           <User className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-white">{guestName}</h2>
-            <p className="text-sm text-white/60 mt-1">Ospite</p>
           </div>
         </div>
       </div>
@@ -194,6 +288,172 @@ export default function OspitePresenzePage() {
           </div>
         )}
       </div>
+
+      {/* Contabilità */}
+      {(() => {
+        const totalPaid = payments
+          .filter((p) => p.status === "completed")
+          .reduce((sum, p) => sum + Number(p.amount), 0);
+        const totalDue = enrollmentFee != null ? enrollmentFee - totalPaid : null;
+        const methodLabel = (m: string | null) => {
+          if (m === "cash") return "Contanti";
+          if (m === "bank_transfer") return "Bonifico";
+          return m ?? "—";
+        };
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Contabilità</h2>
+            </div>
+
+            {/* Riepilogo */}
+            <div className="px-6 py-5 divide-y divide-gray-100 border-b border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-4">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Quota</label>
+                <p className="text-secondary font-semibold">
+                  {enrollmentFee != null ? `€${enrollmentFee.toFixed(2)}` : "—"}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 py-4">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Importo pagato</label>
+                <p className="text-secondary font-semibold">€{totalPaid.toFixed(2)}</p>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pt-4">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Importo dovuto</label>
+                <p className="text-secondary font-semibold">
+                  {totalDue != null ? `€${totalDue.toFixed(2)}` : "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* Lista pagamenti */}
+            {payments.length === 0 ? (
+              <div className="px-6 py-8 text-center">
+                <p className="text-sm text-secondary/50">Nessun pagamento registrato</p>
+              </div>
+            ) : (
+              <div className="px-6 py-4">
+                <ul className="flex flex-col gap-2">
+                  {payments.map((p, i) => {
+                    const date = new Date(p.paid_at ?? p.created_at).toLocaleDateString("it-IT", {
+                      day: "numeric", month: "long", year: "numeric",
+                    });
+                    return (
+                      <li key={p.id}>
+                        <div
+                          className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                          style={{ background: "#023047" }}
+                        >
+                          <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                            <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white text-sm">€{Number(p.amount).toFixed(2)}</p>
+                            <p className="text-xs text-white/50 mt-0.5">
+                              {date} · {methodLabel(p.payment_method)}
+                              {p.metadata?.note && <> · {p.metadata.note}</>}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => deletePayment(p.id)}
+                            className="flex-shrink-0 text-white/30 hover:text-red-300 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {/* Form aggiunta pagamento */}
+            {addingPayment && (
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                <div className="flex flex-col divide-y divide-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Importo (€)</label>
+                    <input
+                      type="number" min="0" step="0.01" value={newAmount}
+                      onChange={(e) => setNewAmount(e.target.value)} placeholder="0.00"
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Metodo</label>
+                    <select
+                      value={newMethod} onChange={(e) => setNewMethod(e.target.value)}
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                    >
+                      <option value="cash">Contanti</option>
+                      <option value="bank_transfer">Bonifico</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Nota (opzionale)</label>
+                    <input
+                      type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="es. Rata gennaio"
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  {paymentError && <p className="flex-1 text-xs text-red-500 self-center">{paymentError}</p>}
+                  <button
+                    onClick={() => { setAddingPayment(false); setNewAmount(""); setNewNote(""); setPaymentError(null); }}
+                    className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:opacity-90 transition-all font-medium"
+                  >Annulla</button>
+                  <button
+                    onClick={addPayment} disabled={savingPayment || !newAmount}
+                    className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:opacity-90 transition-all font-medium disabled:opacity-50"
+                  >{savingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva"}</button>
+                </div>
+              </div>
+            )}
+
+            {/* Form imposta quota */}
+            {settingFee && (
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Quota totale (€)</label>
+                  <input
+                    type="number" min="0" step="0.01" value={feeInput}
+                    onChange={(e) => setFeeInput(e.target.value)}
+                    placeholder={enrollmentFee != null ? enrollmentFee.toFixed(2) : "0.00"}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  />
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={() => { setSettingFee(false); setFeeInput(""); }}
+                    className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#022431] rounded-lg hover:opacity-90 transition-all font-medium"
+                  >Annulla</button>
+                  <button
+                    onClick={updateFee} disabled={savingFee || !feeInput}
+                    className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:opacity-90 transition-all font-medium disabled:opacity-50"
+                  >{savingFee ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva"}</button>
+                </div>
+              </div>
+            )}
+
+            {/* Bottoni azione */}
+            {!addingPayment && !settingFee && (
+              <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => { setSettingFee(true); if (feeInput === "") { const def = enrollmentFee ?? (course?.price_per_month ? Number(course.price_per_month) : null); if (def != null) setFeeInput(String(def)); } }}
+                  className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#023047] rounded-lg hover:opacity-90 transition-all font-medium"
+                >Imposta quota</button>
+                <button
+                  onClick={() => setAddingPayment(true)}
+                  className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-secondary rounded-lg hover:opacity-90 transition-all font-medium"
+                >Aggiungi pagamento</button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

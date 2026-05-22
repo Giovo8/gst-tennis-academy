@@ -36,6 +36,7 @@ type Block = {
   start_time: string;
   end_time: string;
   reason?: string;
+  is_disabled: boolean;
   created_at: string;
 };
 
@@ -49,6 +50,7 @@ export default function CourtsBlockPage() {
   const [filterCourt, setFilterCourt] = useState("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"active" | "expired" | "cancelled" | "all">("active");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -63,7 +65,6 @@ export default function CourtsBlockPage() {
       const { data, error } = await supabase
         .from("court_blocks")
         .select("*")
-        .eq("is_disabled", false)
         .order("start_time", { ascending: false });
 
       if (!error && data) {
@@ -131,6 +132,7 @@ export default function CourtsBlockPage() {
       start_time: string;
       end_time: string;
       reason?: string;
+      is_disabled: boolean;
       blockIds: string[];
       allDates: Array<{start: string, end: string}>;
     }>();
@@ -151,6 +153,7 @@ export default function CourtsBlockPage() {
           start_time: block.start_time,
           end_time: block.end_time,
           reason: block.reason,
+          is_disabled: block.is_disabled,
           blockIds: [block.id],
           allDates: [{start: block.start_time, end: block.end_time}]
         });
@@ -243,13 +246,18 @@ export default function CourtsBlockPage() {
     filterType !== "all" ||
     filterCourt !== "all" ||
     filterDateFrom !== "" ||
-    filterDateTo !== "";
+    filterDateTo !== "" ||
+    filterStatus !== "active";
 
   const nowMs = Date.now();
 
   const filteredBlocks = groupedBlocks.filter((block) => {
-    // In questa pagina non mostriamo i blocchi scaduti.
-    if (new Date(block.end_time).getTime() < nowMs) return false;
+    const isExpired = new Date(block.end_time).getTime() < nowMs;
+    const isCancelled = block.is_disabled;
+
+    if (filterStatus === "active" && (isExpired || isCancelled)) return false;
+    if (filterStatus === "expired" && (!isExpired || isCancelled)) return false;
+    if (filterStatus === "cancelled" && !isCancelled) return false;
 
     const blockType = getBlockStyle(block.reason).type;
     const blockSearch = `${block.court_id} ${block.reason || ""} ${blockType}`.toLowerCase();
@@ -554,6 +562,23 @@ export default function CourtsBlockPage() {
               </select>
             </div>
 
+            <div className="space-y-1">
+              <label htmlFor="courts-status-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                Stato
+              </label>
+              <select
+                id="courts-status-filter"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              >
+                <option value="active">Attivi</option>
+                <option value="expired">Scaduti</option>
+                <option value="cancelled">Annullati</option>
+                <option value="all">Tutti</option>
+              </select>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label htmlFor="courts-date-from-filter" className="text-xs font-semibold uppercase tracking-wide text-secondary/70">
@@ -590,6 +615,7 @@ export default function CourtsBlockPage() {
                 setFilterCourt("all");
                 setFilterDateFrom("");
                 setFilterDateTo("");
+                setFilterStatus("active");
               }}
               className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
             >

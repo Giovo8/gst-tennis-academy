@@ -66,7 +66,8 @@ type Course = {
   extra_dates: string[] | null;
   lesson_overrides: Record<string, string> | null;
   lesson_time_overrides: Record<string, string> | null;
-  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null; start_date?: string | null; end_date?: string | null }[] | null;
+  created_by: string | null;
 };
 
 const TIME_SLOTS: string[] = Array.from({ length: 31 }, (_, i) => {
@@ -83,6 +84,27 @@ const DAYS: Record<string, string> = {
 const DAY_INDEX: Record<string, number> = {
   dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
 };
+const DAY_CODE: Record<number, string> = { 0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab" };
+
+function getPeriodForDate(course: Course, dateStr: string) {
+  if (!course.schedule_periods?.length) return null;
+  const dayCode = DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+  return course.schedule_periods.find((p) => p.days?.includes(dayCode)) ?? null;
+}
+
+function getCourtForDate(course: Course, dateStr: string): string | null {
+  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+  const period = getPeriodForDate(course, dateStr);
+  if (period?.court) return period.court;
+  return course.court_name;
+}
+
+function getTimeForDate(course: Course, dateStr: string): string | null {
+  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
+  const period = getPeriodForDate(course, dateStr);
+  if (period?.time) return period.time;
+  return course.schedule_time;
+}
 
 function computeLessonDates(course: {
   start_date: string | null;
@@ -119,6 +141,7 @@ export default function CorsoDetailPage() {
   const [athletes, setAthletes] = useState<(Athlete | GuestAthlete)[]>([]);
   const [maestros, setMaestros] = useState<MaestroRow[]>([]);
   const [attendedDates, setAttendedDates] = useState<Set<string>>(new Set());
+  const [creatorName, setCreatorName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState<string | null>(null);
@@ -243,6 +266,16 @@ export default function CorsoDetailPage() {
       return;
     }
     setCourse(data as Course);
+
+    // Load creator name
+    if (data.created_by) {
+      const { data: creator } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", data.created_by)
+        .maybeSingle();
+      if (creator) setCreatorName(creator.full_name);
+    }
 
     // Load maestros by name
     const maestroNames = (data.instructor_name ?? "").split(", ").filter(Boolean);
@@ -437,40 +470,10 @@ export default function CorsoDetailPage() {
             </div>
           )}
 
-          {course.schedule_periods && course.schedule_periods.length > 1 ? (
-            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0 sm:pt-0.5">Periodi</label>
-              <div className="space-y-1">
-                {course.schedule_periods.map((p, i) => (
-                  <p key={i} className="text-secondary font-semibold text-sm">
-                    {(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}
-                    {p.time && <span className="text-secondary/60 font-normal"> · {p.time}</span>}
-                    {p.court && <span className="text-secondary/60 font-normal"> · {p.court}</span>}
-                  </p>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <>
-              {days && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
-                  <p className="text-secondary font-semibold">{days}</p>
-                </div>
-              )}
-              {course.schedule_time && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
-                  <p className="text-secondary font-semibold">{course.schedule_time}</p>
-                </div>
-              )}
-            </>
-          )}
-
           {course.price_per_month > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Prezzo
+                Quota
               </label>
               <p className="text-secondary font-semibold">
                 {course.price_per_month.toFixed(2)} € / mese
@@ -478,17 +481,12 @@ export default function CorsoDetailPage() {
             </div>
           )}
 
-          {(course.start_date || course.end_date) && (
+          {creatorName && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Periodo
+                Creato da
               </label>
-              <p className="text-secondary font-semibold">
-                <span className="text-secondary/50 font-normal text-sm mr-2">Dal</span>
-                {course.start_date ? new Date(course.start_date).toLocaleDateString("it-IT") : "—"}
-                <span className="text-secondary/50 font-normal text-sm mx-3">Al</span>
-                {course.end_date ? new Date(course.end_date).toLocaleDateString("it-IT") : "—"}
-              </p>
+              <p className="text-secondary font-semibold">{creatorName}</p>
             </div>
           )}
 
@@ -506,6 +504,56 @@ export default function CorsoDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Periodi */}
+      {(() => {
+        const periodsToShow = course.schedule_periods && course.schedule_periods.length > 0
+          ? course.schedule_periods
+          : (course.schedule_days?.length || course.schedule_time || course.court_name)
+            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, start_date: course.start_date, end_date: course.end_date }]
+            : [];
+        if (periodsToShow.length === 0) return null;
+        return periodsToShow.map((p, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
+              </h2>
+            </div>
+            <div className="px-6 py-6 space-y-5">
+              {(p.start_date || p.end_date) && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Date</label>
+                  <p className="text-secondary font-semibold">
+                    <span className="text-secondary/50 font-normal text-sm mr-2">Dal</span>
+                    {p.start_date ? new Date(p.start_date).toLocaleDateString("it-IT") : "—"}
+                    <span className="text-secondary/50 font-normal text-sm mx-3">Al</span>
+                    {p.end_date ? new Date(p.end_date).toLocaleDateString("it-IT") : "—"}
+                  </p>
+                </div>
+              )}
+              {(p.days ?? []).length > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
+                  <p className="text-secondary font-semibold">{(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}</p>
+                </div>
+              )}
+              {p.court && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                  <p className="text-secondary font-semibold">{p.court}</p>
+                </div>
+              )}
+              {p.time && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+                  <p className="text-secondary font-semibold">{p.time}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ));
+      })()}
 
       {/* Maestri */}
       {maestros.length > 0 && (
@@ -619,9 +667,9 @@ export default function CorsoDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {((course.lesson_overrides?.[dateStr] ?? course.court_name) || (course.lesson_time_overrides?.[dateStr] ?? course.schedule_time)) && (
+                        {(getCourtForDate(course, dateStr) || getTimeForDate(course, dateStr)) && (
                           <p className="text-xs text-white/70 mt-0.5">
-                            {[(course.lesson_overrides?.[dateStr] ?? course.court_name), (course.lesson_time_overrides?.[dateStr] ?? course.schedule_time)].filter(Boolean).join(" · ")}
+                            {[getCourtForDate(course, dateStr), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
                           </p>
                         )}
                       </div>
@@ -644,7 +692,7 @@ export default function CorsoDetailPage() {
                       >
                         <button
                           type="button"
-                          onClick={() => { closeActionMenu(); setEditingLesson(dateStr); setEditingNewDate(dateStr); setEditingNewDateText(isoToDisplay(dateStr)); setEditingNewCourt(course.lesson_overrides?.[dateStr] ?? course.court_name ?? ""); const _t = parseTimeRange(course.lesson_time_overrides?.[dateStr] ?? course.schedule_time ?? ""); setEditingStartTime(_t.start); setEditingEndTime(_t.end); }}
+                          onClick={() => { closeActionMenu(); setEditingLesson(dateStr); setEditingNewDate(dateStr); setEditingNewDateText(isoToDisplay(dateStr)); setEditingNewCourt(getCourtForDate(course, dateStr) ?? ""); const _t = parseTimeRange(getTimeForDate(course, dateStr) ?? ""); setEditingStartTime(_t.start); setEditingEndTime(_t.end); }}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
                         >
                           <Pencil className="h-3.5 w-3.5" />

@@ -133,7 +133,7 @@ function SearchableSelect({
   );
 }
 
-type SchedulePeriod = { days: string[]; slots: string[]; court: string };
+type SchedulePeriod = { days: string[]; slots: string[]; court: string; start_date: string; end_date: string };
 
 function slotsToTimeStr(slots: string[]): string | null {
   if (slots.length === 0) return null;
@@ -183,9 +183,10 @@ export default function NuovoCorsoPage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [maxParticipants, setMaxParticipants] = useState(8);
   const [pricePerMonth, setPricePerMonth] = useState(0);
-  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [], court: "" }]);
+  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [], court: "", start_date: "", end_date: "" }]);
+  const [periodStartTexts, setPeriodStartTexts] = useState<string[]>([""]);
+  const [periodEndTexts, setPeriodEndTexts] = useState<string[]>([""]);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -195,13 +196,10 @@ export default function NuovoCorsoPage() {
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
-  const [activeDateField, setActiveDateField] = useState<"start" | "end">("start");
+  const [activeDateContext, setActiveDateContext] = useState<{ pidx: number; field: "start" | "end" } | null>(null);
   const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-  const [dateTexts, setDateTexts] = useState({ start_date: "", end_date: "" });
 
   useEffect(() => {
     async function loadMaestros() {
@@ -254,20 +252,29 @@ export default function NuovoCorsoPage() {
 
       setName(data.name ?? "");
       setDescription(data.description ?? "");
-      setMaxParticipants(data.max_participants ?? 8);
       setPricePerMonth(data.price_per_month ?? 0);
       if (data.schedule_periods && data.schedule_periods.length > 0) {
-        setPeriods(data.schedule_periods.map((p: { days: string[]; time: string | null; court?: string }) => ({
+        const loaded = data.schedule_periods.map((p: { days: string[]; time: string | null; court?: string; start_date?: string; end_date?: string }) => ({
           days: p.days ?? [],
           slots: p.time ? parseTimeToSlots(p.time) : [],
           court: p.court ?? "",
-        })));
+          start_date: p.start_date ?? data.start_date ?? "",
+          end_date: p.end_date ?? data.end_date ?? "",
+        }));
+        setPeriods(loaded);
+        setPeriodStartTexts(loaded.map((p: SchedulePeriod) => isoToDisplay(p.start_date)));
+        setPeriodEndTexts(loaded.map((p: SchedulePeriod) => isoToDisplay(p.end_date)));
       } else {
-        setPeriods([{
+        const single: SchedulePeriod = {
           days: data.schedule_days ?? [],
           slots: parseTimeToSlots(data.schedule_time ?? ""),
           court: data.court_name ?? "",
-        }]);
+          start_date: data.start_date ?? "",
+          end_date: data.end_date ?? "",
+        };
+        setPeriods([single]);
+        setPeriodStartTexts([isoToDisplay(single.start_date)]);
+        setPeriodEndTexts([isoToDisplay(single.end_date)]);
       }
       const maestroNames = (data.instructor_name ?? "").split(", ").filter(Boolean);
       setSelectedMaestros(maestroNames.map((n) => ({ id: n, full_name: n })));
@@ -302,11 +309,6 @@ export default function NuovoCorsoPage() {
         }
         setSelectedAthletes(athletes);
       }
-      const sd = data.start_date ?? "";
-      const ed = data.end_date ?? "";
-      setStartDate(sd);
-      setEndDate(ed);
-      setDateTexts({ start_date: isoToDisplay(sd), end_date: isoToDisplay(ed) });
       setLoading(false);
     }
     loadCourse();
@@ -347,22 +349,25 @@ export default function NuovoCorsoPage() {
     return `${match[3]}-${match[2]}-${match[1]}`;
   }
 
-  function handleDateTextChange(field: "start_date" | "end_date", value: string) {
-    setDateTexts((prev) => ({ ...prev, [field]: value }));
+  function handlePeriodDateText(pidx: number, field: "start" | "end", value: string) {
+    if (field === "start") {
+      setPeriodStartTexts((prev) => prev.map((t, i) => i === pidx ? value : t));
+    } else {
+      setPeriodEndTexts((prev) => prev.map((t, i) => i === pidx ? value : t));
+    }
     const iso = displayToIso(value);
+    const key = field === "start" ? "start_date" : "end_date";
     if (iso) {
-      if (field === "start_date") setStartDate(iso);
-      else setEndDate(iso);
+      setPeriods((prev) => prev.map((p, i) => i !== pidx ? p : { ...p, [key]: iso }));
     } else if (value === "") {
-      if (field === "start_date") setStartDate("");
-      else setEndDate("");
+      setPeriods((prev) => prev.map((p, i) => i !== pidx ? p : { ...p, [key]: "" }));
     }
   }
 
-  function openDatePicker(field: "start" | "end") {
-    const existing = field === "start" ? startDate : endDate;
+  function openDatePicker(pidx: number, field: "start" | "end") {
+    const existing = field === "start" ? periods[pidx]?.start_date : periods[pidx]?.end_date;
     const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
-    setActiveDateField(field);
+    setActiveDateContext({ pidx, field });
     setPendingDate(base);
     setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
     setDatePickerModalOpen(true);
@@ -377,14 +382,16 @@ export default function NuovoCorsoPage() {
   }
 
   function applyDateSelection() {
+    if (!activeDateContext) return;
     const iso = pendingDate.toISOString().split("T")[0];
     const display = isoToDisplay(iso);
-    if (activeDateField === "start") {
-      setStartDate(iso);
-      setDateTexts((prev) => ({ ...prev, start_date: display }));
+    const { pidx, field } = activeDateContext;
+    const key = field === "start" ? "start_date" : "end_date";
+    setPeriods((prev) => prev.map((p, i) => i !== pidx ? p : { ...p, [key]: iso }));
+    if (field === "start") {
+      setPeriodStartTexts((prev) => prev.map((t, i) => i === pidx ? display : t));
     } else {
-      setEndDate(iso);
-      setDateTexts((prev) => ({ ...prev, end_date: display }));
+      setPeriodEndTexts((prev) => prev.map((t, i) => i === pidx ? display : t));
     }
     setDatePickerModalOpen(false);
   }
@@ -450,11 +457,15 @@ export default function NuovoCorsoPage() {
   }
 
   function addPeriod() {
-    setPeriods((prev) => [...prev, { days: [], slots: [], court: "" }]);
+    setPeriods((prev) => [...prev, { days: [], slots: [], court: "", start_date: "", end_date: "" }]);
+    setPeriodStartTexts((prev) => [...prev, ""]);
+    setPeriodEndTexts((prev) => [...prev, ""]);
   }
 
   function removePeriod(idx: number) {
     setPeriods((prev) => prev.filter((_, i) => i !== idx));
+    setPeriodStartTexts((prev) => prev.filter((_, i) => i !== idx));
+    setPeriodEndTexts((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSubmit() {
@@ -469,19 +480,26 @@ export default function NuovoCorsoPage() {
 
     try {
       const allDays = [...new Set(periods.flatMap((p) => p.days))];
-      const periodsData = periods.map((p) => ({ days: p.days, time: slotsToTimeStr(p.slots), court: p.court || null }));
+      const periodsData = periods.map((p) => ({
+        days: p.days,
+        time: slotsToTimeStr(p.slots),
+        court: p.court || null,
+        start_date: p.start_date || null,
+        end_date: p.end_date || null,
+      }));
+      const allStartDates = periods.map((p) => p.start_date).filter(Boolean).sort();
+      const allEndDates = periods.map((p) => p.end_date).filter(Boolean).sort();
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
-        max_participants: maxParticipants,
         price_per_month: pricePerMonth,
         schedule_days: allDays,
         schedule_time: periodsData[0]?.time ?? null,
-        schedule_periods: periods.length > 1 ? periodsData : null,
+        schedule_periods: periodsData,
         instructor_name: selectedMaestros.map((m) => m.full_name).join(", ") || null,
         court_name: periods[0]?.court || null,
-        start_date: startDate || null,
-        end_date: endDate || null,
+        start_date: allStartDates[0] ?? null,
+        end_date: allEndDates[allEndDates.length - 1] ?? null,
         is_active: true,
       };
 
@@ -490,9 +508,10 @@ export default function NuovoCorsoPage() {
       if (isEditMode) {
         ({ error: err } = await supabase.from("courses").update(payload).eq("id", courseId));
       } else {
+        const { data: { user } } = await supabase.auth.getUser();
         const { data: inserted, error: insertErr } = await supabase
           .from("courses")
-          .insert([payload])
+          .insert([{ ...payload, created_by: user?.id ?? null }])
           .select("id")
           .single();
         err = insertErr;
@@ -512,9 +531,10 @@ export default function NuovoCorsoPage() {
 
         const registeredAthletes = selectedAthletes.filter((a) => a.isRegistered && a.userId);
         const guestAthletes = selectedAthletes.filter((a) => !a.isRegistered && a.fullName.trim());
+        const fee = pricePerMonth > 0 ? pricePerMonth : null;
         const rows = [
-          ...registeredAthletes.map((a) => ({ course_id: savedCourseId, user_id: a.userId, fee: pricePerMonth || null, guest_name: null })),
-          ...guestAthletes.map((a) => ({ course_id: savedCourseId, user_id: null, fee: pricePerMonth || null, guest_name: a.fullName.trim() })),
+          ...registeredAthletes.map((a) => ({ course_id: savedCourseId, user_id: a.userId, fee, guest_name: null })),
+          ...guestAthletes.map((a) => ({ course_id: savedCourseId, user_id: null, fee, guest_name: a.fullName.trim() })),
         ];
         if (rows.length > 0) {
           const { error: insErr } = await supabase.from("course_enrollments").insert(rows);
@@ -607,7 +627,7 @@ export default function NuovoCorsoPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Quota</label>
               <div className="flex-1">
                 <div className="relative w-40">
@@ -625,78 +645,76 @@ export default function NuovoCorsoPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
-              <div className="flex-1">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => openDatePicker("start")}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                    tabIndex={-1}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="GG/MM/AAAA"
-                    value={dateTexts.start_date}
-                    onChange={(e) => handleDateTextChange("start_date", e.target.value)}
-                    maxLength={10}
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
-              <div className="flex-1">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => openDatePicker("end")}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                    tabIndex={-1}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="GG/MM/AAAA"
-                    value={dateTexts.end_date}
-                    onChange={(e) => handleDateTextChange("end_date", e.target.value)}
-                    maxLength={10}
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
-                </div>
-              </div>
-            </div>
 
           </div>
         </div>
 
-        {/* Orario e Periodo */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Orario e periodo</h2>
-          </div>
-          <div className="p-6 space-y-6">
-            {periods.map((period, pidx) => (
-              <div key={pidx} className={pidx > 0 ? "pt-6" : ""}>
-                {periods.length > 1 && (
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-semibold text-secondary">Periodo {pidx + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removePeriod(pidx)}
-                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                      aria-label="Rimuovi periodo"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+        {periods.map((period, pidx) => (
+          <div key={pidx} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
+              </h2>
+              {periods.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removePeriod(pidx)}
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  aria-label="Rimuovi periodo"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="p-6 space-y-6">
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => openDatePicker(pidx, "start")}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                        tabIndex={-1}
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="text"
+                        placeholder="GG/MM/AAAA"
+                        value={periodStartTexts[pidx] ?? ""}
+                        onChange={(e) => handlePeriodDateText(pidx, "start", e.target.value)}
+                        maxLength={10}
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      />
+                    </div>
                   </div>
-                )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => openDatePicker(pidx, "end")}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                        tabIndex={-1}
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="text"
+                        placeholder="GG/MM/AAAA"
+                        value={periodEndTexts[pidx] ?? ""}
+                        onChange={(e) => handlePeriodDateText(pidx, "end", e.target.value)}
+                        maxLength={10}
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                   <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
@@ -720,7 +738,27 @@ export default function NuovoCorsoPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 mt-6 pb-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                  <div className="flex-1 flex flex-wrap gap-2">
+                    {courts.map((court) => (
+                      <button
+                        key={court}
+                        type="button"
+                        onClick={() => setPeriods((prev) => prev.map((p, pIdx) => pIdx !== pidx ? p : { ...p, court }))}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
+                          period.court === court
+                            ? "bg-secondary text-white border-secondary"
+                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                        }`}
+                      >
+                        {court}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
                   <label className="text-sm text-secondary font-medium">Fascia oraria</label>
                   <div
                     className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
@@ -769,44 +807,20 @@ export default function NuovoCorsoPage() {
                       </div>
                     </div>
                   </div>
-                  {(() => {
-                    const ts = slotsToTimeStr(period.slots);
-                    return ts ? <p className="text-sm font-medium text-secondary">{ts}</p> : null;
-                  })()}
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 mt-6 pb-6 border-b border-gray-200">
-                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 flex flex-wrap gap-2">
-                    {courts.map((court) => (
-                      <button
-                        key={court}
-                        type="button"
-                        onClick={() => setPeriods((prev) => prev.map((p, pIdx) => pIdx !== pidx ? p : { ...p, court }))}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                          period.court === court
-                            ? "bg-secondary text-white border-secondary"
-                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                        }`}
-                      >
-                        {court}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addPeriod}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-xl transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              Aggiungi periodo
-            </button>
+            </div>
           </div>
-        </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={addPeriod}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-xl transition-all"
+        >
+          <Plus className="h-4 w-4" />
+          Aggiungi periodo
+        </button>
 
         {/* Maestri */}
         <div className="bg-white rounded-xl border border-gray-200">
@@ -897,7 +911,7 @@ export default function NuovoCorsoPage() {
         <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
           <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
             <ModalTitle className="text-white text-lg">
-              {activeDateField === "start" ? "Data inizio" : "Data fine"}
+              {activeDateContext?.field === "start" ? "Data inizio" : "Data fine"}
             </ModalTitle>
           </ModalHeader>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
