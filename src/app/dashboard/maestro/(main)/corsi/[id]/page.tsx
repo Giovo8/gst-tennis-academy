@@ -13,10 +13,11 @@ import {
 import { supabase } from "@/lib/supabase/client";
 
 type Athlete = {
-  id: string;
+  id: string | null;
   full_name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
+  isGuest?: boolean;
 };
 
 type MaestroRow = {
@@ -38,6 +39,11 @@ type Course = {
   end_date: string | null;
   is_active: boolean;
   created_at: string;
+  cancelled_dates: string[] | null;
+  extra_dates: string[] | null;
+  lesson_overrides: Record<string, string> | null;
+  lesson_time_overrides: Record<string, string> | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null; start_date?: string | null; end_date?: string | null }[] | null;
 };
 
 const DAYS: Record<string, string> = {
@@ -49,21 +55,51 @@ const DAY_INDEX: Record<string, number> = {
   dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
 };
 
+const DAY_CODE: Record<number, string> = { 0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab" };
+
+function getPeriodForDate(course: Course, dateStr: string) {
+  if (!course.schedule_periods?.length) return null;
+  const dayCode = DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+  return course.schedule_periods.find((p) => p.days?.includes(dayCode)) ?? null;
+}
+
+function getCourtForDate(course: Course, dateStr: string): string | null {
+  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+  const period = getPeriodForDate(course, dateStr);
+  if (period?.court) return period.court;
+  return course.court_name;
+}
+
+function getTimeForDate(course: Course, dateStr: string): string | null {
+  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
+  const period = getPeriodForDate(course, dateStr);
+  if (period?.time) return period.time;
+  return course.schedule_time;
+}
+
 function computeLessonDates(course: {
   start_date: string | null;
   end_date: string | null;
   schedule_days: string[] | null;
+  cancelled_dates?: string[] | null;
+  extra_dates?: string[] | null;
 }): Date[] {
   if (!course.start_date || !course.end_date || !course.schedule_days?.length) return [];
   const allowed = new Set(course.schedule_days.map((d) => DAY_INDEX[d] ?? -1));
+  const cancelled = new Set(course.cancelled_dates ?? []);
   const start = new Date(course.start_date);
   const end = new Date(course.end_date);
   const result: Date[] = [];
   const cur = new Date(start);
   while (cur <= end) {
-    if (allowed.has(cur.getDay())) result.push(new Date(cur));
+    const dateStr = cur.toISOString().split("T")[0];
+    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) result.push(new Date(cur));
     cur.setDate(cur.getDate() + 1);
   }
+  for (const d of course.extra_dates ?? []) {
+    result.push(new Date(d));
+  }
+  result.sort((a, b) => a.getTime() - b.getTime());
   return result;
 }
 
@@ -109,16 +145,34 @@ export default function MaestroCorsoDetailPage() {
 
     const { data: enrollments } = await supabase
       .from("course_enrollments")
-      .select("user_id")
+      .select("user_id, guest_name")
       .eq("course_id", courseId);
 
     if (enrollments && enrollments.length > 0) {
-      const userIds = enrollments.map((e: { user_id: string }) => e.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", userIds);
-      if (profiles) setAthletes(profiles as Athlete[]);
+      const allAthletes: Athlete[] = [];
+
+      const userIds = enrollments
+        .filter((e: { user_id: string | null }) => e.user_id != null)
+        .map((e: { user_id: string }) => e.user_id);
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, phone")
+          .in("id", userIds);
+        if (profiles) allAthletes.push(...(profiles as Athlete[]));
+      }
+
+      const guests: Athlete[] = enrollments
+        .filter((e: { user_id: string | null; guest_name: string | null }) => e.user_id == null && e.guest_name)
+        .map((e: { guest_name: string }) => ({
+          id: `guest-${e.guest_name}`,
+          full_name: e.guest_name,
+          isGuest: true,
+        }));
+      allAthletes.push(...guests);
+
+      setAthletes(allAthletes);
     }
 
     const { data: attendanceRecords } = await supabase
@@ -143,7 +197,6 @@ export default function MaestroCorsoDetailPage() {
 
   if (!course) return null;
 
-  const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
   const lessonDates = computeLessonDates(course);
 
   return (
@@ -161,7 +214,7 @@ export default function MaestroCorsoDetailPage() {
       {/* Header card */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "#05384c", borderColor: "#05384c", borderLeftColor: "#023047" }}
+        style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}
       >
         <div className="flex items-start gap-6">
           <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -177,43 +230,83 @@ export default function MaestroCorsoDetailPage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
         <div className="px-6 py-6 space-y-5">
-          {course.court_name && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-              <p className="text-secondary font-semibold">{course.court_name}</p>
-            </div>
-          )}
-          {days && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
-              <p className="text-secondary font-semibold">{days}</p>
-            </div>
-          )}
-          {course.schedule_time && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
-              <p className="text-secondary font-semibold">{course.schedule_time}</p>
-            </div>
-          )}
-          {(course.start_date || course.end_date) && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Periodo</label>
-              <p className="text-secondary font-semibold">
-                <span className="text-secondary/50 font-normal text-sm mr-2">Dal</span>
-                {course.start_date ? new Date(course.start_date).toLocaleDateString("it-IT") : "—"}
-                <span className="text-secondary/50 font-normal text-sm mx-3">Al</span>
-                {course.end_date ? new Date(course.end_date).toLocaleDateString("it-IT") : "—"}
-              </p>
-            </div>
-          )}
           {course.description && (
-            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                Descrizione
+              </label>
               <p className="text-secondary/70 leading-relaxed">{course.description}</p>
             </div>
           )}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Creato il
+            </label>
+            <p className="text-secondary/60">
+              {new Date(course.created_at).toLocaleDateString("it-IT", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Periodi */}
+      {(() => {
+        const periodsToShow = course.schedule_periods && course.schedule_periods.length > 0
+          ? course.schedule_periods
+          : (course.schedule_days?.length || course.schedule_time || course.court_name)
+            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, start_date: course.start_date, end_date: course.end_date }]
+            : [];
+        if (periodsToShow.length === 0) return null;
+        return periodsToShow.map((p, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
+              </h2>
+            </div>
+            <div className="px-6 py-6 space-y-5">
+              {(p.start_date || p.end_date) && (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                    <p className="text-secondary font-semibold">
+                      {p.start_date ? new Date(p.start_date).toLocaleDateString("it-IT") : "—"}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+                    <p className="text-secondary font-semibold">
+                      {p.end_date ? new Date(p.end_date).toLocaleDateString("it-IT") : "—"}
+                    </p>
+                  </div>
+                </>
+              )}
+              {(p.days ?? []).length > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
+                  <p className="text-secondary font-semibold">{(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}</p>
+                </div>
+              )}
+              {p.court && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                  <p className="text-secondary font-semibold">{p.court}</p>
+                </div>
+              )}
+              {p.time && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8">
+                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+                  <p className="text-secondary font-semibold">{p.time}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ));
+      })()}
 
       {/* Maestri */}
       {maestros.length > 0 && (
@@ -250,9 +343,7 @@ export default function MaestroCorsoDetailPage() {
       {/* Partecipanti */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">
-            Partecipanti {athletes.length > 0 && <span className="text-secondary/50 font-normal">({athletes.length})</span>}
-          </h2>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         {athletes.length === 0 ? (
           <div className="px-6 py-8 text-center">
@@ -261,28 +352,37 @@ export default function MaestroCorsoDetailPage() {
           </div>
         ) : (
           <ul className="flex flex-col gap-2 px-4 py-4">
-            {athletes.map((a) => (
-              <li key={a.id}>
+            {athletes.map((a, idx) => {
+              const initials = a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+              const inner = (
                 <div
-                  className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                  className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
                   style={{ background: "#05384c" }}
                 >
                   <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-white leading-none">
-                      {a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
-                    </span>
+                    <span className="text-sm font-bold text-white leading-none">{initials}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
-                    {(a.email || a.phone) && (
+                    {a.isGuest ? (
+                      <p className="text-xs text-white/40 mt-0.5">Ospite</p>
+                    ) : (a.email || a.phone) && (
                       <p className="text-xs text-white/60 truncate mt-0.5">
                         {[a.email, a.phone].filter(Boolean).join(" · ")}
                       </p>
                     )}
                   </div>
                 </div>
-              </li>
-            ))}
+              );
+              return (
+                <li key={a.id ?? `guest-${idx}`}>
+                  {!a.isGuest
+                    ? <Link href={`/dashboard/maestro/corsi/${courseId}/partecipanti/${a.id}`}>{inner}</Link>
+                    : <Link href={`/dashboard/maestro/corsi/${courseId}/partecipanti/ospite/${encodeURIComponent(a.full_name)}`}>{inner}</Link>
+                  }
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -321,8 +421,10 @@ export default function MaestroCorsoDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {course.schedule_time && (
-                          <p className="text-xs text-white/70 mt-0.5">{course.schedule_time}</p>
+                        {(getCourtForDate(course, dateStr) || getTimeForDate(course, dateStr)) && (
+                          <p className="text-xs text-white/70 mt-0.5">
+                            {[getCourtForDate(course, dateStr), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
+                          </p>
                         )}
                       </div>
                     </div>

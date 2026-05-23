@@ -106,8 +106,7 @@ export default function VideoLessonsPage() {
             href="/dashboard/admin/video-lessons/new"
             className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
-            <Plus className="h-4 w-4" />
-            <span>Nuovo Video</span>
+            Nuovo Video
           </Link>
         </div>
 

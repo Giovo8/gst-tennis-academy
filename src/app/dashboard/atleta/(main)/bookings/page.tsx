@@ -7,6 +7,7 @@ import { createNotification } from "@/lib/notifications/createNotification";
 import {
   Calendar,
   CalendarClock,
+  GraduationCap,
   Clock,
   Plus,
   Loader2,
@@ -15,8 +16,6 @@ import {
   Search,
   Users,
   Trophy,
-  List,
-  LayoutGrid,
   MoreVertical,
   Eye,
   Trash2,
@@ -26,7 +25,6 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
-import BookingsTimeline from "@/components/admin/BookingsTimeline";
 import {
   Modal,
   ModalBody,
@@ -76,6 +74,75 @@ type ProfileLite = {
   phone?: string | null;
 };
 
+type CourseData = {
+  id: string;
+  name: string;
+  schedule_days: string[] | null;
+  start_date: string | null;
+  end_date: string | null;
+  cancelled_dates: string[] | null;
+  extra_dates: string[] | null;
+  lesson_overrides: Record<string, string> | null;
+  lesson_time_overrides: Record<string, string> | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
+  court_name: string | null;
+  schedule_time: string | null;
+};
+
+type CourseLesson = {
+  courseId: string;
+  courseName: string;
+  dateStr: string;
+  court: string | null;
+  time: string | null;
+};
+
+const COURSE_DAY_INDEX: Record<string, number> = {
+  dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
+};
+const COURSE_DAY_CODE: Record<number, string> = { 0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab" };
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getNextCourseLessonDate(course: CourseData, fromDateStr: string): string | null {
+  const { start_date, end_date, schedule_days, cancelled_dates, extra_dates } = course;
+  if (!start_date || !end_date || !schedule_days?.length) return null;
+  const allowed = new Set(schedule_days.map((d) => COURSE_DAY_INDEX[d] ?? -1));
+  const cancelled = new Set(cancelled_dates ?? []);
+  const startStr = fromDateStr > start_date ? fromDateStr : start_date;
+  const cur = new Date(startStr + "T12:00:00");
+  const endD = new Date(end_date + "T12:00:00");
+  while (cur <= endD) {
+    const dateStr = cur.toISOString().split("T")[0];
+    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) return dateStr;
+    cur.setDate(cur.getDate() + 1);
+  }
+  const futureExtras = (extra_dates ?? []).filter((d) => d >= fromDateStr).sort();
+  return futureExtras[0] ?? null;
+}
+
+function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.court) return period.court;
+  }
+  return course.court_name;
+}
+
+function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.time) return period.time;
+  }
+  return course.schedule_time;
+}
+
 export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -83,7 +150,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const isHistoryMode = mode === "history";
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [timelineBookings, setTimelineBookings] = useState<Booking[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [filterVisibility, setFilterVisibility] = useState<"active" | "today" | "archived" | "cancelled" | "past" | "all">("active");
@@ -94,12 +160,63 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
   const [filterDateFrom, setFilterDateFrom] = useState<string>("");
   const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const [sortField, setSortField] = useState<string>("start_time");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [courseNextLessons, setCourseNextLessons] = useState<CourseLesson[]>([]);
+
+  async function loadCourseNextLessons(maestroFullName: string) {
+    const now = new Date();
+    const todayStr = localDateStr(now);
+    const tomorrowStr = localDateStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+    const { data } = await supabase
+      .from("courses")
+      .select("id, name, schedule_days, start_date, end_date, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, schedule_periods, court_name, schedule_time")
+      .eq("is_active", true)
+      .ilike("instructor_name", `%${maestroFullName}%`);
+    if (!data) return;
+    const lessons: CourseLesson[] = [];
+    for (const course of data as CourseData[]) {
+      let dateStr = getNextCourseLessonDate(course, todayStr);
+      if (!dateStr) continue;
+      // Se la lezione è oggi, controlla se l'orario è già passato
+      if (dateStr === todayStr) {
+        const time = getCourseTimeForDate(course, dateStr);
+        if (time) {
+          const endMatch = time.match(/(\d{1,2}):(\d{2})\s*$/);
+          if (endMatch) {
+            const lessonEnd = new Date();
+            lessonEnd.setHours(parseInt(endMatch[1]), parseInt(endMatch[2]), 0, 0);
+            if (now > lessonEnd) {
+              dateStr = getNextCourseLessonDate(course, tomorrowStr);
+            }
+          }
+        }
+      }
+      if (!dateStr) continue;
+      lessons.push({
+        courseId: course.id,
+        courseName: course.name,
+        dateStr,
+        court: getCourseCourtForDate(course, dateStr),
+        time: getCourseTimeForDate(course, dateStr),
+      });
+    }
+    setCourseNextLessons(lessons);
+  }
+
+  useEffect(() => {
+    if (!isMaestroDashboard || isHistoryMode) return;
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+      if (profile?.full_name) await loadCourseNextLessons(profile.full_name);
+    }
+    void init();
+  }, [isMaestroDashboard, isHistoryMode]);
 
   const getPrimaryParticipant = (booking: Booking) =>
     booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
@@ -250,9 +367,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         };
       });
 
-      // Keep timeline identical to dashboard/maestro behavior (all bookings in range).
-      setTimelineBookings(enrichedBookings);
-
       // For list mode in maestro dashboard, always load all bookings where the maestro is involved
       // (as coach OR as athlete), even outside the timeline date range.
       const { data: involvedBookingsData, error: involvedBookingsError } = await supabase
@@ -373,7 +487,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     if (!bookingsData || bookingsData.length === 0) {
       console.log("⚠️ Nessuna prenotazione trovata");
       setBookings([]);
-      setTimelineBookings([]);
       setLoading(false);
       return;
     }
@@ -412,10 +525,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
     console.log("📋 Dati arricchiti:", enrichedBookings);
     setBookings(enrichedBookings);
-    // Per la timeline usa solo le prenotazioni dell'atleta;
-    // gli slot occupati dagli altri vengono caricati da BookingsTimeline
-    // tramite fetchOccupied={true} che usa l'API e bypassa la RLS.
-    setTimelineBookings(enrichedBookings);
     setLoading(false);
   }
 
@@ -627,12 +736,10 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
     Boolean(filterDateFrom) ||
     Boolean(filterDateTo);
 
-  const effectiveViewMode = isHistoryMode ? "list" : viewMode;
   const now = new Date();
 
   const filteredBookings = bookings
     .filter((booking) => {
-      const isTimelineMode = !isHistoryMode && effectiveViewMode === "timeline";
       const bookingStartDateObj = new Date(booking.start_time);
       const bookingEndDateObj = new Date(booking.end_time);
       const isPast = bookingEndDateObj < now;
@@ -648,9 +755,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         booking.status === "completed" ||
         booking.status === "confirmed_by_coach";
 
-      const matchesVisibility = isTimelineMode
-        ? true
-        : filterVisibility === "active"
+      const matchesVisibility = filterVisibility === "active"
         ? isPresentOrFuture && !isCancelled
         : filterVisibility === "today"
         ? isTodayBooking && !isCancelled
@@ -730,6 +835,30 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return 0;
     });
 
+  // Merge bookings + course next lessons (maestro only)
+  type MergedItem = { kind: "booking"; data: Booking } | { kind: "corso"; data: CourseLesson };
+  const filteredCourseNextLessons: CourseLesson[] = isMaestroDashboard && !isHistoryMode
+    ? courseNextLessons.filter((lesson) => {
+        const q = search.toLowerCase();
+        const matchesSearch = !search || lesson.courseName.toLowerCase().includes(q);
+        const matchesType = filterType === "all";
+        const isToday = lesson.dateStr === localDateStr(new Date());
+        const matchesDateFrom = !filterDateFrom || lesson.dateStr >= filterDateFrom;
+        const matchesDateTo = !filterDateTo || lesson.dateStr <= filterDateTo;
+        if (filterVisibility === "today") return matchesSearch && matchesType && isToday && matchesDateFrom && matchesDateTo;
+        const matchesVisibility = filterVisibility === "active" || filterVisibility === "all";
+        return matchesSearch && matchesType && matchesVisibility && matchesDateFrom && matchesDateTo;
+      })
+    : [];
+  const mergedItems: MergedItem[] = [
+    ...filteredBookings.map((b) => ({ kind: "booking" as const, data: b })),
+    ...filteredCourseNextLessons.map((c) => ({ kind: "corso" as const, data: c })),
+  ].sort((a, b) => {
+    const aTime = a.kind === "booking" ? new Date(a.data.start_time).getTime() : new Date(a.data.dateStr + "T12:00:00").getTime();
+    const bTime = b.kind === "booking" ? new Date(b.data.start_time).getTime() : new Date(b.data.dateStr + "T12:00:00").getTime();
+    return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
+  });
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -769,7 +898,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               href={`${dashboardBase}/bookings/new`}
               className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
             >
-              <Plus className="h-4 w-4" />
               Nuova Prenotazione
             </Link>
           )}
@@ -778,34 +906,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       {/* Filters */}
       <div className="flex flex-col gap-3">
-        {/* View Mode Toggle */}
-        {!isHistoryMode && (
-          <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
-              effectiveViewMode === "list"
-                ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary border border-gray-200"
-            }`}
-          >
-            <List className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-            Lista
-          </button>
-          <button
-            onClick={() => setViewMode("timeline")}
-            className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
-              effectiveViewMode === "timeline"
-                ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary border border-gray-200"
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-            Timeline
-          </button>
-          </div>
-        )}
-        {effectiveViewMode === "list" && (
+        {(
           <div className="flex items-center gap-2 w-full">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
@@ -834,24 +935,13 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         )}
       </div>
 
-      {/* Bookings List or Timeline */}
-      {effectiveViewMode === "timeline" ? (
-        <BookingsTimeline
-          bookings={timelineBookings}
-          loading={loading}
-          basePath={dashboardBase}
-          fetchOccupied={!isMaestroDashboard}
-          swapAxes={false}
-          showBlockReason={true}
-          showCourtBlocks={true}
-          highlightUserId={currentUserId}
-        />
-      ) : loading ? (
+      {/* Bookings List */}
+      {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
           <p className="mt-4 text-secondary/60">Caricamento prenotazioni...</p>
         </div>
-      ) : filteredBookings.length === 0 ? (
+      ) : mergedItems.length === 0 ? (
         <div className="rounded-xl bg-white border border-gray-200 flex flex-col items-center justify-center py-8 text-secondary/40">
           <Calendar className="h-8 w-8 mb-2" />
           <p className="text-sm font-medium">
@@ -862,7 +952,39 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredBookings.map((booking) => {
+          {mergedItems.map((item) => {
+            if (item.kind === "corso") {
+              const lesson = item.data;
+              const start = new Date(lesson.dateStr + "T12:00:00");
+              return (
+                <Link key={`corso-${lesson.courseId}`} href={`/dashboard/maestro/bookings/${lesson.courseId}?date=${lesson.dateStr}`} className="block">
+                  <div className="rounded-lg overflow-visible hover:opacity-95 transition-opacity" style={{ background: "#075985" }}>
+                    <div className="flex items-center gap-4 py-3 px-3">
+                      <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                          {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                        </span>
+                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                          {start.getDate()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">{lesson.courseName}</p>
+                        {(lesson.time || lesson.court) && (
+                          <p className="text-xs text-white/70 mt-0.5">
+                            {[lesson.time, lesson.court].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
+                        Corso
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            }
+            const booking = item.data;
             const isPast = new Date(booking.start_time) < new Date();
             const isPastBooking = new Date(booking.end_time) < new Date();
             const isCancelled = booking.status === "cancelled";
@@ -915,17 +1037,18 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     </p>
                     <p className="text-xs text-white/70 mt-0.5">
                       {formatTime(booking.start_time)}–{formatTime(booking.end_time)} · {booking.court}
-                      {(booking.type === "lezione_privata" || booking.type === "lezione_gruppo") && booking.coach?.full_name && (
+                      {!isMaestroDashboard && (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") && booking.coach?.full_name && (
                         <span> · {booking.coach.full_name}</span>
                       )}
                     </p>
                   </div>
 
-                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
                     {typeLabel}
                   </span>
 
-                  <div className="relative flex items-center justify-center flex-shrink-0">
+                  {!isMaestroDashboard && (<div className="relative flex items-center justify-center flex-shrink-0">
+                    {!isMaestroDashboard && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -942,7 +1065,8 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                     >
                       <MoreVertical className="h-4 w-4" />
                     </button>
-                    {openMenuId === booking.id && menuPosition && (
+                    )}
+                    {!isMaestroDashboard && openMenuId === booking.id && menuPosition && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
                         <div
@@ -981,7 +1105,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                         </div>
                       </>
                     )}
-                  </div>
+                  </div>)}
                 </div>
               </div>
             );

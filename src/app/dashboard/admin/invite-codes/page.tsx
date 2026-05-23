@@ -178,7 +178,6 @@ export default function InviteCodesPage() {
             href="/dashboard/admin/invite-codes/new"
             className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
-            <Plus className="h-4 w-4" />
             Crea Codice
           </Link>
         </div>
@@ -258,86 +257,6 @@ export default function InviteCodesPage() {
                     <p className="text-xs text-white/60 mt-0.5 truncate">
                       Creato da: {createdByLabel}
                     </p>
-                  </div>
-
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (openMenuId === code.id) { closeActionMenu(); return; }
-                        openActionMenu(code.id, e.currentTarget.getBoundingClientRect());
-                      }}
-                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                    {openMenuId === code.id && menuPosition && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
-                        <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-                          style={{ top: menuPosition.top, left: menuPosition.left }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              router.push(`/dashboard/admin/invite-codes/${code.id}`);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Dettagli
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              copyToClipboard(code.code, code.id);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            Copia Link
-                          </button>
-                          {isCodeValid(code) && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              disableCode(code.id);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#023047] hover:bg-[#023047]/10 transition-colors w-full"
-                          >
-                            <BanIcon className="h-3.5 w-3.5" />
-                            Disattiva
-                          </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              deleteCode(code.id);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Elimina
-                          </button>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>

@@ -7,10 +7,10 @@ import { supabase } from "@/lib/supabase/client";
 import {
   Calendar,
   Trophy,
+  Dumbbell,
   GraduationCap,
   Video,
   Mail,
-  User,
   LayoutGrid,
   Swords,
 } from "lucide-react";
@@ -105,7 +105,7 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
     {
       label: "Maestro",
       href: "/dashboard/maestro/maestro",
-      icon: <User className="h-5 w-5" />,
+      icon: <Dumbbell className="h-5 w-5" />,
     },
     {
       label: "Prenotazioni",

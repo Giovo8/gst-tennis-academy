@@ -132,9 +132,8 @@ export default function CorsiAdminPage() {
         <h1 className="text-4xl font-bold text-secondary">Corsi</h1>
         <Link
           href="/dashboard/admin/corsi/new"
-          className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+          className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
         >
-          <Plus className="h-4 w-4" />
           Nuovo Corso
         </Link>
       </div>
@@ -201,7 +200,7 @@ export default function CorsiAdminPage() {
               <div
                 key={course.id}
                 className="rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                style={{ background: "#05384c", opacity: course.is_active ? 1 : 0.55 }}
+                style={{ background: "#075985", opacity: course.is_active ? 1 : 0.55 }}
                 onClick={() => router.push(`/dashboard/admin/corsi/${course.id}`)}
               >
                 <div className="flex items-center gap-4 py-3 px-3">

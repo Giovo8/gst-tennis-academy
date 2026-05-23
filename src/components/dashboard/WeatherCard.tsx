@@ -5,10 +5,7 @@ import {
   CloudLightning,
   CloudRain,
   CloudSnow,
-  Droplets,
   Sun,
-  Thermometer,
-  Wind,
 } from "lucide-react";
 import { useWeather } from "@/lib/hooks/useWeather";
 
@@ -61,8 +58,8 @@ export default function WeatherCard({
   const { weather, loading } = useWeather();
 
   return (
-    <div className="bg-secondary rounded-xl p-5 text-white">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+    <div className="bg-secondary rounded-xl p-4 sm:p-5 text-white">
+      <div className="flex flex-row items-center justify-between gap-3 sm:gap-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-lg sm:text-lg">{title}</h3>
           <p className="text-xs sm:text-sm text-white/80">{subtitle}</p>
@@ -74,37 +71,19 @@ export default function WeatherCard({
             <div className="h-8 w-8 bg-white/20 rounded-full" />
           </div>
         ) : weather ? (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 flex-shrink-0">
-            <div className="sm:hidden flex items-center justify-between gap-4 w-full">
-              <div className="text-left">
-                <div className="text-4xl font-bold leading-none mb-1">{weather.temperature}°C</div>
-                <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
-              </div>
-              <div className="text-white flex-shrink-0">
-                {getWeatherInfo(weather.weatherCode).icon}
-              </div>
+          <>
+            {/* Mobile layout */}
+            <div className="sm:hidden flex items-center gap-2 flex-shrink-0">
+              <div className="text-white">{getWeatherInfo(weather.weatherCode, "h-7 w-7").icon}</div>
+              <span className="text-2xl font-bold leading-none">{weather.temperature}°C</span>
             </div>
 
-            <div className="hidden sm:flex items-center gap-4">
-              <div className="text-left">
-                <div className="text-4xl font-bold">{weather.temperature}°C</div>
-                <p className="text-sm text-white/90">{getWeatherInfo(weather.weatherCode).label}</p>
-              </div>
-              <div className="text-white">{getWeatherInfo(weather.weatherCode).icon}</div>
+            {/* Desktop layout */}
+            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+              <div className="text-white">{getWeatherInfo(weather.weatherCode, "h-7 w-7").icon}</div>
+              <span className="text-2xl font-bold leading-none">{weather.temperature}°C</span>
             </div>
-
-            <div className="hidden sm:flex items-center gap-4 pl-6 border-l border-white/20">
-              <WeatherDetail icon={<Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />} label="Percepita" value={`${weather.apparentTemperature}°C`} />
-              <WeatherDetail icon={<Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />} label="Umidità" value={`${weather.humidity}%`} />
-              <WeatherDetail icon={<Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />} label="Vento" value={`${weather.windSpeed} km/h`} />
-            </div>
-
-            <div className="sm:hidden grid grid-cols-3 gap-3 w-full pt-2 border-t border-white/20">
-              <WeatherDetail icon={<Thermometer className="h-5 w-5 mx-auto mb-1 text-white/80" />} label="Percepita" value={`${weather.apparentTemperature}°C`} />
-              <WeatherDetail icon={<Droplets className="h-5 w-5 mx-auto mb-1 text-white/80" />} label="Umidità" value={`${weather.humidity}%`} />
-              <WeatherDetail icon={<Wind className="h-5 w-5 mx-auto mb-1 text-white/80" />} label="Vento" value={`${weather.windSpeed} km/h`} />
-            </div>
-          </div>
+          </>
         ) : (
           <div className="flex items-center gap-2 text-white/80">
             <Cloud className="h-6 w-6" />

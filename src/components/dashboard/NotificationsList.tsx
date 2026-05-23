@@ -366,7 +366,7 @@ export default function NotificationsList({
                     className={`w-full text-left rounded-lg border hover:shadow-sm transition-all ${
                       isUnread
                         ? "text-white hover:opacity-95"
-                        : "bg-white border-gray-100 hover:border-gray-200"
+                        : "bg-white border-gray-200 hover:border-gray-300"
                     }`}
                     style={isUnread ? { background: bg, borderColor: bg } : undefined}
                     onClick={() => handleClick(n)}

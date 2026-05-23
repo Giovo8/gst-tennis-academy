@@ -1,20 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   CalendarClock,
   CalendarDays,
   Clock3,
+  Dumbbell,
   GraduationCap,
   Timer,
   LineChart as LineChartIcon,
-
   Sun,
   Sunrise,
   Sunset,
   Users,
 } from "lucide-react";
+import { UpcomingCommitmentsCard, type UpcomingBooking } from "@/components/dashboard/UpcomingCommitmentsCard";
 import { supabase } from "@/lib/supabase/client";
 import {
   formatShortItalianDate,
@@ -30,6 +31,8 @@ type Stats = {
   upcomingInvolved: number;
   privateLessonsDone: number;
   groupLessonsDone: number;
+  courseLessonsDone: number;
+  totalCourses: number;
 };
 
 type BookingRow = {
@@ -107,8 +110,11 @@ export default function MaestroOverviewPage({
     upcomingInvolved: 0,
     privateLessonsDone: 0,
     groupLessonsDone: 0,
+    courseLessonsDone: 0,
+    totalCourses: 0,
   });
-  const [upcoming, setUpcoming] = useState<BookingRow[]>([]);
+  const [upcoming, setUpcoming] = useState<UpcomingBooking[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [athletes, setAthletes] = useState<AthleteSummary[]>([]);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyPoint[]>([]);
   const [weekdayDist, setWeekdayDist] = useState<WeekdayPoint[]>([]);
@@ -401,11 +407,10 @@ export default function MaestroOverviewPage({
 
       // Monthly trend (12 mesi)
       const monthlyMap = new Map<string, number>();
-      const monthLabel = (date: Date) =>
-        date.toLocaleDateString("it-IT", { month: "short", year: "2-digit" })
-          .split(" ")
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join(" ");
+      const monthLabel = (date: Date) => {
+        const raw = date.toLocaleDateString("it-IT", { month: "short" });
+        return raw.charAt(0).toUpperCase() + raw.slice(1, 3);
+      };
 
       const monthCursor = new Date(yearAgo);
       for (let i = 0; i < 12; i += 1) {
@@ -433,32 +438,18 @@ export default function MaestroOverviewPage({
         };
       });
 
-      // Weekday distribution (ultimi 12 mesi)
-      const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
-      yearRows.forEach((row) => {
-        const d = new Date(row.start_time);
-        const idx = (d.getDay() + 6) % 7; // Lun=0
-        weekdayCounts[idx] += 1;
-      });
-      const weekdayData: WeekdayPoint[] = WEEKDAY_LABELS.map((label, i) => ({
+      // Weekday distribution (settimana corrente) - ore
+      const weekdayData: WeekdayPoint[] = WEEKDAY_LABELS.map((label) => ({
         label,
-        count: weekdayCounts[i],
+        count: 0,
       }));
 
-      // Hour bucket distribution
-      const buckets = { mattina: 0, pranzo: 0, pomeriggio: 0, sera: 0 };
-      yearRows.forEach((row) => {
-        const h = new Date(row.start_time).getHours();
-        if (h < 12) buckets.mattina += 1;
-        else if (h < 14) buckets.pranzo += 1;
-        else if (h < 18) buckets.pomeriggio += 1;
-        else buckets.sera += 1;
-      });
+      // Hour bucket distribution (popolato dopo weekRows)
       const hourData: HourBucketPoint[] = [
-        { label: "Mattina", count: buckets.mattina, icon: <Sunrise className="h-4 w-4" /> },
-        { label: "Pranzo", count: buckets.pranzo, icon: <Sun className="h-4 w-4" /> },
-        { label: "Pomeriggio", count: buckets.pomeriggio, icon: <Sun className="h-4 w-4" /> },
-        { label: "Sera", count: buckets.sera, icon: <Sunset className="h-4 w-4" /> },
+        { label: "8-12", count: 0, icon: <Sunrise className="h-4 w-4" /> },
+        { label: "12-14", count: 0, icon: <Sun className="h-4 w-4" /> },
+        { label: "14-18", count: 0, icon: <Sun className="h-4 w-4" /> },
+        { label: "18+", count: 0, icon: <Sunset className="h-4 w-4" /> },
       ];
 
       // Trend helpers
@@ -524,6 +515,29 @@ export default function MaestroOverviewPage({
 
       // Settimana corrente
       const weekRows = weekRowsRes.data ?? [];
+      const courseWeekSchedule: { start_time: string; end_time: string }[] = [];
+
+      const maestroWeekRows = weekRows.filter(
+        (r) => r.coach_id === user.id && (r.type === "lezione_privata" || r.type === "lezione_gruppo")
+      );
+
+      // Popola weekdayData con le ore della settimana corrente
+      maestroWeekRows.forEach((row) => {
+        const d = new Date(row.start_time);
+        const idx = (d.getDay() + 6) % 7;
+        const hrs = (new Date(row.end_time).getTime() - d.getTime()) / (1000 * 60 * 60);
+        weekdayData[idx].count += Math.max(0, hrs);
+      });
+
+      // Popola hourData con le lezioni della settimana corrente
+      maestroWeekRows.forEach((row) => {
+        const h = new Date(row.start_time).getHours();
+        if (h < 12) hourData[0].count += 1;
+        else if (h < 14) hourData[1].count += 1;
+        else if (h < 18) hourData[2].count += 1;
+        else hourData[3].count += 1;
+      });
+
       const weekDoneHours = weekRows
         .filter((r) => new Date(r.end_time) < now)
         .reduce((acc, r) => {
@@ -562,7 +576,7 @@ export default function MaestroOverviewPage({
         const count = twoMonthsRows.filter(
           (r) => new Date(r.start_time) >= dayStart && new Date(r.start_time) < dayEnd
         ).length;
-        const lbl = dayStart.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+        const lbl = `${dayStart.getDate()}/${dayStart.getMonth() + 1}`;
         monthChartPoints.push({ monthKey: `month-d${d}`, label: lbl, lessonsCount: count });
       }
 
@@ -584,31 +598,209 @@ export default function MaestroOverviewPage({
         });
       }
 
-      const counterpartIds = Array.from(
-        new Set(
-          upcomingRows
-            .map((row) => {
-              if (row.coach_id === user.id) return row.user_id;
-              if (row.user_id === user.id && row.coach_id) return row.coach_id;
-              return null;
-            })
-            .filter((id): id is string => Boolean(id))
-        )
+      const allProfileIds = Array.from(
+        new Set([
+          ...upcomingRows.map((r) => r.user_id),
+          ...upcomingRows.map((r) => r.coach_id).filter((id): id is string => Boolean(id)),
+        ])
       );
 
-      let counterpartMap = new Map<string, string>();
-      if (counterpartIds.length > 0) {
+      let allProfileMap = new Map<string, { full_name: string }>();
+      if (allProfileIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("id, full_name")
-          .in("id", counterpartIds);
-        counterpartMap = new Map(
-          (profilesData ?? []).map((p) => [p.id as string, p.full_name as string])
+          .in("id", allProfileIds);
+        allProfileMap = new Map(
+          (profilesData ?? []).map((p) => [p.id as string, { full_name: p.full_name as string }])
         );
       }
 
+      // Fetch course data for this maestro (upcoming items + stats)
+      const maestroFullName = profile?.full_name || "";
+      const courseItems: UpcomingBooking[] = [];
+      let courseLessonsDone = 0;
+      let weekCourseHours = 0;
+      let totalCourses = 0;
+      let maestroCourseIds: string[] = [];
+      const courseTrendRows: { start_time: string; end_time: string; user_id: string }[] = [];
+      const coursePrevYearRows: { start_time: string; end_time: string; user_id: string }[] = [];
+      if (maestroFullName) {
+        const [{ data: coursesData }, { count: allCoursesCount }] = await Promise.all([
+          supabase
+            .from("courses")
+            .select("id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_time_overrides, lesson_overrides, schedule_periods")
+            .eq("is_active", true)
+            .ilike("instructor_name", `%${maestroFullName}%`),
+          supabase
+            .from("courses")
+            .select("id", { count: "exact", head: true })
+            .ilike("instructor_name", `%${maestroFullName}%`),
+        ]);
+
+        totalCourses = allCoursesCount ?? 0;
+        maestroCourseIds = (coursesData ?? []).map((c: { id: string }) => c.id);
+
+        // Fetch attendance records to know which sessions were actually done
+        const attendedLessonsSet = new Set<string>();
+        if (maestroCourseIds.length > 0) {
+          const { data: attendanceData } = await supabase
+            .from("lesson_attendance")
+            .select("course_id, lesson_date")
+            .in("course_id", maestroCourseIds);
+          (attendanceData ?? []).forEach((r: { course_id: string; lesson_date: string }) => {
+            attendedLessonsSet.add(`${r.course_id}:${r.lesson_date}`);
+          });
+          courseLessonsDone = attendedLessonsSet.size;
+        }
+
+        const DAY_CODES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+        for (const c of coursesData ?? []) {
+          // Count past sessions for stats
+          const courseStart = c.start_date ? new Date(c.start_date) : new Date(startOfPrevYear);
+          const pastCursor = new Date(Math.max(courseStart.getTime(), startOfPrevYear.getTime()));
+          pastCursor.setHours(0, 0, 0, 0);
+          while (pastCursor < now) {
+            const pDate = pastCursor.toISOString().split("T")[0];
+            const pDay = DAY_CODES[pastCursor.getDay()];
+            const pSched = (c.schedule_days ?? []).includes(pDay);
+            const pExtra = (c.extra_dates ?? []).includes(pDate);
+            if ((pSched || pExtra) && !(c.cancelled_dates ?? []).includes(pDate)) {
+              if (pSched && !pExtra) {
+                if (c.start_date && c.start_date > pDate) { pastCursor.setDate(pastCursor.getDate() + 1); continue; }
+                if (c.end_date && c.end_date < pDate) { pastCursor.setDate(pastCursor.getDate() + 1); continue; }
+              }
+              let pTime: string = c.schedule_time || "";
+              if (c.lesson_time_overrides?.[pDate]) pTime = c.lesson_time_overrides[pDate];
+              else if (c.schedule_periods?.length > 0) {
+                const pp = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(pDay));
+                if (pp?.time) pTime = pp.time;
+              }
+              const pRng = pTime.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+              const pSh = pRng ? parseInt(pRng[1], 10) : 9;
+              const pSm = pRng ? parseInt(pRng[2], 10) : 0;
+              const pEh = pRng ? parseInt(pRng[3], 10) : pSh + 1;
+              const pEm = pRng ? parseInt(pRng[4], 10) : pSm;
+              const pStart = new Date(pastCursor); pStart.setHours(pSh, pSm, 0, 0);
+              const pEnd = new Date(pastCursor); pEnd.setHours(pEh, pEm, 0, 0);
+              if (pStart < now) {
+                const isAttended = attendedLessonsSet.has(`${c.id}:${pDate}`);
+                if (pStart >= yearAgo && isAttended) {
+                  courseTrendRows.push({ start_time: pStart.toISOString(), end_time: pEnd.toISOString(), user_id: "" });
+                }
+                if (pStart >= startOfPrevYear && pStart < sameDayLastYear && isAttended) {
+                  coursePrevYearRows.push({ start_time: pStart.toISOString(), end_time: pEnd.toISOString(), user_id: "" });
+                }
+              }
+            }
+            pastCursor.setDate(pastCursor.getDate() + 1);
+          }
+
+          // Build upcoming items
+          const from = new Date(now);
+          from.setHours(0, 0, 0, 0);
+          let found = 0;
+          for (let d = 0; d < 90 && found < 3; d++) {
+            const dateStr = from.toISOString().split("T")[0];
+            const dayCode = DAY_CODES[from.getDay()];
+            const isScheduled = (c.schedule_days ?? []).includes(dayCode);
+            const isExtra = (c.extra_dates ?? []).includes(dateStr);
+            if ((isScheduled || isExtra) && !(c.cancelled_dates ?? []).includes(dateStr)) {
+              if (isScheduled && !isExtra) {
+                if (c.start_date && c.start_date > dateStr) { from.setDate(from.getDate() + 1); continue; }
+                if (c.end_date && c.end_date < dateStr) { from.setDate(from.getDate() + 1); continue; }
+              }
+              let timeStr: string = c.schedule_time || "";
+              if (c.lesson_time_overrides?.[dateStr]) timeStr = c.lesson_time_overrides[dateStr];
+              else if (c.schedule_periods?.length > 0) {
+                const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+                if (period?.time) timeStr = period.time;
+              }
+              let courtName: string = c.court_name || "";
+              if (c.lesson_overrides?.[dateStr]) courtName = c.lesson_overrides[dateStr];
+              else if (c.schedule_periods?.length > 0) {
+                const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+                if (period?.court) courtName = period.court;
+              }
+              const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+              const sh = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
+              const sm = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
+              const eh = rangeMatch ? parseInt(rangeMatch[3], 10) : sh + 1;
+              const em = rangeMatch ? parseInt(rangeMatch[4], 10) : sm;
+              const startTime = new Date(from); startTime.setHours(sh, sm, 0, 0);
+              const endTime = new Date(from); endTime.setHours(eh, em, 0, 0);
+              if (startTime >= now) {
+                courseItems.push({
+                  id: c.id,
+                  court: courtName,
+                  user_id: "",
+                  coach_id: user.id,
+                  start_time: startTime.toISOString(),
+                  end_time: endTime.toISOString(),
+                  status: "confirmed",
+                  type: "corso",
+                  notes: c.name,
+                  isCourse: true,
+                });
+                found++;
+              }
+            }
+            from.setDate(from.getDate() + 1);
+          }
+        }
+
+        // Build course schedule for current week (no attendance check)
+        for (const c of coursesData ?? []) {
+          const cursor = new Date(startOfWeek);
+          while (cursor < endOfWeek) {
+            const dateStr = cursor.toISOString().split("T")[0];
+            const dayCode = DAY_CODES[cursor.getDay()];
+            const isScheduled = (c.schedule_days ?? []).includes(dayCode);
+            const isExtra = (c.extra_dates ?? []).includes(dateStr);
+            if ((isScheduled || isExtra) && !(c.cancelled_dates ?? []).includes(dateStr)) {
+              if (isScheduled && !isExtra) {
+                if (c.start_date && c.start_date > dateStr) { cursor.setDate(cursor.getDate() + 1); continue; }
+                if (c.end_date && c.end_date < dateStr) { cursor.setDate(cursor.getDate() + 1); continue; }
+              }
+              let wTimeStr: string = c.schedule_time || "";
+              if (c.lesson_time_overrides?.[dateStr]) wTimeStr = c.lesson_time_overrides[dateStr];
+              else if (c.schedule_periods?.length > 0) {
+                const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+                if (period?.time) wTimeStr = period.time;
+              }
+              const wRng = wTimeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+              const wSh = wRng ? parseInt(wRng[1], 10) : 9;
+              const wSm = wRng ? parseInt(wRng[2], 10) : 0;
+              const wEh = wRng ? parseInt(wRng[3], 10) : wSh + 1;
+              const wEm = wRng ? parseInt(wRng[4], 10) : wSm;
+              const wStart = new Date(cursor); wStart.setHours(wSh, wSm, 0, 0);
+              const wEnd = new Date(cursor); wEnd.setHours(wEh, wEm, 0, 0);
+              courseWeekSchedule.push({ start_time: wStart.toISOString(), end_time: wEnd.toISOString() });
+            }
+            cursor.setDate(cursor.getDate() + 1);
+          }
+        }
+      }
+
+      const courseCurrWeekRows = courseTrendRows.filter((r) => new Date(r.start_time) >= startOfWeek);
+      const coursePrevWeekRows = courseTrendRows.filter((r) => new Date(r.start_time) >= startOfPrevWeek && new Date(r.start_time) < startOfWeek);
+      const courseCurrMonthRows = courseTrendRows.filter((r) => new Date(r.start_time) >= startOfThisMonth);
+      const coursePrevMonthRowsTrend = courseTrendRows.filter((r) => new Date(r.start_time) >= startOfPrevMonth && new Date(r.start_time) < endOfPrevMonth);
+      const courseCurrYearRows = courseTrendRows.filter((r) => new Date(r.start_time) >= startOfThisYear);
+      computedTrends.week  = buildTrend([...currWeekRows, ...courseCurrWeekRows], [...prevWeekRows, ...coursePrevWeekRows]);
+      computedTrends.month = buildTrend([...currentMonthRows, ...courseCurrMonthRows], [...prevMonthRows, ...coursePrevMonthRowsTrend]);
+      computedTrends.year  = buildTrend([...currYearRows, ...courseCurrYearRows], [...prevYearRows, ...coursePrevYearRows]);
+
+      // Add course sessions (attendance-based) to monthly chart
+      courseTrendRows.forEach((row) => {
+        const d = new Date(row.start_time);
+        const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const mEntry = monthlyTrendData.find((p) => p.monthKey === mKey);
+        if (mEntry) mEntry.lessonsCount += 1;
+      });
+
       setStats({
-        totalCoachLessonsDone: coachLessonsDoneRes.count || 0,
+        totalCoachLessonsDone: (coachLessonsDoneRes.count || 0) + courseLessonsDone,
         totalAthletesChosen: athleteAccumulator.size,
         pastCoachLessons: coachLessonsDoneRes.count || 0,
         totalCourtBookings: totalCourtBookingsRes.count || 0,
@@ -616,53 +808,78 @@ export default function MaestroOverviewPage({
         upcomingInvolved: upcomingInvolvedRes.count || 0,
         privateLessonsDone,
         groupLessonsDone,
+        courseLessonsDone,
+        totalCourses,
       });
 
       setAthletes(athleteSummaries);
       setTotalMaestroHours(Math.round(totalMaestroHrs * 10) / 10);
       setMonthlyTrend(monthlyTrendData);
+      // Aggiungi ore e bucket dei corsi dalla settimana corrente
+      courseWeekSchedule.forEach((row) => {
+        const d = new Date(row.start_time);
+        const idx = (d.getDay() + 6) % 7;
+        const hrs = (new Date(row.end_time).getTime() - d.getTime()) / (1000 * 60 * 60);
+        weekdayData[idx].count += Math.max(0, hrs);
+        const h = d.getHours();
+        if (h < 12) hourData[0].count += 1;
+        else if (h < 14) hourData[1].count += 1;
+        else if (h < 18) hourData[2].count += 1;
+        else hourData[3].count += 1;
+      });
+      weekdayData.forEach((pt) => { pt.count = Math.round(pt.count * 10) / 10; });
       setWeekdayDist(weekdayData);
       setHourDist(hourData);
+      // Aggiungi sessioni corsi ai chart settimanale e mensile (courseTrendRows popolato dopo il blocco if maestroFullName)
+      const nowDay = new Date(now);
+      nowDay.setHours(0, 0, 0, 0);
+      courseTrendRows.forEach((row) => {
+        const rowDay = new Date(row.start_time);
+        rowDay.setHours(0, 0, 0, 0);
+        const daysAgo = Math.round((nowDay.getTime() - rowDay.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysAgo >= 0 && daysAgo <= 6) {
+          const pt = weekChartPoints.find((p) => p.monthKey === `day-${daysAgo}`);
+          if (pt) pt.lessonsCount += 1;
+        }
+        if (daysAgo >= 0 && daysAgo <= 29) {
+          const pt = monthChartPoints.find((p) => p.monthKey === `month-d${daysAgo}`);
+          if (pt) pt.lessonsCount += 1;
+        }
+      });
+
       setAllTrends(computedTrends);
       setWeekChartData(weekChartPoints);
       setMonthChartData(monthChartPoints);
       setWeekStats({
-        hours: Math.round(weekDoneHours * 10) / 10,
+        hours: Math.round((weekDoneHours + weekCourseHours) * 10) / 10,
         remaining: weekRemaining,
       });
 
-      const mappedUpcoming: BookingRow[] = upcomingRows.map((row) => {
-          const participants = upcomingParticipantsMap.get(row.id) ?? [];
-          const participantNames = participants
-            .filter((p) => !p.user_id || p.user_id !== user.id)
-            .map((p) => p.full_name)
-            .filter(Boolean);
+      setCurrentUserId(user.id);
 
-          let counterpartName: string | null = null;
-          if (participantNames.length > 0) {
-            counterpartName = participantNames.join(", ");
-          } else {
-            const counterpartId =
-              row.coach_id === user.id
-                ? row.user_id
-                : row.user_id === user.id
-                  ? row.coach_id
-                  : null;
-            counterpartName = counterpartId ? counterpartMap.get(counterpartId) || null : null;
-          }
+      const mappedUpcoming: UpcomingBooking[] = upcomingRows.map((row) => ({
+        id: row.id,
+        court: row.court,
+        user_id: row.user_id,
+        coach_id: row.coach_id,
+        start_time: row.start_time,
+        end_time: row.end_time,
+        status: row.status,
+        type: row.type,
+        notes: null,
+        user_profile: allProfileMap.get(row.user_id) ?? null,
+        coach_profile: row.coach_id ? allProfileMap.get(row.coach_id) ?? null : null,
+        participants: upcomingParticipantsMap.get(row.id) ?? [],
+      }));
 
-          return {
-            ...row,
-            participants,
-            counterpartName,
-            involvementRole: row.coach_id === user.id ? "maestro" : "atleta",
-          };
-        });
+      const allUpcoming = [...mappedUpcoming, ...courseItems].sort(
+        (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+      );
 
       setUpcoming(
         upcomingRoleFilter === "maestro"
-          ? mappedUpcoming.filter((row) => row.involvementRole === "maestro")
-          : mappedUpcoming
+          ? allUpcoming.filter((item) => item.isCourse || item.coach_id === user.id)
+          : allUpcoming
       );
     } catch (error) {
       console.error("Errore caricamento pagina maestro:", error);
@@ -684,273 +901,62 @@ export default function MaestroOverviewPage({
     <div className="space-y-6">
       {/* HERO */}
       <div>
-        <h1 className="text-4xl font-bold text-secondary mb-2">Area Maestro, {userName}</h1>
+        <h1 className="text-4xl font-bold text-secondary mb-2">Area Maestro</h1>
       </div>
 
-      {/* KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatKpi
-          icon={<GraduationCap className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Lezioni svolte"
-          value={stats.totalCoachLessonsDone}
-        />
-        <StatKpi
-          icon={<Users className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Atleti"
-          value={stats.totalAthletesChosen}
-        />
-        <StatKpi
-          icon={<Timer className="h-10 w-10 sm:h-8 sm:w-8 text-white" />}
-          label="Questa settimana"
-          value={`${weekStats.hours} h`}
-        />
-      </div>
-
-      {/* PROSSIMI IMPEGNI */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Prossimi impegni
-            </h2>
-        </div>
-
-        <div className="px-6 py-4">
-          {upcoming.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
-              <CalendarClock className="h-8 w-8 mb-2" />
-              <p className="text-sm font-medium">Nessun impegno in arrivo</p>
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {upcoming.map((item) => (
-                <UpcomingItem
-                  key={item.id}
-                  item={item}
-                  variant={upcomingStyle}
-                  basePath={upcomingBasePath}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {/* TREND */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">
-            Trend
-          </h2>
-          <div className="flex items-center gap-1">
-            {(Object.keys(PERIOD_LABELS) as TrendPeriod[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setTrendPeriod(p)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  trendPeriod === p
-                    ? "bg-secondary text-white"
-                    : "bg-secondary/5 text-secondary/70 hover:bg-secondary/10"
-                }`}
-              >
-                {PERIOD_LABELS[p].label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="p-5 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <TrendCard
-              label="Lezioni"
-              delta={allTrends[trendPeriod].lessons}
-              previousLabel={PERIOD_LABELS[trendPeriod].previousLabel}
-              format={(n) => String(n)}
-            />
-            <TrendCard
-              label="Ore erogate"
-              delta={allTrends[trendPeriod].hours}
-              previousLabel={PERIOD_LABELS[trendPeriod].previousLabel}
-              format={(n) => `${n}h`}
-            />
-            <TrendCard
-              label="Atleti unici"
-              delta={allTrends[trendPeriod].athletes}
-              previousLabel={PERIOD_LABELS[trendPeriod].previousLabel}
-              format={(n) => String(n)}
-            />
-          </div>
+      <div
+        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        style={{ backgroundColor: "#023047", borderColor: "#023047", borderLeftColor: "#011a24" }}
+      >
+        <div className="flex items-start gap-6">
+          <Dumbbell className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+          <h2 className="text-2xl font-bold text-white truncate">{userName}</h2>
         </div>
       </div>
 
       {/* DISTRIBUZIONE SETTIMANA + FASCE ORARIE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="px-5 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Giorni più carichi
+              Distribuzione oraria
             </h2>
           </div>
-          <div className="p-5 sm:p-6">
-            <WeekdayChart data={weekdayDist} />
+          <div className="p-6">
+            <HourBucketChart data={hourDist} />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="px-5 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Fasce orarie preferite
+              Ore questa settimana
             </h2>
           </div>
-          <div className="p-5 sm:p-6">
-            <HourBucketChart data={hourDist} />
+          <div className="p-6">
+            <WeekdayChart data={weekdayDist} todayIdx={(new Date().getDay() + 6) % 7} />
           </div>
         </div>
       </div>
 
       {/* MONTHLY BAR CHART */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">
-            Andamento lezioni
+            Storico lezioni
           </h2>
-
-          <div className="flex items-center gap-1 bg-secondary/5 rounded-lg p-1">
-            {(["week", "month", "year"] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setChartPeriod(p)}
-                className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
-                  chartPeriod === p
-                    ? "bg-secondary text-white"
-                    : "text-secondary/60 hover:text-secondary"
-                }`}
-              >
-                {p === "week" ? "Sett." : p === "month" ? "Mese" : "Anno"}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="p-6">
-          <MonthlyLessonsChart
-            data={
-              chartPeriod === "week"
-                ? weekChartData
-                : chartPeriod === "month"
-                ? monthChartData
-                : monthlyTrend
-            }
-          />
+          <MonthlyLessonsChart data={monthlyTrend} />
         </div>
       </div>
 
-      {/* ATLETI */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              I tuoi atleti
-            </h2>
-        </div>
-
-        <div className="px-2 sm:px-3 py-2 max-h-[480px] overflow-y-auto">
-          {athletes.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-8 w-8" />}
-              title="Nessun atleta ancora"
-              description="Quando svolgerai le tue prime lezioni, gli atleti compariranno qui."
-            />
-          ) : (
-            <ul className="divide-y divide-gray-100">
-              {athletes.map((athlete, idx) => {
-                const maxHours = totalMaestroHours || 1;
-                const pct = Math.round((athlete.totalHours / maxHours) * 100);
-                return (
-                  <li
-                    key={athlete.id}
-                    className="px-3 py-3 hover:bg-secondary/5 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar name={athlete.fullName} top={idx === 0} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-secondary text-sm truncate">
-                            {athlete.fullName}
-                          </p>
-                          <p className="text-sm font-bold text-secondary tabular-nums">
-                            {athlete.lessonsCount}
-                            <span className="text-xs font-medium text-secondary/60 ml-1">
-                              lez.
-                            </span>
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <span className="text-[11px] text-secondary/60">
-                            Ultima:{" "}
-                            {athlete.lastLessonAt
-                              ? formatShortItalianDate(athlete.lastLessonAt)
-                              : "-"}
-                          </span>
-                          <span className="text-[11px] text-secondary/60 tabular-nums">
-                            {Math.round(athlete.totalHours * 10) / 10}h
-                          </span>
-                        </div>
-                        <div className="mt-1.5 h-1.5 w-full rounded-full bg-secondary/10 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-secondary"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
 
 /* ---------------- Sub-components ---------------- */
-
-function StatKpi({
-  icon,
-  label,
-  value,
-  suffix,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  suffix?: string;
-}) {
-  return (
-    <div className="bg-secondary rounded-lg p-5 sm:p-4 hover:shadow-md transition-all flex flex-row items-center gap-4">
-      <div className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-xl bg-white/10 flex items-center justify-center">{icon}</div>
-      <div className="flex-1 hidden sm:block">
-        <p className="text-sm text-white/70">{label}</p>
-        <h3 className="text-2xl font-bold text-white tabular-nums">
-          {value}
-          {suffix && (
-            <span className="text-base font-semibold text-white/70 ml-1">{suffix}</span>
-          )}
-        </h3>
-      </div>
-      <div className="flex sm:hidden items-center gap-3 flex-1">
-        <h3 className="text-3xl font-bold text-white tabular-nums">
-          {value}
-          {suffix && (
-            <span className="text-base font-semibold text-white/70 ml-1">{suffix}</span>
-          )}
-        </h3>
-        <p className="text-base text-white/70">{label}</p>
-      </div>
-    </div>
-  );
-}
 
 function TrendCard({
   label,
@@ -972,7 +978,7 @@ function TrendCard({
         : `${isUp ? "+" : "-"}${Math.abs(delta.diffPct)}%`;
 
   return (
-    <div className="bg-secondary rounded-lg p-4 sm:p-5 hover:shadow-md transition-all">
+    <div className="bg-secondary rounded-lg p-6 hover:shadow-md transition-all">
       <p className="text-xs text-white/60 font-semibold uppercase tracking-wide">
         {label}
       </p>
@@ -991,7 +997,7 @@ function TrendCard({
   );
 }
 
-function WeekdayChart({ data }: { data: WeekdayPoint[] }) {
+function WeekdayChart({ data, todayIdx }: { data: WeekdayPoint[]; todayIdx: number }) {
   const max = Math.max(...data.map((d) => d.count), 1);
   const totalCount = data.reduce((acc, d) => acc + d.count, 0);
   if (totalCount === 0) {
@@ -1005,22 +1011,31 @@ function WeekdayChart({ data }: { data: WeekdayPoint[] }) {
   }
   return (
     <div className="space-y-2.5">
-      {data.map((d) => {
+      {data.map((d, i) => {
         const pct = (d.count / max) * 100;
+        const isToday = i === todayIdx;
         return (
           <div key={d.label} className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-secondary/70 w-8 flex-shrink-0">
+            <span className={`text-sm font-bold w-8 flex-shrink-0 ${isToday ? 'text-[#023047]' : 'text-secondary'}`}>
               {d.label}
             </span>
-            <div className="flex-1 h-6 bg-secondary/5 rounded-md overflow-hidden">
+            <div className="flex-1 relative h-8">
+              <div className="absolute inset-0 bg-secondary/5 rounded-md" />
               <div
-                className="h-full bg-secondary rounded-md transition-all"
-                style={{ width: `${pct}%` }}
-              />
+                className={`absolute inset-y-0 left-0 rounded-md transition-all flex items-center justify-end pr-2`}
+                style={{
+                  width: `${pct}%`,
+                  minWidth: d.count > 0 ? '2.5rem' : '0',
+                  backgroundColor: isToday ? '#023047' : 'var(--secondary)',
+                }}
+              >
+                {d.count > 0 && (
+                  <span className="text-sm font-extrabold text-white tabular-nums">
+                    {d.count}h
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-xs font-bold text-secondary tabular-nums w-8 text-right">
-              {d.count}
-            </span>
           </div>
         );
       })}
@@ -1041,22 +1056,29 @@ function HourBucketChart({ data }: { data: HourBucketPoint[] }) {
     );
   }
   return (
-    <div className="grid grid-cols-4 gap-2 h-44">
+    <div className="flex gap-3 h-72">
       {data.map((d) => {
-        const pct = Math.max(6, (d.count / max) * 100);
+        const pct = (d.count / max) * 100;
         return (
-          <div key={d.label} className="flex flex-col items-center justify-end gap-2">
-            <span className="text-xs font-bold text-secondary tabular-nums">
-              {d.count}
-            </span>
-            <div className="w-full flex-1 flex items-end">
+          <div key={d.label} className="flex flex-col items-center gap-1.5 flex-1 h-full">
+            <div className="w-full flex-1 relative">
+              <div className="absolute inset-0 bg-secondary/5 rounded-md" />
               <div
-                className="w-full rounded-t-lg bg-secondary transition-colors"
-                style={{ height: `${pct}%` }}
-                title={`${d.label}: ${d.count}`}
-              />
+                className="absolute bottom-0 left-0 right-0 rounded-md transition-all flex items-start justify-center pt-1.5"
+                style={{
+                  height: `${pct}%`,
+                  minHeight: '2.5rem',
+                  backgroundColor: 'var(--secondary)',
+                }}
+              >
+                {d.count > 0 && (
+                  <span className="text-sm font-extrabold text-white tabular-nums">
+                    {d.count}
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-[10px] text-secondary/70 font-semibold">{d.label}</span>
+            <span className="text-sm font-bold text-secondary text-center leading-tight whitespace-nowrap">{d.label}</span>
           </div>
         );
       })}
@@ -1067,6 +1089,15 @@ function HourBucketChart({ data }: { data: HourBucketPoint[] }) {
 function MonthlyLessonsChart({ data }: { data: MonthlyPoint[] }) {
   const maxValue = Math.max(...data.map((d) => d.lessonsCount), 1);
   const totalCount = data.reduce((acc, d) => acc + d.lessonsCount, 0);
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, [data]);
 
   if (totalCount === 0) {
     return (
@@ -1079,38 +1110,37 @@ function MonthlyLessonsChart({ data }: { data: MonthlyPoint[] }) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="relative h-56">
-        <div className="h-full flex items-end gap-1.5 sm:gap-2">
-          {data.map((point) => {
-            const barHeight = `${Math.max(4, Math.round((point.lessonsCount / maxValue) * 100))}%`;
-            return (
-              <div
-                key={point.monthKey}
-                className="flex-1 min-w-0 h-full flex flex-col justify-end items-center gap-1 group"
-              >
-                <span className="text-[10px] font-bold text-secondary/80 leading-none">
-                  {point.lessonsCount > 0 ? point.lessonsCount : ""}
-                </span>
+    <div ref={scrollRef} className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="flex gap-2 h-72 w-full min-w-[700px]">
+        {data.map((point) => {
+          const pct = (point.lessonsCount / maxValue) * 100;
+          const isCurrent = point.monthKey === currentMonthKey;
+          return (
+            <div key={point.monthKey} className="flex flex-col items-center gap-1.5 flex-1 min-w-[2rem] h-full">
+              <div className="w-full flex-1 relative">
+                <div className="absolute inset-0 bg-secondary/5 rounded-md" />
                 <div
-                  className="w-full rounded-t-md bg-secondary transition-colors cursor-pointer"
-                  style={{ height: barHeight }}
+                  className="absolute bottom-0 left-0 right-0 rounded-md transition-all flex items-start justify-center pt-3"
+                  style={{
+                    height: `${pct}%`,
+                    minHeight: point.lessonsCount === 0 ? '0.5rem' : '2.5rem',
+                    backgroundColor: isCurrent ? '#023047' : 'var(--secondary)',
+                  }}
                   title={`${point.label}: ${point.lessonsCount} lezioni`}
-                />
+                >
+                  {point.lessonsCount > 0 && (
+                    <span className="text-sm font-extrabold text-white tabular-nums leading-none">
+                      {point.lessonsCount}
+                    </span>
+                  )}
+                </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-      <div className="flex gap-1.5 sm:gap-2">
-        {data.map((point) => (
-          <span
-            key={point.monthKey}
-            className="flex-1 min-w-0 text-[10px] text-secondary/60 text-center leading-tight font-medium truncate"
-          >
-            {point.label}
-          </span>
-        ))}
+              <span className={`w-full text-sm font-bold text-center leading-tight whitespace-nowrap ${isCurrent ? 'text-[#023047]' : 'text-secondary'}`}>
+                {point.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

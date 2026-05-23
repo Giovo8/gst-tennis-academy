@@ -117,7 +117,6 @@ export default function AdminStaffPage() {
             href="/dashboard/admin/staff/new"
             className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
-            <Plus className="h-4 w-4" />
             Nuovo Membro
           </Link>
         </div>

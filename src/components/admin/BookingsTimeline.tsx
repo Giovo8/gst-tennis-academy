@@ -54,6 +54,8 @@ type BookingsTimelineProps = {
   highlightUserId?: string; // When set, bookings where this user is athlete are styled differently
   showBookingContent?: boolean; // When false, shows only colored slot blocks without text labels
   showCourses?: boolean; // When false, hides course lessons from the timeline
+  showEntryModal?: boolean; // When false, clicking a booking navigates directly instead of opening the modal
+  scrollToCurrentTime?: boolean; // When true, scrolls the timeline to the current time on mount
 };
 
 const TIME_SLOTS = [
@@ -74,7 +76,7 @@ type TimeSlotInfo = {
   colspan: number;
 };
 
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true, showEntryModal = true, scrollToCurrentTime = false }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
@@ -167,6 +169,25 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     loadCourtsFromDB();
   }, []);
 
+  // Scroll to current time on mount
+  useEffect(() => {
+    if (!scrollToCurrentTime || parentLoading || blocksLoading || courtsLoading) return;
+    const raf = requestAnimationFrame(() => {
+      if (!timelineScrollRef.current) return;
+      const now = new Date();
+      const hour = now.getHours();
+      const minutes = now.getMinutes();
+      // Timeline starts at 07:00, each hour column = (3400 - 120) / 16 = 205px
+      const COLUMN_WIDTH = 205;
+      const START_HOUR = 7;
+      const hoursFromStart = Math.max(0, hour - START_HOUR) + minutes / 60;
+      // Scroll so that current time is roughly centered (offset by ~2 hours to give context)
+      const scrollPos = Math.max(0, (hoursFromStart - 2) * COLUMN_WIDTH);
+      timelineScrollRef.current.scrollLeft = scrollPos;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [scrollToCurrentTime, parentLoading, blocksLoading, courtsLoading]);
+
   // Load course lessons for the selected date
   useEffect(() => {
     if (!showCourses) { setCourseEntries([]); return; }
@@ -218,6 +239,21 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     const seen = new Set<string>();
     const allData = [...(q1.data ?? []), ...(q2.data ?? [])].filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
 
+    // Resolve instructor names → user IDs so we can check maestro involvement
+    const allInstructorNames = allData
+      .flatMap((c) => (c.instructor_name ?? "").split(", ").filter(Boolean));
+    const uniqueNames = [...new Set(allInstructorNames)];
+    const nameToId = new Map<string, string>();
+    if (uniqueNames.length > 0) {
+      const { data: instructorProfiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("full_name", uniqueNames);
+      (instructorProfiles ?? []).forEach((p: { id: string; full_name: string }) => {
+        nameToId.set(p.full_name, p.id);
+      });
+    }
+
     const entries: Booking[] = [];
     for (const c of allData) {
       const isExtraDate = (c.extra_dates ?? []).includes(dateStr);
@@ -257,11 +293,18 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       startTime.setHours(startHour, startMinute, 0, 0);
       const endTime = new Date(selectedDate);
       endTime.setHours(endHour, endMinute, 0, 0);
+      const instructorNames = (c.instructor_name ?? "").split(", ").filter(Boolean);
+      const instructorIds = instructorNames.map((n) => nameToId.get(n)).filter(Boolean) as string[];
+      // If highlightUserId is one of the instructors, store it as coach_id so the timeline
+      // can distinguish "my course" from "someone else's course".
+      const resolvedCoachId = instructorIds.length > 0
+        ? (highlightUserId && instructorIds.includes(highlightUserId) ? highlightUserId : instructorIds[0])
+        : null;
       entries.push({
         id: c.id,
         court: courtName,
         user_id: "",
-        coach_id: null,
+        coach_id: resolvedCoachId,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         status: "confirmed",
@@ -588,6 +631,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         return { background: "#94a3b8" };
       }
 
+      // Corso del maestro — colore corso
+      if (booking.isCourse) {
+        return { background: "#075985" };
+      }
+
       const isCoach = booking.coach_id === highlightUserId;
       if (isCoach) {
         switch (booking.type) {
@@ -646,8 +694,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
     if (booking.isCourse) return "Corso";
     if (booking.isBlock) return showBlockReason ? booking.reason || "Blocco Campo" : "Blocco Campo";
-    if (booking.type === "lezione_privata") return asCoach ? "Maestro" : "Lezione Privata";
-    if (booking.type === "lezione_gruppo") return asCoach ? "Maestro" : "Lezione Gruppo";
+    if (booking.type === "lezione_privata") return asCoach ? "Lezione Privata" : "Lezione Privata";
+    if (booking.type === "lezione_gruppo") return asCoach ? "Lezione Gruppo" : "Lezione Gruppo";
     if (isArenaBooking) return "Arena";
     return "Campo";
   }
@@ -702,24 +750,24 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   function getEntryDetailsPath(booking: Booking): string {
-    if (booking.isCourse) return `/dashboard/admin/corsi/${booking.id}`;
+    if (booking.isCourse) return `${basePath}/corsi/${booking.id}`;
     return booking.isBlock
       ? `${basePath}/courts/${booking.id}`
       : `${basePath}/bookings/${booking.id}`;
   }
 
   function canOpenEntry(booking: Booking): boolean {
-    if (booking.isCourse) return true;
     // In admin views (no highlighted user), keep existing behavior.
     if (!highlightUserId) return true;
 
     // In maestro/athlete contextual views, only own bookings are clickable.
     if (booking.isBlock) return false;
+    if (booking.isCourse) return booking.coach_id === highlightUserId;
     return booking.user_id === highlightUserId || booking.coach_id === highlightUserId;
   }
 
   function openEntryModal(booking: Booking) {
-    if (booking.isCourse) {
+    if (!showEntryModal || booking.isCourse) {
       router.push(getEntryDetailsPath(booking));
       return;
     }
@@ -875,26 +923,33 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       ) : (
         <div className="space-y-4">
           {!swapAxes ? (
-            <div
-              ref={timelineScrollRef}
-              className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
-              style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
-            >
-              <div className="min-w-[3400px]">
-                {/* Header Row with Time Slots */}
-                <div className="flex bg-secondary rounded-lg mb-3">
-                  <div className="w-[120px] flex-shrink-0 p-3 flex items-center justify-center">
-                    <span className="font-bold text-white uppercase tracking-wide text-[11px]">Campo</span>
+            <div className="flex">
+              {/* Fixed court labels column */}
+              <div className="flex-shrink-0 w-[100px] flex flex-col gap-3">
+                <div className="bg-secondary rounded-l-lg" style={{ height: '48px' }}></div>
+                {courts.map((court) => (
+                  <div key={court} className="bg-secondary rounded-lg p-3 font-bold text-white text-base flex items-center justify-center" style={{ minHeight: '70px' }}>
+                    {court}
                   </div>
-                  <div className="flex-1 grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
+                ))}
+              </div>
+              <div
+                ref={timelineScrollRef}
+                className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing flex-1"
+                style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+              >
+              <div className="min-w-[3280px]">
+                {/* Header Row with Time Slots */}
+                <div className="bg-secondary rounded-r-lg mb-3">
+                  <div className="grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
                     {TIME_SLOTS.map((time) => (
                       <div
                         key={time}
-                        className="p-3 text-center font-bold text-white text-sm flex items-center justify-center"
+                        className="p-3 text-center font-bold text-white text-base flex items-center justify-center"
                       >
                         {time}
                       </div>
@@ -907,15 +962,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                 {courts.map((court) => (
                   <div
                     key={court}
-                    className="flex hover:bg-gray-50/50 transition-colors bg-white border border-gray-200 rounded-lg"
                   >
-                    {/* Court Name */}
-                    <div className="w-[120px] flex-shrink-0 p-3 bg-white font-bold text-secondary text-sm flex items-center justify-center border-r border-gray-200 rounded-l-lg">
-                      {court}
-                    </div>
-
                     {/* Time Slots Container */}
-                    <div className="flex-1 grid timeline-grid relative" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '100px' }}>
+                    <div className="grid timeline-grid relative bg-white border border-l-0 border-gray-200 rounded-r-lg hover:bg-gray-50/50 transition-colors" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
                       {/* Prenotazioni esistenti come blocchi sovrapposti */}
                       {(() => {
                         const ownIds = new Set(bookingsForSelectedDate.filter(b => b.court === court).map(b => b.id));
@@ -933,7 +982,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               <div
                                 key={booking.id}
                                 onClick={isClickable ? () => openEntryModal(booking) : undefined}
-                                className={`absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
+                                className={`absolute p-2 text-white text-[11px] font-bold flex flex-col justify-center rounded-md z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
@@ -948,13 +997,19 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               >
                                 {showBookingContent ? (
                                   booking.isCourse ? (
-                                    <>
-                                      <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
-                                      {booking.user_profile?.full_name && (
-                                        <div className="truncate text-white/80 mt-0.5 text-[11px] leading-tight">{booking.user_profile.full_name}</div>
-                                      )}
-                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
-                                    </>
+                                    highlightUserId && booking.coach_id !== highlightUserId ? (
+                                      <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
+                                        Corso
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
+                                        {booking.user_profile?.full_name && (
+                                          <div className="truncate text-white/80 mt-0.5 text-[9px] leading-tight">{booking.user_profile.full_name}</div>
+                                        )}
+                                        <div className="text-white/90 text-[8px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
+                                      </>
+                                    )
                                   ) : booking.isBlock ? (
                                     highlightUserId ? (
                                       <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
@@ -983,11 +1038,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                         {getBookingDisplayName(booking)}
                                       </div>
                                       {isLesson && booking.coach_profile && (
-                                        <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                        <div className="truncate text-white/95 mt-0.5 text-[9px] leading-tight">
                                           {booking.coach_profile.full_name}
                                         </div>
                                       )}
-                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                      <div className="text-white/90 text-[8px] mt-0.5 uppercase tracking-wide leading-tight">
                                         {getBookingLabel(booking, highlightUserId ? booking.coach_id === highlightUserId : undefined)}
                                       </div>
                                     </>
@@ -1085,6 +1140,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                   </div>
                 ))}
                 </div>
+              </div>
               </div>
             </div>
           ) : (
@@ -1220,13 +1276,19 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               >
                                 {showBookingContent ? (
                                   booking.isCourse ? (
-                                    <>
-                                      <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
-                                      {booking.user_profile?.full_name && (
-                                        <div className="truncate text-white/80 mt-0.5 text-[11px] leading-tight">{booking.user_profile.full_name}</div>
-                                      )}
-                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
-                                    </>
+                                    highlightUserId && booking.coach_id !== highlightUserId ? (
+                                      <div className="truncate leading-tight text-white/90 uppercase tracking-wide text-[10px]">
+                                        Corso
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
+                                        {booking.user_profile?.full_name && (
+                                          <div className="truncate text-white/80 mt-0.5 text-[9px] leading-tight">{booking.user_profile.full_name}</div>
+                                        )}
+                                        <div className="text-white/90 text-[8px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
+                                      </>
+                                    )
                                   ) : booking.isBlock ? (
                                     highlightUserId ? (
                                       <div className="truncate text-white/90 uppercase tracking-wide text-[10px] leading-tight">
@@ -1255,11 +1317,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                         {getBookingDisplayName(booking)}
                                       </div>
                                       {isLesson && booking.coach_profile && (
-                                        <div className="truncate text-white/95 mt-0.5 text-[11px] leading-tight">
+                                        <div className="truncate text-white/95 mt-0.5 text-[9px] leading-tight">
                                           {booking.coach_profile.full_name}
                                         </div>
                                       )}
-                                      <div className="text-white/90 text-[10px] mt-0.5 uppercase tracking-wide leading-tight">
+                                      <div className="text-white/90 text-[8px] mt-0.5 uppercase tracking-wide leading-tight">
                                         {getBookingLabel(booking, highlightUserId ? booking.coach_id === highlightUserId : undefined)}
                                       </div>
                                     </>

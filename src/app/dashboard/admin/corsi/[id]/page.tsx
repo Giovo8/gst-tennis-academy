@@ -445,7 +445,7 @@ export default function CorsoDetailPage() {
       {/* Header card */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "#05384c", borderColor: "#05384c", borderLeftColor: "#023047" }}
+        style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}
       >
         <div className="flex items-start gap-6">
           <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -522,15 +522,20 @@ export default function CorsoDetailPage() {
             </div>
             <div className="px-6 py-6 space-y-5">
               {(p.start_date || p.end_date) && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Date</label>
-                  <p className="text-secondary font-semibold">
-                    <span className="text-secondary/50 font-normal text-sm mr-2">Dal</span>
-                    {p.start_date ? new Date(p.start_date).toLocaleDateString("it-IT") : "—"}
-                    <span className="text-secondary/50 font-normal text-sm mx-3">Al</span>
-                    {p.end_date ? new Date(p.end_date).toLocaleDateString("it-IT") : "—"}
-                  </p>
-                </div>
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                    <p className="text-secondary font-semibold">
+                      {p.start_date ? new Date(p.start_date).toLocaleDateString("it-IT") : "—"}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                    <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+                    <p className="text-secondary font-semibold">
+                      {p.end_date ? new Date(p.end_date).toLocaleDateString("it-IT") : "—"}
+                    </p>
+                  </div>
+                </>
               )}
               {(p.days ?? []).length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
@@ -588,23 +593,19 @@ export default function CorsoDetailPage() {
       )}
 
       {/* Partecipanti */}
+      {athletes.length > 0 && (
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
-        {athletes.length === 0 ? (
-          <div className="px-6 py-8 text-center">
-            <Users className="h-10 w-10 text-secondary/20 mx-auto mb-2" />
-            <p className="text-sm text-secondary/50">Nessun partecipante iscritto</p>
-          </div>
-        ) : (
+        {
           <ul className="flex flex-col gap-2 px-4 py-4">
             {athletes.map((a, idx) => {
               const initials = a.full_name.trim().split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
               const inner = (
                 <div
                   className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                  style={{ background: "#05384c" }}
+                  style={{ background: "#075985" }}
                 >
                   <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                     <span className="text-sm font-bold text-white leading-none">{initials}</span>
@@ -632,8 +633,9 @@ export default function CorsoDetailPage() {
               );
             })}
           </ul>
-        )}
+        }
       </div>
+      )}
 
       {/* Lezioni */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -654,6 +656,7 @@ export default function CorsoDetailPage() {
               const dateStr = date.toISOString().split("T")[0];
               return (
                 <li key={i} className="relative">
+                  {athletes.length > 0 ? (
                   <Link href={`/dashboard/admin/corsi/${courseId}/lezioni/${dateStr}`}>
                     <div
                       className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
@@ -683,6 +686,24 @@ export default function CorsoDetailPage() {
                       </button>
                     </div>
                   </Link>
+                  ) : (
+                    <div
+                      className="flex items-center gap-4 py-3 px-3 rounded-lg cursor-default"
+                      style={{ background: attendedDates.has(dateStr) ? "#023047" : "var(--secondary)" }}
+                    >
+                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">{label}</p>
+                        {(getCourtForDate(course, dateStr) || getTimeForDate(course, dateStr)) && (
+                          <p className="text-xs text-white/70 mt-0.5">
+                            {[getCourtForDate(course, dateStr), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   {openMenuLesson === dateStr && menuPosition && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
@@ -739,7 +760,7 @@ export default function CorsoDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4" style={{ background: "#05384c" }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ background: "#075985" }}>
               <h3 className="text-lg font-semibold text-white">Modifica lezione</h3>
               <button
                 type="button"

@@ -23,8 +23,6 @@ import {
   MapPin,
   RefreshCw,
   Shield,
-  List,
-  LayoutGrid,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -34,7 +32,6 @@ import {
   MoreVertical,
   SlidersHorizontal,
 } from "lucide-react";
-import BookingsTimeline from "@/components/admin/BookingsTimeline";
 import {
   Modal,
   ModalBody,
@@ -69,6 +66,77 @@ type Booking = {
     order_index?: number;
   }>;
 };
+type CourseData = {
+  id: string;
+  name: string;
+  schedule_days: string[] | null;
+  start_date: string | null;
+  end_date: string | null;
+  cancelled_dates: string[] | null;
+  extra_dates: string[] | null;
+  lesson_overrides: Record<string, string> | null;
+  lesson_time_overrides: Record<string, string> | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
+  court_name: string | null;
+  schedule_time: string | null;
+  instructor_name: string | null;
+};
+
+type CourseLesson = {
+  courseId: string;
+  courseName: string;
+  instructorName: string | null;
+  dateStr: string;
+  court: string | null;
+  time: string | null;
+};
+
+const COURSE_DAY_INDEX: Record<string, number> = {
+  dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6,
+};
+const COURSE_DAY_CODE: Record<number, string> = { 0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab" };
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getNextCourseLessonDate(course: CourseData, fromDateStr: string): string | null {
+  const { start_date, end_date, schedule_days, cancelled_dates, extra_dates } = course;
+  if (!start_date || !end_date || !schedule_days?.length) return null;
+  const allowed = new Set(schedule_days.map((d) => COURSE_DAY_INDEX[d] ?? -1));
+  const cancelled = new Set(cancelled_dates ?? []);
+  const startStr = fromDateStr > start_date ? fromDateStr : start_date;
+  const cur = new Date(startStr + "T12:00:00");
+  const endD = new Date(end_date + "T12:00:00");
+  while (cur <= endD) {
+    const dateStr = cur.toISOString().split("T")[0];
+    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) return dateStr;
+    cur.setDate(cur.getDate() + 1);
+  }
+  const futureExtras = (extra_dates ?? []).filter((d) => d >= fromDateStr).sort();
+  return futureExtras[0] ?? null;
+}
+
+function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.court) return period.court;
+  }
+  return course.court_name;
+}
+
+function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.time) return period.time;
+  }
+  return course.schedule_time;
+}
+
 type BookingsPageProps = {
   mode?: "default" | "history";
   basePath?: string;
@@ -87,12 +155,12 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   const [filterDateFrom, setFilterDateFrom] = useState<string>("");
   const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
   const [sortBy, setSortBy] = useState<"date" | "court" | "type" | "status" | "athlete" | "coach" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [courseNextLessons, setCourseNextLessons] = useState<CourseLesson[]>([]);
 
   const getPrimaryParticipant = (booking: Booking) =>
     booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
@@ -127,8 +195,50 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     return booking.user_id;
   };
 
+  async function loadCourseNextLessons() {
+    const now = new Date();
+    const todayStr = localDateStr(now);
+    const tomorrowStr = localDateStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+    const { data } = await supabase
+      .from("courses")
+      .select("id, name, instructor_name, schedule_days, start_date, end_date, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, schedule_periods, court_name, schedule_time")
+      .eq("is_active", true);
+    if (!data) return;
+    const lessons: CourseLesson[] = [];
+    for (const course of data as CourseData[]) {
+      let dateStr = getNextCourseLessonDate(course, todayStr);
+      if (!dateStr) continue;
+      if (dateStr === todayStr) {
+        const time = getCourseTimeForDate(course, dateStr);
+        if (time) {
+          const endMatch = time.match(/(\d{1,2}):(\d{2})\s*$/);
+          if (endMatch) {
+            const lessonEnd = new Date();
+            lessonEnd.setHours(parseInt(endMatch[1]), parseInt(endMatch[2]), 0, 0);
+            if (now > lessonEnd) {
+              dateStr = getNextCourseLessonDate(course, tomorrowStr);
+            }
+          }
+        }
+      }
+      if (!dateStr) continue;
+      lessons.push({
+        courseId: course.id,
+        courseName: course.name,
+        instructorName: course.instructor_name,
+        dateStr,
+        court: getCourseCourtForDate(course, dateStr),
+        time: getCourseTimeForDate(course, dateStr),
+      });
+    }
+    setCourseNextLessons(lessons);
+  }
+
   useEffect(() => {
     loadBookings();
+    if (mode !== "history") {
+      void loadCourseNextLessons();
+    }
   }, []);
 
   useEffect(() => {
@@ -462,7 +572,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   ).sort((a, b) => a.localeCompare(b, "it"));
 
   const filteredBookings = mergedBaseBookings.filter((booking) => {
-    const isTimelineMode = mode !== "history" && viewMode === "timeline";
     const now = new Date();
     const bookingStartDateObj = new Date(booking.start_time);
     const bookingEndDateObj = new Date(booking.end_time);
@@ -479,9 +588,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       booking.status === "completed" ||
       booking.status === "confirmed_by_coach";
 
-    const matchesVisibility = isTimelineMode
-      ? true
-      : filterVisibility === "active"
+    const matchesVisibility = filterVisibility === "active"
       ? isPresentOrFuture && !isCancelled
       : filterVisibility === "today"
       ? isTodayBooking && !isCancelled
@@ -528,6 +635,21 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     );
   });
 
+  // Course lessons filtered
+  const filteredCourseNextLessons: CourseLesson[] = mode !== "history"
+    ? courseNextLessons.filter((lesson) => {
+        const q = search.toLowerCase();
+        const matchesSearch = !search || lesson.courseName.toLowerCase().includes(q) || (lesson.instructorName?.toLowerCase().includes(q) ?? false);
+        const matchesType = filterType === "all";
+        const isToday = lesson.dateStr === localDateStr(new Date());
+        const matchesDateFrom = !filterDateFrom || lesson.dateStr >= filterDateFrom;
+        const matchesDateTo = !filterDateTo || lesson.dateStr <= filterDateTo;
+        if (filterVisibility === "today") return matchesSearch && matchesType && isToday && matchesDateFrom && matchesDateTo;
+        const matchesVisibility = filterVisibility === "active" || filterVisibility === "all";
+        return matchesSearch && matchesType && matchesVisibility && matchesDateFrom && matchesDateTo;
+      })
+    : [];
+
   // Sorting logic
   const sortedBookings = [...filteredBookings].sort((a, b) => {
     if (!sortBy) {
@@ -561,6 +683,18 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     }
     
     return sortOrder === "asc" ? comparison : -comparison;
+  });
+
+  // Merge bookings + course lessons
+  type MergedItem = { kind: "booking"; data: Booking } | { kind: "corso"; data: CourseLesson };
+  const mergedItems: MergedItem[] = [
+    ...sortedBookings.map((b) => ({ kind: "booking" as const, data: b })),
+    ...filteredCourseNextLessons.map((c) => ({ kind: "corso" as const, data: c })),
+  ].sort((a, b) => {
+    const aTime = a.kind === "booking" ? new Date(a.data.start_time).getTime() : new Date(a.data.dateStr + "T12:00:00").getTime();
+    const bTime = b.kind === "booking" ? new Date(b.data.start_time).getTime() : new Date(b.data.dateStr + "T12:00:00").getTime();
+    if (!sortBy) return aTime - bTime;
+    return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
   });
 
   const handleSort = (column: "date" | "court" | "type" | "status" | "athlete" | "coach") => {
@@ -668,7 +802,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                 href={`${basePath}/bookings/new`}
                 className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
-                <Plus className="h-4 w-4" />
                 Crea Prenotazione
               </Link>
             </>
@@ -687,52 +820,16 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
       {/* Filters */}
       <div className="flex flex-col gap-3">
-        {/* Search field - solo in modalità storico non mostrare timeline */}
-        {mode === "history" ? (
-          renderSearchWithFilter()
-        ) : (
-          <>
-            {/* View Mode Toggle */}
-            <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
-                  viewMode === "list"
-                    ? "bg-secondary text-white"
-                    : "text-secondary/60 hover:text-secondary border border-gray-200"
-                }`}
-              >
-                <List className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                Lista
-              </button>
-              <button
-                onClick={() => setViewMode("timeline")}
-                className={`flex-1 px-4 py-3 sm:px-3 sm:py-2.5 rounded text-sm sm:text-xs font-semibold transition-all flex items-center justify-center gap-2 sm:gap-1.5 ${
-                  viewMode === "timeline"
-                    ? "bg-secondary text-white"
-                    : "text-secondary/60 hover:text-secondary border border-gray-200"
-                }`}
-              >
-                <LayoutGrid className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                Timeline
-              </button>
-            </div>
-            {viewMode === "list" && (
-              renderSearchWithFilter()
-            )}
-          </>
-        )}
+        {renderSearchWithFilter()}
       </div>
 
-      {/* Bookings List or Timeline */}
-      {mode !== "history" && viewMode === "timeline" ? (
-        <BookingsTimeline bookings={sortedBookings} loading={loading} basePath={basePath} />
-      ) : loading ? (
+      {/* Bookings List */}
+      {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-secondary" />
           <p className="mt-4 text-secondary/60">Caricamento prenotazioni...</p>
         </div>
-      ) : filteredBookings.length === 0 ? (
+      ) : mergedItems.length === 0 ? (
         <div className="text-center py-20 rounded-md bg-white">
           <Calendar className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna prenotazione trovata</h3>
@@ -741,7 +838,37 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       ) : (
         <div className="space-y-2">
           {/* Data Rows */}
-          {sortedBookings.map((booking) => {
+          {mergedItems.map((item) => {
+            if (item.kind === "corso") {
+              const lesson = item.data;
+              const start = new Date(lesson.dateStr + "T12:00:00");
+              return (
+                <Link key={`corso-${lesson.courseId}`} href={`${basePath}/bookings/${lesson.courseId}?type=corso&date=${lesson.dateStr}`} className="block">
+                  <div className="rounded-lg overflow-visible hover:opacity-95 transition-opacity" style={{ background: "#075985" }}>
+                    <div className="flex items-center gap-4 py-3 px-3">
+                      <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                          {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                        </span>
+                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                          {start.getDate()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">{lesson.courseName}</p>
+                        <p className="text-xs text-white/70 mt-0.5">
+                          {[lesson.time, lesson.court, lesson.instructorName].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                        Corso
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            }
+            const booking = item.data;
             const isCancelledBooking =
               booking.status === "cancelled" || booking.status === "cancellation_requested";
             const isPastBooking = new Date(booking.end_time) < new Date();
@@ -803,73 +930,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                   <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
                     {typeLabel}
                   </span>
-
-                  {/* Azioni - 3 puntini */}
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (openMenuId === booking.id) {
-                          closeActionMenu();
-                          return;
-                        }
-                        openActionMenu(booking.id, e.currentTarget.getBoundingClientRect());
-                      }}
-                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                    {openMenuId === booking.id && menuPosition && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
-                        <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-                          style={{ top: menuPosition.top, left: menuPosition.left }}
-                        >
-                          <Link
-                            href={`${basePath}/bookings/modifica?id=${booking.id}`}
-                            onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Modifica
-                          </Link>
-                          {!(isCancelledBooking || isPastBooking) && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                closeActionMenu();
-                                cancelBooking(booking.id);
-                              }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#056c94] hover:bg-[#056c94]/10 transition-colors w-full"
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                              Annulla
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
-                                deleteBooking(booking.id);
-                              }
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Elimina
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
             );

@@ -11,12 +11,16 @@ import {
   BarChart2,
   MessageSquare,
   Dumbbell,
-  CalendarClock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 import NotificationsList from "@/components/dashboard/NotificationsList";
+import { UpcomingCommitmentsCard } from "@/components/dashboard/UpcomingCommitmentsCard";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 type Stats = {
   upcomingLessons: number;
@@ -35,6 +39,7 @@ interface TimelineBooking {
   status: string;
   type: string;
   notes: string | null;
+  isCourse?: boolean;
   user_profile?: { full_name: string; email: string; phone?: string } | null;
   coach_profile?: { full_name: string; email: string; phone?: string } | null;
   participants?: Array<{
@@ -190,16 +195,81 @@ export default function MaestroDashboardPage() {
           });
 
         setTimelineBookings(enrichedBookings);
+        const upcomingFromBookings = enrichedBookings.filter(
+          (b) =>
+            new Date(b.start_time) >= now &&
+            b.status !== "cancelled" &&
+            (b.coach_id === user.id || b.user_id === user.id)
+        );
+
+        // Fetch upcoming course lessons for this maestro
+        const maestroFullName = profile?.full_name || "";
+        const courseItems: TimelineBooking[] = [];
+        if (maestroFullName) {
+          const { data: coursesData } = await supabase
+            .from("courses")
+            .select("id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_time_overrides, lesson_overrides, schedule_periods")
+            .eq("is_active", true)
+            .ilike("instructor_name", `%${maestroFullName}%`);
+
+          const DAY_CODES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+          for (const c of coursesData ?? []) {
+            const from = new Date(now);
+            from.setHours(0, 0, 0, 0);
+            let found = 0;
+            for (let d = 0; d < 90 && found < 1; d++) {
+              const dateStr = localDateStr(from);
+              const dayCode = DAY_CODES[from.getDay()];
+              const isScheduled = (c.schedule_days ?? []).includes(dayCode);
+              const isExtra = (c.extra_dates ?? []).includes(dateStr);
+              if ((isScheduled || isExtra) && !(c.cancelled_dates ?? []).includes(dateStr)) {
+                if (isScheduled && !isExtra) {
+                  if (c.start_date && c.start_date > dateStr) { from.setDate(from.getDate() + 1); continue; }
+                  if (c.end_date && c.end_date < dateStr) { from.setDate(from.getDate() + 1); continue; }
+                }
+                let timeStr: string = c.schedule_time || "";
+                if (c.lesson_time_overrides?.[dateStr]) timeStr = c.lesson_time_overrides[dateStr];
+                else if (c.schedule_periods?.length > 0) {
+                  const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+                  if (period?.time) timeStr = period.time;
+                }
+                let courtName: string = c.court_name || "";
+                if (c.lesson_overrides?.[dateStr]) courtName = c.lesson_overrides[dateStr];
+                else if (c.schedule_periods?.length > 0) {
+                  const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
+                  if (period?.court) courtName = period.court;
+                }
+                const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+                const sh = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
+                const sm = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
+                const eh = rangeMatch ? parseInt(rangeMatch[3], 10) : sh + 1;
+                const em = rangeMatch ? parseInt(rangeMatch[4], 10) : sm;
+                const startTime = new Date(from); startTime.setHours(sh, sm, 0, 0);
+                const endTime = new Date(from); endTime.setHours(eh, em, 0, 0);
+                if (startTime >= now) {
+                  courseItems.push({
+                    id: c.id,
+                    court: courtName,
+                    user_id: "",
+                    coach_id: user.id,
+                    start_time: startTime.toISOString(),
+                    end_time: endTime.toISOString(),
+                    status: "confirmed",
+                    type: "corso",
+                    notes: c.name,
+                    isCourse: true,
+                  });
+                  found++;
+                }
+              }
+              from.setDate(from.getDate() + 1);
+            }
+          }
+        }
+
         setUpcomingBookings(
-          enrichedBookings
-            .filter(
-              (b) =>
-                new Date(b.start_time) >= now &&
-                b.status !== "cancelled" &&
-                (b.coach_id === user.id || b.user_id === user.id)
-            )
+          [...upcomingFromBookings, ...courseItems]
             .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-            .slice(0, 8)
         );
       } else {
         setTimelineBookings([]);
@@ -237,118 +307,25 @@ export default function MaestroDashboardPage() {
 
       <WeatherCard />
 
-      {/* PROSSIMI IMPEGNI */}
-      {(() => {
-        const upcoming = upcomingBookings;
-
-        const typeLabels: Record<string, string> = {
-          lezione_privata: "Lezione privata",
-          lezione_gruppo: "Lezione gruppo",
-          campo: "Campo",
-          lezione: "Lezione",
-          arena: "Match Arena",
-        };
-
-        function getItemBg(item: TimelineBooking): string {
-          const isCoach = item.coach_id === currentUserId;
-          if (isCoach) {
-            switch (item.type) {
-              case "lezione_privata":
-              case "lezione_gruppo":
-              case "lezione":
-                return "#023047"; // blu scuro — sei il maestro
-              case "campo":
-                return "var(--color-frozen-lake-600)"; // teal medio — campo come maestro
-              case "arena":
-                return "var(--color-frozen-lake-600)";
-              default:
-                return "#023047";
-            }
-          }
-          // sei l'atleta
-          switch (item.type) {
-            case "lezione_privata":
-            case "lezione_gruppo":
-            case "lezione":
-              return "var(--color-frozen-lake-900)"; // teal scuro — hai una lezione
-            case "campo":
-              return "var(--secondary)"; // verde secondario — hai prenotato un campo
-            case "arena":
-              return "var(--color-frozen-lake-600)";
-            default:
-              return "var(--secondary)";
-          }
-        }
-
-        return (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossimi impegni</h2>
-            </div>
-            <div className="px-6 py-4">
-              {upcoming.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
-                  <CalendarClock className="h-8 w-8 mb-2" />
-                  <p className="text-sm font-medium">Nessun impegno in arrivo</p>
-                </div>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {upcoming.map((item) => {
-                    const start = new Date(item.start_time);
-                    const participantNames = (item.participants ?? [])
-                      .filter((p) => !p.user_id || p.user_id !== currentUserId)
-                      .map((p) => p.full_name)
-                      .filter(Boolean);
-                    const counterpart = participantNames.length > 0
-                      ? participantNames.join(", ")
-                      : (item.coach_id === currentUserId
-                          ? (item.user_profile?.full_name || "Impegno")
-                          : (item.coach_profile?.full_name || item.user_profile?.full_name || "Impegno"));
-                    const isCoach = item.coach_id === currentUserId;
-                    const typeLabel = isCoach && (item.type === "lezione_privata" || item.type === "lezione_gruppo" || item.type === "lezione")
-                      ? "Maestro"
-                      : (typeLabels[item.type] || item.type.replace(/_/g, " "));
-                    const typeBg = getItemBg(item);
-                    const timeStr = (t: string) => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-                    return (
-                      <li key={item.id}>
-                        <Link
-                          href={`/dashboard/maestro/bookings/${item.id}`}
-                          className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                          style={{ background: typeBg }}
-                        >
-                          <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                            <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                              {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-                            </span>
-                            <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white text-sm truncate">{counterpart}</p>
-                            <p className="text-xs text-white/70 mt-0.5">{timeStr(item.start_time)}–{timeStr(item.end_time)} · {item.court}</p>
-                          </div>
-                          <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">{typeLabel}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} basePath="/dashboard/maestro" highlightUserId={currentUserId} />
+        <BookingsTimeline bookings={timelineBookings} loading={loading} basePath="/dashboard/maestro" highlightUserId={currentUserId} showEntryModal={false} scrollToCurrentTime={true} />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
-        </div>
-        <div className="px-6 py-4">
-          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+      {/* PROSSIMI IMPEGNI + CENTRO NOTIFICHE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UpcomingCommitmentsCard
+          bookings={upcomingBookings}
+          currentUserId={currentUserId}
+          basePath="/dashboard/maestro"
+        />
+
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+          </div>
         </div>
       </div>
 

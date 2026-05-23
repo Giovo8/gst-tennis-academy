@@ -9,8 +9,10 @@ import { supabase } from "@/lib/supabase/client";
 type Athlete = {
   id: string;
   full_name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
+  isGuest?: boolean;
+  guestName?: string;
 };
 
 type AttendanceMap = Record<string, boolean>;
@@ -55,28 +57,48 @@ export default function MaestroLezionePresenzePage() {
 
     const { data: enrollments } = await supabase
       .from("course_enrollments")
-      .select("user_id")
+      .select("user_id, guest_name")
       .eq("course_id", courseId);
 
     if (enrollments && enrollments.length > 0) {
-      const userIds = enrollments.map((e: { user_id: string }) => e.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", userIds);
-      setAthletes(profiles ?? []);
+      const allAthletes: Athlete[] = [];
+
+      const userIds = enrollments
+        .filter((e: { user_id: string | null }) => e.user_id != null)
+        .map((e: { user_id: string }) => e.user_id);
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, phone")
+          .in("id", userIds);
+        if (profiles) allAthletes.push(...(profiles as Athlete[]));
+      }
+
+      const guests: Athlete[] = enrollments
+        .filter((e: { user_id: string | null; guest_name: string | null }) => e.user_id == null && e.guest_name)
+        .map((e: { guest_name: string }) => ({
+          id: `guest-${e.guest_name}`,
+          full_name: e.guest_name,
+          isGuest: true,
+          guestName: e.guest_name,
+        }));
+      allAthletes.push(...guests);
+
+      setAthletes(allAthletes);
     }
 
     const { data: existingAttendance } = await supabase
       .from("lesson_attendance")
-      .select("user_id, present")
+      .select("user_id, guest_name, present")
       .eq("course_id", courseId)
       .eq("lesson_date", dateParam);
 
     if (existingAttendance) {
       const map: AttendanceMap = {};
-      existingAttendance.forEach((r: { user_id: string; present: boolean }) => {
-        map[r.user_id] = r.present;
+      existingAttendance.forEach((r: { user_id: string | null; guest_name: string | null; present: boolean }) => {
+        const key = r.user_id ? r.user_id : `guest-${r.guest_name}`;
+        map[key] = r.present;
       });
       setAttendance(map);
     }
@@ -94,16 +116,22 @@ export default function MaestroLezionePresenzePage() {
     setSaving(true);
     setError("");
 
+    await supabase
+      .from("lesson_attendance")
+      .delete()
+      .eq("course_id", courseId)
+      .eq("lesson_date", dateParam);
+
     const rows = athletes.map((a) => ({
       course_id: courseId,
       lesson_date: dateParam,
-      user_id: a.id,
+      ...(a.isGuest ? { guest_name: a.guestName } : { user_id: a.id }),
       present: attendance[a.id] ?? false,
     }));
 
     const { error: upsertError } = await supabase
       .from("lesson_attendance")
-      .upsert(rows, { onConflict: "course_id,lesson_date,user_id" });
+      .insert(rows);
 
     if (upsertError) {
       setError("Errore nel salvataggio: " + upsertError.message);
@@ -180,7 +208,9 @@ export default function MaestroLezionePresenzePage() {
                         </div>
                         <div className="flex-1 min-w-0 text-left">
                           <p className="font-semibold text-white text-sm truncate">{a.full_name}</p>
-                          {(a.email || a.phone) && (
+                          {a.isGuest ? (
+                            <p className="text-xs text-white/40 mt-0.5">Ospite</p>
+                          ) : (a.email || a.phone) && (
                             <p className="text-xs text-white/60 truncate mt-0.5">
                               {[a.email, a.phone].filter(Boolean).join(" · ")}
                             </p>

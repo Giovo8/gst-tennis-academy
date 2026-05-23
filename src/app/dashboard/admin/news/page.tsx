@@ -148,9 +148,8 @@ export default function AdminNewsPage() {
               </div>
               <Link
                 href="/dashboard/admin/news/create"
-                className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
-                <Plus className="h-4 w-4" />
                 Crea News
               </Link>
             </div>

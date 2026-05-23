@@ -218,15 +218,14 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
             href={`${basePath}/users/new`}
             className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
-            <UserPlus className="h-4 w-4" />
             Crea Utente
           </Link>
           <Link
             href="/dashboard/admin/invite-codes"
-            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary/5 transition-all flex items-center justify-center gap-2"
+            title="Codici Invito"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-gray-200 bg-white text-secondary/70 hover:bg-secondary/5 transition-all flex-shrink-0"
           >
             <Ticket className="h-4 w-4" />
-            Codici Invito
           </Link>
         </div>
       </div>
@@ -308,80 +307,6 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
                   <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
                     {roleInfo.label}
                   </span>
-
-                  {/* Azioni */}
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (openMenuId === user.id) { closeActionMenu(); return; }
-                        openActionMenu(user.id, e.currentTarget.getBoundingClientRect());
-                      }}
-                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                    {openMenuId === user.id && menuPosition && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
-                        <div
-                          className="fixed z-50 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
-                          style={{ top: menuPosition.top, left: menuPosition.left }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Link
-                            href={`${basePath}/users/${user.id}`}
-                            onClick={(e) => { e.stopPropagation(); closeActionMenu(); }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Dettagli
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              window.location.href = `${basePath}/users/modifica?id=${user.id}`;
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            Modifica
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              resetPassword(user.email, user.full_name);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#023b52] hover:bg-[#023b52]/10 transition-colors w-full"
-                          >
-                            <KeyRound className="h-3.5 w-3.5" />
-                            Resetta Password
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeActionMenu();
-                              deleteUser(user.id, user.email);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors w-full"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Elimina
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
             );

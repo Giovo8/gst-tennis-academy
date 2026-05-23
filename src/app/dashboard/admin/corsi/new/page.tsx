@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Plus,
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
@@ -649,6 +648,72 @@ export default function NuovoCorsoPage() {
           </div>
         </div>
 
+        {/* Maestri */}
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
+          </div>
+          <div className="p-6 space-y-4">
+            <SearchableSelect
+              value=""
+              onChange={(val) => {
+                const m = maestros.find((x) => x.id === val);
+                if (!m || selectedMaestros.some((sm) => sm.full_name === m.full_name)) return;
+                setSelectedMaestros((prev) => [...prev, { id: m.id, full_name: m.full_name }]);
+              }}
+              options={maestros
+                .filter((m) => !selectedMaestros.some((sm) => sm.full_name === m.full_name))
+                .map((m) => ({ value: m.id, label: m.full_name }))}
+              placeholder="Cerca maestro"
+              searchPlaceholder="Cerca maestro..."
+            />
+            {selectedMaestros.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {selectedMaestros.map((m) => (
+                  <li key={m.full_name}>
+                    <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "#05384c" }}>
+                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white leading-none">
+                          {m.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">{m.full_name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedMaestros((prev) => prev.filter((x) => x.full_name !== m.full_name))
+                        }
+                        className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
+                        aria-label={`Rimuovi ${m.full_name}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Partecipanti */}
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+          </div>
+          <div className="p-6">
+            <AthletesSelector
+              athletes={athletes}
+              selectedAthletes={selectedAthletes}
+              onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
+              onAthleteRemove={(index) => setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))}
+              maxAthletes={null}
+            />
+          </div>
+        </div>
+
         {periods.map((period, pidx) => (
           <div key={pidx} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
@@ -813,97 +878,32 @@ export default function NuovoCorsoPage() {
           </div>
         ))}
 
-        <button
-          type="button"
-          onClick={addPeriod}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-xl transition-all"
-        >
-          <Plus className="h-4 w-4" />
-          Aggiungi periodo
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={addPeriod}
+            className="flex-1 flex items-center justify-center px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium"
+          >
+            Aggiungi periodo
+          </button>
 
-        {/* Maestri */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
-          </div>
-          <div className="p-6 space-y-4">
-            <SearchableSelect
-              value=""
-              onChange={(val) => {
-                const m = maestros.find((x) => x.id === val);
-                if (!m || selectedMaestros.some((sm) => sm.full_name === m.full_name)) return;
-                setSelectedMaestros((prev) => [...prev, { id: m.id, full_name: m.full_name }]);
-              }}
-              options={maestros
-                .filter((m) => !selectedMaestros.some((sm) => sm.full_name === m.full_name))
-                .map((m) => ({ value: m.id, label: m.full_name }))}
-              placeholder="Cerca maestro"
-              searchPlaceholder="Cerca maestro..."
-            />
-            {selectedMaestros.length > 0 && (
-              <ul className="flex flex-col gap-2">
-                {selectedMaestros.map((m) => (
-                  <li key={m.full_name}>
-                    <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "#05384c" }}>
-                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white leading-none">
-                          {m.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{m.full_name}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedMaestros((prev) => prev.filter((x) => x.full_name !== m.full_name))
-                        }
-                        className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
-                        aria-label={`Rimuovi ${m.full_name}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          {/* Submit */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || !name.trim()}
+            className="flex-1 px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Salvataggio...</span>
+              </>
+            ) : (
+              <span>{isEditMode ? "Salva Modifiche" : "Crea Corso"}</span>
             )}
-          </div>
+          </button>
         </div>
-
-        {/* Partecipanti */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
-          </div>
-          <div className="p-6">
-            <AthletesSelector
-              athletes={athletes}
-              selectedAthletes={selectedAthletes}
-              onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
-              onAthleteRemove={(index) => setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))}
-              maxAthletes={null}
-            />
-          </div>
-        </div>
-
-        {/* Submit */}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitting || !name.trim()}
-          className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
-        >
-          {submitting ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Salvataggio...</span>
-            </>
-          ) : (
-            <span>{isEditMode ? "Salva Modifiche" : "Crea Corso"}</span>
-          )}
-        </button>
       </div>
 
       {/* Date Picker Modal */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { createNotification } from "@/lib/notifications/createNotification";
@@ -16,7 +16,52 @@ import {
   AlertCircle,
   Target,
   Handshake,
+  GraduationCap,
 } from "lucide-react";
+
+type CourseData = {
+  id: string;
+  name: string;
+  description: string | null;
+  instructor_name: string | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
+  court_name: string | null;
+  schedule_time: string | null;
+  lesson_overrides: Record<string, string> | null;
+  lesson_time_overrides: Record<string, string> | null;
+};
+
+type CourseEnrollment = {
+  id: string;
+  full_name: string;
+  is_guest: boolean;
+  is_instructor: boolean;
+  user_id: string | null;
+};
+
+const COURSE_DAY_CODE: Record<number, string> = {
+  0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab",
+};
+
+function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.court) return period.court;
+  }
+  return course.court_name;
+}
+
+function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.time) return period.time;
+  }
+  return course.schedule_time;
+}
 
 type LinkedChallengeMeta = {
   id: string;
@@ -58,10 +103,15 @@ export default function BookingDetailPage() {
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+  const searchParams = useSearchParams();
+  const courseDate = searchParams?.get("date");
+
   const [booking, setBooking] = useState<Booking | null>(null);
   const [linkedChallenge, setLinkedChallenge] = useState<LinkedChallengeMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [course, setCourse] = useState<CourseData | null>(null);
+  const [courseEnrollments, setCourseEnrollments] = useState<CourseEnrollment[]>([]);
 
   const hasParticipants = (currentBooking: Booking | null) =>
     (currentBooking?.participants?.length || 0) > 0;
@@ -104,10 +154,52 @@ export default function BookingDetailPage() {
   };
 
   useEffect(() => {
-    if (bookingId) {
+    if (bookingId && !(isMaestroDashboard && courseDate)) {
       loadBooking();
     }
   }, [bookingId]);
+
+  useEffect(() => {
+    if (!isMaestroDashboard || !courseDate || !bookingId) return;
+    async function loadCourse() {
+      const [{ data: courseData }, { data: enrollData }] = await Promise.all([
+        supabase
+          .from("courses")
+          .select("id, name, description, instructor_name, schedule_periods, court_name, schedule_time, lesson_overrides, lesson_time_overrides")
+          .eq("id", bookingId)
+          .single(),
+        supabase
+          .from("course_enrollments")
+          .select("user_id, guest_name")
+          .eq("course_id", bookingId),
+      ]);
+      setCourse(courseData);
+      const enrollments: CourseEnrollment[] = [];
+      if (enrollData && enrollData.length > 0) {
+        const registeredIds = enrollData
+          .filter((e: { user_id: string | null }) => e.user_id)
+          .map((e: { user_id: string }) => e.user_id);
+        if (registeredIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", registeredIds);
+          for (const p of profiles ?? []) {
+            enrollments.push({ id: p.id, full_name: p.full_name, is_guest: false, is_instructor: false, user_id: p.id });
+          }
+        }
+        for (const e of enrollData.filter((e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name)) {
+          enrollments.push({ id: `guest-${e.guest_name}`, full_name: e.guest_name, is_guest: true, is_instructor: false, user_id: null });
+        }
+      }
+      if (courseData?.instructor_name) {
+        enrollments.push({ id: "instructor", full_name: courseData.instructor_name, is_guest: false, is_instructor: true, user_id: null });
+      }
+      setCourseEnrollments(enrollments);
+      setLoading(false);
+    }
+    void loadCourse();
+  }, [isMaestroDashboard, courseDate, bookingId]);
 
   async function loadBooking() {
     try {
@@ -374,6 +466,107 @@ export default function BookingDetailPage() {
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="w-10 h-10 animate-spin text-secondary" />
         <p className="mt-4 text-secondary/60">Caricamento...</p>
+      </div>
+    );
+  }
+
+  if (isMaestroDashboard && courseDate && course) {
+    const court = getCourseCourtForDate(course, courseDate);
+    const time = getCourseTimeForDate(course, courseDate);
+    const dateDisplay = new Date(courseDate + "T12:00:00")
+      .toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+      .split(" ")
+      .map((part, i) => (i === 0 || i === 2) ? part.charAt(0).toUpperCase() + part.slice(1) : part)
+      .join(" ");
+    return (
+      <div className="space-y-6">
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
+          {" › "}
+          <span>Dettagli Prenotazione</span>
+        </p>
+        <div>
+          <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
+        </div>
+        <div className="rounded-xl border-t border-r border-b p-6 border-l-4"
+          style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}>
+          <div className="flex items-start gap-6">
+            <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white">{course.name}</h2>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+          </div>
+          <div className="px-6 py-4">
+            {courseEnrollments.length === 0 ? (
+              <p className="text-sm text-secondary/50 py-2">Nessun partecipante iscritto</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {courseEnrollments.map((e) => (
+                  <li key={e.id}>
+                    <div className="flex items-center gap-4 py-3 px-3 rounded-lg"
+                      style={{ background: e.is_instructor ? "#023047" : e.is_guest ? "#023b52" : "var(--secondary)" }}>
+                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white leading-none">
+                          {e.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white text-sm truncate">{e.full_name}</p>
+                      </div>
+                      <span className="flex-shrink-0 text-xs font-bold text-white/50 uppercase tracking-wide">
+                        {e.is_instructor ? "MAESTRO" : e.is_guest ? "OSPITE" : "ATLETA"}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+          </div>
+          <div className="p-6"><div className="space-y-6">
+            {course.description && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
+                <div className="flex-1"><p className="text-secondary font-semibold whitespace-pre-wrap">{course.description}</p></div>
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data</label>
+              <div className="flex-1"><p className="text-secondary font-semibold">{dateDisplay}</p></div>
+            </div>
+            {court && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                <div className="flex-1"><p className="text-secondary font-semibold">{court}</p></div>
+              </div>
+            )}
+            {time && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Orario</label>
+                <div className="flex-1"><p className="text-secondary font-semibold">{time}</p></div>
+              </div>
+            )}
+          </div></div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link href={`/dashboard/maestro/corsi/${bookingId}/lezioni/${courseDate}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#075985] rounded-lg hover:bg-[#075985]/90 transition-all font-medium">
+            Presenze lezione
+          </Link>
+          <Link href={`/dashboard/maestro/corsi/${bookingId}`}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium">
+            Vai al corso
+          </Link>
+        </div>
       </div>
     );
   }

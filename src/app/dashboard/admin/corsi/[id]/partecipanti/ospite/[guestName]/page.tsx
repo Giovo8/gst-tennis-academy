@@ -204,7 +204,7 @@ export default function OspitePresenzePage() {
       {/* Header */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "#05384c", borderColor: "#05384c", borderLeftColor: "#023047" }}
+        style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}
       >
         <div className="flex items-start gap-6">
           <User className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />

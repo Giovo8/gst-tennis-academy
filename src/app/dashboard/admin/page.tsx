@@ -14,6 +14,7 @@ import {
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 import NotificationsList from "@/components/dashboard/NotificationsList";
+import { UpcomingCommitmentsCard, UpcomingBooking } from "@/components/dashboard/UpcomingCommitmentsCard";
 
 interface TimelineBooking {
   id: string;
@@ -218,120 +219,45 @@ export default function AdminDashboard() {
       <WeatherCard />
 
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} />
+        <BookingsTimeline bookings={timelineBookings} loading={loading} showEntryModal={false} scrollToCurrentTime={true} />
       </div>
 
       {/* PROSSIMI IMPEGNI + CENTRO NOTIFICHE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {(() => {
-        const now = new Date();
-        const upcomingBookings = timelineBookings
-          .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled");
-        const upcoming = [...upcomingBookings, ...upcomingCourses]
-          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-          .slice(0, 5);
+        {(() => {
+          const now = new Date();
+          const upcomingItems: UpcomingBooking[] = [
+            ...timelineBookings
+              .filter((b) => new Date(b.start_time) >= now && b.status !== "cancelled")
+              .map((b) => ({ ...b } as UpcomingBooking)),
+            ...upcomingCourses.map((c) => ({
+              id: c.id,
+              court: c.court_name,
+              user_id: "",
+              coach_id: null,
+              start_time: c.start_time,
+              end_time: c.end_time,
+              status: "confirmed",
+              type: "corso",
+              notes: c.name,
+              isCourse: true as const,
+            } as UpcomingBooking)),
+          ].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-        const typeLabels: Record<string, string> = {
-          lezione_privata: "Lezione privata",
-          lezione_gruppo: "Lezione gruppo",
-          campo: "Campo",
-          lezione: "Lezione",
-          arena: "Match Arena",
-        };
-        const typeColors: Record<string, string> = {
-          lezione_privata: "#023047",
-          lezione_gruppo: "#023047",
-          campo: "var(--secondary)",
-          lezione: "#023047",
-          arena: "var(--color-frozen-lake-600)",
-        };
-        const timeStr = (t: string) => new Date(t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-
-        return (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center bg-gradient-to-r from-secondary/5 to-transparent">
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossime prenotazioni</h2>
-            </div>
-            <div className="px-6 py-4">
-              {upcoming.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
-                  <CalendarClock className="h-8 w-8 mb-2" />
-                  <p className="text-sm font-medium">Nessun impegno in arrivo</p>
-                </div>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {upcoming.map((item) => {
-                    const isCourseItem = "isCourse" in item && item.isCourse;
-                    const start = new Date(item.start_time);
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
-                    const dayAfter = new Date(today); dayAfter.setDate(today.getDate()+2);
-                    let pill: { text: string; cls: string } | null = null;
-                    if (start >= today && start < tomorrow) pill = { text: "Oggi", cls: "bg-primary text-white" };
-                    else if (start >= tomorrow && start < dayAfter) pill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
-
-                    if (isCourseItem) {
-                      const c = item as UpcomingCourse;
-                      return (
-                        <li key={`corso-${c.id}-${c.start_time}`}>
-                          <Link href={`/dashboard/admin/corsi/${c.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: "#075985" }}>
-                            <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                              <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                                {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-                              </span>
-                              <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-white text-sm truncate">{c.name}</p>
-                              <p className="text-xs text-white/70 mt-0.5">{timeStr(c.start_time)}–{timeStr(c.end_time)} · {c.court_name}</p>
-                            </div>
-                            <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">Corso</span>
-                          </Link>
-                        </li>
-                      );
-                    }
-
-                    const b = item as TimelineBooking;
-                    const displayName = (() => {
-                      if (b.participants && b.participants.length > 0) {
-                        return b.participants.map(p => p.full_name).slice(0, 2).join(", ");
-                      }
-                      return b.user_profile?.full_name || b.coach_profile?.full_name || "Prenotazione";
-                    })();
-                    const isArenaBooking = b.type === "arena" || b.notes?.toLowerCase().includes("sfida arena");
-                    const typeLabel = isArenaBooking ? "Arena" : (typeLabels[b.type] || b.type.replace(/_/g, " "));
-                    const typeBg = isArenaBooking ? "#023b52" : (typeColors[b.type] || "var(--secondary)");
-                    return (
-                      <li key={b.id}>
-                        <Link href={`/dashboard/admin/bookings/${b.id}`} className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity" style={{ background: typeBg }}>
-                        <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                          <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                            {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-                          </span>
-                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">{start.getDate()}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white text-sm truncate">{displayName}</p>
-                          <p className="text-xs text-white/70 mt-0.5">{timeStr(b.start_time)}–{timeStr(b.end_time)} · {b.court}</p>
-                        </div>
-                        <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">{typeLabel}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
-        );
-      })()}
+          return (
+            <UpcomingCommitmentsCard
+              bookings={upcomingItems}
+              basePath="/dashboard/admin"
+            />
+          );
+        })()}
 
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full flex flex-col">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={4} />
+            <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
           </div>
         </div>
       </div>
