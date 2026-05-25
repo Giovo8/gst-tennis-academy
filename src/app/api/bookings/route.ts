@@ -291,6 +291,63 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check for course conflicts overlapping the requested slot
+    const bookingStart = new Date(start_time);
+    const bookingEnd = new Date(end_time);
+    const dateStr = start_time.split("T")[0];
+    const DAY_NAMES_COURSE = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+    const dayName = DAY_NAMES_COURSE[bookingStart.getDay()];
+
+    const { data: courseData, error: courseError } = await supabaseServer
+      .from("courses")
+      .select("id, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date")
+      .eq("is_active", true)
+      .eq("court_name", court)
+      .contains("schedule_days", [dayName]);
+
+    if (courseError) {
+      logger.error('Error checking course conflicts', courseError, { userId: user.id, court });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+
+    const hasCourseConflict = (courseData ?? []).some((c) => {
+      if (c.start_date && new Date(c.start_date) > bookingStart) return false;
+      if (c.end_date && new Date(c.end_date) < bookingStart) return false;
+      if (c.cancelled_dates && (c.cancelled_dates as string[]).includes(dateStr)) return false;
+
+      let timeStr: string | null = c.schedule_time ?? null;
+      if (c.schedule_periods && (c.schedule_periods as { days: string[]; time: string | null }[]).length > 0) {
+        const mp = (c.schedule_periods as { days: string[]; time: string | null }[]).find((p) => p.days.includes(dayName));
+        timeStr = mp?.time ?? null;
+      }
+      if (!timeStr) return false;
+
+      const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+      if (!m) return false;
+
+      const courseStart = new Date(`${dateStr}T${m[1].padStart(2, "0")}:${m[2]}:00`);
+      const courseEnd = new Date(`${dateStr}T${m[3].padStart(2, "0")}:${m[4]}:00`);
+      return courseStart < bookingEnd && courseEnd > bookingStart;
+    });
+
+    if (hasCourseConflict) {
+      logger.warn('Booking blocked by scheduled course', {
+        userId: user.id,
+        court,
+        requestedTime: start_time,
+      });
+      return NextResponse.json(
+        {
+          error: "Il campo non è disponibile in questo orario (corso programmato).",
+          conflict: true,
+        },
+        { status: HTTP_STATUS.CONFLICT }
+      );
+    }
+
     const normalizedBooking = normalizeBookingMutation(bookingData);
 
     const { data, error } = await supabaseServer
