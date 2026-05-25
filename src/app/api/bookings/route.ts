@@ -29,7 +29,7 @@ import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
-import { validateRestrictedBookingHours } from "@/lib/bookings/bookingTimeRestrictions";
+import { validateRestrictedBookingHours, parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -328,8 +328,8 @@ export async function POST(req: Request) {
       const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
       if (!m) return false;
 
-      const courseStart = new Date(`${dateStr}T${m[1].padStart(2, "0")}:${m[2]}:00`);
-      const courseEnd = new Date(`${dateStr}T${m[3].padStart(2, "0")}:${m[4]}:00`);
+      const courseStart = parseItalyLocalToUTC(dateStr, parseInt(m[1], 10), parseInt(m[2], 10));
+      const courseEnd = parseItalyLocalToUTC(dateStr, parseInt(m[3], 10), parseInt(m[4], 10));
       return courseStart < bookingEnd && courseEnd > bookingStart;
     });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -103,8 +104,8 @@ export async function GET(request: Request) {
           if (!timeStr) return [];
           const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
           if (!m) return [];
-          const start = new Date(`${dateStr}T${m[1].padStart(2,"0")}:${m[2]}:00`);
-          const end = new Date(`${dateStr}T${m[3].padStart(2,"0")}:${m[4]}:00`);
+          const start = parseItalyLocalToUTC(dateStr, parseInt(m[1], 10), parseInt(m[2], 10));
+          const end = parseItalyLocalToUTC(dateStr, parseInt(m[3], 10), parseInt(m[4], 10));
           return [{
             id: c.id,
             court,

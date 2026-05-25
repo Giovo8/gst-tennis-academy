@@ -91,3 +91,32 @@ export function validateRestrictedBookingHours(
 
   return null;
 }
+
+/**
+ * Converte una data/ora locale italiana (Europe/Rome) in un oggetto Date UTC.
+ * Necessario perché i server Vercel girano in UTC e gli orari dei corsi
+ * sono espressi in ora locale italiana.
+ *
+ * @param dateStr - Data in formato YYYY-MM-DD
+ * @param hh - Ora (0-23) in orario locale italiano
+ * @param mm - Minuti (0-59)
+ */
+export function parseItalyLocalToUTC(dateStr: string, hh: number, mm: number): Date {
+  // Crea una stima UTC trattando l'orario come UTC (sarà sfasata dell'offset Italy)
+  const estimate = new Date(`${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00Z`);
+
+  // Trova l'orario Italy (Europe/Rome) corrispondente alla stima UTC
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(estimate);
+
+  const italyHour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0') % 24;
+  const italyMin = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0');
+
+  // Aggiusta: sposta la stima per ottenere l'orario Italy corretto
+  const diffMs = ((hh - italyHour) * 60 + (mm - italyMin)) * 60_000;
+  return new Date(estimate.getTime() + diffMs);
+}

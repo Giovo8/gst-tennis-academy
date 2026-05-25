@@ -244,7 +244,7 @@ function NewBookingPageInner() {
         : 4;
 
   // Validation
-  const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
+  const canSubmit = selectedAthletes.length > 0 && selectedDate && selectedCourt && selectedSlots.length > 0 &&
     ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoach));
 
   useEffect(() => {
@@ -1099,11 +1099,11 @@ function NewBookingPageInner() {
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10 [&>button]:top-4 [&>button]:right-7 flex flex-col max-h-[90dvh]">
+          <ModalHeader className="px-7! pt-4! pb-4! bg-secondary border-b border-gray-200 dark:!border-gray-200">
             <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
           </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white overflow-y-auto flex-1">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <button
@@ -1155,18 +1155,18 @@ function NewBookingPageInner() {
               </div>
             </div>
           </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="px-7! py-3! border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
             <button
               type="button"
               onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+              className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 rounded-lg transition-colors"
             >
               Oggi
             </button>
             <button
               type="button"
               onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+              className="flex-1 py-2.5 bg-secondary text-white font-semibold hover:opacity-90 rounded-lg transition-opacity"
             >
               Applica
             </button>

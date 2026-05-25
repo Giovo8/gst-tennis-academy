@@ -95,7 +95,9 @@ export const bookingParticipantSchema = z.object({
   user_id: uuidSchema.optional().nullable(),
   full_name: z.string().min(2, 'Nome troppo corto').max(100, 'Nome troppo lungo'),
   email: emailSchema.optional().nullable(),
-  phone: phoneSchema.optional().nullable(),
+  // Usa validazione permissiva: il telefono viene sanificato prima dell'inserimento in DB
+  // e i formati internazionali (es. "+39 347 1234567") devono essere accettati
+  phone: z.string().max(30).optional().nullable(),
   is_registered: z.boolean().default(false),
 });
 
