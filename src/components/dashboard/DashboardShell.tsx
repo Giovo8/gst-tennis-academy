@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
-  Menu,
-  X,
   LogOut,
   ChevronDown,
   Search,
+  PanelLeft,
+  Menu,
+  X,
 } from "lucide-react";
 import NotificationsDropdown from "@/components/notifications/NotificationsDropdown";
 import { type UserRole } from "@/lib/roles";
@@ -55,7 +56,11 @@ export default function DashboardShell({
   const profileHref = (role === "admin" || role === "gestore") && userId
     ? `/dashboard/admin/users/${userId}`
     : `/dashboard/${role}/profile`;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<'expanded' | 'collapsed' | 'hover'>('collapsed');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [sidebarControlOpen, setSidebarControlOpen] = useState(false);
+  const showLabels = sidebarMode === 'expanded' || (sidebarMode === 'hover' && isHovered);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<NavItem[]>([]);
@@ -138,18 +143,23 @@ export default function DashboardShell({
       return (
         <div key={item.label}>
           <button
-            onClick={() => toggleExpanded(item.label)}
-            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors"
+            onClick={() => { if (!showLabels) setSidebarMode('expanded'); else toggleExpanded(item.label); }}
+            title={!showLabels ? item.label : undefined}
+            className={`w-full flex items-center rounded-md transition-colors ${
+              showLabels ? "justify-between gap-3 px-3 py-2.5" : "justify-center py-2.5"
+            } text-secondary/70 hover:bg-secondary/5`}
           >
-            <div className="flex items-center gap-3">
-              <span className="text-secondary/60 [&>svg]:!h-5 [&>svg]:!w-5">{item.icon}</span>
-              <span className="text-base font-semibold">{item.label}</span>
+            <div className={`flex items-center ${showLabels ? "gap-3" : ""}`}>
+              <span className="text-secondary/60 [&>svg]:!h-5 [&>svg]:!w-5 flex-shrink-0">{item.icon}</span>
+              {showLabels && <span className="text-base font-semibold">{item.label}</span>}
             </div>
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-            />
+            {showLabels && (
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+              />
+            )}
           </button>
-          {isExpanded && (
+          {showLabels && isExpanded && (
             <div className="mt-1 space-y-1 ml-8">
               {item.children!.map((child) => renderNavItem(child, depth + 1))}
             </div>
@@ -162,18 +172,20 @@ export default function DashboardShell({
       <Link
         key={item.href}
         href={item.href}
-        onClick={() => setDrawerOpen(false)}
+        onClick={() => { if (sidebarMode === 'hover') setIsHovered(false); setMobileOpen(false); }}
+        title={!showLabels ? item.label : undefined}
         className={`
-          relative flex items-center gap-3 px-3 py-2.5 rounded-md
+          relative flex items-center rounded-md
           transition-colors duration-200
+          ${showLabels ? "gap-3 px-3 py-2.5" : "justify-center py-2.5"}
           ${active ? "bg-secondary text-white" : "text-gray-600 hover:bg-gray-100"}
         `}
       >
         <span className={`${active ? "text-white" : "text-gray-600"} flex-shrink-0 [&>svg]:!h-5 [&>svg]:!w-5`}>
           {item.icon}
         </span>
-        <span className="text-base font-semibold flex-1">{item.label}</span>
-        {item.badge && item.badge > 0 && (
+        {showLabels && <span className="text-base font-semibold flex-1">{item.label}</span>}
+        {showLabels && item.badge && item.badge > 0 && (
           <span className={`px-2 py-0.5 text-xs font-bold rounded-md min-w-[24px] text-center ${
             active ? "bg-white text-secondary" : "bg-secondary text-white"
           }`}>
@@ -187,38 +199,44 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navbar - fisso su tutti gli schermi */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-[1400px] mx-auto relative h-16 px-6 lg:px-8 flex items-center justify-between">
-          {/* Sinistra: hamburger */}
-          <div className="flex items-center w-10">
+      <header className="fixed top-0 left-0 right-0 z-[110] bg-white border-b border-gray-200">
+        <div className="relative h-16 sm:h-14 flex items-center justify-between">
+          {/* Sinistra: hamburger (mobile) + logo (desktop) */}
+          <div className="flex items-center px-3 lg:px-0">
+            {/* Hamburger - solo mobile, ora a sinistra */}
             <button
-              onClick={() => setDrawerOpen(!drawerOpen)}
-              className="bg-secondary rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 transition-opacity hover:opacity-90 active:opacity-80 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
-              aria-label={drawerOpen ? "Chiudi menu" : "Apri menu"}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden flex items-center justify-center w-11 h-11 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
+              aria-label="Apri menu"
             >
-              {drawerOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+              {mobileOpen ? <X className="h-7 w-7 text-gray-600" /> : <Menu className="h-7 w-7 text-gray-600" />}
             </button>
+            {/* Logo - solo desktop, a sinistra */}
+            <div className="hidden lg:flex items-center justify-center w-14 flex-shrink-0">
+              <Link
+                href="/"
+                className="rounded-lg hover:opacity-80 active:opacity-60 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary min-w-[36px] min-h-[36px] flex items-center justify-center touch-manipulation"
+                aria-label="Vai alla home"
+              >
+                <Image src="/images/logo-tennis.png" alt="GST" width={32} height={32} className="h-8 w-8 object-contain" />
+              </Link>
+            </div>
           </div>
 
-          {/* Centro: logo */}
-          <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image
-              src="/images/logo-tennis.png"
-              alt="GST Tennis Academy"
-              width={32}
-              height={32}
-              className="h-8 w-8 object-contain"
-            />
-            <span className="font-extrabold text-secondary text-2xl tracking-tight" style={{ fontFamily: 'var(--font-urbanist)' }}>
-              Area GST
-            </span>
+          {/* Logo centrato - solo mobile */}
+          <Link
+            href="/"
+            className="lg:hidden absolute left-1/2 -translate-x-1/2 rounded-lg hover:opacity-80 active:opacity-60 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary flex items-center justify-center touch-manipulation"
+            aria-label="Vai alla home"
+          >
+            <Image src="/images/logo-tennis.png" alt="GST" width={32} height={32} className="h-8 w-8 object-contain" />
           </Link>
 
           {/* Destra: notifiche, avatar */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center pr-1">
             <NotificationsDropdown />
-            <Link href={profileHref} className="ml-1">
-              <div className="w-11 h-11 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold hover:ring-2 hover:ring-secondary/30 transition-all">
+            <Link href={profileHref} className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="w-8 h-8 rounded-md overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
                 {userAvatar ? (
                   <img src={userAvatar} alt={userName || "User"} className="w-full h-full object-cover" />
                 ) : (
@@ -230,79 +248,141 @@ export default function DashboardShell({
         </div>
       </header>
 
-      {/* Dropdown overlay - covers area below navbar */}
-      {drawerOpen && (
-        <div
-          className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-black/30 backdrop-blur-sm"
-          onClick={() => setDrawerOpen(false)}
-        />
-      )}
-
-      {/* Dropdown Navigation Panel */}
-      <div
-        className="fixed top-16 left-0 right-0 z-[45] transition-all duration-200 ease-out"
-        style={{
-          opacity: drawerOpen ? 1 : 0,
-          transform: drawerOpen ? 'translateY(0)' : 'translateY(-6px)',
-          pointerEvents: drawerOpen ? 'auto' : 'none',
-        }}
-      >
-        <div className="max-w-[1400px] mx-auto">
-          <div className="w-64 bg-white border border-t-0 border-gray-200 shadow-xl rounded-b-xl ml-6 lg:ml-8">
-            <div className="px-3 py-3">
-            {/* Nav items grid */}
-            <nav className="flex flex-col gap-0.5">
-              {(() => {
-                const allItems = hasPrimarySection
-                  ? [dashboardItem, ...primaryNavItems!.filter(i => i.href !== dashboardItem.href), ...menuItemsWithPrimary]
-                  : [dashboardItem, ...otherItems];
-                return allItems.map((item) => {
-                  const active = isActive(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setDrawerOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                        active
-                          ? 'bg-secondary text-white'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <span className={`flex-shrink-0 [&>svg]:h-5 [&>svg]:w-5 ${active ? 'text-white' : 'text-gray-500'}`}>
-                        {item.icon}
-                      </span>
-                      <span className="text-sm font-semibold truncate">{item.label}</span>
-                      {item.badge && item.badge > 0 && (
-                        <span className={`ml-auto px-1.5 py-0.5 text-xs font-bold rounded-md ${active ? 'bg-white text-secondary' : 'bg-secondary text-white'}`}>
-                          {item.badge > 99 ? '99+' : item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                });
-              })()}
+      {/* Menu mobile drawer da sinistra - solo smartphone */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="lg:hidden fixed inset-0 bg-black/40 z-[99]"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Drawer */}
+          <div className="lg:hidden fixed top-16 sm:top-14 left-0 bottom-0 w-72 bg-white shadow-xl overflow-y-auto animate-in slide-in-from-left duration-300 z-[100]">
+            {/* Nav items */}
+            <nav>
+              {[dashboardItem, ...(hasPrimarySection
+                ? [...primaryNavItems!.filter(i => i.href !== dashboardItem.href), ...menuItemsWithPrimary]
+                : otherItems
+              )].map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 transition-colors ${
+                      active ? "bg-secondary text-white" : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className={`flex-shrink-0 [&>svg]:!h-5 [&>svg]:!w-5 ${active ? "text-white" : "text-secondary/70"}`}>
+                      {item.icon}
+                    </span>
+                    <span className="text-sm font-semibold flex-1">{item.label}</span>
+                    {item.badge && item.badge > 0 && (
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${
+                        active ? "bg-white text-secondary" : "bg-secondary text-white"
+                      }`}>{item.badge > 99 ? "99+" : item.badge}</span>
+                    )}
+                  </Link>
+                );
+              })}
             </nav>
 
-            {/* Footer row */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            {/* Footer */}
+            <div className="p-2">
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-gray-600"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors text-gray-700"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5 flex-shrink-0" />
                 <span className="text-sm font-semibold">Esci</span>
               </button>
             </div>
-            </div>
           </div>
+        </>
+      )}
+
+      {/* Sidebar laterale - solo desktop */}
+      <aside
+        className={`
+          hidden lg:flex fixed top-0 left-0 h-screen
+          bg-white border-r border-gray-200
+          flex-col z-30
+          transition-all duration-300 ease-in-out
+          ${showLabels ? "lg:translate-x-0 lg:w-56" : "lg:translate-x-0 lg:w-14"}
+        `}
+        onMouseEnter={() => sidebarMode === 'hover' && setIsHovered(true)}
+        onMouseLeave={() => { if (sidebarMode === 'hover') { setIsHovered(false); setSidebarControlOpen(false); } }}
+      >
+        {/* Navigation */}
+        <nav className={`flex-1 pt-14 sm:pt-16 py-4 overflow-y-auto space-y-0.5 ${showLabels ? "px-3" : "px-1"}`}>
+          {renderNavItem(dashboardItem)}
+          <div className={`my-2 ${showLabels ? "mx-1 border-t border-gray-200" : "mx-2 border-t border-gray-200"}`} />
+          <div className="space-y-0.5">
+            {hasPrimarySection ? (
+              <>
+                {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => renderNavItem(item))}
+                {menuItemsWithPrimary.map((item) => renderNavItem(item))}
+              </>
+            ) : (
+              otherItems.map((item) => renderNavItem(item))
+            )}
+          </div>
+        </nav>
+
+        {/* Drawer Footer */}
+        <div className={`border-t border-gray-100 space-y-1 flex-shrink-0 ${showLabels ? "p-3" : "p-1"}`}>
+          <div className="relative">
+            <button
+              onClick={() => setSidebarControlOpen(!sidebarControlOpen)}
+              title={!showLabels ? "Sidebar" : undefined}
+              className={`w-full flex items-center rounded-md hover:bg-gray-100 transition-colors text-gray-500 ${
+                showLabels ? "gap-3 px-3 py-2.5" : "justify-center py-2.5"
+              }`}
+            >
+              <PanelLeft className="h-5 w-5 flex-shrink-0" />
+              {showLabels && <span className="text-base font-semibold">Sidebar</span>}
+            </button>
+            {sidebarControlOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-52 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50">
+                <p className="px-4 py-3 text-xs font-semibold text-white uppercase tracking-wider bg-secondary">Sidebar control</p>
+                <div className="py-1">
+                {(['expanded', 'collapsed', 'hover'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => { setSidebarMode(mode); setSidebarControlOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                      sidebarMode === mode ? 'bg-secondary' : 'border border-gray-300'
+                    }`} />
+                    {mode === 'expanded' ? 'Expanded' : mode === 'collapsed' ? 'Collapsed' : 'Expand on hover'}
+                  </button>
+                ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleLogout}
+            title={!showLabels ? "Esci" : undefined}
+            className={`w-full flex items-center rounded-md hover:bg-red-50 hover:text-red-600 transition-colors text-gray-600 ${
+              showLabels ? "gap-3 px-3 py-2.5" : "justify-center py-2.5"
+            }`}
+          >
+            <LogOut className="h-5 w-5 flex-shrink-0" />
+            {showLabels && <span className="text-base font-semibold">Esci</span>}
+          </button>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="pt-16 min-h-screen">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-6 lg:py-8">
-          {children}
+      <main className={`min-h-screen pt-16 sm:pt-14 transition-all duration-300 ease-in-out ${sidebarMode === 'expanded' ? 'lg:pl-56' : 'lg:pl-14'}`}>
+        <div className="p-6 lg:p-8">
+          <div className="max-w-[1400px] mx-auto">
+            {children}
+          </div>
         </div>
       </main>
 

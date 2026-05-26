@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Bell, Mail, Trophy, Megaphone, CalendarClock, Users, Video, X, Swords } from "lucide-react";
+import { Bell, BellRing, Mail, Trophy, Megaphone, CalendarClock, Users, Video, X, Swords } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -200,9 +200,9 @@ export default function NotificationsDropdown() {
         title="Notifiche"
       >
         {isOpen ? (
-          <X className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+          <X className="h-7 w-7 text-secondary/60" strokeWidth={2} />
         ) : (
-          <Bell className="h-5 w-5 text-secondary/60" strokeWidth={2} />
+          <Bell className="h-7 w-7 text-secondary/60" strokeWidth={2} />
         )}
         {!isOpen && unreadCount > 0 && (
           <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
