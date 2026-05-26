@@ -889,17 +889,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             onClick={openDatePickerModal}
           >
             <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
-              <CalendarIcon className="h-5 w-5 text-white shrink-0" />
               <span
-                className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
+                className="font-bold text-white text-xl leading-none text-center whitespace-nowrap"
               >
                 {formatDateHeader(true)}
               </span>
             </span>
             <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
-              <CalendarIcon className="h-5 w-5 text-white shrink-0" />
               <span
-                className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
+                className="font-bold text-white text-xl leading-none text-left min-w-0 truncate max-w-none capitalize"
               >
                 {formatDateHeader()}
               </span>
@@ -925,11 +923,13 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
           {!swapAxes ? (
             <div className="flex">
               {/* Fixed court labels column */}
-              <div className="flex-shrink-0 w-[100px] flex flex-col gap-3">
-                <div className="bg-secondary rounded-l-lg" style={{ height: '48px' }}></div>
+              <div className="flex-shrink-0 w-[70px] flex flex-col gap-3">
+                <div className="bg-secondary rounded-l-lg" style={{ height: '52px' }}></div>
                 {courts.map((court) => (
-                  <div key={court} className="bg-secondary rounded-lg p-3 font-bold text-white text-base flex items-center justify-center" style={{ minHeight: '70px' }}>
-                    {court}
+                  <div key={court} className="bg-secondary rounded-lg p-3 flex items-center justify-center" style={{ minHeight: '70px' }}>
+                    <span className="text-xl font-bold text-white tabular-nums">
+                      {court.replace(/^Campo\s+/i, "")}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -949,7 +949,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                     {TIME_SLOTS.map((time) => (
                       <div
                         key={time}
-                        className="p-3 text-center font-bold text-white text-base flex items-center justify-center"
+                        className="p-3 text-center font-bold text-white text-xl whitespace-nowrap flex items-center justify-center"
                       >
                         {time}
                       </div>
@@ -1164,7 +1164,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         key={`header-${court}`}
                         className="p-3 text-center font-bold text-white text-xs flex items-center justify-center border-r border-white/15 last:border-r-0"
                       >
-                        {court}
+                        {court.replace(/^Campo\s+/i, "")}
                       </div>
                     ))}
                   </div>

@@ -49,6 +49,69 @@ interface UpcomingCourse {
   isCourse: true;
 }
 
+type CourseData = {
+  id: string;
+  name: string;
+  schedule_days: string[] | null;
+  start_date: string | null;
+  end_date: string | null;
+  cancelled_dates: string[] | null;
+  extra_dates: string[] | null;
+  lesson_overrides: Record<string, string> | null;
+  lesson_time_overrides: Record<string, string> | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
+  court_name: string | null;
+  schedule_time: string | null;
+};
+
+const COURSE_DAY_INDEX: Record<string, number> = { dom: 0, lun: 1, mar: 2, mer: 3, gio: 4, ven: 5, sab: 6 };
+const COURSE_DAY_CODE: Record<number, string> = { 0: "dom", 1: "lun", 2: "mar", 3: "mer", 4: "gio", 5: "ven", 6: "sab" };
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getNextCourseLessonDate(course: CourseData, fromDateStr: string): string | null {
+  const { start_date, end_date, schedule_days, cancelled_dates, extra_dates } = course;
+  const hasDays = schedule_days?.length;
+  if (!hasDays && !extra_dates?.length) return null;
+  const allowed = new Set((schedule_days ?? []).map((d) => COURSE_DAY_INDEX[d] ?? -1));
+  const cancelled = new Set(cancelled_dates ?? []);
+  const startStr = start_date && fromDateStr < start_date ? start_date : fromDateStr;
+  if (hasDays) {
+    const cur = new Date(startStr + "T12:00:00");
+    const limit = end_date ? new Date(end_date + "T12:00:00") : null;
+    for (let i = 0; i < 365; i++) {
+      if (limit && cur > limit) break;
+      const d = localDateStr(cur);
+      if (allowed.has(cur.getDay()) && !cancelled.has(d)) return d;
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+  const futureExtras = (extra_dates ?? []).filter((d) => !cancelled.has(d) && d >= fromDateStr).sort();
+  return futureExtras[0] ?? null;
+}
+
+function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.court) return period.court;
+  }
+  return course.court_name;
+}
+
+function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {
+  if (course.lesson_time_overrides?.[dateStr]) return course.lesson_time_overrides[dateStr];
+  if (course.schedule_periods?.length) {
+    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
+    if (period?.time) return period.time;
+  }
+  return course.schedule_time;
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timelineBookings, setTimelineBookings] = useState<TimelineBooking[]>([]);
@@ -58,6 +121,19 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     void loadDashboardData();
+
+    const channel = supabase
+      .channel("admin-dashboard-bookings")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => { void loadDashboardData(); }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   async function loadDashboardData() {
@@ -138,54 +214,46 @@ export default function AdminDashboard() {
       // Carica prossime occorrenze dei corsi attivi
       const { data: coursesData } = await supabase
         .from("courses")
-        .select("id, name, schedule_days, schedule_time, schedule_periods, court_name, start_date, end_date")
+        .select("id, name, schedule_days, schedule_time, schedule_periods, court_name, start_date, end_date, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides")
         .eq("is_active", true);
 
       if (coursesData && coursesData.length > 0) {
-        const DAY_NAMES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
         const occurrences: UpcomingCourse[] = [];
         const now2 = new Date();
+        const todayStr = localDateStr(now2);
+        const tomorrowStr = localDateStr(new Date(now2.getFullYear(), now2.getMonth(), now2.getDate() + 1));
 
-        for (const course of coursesData) {
-          if (!course.schedule_days?.length) continue;
-          const startDate = course.start_date ? new Date(course.start_date + "T00:00:00") : null;
-          const endDate = course.end_date ? new Date(course.end_date + "T23:59:59") : null;
-
-          const searchDate = new Date(now2);
-          searchDate.setHours(0, 0, 0, 0);
-
-          for (let i = 0; i < 90; i++) {
-            const dayName = DAY_NAMES[searchDate.getDay()];
-            if (course.schedule_days.includes(dayName)) {
-              // Pick the right time for this day (multi-period support)
-              let timeStr: string | null = course.schedule_time ?? null;
-              if (course.schedule_periods && course.schedule_periods.length > 0) {
-                const mp = course.schedule_periods.find((p: { days: string[]; time: string | null }) => p.days.includes(dayName));
-                timeStr = mp?.time ?? timeStr;
-              }
-              if (!timeStr) { searchDate.setDate(searchDate.getDate() + 1); continue; }
-              const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
-              if (!m) { searchDate.setDate(searchDate.getDate() + 1); continue; }
-              const startH = parseInt(m[1]), startM = parseInt(m[2]);
-              const endH = parseInt(m[3]), endM = parseInt(m[4]);
-              const start = new Date(searchDate);
-              start.setHours(startH, startM, 0, 0);
-              if (start >= now2 && (!startDate || start >= startDate) && (!endDate || start <= endDate)) {
-                const end = new Date(searchDate);
-                end.setHours(endH, endM, 0, 0);
-                occurrences.push({
-                  id: course.id,
-                  name: course.name || "Corso",
-                  court_name: course.court_name || "",
-                  start_time: start.toISOString(),
-                  end_time: end.toISOString(),
-                  isCourse: true,
-                });
-                break;
-              }
+        for (const course of coursesData as CourseData[]) {
+          let dateStr = getNextCourseLessonDate(course, todayStr);
+          if (!dateStr) continue;
+          // Se la lezione di oggi è già finita, cerca la prossima
+          if (dateStr === todayStr) {
+            const time = getCourseTimeForDate(course, dateStr);
+            const endMatch = time?.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+            if (endMatch) {
+              const lessonEnd = new Date();
+              lessonEnd.setHours(parseInt(endMatch[3]), parseInt(endMatch[4]), 0, 0);
+              if (now2 > lessonEnd) dateStr = getNextCourseLessonDate(course, tomorrowStr);
             }
-            searchDate.setDate(searchDate.getDate() + 1);
           }
+          if (!dateStr) continue;
+          const timeStr = getCourseTimeForDate(course, dateStr);
+          const courtName = getCourseCourtForDate(course, dateStr);
+          if (!timeStr || !courtName) continue;
+          const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
+          if (!m) continue;
+          const start = new Date(dateStr + "T00:00:00");
+          start.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0);
+          const end = new Date(dateStr + "T00:00:00");
+          end.setHours(parseInt(m[3]), parseInt(m[4]), 0, 0);
+          occurrences.push({
+            id: course.id,
+            name: course.name || "Corso",
+            court_name: courtName,
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
+            isCourse: true,
+          });
         }
         setUpcomingCourses(occurrences);
       }
@@ -248,6 +316,7 @@ export default function AdminDashboard() {
             <UpcomingCommitmentsCard
               bookings={upcomingItems}
               basePath="/dashboard/admin"
+              title="Prenotazioni"
             />
           );
         })()}

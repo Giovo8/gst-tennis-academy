@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 
 interface ModalContextType {
   isOpen: boolean;
@@ -82,6 +83,7 @@ interface ModalContentProps {
   className?: string;
   size?: "sm" | "md" | "lg" | "xl" | "full";
   closeOnOverlayClick?: boolean;
+  showBuiltinClose?: boolean;
 }
 
 const sizeClasses = {
@@ -97,6 +99,7 @@ export function ModalContent({
   className = "",
   size = "md",
   closeOnOverlayClick = true,
+  showBuiltinClose = true,
 }: ModalContentProps) {
   const { isOpen, closeModal } = useModal();
 
@@ -120,24 +123,41 @@ export function ModalContent({
         role="dialog"
         aria-modal="true"
       >
-        <button
-          onClick={closeModal}
-          className="absolute top-4 right-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
-          aria-label="Close modal"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {showBuiltinClose && (
+          <button
+            onClick={closeModal}
+            className="absolute top-6 right-4 z-10 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
+            aria-label="Close modal"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
         {children}
       </div>
     </div>
   );
 }
 
-export function ModalHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function ModalHeader({ children, className = "", withCloseButton = false, closeButtonClassName = "" }: { children: ReactNode; className?: string; withCloseButton?: boolean; closeButtonClassName?: string }) {
   return (
-    <div className={`px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800 ${className}`}>
+    <div className={twMerge("px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800", withCloseButton && "flex items-center justify-between gap-3", className)}>
       {children}
+      {withCloseButton && <ModalCloseButton className={closeButtonClassName} />}
     </div>
+  );
+}
+
+export function ModalCloseButton({ className = "" }: { className?: string }) {
+  const { closeModal } = useModal();
+  return (
+    <button
+      onClick={closeModal}
+      type="button"
+      className={`shrink-0 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors ${className}`}
+      aria-label="Close modal"
+    >
+      <X className="h-5 w-5" />
+    </button>
   );
 }
 
