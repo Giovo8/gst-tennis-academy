@@ -126,6 +126,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Utenti",
       href: "/dashboard/admin/users",
       icon: <Users className="h-5 w-5" />,
+      separatorAfter: true,
     },
     {
       label: "Staff",

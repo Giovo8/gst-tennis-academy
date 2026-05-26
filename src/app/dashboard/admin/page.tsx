@@ -321,8 +321,8 @@ export default function AdminDashboard() {
           );
         })()}
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -332,8 +332,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* AZIONI RAPIDE */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Azioni Rapide</h2>
         </div>
         <div className="px-6 py-5">
