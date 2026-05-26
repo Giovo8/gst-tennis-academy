@@ -167,7 +167,7 @@ export default function AtletaDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-4xl font-bold text-secondary">Bentornato, {userName}</h1>
+      <h1 className="text-4xl font-bold text-secondary">Dashboard</h1>
 
       <WeatherCard />
 

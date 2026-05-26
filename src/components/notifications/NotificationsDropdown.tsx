@@ -196,7 +196,7 @@ export default function NotificationsDropdown() {
             void markAllAsRead();
           }
         }}
-        className="relative flex items-center justify-center p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 transition-colors"
+        className="relative flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg hover:bg-gray-100 transition-colors"
         title="Notifiche"
       >
         {isOpen ? (
@@ -214,7 +214,7 @@ export default function NotificationsDropdown() {
       {isOpen && (
         <>
           {/* Desktop Dropdown */}
-          <div className="hidden lg:block absolute left-0 bottom-full mb-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
+          <div className="hidden lg:block absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
             {/* Header */}
             <div className="px-4 py-3 bg-secondary flex items-center justify-between rounded-t-lg">
               <h3 className="font-semibold text-white">Notifiche</h3>

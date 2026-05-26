@@ -9,13 +9,7 @@ import {
   X,
   LogOut,
   ChevronDown,
-  Home,
   Search,
-  ChevronLeft,
-  ChevronRight,
-  User,
-  LayoutGrid,
-  Bell,
 } from "lucide-react";
 import NotificationsDropdown from "@/components/notifications/NotificationsDropdown";
 import { type UserRole } from "@/lib/roles";
@@ -61,12 +55,10 @@ export default function DashboardShell({
   const profileHref = (role === "admin" || role === "gestore") && userId
     ? `/dashboard/admin/users/${userId}`
     : `/dashboard/${role}/profile`;
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<NavItem[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
   // Force remove dark class on mount to ensure light mode
@@ -83,10 +75,8 @@ export default function DashboardShell({
         item.label.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setSearchResults(results);
-      setShowSearchResults(true);
     } else {
       setSearchResults([]);
-      setShowSearchResults(false);
     }
   }, [searchQuery, navItems, primaryNavItems]);
 
@@ -144,7 +134,7 @@ export default function DashboardShell({
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.label);
 
-    if (hasChildren && !sidebarCollapsed) {
+    if (hasChildren) {
       return (
         <div key={item.label}>
           <button
@@ -152,17 +142,15 @@ export default function DashboardShell({
             className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-secondary/70 hover:bg-secondary/5 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className="text-secondary/60 [&>svg]:!h-6 [&>svg]:!w-6">{item.icon}</span>
-              <span className="text-lg font-semibold">{item.label}</span>
+              <span className="text-secondary/60 [&>svg]:!h-5 [&>svg]:!w-5">{item.icon}</span>
+              <span className="text-base font-semibold">{item.label}</span>
             </div>
             <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${
-                isExpanded ? "rotate-180" : ""
-              }`}
+              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
             />
           </button>
           {isExpanded && (
-            <div className="mt-1 space-y-1 ml-9">
+            <div className="mt-1 space-y-1 ml-8">
               {item.children!.map((child) => renderNavItem(child, depth + 1))}
             </div>
           )}
@@ -174,40 +162,23 @@ export default function DashboardShell({
       <Link
         key={item.href}
         href={item.href}
-        onClick={() => setSidebarOpen(false)}
-        title={sidebarCollapsed ? item.label : undefined}
+        onClick={() => setDrawerOpen(false)}
         className={`
-          relative flex items-center rounded-md
+          relative flex items-center gap-3 px-3 py-2.5 rounded-md
           transition-colors duration-200
-          ${sidebarCollapsed ? "p-3 justify-center" : "px-3 py-2.5 gap-3"}
-          ${
-            active
-              ? "bg-secondary text-white"
-              : "text-gray-600 hover:bg-gray-100"
-          }
+          ${active ? "bg-secondary text-white" : "text-gray-600 hover:bg-gray-100"}
         `}
       >
-        <span className={`${active ? "text-white" : "text-gray-600"} flex-shrink-0`}>
-          <span className="[&>svg]:!h-6 [&>svg]:!w-6">
-            {item.icon}
-          </span>
+        <span className={`${active ? "text-white" : "text-gray-600"} flex-shrink-0 [&>svg]:!h-5 [&>svg]:!w-5`}>
+          {item.icon}
         </span>
-        {!sidebarCollapsed && (
-          <>
-            <span className="text-lg font-semibold flex-1">{item.label}</span>
-            {item.badge && item.badge > 0 && (
-              <span className={`px-2.5 py-1 text-xs font-bold rounded-md min-w-[28px] text-center ${
-                active 
-                  ? "bg-white text-secondary" 
-                  : "bg-secondary text-white"
-              }`}>
-                {item.badge > 99 ? "99+" : item.badge}
-              </span>
-            )}
-          </>
-        )}
-        {sidebarCollapsed && item.badge && item.badge > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary rounded-full ring-2 ring-white" />
+        <span className="text-base font-semibold flex-1">{item.label}</span>
+        {item.badge && item.badge > 0 && (
+          <span className={`px-2 py-0.5 text-xs font-bold rounded-md min-w-[24px] text-center ${
+            active ? "bg-white text-secondary" : "bg-secondary text-white"
+          }`}>
+            {item.badge > 99 ? "99+" : item.badge}
+          </span>
         )}
       </Link>
     );
@@ -215,302 +186,133 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header - solo per mobile */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="h-16 px-4 flex items-center justify-between">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-3 rounded-lg hover:bg-gray-100 active:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center touch-manipulation"
-            aria-label={sidebarOpen ? "Chiudi menu" : "Apri menu"}
-          >
-            {sidebarOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
-          </button>
-          
-          <Link href="/" className="flex items-center gap-2">
+      {/* Top Navbar - fisso su tutti gli schermi */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-[1400px] mx-auto relative h-16 px-6 lg:px-8 flex items-center justify-between">
+          {/* Sinistra: hamburger */}
+          <div className="flex items-center w-10">
+            <button
+              onClick={() => setDrawerOpen(!drawerOpen)}
+              className="bg-secondary rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 transition-opacity hover:opacity-90 active:opacity-80 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
+              aria-label={drawerOpen ? "Chiudi menu" : "Apri menu"}
+            >
+              {drawerOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+            </button>
+          </div>
+
+          {/* Centro: logo */}
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Image
               src="/images/logo-tennis.png"
               alt="GST Tennis Academy"
               width={32}
               height={32}
-              className="h-8 w-8"
+              className="h-8 w-8 object-contain"
             />
-            <span className="font-bold text-secondary text-2xl" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
+            <span className="font-extrabold text-secondary text-2xl tracking-tight" style={{ fontFamily: 'var(--font-urbanist)' }}>
+              Area GST
+            </span>
           </Link>
-          
-          <NotificationsDropdown />
-        </div>
 
-        {/* Mobile Dropdown Menu - appare dall'alto */}
-        {sidebarOpen && (
-          <div className="fixed top-16 left-0 right-0 bottom-0 bg-white border-b border-gray-200 shadow-lg overflow-y-auto scrollbar-hide overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] animate-in slide-in-from-top duration-300">
-            <div className="min-h-full flex flex-col">
-              {/* Navigation Mobile */}
-              <nav className="p-4 space-y-1">
-                {renderNavItem(dashboardItem)}
-                {hasPrimarySection ? (
-                  <>
-                    {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => (
-                      <div key={item.href} onClick={() => setSidebarOpen(false)}>
-                        {renderNavItem(item)}
-                      </div>
-                    ))}
-                    {menuItemsWithPrimary.map((item) => (
-                      <div key={item.href} onClick={() => setSidebarOpen(false)}>
-                        {renderNavItem(item)}
-                      </div>
-                    ))}
-                  </>
+          {/* Destra: notifiche, avatar */}
+          <div className="flex items-center gap-1">
+            <NotificationsDropdown />
+            <Link href={profileHref} className="ml-1">
+              <div className="w-11 h-11 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold hover:ring-2 hover:ring-secondary/30 transition-all">
+                {userAvatar ? (
+                  <img src={userAvatar} alt={userName || "User"} className="w-full h-full object-cover" />
                 ) : (
-                  <>
-                    {otherItems.map((item) => (
-                      <div key={item.href} onClick={() => setSidebarOpen(false)}>
-                        {renderNavItem(item)}
-                      </div>
-                    ))}
-                  </>
+                  <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
                 )}
-              </nav>
-
-              {/* Actions Mobile */}
-              <div className="p-4 border-t border-gray-100 space-y-2 mt-auto">
-                <button
-                  onClick={() => {
-                    setSidebarOpen(false);
-                    setShowSearchModal(true);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
-                >
-                  <Search className="h-5 w-5" />
-                  <span className="text-sm font-medium">Cerca</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#022431]/10 hover:text-[#022431] transition-colors text-gray-700"
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span className="text-sm font-medium">Esci</span>
-                </button>
-
-                {/* User Info Mobile (in fondo al menu) */}
-                <div className="pt-3 mt-2 border-t border-gray-100">
-                  <Link
-                    href={profileHref}
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex w-full items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors min-w-0"
-                  >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                      {userAvatar ? (
-                        <img
-                          src={userAvatar}
-                          alt={userName || "User"}
-                          className="w-full h-full object-cover scale-110 object-center"
-                        />
-                      ) : (
-                        <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
-                      )}
-                    </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-base font-bold text-secondary leading-tight truncate">{userName || "User"}</span>
-                      <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
-                    </div>
-                  </Link>
-                </div>
               </div>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Sidebar Overlay (Mobile) - solo per chiudere il dropdown */}
-      {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-30 bg-transparent"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Desktop - visibile solo su desktop */}
-      <aside
-        className={`
-          hidden lg:block
-          fixed top-0 left-0 z-30 h-screen
-          bg-white border-r border-gray-200
-          transition-all duration-300 ease-in-out
-          ${sidebarCollapsed ? "w-[70px]" : "w-[260px]"}
-        `}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo Section */}
-          <Link href="/" className={`p-6 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"} hover:opacity-80 transition-opacity`}>
-            <div className="flex-shrink-0">
-              <Image
-                src="/images/logo-tennis.png"
-                alt="GST Tennis Academy"
-                width={36}
-                height={36}
-                className="w-9 h-9 object-contain"
-              />
-            </div>
-            {!sidebarCollapsed && (
-              <span className="font-bold text-secondary text-3xl tracking-tight" style={{ fontFamily: 'var(--font-urbanist)' }}>Area GST</span>
-            )}
-          </Link>
-
-          {/* Navigation */}
-          <nav className={`flex-1 ${sidebarCollapsed ? "px-2 py-4" : "px-4 py-6"} overflow-y-auto`}>
-            {/* Dashboard sempre per primo (senza intestazione) */}
-            <div className="space-y-1">
-              {renderNavItem(dashboardItem)}
-            </div>
-
-            {/* Altre voci del menu */}
-            <div className="space-y-1 mt-1">
-              {hasPrimarySection ? (
-                <>
-                  {/* Prima le primaryNavItems escluso il dashboard */}
-                  {primaryNavItems!.filter(item => item.href !== dashboardItem.href).map((item) => renderNavItem(item))}
-                  {/* Poi le altre voci non presenti in primaryNavItems */}
-                  {menuItemsWithPrimary.map((item) => renderNavItem(item))}
-                </>
-              ) : (
-                <>
-                  {otherItems.map((item) => renderNavItem(item))}
-                </>
-              )}
-            </div>
-          </nav>
-
-          {/* Footer: azioni e profilo Desktop */}
-          <div className={`${sidebarCollapsed ? "p-3" : "p-4"} space-y-3`}>
-            {/* Azioni: Cerca, Notifiche, Logout e Collapse */}
-            {!sidebarCollapsed && (
-              <div className="flex items-center gap-2 pl-2">
-                {/* Search */}
-                <button
-                  onClick={() => setShowSearchModal(true)}
-                  title="Cerca"
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <Search className="h-6 w-6 text-gray-600" />
-                </button>
-
-                {/* Notifiche */}
-                <NotificationsDropdown />
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  title="Esci"
-                  className="p-2 rounded-lg hover:bg-[#022431]/10 transition-colors"
-                >
-                  <LogOut className="h-6 w-6 text-gray-600 hover:text-[#022431]" />
-                </button>
-
-                {/* Collapse/Expand */}
-                <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Riduci menu"
-                >
-                  <ChevronLeft className="h-6 w-6 text-gray-600" />
-                </button>
-              </div>
-            )}
-
-            {/* Azioni in modalità collapsed */}
-            {sidebarCollapsed && (
-              <div className="flex flex-col gap-2">
-                {/* Search */}
-                <button
-                  onClick={() => setShowSearchModal(true)}
-                  title="Cerca"
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <Search className="h-6 w-6 text-gray-600" />
-                </button>
-
-                {/* Notifiche */}
-                <NotificationsDropdown />
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  title="Esci"
-                  className="p-2 rounded-lg hover:bg-[#022431]/10 transition-colors"
-                >
-                  <LogOut className="h-6 w-6 text-gray-600 hover:text-[#022431]" />
-                </button>
-
-                {/* Collapse/Expand */}
-                <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Espandi menu"
-                >
-                  <ChevronRight className="h-6 w-6 text-gray-600" />
-                </button>
-              </div>
-            )}
-
-            {/* Profilo Utente - cliccabile Desktop */}
-            <Link
-              href={profileHref}
-              title={sidebarCollapsed ? "Profilo" : undefined}
-              className="block"
-            >
-              {!sidebarCollapsed ? (
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/5 transition-colors cursor-pointer">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-base font-semibold flex-shrink-0">
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt={userName || "User"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-base font-bold text-secondary leading-tight truncate">{userName || "User"}</span>
-                    <span className="text-xs text-secondary/60 leading-tight truncate">{userEmail}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-center">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-base font-semibold hover:ring-2 hover:ring-secondary/20 transition-all">
-                    {userAvatar ? (
-                      <img
-                        src={userAvatar}
-                        alt={userName || "User"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>
-                    )}
-                  </div>
-                </div>
-              )}
             </Link>
           </div>
         </div>
-      </aside>
+      </header>
+
+      {/* Dropdown overlay - covers area below navbar */}
+      {drawerOpen && (
+        <div
+          className="fixed top-16 left-0 right-0 bottom-0 z-[35] bg-black/30 backdrop-blur-sm"
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+
+      {/* Dropdown Navigation Panel */}
+      <div
+        className="fixed top-16 left-0 right-0 z-[45] transition-all duration-200 ease-out"
+        style={{
+          opacity: drawerOpen ? 1 : 0,
+          transform: drawerOpen ? 'translateY(0)' : 'translateY(-6px)',
+          pointerEvents: drawerOpen ? 'auto' : 'none',
+        }}
+      >
+        <div className="max-w-[1400px] mx-auto">
+          <div className="w-64 bg-white border border-t-0 border-gray-200 shadow-xl rounded-b-xl ml-6 lg:ml-8">
+            <div className="px-3 py-3">
+            {/* Nav items grid */}
+            <nav className="flex flex-col gap-0.5">
+              {(() => {
+                const allItems = hasPrimarySection
+                  ? [dashboardItem, ...primaryNavItems!.filter(i => i.href !== dashboardItem.href), ...menuItemsWithPrimary]
+                  : [dashboardItem, ...otherItems];
+                return allItems.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setDrawerOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
+                        active
+                          ? 'bg-secondary text-white'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <span className={`flex-shrink-0 [&>svg]:h-5 [&>svg]:w-5 ${active ? 'text-white' : 'text-gray-500'}`}>
+                        {item.icon}
+                      </span>
+                      <span className="text-sm font-semibold truncate">{item.label}</span>
+                      {item.badge && item.badge > 0 && (
+                        <span className={`ml-auto px-1.5 py-0.5 text-xs font-bold rounded-md ${active ? 'bg-white text-secondary' : 'bg-secondary text-white'}`}>
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                });
+              })()}
+            </nav>
+
+            {/* Footer row */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-gray-600"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-sm font-semibold">Esci</span>
+              </button>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <main className={`pt-16 lg:pt-0 min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]"}`}>
-        {/* Page content */}
-        <div className="p-6 lg:p-8">
+      <main className="pt-16 min-h-screen">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-6 lg:py-8">
           {children}
         </div>
       </main>
 
       {/* Search Modal */}
       {showSearchModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-start justify-center pt-20 px-4"
           onClick={() => setShowSearchModal(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
             onClick={(e) => e.stopPropagation()}
           >

@@ -654,7 +654,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       switch (booking.type) {
         case "lezione_privata":
         case "lezione_gruppo":
-          return { background: "var(--color-frozen-lake-900)" }; // teal scuro — hai una lezione
+          return { background: "#023047" }; // blu scuro — hai una lezione
         case "campo":
           return { background: isArenaBooking ? "#023b52" : "var(--secondary)" }; // verde — hai prenotato un campo
         case "arena":

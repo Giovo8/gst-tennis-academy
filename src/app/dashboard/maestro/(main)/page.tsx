@@ -301,7 +301,7 @@ export default function MaestroDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-secondary mb-2">Bentornato, {userName}</h1>
+          <h1 className="text-4xl font-bold text-secondary mb-2">Dashboard</h1>
         </div>
       </div>
 

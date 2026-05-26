@@ -58,7 +58,7 @@ function getItemBg(item: UpcomingBooking, currentUserId?: string): string {
     case "lezione_privata":
     case "lezione_gruppo":
     case "lezione":
-      return "var(--color-frozen-lake-900)";
+      return "#023047";
     case "campo":
       return "var(--secondary)";
     case "arena":
