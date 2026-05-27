@@ -571,8 +571,8 @@ export default function AthleteArenaPage() {
       {/* Leaderboard Player Modal */}
       {selectedLeaderboardEntry && (
         <Modal open={!!selectedLeaderboardEntry} onOpenChange={(open) => { if (!open) setSelectedLeaderboardEntry(null); }}>
-          <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
-            <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+            <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+              <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
               <ModalTitle className="text-white text-base sm:text-lg">
                 {selectedLeaderboardEntry.name}
                 {selectedLeaderboardEntry.userId === userId && <span className="ml-1 text-sm text-white/70">(Tu)</span>}
@@ -627,9 +627,10 @@ export default function AthleteArenaPage() {
       <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
         <ModalContent
           size="md"
+          showBuiltinClose={false}
           className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
         >
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-lg">Filtra Arena</ModalTitle>
           </ModalHeader>
 

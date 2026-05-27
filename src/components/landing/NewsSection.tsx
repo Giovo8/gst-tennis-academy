@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 type NewsItem = {
@@ -60,17 +60,55 @@ const defaultNews: NewsItem[] = [
 function formatNewsDate(dateString: string | undefined): string {
   if (!dateString) return "";
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("it-IT", {
+  const formatted = new Intl.DateTimeFormat("it-IT", {
     weekday: "short",
     day: "2-digit",
     month: "short",
     year: "numeric",
   }).format(date);
+  // Capitalizza la prima lettera di ogni parola (giorno e mese)
+  return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
 }
 
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPaused = useRef(false);
+
+  function scrollTo(direction: "left" | "right") {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = 320 + 24; // w-80 + gap-6
+    if (news.length > 3) {
+      // Infinite loop: array is doubled, reset silently at midpoint
+      const half = cardWidth * news.length; // exact width of one copy
+      if (direction === "right") {
+        if (el.scrollLeft + cardWidth >= half) el.scrollLeft -= half;
+        el.scrollBy({ left: cardWidth, behavior: "smooth" });
+      } else {
+        if (el.scrollLeft - cardWidth < 0) el.scrollLeft += half;
+        el.scrollBy({ left: -cardWidth, behavior: "smooth" });
+      }
+    } else {
+      el.scrollBy({ left: direction === "right" ? cardWidth : -cardWidth, behavior: "smooth" });
+    }
+  }
+
+  useEffect(() => {
+    if (news.length <= 3) return;
+    const cardWidth = 320 + 24;
+    const half = cardWidth * news.length;
+    autoScrollRef.current = setInterval(() => {
+      if (isPaused.current) return;
+      const el = scrollRef.current;
+      if (!el) return;
+      if (el.scrollLeft + 10 >= half) el.scrollLeft -= half;
+      el.scrollBy({ left: cardWidth, behavior: "smooth" });
+    }, 3000);
+    return () => { if (autoScrollRef.current) clearInterval(autoScrollRef.current); };
+  }, [news.length]);
 
   async function loadNews() {
     const { data, error } = await supabase
@@ -78,7 +116,7 @@ export default function NewsSection() {
       .select("*")
       .eq("is_published", true)
       .order("published_at", { ascending: false })
-      .limit(3);
+      .limit(6);
 
     if (error) {
       console.error("Error loading news:", error);
@@ -109,23 +147,30 @@ export default function NewsSection() {
 
   return (
     <section id="news" className="py-20 sm:py-24 md:py-28 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
-            Aggiornamenti
-          </p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
-            Ultime news dal circolo
+          <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
+            News
           </h2>
           <p className="text-base sm:text-lg max-w-2xl text-gray-500">
             Risultati, orari, novità e iscrizioni.
           </p>
         </div>
 
-        {/* Griglia news cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {news.map((item) => {
+        {/* Cards */}
+        {(() => {
+          const isCarousel = news.length > 3;
+          const gridClass = isCarousel
+            ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-0"
+            : news.length === 1
+            ? "grid grid-cols-1 max-w-md mx-auto gap-6 mb-12"
+            : news.length === 2
+            ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-2 md:max-w-3xl md:mx-auto md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12"
+            : "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12";
+
+          const displayItems = isCarousel ? [...news, ...news] : news;
+          const cards = displayItems.map((item, i) => {
             const relativeDate = (() => {
               const ref = item.published_at || item.created_at;
               if (!ref) return "";
@@ -139,9 +184,9 @@ export default function NewsSection() {
 
             return (
               <Link
-                key={item.id}
+                key={isCarousel ? `${item.id}-${i}` : item.id}
                 href={`/news/${item.id}`}
-                className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                className={`flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer${isCarousel ? " flex-shrink-0 w-72 sm:w-80 snap-center" : news.length >= 2 ? " flex-shrink-0 w-72 sm:w-80 snap-center md:w-full" : ""}`}
               >
                 {/* Immagine */}
                 <div className="w-full aspect-[16/9] overflow-hidden">
@@ -183,23 +228,58 @@ export default function NewsSection() {
                 </p>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-5 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-5 border-t border-gray-200">
                   <span className="text-xs text-gray-400">{relativeDate}</span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold border border-gray-200 bg-gray-50 text-secondary">
+                  <span className="text-xs font-semibold text-secondary">
                     {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
                   </span>
                 </div>
                 </div>
               </Link>
             );
-          })}
-        </div>
+          });
+
+          return isCarousel ? (
+            <div
+              ref={scrollRef}
+              onMouseEnter={() => { isPaused.current = true; }}
+              onMouseLeave={() => { isPaused.current = false; }}
+              className={gridClass}
+            >
+              {cards}
+            </div>
+          ) : news.length >= 2 ? (
+            <div ref={scrollRef} className={gridClass}>{cards}</div>
+          ) : (
+            <div className={gridClass}>{cards}</div>
+          );
+        })()}
+
+        {/* Nav buttons — carosello e mobile scroll */}
+        {news.length >= 2 && (
+          <div className={`flex justify-center gap-2 mb-8${news.length <= 3 ? " md:hidden" : ""}`}>
+            <button
+              onClick={() => scrollTo("left")}
+              aria-label="Scorri a sinistra"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-white hover:bg-secondary/80 transition-colors shadow-sm"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollTo("right")}
+              aria-label="Scorri a destra"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-white hover:bg-secondary/80 transition-colors shadow-sm"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Pulsante Vedi tutte */}
-        <div className="text-center">
+        <div className="text-center mt-2">
           <Link
             href="/news"
-            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-md border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
+            className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3.5 sm:py-3 text-sm font-medium text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all"
           >
             Leggi tutte le news
           </Link>

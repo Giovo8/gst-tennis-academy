@@ -178,7 +178,7 @@ export default function ManualEnrollment({
     >
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+        <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
                 <UserPlus className="h-6 w-6 text-white" />
                 <h3 className="text-lg font-bold text-white">Iscrivi Atleti al Torneo</h3>

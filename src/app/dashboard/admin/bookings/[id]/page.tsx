@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
@@ -466,8 +466,8 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
           </div>
           <div className="px-6 py-4">
@@ -516,8 +516,8 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             )}
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
           </div>
           <div className="p-6"><div className="space-y-6">
@@ -547,11 +547,11 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link href={`${basePath}/corsi/${bookingId}/lezioni/${courseDate}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#075985] rounded-lg hover:bg-[#075985]/90 transition-all font-medium">
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#075985] rounded-lg shadow-sm hover:bg-[#075985]/90 transition-all font-medium">
             Presenze lezione
           </Link>
           <Link href={`${basePath}/corsi/${bookingId}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium">
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg shadow-sm hover:bg-[#023047]/90 transition-all font-medium">
             Vai al corso
           </Link>
         </div>
@@ -676,8 +676,8 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         <div className="px-6 py-4">
@@ -747,8 +747,8 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       </div>
 
       {/* Dettagli prenotazione */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
         </div>
         <div className="px-6 py-6">
@@ -844,8 +844,8 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
 
       {/* Note */}
       {booking.notes && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
           </div>
           <div className="px-6 py-6">
@@ -860,7 +860,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             {isArenaBooking && linkedChallenge?.id && (
               <Link
                 href={`${basePath}/arena/challenge/${linkedChallenge.id}`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg hover:bg-[#035f80]/90 transition-all font-medium"
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg shadow-sm hover:bg-[#035f80]/90 transition-all font-medium"
               >
                 Dettagli Sfida
               </Link>
@@ -868,7 +868,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             {!isPastBooking && booking.status !== "cancelled" && (
               <Link
                 href={`${basePath}/bookings/modifica?id=${booking.id}`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium"
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all font-medium"
               >
                 Modifica
               </Link>
@@ -878,7 +878,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               <button
                 onClick={cancelBooking}
                 disabled={actionLoading}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg shadow-sm hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {actionLoading && !deleting ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -891,7 +891,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
               <button
                 onClick={deleteBooking}
                 disabled={actionLoading}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg shadow-sm hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {actionLoading && deleting ? (
                   <Loader2 className="h-5 w-5 animate-spin" />

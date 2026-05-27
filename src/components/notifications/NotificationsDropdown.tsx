@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase/client";
 import { Bell, BellRing, Mail, Trophy, Megaphone, CalendarClock, Users, Video, X, Swords } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -35,6 +36,9 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", closeSigna
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPos, setDropdownPos] = useState({ bottom: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => { if (closeSignal > 0) setIsOpen(false); }, [closeSignal]);
 
@@ -189,6 +193,50 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", closeSigna
     return typeColorMap[notification.type] ?? "var(--secondary)";
   }
 
+  const notificationItem = (notification: Notification) => (
+    <div
+      key={notification.id}
+      onClick={() => {
+        const targetLink = resolveNotificationLink(notification);
+        if (targetLink) router.push(targetLink);
+        setIsOpen(false);
+      }}
+      className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+        !notification.is_read ? "bg-blue-50/50" : ""
+      }`}
+    >
+      <div className="flex gap-3">
+        <div
+          className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
+          style={{ background: getNotificationBadgeColor(notification) }}
+        >
+          {getNotificationIcon(notification)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 mb-1">
+            {notification.title}
+          </p>
+          <p className="text-xs text-gray-600 mb-2">
+            {notification.message}
+          </p>
+          <span className="text-xs text-gray-400">
+            {formatDistanceToNow(new Date(notification.created_at), {
+              addSuffix: true,
+              locale: it,
+            })}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const emptyState = (
+    <div className="px-4 py-8 text-center">
+      <Bell className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+      <p className="text-sm text-gray-500">Nessuna notifica</p>
+    </div>
+  );
+
   return (
     <div className="relative">
       <button
@@ -203,9 +251,10 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", closeSigna
             if (buttonRef.current) {
               const rect = buttonRef.current.getBoundingClientRect();
               const dropdownWidth = 384;
-              const left = Math.max(8, Math.min(rect.left, window.innerWidth - dropdownWidth - 8));
+              const preferredLeft = rect.right + 8;
+              const left = Math.max(8, Math.min(preferredLeft, window.innerWidth - dropdownWidth - 8));
               setDropdownPos({
-                bottom: window.innerHeight - rect.top + 8,
+                bottom: window.innerHeight - rect.bottom + 8,
                 left,
               });
             }
@@ -226,141 +275,61 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", closeSigna
         )}
       </button>
 
-      {/* Desktop Dropdown */}
-      {isOpen && (
+      {/* Desktop Dropdown + overlay — portaled to body to escape sidebar stacking context */}
+      {mounted && isOpen && createPortal(
         <>
-          <div className="hidden lg:block fixed w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[200]" style={{ bottom: dropdownPos.bottom, left: dropdownPos.left }}>
-            {/* Header */}
+          {/* Overlay */}
+          <div
+            className="hidden lg:block fixed inset-0"
+            style={{ zIndex: 9998 }}
+            onClick={() => setIsOpen(false)}
+          />
+          {/* Dropdown */}
+          <div
+            className="hidden lg:block fixed w-96 bg-white rounded-lg shadow-xl border border-gray-200"
+            style={{ zIndex: 9999, bottom: dropdownPos.bottom, left: dropdownPos.left }}
+          >
             <div className="px-4 py-3 bg-secondary flex items-center justify-between rounded-t-lg">
               <h3 className="font-semibold text-white">Notifiche</h3>
             </div>
-
-            {/* Notifications List */}
             <div className="max-h-[400px] overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <Bell className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Nessuna notifica</p>
-                </div>
-              ) : (
-                <div>
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      onClick={() => {
-                        const targetLink = resolveNotificationLink(notification);
-                        if (targetLink) router.push(targetLink);
-                        setIsOpen(false);
-                      }}
-                      className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                        !notification.is_read ? "bg-blue-50/50" : ""
-                      }`}
-                    >
-                      <div className="flex gap-3">
-                        <div
-                          className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
-                          style={{ background: getNotificationBadgeColor(notification) }}
-                        >
-                          {getNotificationIcon(notification)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 mb-1">
-                            {notification.title}
-                          </p>
-                          <p className="text-xs text-gray-600 mb-2">
-                            {notification.message}
-                          </p>
-                          <span className="text-xs text-gray-400">
-                            {formatDistanceToNow(new Date(notification.created_at), {
-                              addSuffix: true,
-                              locale: it,
-                            })}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {notifications.length === 0 ? emptyState : <div>{notifications.map(notificationItem)}</div>}
             </div>
           </div>
-
-          {/* Desktop overlay */}
-          <div
-            className="hidden lg:block fixed inset-0 z-[99] bg-transparent"
-            onClick={() => setIsOpen(false)}
-          />
-        </>
+        </>,
+        document.body
       )}
 
-      {/* Mobile backdrop */}
-      <div
-        className={`lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-black/40 z-[99] transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        onClick={() => setIsOpen(false)}
-        aria-hidden="true"
-      />
-
-      {/* Mobile Panel - scorre da destra */}
-      <div className={`lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white shadow-xl z-[100] flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        {/* Header */}
-        <div className="px-4 py-3 bg-secondary flex items-center justify-between flex-shrink-0">
-          <h3 className="font-semibold text-white">Notifiche</h3>
-          {unreadCount > 0 && (
-            <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-semibold text-white">
-              {unreadCount}
-            </span>
-          )}
-        </div>
-
-        {/* Notifications List */}
-        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center">
-              <Bell className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">Nessuna notifica</p>
+      {/* Mobile backdrop + panel — portaled to body to escape header stacking context */}
+      {mounted && createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            className={`lg:hidden fixed inset-0 transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            style={{ zIndex: 9998 }}
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Panel */}
+          <div
+            className={`lg:hidden fixed top-[5rem] left-6 right-6 bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col max-h-[calc(100dvh-6rem)] overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
+            style={{ zIndex: 9999 }}
+          >
+            <div className="px-4 py-3 bg-secondary flex items-center justify-between flex-shrink-0">
+              <h3 className="font-semibold text-white">Notifiche</h3>
+              {unreadCount > 0 && (
+                <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-semibold text-white">
+                  {unreadCount}
+                </span>
+              )}
             </div>
-          ) : (
-            <div>
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => {
-                    const targetLink = resolveNotificationLink(notification);
-                    if (targetLink) router.push(targetLink);
-                    setIsOpen(false);
-                  }}
-                  className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                    !notification.is_read ? "bg-blue-50/50" : ""
-                  }`}
-                >
-                  <div className="flex gap-3">
-                    <div
-                      className="flex items-center justify-center rounded-lg w-11 h-11 flex-shrink-0"
-                      style={{ background: getNotificationBadgeColor(notification) }}
-                    >
-                      {getNotificationIcon(notification)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 mb-1">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-gray-600 mb-2">
-                        {notification.message}
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        {formatDistanceToNow(new Date(notification.created_at), {
-                          addSuffix: true,
-                          locale: it,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {notifications.length === 0 ? emptyState : <div>{notifications.map(notificationItem)}</div>}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 }

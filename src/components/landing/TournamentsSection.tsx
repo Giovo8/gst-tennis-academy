@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -72,51 +70,16 @@ export default function TournamentsSection() {
     };
   }, []);
 
-  const getTournamentTypeLabel = (tournament: Tournament) => {
-    const type = tournament.tournament_type || tournament.competition_type;
-    switch(type) {
-      case "eliminazione_diretta": return "Torneo";
-      case "girone_eliminazione": return "Torneo con fase a gironi";
-      case "campionato": return "Campionato";
-      default: return "Torneo";
-    }
-  };
-
-  const getStatusInfo = (status?: string) => {
-    if (!status) return null;
-    const normalized = status.toLowerCase();
-    if (normalized === "aperto") {
-      return {
-        label: "Iscrizioni aperte",
-        className:
-          "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium bg-emerald-50 text-emerald-700",
-      };
-    }
-    if (normalized === "chiuso" || normalized === "terminato") {
-      return {
-        label: "Iscrizioni chiuse",
-        className:
-          "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium bg-secondary/5 text-secondary/70",
-      };
-    }
-    return null;
-  };
-
-
-
   return (
-    <section id="tornei" className="py-20 sm:py-24 md:py-28 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="tornei" className="pt-6 pb-20 sm:py-24 md:py-28 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
+          <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             Competizioni
-          </p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
-            Tornei e campionati
           </h2>
           <p className="text-base sm:text-lg max-w-2xl text-gray-500">
-            Scopri i prossimi eventi in programma alla GST Tennis Academy e trova il torneo giusto per il tuo livello.
+            Scopri i prossimi eventi in programma alla GST Academy e trova il torneo giusto per te.
           </p>
         </div>
 
@@ -141,59 +104,61 @@ export default function TournamentsSection() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {items.map((tournament) => {
-              const typeLabel = getTournamentTypeLabel(tournament);
               const date = tournament.start_date ? new Date(tournament.start_date) : null;
-              const weekday = date ? format(date, "EEE", { locale: it }) : "";
-              const day = date ? format(date, "dd", { locale: it }) : "";
-              const monthYear = date ? format(date, "MMM yyyy", { locale: it }).toUpperCase() : "DATA DA DEFINIRE";
+              const monthStr = date
+                ? date.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')
+                : null;
+              const dayStr = date ? date.getDate().toString() : null;
 
-              const getBorderColor = () => {
-                const status = tournament.status?.toLowerCase();
-                if (status === "aperto") return "#10b981";
-                if (status === "concluso" || status === "completato" || status === "chiuso") return "#6b7280";
-                return "#034863";
+              const getTypeLabel = () => {
+                const type = tournament.tournament_type || tournament.competition_type;
+                if (type === 'campionato') return 'Campionato';
+                if (type === 'girone_eliminazione') return 'Girone';
+                return 'Torneo';
               };
+
+              const bgColor = tournament.status?.toLowerCase() === 'in corso'
+                ? '#023047'
+                : 'var(--secondary)';
 
               return (
                 <Link
                   key={tournament.id}
                   href={`/tornei/${tournament.id}`}
-                  className="bg-white px-0 py-0 flex flex-row items-stretch border-l-4 border border-gray-200 rounded-md overflow-hidden hover:bg-gray-50 transition-colors cursor-pointer"
-                  style={{ borderLeftColor: getBorderColor() }}
+                  className="block rounded-lg overflow-hidden hover:opacity-95 transition-opacity"
+                  style={{ background: bgColor }}
                 >
-                  {/* Colonna data */}
-                  <div className="bg-secondary flex flex-col items-center justify-center w-20 sm:w-28 flex-shrink-0 px-3 py-5">
-                    <p className="text-xs font-semibold uppercase text-white/70 text-center mb-1">
-                      {weekday}
-                    </p>
-                    <p className="text-4xl sm:text-3xl md:text-4xl font-bold text-white leading-none text-center">
-                      {day}
-                    </p>
-                    <p className="text-xs font-semibold uppercase text-white/70 mt-1.5 text-center whitespace-nowrap">
-                      {monthYear}
-                    </p>
-                  </div>
-
-                  {/* Barra separatrice */}
-                  <div className="w-px bg-gray-200"></div>
-
-                  {/* Contenuto centrale */}
-                  <div className="flex-1 min-w-0 px-5 sm:px-6 py-5 sm:py-6">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold uppercase tracking-wide text-secondary/60">
-                        {typeLabel}
-                      </span>
+                  <div className="flex items-center gap-4 py-3 px-3">
+                    {/* Date box */}
+                    <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                      {date ? (
+                        <>
+                          <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                            {monthStr}
+                          </span>
+                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                            {dayStr}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">TBD</span>
+                      )}
                     </div>
-                    <h3 className="text-base sm:text-lg font-semibold text-secondary truncate">
-                      {tournament.title}
-                    </h3>
-                    {tournament.description && (
-                      <p className="text-sm text-secondary/70 mt-2 line-clamp-2">
-                        {tournament.description}
-                      </p>
-                    )}
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white text-sm truncate">{tournament.title}</p>
+                      {tournament.description && (
+                        <p className="text-xs text-white/70 mt-0.5 truncate">{tournament.description}</p>
+                      )}
+                    </div>
+
+                    {/* Type label */}
+                    <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                      {getTypeLabel()}
+                    </span>
                   </div>
                 </Link>
               );
@@ -205,7 +170,7 @@ export default function TournamentsSection() {
         <div className="text-center mt-8 sm:mt-10">
           <Link
             href="/tornei"
-            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-md border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
+            className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3.5 sm:py-3 text-sm font-medium text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all"
           >
             Vedi tutti i tornei
           </Link>

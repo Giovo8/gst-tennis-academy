@@ -58,30 +58,57 @@ export default function TextHeroSection() {
   };
 
   return (
-    <section className="bg-white pt-16 sm:pt-24 md:pt-32 pb-12 sm:pb-16 md:pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="bg-white pt-20 sm:pt-24 md:pt-32 pb-0 sm:pb-8 md:pb-10 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
         <div className="text-center flex flex-col items-center justify-center">
-          <h1 className="!text-[2.75rem] sm:!text-8xl md:!text-9xl lg:!text-[10rem] xl:!text-[12rem] font-extrabold mb-10 sm:mb-14 text-secondary leading-[0.92] tracking-tight whitespace-nowrap">
-            GST Academy
+          <h1 className="text-[14vw] md:text-8xl lg:text-8xl font-extrabold mb-5 sm:mb-6 text-secondary leading-[1.05] tracking-tight">
+            Campi, Tornei<br /> e Lezioni di Tennis
           </h1>
+          <p className="text-base sm:text-lg md:text-xl text-gray-500 max-w-xs sm:max-w-2xl mb-12 sm:mb-14">
+            Prenota un <span className="text-secondary">campo online</span>, iscriviti a un <span className="text-secondary">torneo</span> o inizia il tuo percorso con i nostri <span className="text-secondary">maestri certificati FITP</span>.
+          </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 w-full sm:w-auto">
             <button
               onClick={handleBookingClick}
-              className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold text-white bg-secondary hover:bg-secondary/90 transition-all rounded-md whitespace-nowrap hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center px-6 py-3.5 sm:py-3 text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all font-medium whitespace-nowrap"
             >
               Prenota un campo
             </button>
-            <button
-              onClick={handleTournamentClick}
-              className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold text-secondary bg-white hover:bg-gray-50 transition-all rounded-md border border-secondary whitespace-nowrap hover:-translate-y-0.5"
+            <a
+              href="https://wa.me/393791958651"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-6 py-3.5 sm:py-3 text-white bg-[#023047] rounded-lg shadow-sm hover:bg-[#023047]/90 transition-all font-medium whitespace-nowrap"
             >
-              Iscriviti ad un torneo
-            </button>
+              Contattaci
+            </a>
           </div>
         </div>
       </div>
+
+      {/* Marquee logos */}
+      <div className="w-full pt-6 pb-0">
+        <div className="max-w-xl mx-auto overflow-hidden">
+          <div className="flex items-center w-max" style={{ animation: 'marquee 30s linear infinite' }}>
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((set) => (
+              <div key={set} className="flex items-center flex-shrink-0" style={{ gap: '3rem', paddingRight: '3rem' }}>
+                <img src="/images/logo/1729263756_adidas-logo-png-210379511.png" alt="Adidas" style={{ height: '28px', width: 'auto', objectFit: 'contain', flexShrink: 0, filter: 'grayscale(1) opacity(0.45)' }} />
+                <img src="/images/logo/Dunlop-logo-4C18C47FBA-seeklogo.com-649631757.png" alt="Dunlop" style={{ height: '24px', width: 'auto', objectFit: 'contain', flexShrink: 0, filter: 'grayscale(1) opacity(0.45)' }} />
+                <img src="/images/logo/FITP-LOGO-2501270168.png" alt="FITP" style={{ height: '28px', width: 'auto', objectFit: 'contain', flexShrink: 0, filter: 'grayscale(1) opacity(0.45)' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 text-center mt-6">Powered by</p>
+      </div>
+      <style>{`
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+      `}</style>
     </section>
   );
 }

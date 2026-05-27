@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -133,7 +133,7 @@ function SearchableSelect({
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
       >
         <span className={selectedOption ? "" : "text-secondary/40"}>
           {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
@@ -1076,8 +1076,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
 
           {/* Card Dettagli prenotazione */}
-          <div className="bg-white border border-gray-200 rounded-xl">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
             </div>
             {courtsLoading ? (
@@ -1096,7 +1096,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                         key={type.value}
                         type="button"
                         onClick={() => setBookingType(type.value)}
-                        className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
                           bookingType === type.value
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1119,7 +1119,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                           key={formatOption.value}
                           type="button"
                           onClick={() => setMatchFormat(formatOption.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
                             matchFormat === formatOption.value
                               ? 'bg-secondary text-white border-secondary'
                               : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1160,7 +1160,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                         key={court}
                         type="button"
                         onClick={() => setSelectedCourt(court)}
-                        className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
                           selectedCourt === court
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1176,8 +1176,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
 
           {/* Card Partecipanti */}
-          <div className="bg-white border border-gray-200 rounded-xl">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -1199,8 +1199,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
 
           {/* Card Orari disponibili */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -1356,8 +1356,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
 
           {/* Card Note */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -1366,7 +1366,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Eventuali note..."
                 rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
               />
             </div>
           </div>
@@ -1375,7 +1375,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md shadow-sm transition-all flex items-center justify-center gap-3"
           >
             {submitting ? (
               <>
@@ -1394,9 +1394,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
-            <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
+        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+            <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
           </ModalHeader>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
             <div className="space-y-3">
@@ -1470,8 +1470,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       </Modal>
 
       <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
-        <ModalContent size="md" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+        <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-base sm:text-lg">
               {selectedEntry?.isBlock
                 ? "Blocco Campo"

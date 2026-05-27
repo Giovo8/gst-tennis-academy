@@ -755,13 +755,13 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           placeholder="Cerca per nome atleta, maestro, email o campo..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 shadow-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
         />
       </div>
       <button
         type="button"
         onClick={() => setIsFilterModalOpen(true)}
-        className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+        className={`inline-flex h-11 w-11 items-center justify-center rounded-md border shadow-sm transition-colors ${
           hasActiveFilters
             ? "border-secondary bg-secondary text-white hover:opacity-90"
             : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
@@ -800,7 +800,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             <>
               <Link
                 href={`${basePath}/bookings/new`}
-                className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
                 Crea Prenotazione
               </Link>
@@ -809,7 +809,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           {mode !== "history" && (
             <Link
               href={`${basePath}/courts`}
-              className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all"
+              className="p-2.5 text-secondary/70 bg-white border border-gray-200 shadow-sm rounded-md hover:bg-secondary hover:text-white transition-all"
               title="Blocco Campi"
             >
               <Shield className="h-5 w-5" />
@@ -942,13 +942,11 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
         <ModalContent
           size="md"
+          showBuiltinClose={false}
           className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
         >
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-lg">Filtra Prenotazioni</ModalTitle>
-            <ModalDescription className="text-white/80 text-xs">
-              Seleziona i criteri per visualizzare le prenotazioni.
-            </ModalDescription>
           </ModalHeader>
 
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">

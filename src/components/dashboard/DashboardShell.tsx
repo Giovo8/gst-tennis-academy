@@ -128,7 +128,7 @@ export default function DashboardShell({
     <div className="min-h-screen bg-gray-50">
 
       {/* Top Navbar - solo mobile */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-[110] bg-white border-b border-gray-200">
+      <header className="lg:hidden fixed top-2 left-6 right-6 z-[110] bg-white border border-gray-200 shadow-sm rounded-xl">
         <div className="h-16 relative flex items-center px-4">
           <button
             onClick={() => { setMobileOpen(!mobileOpen); setNotifCloseSignal(s => s + 1); }}
@@ -147,7 +147,7 @@ export default function DashboardShell({
       </header>
 
       {/* Mobile sidebar overlay */}
-      <aside className={`lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-white z-[100] flex flex-col transition-transform duration-300 ease-in-out ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`lg:hidden fixed top-[5rem] left-6 right-6 z-[100] flex flex-col bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-200 max-h-[calc(100dvh-6rem)] transition-all duration-300 ease-in-out ${mobileOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}>
           <div className="px-4 py-3 bg-secondary flex items-center flex-shrink-0">
             <h3 className="font-semibold text-white">Area GST</h3>
           </div>
@@ -188,7 +188,7 @@ export default function DashboardShell({
         </aside>
 
       {/* Layout desktop: container con sidebar + contenuto in riga */}
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-8 flex min-h-screen pt-16 lg:pt-0">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-8 flex min-h-screen pt-[4.5rem] lg:pt-0">
 
         {/* Sidebar desktop - sticky dentro il container */}
         <aside className={`hidden lg:flex flex-col flex-shrink-0 sticky top-4 h-[calc(100vh-2rem)] bg-white border border-gray-200 rounded-2xl overflow-hidden -ml-8 mr-8 shadow-sm transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>

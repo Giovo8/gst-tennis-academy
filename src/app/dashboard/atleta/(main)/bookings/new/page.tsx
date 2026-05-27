@@ -1099,9 +1099,9 @@ function NewBookingPageInner() {
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10 [&>button]:top-4 [&>button]:right-7 flex flex-col max-h-[90dvh]">
-          <ModalHeader className="px-7! pt-4! pb-4! bg-secondary border-b border-gray-200 dark:!border-gray-200">
-            <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
+        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 flex flex-col max-h-[90dvh]">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+            <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
           </ModalHeader>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white overflow-y-auto flex-1">
             <div className="space-y-3">

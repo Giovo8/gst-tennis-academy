@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, LogOut, LayoutDashboard, Shield, Instagram, Facebook, Youtube } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 export default function PublicNavbar() {
-  const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userFullName, setUserFullName] = useState<string | null>(null);
@@ -80,114 +78,32 @@ export default function PublicNavbar() {
   };
 
   return (
-    <nav className="bg-white sticky top-0 z-50 safe-top">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Left Side - Mobile Menu Button on mobile, Navigation Links on desktop */}
-          <div className="flex items-center gap-4">
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 transition min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
-              style={{ color: 'var(--secondary)' }}
-              aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-
-            {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-              <Link
-                href="/tornei"
-                className="font-semibold transition-colors"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-frozen-lake-900)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-              >
-                Tornei
-              </Link>
-              <Link
-                href="/news"
-                className="font-semibold transition-colors"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-frozen-lake-900)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-              >
-                News
-              </Link>
-              <Link
-                href="/lavora-con-noi"
-                className="font-semibold transition-colors"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-frozen-lake-900)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary)'}
-              >
-                Lavora con Noi
-              </Link>
-            </div>
-          </div>
-
-          {/* Center - Logo */}
-          <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center min-w-0 flex-shrink absolute left-1/2 transform -translate-x-1/2">
+    <nav className="bg-white sticky top-2 z-50 safe-top shadow-sm mx-6 mt-2 rounded-xl border border-gray-200">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo - left */}
+          <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-2 flex-shrink-0">
             <Image 
               src="/images/logo-tennis.png" 
               alt="GST Tennis Academy" 
               width={48} 
               height={48}
               priority
-              className="h-10 w-10 sm:h-12 sm:w-12"
+              className="h-8 w-8"
             />
+            <span className="text-lg font-bold text-secondary">GST Academy</span>
           </Link>
 
-          {/* Right Side - Area GST Button */}
-          <div className="flex items-center">
-            <Link
-              href={getDashboardLink()}
-              className="px-4 py-2.5 rounded-md text-white font-medium text-sm transition-all whitespace-nowrap flex items-center justify-center bg-secondary hover:opacity-90"
-            >
-              Area GST
-            </Link>
-          </div>
+          {/* Area GST Button - right */}
+          <Link
+            href={getDashboardLink()}
+            className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-white bg-secondary shadow-sm hover:opacity-90 transition-all whitespace-nowrap"
+          >
+            Area GST
+          </Link>
         </div>
 
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="lg:hidden mt-2 pt-3 sm:pt-4 space-y-2 sm:space-y-3 pb-3 sm:pb-4 animate-in slide-in-from-top duration-300">
-            {/* Navigation Links */}
-            <div className="space-y-2 px-2">
-              <Link
-                href="/tornei"
-                onClick={() => setIsOpen(false)}
-                className="block px-4 py-3 rounded-lg font-semibold transition-colors min-h-[48px] touch-manipulation"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                Tornei
-              </Link>
-              <Link
-                href="/news"
-                onClick={() => setIsOpen(false)}
-                className="block px-4 py-3 rounded-lg font-semibold transition-colors min-h-[48px] touch-manipulation"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                News
-              </Link>
-              <Link
-                href="/lavora-con-noi"
-                onClick={() => setIsOpen(false)}
-                className="block px-4 py-3 rounded-lg font-semibold transition-colors min-h-[48px] touch-manipulation"
-                style={{ color: 'var(--secondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                Lavora con Noi
-              </Link>
-            </div>
-          </div>
-        )}
+
       </div>
     </nav>
   );

@@ -3,7 +3,7 @@
 export default function ServicesSection() {
   return (
     <section className="bg-white py-20 sm:py-24 md:py-28">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
             Cosa offriamo

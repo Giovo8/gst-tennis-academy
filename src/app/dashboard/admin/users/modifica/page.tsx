@@ -1146,8 +1146,8 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
+        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-lg">
               {getCalendarModalTitle()}
             </ModalTitle>
@@ -1236,7 +1236,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       {showCertificatoModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-secondary rounded-t-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-secondary rounded-t-xl">
               <h3 className="text-xl font-bold text-white">Certificato Medico</h3>
               <button
                 onClick={() => setShowCertificatoModal(false)}
@@ -1312,7 +1312,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-secondary rounded-t-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-secondary rounded-t-xl">
               <h3 className="text-xl font-bold text-white">Cambia Avatar</h3>
               <button
                 onClick={() => setShowAvatarModal(false)}

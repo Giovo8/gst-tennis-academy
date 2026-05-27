@@ -872,7 +872,7 @@ export default function AtletaMailPage() {
         >
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+            <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
                 {selectedMembers.length > 0 ? <Users className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
                 <h3 className="text-lg font-bold text-white">{selectedMembers.length > 0 ? `Nuovo Gruppo (${selectedMembers.length} membri)` : 'Nuova Chat'}</h3>
@@ -1046,7 +1046,7 @@ export default function AtletaMailPage() {
         >
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+            <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
                 <Users className="h-6 w-6 text-white" />
                 <h3 className="text-lg font-bold text-white">Nuovo Gruppo</h3>
@@ -1220,7 +1220,7 @@ export default function AtletaMailPage() {
         >
           <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-secondary rounded-t-xl">
+            <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-t-xl">
               <div className="flex items-center gap-3">
                 <Settings className="h-6 w-6 text-white" />
                 <h3 className="text-lg font-bold text-white">Impostazioni Gruppo</h3>

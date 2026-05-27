@@ -3,13 +3,10 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, AlertCircle, Calendar, ChevronDown, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { Loader2, AlertCircle, Calendar, ChevronDown, ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
 import {
   Modal,
   ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalDescription,
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
@@ -124,7 +121,7 @@ function SearchableSelect({
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+        className="w-full rounded-lg border border-gray-200 bg-white shadow-sm px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
       >
         <span className={selectedOption ? "" : "text-secondary/40"}>
           {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
@@ -955,8 +952,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             )}
 
             {/* Card Dettagli prenotazione */}
-            <div className="bg-white border border-gray-200 rounded-xl">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
               </div>
               {courtsLoading ? (
@@ -977,7 +974,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         onClick={() => {
                           setBookingType(type.value);
                         }}
-                        className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
                           bookingType === type.value
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1000,7 +997,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                           key={formatOption.value}
                           type="button"
                           onClick={() => handleMatchFormatChange(formatOption.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
                             matchFormat === formatOption.value
                               ? "bg-secondary text-white border-secondary"
                               : "bg-white text-secondary border-gray-300 hover:border-secondary"
@@ -1044,7 +1041,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                           setSelectedCourt(c);
                           setSelectedSlots([]);
                         }}
-                        className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                        className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
                           selectedCourt === c
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1060,8 +1057,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             </div>
 
             {/* Card Partecipanti */}
-            <div className="bg-white border border-gray-200 rounded-xl">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
               </div>
               <div className="p-4 sm:p-6">
@@ -1084,8 +1081,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             </div>
 
             {/* Card Orari disponibili */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
               </div>
               <div className="p-4 sm:p-6">
@@ -1213,8 +1210,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             </div>
 
             {/* Card Note */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
               </div>
               <div className="p-4 sm:p-6">
@@ -1223,7 +1220,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Eventuali note..."
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
                 />
               </div>
             </div>
@@ -1233,7 +1230,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
               type="button"
               onClick={handleSave}
               disabled={saving || !canSave}
-              className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+              className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md shadow-sm transition-all flex items-center justify-center gap-3"
             >
               {saving ? (
                 <>
@@ -1253,10 +1250,17 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 [&>button]:text-white/80 [&>button:hover]:text-white [&>button:hover]:bg-white/10">
-          <ModalHeader className="px-4 py-3 bg-secondary border-b border-gray-200 dark:!border-gray-200">
-            <ModalTitle className="text-white text-lg">Seleziona Data</ModalTitle>
-          </ModalHeader>
+        <ModalContent size="sm" className="overflow-hidden rounded-xl !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200" showBuiltinClose={false}>
+          <div className="flex items-center justify-between px-4 py-3 bg-secondary border-b border-secondary">
+            <h3 className="text-base font-semibold text-white">Seleziona Data</h3>
+            <button
+              type="button"
+              onClick={() => setDatePickerModalOpen(false)}
+              className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <X className="h-5 w-5 text-white/70" />
+            </button>
+          </div>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
             <div className="space-y-3">
               <div className="flex items-center justify-between">

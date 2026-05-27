@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Loader2, Facebook, Instagram, Linkedin, Twitter, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 type StaffMember = {
@@ -90,6 +90,18 @@ const defaultStaff: StaffMember[] = [
 export default function StaffSection() {
   const [staff, setStaff] = useState<StaffMember[]>(defaultStaff);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  function scrollTo(direction: "left" | "right") {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = 320 + 24; // w-80 + gap-6
+    if (direction === "right") {
+      el.scrollBy({ left: cardWidth, behavior: "smooth" });
+    } else {
+      el.scrollBy({ left: -cardWidth, behavior: "smooth" });
+    }
+  }
 
   async function loadStaff() {
     const { data, error } = await supabase
@@ -139,13 +151,10 @@ export default function StaffSection() {
 
   return (
     <section id="staff" className="py-20 sm:py-24 md:py-28 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
-            Il team
-          </p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
+          <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             I nostri maestri
           </h2>
           <p className="text-base sm:text-lg max-w-2xl text-gray-500">
@@ -153,14 +162,17 @@ export default function StaffSection() {
           </p>
         </div>
 
-        {/* Staff Grid */}
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-16 sm:mb-20">
-          {staff.map((member) => (
+        {/* Staff Scroll Row */}
+        <div
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [padding-inline:calc(50%-9rem)] sm:[padding-inline:0]"
+        >
+          {staff.map((member, i) => (
             <article
-              key={member.id}
-              className="group flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              key={`${member.id}-${i}`}
+              className="group flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex-shrink-0 w-72 sm:w-80 snap-center"
             >
-              {/* Square image */}
+              {/* 16/9 image */}
               <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
                 {member.image_url ? (
                   <img
@@ -190,13 +202,9 @@ export default function StaffSection() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary/60 mb-4">
                   {member.role}
                 </p>
-                <p className="text-sm leading-relaxed text-gray-500 mb-6 flex-1">
-                  {member.bio || 'Professionista certificato con anni di esperienza.'}
-                </p>
-
                 {/* Socials */}
                 {(member.facebook_url || member.instagram_url || member.linkedin_url || member.twitter_url) && (
-                  <div className="flex gap-2 pt-5 border-t border-gray-100">
+                  <div className="flex gap-2 pt-5 border-t border-gray-200">
                     {member.facebook_url && (
                       <a
                         href={member.facebook_url}
@@ -248,9 +256,27 @@ export default function StaffSection() {
           ))}
         </div>
 
+        {/* Nav buttons */}
+        <div className="flex justify-center gap-2 mb-8 sm:mb-10">
+          <button
+            onClick={() => scrollTo("left")}
+            aria-label="Scorri a sinistra"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-white hover:bg-secondary/80 transition-colors shadow-sm"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => scrollTo("right")}
+            aria-label="Scorri a destra"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-white hover:bg-secondary/80 transition-colors shadow-sm"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
         {/* Join Team CTA */}
-        <div className="text-center pt-4 pb-2 border-t border-gray-100 mt-4">
-          <h3 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
+        <div className="text-center pt-0 pb-2 mt-0">
+          <h3 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             Unisciti al team
           </h3>
           <p className="text-base sm:text-lg mb-8 max-w-2xl mx-auto text-gray-500">
@@ -258,7 +284,7 @@ export default function StaffSection() {
           </p>
           <Link
             href="/lavora-con-noi"
-            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-md border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all"
+            className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3.5 sm:py-3 text-sm font-medium text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all"
           >
             Candidati
           </Link>
