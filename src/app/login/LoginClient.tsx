@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { getDestinationForRole, type UserRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/activity/logActivity";
+import PublicNavbar from "@/components/layout/PublicNavbar";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -87,23 +88,17 @@ export default function LoginClient() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-white flex flex-col">
-      {/* Logo Header */}
-      <div className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-14 sm:h-20">
-            <img src="/images/logo-tennis.png" alt="GST Tennis Academy" className="h-10 w-10 sm:h-12 sm:w-12" />
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1400px] mx-auto min-h-screen flex flex-col bg-gray-50">
+        <PublicNavbar />
 
-      {/* Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-4 sm:py-12">
-        <div className="w-full max-w-md">
+        {/* Login Form */}
+        <main className="flex-1 flex items-center justify-center px-6 sm:px-4 py-10">
+        <div className="w-full sm:max-w-md bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-10">
           {/* Login Card */}
           <div className="mb-4 sm:mb-10">
           <div className="mb-6 sm:mb-10 text-center">
-            <h2 className="text-[2.45rem] sm:text-4xl md:text-5xl font-bold text-secondary mb-3">Benvenuto</h2>
+            <h2 className="text-[2.45rem] sm:text-4xl md:text-5xl font-bold text-secondary mb-1 sm:mb-3">Benvenuto</h2>
             <p className="text-[1.22rem] sm:text-lg text-secondary opacity-70">Accedi al tuo account</p>
           </div>
 
@@ -212,8 +207,9 @@ export default function LoginClient() {
             Torna alla homepage
           </Link>
         </div>
+        </div>
+        </main>
       </div>
-      </div>
-    </main>
+    </div>
   );
 }
