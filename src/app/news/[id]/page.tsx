@@ -238,85 +238,101 @@ export default function NewsDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        <PublicNavbar />
-        <main className="bg-white">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-20">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-secondary" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto bg-white">
+          <PublicNavbar />
+          <main>
+            <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 py-20">
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-secondary" />
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-white">
-        <PublicNavbar />
-        <main className="bg-white">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-20">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-secondary mb-4">
-                Articolo non trovato
-              </h1>
-              <p className="text-secondary/70 mb-8">
-                L&apos;articolo che stai cercando non esiste o non è più disponibile.
-              </p>
-              <Link
-                href="/news"
-                className="inline-flex items-center text-secondary hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Torna alle news
-              </Link>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto bg-white">
+          <PublicNavbar />
+          <main>
+            <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 py-20">
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-secondary mb-4">
+                  Articolo non trovato
+                </h1>
+                <p className="text-secondary/70 mb-8">
+                  L&apos;articolo che stai cercando non esiste o non è più disponibile.
+                </p>
+                <Link
+                  href="/news"
+                  className="inline-flex items-center text-secondary hover:opacity-70 transition-opacity"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Torna alle news
+                </Link>
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <PublicNavbar />
-      <main className="bg-white">
-        {/* Hero Image */}
-        {post.image_url && (
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pt-8 mb-8">
-            <div className="w-full aspect-[16/9] overflow-hidden rounded-lg">
-              <img
-                src={post.image_url}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Article Content */}
-        <article className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
-          {/* Meta information */}
-          <div className="flex flex-wrap items-center gap-4 mb-6">
-            <div className="flex items-center text-sm text-secondary/70">
-              <Tag className="w-4 h-4 mr-2" />
-              <span className="font-semibold">
-                {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
-              </span>
-            </div>
-            <div className="flex items-center text-sm text-secondary/70">
-              <Calendar className="w-4 h-4 mr-2" />
-              <time dateTime={post.published_at || post.created_at}>
-                {formatDate(post.published_at || post.created_at)}
-              </time>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1400px] mx-auto bg-white">
+        <PublicNavbar />
+        <main>
+          {/* Back link */}
+          <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pt-10">
+            <Link
+              href="/news"
+              className="inline-flex items-center gap-2 text-sm text-secondary/60 hover:text-secondary transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Tutte le news
+            </Link>
           </div>
 
-          {/* Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-6">
-            {post.title}
-          </h1>
+          {/* Hero Image */}
+          {post.image_url && (
+            <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pt-6 mb-8">
+              <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl">
+                <img
+                  src={post.image_url}
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Article Content */}
+          <article className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pb-12">
+            {/* Meta information */}
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+              <div className="flex items-center text-sm text-secondary/70">
+                <Tag className="w-4 h-4 mr-2" />
+                <span className="font-semibold">
+                  {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
+                </span>
+              </div>
+              <div className="flex items-center text-sm text-secondary/70">
+                <Calendar className="w-4 h-4 mr-2" />
+                <time dateTime={post.published_at || post.created_at}>
+                  {formatDate(post.published_at || post.created_at)}
+                </time>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-8 leading-tight tracking-tight">
+              {post.title}
+            </h1>
 
           {/* Content */}
           <div className="prose prose-lg max-w-none text-secondary/90">
@@ -369,24 +385,22 @@ export default function NewsDetailPage() {
               );
             })}
           </div>
-        </article>
+          </article>
 
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-200">
-            <h2 className="text-2xl sm:text-3xl font-bold text-secondary mb-8">
-              Articoli correlati
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map((relatedPost) => (
-                <Link
-                  key={relatedPost.id}
-                  href={`/news/${relatedPost.id}`}
-                  className="group"
-                >
-                  <article className="flex flex-col">
-                    {/* Image */}
-                    <div className="w-full aspect-[4/3] mb-4 overflow-hidden rounded-lg">
+          {/* Related Posts */}
+          {relatedPosts.length > 0 && (
+            <section className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8 py-16 border-t border-gray-200">
+              <h2 className="text-2xl sm:text-3xl font-bold text-secondary mb-8 tracking-tight">
+                Articoli correlati
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {relatedPosts.map((relatedPost) => (
+                  <Link
+                    key={relatedPost.id}
+                    href={`/news/${relatedPost.id}`}
+                    className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                  >
+                    <div className="w-full aspect-[16/9] overflow-hidden">
                       {relatedPost.image_url ? (
                         <img
                           src={relatedPost.image_url}
@@ -411,23 +425,29 @@ export default function NewsDetailPage() {
                         </div>
                       )}
                     </div>
-
-                    {/* Category */}
-                    <span className="text-xs font-semibold text-secondary mb-2">
-                      {relatedPost.category}
-                    </span>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold text-secondary group-hover:opacity-70 transition-opacity">
-                      {relatedPost.title}
-                    </h3>
-                  </article>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
+                    <div className="flex flex-col flex-grow p-7">
+                      <h3 className="text-xl font-bold text-secondary mb-3 tracking-tight leading-tight group-hover:text-secondary/80 transition-colors">
+                        {relatedPost.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 flex-grow mb-5">
+                        {relatedPost.excerpt || relatedPost.content.substring(0, 100)}
+                      </p>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <span className="text-xs text-gray-400">
+                          {formatDate(relatedPost.published_at || relatedPost.created_at)}
+                        </span>
+                        <span className="text-xs font-semibold text-secondary">
+                          {relatedPost.category.charAt(0).toUpperCase() + relatedPost.category.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

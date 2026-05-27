@@ -5,6 +5,28 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
+function formatNewsDate(dateString: string | undefined): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const formatted = new Intl.DateTimeFormat("it-IT", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+  return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
+}
+
+function relativeDate(dateString: string | undefined): string {
+  if (!dateString) return "";
+  const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return "Oggi";
+  if (diff === 1) return "Ieri";
+  if (diff < 7) return `${diff} giorni fa`;
+  if (diff < 30) return `${Math.floor(diff / 7)} settimane fa`;
+  return formatNewsDate(dateString);
+}
+
 type NewsPost = {
   id: string;
   title: string;
@@ -96,7 +118,7 @@ export default function AdminNewsBoard() {
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button
           onClick={() => setActiveCategory("tutte")}
-          className={`text-sm px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
             activeCategory === "tutte"
               ? "bg-secondary text-white"
               : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
@@ -108,7 +130,7 @@ export default function AdminNewsBoard() {
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`text-sm px-4 py-2 rounded-md font-medium transition-colors ${
+            className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
               activeCategory === cat
                 ? "bg-secondary text-white"
                 : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
@@ -121,81 +143,62 @@ export default function AdminNewsBoard() {
 
       {/* News Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {filteredPosts.map((post) => {
-          const readTime = "5 min read";
+        {filteredPosts.map((post) => (
+          <Link
+            key={post.id}
+            href={`/news/${post.id}`}
+            className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+          >
+            {/* Image */}
+            <div className="w-full aspect-[16/9] overflow-hidden">
+              {post.image_url ? (
+                <img
+                  src={post.image_url}
+                  alt={post.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-secondary/5">
+                  <svg
+                    className="w-14 h-14 text-secondary/20"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
 
-          return (
-            <article key={post.id} className="flex flex-col group">
-              {/* Image */}
-              <div className="w-full aspect-[4/3] mb-4 overflow-hidden">
-                {post.image_url ? (
-                  <img
-                    src={post.image_url}
-                    alt={post.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-secondary/5">
-                    <svg
-                      className="w-16 h-16 sm:w-20 sm:h-20 text-secondary/20"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              {/* Meta info */}
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs font-semibold text-secondary">
-                  {post.category}
-                </span>
-                <span className="text-xs text-secondary/60">
-                  {readTime}
-                </span>
-              </div>
-
+            <div className="flex flex-col flex-grow p-7">
               {/* Title */}
-              <h3 className="text-lg sm:text-xl font-bold text-secondary mb-2 group-hover:opacity-80 transition-opacity">
+              <h3 className="text-xl sm:text-2xl font-bold text-secondary mb-3 tracking-tight leading-tight group-hover:text-secondary/80 transition-colors">
                 {post.title}
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-secondary/70 mb-4 line-clamp-2 flex-grow">
+              <p className="text-sm text-gray-500 mb-6 line-clamp-2 flex-grow">
                 {post.excerpt || post.content.substring(0, 120)}
               </p>
 
-              {/* Link */}
-              <Link
-                href={`/news/${post.id}`}
-                className="inline-flex items-center text-sm font-semibold text-secondary hover:opacity-70 transition-opacity group/link"
-              >
-                Leggi tutto
-                <svg 
-                  className="w-4 h-4 ml-1 transition-transform group-hover/link:translate-x-1" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9 5l7 7-7 7" 
-                  />
-                </svg>
-              </Link>
-            </article>
-          );
-        })}
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-5 border-t border-gray-200">
+                <span className="text-xs text-gray-400">
+                  {relativeDate(post.published_at || post.created_at)}
+                </span>
+                <span className="text-xs font-semibold text-secondary">
+                  {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
