@@ -10,8 +10,6 @@ export default function PublicNavbar() {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userFullName, setUserFullName] = useState<string | null>(null);
-
-
   useEffect(() => {
     // Check current user
     supabase.auth.getUser().then(({ data: { user } }) => {
