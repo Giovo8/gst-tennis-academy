@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+import { toast } from 'sonner';
 import { getAvatarUrl } from '@/lib/utils';
 
 interface Participant {
@@ -232,15 +233,15 @@ export default function ChampionshipStandingsView({
       const data = await res.json();
 
       if (res.ok) {
-        alert(data.message || 'Calendario generato con successo!');
+        toast.success(data.message || 'Calendario generato con successo!');
         await loadMatches();
         if (onMatchUpdate) onMatchUpdate();
       } else {
-        alert(data.error || 'Errore nella generazione del calendario');
+        toast.error(data.error || 'Errore nella generazione del calendario');
       }
     } catch (error) {
       console.error('Error generating championship:', error);
-      alert('Errore nella generazione del calendario');
+      toast.error('Errore nella generazione del calendario');
     } finally {
       setGenerating(false);
     }

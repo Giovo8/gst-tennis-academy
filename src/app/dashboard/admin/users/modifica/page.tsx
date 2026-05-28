@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2, ArrowLeft, Crown, Dumbbell, Home, User, Camera, Upload, Link as LinkIcon, X, FileText, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Modal,
   ModalContent,
@@ -105,7 +106,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         .single();
 
       if (error || !data) {
-        alert("Utente non trovato");
+        toast.warning("Utente non trovato");
         router.push(`${basePath}/users`);
         return;
       }
@@ -154,7 +155,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       });
     } catch (error) {
       console.error("Error loading user:", error);
-      alert("Errore nel caricamento dell'utente");
+      toast.error("Errore nel caricamento dell'utente");
       router.push(`${basePath}/users`);
     } finally {
       setLoading(false);
@@ -165,7 +166,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     e.preventDefault();
 
     if (!formData.email || !formData.full_name) {
-      alert("Email e Nome sono obbligatori");
+      toast.warning("Email e Nome sono obbligatori");
       return;
     }
 
@@ -228,11 +229,11 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         }
       }
 
-      alert("Profilo aggiornato con successo!");
+      toast.success("Profilo aggiornato con successo!");
       router.push(`${basePath}/users`);
     } catch (error: any) {
       console.error("Error updating user:", error);
-      alert(error.message || "Errore durante l'aggiornamento del profilo");
+      toast.error(error.message || "Errore durante l'aggiornamento del profilo");
     } finally {
       setUpdating(false);
     }
@@ -243,12 +244,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("L'immagine deve essere inferiore a 5MB");
+      toast.warning("L'immagine deve essere inferiore a 5MB");
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      alert("Il file deve essere un'immagine");
+      toast.warning("Il file deve essere un'immagine");
       return;
     }
 
@@ -281,7 +282,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
       if (updateError) {
         console.error("Update error:", updateError);
-        alert("Errore durante l'aggiornamento del profilo");
+        toast.error("Errore durante l'aggiornamento del profilo");
         return;
       }
 
@@ -289,7 +290,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      alert("Errore durante l'upload dell'immagine");
+      toast.error("Errore durante l'upload dell'immagine");
     } finally {
       setUploadingAvatar(false);
     }
@@ -301,7 +302,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     try {
       new URL(avatarUrl);
     } catch {
-      alert("Inserisci un URL valido");
+      toast.warning("Inserisci un URL valido");
       return;
     }
 
@@ -323,7 +324,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
       if (updateError) {
         console.error("Update error:", updateError);
-        alert("Errore durante l'aggiornamento del profilo");
+        toast.error("Errore durante l'aggiornamento del profilo");
         return;
       }
 
@@ -332,7 +333,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       
     } catch (error) {
       console.error("Error updating avatar:", error);
-      alert("Errore durante l'aggiornamento dell'immagine");
+      toast.error("Errore durante l'aggiornamento dell'immagine");
     } finally {
       setUploadingAvatar(false);
     }
@@ -372,7 +373,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       setAvatarUrl("");
     } catch (error) {
       console.error("Error removing avatar:", error);
-      alert("Errore durante la rimozione dell'avatar");
+      toast.error("Errore durante la rimozione dell'avatar");
     } finally {
       setUploadingAvatar(false);
     }
@@ -383,7 +384,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     try {
       new URL(certificatoLinkUrl);
     } catch {
-      alert("Inserisci un URL valido");
+      toast.warning("Inserisci un URL valido");
       return;
     }
     setFormData((prev) => ({ ...prev, certificato_medico_url: certificatoLinkUrl }));
@@ -396,12 +397,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
     if (!file || !userId) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("Il file deve essere inferiore a 10MB");
+      toast.warning("Il file deve essere inferiore a 10MB");
       return;
     }
 
     if (file.type !== "application/pdf") {
-      alert("Il file deve essere un PDF");
+      toast.warning("Il file deve essere un PDF");
       return;
     }
 
@@ -429,7 +430,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       setFormData((prev) => ({ ...prev, certificato_medico_url: urlData.publicUrl }));
     } catch (error) {
       console.error("Error uploading certificate:", error);
-      alert("Errore durante il caricamento del certificato");
+      toast.error("Errore durante il caricamento del certificato");
     } finally {
       setUploadingCertificato(false);
       event.target.value = "";
@@ -544,7 +545,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       setFormData((prev) => ({ ...prev, certificato_medico_url: "" }));
     } catch (error) {
       console.error("Error removing certificate:", error);
-      alert("Errore durante la rimozione del certificato");
+      toast.error("Errore durante la rimozione del certificato");
     } finally {
       setUploadingCertificato(false);
     }
@@ -577,10 +578,10 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Errore durante l'invio dell'email di reset password");
 
-      alert("Email di reset password inviata con successo.");
+      toast.success("Email di reset password inviata con successo.");
     } catch (error: any) {
       console.error("Error resetting password:", error);
-      alert(error?.message || "Errore durante l'invio dell'email di reset password");
+      toast.error(error?.message || "Errore durante l'invio dell'email di reset password");
     } finally {
       setResettingPassword(false);
     }
@@ -603,7 +604,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       router.push(`${basePath}/users`);
     } catch (error: any) {
       console.error("Error deleting user:", error);
-      alert(error?.message || "Errore durante l'eliminazione dell'utente");
+      toast.error(error?.message || "Errore durante l'eliminazione dell'utente");
       setDeletingUser(false);
     }
   }
@@ -841,7 +842,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     onClick={() =>
                       setFormData((prev) => ({
                         ...prev,
-                        role: role as any,
+                        role: role as "admin" | "gestore" | "maestro" | "atleta",
                         also_maestro: ["admin", "gestore"].includes(role) ? prev.also_maestro : false,
                       }))
                     }

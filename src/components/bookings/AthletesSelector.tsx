@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { type UserRole } from "@/lib/roles";
+import { toast } from "sonner";
 
 interface Athlete {
   id: string;
@@ -117,7 +118,7 @@ export default function AthletesSelector({
 
   const handleAddGuest = () => {
     if (!guestName.trim()) {
-      alert("Inserisci il nome dell'ospite");
+      toast.warning("Inserisci il nome dell'ospite");
       return;
     }
 

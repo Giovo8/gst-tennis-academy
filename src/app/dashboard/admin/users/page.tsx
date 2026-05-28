@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Users, Loader2, Search, Crown, GraduationCap, Home, UserCheck, Ticket, Plus, UserPlus, Trash2, Edit2, X, Check, Eye, MoreVertical, SlidersHorizontal, KeyRound } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui";
 
 type Profile = {
@@ -78,11 +79,11 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
         throw new Error(data.error || "Errore durante l'eliminazione");
       }
 
-      alert("Utente eliminato con successo!");
+      toast.success("Utente eliminato con successo!");
       loadUsers();
     } catch (error: any) {
       console.error("Error deleting user:", error);
-      alert(error.message || "Errore durante l'eliminazione dell'utente");
+      toast.error(error.message || "Errore durante l'eliminazione dell'utente");
     }
   }
 
@@ -114,10 +115,10 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
         throw new Error(data.error || "Errore durante l'invio del reset password");
       }
 
-      alert("Email di reset password inviata con successo.");
+      toast.success("Email di reset password inviata con successo.");
     } catch (error: any) {
       console.error("Error resetting password:", error);
-      alert(error.message || "Errore durante l'invio dell'email di reset password");
+      toast.error(error.message || "Errore durante l'invio dell'email di reset password");
     }
   }
 

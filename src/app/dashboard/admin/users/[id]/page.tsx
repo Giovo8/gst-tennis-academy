@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import { Loader2, AlertCircle, User, Mail, Phone, Calendar, MapPin, CreditCard, FileText, Award, Crown, Dumbbell, Home, UserCheck, Pencil, Shield, Trash2, KeyRound } from "lucide-react";
 
 type UserProfile = {
@@ -508,9 +509,9 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
 
               const data = await response.json();
               if (!response.ok) throw new Error(data.error || "Impossibile inviare l'email di reset.");
-              alert("Email di reset password inviata con successo.");
+              toast.success("Email di reset password inviata con successo.");
             } catch (err: any) {
-              alert("Errore: " + (err.message || "Impossibile inviare l'email di reset."));
+              toast.error("Errore: " + (err.message || "Impossibile inviare l'email di reset."));
             } finally {
               setResettingPassword(false);
             }
@@ -530,7 +531,7 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
               if (error) throw error;
               router.push(`${basePath}/users`);
             } catch (err: any) {
-              alert("Errore: " + (err.message || "Impossibile eliminare l'utente."));
+              toast.error("Errore: " + (err.message || "Impossibile eliminare l'utente."));
               setDeletingUser(false);
             }
           }}

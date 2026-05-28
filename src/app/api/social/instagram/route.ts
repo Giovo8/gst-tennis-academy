@@ -36,7 +36,7 @@ export async function GET(req: Request) {
               const data = await res.json();
               // traverse to media edges (best-effort for common schema)
               const edges = ((data.graphql && data.graphql.user && data.graphql.user.edge_owner_to_timeline_media && data.graphql.user.edge_owner_to_timeline_media.edges) ||
-                (data.items)) as any[] | undefined;
+                (data.items)) as unknown[] | undefined;
               if (edges && edges.length) {
                 return edges.slice(0, 6).map((e: any) => {
                   const shortcode = e.shortcode || (e.code || (e.id ? String(e.id) : null));

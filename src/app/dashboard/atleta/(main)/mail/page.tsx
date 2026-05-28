@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -514,7 +515,7 @@ export default function AtletaMailPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        alert("Sessione non valida");
+        toast.error("Sessione non valida");
         return;
       }
 
@@ -535,9 +536,9 @@ export default function AtletaMailPage() {
         const errorData = await res.json();
         console.error("Error creating group:", errorData);
         if (errorData.error?.includes("does not exist")) {
-          alert("La funzionalità gruppi non è ancora disponibile. Esegui la migration del database.");
+          toast.warning("La funzionalità gruppi non è ancora disponibile. Esegui la migration del database.");
         } else {
-          alert(errorData.error || "Errore nella creazione del gruppo");
+          toast.error(errorData.error || "Errore nella creazione del gruppo");
         }
         return;
       }
@@ -564,7 +565,7 @@ export default function AtletaMailPage() {
       closeModal();
     } catch (error) {
       console.error("Errore nella creazione del gruppo:", error);
-      alert("Errore nella creazione del gruppo");
+      toast.error("Errore nella creazione del gruppo");
     } finally {
       setCreatingGroup(false);
     }
@@ -578,7 +579,7 @@ export default function AtletaMailPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        alert("Sessione non valida");
+        toast.error("Sessione non valida");
         return;
       }
 
@@ -592,7 +593,7 @@ export default function AtletaMailPage() {
       if (!res.ok) {
         const errorData = await res.json();
         console.error("Error leaving group:", errorData);
-        alert(errorData.error || "Errore nell'abbandonare il gruppo");
+        toast.error(errorData.error || "Errore nell'abbandonare il gruppo");
         return;
       }
 
@@ -601,7 +602,7 @@ export default function AtletaMailPage() {
       await loadConversations();
     } catch (error) {
       console.error("Errore:", error);
-      alert("Errore nell'abbandonare il gruppo");
+      toast.error("Errore nell'abbandonare il gruppo");
     }
   }
 

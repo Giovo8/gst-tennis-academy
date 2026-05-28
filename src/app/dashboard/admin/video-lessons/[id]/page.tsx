@@ -13,6 +13,7 @@ import {
   Play,
 } from "lucide-react";
 import AuthGuard from "@/components/auth/AuthGuard";
+import { toast } from "sonner";
 
 type VideoLesson = {
   id: string;
@@ -133,11 +134,11 @@ export default function VideoDetailPage() {
 
       if (error) throw error;
 
-      alert("Video eliminato con successo!");
+      toast.success("Video eliminato con successo!");
       router.push("/dashboard/admin/video-lessons");
     } catch (error: any) {
       console.error("Error deleting video:", error);
-      alert(error.message || "Errore durante l'eliminazione");
+      toast.error(error.message || "Errore durante l'eliminazione");
     }
   }
 
@@ -152,7 +153,7 @@ export default function VideoDetailPage() {
       setNotesDirty(false);
     } catch (error: any) {
       console.error("Error saving notes:", error);
-      alert(error.message || "Errore durante il salvataggio delle note");
+      toast.error(error.message || "Errore durante il salvataggio delle note");
     } finally {
       setNotesSaving(false);
     }

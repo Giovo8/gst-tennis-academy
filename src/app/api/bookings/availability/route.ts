@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabase/serverClient";
 import { parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 /**
  * API per verificare disponibilità slot in tempo reale
@@ -18,7 +15,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  *   Restituisce: { available, slot, conflicting_bookings }
  */
 export async function GET(request: Request) {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = supabaseServer;
 
   try {
     const { searchParams } = new URL(request.url);

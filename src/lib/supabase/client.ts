@@ -24,7 +24,7 @@ function createSupabaseClient() {
 
     return createBrowserClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        flowType: "implicit",
+        flowType: "pkce",
       },
     });
   } catch (error) {

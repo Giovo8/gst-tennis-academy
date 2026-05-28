@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { UserPlus, Search, X, Loader2, Check } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ManualEnrollmentProps {
   tournamentId: string;
@@ -63,7 +64,7 @@ export default function ManualEnrollment({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        alert('Sessione non valida');
+        toast.error('Sessione non valida');
         setLoading(false);
         return;
       }
@@ -87,7 +88,7 @@ export default function ManualEnrollment({
       setFilteredUsers(athletes);
     } catch (error: any) {
       console.error('Error loading users:', error);
-      alert(error.message || 'Errore nel caricamento degli utenti');
+      toast.error(error.message || 'Errore nel caricamento degli utenti');
     } finally {
       setLoading(false);
     }
@@ -100,7 +101,7 @@ export default function ManualEnrollment({
     } else {
       // Verifica che non si superi il limite
       if (currentParticipants + newSelection.size >= maxParticipants) {
-        alert('Numero massimo di partecipanti raggiunto');
+        toast.warning('Numero massimo di partecipanti raggiunto');
         return;
       }
       newSelection.add(userId);
@@ -110,12 +111,12 @@ export default function ManualEnrollment({
 
   const handleEnrollSelected = async () => {
     if (selectedUserIds.size === 0) {
-      alert('Seleziona almeno un atleta');
+      toast.warning('Seleziona almeno un atleta');
       return;
     }
 
     if (currentParticipants + selectedUserIds.size > maxParticipants) {
-      alert('Numero massimo di partecipanti superato');
+      toast.warning('Numero massimo di partecipanti superato');
       return;
     }
 
@@ -126,7 +127,7 @@ export default function ManualEnrollment({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        alert('Sessione non valida');
+        toast.error('Sessione non valida');
         return;
       }
 
@@ -149,17 +150,17 @@ export default function ManualEnrollment({
       const failedEnrollments = results.filter(res => !res.ok);
 
       if (failedEnrollments.length === 0) {
-        alert(`${selectedUserIds.size} atleta/i iscritto/i con successo!`);
+        toast.success(`${selectedUserIds.size} atleta/i iscritto/i con successo!`);
         setShowModal(false);
         setSelectedUserIds(new Set());
         onEnrollmentSuccess();
       } else {
-        alert(`${results.length - failedEnrollments.length} atleti iscritti, ${failedEnrollments.length} errori`);
+        toast.warning(`${results.length - failedEnrollments.length} atleti iscritti, ${failedEnrollments.length} errori`);
         onEnrollmentSuccess();
       }
     } catch (error) {
       console.error('Error enrolling users:', error);
-      alert('Errore nell\'iscrizione');
+      toast.error('Errore nell\'iscrizione');
     } finally {
       setEnrolling(false);
     }

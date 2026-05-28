@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import {
   Swords,
   Trophy,
@@ -285,15 +286,15 @@ export default function AdminArenaPage() {
       });
 
       if (response.ok) {
-        alert("✅ Stagione resettata con successo!");
+        toast.success("Stagione resettata con successo!");
         loadChallenges();
       } else {
         const error = await response.json();
-        alert(`❌ Errore: ${error.error || "Impossibile resettare la stagione"}`);
+        toast.error(`Errore: ${error.error || "Impossibile resettare la stagione"}`);
       }
     } catch (error) {
       console.error("Error resetting season:", error);
-      alert("❌ Errore durante il reset della stagione");
+      toast.error("Errore durante il reset della stagione");
     } finally {
       setResetting(false);
     }

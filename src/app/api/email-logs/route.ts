@@ -32,13 +32,13 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get("limit") || "50");
 
-    const { data: primaryLogs, error: primaryError } = (await supabaseServer
+    const { data: primaryLogs, error: primaryError } = await supabaseServer
       .from("email_logs")
       .select(
         "id, recipient_email, recipient_name, subject, template_name, status, provider, provider_message_id, sent_at, delivered_at, opened_at, clicked_at, error_message, created_at"
       )
       .order("created_at", { ascending: false })
-      .limit(limit)) as any;
+      .limit(limit);
 
     if (!primaryError) {
       const logs: EmailLogRow[] = (primaryLogs || []).map((row: any) => ({
@@ -48,13 +48,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ logs });
     }
 
-    const { data: fallbackLogs, error: fallbackError } = (await supabaseServer
+    const { data: fallbackLogs, error: fallbackError } = await supabaseServer
       .from("email_log")
       .select(
         "id, recipient_email, recipient_name, subject, template_name, status, provider, sent_at, delivered_at, failed_at, error_message, created_at"
       )
       .order("created_at", { ascending: false })
-      .limit(limit)) as any;
+      .limit(limit);
 
     if (fallbackError) {
       logger.error("Error loading email logs:", {

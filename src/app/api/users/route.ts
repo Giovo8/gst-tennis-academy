@@ -3,7 +3,7 @@ import { supabaseServer } from '@/lib/supabase/serverClient';
 import { isBookableCoachProfile } from '@/lib/roles';
 
 async function getUserProfile(req: Request) {
-  const authHeader = (req as any).headers?.get?.('authorization') ?? null;
+  const authHeader = req.headers.get('authorization') ?? null;
   const token = authHeader?.replace('Bearer ', '') ?? null;
   if (!token) return null;
   

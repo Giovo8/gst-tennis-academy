@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabaseServer = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
 
 // POST - Reset entire Arena season
 export async function POST(req: Request) {
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
+
   try {
-    // Note: This endpoint should only be accessible to admin users
-    // Frontend should verify admin role before calling this endpoint
-    
     // Delete all arena challenges
     const { error: deleteChallengesError } = await supabaseServer
       .from("arena_challenges")

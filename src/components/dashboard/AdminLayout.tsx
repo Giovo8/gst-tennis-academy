@@ -4,6 +4,7 @@ import { useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import DashboardShell, { NavItem } from "@/components/dashboard/DashboardShell";
 import { supabase } from "@/lib/supabase/client";
+import { getSecondaryRoles } from "@/lib/roles";
 import {
   Home,
   LayoutGrid,
@@ -66,9 +67,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setUserAvatar(profile.avatar_url || "");
       setUserRole(profile.role as "admin" | "gestore");
 
-      const secondaryRoles = Array.isArray((profile as any).metadata?.secondary_roles)
-        ? (profile as any).metadata.secondary_roles.map((value: unknown) => String(value).toLowerCase())
-        : [];
+      const secondaryRoles = getSecondaryRoles(profile.metadata);
       setHasSecondaryMaestroRole(secondaryRoles.includes("maestro"));
 
       setLoading(false);

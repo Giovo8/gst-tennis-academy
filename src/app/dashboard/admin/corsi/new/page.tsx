@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Calendar as CalendarIcon,
   CheckCircle,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -18,6 +17,7 @@ import { isBookableCoachProfile } from "@/lib/roles";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
+import SearchableSelect from "@/components/bookings/SearchableSelect";
 import AuthGuard from "@/components/auth/AuthGuard";
 import {
   Modal,
@@ -43,94 +43,6 @@ type SelectedAthlete = {
   phone?: string;
   isRegistered: boolean;
 };
-
-interface SearchableOption {
-  value: string;
-  label: string;
-}
-
-interface SearchableSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: SearchableOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-}
-
-function SearchableSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  searchPlaceholder,
-}: SearchableSelectProps) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-
-  const selectedOption = options.find((opt) => opt.value === value);
-  const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const handleSelect = (val: string) => {
-    onChange(val);
-    setOpen(false);
-  };
-
-  const handleToggle = () => {
-    setOpen((prev) => {
-      const next = !prev;
-      if (!next) setQuery("");
-      return next;
-    });
-  };
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-      >
-        <span className={selectedOption ? "" : "text-secondary/40"}>
-          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
-        </span>
-        <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
-          <div className="p-2 border-b border-gray-100">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder || "Cerca..."}
-              className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
-            />
-          </div>
-          <div className="max-h-56 overflow-auto py-1">
-            {filteredOptions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-secondary/40">Nessun risultato</div>
-            ) : (
-              filteredOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleSelect(opt.value)}
-                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-secondary/5 ${
-                    opt.value === value ? "bg-secondary/10 font-semibold" : ""
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 type SchedulePeriod = { days: string[]; slots: string[]; court: string; start_date: string; end_date: string };
 

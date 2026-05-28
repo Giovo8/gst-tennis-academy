@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 
 export const defaultMetadata: Metadata = {
-  metadataBase: new URL('https://gst-tennis-academy.vercel.app'),
+  metadataBase: new URL('https://www.gstacademy.it'),
   title: {
     default: 'GST Academy',
     template: '%s | GST Academy'
@@ -19,7 +19,7 @@ export const defaultMetadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'it_IT',
-    url: 'https://gst-tennis-academy.vercel.app',
+    url: 'https://www.gstacademy.it',
     siteName: 'GST Tennis Academy',
     title: 'GST Tennis Academy | Scuola Tennis Roma',
     description: 'Scuola tennis a Roma con corsi per tutti i livelli. Prenota lezioni, partecipa ai tornei e migliora il tuo gioco.',
@@ -49,9 +49,7 @@ export const defaultMetadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+
 }
 
 export function generateOrganizationSchema() {
@@ -60,16 +58,16 @@ export function generateOrganizationSchema() {
     '@type': 'SportsActivityLocation',
     name: 'GST Tennis Academy',
     description: 'Scuola tennis a Roma con corsi per tutti i livelli',
-    url: 'https://gst-tennis-academy.vercel.app',
-    logo: 'https://gst-tennis-academy.vercel.app/images/logo-tennis.png',
-    image: 'https://gst-tennis-academy.vercel.app/images/og-image.jpg',
-    telephone: '+39-XXX-XXXXXXX',
+    url: 'https://www.gstacademy.it',
+    logo: 'https://www.gstacademy.it/images/logo-tennis.png',
+    image: 'https://www.gstacademy.it/images/og-image.jpg',
+    telephone: '+39 379 195 8651',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Via Example',
-      addressLocality: 'Roma',
+      streetAddress: 'Via Cassia, 24300',
+      addressLocality: 'Formello',
       addressRegion: 'RM',
-      postalCode: '00100',
+      postalCode: '00060',
       addressCountry: 'IT',
     },
     geo: {

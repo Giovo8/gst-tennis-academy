@@ -1,11 +1,8 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Calendar, Tag } from "lucide-react";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Calendar, Tag } from "lucide-react";
 import Link from "next/link";
 import PublicNavbar from "@/components/layout/PublicNavbar";
-import { supabase } from "@/lib/supabase/client";
+import { supabaseServer } from "@/lib/supabase/serverClient";
 import { sanitizeHtml } from "@/lib/security/sanitize";
 
 type NewsPost = {
@@ -20,267 +17,45 @@ type NewsPost = {
   created_at: string;
 };
 
-const defaultPosts: Record<string, NewsPost> = {
-  n1: {
-    id: "n1",
-    title: "Stage intensivo pre-torneo",
-    category: "Eventi",
-    image_url:
-      "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1200&q=80",
-    content: `
-# Stage intensivo pre-torneo
-
-Siamo entusiasti di annunciare il nostro stage intensivo pre-torneo, un'opportunità unica per prepararsi al meglio per il calendario invernale.
-
-## Programma dello stage
-
-Lo stage si articolerà su una settimana completa con:
-
-- **Match play intensivi**: sessioni giornaliere di gioco competitivo per affinare la strategia
-- **Video analysis**: analisi dettagliata dei tuoi match per identificare punti di forza e aree di miglioramento
-- **Preparazione atletica**: allenamenti specifici per ottimizzare la condizione fisica
-- **Mental coaching**: sessioni dedicate all'aspetto mentale del tennis competitivo
-
-## Chi può partecipare
-
-Lo stage è aperto a tutti i giocatori agonisti dell'academy, con particolare focus sui livelli intermedio e avanzato.
-
-## Quando e dove
-
-- **Date**: 15-22 gennaio 2026
-- **Orari**: 9:00-17:00 con pausa pranzo
-- **Luogo**: Campi interni ed esterni del GST Tennis Academy
-
-## Iscrizioni
-
-Le iscrizioni sono aperte fino al 10 gennaio. Posti limitati!
-
-Per informazioni e iscrizioni, contattare la segreteria dell'academy.
-    `,
-    is_published: true,
-    published_at: "2026-01-03T10:00:00Z",
-    created_at: "2026-01-03T10:00:00Z",
-  },
-  n2: {
-    id: "n2",
-    title: "Nuove divise team GST",
-    category: "Novità",
-    image_url:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80",
-    content: `
-# Nuove divise team GST
-
-È con grande piacere che presentiamo le nuove divise ufficiali del GST Tennis Academy!
-
-## Design e caratteristiche
-
-Le nuove divise sono state progettate con particolare attenzione a:
-
-- **Comfort**: tessuti tecnici traspiranti e anti-sudore
-- **Performance**: materiali che favoriscono la libertà di movimento
-- **Stile**: design moderno che riflette l'identità della nostra academy
-
-## Disponibilità
-
-Le divise sono disponibili per:
-
-- Team agonistico senior
-- Junior academy
-- Staff tecnico
-
-### Taglie disponibili
-
-Da XS a XXL, sia per uomo che per donna, con modelli specifici per giovani atleti.
-
-## Come ordinare
-
-Le ordinazioni possono essere effettuate presso la segreteria dell'academy. Ogni divisa include:
-
-- Polo da gioco (2 colori disponibili)
-- Pantaloncini/gonna
-- Tuta da riscaldamento
-- Borsa porta racchette con logo GST
-
-**Prezzi speciali per i primi ordini!**
-
-Visita la segreteria per provare le taglie e effettuare il tuo ordine.
-    `,
-    is_published: true,
-    published_at: "2026-01-02T14:00:00Z",
-    created_at: "2026-01-02T14:00:00Z",
-  },
-  n3: {
-    id: "n3",
-    title: "Campionato invernale, i vincitori della settimana",
-    category: "Risultati",
-    image_url:
-      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1200&q=80",
-    content: `
-# Campionato invernale - Risultati della settimana
-
-Si è conclusa con grande successo un'altra settimana del campionato invernale GST!
-
-## Singolare Maschile
-
-**Finale**: Marco Rossi vs. Andrea Verdi
-
-Marco Rossi si aggiudica il titolo con un convincente 6-3, 6-4. Una prestazione impeccabile che conferma il suo momento di forma eccellente.
-
-### Highlights
-
-- Service vincenti: 8
-- Break point convertiti: 4/7
-- Percentuale prime palle: 72%
-
-## Singolare Femminile
-
-**Finale**: Laura Bianchi vs. Sofia Neri
-
-Laura Bianchi domina l'incontro chiudendo 6-2, 6-1. La sua aggressività da fondo campo ha fatto la differenza.
-
-## Doppio Misto
-
-**Finale**: Gallo/Moretti vs. Ricci/Ferrari
-
-La coppia Gallo/Moretti trionfa al tie-break del terzo set con il punteggio di 6-4, 3-6, 10-8.
-
-Un match tiratissimo che ha regalato grandi emozioni al pubblico presente.
-
-## Classifiche aggiornate
-
-Le classifiche complete sono disponibili nella sezione dedicata del sito.
-
-## Prossimi appuntamenti
-
-Il torneo continua la prossima settimana con le semifinali della categoria Open.
-
-**Non perdere l'occasione di partecipare o di venire a fare il tifo!**
-
-Per iscrizioni agli eventi futuri, contattare la segreteria.
-    `,
-    is_published: true,
-    published_at: "2026-01-01T16:00:00Z",
-    created_at: "2026-01-01T16:00:00Z",
-  },
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const month = date.toLocaleDateString("it-IT", { month: "long" });
+  const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
+  return `${day} ${monthCapitalized} ${year}`;
 };
 
-export default function NewsDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [post, setPost] = useState<NewsPost | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [relatedPosts, setRelatedPosts] = useState<NewsPost[]>([]);
+export default async function NewsDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  const id = params.id as string;
+  const { data: post, error } = await supabaseServer
+    .from("news")
+    .select("*")
+    .eq("id", id)
+    .eq("is_published", true)
+    .single();
 
-  async function loadRelatedPosts(category: string) {
-    const { data, error } = await supabase
-      .from("news")
-      .select("*")
-      .eq("is_published", true)
-      .eq("category", category)
-      .neq("id", id)
-      .order("published_at", { ascending: false })
-      .limit(3);
-
-    if (!error && data && data.length > 0) {
-      setRelatedPosts(data);
-    } else {
-      // Fallback to default posts
-      const related = Object.values(defaultPosts)
-        .filter((p) => p.category === category && p.id !== id)
-        .slice(0, 3);
-      setRelatedPosts(related);
-    }
+  if (error || !post) {
+    notFound();
   }
 
-  async function loadNewsPost() {
-    setLoading(true);
+  const { data: relatedPosts } = await supabaseServer
+    .from("news")
+    .select("*")
+    .eq("is_published", true)
+    .eq("category", post.category)
+    .neq("id", id)
+    .order("published_at", { ascending: false })
+    .limit(3);
 
-    // Try to load from database
-    const { data, error } = await supabase
-      .from("news")
-      .select("*")
-      .eq("id", id)
-      .eq("is_published", true)
-      .single();
-
-    if (error || !data) {
-      // Fallback to default posts
-      const defaultPost = defaultPosts[id];
-      if (defaultPost) {
-        setPost(defaultPost);
-        loadRelatedPosts(defaultPost.category);
-      } else {
-        setPost(null);
-      }
-    } else {
-      setPost(data);
-      loadRelatedPosts(data.category);
-    }
-
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    loadNewsPost();
-  }, [id]);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const year = date.getFullYear();
-    const month = date.toLocaleDateString("it-IT", { month: "long" });
-    const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
-    return `${day} ${monthCapitalized} ${year}`;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1400px] mx-auto bg-white">
-          <PublicNavbar />
-          <main>
-            <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 py-20">
-              <div className="flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-secondary" />
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1400px] mx-auto bg-white">
-          <PublicNavbar />
-          <main>
-            <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 py-20">
-              <div className="text-center">
-                <h1 className="text-3xl font-bold text-secondary mb-4">
-                  Articolo non trovato
-                </h1>
-                <p className="text-secondary/70 mb-8">
-                  L&apos;articolo che stai cercando non esiste o non è più disponibile.
-                </p>
-                <Link
-                  href="/news"
-                  className="inline-flex items-center text-secondary hover:opacity-70 transition-opacity"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Torna alle news
-                </Link>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
+  const typedPost = post as NewsPost;
+  const typedRelated = (relatedPosts ?? []) as NewsPost[];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -299,12 +74,12 @@ export default function NewsDetailPage() {
           </div>
 
           {/* Hero Image */}
-          {post.image_url && (
+          {typedPost.image_url && (
             <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pt-6 mb-8">
               <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl">
                 <img
-                  src={post.image_url}
-                  alt={post.title}
+                  src={typedPost.image_url}
+                  alt={typedPost.title}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -318,25 +93,25 @@ export default function NewsDetailPage() {
               <div className="flex items-center text-sm text-secondary/70">
                 <Tag className="w-4 h-4 mr-2" />
                 <span className="font-semibold">
-                  {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
+                  {typedPost.category.charAt(0).toUpperCase() + typedPost.category.slice(1)}
                 </span>
               </div>
               <div className="flex items-center text-sm text-secondary/70">
                 <Calendar className="w-4 h-4 mr-2" />
-                <time dateTime={post.published_at || post.created_at}>
-                  {formatDate(post.published_at || post.created_at)}
+                <time dateTime={typedPost.published_at || typedPost.created_at}>
+                  {formatDate(typedPost.published_at || typedPost.created_at)}
                 </time>
               </div>
             </div>
 
             {/* Title */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-8 leading-tight tracking-tight">
-              {post.title}
+              {typedPost.title}
             </h1>
 
           {/* Content */}
           <div className="prose prose-lg max-w-none text-secondary/90">
-            {post.content.split("\n").map((paragraph, index) => {
+            {typedPost.content.split("\n").map((paragraph, index) => {
               // Handle markdown-like syntax
               if (paragraph.startsWith("# ")) {
                 return (
@@ -388,13 +163,13 @@ export default function NewsDetailPage() {
           </article>
 
           {/* Related Posts */}
-          {relatedPosts.length > 0 && (
+          {typedRelated.length > 0 && (
             <section className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8 py-16 border-t border-gray-200">
               <h2 className="text-2xl sm:text-3xl font-bold text-secondary mb-8 tracking-tight">
                 Articoli correlati
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {relatedPosts.map((relatedPost) => (
+                {typedRelated.map((relatedPost) => (
                   <Link
                     key={relatedPost.id}
                     href={`/news/${relatedPost.id}`}

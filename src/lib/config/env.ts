@@ -63,11 +63,6 @@ class EnvironmentConfig {
     try {
       this.config = envSchema.parse(process.env);
       this.isValidated = true;
-      
-      // Only log on server-side in development
-      if (!isClient && this.config.NODE_ENV === 'development') {
-        console.log('✅ Environment variables validated successfully');
-      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Only log errors on server-side
@@ -85,7 +80,7 @@ class EnvironmentConfig {
         
         // Use raw process.env values as fallback
         this.config = {
-          NODE_ENV: (process.env.NODE_ENV || 'development') as any,
+          NODE_ENV: (process.env.NODE_ENV || 'development') as EnvConfig['NODE_ENV'],
           NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
           NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
           VERCEL_URL: process.env.VERCEL_URL,
@@ -96,8 +91,8 @@ class EnvironmentConfig {
           SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
           RESEND_API_KEY: process.env.RESEND_API_KEY,
           EMAIL_FROM: process.env.EMAIL_FROM,
-          ENABLE_RATE_LIMITING: (process.env.ENABLE_RATE_LIMITING || 'true') as any,
-          LOG_LEVEL: (process.env.LOG_LEVEL || 'info') as any,
+          ENABLE_RATE_LIMITING: (process.env.ENABLE_RATE_LIMITING || 'true') as EnvConfig['ENABLE_RATE_LIMITING'],
+          LOG_LEVEL: (process.env.LOG_LEVEL || 'info') as EnvConfig['LOG_LEVEL'],
         } as EnvConfig;
         this.isValidated = true;
       } else {
@@ -118,7 +113,7 @@ class EnvironmentConfig {
       return this.config[key];
     }
     if (isClient) {
-      return (process.env as any)?.[key];
+      return (process.env as Record<string, string | undefined>)[key as string] as EnvConfig[K] | undefined;
     }
     return this.config?.[key];
   }

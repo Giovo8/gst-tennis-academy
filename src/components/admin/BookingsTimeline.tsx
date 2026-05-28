@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Users, Swords, Lock, GraduationCap } from "lucide-react";
-import { getCourts } from "@/lib/courts/getCourts";
-import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import { useDragScroll } from "./hooks/useDragScroll";
+import { useTimelineData, type Booking } from "./hooks/useTimelineData";
 import {
   Modal,
   ModalContent,
@@ -15,33 +14,6 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
-
-type Booking = {
-  id: string;
-  court: string;
-  user_id: string;
-  coach_id: string | null;
-  start_time: string;
-  end_time: string;
-  status: string;
-  type: string;
-  notes: string | null;
-  user_profile?: { full_name: string; email: string; phone?: string } | null;
-  coach_profile?: { full_name: string; email: string; phone?: string } | null;
-  participants?: Array<{
-    id?: string;
-    booking_id?: string;
-    full_name: string;
-    email?: string;
-    phone?: string;
-    is_registered: boolean;
-    user_id?: string | null;
-    order_index?: number;
-  }>;
-  isBlock?: boolean;
-  isCourse?: boolean;
-  reason?: string;
-};
 
 type BookingsTimelineProps = {
   bookings: Booking[];
@@ -79,13 +51,7 @@ type TimeSlotInfo = {
 export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true, showEntryModal = true, scrollToCurrentTime = false }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [courtBlocks, setCourtBlocks] = useState<Booking[]>([]);
-  const [blocksLoading, setBlocksLoading] = useState(false);
-  const [allOccupiedBookings, setAllOccupiedBookings] = useState<any[]>([]);
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
-  const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
-  const [courtsLoading, setCourtsLoading] = useState(true);
-  const [courseEntries, setCourseEntries] = useState<Booking[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<Booking | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
@@ -98,12 +64,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
-  
-  // Drag to scroll
-  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
+
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
+  const { courts, courtsLoading, courtBlocks, blocksLoading, courseEntries, allOccupiedBookings } = useTimelineData({
+    selectedDate,
+    showCourses,
+    showCourtBlocks,
+    fetchOccupied,
+    highlightUserId,
+  });
 
   const getPrimaryParticipant = (booking: Booking) =>
     booking.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
@@ -132,254 +101,24 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return booking.user_id;
   };
 
-  // Drag to scroll handlers
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineScrollRef.current) return;
-    isDragging.current = true;
-    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
-    scrollLeft.current = timelineScrollRef.current.scrollLeft;
-    timelineScrollRef.current.style.cursor = 'grabbing';
-    timelineScrollRef.current.style.userSelect = 'none';
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !timelineScrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - timelineScrollRef.current.offsetLeft;
-    const walk = (x - startX.current) * 2;
-    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.style.cursor = 'grab';
-      timelineScrollRef.current.style.userSelect = 'auto';
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging.current) {
-      handleMouseUp();
-    }
-  };
-
-  // Load courts from database on mount
-  useEffect(() => {
-    loadCourtsFromDB();
-  }, []);
-
   // Scroll to current time on mount
   useEffect(() => {
     if (!scrollToCurrentTime || parentLoading || blocksLoading || courtsLoading) return;
     const raf = requestAnimationFrame(() => {
-      if (!timelineScrollRef.current) return;
+      if (!scrollRef.current) return;
       const now = new Date();
       const hour = now.getHours();
       const minutes = now.getMinutes();
-      // Timeline starts at 07:00, each hour column = (3400 - 120) / 16 = 205px
       const COLUMN_WIDTH = 205;
       const START_HOUR = 7;
       const hoursFromStart = Math.max(0, hour - START_HOUR) + minutes / 60;
-      // Scroll so that current time is roughly centered (offset by ~2 hours to give context)
       const scrollPos = Math.max(0, (hoursFromStart - 2) * COLUMN_WIDTH);
-      timelineScrollRef.current.scrollLeft = scrollPos;
+      scrollRef.current.scrollLeft = scrollPos;
     });
     return () => cancelAnimationFrame(raf);
-  }, [scrollToCurrentTime, parentLoading, blocksLoading, courtsLoading]);
+  }, [scrollToCurrentTime, parentLoading, blocksLoading, courtsLoading, scrollRef]);
 
-  // Load course lessons for the selected date
-  useEffect(() => {
-    if (!showCourses) { setCourseEntries([]); return; }
-    void loadCourseEntries();
-  }, [selectedDate, showCourses]);
-
-  // Load court blocks for the selected date
-  useEffect(() => {
-    if (!showCourtBlocks) {
-      setCourtBlocks([]);
-      setBlocksLoading(false);
-      return;
-    }
-
-    loadCourtBlocks();
-  }, [selectedDate, showCourtBlocks]);
-
-  // When fetchOccupied is enabled, fetch all bookings via API (bypasses RLS)
-  useEffect(() => {
-    if (!fetchOccupied) return;
-    const dateStr = selectedDate.toISOString().split('T')[0];
-    const fetchAll = async () => {
-      try {
-        const results = await Promise.all(
-          courts.map(court =>
-            fetch(`/api/bookings/availability?date=${dateStr}&court=${encodeURIComponent(court)}`)
-              .then(r => r.ok ? r.json() : { bookings: [] })
-              .then(d => (d.bookings ?? []) as any[])
-          )
-        );
-        setAllOccupiedBookings(results.flat());
-      } catch (err) {
-        console.error('Error fetching occupied bookings:', err);
-      }
-    };
-    void fetchAll();
-  }, [selectedDate, courts, fetchOccupied]);
-
-  async function loadCourseEntries() {
-    const DAY_CODES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
-    const dayCode = DAY_CODES[selectedDate.getDay()];
-    const dateStr = selectedDate.toISOString().split("T")[0];
-    const selectFields = "id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, schedule_periods";
-
-    const [q1, q2] = await Promise.all([
-      supabase.from("courses").select(selectFields).eq("is_active", true).contains("schedule_days", [dayCode]),
-      supabase.from("courses").select(selectFields).eq("is_active", true).contains("extra_dates", [dateStr]),
-    ]);
-    const seen = new Set<string>();
-    const allData = [...(q1.data ?? []), ...(q2.data ?? [])].filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
-
-    // Resolve instructor names → user IDs so we can check maestro involvement
-    const allInstructorNames = allData
-      .flatMap((c) => (c.instructor_name ?? "").split(", ").filter(Boolean));
-    const uniqueNames = [...new Set(allInstructorNames)];
-    const nameToId = new Map<string, string>();
-    if (uniqueNames.length > 0) {
-      const { data: instructorProfiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("full_name", uniqueNames);
-      (instructorProfiles ?? []).forEach((p: { id: string; full_name: string }) => {
-        nameToId.set(p.full_name, p.id);
-      });
-    }
-
-    const entries: Booking[] = [];
-    for (const c of allData) {
-      const isExtraDate = (c.extra_dates ?? []).includes(dateStr);
-      const isScheduledDay = (c.schedule_days ?? []).includes(dayCode);
-      if ((c.cancelled_dates ?? []).includes(dateStr)) continue;
-      if (isScheduledDay && !isExtraDate) {
-        if (c.start_date && c.start_date > dateStr) continue;
-        if (c.end_date && c.end_date < dateStr) continue;
-      }
-
-      // Determine time: lesson_time_overrides > matching period > schedule_time
-      let timeStr: string = c.schedule_time || "";
-      if (c.lesson_time_overrides?.[dateStr]) {
-        timeStr = c.lesson_time_overrides[dateStr];
-      } else if (c.schedule_periods?.length > 0) {
-        const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
-        if (period?.time) timeStr = period.time;
-      }
-
-      // Determine court: lesson_overrides > matching period > court_name
-      let courtName: string | null = c.court_name;
-      if (c.lesson_overrides?.[dateStr]) {
-        courtName = c.lesson_overrides[dateStr];
-      } else if (c.schedule_periods?.length > 0) {
-        const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
-        if (period?.court) courtName = period.court;
-      }
-
-      if (!courtName) continue;
-
-      const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
-      const startHour   = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
-      const startMinute = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;
-      const endHour     = rangeMatch ? parseInt(rangeMatch[3], 10) : startHour + 1;
-      const endMinute   = rangeMatch ? parseInt(rangeMatch[4], 10) : startMinute;
-      const startTime = new Date(selectedDate);
-      startTime.setHours(startHour, startMinute, 0, 0);
-      const endTime = new Date(selectedDate);
-      endTime.setHours(endHour, endMinute, 0, 0);
-      const instructorNames = (c.instructor_name ?? "").split(", ").filter(Boolean);
-      const instructorIds = instructorNames.map((n) => nameToId.get(n)).filter(Boolean) as string[];
-      // If highlightUserId is one of the instructors, store it as coach_id so the timeline
-      // can distinguish "my course" from "someone else's course".
-      const resolvedCoachId = instructorIds.length > 0
-        ? (highlightUserId && instructorIds.includes(highlightUserId) ? highlightUserId : instructorIds[0])
-        : null;
-      entries.push({
-        id: c.id,
-        court: courtName,
-        user_id: "",
-        coach_id: resolvedCoachId,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        status: "confirmed",
-        type: "corso",
-        notes: c.name,
-        isCourse: true,
-        user_profile: c.instructor_name ? { full_name: c.instructor_name, email: "" } : null,
-      } as Booking);
-    }
-    setCourseEntries(entries);
-  }
-
-  async function loadCourtsFromDB() {
-    setCourtsLoading(true);
-    try {
-      const courtsData = await getCourts();
-      setCourts(courtsData);
-    } catch (error) {
-      console.error("Error loading courts:", error);
-      // Keep default fallback courts
-    } finally {
-      setCourtsLoading(false);
-    }
-  }
-
-  async function loadCourtBlocks() {
-    if (!showCourtBlocks) {
-      setCourtBlocks([]);
-      setBlocksLoading(false);
-      return;
-    }
-
-    setBlocksLoading(true);
-    try {
-      const startOfDay = new Date(selectedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const endOfDay = new Date(selectedDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      // Fetch court blocks for the selected date
-      const { data: blocksData } = await supabase
-        .from("court_blocks")
-        .select("*")
-        .eq("is_disabled", false)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString())
-        .order("start_time", { ascending: true });
-
-      // Convert blocks to booking-like format for timeline display
-      const blockEntries: Booking[] = blocksData?.map(block => ({
-        id: block.id,
-        court: block.court_id,
-        user_id: "",
-        coach_id: null,
-        start_time: block.start_time,
-        end_time: block.end_time,
-        status: "blocked",
-        type: "blocco",
-        notes: block.reason,
-        reason: block.reason,
-        isBlock: true,
-        user_profile: null,
-        coach_profile: null
-      })) || [];
-
-      setCourtBlocks(blockEntries);
-    } catch (error) {
-      console.error("Error loading court blocks:", error);
-    } finally {
-      setBlocksLoading(false);
-    }
-  }
-
-  // Filter bookings for the selected date and merge with court blocks
+    // Filter bookings for the selected date and merge with court blocks
   const bookingsForSelectedDate = useMemo(() => {
     const startOfDay = new Date(selectedDate);
     startOfDay.setHours(0, 0, 0, 0);
@@ -934,7 +673,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                 ))}
               </div>
               <div
-                ref={timelineScrollRef}
+                ref={scrollRef}
                 className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing flex-1"
                 style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
                 onMouseDown={handleMouseDown}
@@ -1145,7 +884,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             </div>
           ) : (
             <div
-              ref={timelineScrollRef}
+              ref={scrollRef}
               className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
               style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
               onMouseDown={handleMouseDown}

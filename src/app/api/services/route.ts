@@ -11,7 +11,10 @@ export async function GET() {
       .order("created_at", { ascending: false });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ services: data });
+    return NextResponse.json(
+      { services: data },
+      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto";
     return NextResponse.json({ error: message }, { status: 500 });

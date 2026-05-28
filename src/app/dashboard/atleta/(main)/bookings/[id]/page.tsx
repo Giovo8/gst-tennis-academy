@@ -18,6 +18,7 @@ import {
   Handshake,
   GraduationCap,
 } from "lucide-react";
+import { toast } from 'sonner';
 
 type CourseData = {
   id: string;
@@ -228,7 +229,7 @@ export default function BookingDetailPage() {
 
       if (error || !bookingData) {
         console.error("Errore caricamento prenotazione:", error);
-        alert("Prenotazione non trovata");
+        toast.error("Prenotazione non trovata");
         router.push(`${dashboardBase}/bookings`);
         return;
       }
@@ -326,7 +327,7 @@ export default function BookingDetailPage() {
       setBooking(enrichedBooking);
     } catch (error) {
       console.error("Errore:", error);
-      alert("Errore nel caricamento della prenotazione");
+      toast.error("Errore nel caricamento della prenotazione");
       router.push(`${dashboardBase}/bookings`);
     } finally {
       setLoading(false);
@@ -441,7 +442,7 @@ export default function BookingDetailPage() {
       router.push(`${dashboardBase}/bookings`);
     } catch (error) {
       console.error("Errore:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
+      toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
     } finally {
       setActionLoading(false);
     }

@@ -44,7 +44,7 @@ export function canManageUsers(role: UserRole | null | undefined): boolean {
   return role === "admin" || role === "gestore" || role === "maestro";
 }
 
-function getSecondaryRoles(metadata: unknown): string[] {
+export function getSecondaryRoles(metadata: unknown): string[] {
   if (!metadata || typeof metadata !== "object") return [];
 
   const secondaryRoles = (metadata as { secondary_roles?: unknown }).secondary_roles;

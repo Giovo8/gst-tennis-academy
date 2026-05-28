@@ -1,56 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
+import { supabaseServer } from "@/lib/supabase/serverClient";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) return authResult.response;
 
-    // Ottieni l'utente corrente dalla richiesta
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
-    }
+    const isAdmin = isAdminOrGestore(authResult.data.profile?.role);
+    const currentUserId = authResult.data.user.id;
 
     // Carica tutti gli utenti tranne l'utente corrente
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles, error: profilesError } = await supabaseServer
       .from("profiles")
-      .select("id, full_name, avatar_url, email, role")
-      .neq("id", user.id)
+      .select("id, full_name, avatar_url, email")
+      .neq("id", currentUserId)
       .order("full_name", { ascending: true });
 
     if (profilesError) {
-      console.error("Error loading profiles:", profilesError);
       return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
 
     // Carica le statistiche arena
-    const { data: stats } = await supabase
+    const { data: stats } = await supabaseServer
       .from("arena_stats")
       .select("user_id, ranking, points, wins, losses, level, total_matches, win_rate");
 
-    // Combina i dati
+    // Combina i dati — email visibile solo agli admin
     const statsMap = new Map(stats?.map(s => [s.user_id, s]) || []);
     const players = (profiles || []).map(p => ({
       id: p.id,
       full_name: p.full_name || "Giocatore",
       avatar_url: p.avatar_url,
-      email: p.email,
+      ...(isAdmin ? { email: p.email } : {}),
       arena_stats: statsMap.get(p.id) || null,
     }));
 
     return NextResponse.json({ players });
-  } catch (error: any) {
-    console.error("Error in /api/arena/players:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Errore interno";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

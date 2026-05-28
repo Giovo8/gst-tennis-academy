@@ -20,6 +20,7 @@ import NewConversationModal from "./NewConversationModal";
 import StatusDot from "./StatusDot";
 import TypingIndicator from "./TypingIndicator";
 import { useCurrentUserPresence, useTypingIndicator } from "@/lib/chat/presence";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -400,11 +401,11 @@ export default function ChatPanel() {
           );
         }
       } else {
-        alert("Errore durante l'upload del file");
+        toast.error("Errore durante l'upload del file");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Errore durante l'upload del file");
+      toast.error("Errore durante l'upload del file");
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

@@ -34,6 +34,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from "@/components/ui";
+import { toast } from 'sonner';
 
 interface Booking {
   id: string;
@@ -265,18 +266,14 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
   async function loadBookings() {
     setLoading(true);
-    console.log("🔍 Caricamento prenotazioni atleta...");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.log("❌ Nessun utente loggato");
       setLoading(false);
       return;
     }
 
     setCurrentUserId(user.id);
-
-    console.log("👤 User ID:", user.id);
 
     if (isMaestroDashboard) {
       const now = new Date();
@@ -314,7 +311,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
 
       const profilesPromise = allUserIds.length > 0
         ? supabase.from("profiles").select("id, full_name, email, phone").in("id", allUserIds)
-        : Promise.resolve({ data: [] as any[] });
+        : Promise.resolve({ data: [] as ProfileLite[] });
 
       const ownBookingIdsList = ownBookingsData.map((b) => b.id);
       const participantsPromise = ownBookingIdsList.length > 0
@@ -336,14 +333,18 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       );
 
       let participantsData: Booking["participants"] | null = null;
-      if ((participantsQuery as any).error?.message?.toLowerCase().includes("phone")) {
+      const { error: pqError, data: pqData } = participantsQuery as {
+        data: Booking["participants"] | null;
+        error: { message?: string } | null;
+      };
+      if (pqError?.message?.toLowerCase().includes("phone")) {
         const fallbackQuery = await supabase
           .from("booking_participants")
           .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
           .in("booking_id", ownBookingIdsList);
         if (!fallbackQuery.error) participantsData = fallbackQuery.data || [];
-      } else if (!(participantsQuery as any).error) {
-        participantsData = (participantsQuery as any).data || [];
+      } else if (!pqError) {
+        participantsData = pqData || [];
       }
 
       const enrichedBookings = allData.map((booking) => {
@@ -395,7 +396,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
             .from("profiles")
             .select("id, full_name, email, phone")
             .in("id", involvedUserIds)
-        : { data: [] as any[] };
+        : { data: [] as ProfileLite[] };
 
       const involvedProfilesMap = new Map<string, ProfileLite>(
         ((involvedProfiles ?? []) as ProfileLite[]).map((p) => [p.id, p])
@@ -482,10 +483,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       return;
     }
 
-    console.log("✅ Prenotazioni caricate:", bookingsData?.length || 0);
-
     if (!bookingsData || bookingsData.length === 0) {
-      console.log("⚠️ Nessuna prenotazione trovata");
       setBookings([]);
       setLoading(false);
       return;
@@ -523,7 +521,6 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       };
     });
 
-    console.log("📋 Dati arricchiti:", enrichedBookings);
     setBookings(enrichedBookings);
     setLoading(false);
   }
@@ -646,7 +643,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
       await loadBookings();
     } catch (error) {
       console.error("Errore durante l'annullamento della prenotazione:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
+      toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
     }
   }
 

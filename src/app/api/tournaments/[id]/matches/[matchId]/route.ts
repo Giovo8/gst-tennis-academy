@@ -151,7 +151,7 @@ export async function PUT(
     });
 
     // Determine winner based on best_of format
-    const bestOf = (currentMatch.tournament as any)?.best_of || 3;
+    const bestOf = currentMatch.tournament?.best_of || 3;
     const setsToWin = Math.ceil(bestOf / 2); // 2 for best of 3, 3 for best of 5
     
     let winner_id = null;
@@ -184,17 +184,8 @@ export async function PUT(
 
     if (updateError) throw updateError;
 
-    console.log('✅ Match updated:', {
-      id: updatedMatch.id,
-      winner_id,
-      match_status,
-      round_number: updatedMatch.round_number,
-      match_number: updatedMatch.match_number
-    });
-
     // If match completed, advance winner to next round
     if (winner_id && match_status === 'completed') {
-      console.log('🎯 Calling advanceWinnerToNextRound...');
       await advanceWinnerToNextRound(
         supabase,
         params.id,
@@ -202,8 +193,6 @@ export async function PUT(
         updatedMatch.match_number,
         winner_id
       );
-    } else {
-      console.log('⏸️ Match not completed yet or no winner:', { winner_id, match_status });
     }
 
     return NextResponse.json({
@@ -361,13 +350,6 @@ async function advanceWinnerToNextRound(
   winnerId: string
 ) {
   try {
-    console.log('🏆 advanceWinnerToNextRound called:', {
-      tournamentId,
-      currentRound,
-      currentMatchNumber,
-      winnerId
-    });
-
     // Calcola quale match del turno successivo
     const nextRound = currentRound + 1;
     
@@ -383,19 +365,13 @@ async function advanceWinnerToNextRound(
     const positionInRound = currentRoundMatches?.findIndex((m: { match_number: number }) => m.match_number === currentMatchNumber) ?? -1;
     
     if (positionInRound === -1) {
-      console.error('❌ Could not find current match position');
+      console.error('Could not find current match position');
       return;
     }
     
     // Il match successivo è alla posizione Math.floor(positionInRound / 2) nel round successivo
     const nextMatchPositionInRound = Math.floor(positionInRound / 2);
     
-    console.log('📊 Searching for next match:', {
-      nextRound,
-      positionInRound,
-      nextMatchPositionInRound
-    });
-
     // Trova tutti i match del turno successivo
     const { data: nextRoundMatches } = await supabase
       .from("tournament_matches")
@@ -405,18 +381,14 @@ async function advanceWinnerToNextRound(
       .order("match_number", { ascending: true });
     
     if (!nextRoundMatches || nextRoundMatches.length === 0) {
-      console.log('✅ No next match found - tournament completed! Updating tournament status to Concluso...');
-      
-      // Aggiorna lo status del torneo a "Concluso"
+      // Torneo completato - aggiorna lo status
       const { error: tournamentUpdateError } = await supabase
         .from("tournaments")
         .update({ status: 'Concluso' })
         .eq("id", tournamentId);
       
       if (tournamentUpdateError) {
-        console.error('❌ Error updating tournament status:', tournamentUpdateError);
-      } else {
-        console.log('✅ Tournament status updated to Concluso');
+        console.error('Error updating tournament status:', tournamentUpdateError);
       }
       
       return;
@@ -426,65 +398,41 @@ async function advanceWinnerToNextRound(
     const nextMatch = nextRoundMatches[nextMatchPositionInRound];
     
     if (!nextMatch) {
-      console.error('❌ Next match not found at position', nextMatchPositionInRound);
+      console.error('Next match not found at position', nextMatchPositionInRound);
       return;
     }
     
-    console.log('✅ Found next match:', {
-      id: nextMatch.id,
-      match_number: nextMatch.match_number,
-      round_name: nextMatch.round_name,
-      current_player1: nextMatch.player1_id,
-      current_player2: nextMatch.player2_id
-    });
-
     // Determina se il vincitore va in player1 o player2
     // Match pari (0, 2, 4...) -> player1 del prossimo
     // Match dispari (1, 3, 5...) -> player2 del prossimo
     const isPlayer1 = positionInRound % 2 === 0;
     
-    console.log(`🎯 Winner goes to: ${isPlayer1 ? 'player1' : 'player2'} (positionInRound: ${positionInRound})`);
-
     const updateData: Record<string, unknown> = {};
     if (isPlayer1) {
       updateData.player1_id = winnerId;
-      // Se player2 è già presente, il match può iniziare
       if (nextMatch.player2_id) {
         updateData.match_status = 'scheduled';
         updateData.status = 'programmata';
-        console.log('✅ Both players now present, match can be scheduled');
-      } else {
-        console.log('⏳ Waiting for player2');
       }
     } else {
       updateData.player2_id = winnerId;
-      // Se player1 è già presente, il match può iniziare
       if (nextMatch.player1_id) {
         updateData.match_status = 'scheduled';
         updateData.status = 'programmata';
-        console.log('✅ Both players now present, match can be scheduled');
-      } else {
-        console.log('⏳ Waiting for player1');
       }
     }
     
-    console.log('📝 Updating next match with data:', updateData);
-
     // Aggiorna il match successivo
-    const { data: updated, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from("tournament_matches")
       .update(updateData)
-      .eq("id", nextMatch.id)
-      .select()
-      .single();
+      .eq("id", nextMatch.id);
     
     if (updateError) {
-      console.error('❌ Error updating next match:', updateError);
-    } else {
-      console.log('✅ Next match updated successfully:', updated);
+      console.error('Error updating next match:', updateError);
     }
   } catch (error) {
-    console.error('❌ Error in advanceWinnerToNextRound:', error);
+    console.error('Error in advanceWinnerToNextRound:', error);
   }
 }
 

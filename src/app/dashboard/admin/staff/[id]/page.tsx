@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { toast } from 'sonner';
 
 type StaffMember = {
   id: string;
@@ -62,7 +63,7 @@ export default function AdminStaffDetailPage() {
       if (error) throw error;
       router.push("/dashboard/admin/staff");
     } catch {
-      alert("Errore durante l'eliminazione del membro staff");
+      toast.error("Errore durante l'eliminazione del membro staff");
     }
   }
 

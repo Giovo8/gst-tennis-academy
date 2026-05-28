@@ -312,7 +312,7 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", closeSigna
           />
           {/* Panel */}
           <div
-            className={`lg:hidden fixed top-[5rem] left-6 right-6 bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col max-h-[calc(100dvh-6rem)] overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
+            className={`lg:hidden fixed top-[6rem] left-6 right-6 bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col max-h-[calc(100dvh-7rem)] overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
             style={{ zIndex: 9999 }}
           >
             <div className="px-4 py-3 bg-secondary flex items-center justify-between flex-shrink-0">

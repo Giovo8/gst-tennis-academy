@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { CheckCircle, AlertCircle, Loader2, Upload, Link as LinkIcon, X } from "lucide-react";
+import { toast } from 'sonner';
 
 type FormData = {
   full_name: string;
@@ -150,12 +151,12 @@ export default function NewStaffPage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("L'immagine deve essere inferiore a 5MB");
+      toast.warning("L'immagine deve essere inferiore a 5MB");
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      alert("Il file deve essere un'immagine");
+      toast.warning("Il file deve essere un'immagine");
       return;
     }
 
@@ -244,7 +245,7 @@ export default function NewStaffPage() {
         userMessage = `❌ ${errorMsg}`;
       }
       
-      alert(userMessage);
+      toast.error(userMessage);
     } finally {
       setUploadingImage(false);
       // Reset file input
@@ -259,7 +260,7 @@ export default function NewStaffPage() {
     try {
       new URL(imageUrlInput);
     } catch {
-      alert("Inserisci un URL valido");
+      toast.warning("Inserisci un URL valido");
       return;
     }
 

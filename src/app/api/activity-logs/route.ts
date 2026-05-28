@@ -14,11 +14,11 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get("limit") || "50");
 
-    const { data: logs, error } = (await supabaseServer
+    const { data: logs, error } = await supabaseServer
       .from("activity_log")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(limit)) as any;
+      .limit(limit);
 
     if (error) {
       logger.error("Error loading activity logs:", error);
@@ -29,10 +29,10 @@ export async function GET(req: Request) {
     const profilesMap = new Map();
 
     if (userIds.length > 0) {
-      const { data: profiles } = (await supabaseServer
+      const { data: profiles } = await supabaseServer
         .from("profiles")
         .select("id, full_name, email")
-        .in("id", userIds)) as any;
+        .in("id", userIds);
 
       profiles?.forEach((profile: any) => {
         profilesMap.set(profile.id, profile);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Users, Calendar, RotateCw } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+import { toast } from 'sonner';
 
 interface Participant {
   id: string;
@@ -142,7 +143,7 @@ export default function EliminationBracket({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        alert('Sessione non valida');
+        toast.error('Sessione non valida');
         setGenerating(false);
         return;
       }
@@ -162,18 +163,18 @@ export default function EliminationBracket({
         await loadMatches(); // Ricarica i match
         if (onBracketGenerated) onBracketGenerated(); // Cambia al tab bracket
         if (onMatchUpdate) onMatchUpdate();
-        alert(data.message || 'Bracket generato con successo!');
+        toast.success(data.message || 'Bracket generato con successo!');
       } else {
         // Se dice che è già generato, prova a ricaricare comunque
         if (data.error?.includes('già stato generato')) {
           await loadMatches();
           if (onBracketGenerated) onBracketGenerated();
         }
-        alert(data.error || 'Errore nella generazione del bracket');
+        toast.error(data.error || 'Errore nella generazione del bracket');
       }
     } catch (error) {
       console.error('Error generating bracket:', error);
-      alert('Errore nella generazione del bracket');
+      toast.error('Errore nella generazione del bracket');
     } finally {
       setGenerating(false);
     }
@@ -190,7 +191,7 @@ export default function EliminationBracket({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        alert('Sessione non valida');
+        toast.error('Sessione non valida');
         return;
       }
 
@@ -204,15 +205,15 @@ export default function EliminationBracket({
       const data = await res.json();
 
       if (res.ok) {
-        alert(data.message || 'Match eliminati con successo!');
+        toast.success(data.message || 'Match eliminati con successo!');
         await loadMatches(); // Ricarica (dovrebbe essere vuoto)
         if (onMatchUpdate) onMatchUpdate();
       } else {
-        alert(data.error || 'Errore nell\'eliminazione dei match');
+        toast.error(data.error || 'Errore nell\'eliminazione dei match');
       }
     } catch (error) {
       console.error('Error deleting matches:', error);
-      alert('Errore nell\'eliminazione dei match');
+      toast.error('Errore nell\'eliminazione dei match');
     } finally {
       setDeleting(false);
     }

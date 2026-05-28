@@ -3,13 +3,13 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 import { logActivityServer } from "@/lib/activity/logActivity";
 
 async function getUserProfileFromRequest(req: Request) {
-  const authHeader = (req as any).headers?.get?.("authorization") ?? null;
+  const authHeader = req.headers.get("authorization") ?? null;
   const token = authHeader?.replace("Bearer ", "") ?? null;
   if (!token) return { user: null, profile: null };
   const { data: userData, error: userErr } = await supabaseServer.auth.getUser(token);
   if (userErr || !userData?.user) return { user: null, profile: null };
   const user = userData.user;
-  const { data: profile } = (await supabaseServer.from("profiles").select("id, role, full_name").eq("id", user.id).single()) as any;
+  const { data: profile } = await supabaseServer.from("profiles").select("id, role, full_name").eq("id", user.id).single();
   return { user, profile };
 }
 
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     const userIds = (data || []).map((r: any) => r.user_id).filter(Boolean);
     const profilesMap = new Map();
     if (userIds.length > 0) {
-      const { data: profiles } = (await supabaseServer.from('profiles').select('id, full_name, email, avatar_url, phone').in('id', userIds)) as any;
+      const { data: profiles } = await supabaseServer.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
       (profiles || []).forEach((p: any) => profilesMap.set(p.id, p));
     }
 
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         // allowed
       } else if (roleLower === "maestro") {
         // verify target is atleta
-        const { data: targetProfile, error: tErr } = (await supabaseServer.from('profiles').select('id, role').eq('id', user_id).single()) as any;
+        const { data: targetProfile, error: tErr } = await supabaseServer.from('profiles').select('id, role').eq('id', user_id).single();
         if (tErr || !targetProfile) return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
         if (String(targetProfile.role).toLowerCase() !== 'atleta') {
           return NextResponse.json({ error: 'Forbidden: can only register athletes' }, { status: 403 });
@@ -79,11 +79,11 @@ export async function POST(req: Request) {
     }
 
     // Check tournament and capacity
-    const { data: tournament, error: tErr } = (await supabaseServer
+    const { data: tournament, error: tErr } = await supabaseServer
       .from("tournaments")
       .select("max_participants")
       .eq("id", tournament_id)
-      .single()) as any;
+      .single();
     if (tErr) return NextResponse.json({ error: tErr.message }, { status: 404 });
     if (!tournament) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
 
@@ -149,22 +149,22 @@ export async function PATCH(req: Request) {
     }
 
     // Verify the target user exists in profiles
-    const { data: targetProfile, error: tpErr } = (await supabaseServer
+    const { data: targetProfile, error: tpErr } = await supabaseServer
       .from("profiles")
       .select("id, full_name, email")
       .eq("id", user_id)
-      .single()) as any;
+      .single();
 
     if (tpErr || !targetProfile) {
       return NextResponse.json({ error: "Utente non trovato" }, { status: 404 });
     }
 
     // Verify participant exists
-    const { data: participant, error: pErr } = (await supabaseServer
+    const { data: participant, error: pErr } = await supabaseServer
       .from("tournament_participants")
       .select("id, tournament_id, user_id")
       .eq("id", id)
-      .single()) as any;
+      .single();
 
     if (pErr || !participant) {
       return NextResponse.json({ error: "Partecipante non trovato" }, { status: 404 });
@@ -206,7 +206,7 @@ export async function DELETE(req: Request) {
 
     if (id) {
       // find participant to check permissions
-      const { data: part, error: pErr } = (await supabaseServer.from("tournament_participants").select("id, user_id").eq("id", id).single()) as any;
+      const { data: part, error: pErr } = await supabaseServer.from("tournament_participants").select("id, user_id").eq("id", id).single();
       if (pErr) return NextResponse.json({ error: pErr.message }, { status: 404 });
 
       const { user, profile } = await getUserProfileFromRequest(req);
@@ -221,7 +221,7 @@ export async function DELETE(req: Request) {
           // allowed
         } else if (roleLower === 'maestro') {
           // check participant's role
-          const { data: pProfile, error: ppErr } = (await supabaseServer.from('profiles').select('id, role').eq('id', part.user_id).single()) as any;
+          const { data: pProfile, error: ppErr } = await supabaseServer.from('profiles').select('id, role').eq('id', part.user_id).single();
           if (ppErr || !pProfile) return NextResponse.json({ error: 'Participant profile not found' }, { status: 404 });
           if (String(pProfile.role).toLowerCase() !== 'atleta') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         } else {
@@ -246,7 +246,7 @@ export async function DELETE(req: Request) {
           // allowed
         } else if (roleLower === 'maestro') {
           // only if target user is atleta
-          const { data: targetProfile, error: tpErr } = (await supabaseServer.from('profiles').select('id, role').eq('id', user_id).single()) as any;
+          const { data: targetProfile, error: tpErr } = await supabaseServer.from('profiles').select('id, role').eq('id', user_id).single();
           if (tpErr || !targetProfile) return NextResponse.json({ error: 'Target profile not found' }, { status: 404 });
           if (String(targetProfile.role).toLowerCase() !== 'atleta') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         } else {

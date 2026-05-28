@@ -106,13 +106,13 @@ export async function POST(
     }
 
     // Generate round-robin schedule
-    const participantIds = participants.map((p: any) => p.id);
+    const participantIds: (string | null)[] = participants.map((p: { id: string }) => p.id);
     const matches: any[] = [];
     let matchNumber = 1;
 
     // If odd number of participants, add a "bye" (null)
     if (participantIds.length % 2 !== 0) {
-      participantIds.push(null as any);
+      participantIds.push(null);
     }
 
     const numRounds = participantIds.length - 1;

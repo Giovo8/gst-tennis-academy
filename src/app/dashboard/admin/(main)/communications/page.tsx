@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
+import { toast } from "sonner";
 import {
   MessageSquare,
   Send,
@@ -58,7 +59,7 @@ export default function AdminCommunicationsPage() {
 
   async function createAnnouncement() {
     if (!title || !content) {
-      alert("Compila tutti i campi");
+      toast.warning("Compila tutti i campi");
       return;
     }
 
@@ -79,7 +80,7 @@ export default function AdminCommunicationsPage() {
       .single();
 
     if (error) {
-      alert("Errore: " + error.message);
+      toast.error("Errore: " + error.message);
     } else {
       // Send notifications to all target users
       const roles = targetRoles.length > 0 ? targetRoles : ["atleta", "maestro", "gestore"];

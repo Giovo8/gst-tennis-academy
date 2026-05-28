@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2, Plus } from "lucide-react";
 import Link from "next/link";
+import { toast } from 'sonner';
 
 export default function NewInviteCodePage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function NewInviteCodePage() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        alert("Errore: utente non autenticato");
+        toast.error("Errore: utente non autenticato");
         return;
       }
 
@@ -61,7 +62,7 @@ export default function NewInviteCodePage() {
 
       if (error) {
         console.error("Error generating code:", error);
-        alert(`Errore nella generazione del codice: ${error.message}`);
+        toast.error(`Errore nella generazione del codice: ${error.message}`);
         return;
       }
 
@@ -83,12 +84,12 @@ export default function NewInviteCodePage() {
           }),
         });
 
-        alert("Codice generato con successo!");
+        toast.success("Codice generato con successo!");
         router.push("/dashboard/admin/invite-codes");
       }
     } catch (error: any) {
       console.error("Error generating code:", error);
-      alert(`Errore: ${error?.message || 'Errore sconosciuto'}`);
+      toast.error(`Errore: ${error?.message || 'Errore sconosciuto'}`);
     } finally {
       setGenerating(false);
     }

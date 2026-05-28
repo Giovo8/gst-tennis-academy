@@ -8,6 +8,7 @@ import { createNotification } from "@/lib/notifications/createNotification";
 import AuthGuard from "@/components/auth/AuthGuard";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
 import { type UserRole } from "@/lib/roles";
+import { toast } from "sonner";
 
 type User = {
   id: string;
@@ -125,7 +126,7 @@ export default function VideoLessonFormPage() {
       }
     } catch (error) {
       console.error("Error loading video:", error);
-      alert("Errore nel caricamento del video");
+      toast.error("Errore nel caricamento del video");
     }
   }
 
@@ -133,7 +134,7 @@ export default function VideoLessonFormPage() {
     e.preventDefault();
 
     if (!formData.title || !formData.video_url) {
-      alert("Titolo e URL video sono obbligatori");
+      toast.warning("Titolo e URL video sono obbligatori");
       return;
     }
 
@@ -272,11 +273,11 @@ export default function VideoLessonFormPage() {
         }
       }
 
-      alert(isEditMode ? "Video aggiornato con successo!" : "Video creato con successo!");
+      toast.success(isEditMode ? "Video aggiornato con successo!" : "Video creato con successo!");
       router.push(baseVideosPath);
     } catch (error: any) {
       console.error("Error saving video:", error);
-      alert(formatDbError(error));
+      toast.error(formatDbError(error));
     } finally {
       setLoading(false);
     }
@@ -295,11 +296,11 @@ export default function VideoLessonFormPage() {
 
       if (error) throw new Error(formatDbError(error));
 
-      alert("Video eliminato con successo!");
+      toast.success("Video eliminato con successo!");
       router.push(baseVideosPath);
     } catch (error: any) {
       console.error("Error deleting video:", error);
-      alert(formatDbError(error));
+      toast.error(formatDbError(error));
     }
   }
 

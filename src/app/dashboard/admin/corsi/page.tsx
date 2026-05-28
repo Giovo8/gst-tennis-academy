@@ -23,6 +23,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
+import { toast } from 'sonner';
 
 // â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -79,7 +80,7 @@ export default function CorsiAdminPage() {
   async function handleDelete(course: Course) {
     if (!confirm(`Sei sicuro di voler eliminare il corso "${course.name}"?`)) return;
     const { error } = await supabase.from("courses").delete().eq("id", course.id);
-    if (error) alert("Errore: " + error.message);
+    if (error) toast.error("Errore: " + error.message);
     else setCourses((prev) => prev.filter((c) => c.id !== course.id));
   }
 

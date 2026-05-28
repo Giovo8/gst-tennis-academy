@@ -9,6 +9,11 @@ interface RouteAuthResult {
   role: UserRole | null;
 }
 
+/**
+ * Verifica l'autenticazione tramite cookie di sessione (SSR/browser).
+ * Usare in API route chiamate direttamente dal browser senza header Authorization.
+ * Per route chiamate con fetch + header Bearer usare `verifyAuth` da `@/lib/auth/verifyAuth`.
+ */
 export async function getRouteAuth(): Promise<RouteAuthResult | null> {
   try {
     const supabase = await createClient();

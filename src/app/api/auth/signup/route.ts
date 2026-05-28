@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimit = applyRateLimit(clientId, RATE_LIMITS.AUTH_SIGNUP);
+    const rateLimit = await applyRateLimit(clientId, RATE_LIMITS.AUTH_SIGNUP);
 
     if (!rateLimit.allowed) {
       logger.security('Signup rate limit exceeded', { clientId });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     // Additional role validation - only allow specific roles
     const allowedRoles = [USER_ROLES.ATLETA, USER_ROLES.MAESTRO];
-    if (!allowedRoles.includes(role as any)) {
+    if (!allowedRoles.includes(role as 'atleta' | 'maestro')) {
       logger.security('Attempt to register with unauthorized role', {
         role,
         email,

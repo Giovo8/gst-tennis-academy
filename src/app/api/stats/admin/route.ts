@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseServer as supabase } from "@/lib/supabase/serverClient";
+import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
 
 // GET - Fetch admin/gestore statistics
 export async function GET(request: NextRequest) {
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
+
   try {
     const now = new Date().toISOString();
     const today = new Date().toISOString().split('T')[0];

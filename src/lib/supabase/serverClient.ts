@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import env from "@/lib/config/env";
 import logger from "@/lib/logger/secure-logger";
 
@@ -17,9 +17,9 @@ import logger from "@/lib/logger/secure-logger";
  * - Server-to-server authentication
  */
 
-let supabaseServerInstance: ReturnType<typeof createClient> | null = null;
+let supabaseServerInstance: SupabaseClient | null = null;
 
-function createSupabaseServer() {
+function createSupabaseServer(): SupabaseClient {
   try {
     // Validate environment variables are loaded
     const supabaseUrl = env.supabaseUrl;
@@ -52,11 +52,11 @@ function createSupabaseServer() {
 }
 
 // Lazy initialization
-function getSupabaseServer() {
+function getSupabaseServer(): SupabaseClient {
   if (!supabaseServerInstance) {
-    supabaseServerInstance = createSupabaseServer() as any;
+    supabaseServerInstance = createSupabaseServer();
   }
-  return supabaseServerInstance;
+  return supabaseServerInstance!;
 }
 
-export const supabaseServer = getSupabaseServer() as any;
+export const supabaseServer = getSupabaseServer();

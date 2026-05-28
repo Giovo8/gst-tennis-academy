@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Search, UserPlus, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import StatusDot from "./StatusDot";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -114,11 +115,11 @@ export default function NewConversationModal({
         onConversationCreated(data.conversation_id);
         handleClose();
       } else {
-        alert("Errore nella creazione della conversazione");
+        toast.error("Errore nella creazione della conversazione");
       }
     } catch (error) {
       console.error("Error creating conversation:", error);
-      alert("Errore nella creazione della conversazione");
+      toast.error("Errore nella creazione della conversazione");
     } finally {
       setCreating(false);
     }

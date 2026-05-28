@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Trophy, Users, Target, Loader2, Trash2, Calendar, MoreVertical, Search } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
-import { getAvatarUrl } from '@/lib/utils';
+import { useTournamentData } from './hooks/useTournamentData';
+import { ParticipantCard } from './ParticipantCard';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -42,127 +43,17 @@ interface TournamentManagerProps {
 }
 
 export default function TournamentManager({ tournament, isAdmin = false, sectioned = false, onMetaChange }: TournamentManagerProps) {
-  const [participants, setParticipants] = useState<any[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { participants, groups, loading, loadData, handleRemoveParticipant, handleDeleteTournament } = useTournamentData({
+    tournamentId: tournament.id,
+    tournamentType: tournament.tournament_type,
+    maxParticipants: tournament.max_participants,
+    currentPhase: tournament.current_phase,
+    status: tournament.status,
+    onMetaChange,
+  });
   const [activeTab, setActiveTab] = useState<'overview' | 'bracket' | 'groups' | 'calendar' | 'standings'>('overview');
   const [openParticipantMenuId, setOpenParticipantMenuId] = useState<string | null>(null);
   const [participantSearch, setParticipantSearch] = useState('');
-
-  useEffect(() => {
-    loadData();
-  }, [tournament.id]);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Carica partecipanti
-      const participantsRes = await fetch(`/api/tournament_participants?tournament_id=${tournament.id}`);
-      const participantsData = await participantsRes.json();
-
-      let participantsArray: any[] = [];
-
-      if (participantsRes.ok) {
-        participantsArray = participantsData.participants || [];
-        setParticipants(participantsArray);
-      } else {
-        setParticipants([]);
-      }
-
-      // Carica gironi se tipo girone_eliminazione
-      if (tournament.tournament_type === 'girone_eliminazione') {
-        const groupsRes = await fetch(`/api/tournaments/${tournament.id}/groups`);
-        const groupsData = await groupsRes.json();
-        
-        if (groupsRes.ok) {
-          setGroups(groupsData.groups || []);
-        }
-      }
-
-      // Aggiorna i metadati per l'header della pagina
-      if (onMetaChange) {
-        onMetaChange({
-          participantsCount: participantsArray.length,
-          maxParticipants: tournament.max_participants,
-          currentPhase: tournament.current_phase,
-          status: tournament.status,
-          tournamentType: tournament.tournament_type,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading tournament data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveParticipant = async (participantId: string, participantName: string) => {
-    if (!confirm(`Sei sicuro di voler rimuovere ${participantName} dal torneo?`)) {
-      return;
-    }
-
-    try {
-      const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        alert('Sessione non valida');
-        return;
-      }
-
-      const res = await fetch(`/api/tournament_participants?id=${participantId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      if (res.ok) {
-        alert('Partecipante rimosso con successo');
-        loadData();
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Errore nella rimozione del partecipante');
-      }
-    } catch (error) {
-      console.error('Error removing participant:', error);
-      alert('Errore nella rimozione del partecipante');
-    }
-  };
-
-  const handleDeleteTournament = async () => {
-    if (!confirm('⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo torneo?\n\nQuesta azione è irreversibile e cancellerà:\n- Il torneo\n- Tutti i partecipanti\n- Tutte le partite\n- Tutte le statistiche')) {
-      return;
-    }
-
-    try {
-      const { supabase } = await import('@/lib/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        alert('Sessione non valida');
-        return;
-      }
-
-      const res = await fetch(`/api/tournaments?id=${tournament.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      if (res.ok) {
-        alert('Torneo eliminato con successo');
-        window.location.href = '/dashboard/admin/tornei';
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Errore nell\'eliminazione del torneo');
-      }
-    } catch (error) {
-      console.error('Error deleting tournament:', error);
-      alert('Errore nell\'eliminazione del torneo');
-    }
-  };
 
   const getTournamentTypeInfo = () => {
     switch (tournament.tournament_type) {
@@ -457,63 +348,17 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </div>
 
                   {/* Data Rows */}
-                  {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
-                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
-                    const isGuest = !participant.user_id;
-
-                    return (
-                      <div
-                        key={participant.id}
-                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                        style={{ borderLeftColor: isGuest ? "#d1d5db" : "#0f4c7c" }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className={`w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg flex items-center justify-center text-sm font-bold overflow-hidden relative ${isGuest ? 'bg-gray-200 text-gray-400' : 'bg-secondary text-white'}`}>
-                              {avatarUrl ? (
-                                <img
-                                  src={avatarUrl}
-                                  alt={fullName}
-                                  className="absolute inset-0 w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className={`font-bold ${isGuest ? 'text-gray-400' : 'text-secondary'}`}>
-                              {fullName}
-                            </div>
-                          </div>
-                          {isAdmin && (
-                            <div className="relative flex-shrink-0">
-                              <button
-                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
-                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-                              {openParticipantMenuId === participant.id && (
-                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
-                                  {(tournament.current_phase as string) === 'iscrizioni' && (
-                                    <button
-                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      Rimuovi
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {participants.map((participant: any) => (
+                    <ParticipantCard
+                      key={participant.id}
+                      participant={participant}
+                      isAdmin={isAdmin}
+                      currentPhase={tournament.current_phase as string}
+                      openMenuId={openParticipantMenuId}
+                      onMenuToggle={setOpenParticipantMenuId}
+                      onRemove={handleRemoveParticipant}
+                    />
+                  ))}
                 </div>
               )}
             </>
@@ -565,68 +410,19 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </div>
 
                   {/* Data Rows */}
-                  {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
-                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
-                    const isGuest = !participant.user_id;
-
-                    return (
-                      <div
-                        key={participant.id}
-                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                        style={{ borderLeftColor: isGuest ? "#d1d5db" : "#0f4c7c" }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className={`w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg flex items-center justify-center text-sm font-bold overflow-hidden relative ${isGuest ? 'bg-gray-200 text-gray-400' : 'bg-secondary text-white'}`}>
-                              {avatarUrl ? (
-                                <img
-                                  src={avatarUrl}
-                                  alt={fullName}
-                                  className="absolute inset-0 w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className={`font-bold ${isGuest ? 'text-gray-400' : 'text-secondary'}`}>
-                              {fullName}
-                            </div>
-                            {participant.group_id && (
-                              <div className="text-xs text-secondary/60 mt-0.5">
-                                {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'}
-                              </div>
-                            )}
-                          </div>
-                          {isAdmin && (
-                            <div className="relative flex-shrink-0">
-                              <button
-                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
-                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-                              {openParticipantMenuId === participant.id && (
-                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
-                                  {(tournament.current_phase as string) === 'iscrizioni' && (
-                                    <button
-                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      Rimuovi
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {participants.map((participant: any) => (
+                    <ParticipantCard
+                      key={participant.id}
+                      participant={participant}
+                      isAdmin={isAdmin}
+                      currentPhase={tournament.current_phase as string}
+                      groups={groups}
+                      showGroupInfo={true}
+                      openMenuId={openParticipantMenuId}
+                      onMenuToggle={setOpenParticipantMenuId}
+                      onRemove={handleRemoveParticipant}
+                    />
+                  ))}
                 </div>
               )}
             </>
@@ -723,72 +519,21 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </div>
 
                   {/* Data Rows - Tutti i partecipanti */}
-                  {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
-                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
-                    const isGuest = !participant.user_id;
-
-                    return (
-                      <div
-                        key={participant.id}
-                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                        style={{ borderLeftColor: isGuest ? "#d1d5db" : "#0f4c7c" }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className={`w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg flex items-center justify-center text-sm font-bold overflow-hidden relative ${isGuest ? 'bg-gray-200 text-gray-400' : 'bg-secondary text-white'}`}>
-                              {avatarUrl ? (
-                                <img
-                                  src={avatarUrl}
-                                  alt={fullName}
-                                  className="absolute inset-0 w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className={`font-bold ${isGuest ? 'text-gray-400' : 'text-secondary'}`}>
-                              {fullName}
-                            </div>
-                            {participant.group_id && (
-                              <div className="text-xs text-secondary/60 mt-0.5">
-                                {groups.find(g => g.id === participant.group_id)?.group_name || 'Girone'} - {
-                                  participant.group_position && participant.group_position <= (tournament.teams_advancing || 2)
-                                    ? `Posizione ${participant.group_position}`
-                                    : 'Non Qualificato'
-                                }
-                              </div>
-                            )}
-                          </div>
-                          {isAdmin && (
-                            <div className="relative flex-shrink-0">
-                              <button
-                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
-                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-                              {openParticipantMenuId === participant.id && (
-                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
-                                  {(tournament.current_phase as string) === 'iscrizioni' && (
-                                    <button
-                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      Rimuovi
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {participants.map((participant: any) => (
+                    <ParticipantCard
+                      key={participant.id}
+                      participant={participant}
+                      isAdmin={isAdmin}
+                      currentPhase={tournament.current_phase as string}
+                      groups={groups}
+                      teamsAdvancing={tournament.teams_advancing || 2}
+                      showGroupInfo={true}
+                      showGroupPosition={true}
+                      openMenuId={openParticipantMenuId}
+                      onMenuToggle={setOpenParticipantMenuId}
+                      onRemove={handleRemoveParticipant}
+                    />
+                  ))}
                 </div>
               )}
             </>
@@ -889,63 +634,17 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </div>
 
                   {/* Data Rows */}
-                  {participants.map((participant: any, index: number) => {
-                    const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
-                    const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
-                    const isGuest = !participant.user_id;
-
-                    return (
-                      <div
-                        key={participant.id}
-                        className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
-                        style={{ borderLeftColor: isGuest ? "#d1d5db" : "#0f4c7c" }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <div className={`w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg flex items-center justify-center text-sm font-bold overflow-hidden relative ${isGuest ? 'bg-gray-200 text-gray-400' : 'bg-secondary text-white'}`}>
-                              {avatarUrl ? (
-                                <img
-                                  src={avatarUrl}
-                                  alt={fullName}
-                                  className="absolute inset-0 w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className={`font-bold ${isGuest ? 'text-gray-400' : 'text-secondary'}`}>
-                              {fullName}
-                            </div>
-                          </div>
-                          {isAdmin && (
-                            <div className="relative flex-shrink-0">
-                              <button
-                                onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
-                                className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-                              {openParticipantMenuId === participant.id && (
-                                <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
-                                  {(tournament.current_phase as string) === 'iscrizioni' && (
-                                    <button
-                                      onClick={() => handleRemoveParticipant(participant.id, fullName)}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      Rimuovi
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {participants.map((participant: any) => (
+                    <ParticipantCard
+                      key={participant.id}
+                      participant={participant}
+                      isAdmin={isAdmin}
+                      currentPhase={tournament.current_phase as string}
+                      openMenuId={openParticipantMenuId}
+                      onMenuToggle={setOpenParticipantMenuId}
+                      onRemove={handleRemoveParticipant}
+                    />
+                  ))}
                 </div>
               )}
             </>
@@ -1099,67 +798,17 @@ export default function TournamentManager({ tournament, isAdmin = false, section
           </div>
 
           {/* Data Rows */}
-          {participants.map((participant: any, index: number) => {
-            const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
-            const avatarUrl = participant.profiles?.avatar_url ? getAvatarUrl(participant.profiles.avatar_url) : null;
-            const isGuest = !participant.user_id;
-
-            return (
-              <div
-                key={participant.id}
-                className={`bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 ${isGuest ? 'border-gray-300' : 'border-secondary'}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                    <div className={`w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg flex items-center justify-center text-sm font-bold overflow-hidden relative ${isGuest ? 'bg-gray-200 text-gray-400' : 'bg-secondary text-white'}`}>
-                      {avatarUrl ? (
-                        <img
-                          src={avatarUrl}
-                          alt={fullName}
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className={`font-bold ${isGuest ? 'text-gray-400' : 'text-secondary'}`}>
-                      {fullName}
-                    </div>
-                    {participant.stats?.matches_played > 0 && (
-                      <div className="text-xs text-secondary/60 mt-0.5">
-                        {participant.stats.matches_won}W - {participant.stats.matches_lost}L
-                      </div>
-                    )}
-                  </div>
-                  {isAdmin && (
-                    <div className="relative flex-shrink-0">
-                      <button
-                        onClick={() => setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id)}
-                        className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {openParticipantMenuId === participant.id && (
-                        <div className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
-                          {(tournament.current_phase as string) === 'iscrizioni' && (
-                            <button
-                              onClick={() => handleRemoveParticipant(participant.id, fullName)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Rimuovi
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {participants.map((participant: any) => (
+            <ParticipantCard
+              key={participant.id}
+              participant={participant}
+              isAdmin={isAdmin}
+              currentPhase={tournament.current_phase as string}
+              openMenuId={openParticipantMenuId}
+              onMenuToggle={setOpenParticipantMenuId}
+              onRemove={handleRemoveParticipant}
+            />
+          ))}
         </div>
       )}
     </div>

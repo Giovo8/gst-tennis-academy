@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import { toast } from 'sonner';
 
 type Athlete = {
   id: string;
@@ -409,7 +410,7 @@ export default function CorsoDetailPage() {
     setDeleting(true);
     const { error } = await supabase.from("courses").delete().eq("id", course.id);
     if (error) {
-      alert("Errore: " + error.message);
+      toast.error("Errore: " + error.message);
       setDeleting(false);
     } else {
       router.push("/dashboard/admin/corsi");

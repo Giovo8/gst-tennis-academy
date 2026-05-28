@@ -41,6 +41,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from "@/components/ui";
+import { toast } from 'sonner';
 
 type Booking = {
   id: string;
@@ -272,7 +273,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
       if (bookingsError) {
         console.error("❌ Errore Supabase:", bookingsError);
-        alert(`Errore nel caricamento: ${bookingsError.message}\n\nVerifica di avere il ruolo admin/gestore nel database.`);
+        toast.error(`Errore nel caricamento: ${bookingsError.message}\n\nVerifica di avere il ruolo admin/gestore nel database.`);
         setLoading(false);
         return;
       }
@@ -361,7 +362,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       setBookings(enrichedBookings);
     } catch (error) {
       console.error("❌ Errore nel caricamento prenotazioni:", error);
-      alert(`Errore: ${error}`);
+      toast.error(`Errore: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -393,7 +394,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       loadBookings();
     } catch (error) {
       console.error("Error deleting booking:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
+      toast.error(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     }
   }
 
@@ -413,7 +414,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       loadBookings();
     } catch (error) {
       console.error("Errore durante l'annullamento:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
+      toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
     }
   }
 
@@ -687,12 +688,19 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
 
   // Merge bookings + course lessons
   type MergedItem = { kind: "booking"; data: Booking } | { kind: "corso"; data: CourseLesson };
+  const getCourseItemTime = (lesson: CourseLesson): number => {
+    const timeMatch = lesson.time?.match(/^(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      return new Date(`${lesson.dateStr}T${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}:00`).getTime();
+    }
+    return new Date(lesson.dateStr + "T12:00:00").getTime();
+  };
   const mergedItems: MergedItem[] = [
     ...sortedBookings.map((b) => ({ kind: "booking" as const, data: b })),
     ...filteredCourseNextLessons.map((c) => ({ kind: "corso" as const, data: c })),
   ].sort((a, b) => {
-    const aTime = a.kind === "booking" ? new Date(a.data.start_time).getTime() : new Date(a.data.dateStr + "T12:00:00").getTime();
-    const bTime = b.kind === "booking" ? new Date(b.data.start_time).getTime() : new Date(b.data.dateStr + "T12:00:00").getTime();
+    const aTime = a.kind === "booking" ? new Date(a.data.start_time).getTime() : getCourseItemTime(a.data);
+    const bTime = b.kind === "booking" ? new Date(b.data.start_time).getTime() : getCourseItemTime(b.data);
     if (!sortBy) return aTime - bTime;
     return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
   });

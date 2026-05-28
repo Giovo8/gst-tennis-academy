@@ -400,7 +400,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                     <button
                       key={role}
                       type="button"
-                      onClick={() => setNewUser({ ...newUser, role: role as any })}
+                      onClick={() => setNewUser({ ...newUser, role: role as "admin" | "gestore" | "maestro" | "atleta" })}
                       className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
                         newUser.role === role
                           ? 'bg-secondary text-white border-secondary'

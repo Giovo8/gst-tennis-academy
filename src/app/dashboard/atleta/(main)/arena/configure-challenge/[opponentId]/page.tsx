@@ -24,6 +24,9 @@ import {
   ModalFooter,
 } from "@/components/ui";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { type UserRole } from "@/lib/roles";
+import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
+import { ARENA_MATCH_FORMATS, CHALLENGE_TYPES } from "@/lib/arena/arenaConstants";
 
 interface OpponentProfile {
   id: string;
@@ -56,17 +59,6 @@ const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
 const MATCH_TYPES = [
   { value: "singolo", label: "Singolo" },
   { value: "doppio", label: "Doppio" },
-];
-
-const CHALLENGE_TYPES = [
-  { value: "ranked", label: "Classificata" },
-  { value: "amichevole", label: "Amichevole" },
-];
-
-const MATCH_FORMATS = [
-  { value: "best_of_1", label: "Set Singolo" },
-  { value: "best_of_3", label: "Best of 3" },
-  { value: "best_of_5", label: "Best of 5" },
 ];
 
 const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
@@ -118,39 +110,7 @@ export default function ConfigureChallengePage() {
   const editingBookingIdRef = useRef<string | null>(null);
 
   // Drag to scroll
-  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineScrollRef.current) return;
-    isDragging.current = true;
-    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
-    scrollLeft.current = timelineScrollRef.current.scrollLeft;
-    timelineScrollRef.current.style.cursor = "grabbing";
-    timelineScrollRef.current.style.userSelect = "none";
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !timelineScrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - timelineScrollRef.current.offsetLeft;
-    const walk = (x - startX.current) * 2;
-    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.style.cursor = "grab";
-      timelineScrollRef.current.style.userSelect = "auto";
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging.current) handleMouseUp();
-  };
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
 
   useEffect(() => {
     loadData();
@@ -189,7 +149,7 @@ export default function ConfigureChallengePage() {
         fetch("/api/arena/players", { headers: { Authorization: `Bearer ${session.access_token}` } }),
       ]);
 
-      if (profileRes.data) setCurrentUserProfile(profileRes.data as any);
+      if (profileRes.data) setCurrentUserProfile(profileRes.data as Player | null);
 
       const response = playersRes;
       if (response.ok) {
@@ -775,7 +735,7 @@ export default function ConfigureChallengePage() {
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Formato match *</label>
                 <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  {MATCH_FORMATS.map((fmt) => (
+                  {ARENA_MATCH_FORMATS.map((fmt) => (
                     <button
                       key={fmt.value}
                       type="button"
@@ -823,7 +783,7 @@ export default function ConfigureChallengePage() {
         </div>
         <div className="p-4 sm:p-6">
           <AthletesSelector
-            athletes={players as any}
+            athletes={players.map(p => ({ ...p, email: '', role: 'atleta' as UserRole }))}
             selectedAthletes={selectedParticipants}
             onAthleteAdd={(participant) => {
               if (matchType !== "doppio") return;
@@ -866,7 +826,7 @@ export default function ConfigureChallengePage() {
         </div>
         <div className="p-4 sm:p-6">
           <div
-            ref={timelineScrollRef}
+            ref={scrollRef}
             className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
             style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
             onMouseDown={handleMouseDown}

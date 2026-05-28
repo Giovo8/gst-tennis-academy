@@ -170,14 +170,18 @@ export default function MaestroDashboardPage() {
         const allProfilesMap = new Map(allProfiles?.map((p) => [p.id, p]) || []);
 
         let participantsData: TimelineBooking["participants"] | null = null;
-        if ((participantsQuery as any).error?.message?.toLowerCase().includes("phone")) {
+        const { error: pqError, data: pqData } = participantsQuery as {
+          data: TimelineBooking["participants"] | null;
+          error: { message?: string } | null;
+        };
+        if (pqError?.message?.toLowerCase().includes("phone")) {
           const fallbackQuery = await supabase
             .from("booking_participants")
             .select("id, booking_id, full_name, email, is_registered, user_id, order_index")
             .in("booking_id", ownBookingIdsList);
           if (!fallbackQuery.error) participantsData = fallbackQuery.data || [];
-        } else if (!(participantsQuery as any).error) {
-          participantsData = (participantsQuery as any).data || [];
+        } else if (!pqError) {
+          participantsData = pqData || [];
         }
 
         const enrichedBookings = allBookingsData.map((booking) => {

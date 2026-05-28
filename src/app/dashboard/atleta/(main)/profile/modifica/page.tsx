@@ -14,6 +14,7 @@ import {
   Link as LinkIcon,
   X,
 } from "lucide-react";
+import { toast } from 'sonner';
 
 type Profile = {
   id: string;
@@ -87,7 +88,7 @@ export default function AthleteProfileEditPage() {
         .maybeSingle();
 
       if (error || !data) {
-        alert("Profilo non trovato");
+        toast.error("Profilo non trovato");
         router.push("/dashboard/atleta/profile");
         return;
       }
@@ -108,7 +109,7 @@ export default function AthleteProfileEditPage() {
       });
     } catch (error) {
       console.error("Error loading profile:", error);
-      alert("Errore nel caricamento del profilo");
+      toast.error("Errore nel caricamento del profilo");
       router.push("/dashboard/atleta/profile");
     } finally {
       setLoading(false);
@@ -149,7 +150,7 @@ export default function AthleteProfileEditPage() {
       router.push("/dashboard/atleta/profile");
     } catch (err: any) {
       console.error("Error updating profile:", err);
-      alert(err?.message || "Errore durante il salvataggio del profilo");
+      toast.error(err?.message || "Errore durante il salvataggio del profilo");
     } finally {
       setUpdating(false);
     }
@@ -160,12 +161,12 @@ export default function AthleteProfileEditPage() {
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("L'immagine deve essere inferiore a 5MB");
+      toast.warning("L'immagine deve essere inferiore a 5MB");
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      alert("Il file deve essere un'immagine");
+      toast.warning("Il file deve essere un'immagine");
       return;
     }
 
@@ -201,7 +202,7 @@ export default function AthleteProfileEditPage() {
       setUser({ ...user, avatar_url: publicUrl });
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      alert("Errore durante l'upload dell'immagine");
+      toast.error("Errore durante l'upload dell'immagine");
     } finally {
       setUploadingAvatar(false);
     }
@@ -213,7 +214,7 @@ export default function AthleteProfileEditPage() {
     try {
       new URL(avatarUrl);
     } catch {
-      alert("Inserisci un URL valido");
+      toast.warning("Inserisci un URL valido");
       return;
     }
 
@@ -232,7 +233,7 @@ export default function AthleteProfileEditPage() {
       setAvatarUrl("");
     } catch (error) {
       console.error("Error updating avatar:", error);
-      alert("Errore durante l'aggiornamento dell'immagine");
+      toast.error("Errore durante l'aggiornamento dell'immagine");
     } finally {
       setUploadingAvatar(false);
     }
@@ -270,7 +271,7 @@ export default function AthleteProfileEditPage() {
       setAvatarUrl("");
     } catch (error) {
       console.error("Error removing avatar:", error);
-      alert("Errore durante la rimozione dell'avatar");
+      toast.error("Errore durante la rimozione dell'avatar");
     } finally {
       setUploadingAvatar(false);
     }
@@ -289,10 +290,10 @@ export default function AthleteProfileEditPage() {
 
       if (error) throw error;
 
-      alert("Email di reset password inviata con successo.");
+      toast.success("Email di reset password inviata con successo.");
     } catch (err: any) {
       console.error("Error resetting password:", err);
-      alert(err?.message || "Errore durante l'invio del reset password");
+      toast.error(err?.message || "Errore durante l'invio del reset password");
     } finally {
       setResettingPassword(false);
     }

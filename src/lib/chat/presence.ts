@@ -5,6 +5,16 @@ import { supabase } from "@/lib/supabase/client";
 
 type UserStatus = "online" | "offline" | "away" | "busy";
 
+interface UserPresenceRecord {
+  status?: string;
+  last_seen?: string | null;
+}
+
+interface TypingIndicatorRecord {
+  user_id: string;
+  is_typing?: boolean;
+}
+
 interface UseUserPresenceReturn {
   status: UserStatus;
   lastSeen: string | null;
@@ -54,8 +64,9 @@ export function useUserPresence(userId: string | null): UseUserPresenceReturn {
         },
         (payload) => {
           if (payload.new) {
-            setStatus((payload.new as any).status || "offline");
-            setLastSeen((payload.new as any).last_seen || null);
+            const newPresence = payload.new as UserPresenceRecord;
+            setStatus(newPresence.status as UserStatus || "offline");
+            setLastSeen(newPresence.last_seen || null);
           }
         }
       )
@@ -164,7 +175,7 @@ export function useTypingIndicator(conversationId: string | null) {
         },
         async (payload) => {
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            const newData = payload.new as any;
+            const newData = payload.new as TypingIndicatorRecord;
             if (newData.is_typing) {
               // Fetch user profile
               const { data: profile } = await supabase
@@ -194,7 +205,7 @@ export function useTypingIndicator(conversationId: string | null) {
               );
             }
           } else if (payload.eventType === "DELETE") {
-            const oldData = payload.old as any;
+            const oldData = payload.old as TypingIndicatorRecord;
             setTypingUsers((prev) =>
               prev.filter((u) => u.user_id !== oldData.user_id)
             );

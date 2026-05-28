@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimit = applyRateLimit(clientId, RATE_LIMITS.API_SEARCH);
+    const rateLimit = await applyRateLimit(clientId, RATE_LIMITS.API_SEARCH);
     
     if (!rateLimit.allowed) {
       logger.security('Rate limit exceeded for user search', { clientId });

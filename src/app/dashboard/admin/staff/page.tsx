@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Plus, User, Loader2, Search, MoreVertical, Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from 'sonner';
 
 type StaffMember = {
   id: string;
@@ -56,7 +57,7 @@ export default function AdminStaffPage() {
         prev.map((m) => (m.id === member.id ? { ...m, active: newActive } : m))
       );
     } catch {
-      alert("Errore durante l'aggiornamento dello stato");
+      toast.error("Errore durante l'aggiornamento dello stato");
     }
   }
 
@@ -73,7 +74,7 @@ export default function AdminStaffPage() {
       await loadStaff();
     } catch (error) {
       // Handle error with user feedback
-      alert("Errore nell'eliminazione dello staff member");
+      toast.error("Errore nell'eliminazione dello staff member");
     }
   }
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, AlertCircle, Calendar, ChevronDown, ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
+import { Loader2, AlertCircle, Calendar, ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
 import {
   Modal,
   ModalContent,
@@ -16,7 +16,10 @@ import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { SearchableSelect } from "@/components/bookings/SearchableSelect";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
+import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
+import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
 
 interface Booking {
   id: string;
@@ -73,108 +76,11 @@ interface ExistingBooking {
   reason?: string;
 }
 
-interface SearchableOption {
-  value: string;
-  label: string;
-}
-
-interface SearchableSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: SearchableOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-}
-
-function SearchableSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  searchPlaceholder,
-}: SearchableSelectProps) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-
-  const selectedOption = options.find((opt) => opt.value === value);
-  const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const handleSelect = (val: string) => {
-    onChange(val);
-    setOpen(false);
-  };
-
-  const handleToggle = () => {
-    setOpen((prev) => {
-      const next = !prev;
-      if (!next) {
-        setQuery("");
-      }
-      return next;
-    });
-  };
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="w-full rounded-lg border border-gray-200 bg-white shadow-sm px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-      >
-        <span className={selectedOption ? "" : "text-secondary/40"}>
-          {selectedOption ? selectedOption.label : placeholder || "Seleziona"}
-        </span>
-        <ChevronDown className="h-4 w-4 text-secondary/60 ml-2 flex-shrink-0" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
-          <div className="p-2 border-b border-gray-100">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder || "Cerca..."}
-              className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
-            />
-          </div>
-          <div className="max-h-56 overflow-auto py-1">
-            {filteredOptions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-secondary/40">Nessun risultato</div>
-            ) : (
-              filteredOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleSelect(opt.value)}
-                  className={`w-full px-3 py-2 text-left text-sm hover:bg-secondary/5 ${
-                    opt.value === value ? "bg-secondary/10 font-semibold" : ""
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", shortLabel: "Campo" },
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata" },
   { value: "lezione_gruppo", label: "Lezione Gruppo", shortLabel: "Gruppo" },
 ];
-
-const MATCH_FORMATS = [
-  { value: "singolo", label: "Singolo" },
-  { value: "doppio", label: "Doppio" },
-] as const;
-
-type MatchFormat = "singolo" | "doppio";
 
 interface AthleteProfile {
   id: string;
@@ -227,49 +133,13 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
-  // Drag to scroll
-  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
 
   const getPrimaryParticipant = (bookingItem: ExistingBooking | null) =>
     bookingItem?.participants?.find((participant) => participant.full_name?.trim().length > 0) || null;
 
   const getBookingDisplayName = (bookingItem: ExistingBooking) =>
     getPrimaryParticipant(bookingItem)?.full_name || bookingItem.user_profile?.full_name || "Sconosciuto";
-
-  // Drag to scroll handlers
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineScrollRef.current) return;
-    isDragging.current = true;
-    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
-    scrollLeft.current = timelineScrollRef.current.scrollLeft;
-    timelineScrollRef.current.style.cursor = 'grabbing';
-    timelineScrollRef.current.style.userSelect = 'none';
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !timelineScrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - timelineScrollRef.current.offsetLeft;
-    const walk = (x - startX.current) * 2;
-    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.style.cursor = 'grab';
-      timelineScrollRef.current.style.userSelect = 'auto';
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging.current) {
-      handleMouseUp();
-    }
-  };
 
   useEffect(() => {
     if (!bookingId) {
@@ -318,7 +188,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           .order("order_index", { ascending: true });
         participantsData = participantsQuery.data;
 
-        setBooking({ ...(data as any), user_profile: userProfile, participants: participantsData || [] } as Booking);
+        setBooking({ ...data, user_profile: userProfile, participants: participantsData || [] } as Booking);
         setSelectedCourt(data.court);
         setBookingType(data.type || "campo");
         setSelectedCoach(data.coach_id || "");
@@ -1024,6 +894,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         }))}
                         placeholder="Seleziona maestro"
                         searchPlaceholder="Cerca maestro"
+                        triggerClassName="w-full rounded-lg border border-gray-200 bg-white shadow-sm px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        itemClassName="py-2"
                       />
                     </div>
                   </div>
@@ -1093,7 +965,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   </div>
                 ) : (
                   <div
-                    ref={timelineScrollRef}
+                    ref={scrollRef}
                     className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
                     style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
                     onMouseDown={handleMouseDown}

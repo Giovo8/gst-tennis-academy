@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -23,6 +23,8 @@ import {
   ModalFooter,
 } from "@/components/ui";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
+import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
+import { CHALLENGE_TYPES } from "@/lib/arena/arenaConstants";
 import { type UserRole } from "@/lib/roles";
 
 interface Player {
@@ -74,10 +76,6 @@ const MATCH_TYPES = [
   { value: "singles", label: "Singolo" },
   { value: "doubles", label: "Doppio" },
 ];
-const CHALLENGE_TYPES = [
-  { value: "ranked", label: "Classificata" },
-  { value: "amichevole", label: "Amichevole" },
-];
 const MATCH_FORMATS = [
   { value: "best_of_3", label: "Best of 3" },
   { value: "best_of_2", label: "Best of 2" },
@@ -121,42 +119,7 @@ export default function AdminEditChallengePage() {
   });
   
   // Drag to scroll
-  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-
-  // Drag to scroll handlers
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineScrollRef.current) return;
-    isDragging.current = true;
-    startX.current = e.pageX - timelineScrollRef.current.offsetLeft;
-    scrollLeft.current = timelineScrollRef.current.scrollLeft;
-    timelineScrollRef.current.style.cursor = 'grabbing';
-    timelineScrollRef.current.style.userSelect = 'none';
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !timelineScrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - timelineScrollRef.current.offsetLeft;
-    const walk = (x - startX.current) * 2;
-    timelineScrollRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.style.cursor = 'grab';
-      timelineScrollRef.current.style.userSelect = 'auto';
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging.current) {
-      handleMouseUp();
-    }
-  };
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
 
   useEffect(() => {
     loadPlayers();
@@ -913,7 +876,7 @@ export default function AdminEditChallengePage() {
                 </div>
               ) : (
                 <div
-                  ref={timelineScrollRef}
+                  ref={scrollRef}
                   className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
                   style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
                   onMouseDown={handleMouseDown}

@@ -25,6 +25,7 @@ import {
   Phone,
   Save,
 } from "lucide-react";
+import { toast } from 'sonner';
 
 type Booking = {
   id: string;
@@ -222,7 +223,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
 
   async function loadBooking() {
     if (!bookingId) {
-      alert("ID prenotazione non valido");
+      toast.error("ID prenotazione non valido");
       router.push(`${basePath}/bookings`);
       return;
     }
@@ -236,13 +237,13 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
 
       if (error) {
         console.error("Errore caricamento prenotazione:", error);
-        alert("Errore nel caricamento della prenotazione");
+        toast.error("Errore nel caricamento della prenotazione");
         router.push(`${basePath}/bookings`);
         return;
       }
 
       if (!bookingData) {
-        alert("Prenotazione non trovata");
+        toast.error("Prenotazione non trovata");
         router.push(`${basePath}/bookings`);
         return;
       }
@@ -349,7 +350,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       setBooking(enrichedBooking);
     } catch (error) {
       console.error("Errore:", error);
-      alert("Errore nel caricamento della prenotazione");
+      toast.error("Errore nel caricamento della prenotazione");
       router.push(`${basePath}/bookings`);
     } finally {
       setLoading(false);
@@ -386,7 +387,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       router.push(`${basePath}/bookings`);
     } catch (error) {
       console.error("Errore:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'eliminazione");
+      toast.error(error instanceof Error ? error.message : "Errore durante l'eliminazione");
     } finally {
       setActionLoading(false);
       setDeleting(false);
@@ -412,7 +413,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       await loadBooking();
     } catch (error) {
       console.error("Errore:", error);
-      alert(error instanceof Error ? error.message : "Errore durante l'annullamento");
+      toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
     } finally {
       setActionLoading(false);
     }

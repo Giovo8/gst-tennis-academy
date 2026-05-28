@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Users, Trophy, TrendingUp, RefreshCw, Target, Calendar } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { getAvatarUrl } from '@/lib/utils';
+import { toast } from 'sonner';
 
 type TabType = 'participants' | 'standings' | 'matches';
 
@@ -145,7 +146,7 @@ export default function GroupStageView({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        alert('Sessione non valida');
+        toast.error('Sessione non valida');
         return;
       }
 
@@ -159,16 +160,16 @@ export default function GroupStageView({
       const data = await res.json();
 
       if (res.ok) {
-        alert(data.message || 'Gironi generati con successo!');
+        toast.success(data.message || 'Gironi generati con successo!');
         // Reload the page or update groups
         if (onMatchUpdate) onMatchUpdate();
         window.location.reload();
       } else {
-        alert(data.error || 'Errore nella generazione dei gironi');
+        toast.error(data.error || 'Errore nella generazione dei gironi');
       }
     } catch (error) {
       console.error('Error generating groups:', error);
-      alert('Errore nella generazione dei gironi');
+      toast.error('Errore nella generazione dei gironi');
     } finally {
       setGenerating(false);
     }
@@ -231,15 +232,15 @@ export default function GroupStageView({
       const data = await res.json();
 
       if (res.ok) {
-        alert(data.message || 'Partecipanti avanzati alla fase eliminatoria!');
+        toast.success(data.message || 'Partecipanti avanzati alla fase eliminatoria!');
         // Reload the page to show knockout phase
         window.location.reload();
       } else {
-        alert(data.error || 'Errore nell\'avanzamento alla fase eliminatoria');
+        toast.error(data.error || 'Errore nell\'avanzamento alla fase eliminatoria');
       }
     } catch (error) {
       console.error('Error advancing to knockout:', error);
-      alert('Errore nell\'avanzamento alla fase eliminatoria');
+      toast.error('Errore nell\'avanzamento alla fase eliminatoria');
     } finally {
       setAdvancing(false);
     }
@@ -385,7 +386,7 @@ export default function GroupStageView({
                       className="px-3 py-1.5 text-xs text-[#022431] hover:bg-[#022431]/10 rounded-md font-medium whitespace-nowrap transition-colors"
                       onClick={() => {
                         if (confirm(`Rimuovere ${fullName} dal torneo?`)) {
-                          alert('Funzione rimozione partecipante da collegare (admin).');
+                          toast.info('Funzione rimozione partecipante da collegare (admin).');
                         }
                       }}
                     >

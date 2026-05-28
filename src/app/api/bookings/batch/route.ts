@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabase/serverClient";
 import { notifyAdmins } from "@/lib/notifications/notifyAdmins";
 import { sendBookingCreatedEmailToGestore, sendBookingCreatedEmailToAthlete, sendBookingCreatedEmailToMaestro } from "@/lib/email/booking-notifications";
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
@@ -11,9 +11,6 @@ import {
 } from "@/lib/bookings/privateLessonNotifications";
 import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 /**
  * API per creare prenotazioni multiple in una transazione atomica
  * POST /api/bookings/batch
@@ -23,7 +20,7 @@ export async function POST(request: Request) {
   const auth = await getRouteAuth();
   if (!auth) return unauthorized();
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = supabaseServer;
 
   try {
     const body = await request.json();
@@ -46,30 +43,41 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check conflitti per TUTTI gli slot prima di inserire
+    // Check conflitti per TUTTI gli slot con una singola query (evita N+1)
+    const courts = [...new Set(bookings.map((b) => b.court))];
+    const minStart = [...bookings].sort((a, b) => a.start_time.localeCompare(b.start_time))[0].start_time;
+    const maxEnd = [...bookings].sort((a, b) => b.end_time.localeCompare(a.end_time))[0].end_time;
+
+    const { data: existingBookings, error: conflictError } = await supabase
+      .from("bookings")
+      .select("id, start_time, end_time, court, status")
+      .in("court", courts)
+      .neq("status", "cancelled")
+      .neq("status", "rejected")
+      .lt("start_time", maxEnd)
+      .gt("end_time", minStart);
+
+    if (conflictError) {
+      return NextResponse.json(
+        { error: "Error checking conflicts", details: conflictError.message },
+        { status: 500 }
+      );
+    }
+
+    // Controlla overlap esatto per ogni slot in JS
     const conflicts = [];
-    
     for (const booking of bookings) {
-      const { data: existingBookings, error: conflictError } = await supabase
-        .from("bookings")
-        .select("id, start_time, end_time, court, status")
-        .eq("court", booking.court)
-        .neq("status", "cancelled")
-        .neq("status", "rejected")
-        .or(`and(start_time.lt.${booking.end_time},end_time.gt.${booking.start_time})`);
-
-      if (conflictError) {
-        return NextResponse.json(
-          { error: "Error checking conflicts", details: conflictError.message },
-          { status: 500 }
-        );
-      }
-
-      if ((existingBookings || []).length > 0) {
+      const overlapping = (existingBookings || []).filter(
+        (existing) =>
+          existing.court === booking.court &&
+          existing.start_time < booking.end_time &&
+          existing.end_time > booking.start_time
+      );
+      if (overlapping.length > 0) {
         conflicts.push({
           start_time: booking.start_time,
           court: booking.court,
-          conflict_count: existingBookings?.length || 0,
+          conflict_count: overlapping.length,
         });
       }
     }

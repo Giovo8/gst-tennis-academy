@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { toast } from 'sonner';
 
 type Block = {
   id: string;
@@ -159,7 +160,7 @@ export default function CourtBlockDetailPage() {
       router.push("/dashboard/admin/courts");
     } catch (err) {
       console.error("Error deleting blocks:", err);
-      alert("Errore durante l'eliminazione del blocco");
+      toast.error("Errore durante l'eliminazione del blocco");
     } finally {
       setDeleting(false);
     }
@@ -190,7 +191,7 @@ export default function CourtBlockDetailPage() {
       );
     } catch (err) {
       console.error("Error toggling date:", err);
-      alert("Errore durante la modifica");
+      toast.error("Errore durante la modifica");
     } finally {
       setTogglingDateId(null);
     }

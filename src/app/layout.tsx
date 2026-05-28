@@ -4,6 +4,7 @@ import "./globals.css";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import { defaultMetadata, generateOrganizationSchema } from "@/lib/seo/metadata";
 import { ThemeProvider } from "@/components/theme";
+import { Toaster } from "sonner";
 
 const inter = Inter_Tight({
   subsets: ["latin"],
@@ -72,6 +73,7 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="light">
           {children}
           <ConditionalFooter />
+          <Toaster position="top-right" richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

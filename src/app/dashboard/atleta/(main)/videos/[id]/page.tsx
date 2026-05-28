@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface VideoLesson {
   id: string;
@@ -179,15 +180,15 @@ export default function VideoPlayerPage() {
 
       if (deleteError) throw deleteError;
 
-      alert("Video eliminato con successo!");
+      toast.success("Video eliminato con successo!");
       router.push(`${dashboardBase}/videos`);
     } catch (deleteErr: any) {
       const dbErrorCode = deleteErr?.code;
       const baseMessage = deleteErr?.message || "Errore durante l'eliminazione";
       if (dbErrorCode === "42501") {
-        alert(`${baseMessage}. Verifica che sia applicata la migration 039_allow_maestro_delete_own_video_lessons.sql.`);
+        toast.error(`${baseMessage}. Verifica che sia applicata la migration 039_allow_maestro_delete_own_video_lessons.sql.`);
       } else {
-        alert(baseMessage);
+        toast.error(baseMessage);
       }
     } finally {
       setDeleting(false);

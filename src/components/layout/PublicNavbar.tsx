@@ -76,7 +76,8 @@ export default function PublicNavbar() {
   };
 
   return (
-    <nav className="bg-white sticky top-2 z-50 safe-top shadow-sm mx-6 mt-2 rounded-xl border border-gray-200">
+    <>
+    <nav className="bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-gray-200 [transform:translateZ(0)]">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo - left */}
@@ -104,5 +105,7 @@ export default function PublicNavbar() {
 
       </div>
     </nav>
+    <div className="h-[4.5rem] lg:hidden" aria-hidden="true" />
+    </>
   );
 }

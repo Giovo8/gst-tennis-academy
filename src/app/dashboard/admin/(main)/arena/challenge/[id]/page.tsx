@@ -17,6 +17,7 @@ import {
   ModalTitle,
   ModalBody,
 } from "@/components/ui";
+import { toast } from 'sonner';
 
 interface Challenge {
   id: string;
@@ -371,10 +372,10 @@ export default function AdminChallengeDetailPage() {
       }
 
       const errorData = await response.json().catch(() => null);
-      alert(errorData?.error || "Impossibile eliminare la sfida");
+      toast.error(errorData?.error || "Impossibile eliminare la sfida");
     } catch (error) {
       console.error("Error deleting challenge:", error);
-      alert("Errore durante l'eliminazione della sfida");
+      toast.error("Errore durante l'eliminazione della sfida");
     }
   }
 
@@ -402,10 +403,10 @@ export default function AdminChallengeDetailPage() {
       }
 
       const errorData = await response.json().catch(() => null);
-      alert(errorData?.error || "Impossibile annullare la sfida");
+      toast.error(errorData?.error || "Impossibile annullare la sfida");
     } catch (error) {
       console.error("Error cancelling challenge:", error);
-      alert("Errore durante l'annullamento della sfida");
+      toast.error("Errore durante l'annullamento della sfida");
     }
   }
 
@@ -428,21 +429,21 @@ export default function AdminChallengeDetailPage() {
       }
 
       const errorData = await response.json().catch(() => null);
-      alert(errorData?.error || "Impossibile confermare la sfida");
+      toast.error(errorData?.error || "Impossibile confermare la sfida");
     } catch (error) {
       console.error("Error confirming challenge:", error);
-      alert("Errore durante la conferma della sfida");
+      toast.error("Errore durante la conferma della sfida");
     }
   }
 
   async function handleSaveScore() {
     if (!score.trim()) {
-      alert("Inserisci il punteggio");
+      toast.warning("Inserisci il punteggio");
       return;
     }
 
     if (!SCORE_PATTERN.test(score.trim())) {
-      alert("Formato punteggio non valido. Usa ad esempio: 6-4, 6-3");
+      toast.warning("Formato punteggio non valido. Usa ad esempio: 6-4, 6-3");
       return;
     }
 
@@ -450,7 +451,7 @@ export default function AdminChallengeDetailPage() {
     const computedWinnerId = getWinnerIdFromScore(normalizedScore, challenge.challenger_id, challenge.opponent_id);
 
     if (!computedWinnerId) {
-      alert("Impossibile determinare il vincitore dal punteggio inserito");
+      toast.error("Impossibile determinare il vincitore dal punteggio inserito");
       return;
     }
 
@@ -468,16 +469,16 @@ export default function AdminChallengeDetailPage() {
       });
 
       if (response.ok) {
-        alert("✅ Punteggio salvato con successo!");
+        toast.success("Punteggio salvato con successo!");
         setShowScoreForm(false);
         loadChallengeDetails();
       } else {
         const errorData = await response.json();
-        alert(`❌ Errore: ${errorData.error || "Impossibile salvare il punteggio"}`);
+        toast.error(`Errore: ${errorData.error || "Impossibile salvare il punteggio"}`);
       }
     } catch (error) {
       console.error("Error saving score:", error);
-      alert("❌ Errore nel salvataggio del punteggio");
+      toast.error("Errore nel salvataggio del punteggio");
     } finally {
       setSavingScore(false);
     }

@@ -245,7 +245,7 @@ export default function CreateNewsPage() {
     }
   }
 
-  function handleImageUrl() {
+  async function handleImageUrl() {
     if (!imageUrlInput) return;
 
     try {
@@ -255,10 +255,43 @@ export default function CreateNewsPage() {
       return;
     }
 
-    setError(null);
-    setImageUrl(imageUrlInput);
-    setImageUrlInput("");
+    setUploadingImage(true);
     setShowImageModal(false);
+    setError(null);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("externalUrl", imageUrlInput);
+      if (imageUrl) {
+        uploadFormData.append("oldImageUrl", imageUrl);
+      }
+
+      const response = await fetch("/api/upload/news-image", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Errore nel recupero dell'immagine";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Keep fallback error message
+        }
+        throw new Error(errorMessage);
+      }
+
+      const responseData = await response.json();
+      if (!responseData.url) throw new Error("Server non ha restituito un URL valido");
+
+      setImageUrl(responseData.url);
+      setImageUrlInput("");
+    } catch (uploadError: unknown) {
+      setError(uploadError instanceof Error ? uploadError.message : "Errore durante il recupero dell'immagine");
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   if (loading) {

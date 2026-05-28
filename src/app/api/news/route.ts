@@ -21,7 +21,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  // Cache only published articles (not the admin ?all=true variant)
+  const headers = !showAll
+    ? { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" }
+    : {};
+  return NextResponse.json(data, { headers });
 }
 
 export async function POST(request: Request) {

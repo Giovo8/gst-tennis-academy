@@ -5,6 +5,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import { Newspaper, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, Search, Filter, Calendar, X, RefreshCw, Download, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
+import { toast } from 'sonner';
 
 type News = {
   id: string;
@@ -75,7 +76,7 @@ export default function AdminNewsPage() {
     const { error } = await supabase.from("news").delete().eq("id", id);
 
     if (error) {
-      alert("Errore durante l'eliminazione: " + error.message);
+      toast.error("Errore durante l'eliminazione: " + error.message);
     } else {
       loadNews();
     }
@@ -93,7 +94,7 @@ export default function AdminNewsPage() {
       .eq("id", id);
 
     if (error) {
-      alert("Errore: " + error.message);
+      toast.error("Errore: " + error.message);
     } else {
       loadNews();
     }

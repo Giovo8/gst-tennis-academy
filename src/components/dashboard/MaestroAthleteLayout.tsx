@@ -4,6 +4,7 @@ import { useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import DashboardShell, { NavItem } from "@/components/dashboard/DashboardShell";
 import { supabase } from "@/lib/supabase/client";
+import { getSecondaryRoles } from "@/lib/roles";
 import {
   Calendar,
   Trophy,
@@ -44,9 +45,7 @@ export default function MaestroAthleteLayout({ children }: MaestroAthleteLayoutP
         .eq("id", user.id)
         .single();
 
-      const secondaryRoles = Array.isArray((profile as any)?.metadata?.secondary_roles)
-        ? (profile as any).metadata.secondary_roles.map((value: unknown) => String(value).toLowerCase())
-        : [];
+      const secondaryRoles = getSecondaryRoles(profile?.metadata);
       const canAccessMaestro = profile?.role === "maestro" || secondaryRoles.includes("maestro");
 
       if (!profile || !canAccessMaestro) {

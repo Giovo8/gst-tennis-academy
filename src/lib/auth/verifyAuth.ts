@@ -24,16 +24,18 @@ export interface AuthErrorResponse {
 export interface AuthSuccessResponse {
   success: true;
   data: AuthResult;
+  response?: never;
 }
 
 /**
- * Verifica l'autenticazione dell'utente da un header Authorization Bearer token.
- * Restituisce i dati utente e profilo se autenticato, altrimenti un errore.
+ * Verifica l'autenticazione tramite header `Authorization: Bearer <token>`.
+ * Usare in API route chiamate dal client JS con fetch + header esplicito.
+ * Per route chiamate dal browser senza header (cookie automatico) usare `getRouteAuth`.
  */
 export async function verifyAuth(
   req: Request,
   allowedRoles?: UserRole[]
-): Promise<any> {
+): Promise<AuthSuccessResponse | AuthErrorResponse> {
   const authHeader = req.headers.get("authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

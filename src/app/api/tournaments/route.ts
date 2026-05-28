@@ -37,7 +37,7 @@ interface TournamentBody {
 
 async function getUserProfileFromRequest(req: Request) {
   const supabase = getSupabase();
-  const authHeader = (req as any).headers?.get?.("authorization") ?? null;
+  const authHeader = req.headers.get("authorization") ?? null;
   const token = authHeader?.replace("Bearer ", "") ?? null;
   if (!token) return { user: null, profile: null };
   const { data: userData, error: userErr } = await supabase.auth.getUser(token);
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
 
     // Rate limiting
     const clientId = getClientIdentifier(req);
-    const rateLimit = applyRateLimit(clientId, RATE_LIMITS.API_WRITE);
+    const rateLimit = await applyRateLimit(clientId, RATE_LIMITS.API_WRITE);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -178,7 +178,7 @@ export async function POST(req: Request) {
     }
 
     const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role as any)) {
+    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
         { status: HTTP_STATUS.FORBIDDEN }
@@ -205,7 +205,7 @@ export async function POST(req: Request) {
     const body = validationResult.data;
 
     if (body.format === COMPETITION_FORMAT.ELIMINAZIONE_DIRETTA &&
-        !TOURNAMENT_CONFIG.VALID_BRACKET_SIZES.includes(body.max_participants as any)) {
+        !(TOURNAMENT_CONFIG.VALID_BRACKET_SIZES as readonly number[]).includes(body.max_participants)) {
       return NextResponse.json({
         error: `For eliminazione_diretta, max_participants must be one of: ${TOURNAMENT_CONFIG.VALID_BRACKET_SIZES.join(', ')}`
       }, { status: HTTP_STATUS.BAD_REQUEST });
@@ -256,7 +256,7 @@ export async function PUT(req: Request) {
     }
 
     const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role as any)) {
+    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
         { status: HTTP_STATUS.FORBIDDEN }
@@ -304,7 +304,7 @@ export async function DELETE(req: Request) {
     }
 
     const { user, profile } = await getUserProfileFromRequest(req);
-    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role as any)) {
+    if (!profile || ![USER_ROLES.GESTORE, USER_ROLES.ADMIN].includes(profile.role)) {
       return NextResponse.json(
         { error: ERROR_MESSAGES.FORBIDDEN },
         { status: HTTP_STATUS.FORBIDDEN }
@@ -330,3 +330,4 @@ export async function DELETE(req: Request) {
     );
   }
 }
+
