@@ -5,7 +5,9 @@
 
 /* Mobile Optimizations */
 @media (max-width: 768px) {
-  /* Prevent text overflow */
+  /* Prevent text overflow — must be on html too, otherwise body becomes the
+     scroll container and position:fixed elements scroll with the page */
+  html,
   body {
     overflow-x: hidden;
   }
