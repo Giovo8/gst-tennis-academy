@@ -3,15 +3,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, AlertCircle, Calendar, ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
 import {
   Modal,
   ModalContent,
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
-import { addDays, format } from "date-fns";
-import { it } from "date-fns/locale";
+
 import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
@@ -79,7 +78,6 @@ interface ExistingBooking {
 const BOOKING_TYPES = [
   { value: "campo", label: "Campo", shortLabel: "Campo" },
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata" },
-  { value: "lezione_gruppo", label: "Lezione Gruppo", shortLabel: "Gruppo" },
 ];
 
 interface AthleteProfile {
@@ -112,8 +110,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
   const [bookingType, setBookingType] = useState<string>("campo");
-  const [coaches, setCoaches] = useState<{ id: string; full_name: string }[]>([]);
-  const [selectedCoach, setSelectedCoach] = useState<string>("");
+  const [coaches, setCoaches] = useState<{ id: string; full_name: string; email?: string }[]>([]);
+  const [selectedCoaches, setSelectedCoaches] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -191,7 +189,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         setBooking({ ...data, user_profile: userProfile, participants: participantsData || [] } as Booking);
         setSelectedCourt(data.court);
         setBookingType(data.type || "campo");
-        setSelectedCoach(data.coach_id || "");
+        setSelectedCoaches(data.coach_id ? [data.coach_id] : []);
         setSelectedDate(new Date(data.start_time));
 
         // Pre-compila gli slot selezionati a partire da start_time / end_time (ogni 30 min)
@@ -237,15 +235,15 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         }
 
         const [coachRes, athleteRes] = await Promise.all([
-          supabase.from("profiles").select("id, full_name, role, metadata").in("role", ["maestro", "gestore"]).order("full_name"),
+          supabase.from("profiles").select("id, full_name, email, role, metadata").in("role", ["maestro", "gestore"]).order("full_name"),
           supabase.from("profiles").select("id, full_name, email, phone, role").eq("role", "atleta").order("full_name"),
         ]);
         if (coachRes.data) {
           const eligibleCoaches = coachRes.data
             .filter((coach) => isBookableCoachProfile(coach))
-            .map(({ id, full_name }) => ({ id, full_name }));
+            .map(({ id, full_name, email }) => ({ id, full_name, email: email ?? undefined }));
 
-          setCoaches(eligibleCoaches as { id: string; full_name: string }[]);
+          setCoaches(eligibleCoaches as { id: string; full_name: string; email?: string }[]);
         }
         if (athleteRes.data) setAthletes(athleteRes.data as AthleteProfile[]);
 
@@ -495,7 +493,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
     : bookingType === "campo" && matchFormat === "singolo" ? 2 : 4;
 
   const canSave = selectedAthletes.length > 0 && !!selectedDate && !!selectedCourt && selectedSlots.length > 0 &&
-    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !!selectedCoach));
+    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoaches.length > 0));
 
   useEffect(() => {
     setSelectedAthletes((prev) => {
@@ -532,8 +530,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         throw new Error(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       }
 
-      if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && !selectedCoach) {
-        throw new Error("Seleziona un maestro per le lezioni");
+      if ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoaches.length === 0) {
+        throw new Error("Seleziona almeno un maestro per le lezioni");
       }
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -575,7 +573,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           type: bookingType || "campo",
           coach_id:
             bookingType === "lezione_privata" || bookingType === "lezione_gruppo"
-              ? selectedCoach || null
+              ? selectedCoaches[0] || null
               : null,
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
@@ -703,9 +701,15 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  const fullDateLabel = selectedDate ? (() => { const s = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it }); return s.charAt(0).toUpperCase() + s.slice(1); })() : "";
-  const mobileWeekdayLabel = selectedDate ? format(selectedDate, "EEE", { locale: it }) : "";
-  const mobileDateLabel = selectedDate ? (() => { const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`; return raw.replace(/(\d{2} )(\w)/, (_, d, c) => d + c.toUpperCase()); })() : "";
+  function formatDateHeader(short: boolean = false): string {
+    if (!selectedDate) return "";
+    if (short) {
+      const formatted = selectedDate.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+      return formatted.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    }
+    const formatted = selectedDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    return formatted.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
 
   if (!bookingId) {
     return (
@@ -766,20 +770,16 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           <div className="space-y-6">
             {/* Selettore Data */}
             {selectedDate && (
-              <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
+              <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!selectedDate) return;
-                    setSelectedDate(addDays(selectedDate, -1));
-                    setSelectedSlots([]);
-                  }}
-                  className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+                  onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); setSelectedSlots([]); }}
+                  className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
                 >
                   <span className="text-lg font-semibold text-white">&lt;</span>
                 </button>
 
-                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center sm:static sm:inset-auto sm:translate-x-0 sm:min-w-0 sm:justify-center">
+                <div className="min-w-0 flex justify-center">
                   <button
                     type="button"
                     onClick={openDatePickerModal}
@@ -787,21 +787,13 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                     title="Scegli data"
                   >
                     <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
-                      <Calendar className="h-5 w-5 text-white shrink-0" />
-                      <span
-                        className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
-                        style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
-                      >
-                        {mobileDateLabel}
+                      <span className="font-bold text-white text-xl leading-none text-center whitespace-nowrap">
+                        {formatDateHeader(true)}
                       </span>
                     </span>
                     <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
-                      <Calendar className="h-5 w-5 text-white shrink-0" />
-                      <span
-                        className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
-                        style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
-                      >
-                        {fullDateLabel}
+                      <span className="font-bold text-white text-xl leading-none text-left min-w-0 truncate max-w-none capitalize">
+                        {formatDateHeader()}
                       </span>
                     </span>
                   </button>
@@ -809,12 +801,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!selectedDate) return;
-                    setSelectedDate(addDays(selectedDate, 1));
-                    setSelectedSlots([]);
-                  }}
-                  className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+                  onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); setSelectedSlots([]); }}
+                  className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
                 >
                   <span className="text-lg font-semibold text-white">&gt;</span>
                 </button>
@@ -880,27 +868,6 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   </div>
                 )}
 
-                {/* Maestro */}
-                {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                    <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
-                    <div className="flex-1">
-                      <SearchableSelect
-                        value={selectedCoach}
-                        onChange={setSelectedCoach}
-                        options={coaches.map((coach) => ({
-                          value: coach.id,
-                          label: coach.full_name,
-                        }))}
-                        placeholder="Seleziona maestro"
-                        searchPlaceholder="Cerca maestro"
-                        triggerClassName="w-full rounded-lg border border-gray-200 bg-white shadow-sm px-4 py-3 text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                        itemClassName="py-2"
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {/* Campo */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
@@ -927,6 +894,66 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
               </div>
               )}
             </div>
+
+            {/* Card Maestro - solo per lezione privata/gruppo */}
+            {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
+              <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+                  <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
+                </div>
+                <div className="p-4 sm:p-6 space-y-3">
+                  <SearchableSelect
+                    value=""
+                    onChange={(id) => {
+                      if (!selectedCoaches.includes(id)) {
+                        setSelectedCoaches([...selectedCoaches, id]);
+                      }
+                    }}
+                    options={coaches
+                      .filter((c) => !selectedCoaches.includes(c.id))
+                      .map((coach) => ({
+                        value: coach.id,
+                        label: coach.full_name,
+                      }))}
+                    placeholder="Seleziona maestro"
+                    searchPlaceholder="Cerca maestro"
+                  />
+                  {selectedCoaches.length > 0 && (
+                    <ul className="flex flex-col gap-2">
+                      {selectedCoaches.map((coachId) => {
+                        const coach = coaches.find((c) => c.id === coachId);
+                        if (!coach) return null;
+                        return (
+                          <li key={coachId}>
+                            <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "#023047" }}>
+                              <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
+                                <span className="text-sm font-bold text-white leading-none">
+                                  {coach.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-white text-sm truncate">{coach.full_name}</p>
+                                {coach.email && (
+                                  <p className="text-xs text-white/60 mt-0.5 truncate">{coach.email}</p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCoaches(selectedCoaches.filter((id) => id !== coachId))}
+                                className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
+                                aria-label={`Rimuovi ${coach.full_name}`}
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Card Partecipanti */}
             <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -1092,7 +1119,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Eventuali note..."
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 resize-none"
                 />
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import logger from '@/lib/logger/secure-logger';
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -17,18 +18,22 @@ export async function createClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // Expected when called from a Server Component; sessions are
+            // refreshed by middleware. Logged at debug for diagnostics.
+            logger.debug('Supabase cookie set skipped (Server Component context)', {
+              cookie: name,
+            });
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // Expected when called from a Server Component; sessions are
+            // refreshed by middleware. Logged at debug for diagnostics.
+            logger.debug('Supabase cookie remove skipped (Server Component context)', {
+              cookie: name,
+            });
           }
         },
       },

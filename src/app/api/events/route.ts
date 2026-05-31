@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { getRouteAuth, isAdmin, unauthorized, forbidden } from "@/lib/auth/routeAuth";
+import { sanitizeUuid } from "@/lib/security/sanitize-server";
 
 export async function GET(req: Request) {
   try {
@@ -10,10 +11,14 @@ export async function GET(req: Request) {
     const upcoming = url.searchParams.get("upcoming");
 
     if (id) {
+      const validId = sanitizeUuid(id);
+      if (!validId) {
+        return NextResponse.json({ error: "ID evento non valido" }, { status: 400 });
+      }
       const { data, error } = await supabaseServer
         .from("events")
         .select("*")
-        .eq("id", id)
+        .eq("id", validId)
         .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 404 });
       return NextResponse.json({ event: data });

@@ -9,6 +9,25 @@ export async function POST(req: Request) {
   if (!isAdmin(auth.role)) return forbidden();
 
   try {
+    // Richiede token di conferma esplicito per prevenire reset accidentali
+    const body = await req.json().catch(() => ({}));
+    if (body.confirm !== "RESET_ARENA_SEASON") {
+      return NextResponse.json(
+        { error: "Conferma richiesta: invia { confirm: 'RESET_ARENA_SEASON' } nel body" },
+        { status: 400 }
+      );
+    }
+
+    // Registra l'operazione in activity_logs prima della cancellazione (audit trail)
+    await supabaseServer
+      .from("activity_logs")
+      .insert({
+        user_id: auth.user.id,
+        action: "arena.season_reset",
+        entity_type: "arena",
+        metadata: { reset_by: auth.user.email, reset_at: new Date().toISOString() },
+      });
+
     // Delete all arena challenges
     const { error: deleteChallengesError } = await supabaseServer
       .from("arena_challenges")

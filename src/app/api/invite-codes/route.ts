@@ -75,14 +75,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let normalizedMaxUses: number | null = null;
+    if (max_uses !== undefined && max_uses !== null) {
+      const parsed = Number(max_uses);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10000) {
+        return NextResponse.json(
+          { error: "max_uses deve essere un intero tra 1 e 10000" },
+          { status: 400 }
+        );
+      }
+      normalizedMaxUses = parsed;
+    }
+
+    if (expires_at !== undefined && expires_at !== null) {
+      const ts = Date.parse(expires_at);
+      if (Number.isNaN(ts)) {
+        return NextResponse.json(
+          { error: "expires_at non è una data valida" },
+          { status: 400 }
+        );
+      }
+      if (ts <= Date.now()) {
+        return NextResponse.json(
+          { error: "expires_at deve essere una data futura" },
+          { status: 400 }
+        );
+      }
+    }
+
     const { data, error } = await supabase
       .from("invite_codes")
       .insert({
         code,
         role,
-        max_uses,
-        uses_remaining: max_uses,
-        expires_at,
+        max_uses: normalizedMaxUses,
+        uses_remaining: normalizedMaxUses,
+        expires_at: expires_at ?? null,
         created_by: user.id,
       })
       .select()

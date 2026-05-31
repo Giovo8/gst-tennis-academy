@@ -37,7 +37,7 @@ export default function Footer() {
             <a
               href="https://wa.me/393791958651"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="p-2 transition-opacity hover:opacity-70"
               aria-label="WhatsApp"
             >

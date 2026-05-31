@@ -579,7 +579,7 @@ export default function ModificaLezionePage() {
                     if (duration <= 0) return null;
                     const getBookingStyle = () => {
                       if (b.isBlock) return { background: "var(--color-frozen-lake-900)" };
-                      if (b.isCourse) return { background: "#075985" };
+                      if (b.isCourse) return { background: "var(--color-frozen-lake-900)" };
                       switch (b.type) {
                         case "lezione_privata": case "lezione_gruppo": return { background: "#023047" };
                         case "campo": return { background: "var(--secondary)" };

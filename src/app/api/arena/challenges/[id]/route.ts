@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const challengeId = params.id;
 
     // Fetch challenge data

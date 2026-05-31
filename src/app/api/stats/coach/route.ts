@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
 import logger from "@/lib/logger/secure-logger";
 
 // GET - Fetch coach/maestro statistics
@@ -17,6 +17,11 @@ export async function GET(request: NextRequest) {
         { error: "user_id is required" },
         { status: 400 }
       );
+    }
+
+    // IDOR check: un coach può leggere solo le proprie statistiche
+    if (userId !== auth.user.id && !isAdmin(auth.role)) {
+      return forbidden();
     }
 
     const now = new Date().toISOString();
@@ -91,6 +96,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err: any) {
     logger.error("Error fetching coach stats:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Errore interno del server" }, { status: 500 });
   }
 }

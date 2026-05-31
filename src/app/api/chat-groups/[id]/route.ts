@@ -81,8 +81,20 @@ export async function PATCH(
     const { name, description } = body;
 
     const updateData: Record<string, any> = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (description !== undefined) updateData.description = description?.trim() || null;
+    if (name !== undefined) {
+      const trimmedName = String(name).trim();
+      if (trimmedName.length < 1 || trimmedName.length > 100) {
+        return NextResponse.json({ error: "Il nome deve essere tra 1 e 100 caratteri" }, { status: 400 });
+      }
+      updateData.name = trimmedName;
+    }
+    if (description !== undefined) {
+      const trimmedDesc = description ? String(description).trim() : "";
+      if (trimmedDesc.length > 500) {
+        return NextResponse.json({ error: "La descrizione non puo superare 500 caratteri" }, { status: 400 });
+      }
+      updateData.description = trimmedDesc || null;
+    }
 
     const { data: group, error } = await supabaseServer
       .from("chat_groups")

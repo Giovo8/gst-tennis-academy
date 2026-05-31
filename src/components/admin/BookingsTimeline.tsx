@@ -50,7 +50,11 @@ type TimeSlotInfo = {
 
 export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true, showEntryModal = true, scrollToCurrentTime = false }: BookingsTimelineProps) {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    return today;
+  });
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<Booking | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
@@ -404,10 +408,10 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     }
 
     // Colori default (admin/altre dashboard)
-    if (booking.isCourse) return { background: "#075985" };
+    if (booking.isCourse) return { background: "var(--color-frozen-lake-900)" };
 
     if (booking.isBlock) {
-      return { background: "var(--color-frozen-lake-900)" };
+      return { background: "#075985" };
     }
 
     if (booking.status === "cancelled") {

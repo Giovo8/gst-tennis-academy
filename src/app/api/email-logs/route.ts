@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     if (!isAdmin(auth.role)) return forbidden();
 
     const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") || "50");
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "50") || 50, 1), 200);
 
     const { data: primaryLogs, error: primaryError } = await supabaseServer
       .from("email_logs")

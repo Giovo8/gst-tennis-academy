@@ -601,7 +601,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       ? true
       : isPast && isSuccessful && !isCancelled;
 
-    const matchesType = filterType === "all" || booking.type === filterType;
+    const matchesType = filterType === "corso" ? false : filterType === "all" || booking.type === filterType;
     const matchesCourt = filterCourt === "all" || booking.court === filterCourt;
     const matchesUser = filterUser === "all" || getAthleteDisplayName(booking) === filterUser;
     const shouldFilterByCoach = filterType === "lezione_privata";
@@ -641,7 +641,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     ? courseNextLessons.filter((lesson) => {
         const q = search.toLowerCase();
         const matchesSearch = !search || lesson.courseName.toLowerCase().includes(q) || (lesson.instructorName?.toLowerCase().includes(q) ?? false);
-        const matchesType = filterType === "all";
+        const matchesType = filterType === "all" || filterType === "corso";
         const isToday = lesson.dateStr === localDateStr(new Date());
         const matchesDateFrom = !filterDateFrom || lesson.dateStr >= filterDateFrom;
         const matchesDateTo = !filterDateTo || lesson.dateStr <= filterDateTo;
@@ -852,7 +852,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
               const start = new Date(lesson.dateStr + "T12:00:00");
               return (
                 <Link key={`corso-${lesson.courseId}`} href={`${basePath}/bookings/${lesson.courseId}?type=corso&date=${lesson.dateStr}`} className="block">
-                  <div className="rounded-lg overflow-visible hover:opacity-95 transition-opacity" style={{ background: "#075985" }}>
+                  <div className="rounded-lg overflow-visible hover:opacity-95 transition-opacity" style={{ background: "var(--color-frozen-lake-900)" }}>
                     <div className="flex items-center gap-4 py-3 px-3">
                       <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                         <span className="text-[10px] uppercase font-bold text-white/70 leading-none">

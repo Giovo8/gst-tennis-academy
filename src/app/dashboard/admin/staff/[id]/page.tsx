@@ -164,7 +164,7 @@ export default function AdminStaffDetailPage() {
                   <a
                     href={item.url as string}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="text-sm font-medium text-secondary hover:opacity-80 transition-opacity break-all"
                   >
                     {item.url}

@@ -1,890 +1,296 @@
-# Database Documentation - GST Tennis Academy
+# Database
 
-**Ultima revisione**: 30 Dicembre 2025  
-**Database**: PostgreSQL via Supabase  
-**Versione Schema**: 2.0
-
-## Panoramica
-
-Il database utilizza PostgreSQL tramite Supabase con Row Level Security (RLS) abilitato per la sicurezza. L'architettura supporta:
-
-- Sistema multi-ruolo (atleta, maestro, gestore, admin)
-- Gestione tornei con 3 modalità (eliminazione diretta, girone + eliminazione, campionato)
-- Sistema di messaggistica in tempo reale
-- Sistema email con template e tracking
-- Prenotazioni campi e lezioni
-- Gestione corsi e iscrizioni
-- News e annunci
-- Pagamenti e ordini
+Schema completo del database **Supabase / PostgreSQL** di GST Tennis Academy.
+Comprende ~50 tabelle, funzioni e trigger, policy RLS, storage bucket e 62 migrazioni.
 
 ---
 
-## Schema Tabelle Principali
+## Estensioni
 
-### 1. Profiles (Utenti)
-
-Gestione profili utenti con sistema ruoli gerarchico.
-
-```sql
-CREATE TYPE user_role AS ENUM ('atleta', 'maestro', 'gestore', 'admin');
-
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
-  email TEXT NOT NULL UNIQUE,
-  full_name TEXT,
-  role user_role NOT NULL DEFAULT 'atleta',
-  subscription_type TEXT,
-  
-  -- Campi anagrafica
-  phone TEXT,
-  date_of_birth DATE,
-  address TEXT,
-  city TEXT,
-  postal_code TEXT,
-  notes TEXT,
-  
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX profiles_role_idx ON profiles(role);
-CREATE INDEX profiles_email_idx ON profiles(email);
-```
-
-**RLS Policies**:
-- Utenti vedono solo il proprio profilo
-- Admin/Gestore vedono tutti i profili
-- Admin/Gestore possono creare/modificare profili
-
-**Ruoli**:
-- `atleta`: Accesso base, dashboard atleta, prenotazioni
-- `maestro`: Dashboard coach, visualizza tutte le prenotazioni, gestione lezioni
-- `gestore`: Dashboard admin, gestione utenti (no admin), creazione account
-- `admin`: Accesso completo, può creare altri admin
+| Estensione | Uso |
+|------------|-----|
+| `pgcrypto` | Generazione UUID, cifratura |
+| `btree_gist` | Vincolo anti-sovrapposizione prenotazioni (GIST) |
 
 ---
 
-### 2. Sistema Prenotazioni
-
-#### Bookings
-
-```sql
-CREATE TYPE booking_type AS ENUM ('campo', 'lezione_privata', 'lezione_gruppo');
-
-CREATE TABLE bookings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
-  coach_id UUID REFERENCES auth.users ON DELETE SET NULL,
-  court TEXT NOT NULL,
-  type booking_type NOT NULL DEFAULT 'campo',
-  start_time TIMESTAMPTZ NOT NULL,
-  end_time TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  CONSTRAINT bookings_time_check CHECK (end_time > start_time),
-  CONSTRAINT bookings_no_overlap EXCLUDE USING gist (
-    court WITH =,
-    tstzrange(start_time, end_time) WITH &&
-  )
-);
-
-CREATE INDEX bookings_user_idx ON bookings(user_id);
-CREATE INDEX bookings_court_idx ON bookings(court, start_time);
-CREATE INDEX bookings_type_idx ON bookings(type);
-```
-
-**Features**:
-- Prevenzione sovrapposizioni automatica con exclusion constraint
-- Supporto campo, lezioni private, lezioni gruppo
-- Assegnazione opzionale coach
-
-**RLS Policies**:
-- Utenti vedono solo le proprie prenotazioni
-- Maestri vedono tutte le prenotazioni
-- Admin/Gestore gestione completa
-
----
-
-### 3. Sistema Tornei (Versione Semplificata v2.0)
-
-#### Tournaments
-
-```sql
-CREATE TABLE tournaments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  description TEXT,
-  start_date TIMESTAMPTZ,  -- Opzionale
-  end_date TIMESTAMPTZ,     -- Opzionale
-  category TEXT,
-  level TEXT,
-  max_participants INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'Aperto',  -- 'Aperto', 'In Corso', 'Concluso', 'Annullato'
-  
-  -- Tipo competizione
-  tournament_type VARCHAR(50) DEFAULT 'eliminazione_diretta',
-    -- 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato'
-  best_of INTEGER DEFAULT 3 CHECK (best_of IN (3, 5)),
-  
-  -- Tennis specifico
-  match_format TEXT DEFAULT 'best_of_3',  -- 'best_of_1', 'best_of_3', 'best_of_5'
-  surface_type TEXT DEFAULT 'terra',      -- 'terra', 'erba', 'cemento', 'sintetico', 'indoor'
-  
-  -- Sistema gironi (per girone_eliminazione)
-  num_groups INT DEFAULT 0,
-  teams_per_group INT DEFAULT 4,
-  teams_advancing INT DEFAULT 2,  -- Quanti avanzano per girone
-  current_phase VARCHAR(50) DEFAULT 'iscrizioni',
-    -- 'iscrizioni' | 'gironi' | 'eliminazione' | 'completato' | 'annullato'
-  bracket_config JSONB DEFAULT '{}'::jsonb,
-  
-  -- Dati strutturali (legacy/cache)
-  rounds_data JSONB DEFAULT '[]'::jsonb,
-  groups_data JSONB DEFAULT '[]'::jsonb,
-  standings JSONB DEFAULT '[]'::jsonb,
-  
-  -- Financial
-  entry_fee DECIMAL(10,2),
-  prize_money DECIMAL(10,2),
-  
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  CONSTRAINT tournaments_type_check CHECK (
-    tournament_type IN ('eliminazione_diretta', 'girone_eliminazione', 'campionato')
-  ),
-  CONSTRAINT tournaments_phase_check CHECK (
-    current_phase IN ('iscrizioni', 'gironi', 'eliminazione', 'completato', 'annullato')
-  )
-);
-
-CREATE INDEX tournaments_status_idx ON tournaments(status);
-CREATE INDEX tournaments_type_idx ON tournaments(tournament_type);
-CREATE INDEX tournaments_dates_idx ON tournaments(start_date, end_date);
-```
-
-**Tipi di Torneo**:
-
-1. **Eliminazione Diretta** (`eliminazione_diretta`)
-   - Bracket classico ad eliminazione
-   - max_participants: 2, 4, 8, 16, 32, 64, 128
-   - Fase unica: `current_phase = 'eliminazione'`
-
-2. **Girone + Eliminazione** (`girone_eliminazione`)
-   - Fase a gironi seguita da eliminazione diretta
-   - `num_groups`: numero gironi (2-8)
-   - `teams_per_group`: partecipanti per girone (3-8)
-   - `teams_advancing`: quanti qualificati per girone (1-4)
-   - Fasi: `iscrizioni` → `gironi` → `eliminazione` → `completato`
-
-3. **Campionato** (`campionato`)
-   - Round-robin, tutti contro tutti
-   - Calcolo punti: 2 vittoria, 0 sconfitta
-   - Classifica unica
-   - Fasi: `iscrizioni` → `gironi` → `completato`
-
-#### Tournament Groups
-
-```sql
-CREATE TABLE tournament_groups (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  group_name VARCHAR(50) NOT NULL,  -- "Girone A", "Girone B", ...
-  group_order INT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  UNIQUE(tournament_id, group_name)
-);
-
-CREATE INDEX idx_tournament_groups_tournament_id ON tournament_groups(tournament_id);
-```
-
-#### Tournament Participants
-
-```sql
-CREATE TABLE tournament_participants (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
-  group_id UUID REFERENCES tournament_groups(id) ON DELETE SET NULL,
-  seed INT,               -- Posizione seeding
-  group_position INT,     -- Posizione finale nel girone
-  stats JSONB DEFAULT '{
-    "matches_played": 0,
-    "matches_won": 0,
-    "matches_lost": 0,
-    "sets_won": 0,
-    "sets_lost": 0,
-    "games_won": 0,
-    "games_lost": 0,
-    "points": 0
-  }'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  UNIQUE(tournament_id, user_id)
-);
-
-CREATE INDEX tournament_participants_tournament_idx ON tournament_participants(tournament_id);
-CREATE INDEX tournament_participants_user_idx ON tournament_participants(user_id);
-CREATE INDEX tournament_participants_group_idx ON tournament_participants(group_id);
-```
-
-#### Tournament Matches
-
-```sql
-CREATE TABLE tournament_matches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  
-  -- Fase e round
-  phase VARCHAR(50) NOT NULL,  -- 'gironi' | 'eliminazione'
-  round_name VARCHAR(100),     -- "Girone A - Giornata 1", "Quarti", "Finale"
-  round_number INT,
-  match_number INT,
-  
-  -- Partecipanti
-  player1_id UUID REFERENCES tournament_participants(id) ON DELETE CASCADE,
-  player2_id UUID REFERENCES tournament_participants(id) ON DELETE CASCADE,
-  
-  -- Risultato
-  player1_score INT DEFAULT 0,  -- Set vinti
-  player2_score INT DEFAULT 0,  -- Set vinti
-  score_details JSONB DEFAULT '{"sets": []}'::jsonb,
-    -- Esempio: {"sets": [{"p1": 6, "p2": 4}, {"p1": 7, "p2": 5}]}
-  winner_id UUID REFERENCES tournament_participants(id),
-  
-  -- Stato
-  status VARCHAR(50) DEFAULT 'programmata',
-    -- 'programmata' | 'in_corso' | 'completata' | 'annullata' | 'walkover'
-  scheduled_at TIMESTAMPTZ,
-  started_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ,
-  
-  -- Metadati
-  court VARCHAR(50),
-  notes TEXT,
-  
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  CONSTRAINT tournament_matches_phase_check CHECK (phase IN ('gironi', 'eliminazione')),
-  CONSTRAINT tournament_matches_status_check CHECK (
-    status IN ('programmata', 'in_corso', 'completata', 'annullata', 'walkover')
-  )
-);
-
-CREATE INDEX idx_tournament_matches_tournament_id ON tournament_matches(tournament_id);
-CREATE INDEX idx_tournament_matches_phase ON tournament_matches(phase);
-CREATE INDEX idx_tournament_matches_players ON tournament_matches(player1_id, player2_id);
-```
-
-**RLS Policies Tornei**:
-- Tutti possono visualizzare tornei e partecipanti
-- Solo Admin/Gestore possono creare/modificare tornei
-- Utenti possono iscriversi autonomamente
-- Admin/Gestore/Maestro possono inserire risultati
-
----
-
-### 4. Sistema Chat/Messaggistica
-
-#### Conversations
-
-```sql
-CREATE TABLE conversations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title VARCHAR(255),           -- Opzionale per conversazioni gruppo
-  is_group BOOLEAN DEFAULT false,
-  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  last_message_at TIMESTAMPTZ DEFAULT NOW(),
-  last_message_preview TEXT,
-  metadata JSONB DEFAULT '{}'::jsonb
-);
-
-CREATE INDEX idx_conversations_last_message ON conversations(last_message_at DESC);
-```
-
-#### Conversation Participants
-
-```sql
-CREATE TABLE conversation_participants (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  joined_at TIMESTAMPTZ DEFAULT NOW(),
-  last_read_at TIMESTAMPTZ DEFAULT NOW(),
-  unread_count INT DEFAULT 0,
-  is_admin BOOLEAN DEFAULT false,
-  is_muted BOOLEAN DEFAULT false,
-  is_archived BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  UNIQUE(conversation_id, user_id)
-);
-
-CREATE INDEX idx_conversation_participants_user ON conversation_participants(user_id);
-CREATE INDEX idx_conversation_participants_unread ON conversation_participants(user_id, unread_count)
-  WHERE unread_count > 0;
-```
-
-#### Messages
-
-```sql
-CREATE TABLE messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  message_type VARCHAR(50) DEFAULT 'text',
-    -- 'text' | 'image' | 'file' | 'system' | 'booking' | 'lesson'
-  attachment_url TEXT,
-  attachment_metadata JSONB,
-  is_edited BOOLEAN DEFAULT false,
-  edited_at TIMESTAMPTZ,
-  is_deleted BOOLEAN DEFAULT false,
-  deleted_at TIMESTAMPTZ,
-  reply_to_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  CONSTRAINT messages_type_check CHECK (
-    message_type IN ('text', 'image', 'file', 'system', 'booking', 'lesson')
-  )
-);
-
-CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at DESC);
-CREATE INDEX idx_messages_sender ON messages(sender_id);
-```
-
-#### Message Reads
-
-```sql
-CREATE TABLE message_reads (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  read_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  UNIQUE(message_id, user_id)
-);
-
-CREATE INDEX idx_message_reads_message ON message_reads(message_id);
-CREATE INDEX idx_message_reads_user ON message_reads(user_id);
-```
-
-**RLS Policies Chat**:
-- Utenti vedono solo conversazioni a cui partecipano
-- Admin/Gestore vedono tutte le conversazioni
-- Participants possono inviare messaggi nelle loro conversazioni
-
----
-
-### 5. Sistema Email
-
-#### Email Logs
-
-```sql
-CREATE TABLE email_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  recipient_email VARCHAR(255) NOT NULL,
-  recipient_name VARCHAR(255),
-  recipient_user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  
-  subject VARCHAR(500) NOT NULL,
-  template_name VARCHAR(100) NOT NULL,
-  template_data JSONB DEFAULT '{}'::jsonb,
-  
-  status VARCHAR(50) DEFAULT 'pending',
-    -- 'pending' | 'queued' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'opened' | 'clicked'
-  provider VARCHAR(50) DEFAULT 'resend',
-  provider_message_id VARCHAR(255),
-  
-  sent_at TIMESTAMPTZ,
-  delivered_at TIMESTAMPTZ,
-  opened_at TIMESTAMPTZ,
-  clicked_at TIMESTAMPTZ,
-  
-  error_message TEXT,
-  retry_count INT DEFAULT 0,
-  metadata JSONB DEFAULT '{}'::jsonb,
-  
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_email_logs_recipient ON email_logs(recipient_email);
-CREATE INDEX idx_email_logs_status ON email_logs(status);
-CREATE INDEX idx_email_logs_template ON email_logs(template_name);
-```
-
-#### Email Templates
-
-```sql
-CREATE TABLE email_templates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name VARCHAR(100) UNIQUE NOT NULL,
-  display_name VARCHAR(255) NOT NULL,
-  description TEXT,
-  
-  subject_template VARCHAR(500) NOT NULL,  -- Con placeholder: "Conferma - {{court_name}}"
-  html_template TEXT NOT NULL,
-  text_template TEXT,
-  
-  category VARCHAR(50),  -- 'transactional' | 'marketing' | 'notification' | 'system'
-  is_active BOOLEAN DEFAULT true,
-  variables JSONB DEFAULT '[]'::jsonb,
-  
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_email_templates_name ON email_templates(name);
-```
-
-#### Email Unsubscribes
-
-```sql
-CREATE TABLE email_unsubscribes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  email VARCHAR(255) NOT NULL,
-  unsubscribe_from VARCHAR(50) DEFAULT 'all',  -- 'all' | 'marketing' | 'notifications'
-  reason TEXT,
-  unsubscribed_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  UNIQUE(user_id, unsubscribe_from),
-  UNIQUE(email, unsubscribe_from)
-);
-```
-
-**RLS Policies Email**:
-- Solo Admin/Gestore vedono email logs e template
-- Sistema può creare email logs
-- Utenti possono gestire le proprie unsubscribe
-
----
-
-### 6. Corsi e Iscrizioni
-
-#### Courses
-
-```sql
-CREATE TABLE courses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  description TEXT,
-  coach_id UUID REFERENCES auth.users ON DELETE SET NULL,
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
-  schedule TEXT,  -- JSON o testo descrittivo orari
-  max_participants INT NOT NULL DEFAULT 10,
-  current_participants INT NOT NULL DEFAULT 0,
-  price DECIMAL(10,2) NOT NULL,
-  level TEXT,      -- 'principiante', 'intermedio', 'avanzato'
-  age_group TEXT,  -- 'bambini', 'junior', 'adulti', 'senior'
-  image_url TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX courses_coach_idx ON courses(coach_id);
-CREATE INDEX courses_dates_idx ON courses(start_date, end_date);
-CREATE INDEX courses_active_idx ON courses(is_active);
-```
-
-#### Enrollments
-
-```sql
-CREATE TABLE enrollments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'pending',          -- 'pending' | 'confirmed' | 'cancelled' | 'completed'
-  payment_status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'paid' | 'refunded'
-  enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  UNIQUE(user_id, course_id)
-);
-
-CREATE INDEX enrollments_user_idx ON enrollments(user_id);
-CREATE INDEX enrollments_course_idx ON enrollments(course_id);
-CREATE INDEX enrollments_status_idx ON enrollments(status);
-```
-
-**RLS Policies**:
-- Tutti vedono corsi attivi
-- Admin/Gestore/Maestro gestiscono corsi
-- Utenti vedono le proprie iscrizioni
-- Utenti possono iscriversi autonomamente
-
----
-
-### 7. News e Annunci
-
-#### News
-
-```sql
-CREATE TABLE news (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  category TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  image_url TEXT,
-  date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  published BOOLEAN NOT NULL DEFAULT true,
-  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX news_published_date_idx ON news(published, date DESC);
-CREATE INDEX news_created_by_idx ON news(created_by);
-```
-
-**RLS Policies News**:
-- Tutti vedono news pubblicate
-- Admin/Gestore vedono tutte le news
-- Solo Admin/Gestore possono creare/modificare/eliminare
-
----
-
-### 8. Payments e Orders
-
-#### Payments
-
-```sql
-CREATE TABLE payments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
-  amount DECIMAL(10,2) NOT NULL,
-  currency TEXT NOT NULL DEFAULT 'EUR',
-  payment_type TEXT NOT NULL,  -- 'subscription' | 'booking' | 'course' | 'event' | 'product'
-  reference_id UUID,           -- ID booking/course/event/product correlato
-  payment_method TEXT,         -- 'stripe' | 'cash' | 'bank_transfer'
-  status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'completed' | 'failed' | 'refunded'
-  stripe_payment_id TEXT,
-  metadata JSONB,
-  paid_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX payments_user_idx ON payments(user_id);
-CREATE INDEX payments_status_idx ON payments(status);
-CREATE INDEX payments_type_idx ON payments(payment_type);
-```
-
-#### Orders
-
-```sql
-CREATE TABLE orders (
-  id TEXT PRIMARY KEY,
-  customer_email TEXT,
-  amount_total BIGINT,
-  currency TEXT,
-  payment_status TEXT,
-  metadata JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
-
----
-
-### 9. Subscription Credits
-
-Sistema crediti settimanali per abbonamenti.
-
-```sql
-CREATE TABLE subscription_credits (
-  user_id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
-  plan TEXT NOT NULL DEFAULT 'Monosettimanale',
-  weekly_credits INT NOT NULL DEFAULT 1,
-  credits_available INT NOT NULL DEFAULT 1,
-  last_reset TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX subscription_credits_user_idx ON subscription_credits(user_id);
-```
-
-**Funzioni Helper**:
-
-```sql
--- Reset crediti settimanali (eseguire ogni lunedì)
-CREATE OR REPLACE FUNCTION reset_weekly_credits()
-RETURNS VOID
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  UPDATE subscription_credits
-  SET credits_available = weekly_credits,
-      last_reset = NOW(),
-      updated_at = NOW()
-  WHERE date_part('isodow', NOW()) = 1; -- Lunedì
-END;
-$$;
-
--- Consuma un credito gruppo
-CREATE OR REPLACE FUNCTION consume_group_credit(p_user_id UUID)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  ok BOOLEAN := false;
-BEGIN
-  UPDATE subscription_credits
-  SET credits_available = credits_available - 1,
-      updated_at = NOW()
-  WHERE user_id = p_user_id AND credits_available > 0
-  RETURNING true INTO ok;
-  
-  RETURN ok;
-END;
-$$;
-```
-
----
-
-## Funzioni Helper Tornei
-
-### Creazione Gironi
-
-```sql
-CREATE OR REPLACE FUNCTION create_tournament_groups(
-  p_tournament_id UUID,
-  p_num_groups INT
-)
-RETURNS VOID
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  v_group_name VARCHAR(50);
-  v_i INT;
-BEGIN
-  FOR v_i IN 1..p_num_groups LOOP
-    v_group_name := 'Girone ' || CHR(64 + v_i);
-    
-    INSERT INTO tournament_groups (tournament_id, group_name, group_order)
-    VALUES (p_tournament_id, v_group_name, v_i)
-    ON CONFLICT (tournament_id, group_name) DO NOTHING;
-  END LOOP;
-END;
-$$;
-```
-
-### Assegnazione Partecipanti ai Gironi
-
-```sql
-CREATE OR REPLACE FUNCTION assign_participants_to_groups(
-  p_tournament_id UUID
-)
-RETURNS VOID
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  v_participant RECORD;
-  v_groups UUID[];
-  v_group_index INT := 0;
-  v_seed INT := 1;
-BEGIN
-  SELECT ARRAY_AGG(id ORDER BY group_order) INTO v_groups
-  FROM tournament_groups
-  WHERE tournament_id = p_tournament_id;
-  
-  IF v_groups IS NULL OR array_length(v_groups, 1) = 0 THEN
-    RAISE EXCEPTION 'Nessun girone trovato per il torneo %', p_tournament_id;
-  END IF;
-  
-  FOR v_participant IN 
-    SELECT id FROM tournament_participants 
-    WHERE tournament_id = p_tournament_id AND group_id IS NULL
-    ORDER BY created_at
-  LOOP
-    UPDATE tournament_participants
-    SET 
-      group_id = v_groups[(v_group_index % array_length(v_groups, 1)) + 1],
-      seed = v_seed
-    WHERE id = v_participant.id;
-    
-    v_group_index := v_group_index + 1;
-    v_seed := v_seed + 1;
-  END LOOP;
-END;
-$$;
-```
-
-### Calcolo Classifica Girone
-
-```sql
-CREATE OR REPLACE FUNCTION calculate_group_standings(
-  p_group_id UUID
-)
-RETURNS TABLE (
-  participant_id UUID,
-  points INT,
-  matches_played INT,
-  matches_won INT,
-  matches_lost INT,
-  sets_won INT,
-  sets_lost INT,
-  games_won INT,
-  games_lost INT
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    tp.id,
-    (tp.stats->>'points')::INT,
-    (tp.stats->>'matches_played')::INT,
-    (tp.stats->>'matches_won')::INT,
-    (tp.stats->>'matches_lost')::INT,
-    (tp.stats->>'sets_won')::INT,
-    (tp.stats->>'sets_lost')::INT,
-    (tp.stats->>'games_won')::INT,
-    (tp.stats->>'games_lost')::INT
-  FROM tournament_participants tp
-  WHERE tp.group_id = p_group_id
-  ORDER BY 
-    (tp.stats->>'points')::INT DESC,
-    (tp.stats->>'sets_won')::INT - (tp.stats->>'sets_lost')::INT DESC,
-    (tp.stats->>'games_won')::INT - (tp.stats->>'games_lost')::INT DESC;
-END;
-$$;
-```
-
----
-
-## Migrazioni
-
-### Lista Migrazioni Applicate
-
-| # | File | Descrizione |
-|---|------|-------------|
-| 001 | `001_create_tournaments_and_participants.sql` | Tabelle base tornei |
-| 002 | `002_rls_policies_tournaments.sql` | RLS policies tornei |
-| 003 | `003_add_competition_types.sql` | Tipi competizione |
-| 004 | `004_tennis_tournament_system.sql` | Sistema tennis completo |
-| 005 | `005_chat_messaging_system.sql` | Sistema messaggistica |
-| 006 | `006_announcements_system.sql` | Sistema annunci |
-| 007 | `007_email_system.sql` | Sistema email |
-| 008 | `008_profile_enhancements.sql` | Miglioramenti profili |
-| 010 | `010_simplified_tournament_system.sql` | **Sistema tornei v2 semplificato** |
-| 011 | `011_make_dates_optional.sql` | Date tornei opzionali |
-| 012 | `012_tournament_matches_bracket_columns.sql` | Colonne bracket matches |
-| 013 | `013_tennis_scoring_system.sql` | Sistema punteggio tennis |
-| - | `improve_roles_system.sql` | Miglioramenti sistema ruoli |
-| - | `create_courses_table.sql` | Tabella corsi |
-| - | `add_news_table.sql` | Tabella news |
-| - | `complete_migration.sql` | Staff, hero images, subscriptions |
-
-### File SQL Utility
-
-| File | Scopo |
-|------|-------|
-| `RESET_DATABASE.sql` | Reset completo database |
-| `FIX_TOURNAMENTS_SCHEMA.sql` | Fix schema tornei |
-| `APPLY_ALL_BRACKET_FIXES.sql` | Fix bracket system |
-| `FIX_STAFF_RLS.sql` | Fix RLS policies staff |
-| `FIX_COURSES_POLICY.sql` | Fix RLS policies corsi |
-
----
-
-## Query Utili
-
-### Gestione Ruoli
-
-```sql
--- Ottenere tutti gli admin
-SELECT * FROM profiles WHERE role IN ('admin', 'gestore');
-
--- Promuovere utente ad admin
-UPDATE profiles SET role = 'admin' WHERE id = 'user-uuid';
-
--- Contare utenti per ruolo
-SELECT role, COUNT(*) FROM profiles GROUP BY role;
-```
+## Tabelle
+
+### Utenti e profili
+
+#### `profiles`
+Profilo utente e gestione ruolo. PK `id` (→ `auth.users`).
+Campi chiave: `email` (unique), `full_name`, `role` (`atleta`/`maestro`/`gestore`/`admin`),
+`subscription_type`, `bio`, `birth_date`, `skill_level`, `tennis_stats` (JSONB),
+`emergency_contact` (JSONB), `preferred_times` (array), `profile_completion_percentage`,
+`social_media` (JSONB). **RLS**: utente vede il proprio profilo, lo staff vede tutto,
+i maestri vedono gli atleti, tutti gli autenticati possono cercare profili per la messaggistica.
+
+#### `athlete_stats`
+Statistiche tennistiche dettagliate dell'atleta (1:1 con `profiles`).
+Match (giocati/vinti/persi, win rate), set e game, statistiche di servizio (ace, doppi falli,
+% prima), risposta, qualità dei punti (winner, errori non forzati), streak, attività.
+
+#### `recruitment_applications`
+Candidature per posizioni `maestro` / `personale` (chiunque può inserire, staff legge).
+
+### Prenotazioni e campi
+
+#### `bookings`
+Prenotazioni campi e lezioni. Campi: `user_id`, `coach_id`, `court`,
+`type` (`campo`/`lezione_privata`/`lezione_gruppo`), `start_time`, `end_time`, `status`,
+`coach_confirmed`, `manager_confirmed`, `notes`, `created_by`.
+**Vincoli**: `end_time > start_time`; **`bookings_no_overlap`** (GIST) impedisce sovrapposizioni
+sullo stesso campo. **RLS**: utente vede le proprie, il coach quelle assegnate, lo staff tutte.
+
+#### `booking_participants`
+Più atleti per una stessa prenotazione (max 4). Campi: `booking_id`, `user_id`, `full_name`,
+`email`, `phone`, `is_registered`, `participant_type` (`atleta`/`ospite`), `order_index` (0–3).
+Trigger di limite a 4 partecipanti; unique `(booking_id, order_index)`.
+
+#### `courts_settings`
+Configurazione campi (`court_name` unique, `display_order`, `is_active`). Default: 4 campi.
+
+#### `court_blocks`
+Blocco di fasce orarie su un campo (range, motivo, ricorrenza, `is_disabled`).
+
+### Corsi e lezioni
+
+| Tabella | Scopo |
+|---------|-------|
+| `courses` | Corsi di gruppo: coach, date, `schedule_periods` (JSONB), capienza, prezzo, livello, fascia d'età, `court_name`, `created_by` |
+| `course_enrollments` | Iscrizioni (con `fee` e supporto ospiti); unique `(course_id, user_id)` |
+| `lesson_attendance` | Presenze per lezione (`lesson_date`, `present`); supporto ospiti |
+| `courses_cancelled_dates` | Date di lezione annullate |
+| `courses_extra_dates` | Date di lezione extra |
+| `lesson_time_overrides` | Override orario per una data specifica |
 
 ### Tornei
 
-```sql
--- Tornei aperti con posti disponibili
-SELECT t.*, 
-  COUNT(tp.id) as iscritti,
-  t.max_participants - COUNT(tp.id) as posti_disponibili
-FROM tournaments t
-LEFT JOIN tournament_participants tp ON t.id = tp.tournament_id
-WHERE t.status = 'Aperto'
-GROUP BY t.id
-HAVING COUNT(tp.id) < t.max_participants;
+#### `tournaments`
+Tornei e campionati. Campi: `title`, date, `max_participants`, `status`
+(`Aperto`/`In Corso`/`Concluso`/`Annullato`), `competition_type` (`torneo`/`campionato`),
+`format` (`eliminazione_diretta`/`round_robin`/`girone_eliminazione`),
+`match_format` (`best_of_1/3/5`), `surface_type`, `current_stage`, `rounds_data`/`groups_data`/`standings` (JSONB),
+`entry_fee`, `prize_money`, `created_by`.
 
--- Classifica girone
-SELECT 
-  tp.id,
-  p.full_name,
-  tp.stats->>'points' as punti,
-  tp.stats->>'matches_won' as vittorie,
-  tp.stats->>'sets_won' - tp.stats->>'sets_lost' as diff_set
-FROM tournament_participants tp
-JOIN profiles p ON tp.user_id = p.id
-WHERE tp.group_id = 'group-uuid'
-ORDER BY 
-  (tp.stats->>'points')::INT DESC,
-  ((tp.stats->>'sets_won')::INT - (tp.stats->>'sets_lost')::INT) DESC;
-```
+#### `tournament_participants`
+Iscrizioni ai tornei. Campi: `tournament_id`, `user_id`, `seed`, `group_id`, `group_name`,
+`stats` (JSONB: match, set, game, punti); unique `(tournament_id, user_id)`.
 
-### Prenotazioni
+#### `tournament_groups`
+Gironi per i tornei a fase a gruppi (`group_name`, `group_order`, `max_participants`,
+`advancement_count`).
 
-```sql
--- Prenotazioni di oggi
-SELECT b.*, p.full_name
-FROM bookings b
-JOIN profiles p ON b.user_id = p.id
-WHERE DATE(b.start_time) = CURRENT_DATE
-ORDER BY b.start_time;
+#### `tournament_matches`
+Partite con punteggio tennis. Campi: `round_name`, `stage` (`groups`/`knockout`),
+`player1_id`/`player2_id`, `player1_sets`/`player2_sets`, `score_detail` (JSONB set-per-set),
+`winner_id`, `match_status`, orari, `court_number`, `surface_type`, `stats` (JSONB).
 
--- Campi liberi in un orario
-SELECT DISTINCT court
-FROM unnest(ARRAY['Campo 1', 'Campo 2', 'Campo 3']) AS court
-WHERE court NOT IN (
-  SELECT court FROM bookings
-  WHERE start_time < '2025-12-30 15:00:00'
-  AND end_time > '2025-12-30 14:00:00'
-);
-```
+### Arena
+
+#### `arena_challenges`
+Sfide 1v1 tra giocatori. Campi: `challenger_id`, `opponent_id`,
+`status` (`pending`/`accepted`/`declined`/`completed`/`cancelled`/`counter_proposal`/`awaiting_score`),
+`scheduled_date`, `court`, `booking_id`, `message`, `winner_id`, `score`.
+**Vincoli**: sfidante ≠ avversario; se `completed` richiede `winner_id`.
+Trigger di aggiornamento statistiche al completamento.
+
+#### `arena_stats`
+Ranking e statistiche Arena (PK `user_id`). Campi: `ranking`, `points`, `total_matches`,
+`wins`, `losses`, `win_rate`, `sets_won`, `current_streak`, `longest_win_streak`,
+`level` (`Bronzo`/`Argento`/`Oro`/`Platino`/`Diamante`). **RLS**: lettura pubblica (classifica),
+modifica admin/gestore. Vedi [ARENA.md](ARENA.md) per il sistema punti.
+
+### Eventi
+
+| Tabella | Scopo |
+|---------|-------|
+| `events` | Eventi/attività sociali (`event_type`: `torneo`/`evento_sociale`/`workshop`/`camp`) |
+| `event_registrations` | Iscrizioni agli eventi con `status` e `payment_status` |
+
+### Comunicazione
+
+| Tabella | Scopo |
+|---------|-------|
+| `conversations` | Conversazioni dirette e di gruppo (`is_group`, `last_message_at`, anteprima) |
+| `conversation_participants` | Membri conversazione (`unread_count`, `last_read_at`, `is_admin`, `is_muted`) |
+| `messages` | Messaggi chat (`message_type`, allegati, reply, edit/delete soft) |
+| `message_reads` | Stato lettura per messaggio |
+| `chat_groups` / `chat_group_members` | Chat di gruppo con ruoli (`admin`/`member`) |
+| `internal_messages` | Messaggi diretti 1:1 con oggetto e thread (sistema legacy) |
+| `user_presence` | Stato online/offline/away/busy con `last_seen` |
+| `typing_indicators` | Indicatori "sta scrivendo" in tempo reale |
+
+### News e annunci
+
+| Tabella | Scopo |
+|---------|-------|
+| `news` | Articoli/news con categoria, immagine, stato pubblicazione |
+| `announcements` | Annunci/bacheca con priorità, visibilità per ruolo, scadenza, pinning, `view_count` |
+| `announcement_views` | Tracciamento visualizzazioni annunci (trigger incrementa il contatore) |
+
+### Notifiche
+
+#### `notifications`
+Notifiche in-app per utente (`type`: `info`/`success`/`warning`/`error`, `title`, `message`,
+`link`, `is_read`).
+
+### Pagamenti e commercio
+
+| Tabella | Scopo |
+|---------|-------|
+| `services` | Servizi offerti (lezione privata/gruppo, corso, campo) con prezzo e durata |
+| `products` | Prodotti shop |
+| `orders` | Ordini shop (creati via webhook) |
+| `payments` | Transazioni (`payment_type`: subscription/booking/course/event/product; `status`; supporto ospiti) |
+| `subscription_credits` | Crediti settimanali per le lezioni di gruppo |
+
+### Email, log e video
+
+| Tabella | Scopo |
+|---------|-------|
+| `email_logs` | Audit trail email (stato, provider, message id, timestamp apertura/click) |
+| `email_templates` | Gestione template email |
+| `email_settings` | Configurazione email |
+| `email_unsubscribes` | Preferenze di disiscrizione (`all`/`marketing`/`notifications`) |
+| `activity_log` | Audit completo delle azioni utente (action, entity, metadata, IP, user agent) |
+| `video_lessons` | Video lezioni (URL, durata, note, creatore) |
+| `video_assignments` | Assegnazione video agli atleti con tracciamento visualizzazione |
 
 ---
 
-## Backup e Manutenzione
+## Funzioni e trigger principali
 
-### Backup Database
+### Funzioni core
 
-```bash
-# Via Supabase CLI
-supabase db dump -f backup.sql
+| Funzione | Descrizione |
+|----------|-------------|
+| `get_my_role()` | **SECURITY DEFINER** — restituisce il ruolo dell'utente corrente senza ricorsione RLS |
+| `update_updated_at_column()` | Trigger generico per aggiornare `updated_at` |
+| `handle_new_user()` | Crea automaticamente il profilo alla registrazione (trigger `on_auth_user_created`) |
+| `check_booking_participants_limit()` | Impedisce più di 4 partecipanti per prenotazione |
+| `calculate_profile_completion(id)` | Calcola la percentuale di completamento del profilo |
 
-# Restore
-supabase db reset
-psql -h db.xxx.supabase.co -U postgres -d postgres -f backup.sql
-```
+### Funzioni di dominio
 
-### Pulizia Dati Vecchi
-
-```sql
--- Elimina prenotazioni passate oltre 6 mesi
-DELETE FROM bookings WHERE end_time < NOW() - INTERVAL '6 months';
-
--- Elimina email logs oltre 3 mesi
-DELETE FROM email_logs WHERE created_at < NOW() - INTERVAL '3 months';
-```
+| Funzione | Descrizione |
+|----------|-------------|
+| `update_arena_stats_on_challenge_complete()` | Aggiorna stats, punti, ranking e livello al completamento di una sfida Arena |
+| `calculate_group_standings(group_uuid)` | Calcola la classifica di un girone (punti, set/game diff, scontri diretti) |
+| `reset_weekly_credits()` | Reimposta i crediti settimanali (lezioni di gruppo) |
+| `consume_group_credit(user_id)` | Consuma un credito per la partecipazione a una lezione di gruppo |
+| `is_user_unsubscribed(email, category)` | Verifica disiscrizione email |
+| `get_email_stats(start, end)` | Statistiche email per intervallo |
+| `increment_announcement_views()` | Incrementa il contatore visualizzazioni annunci |
+| `cleanup_old_typing_indicators()` | Rimuove gli indicatori di digitazione obsoleti |
 
 ---
 
-**Fine Documentazione Database**
+## Row Level Security (RLS)
+
+La sicurezza a livello di riga è abilitata su tutte le tabelle sensibili. L'autorizzazione
+si basa sulla funzione **`public.get_my_role()`** (`SECURITY DEFINER`, evita la ricorsione
+infinita delle policy).
+
+### Pattern principali
+
+| Pattern | Implementazione | Esempi |
+|---------|-----------------|--------|
+| Self + admin | `auth.uid() = id OR get_my_role() IN ('admin','gestore')` | profiles, notifications, payments |
+| Basato sul ruolo | `get_my_role() IN ('admin','gestore','maestro')` | gestione contenuti, impostazioni |
+| Relazionale | `auth.uid() = user_id OR auth.uid() = coach_id` | bookings, messages |
+| Pubblico in lettura | `is_active = true` + override staff | courses, services, events |
+| Visibilità broadcast | enum `visibility` + match ruolo | announcements |
+| Classifica pubblica | `USING (true)` | arena_stats |
+
+> **Prevenzione ricorsione**: le policy non leggono direttamente `profiles` ma usano
+> `get_my_role()` in `SECURITY DEFINER`. Le migrazioni 016, 017, 020b, 029, 036 hanno
+> consolidato questo approccio.
+
+---
+
+## Storage bucket
+
+| Bucket | Scopo | Note |
+|--------|-------|------|
+| `chat-attachments` | Allegati dei messaggi | Upload autenticato; cancellazione per cartella `auth.uid()` |
+| `certificates` | Certificati medici/PDF | Limite 10 MB, solo `application/pdf`; insert/delete admin/gestore |
+| `images/` (public) | Logo e branding | In `public/images/` |
+| Video lessons | Registrazioni video | URL in `video_lessons` |
+
+---
+
+## Elenco migrazioni
+
+Le migrazioni si trovano in `supabase/migrations/` e vanno applicate in ordine numerico.
+
+| # | File | Descrizione |
+|---|------|-------------|
+| 001 | create_tournaments_and_participants | Tabelle base tornei |
+| 002 | rls_policies_tournaments | Policy RLS tornei |
+| 003 | add_competition_types | Enum `competition_type`/`format`, colonne JSONB |
+| 004 | tennis_tournament_system | `tournament_groups`, `tournament_matches`, scoring tennis |
+| 005 | chat_messaging_system | `conversations`, `messages`, `message_reads` |
+| 006 | announcements_system | Annunci + tracciamento viste |
+| 006b | create_messages_system | `internal_messages` (1:1) |
+| 007 | allow_users_search | RLS ricerca profili |
+| 007b | email_system | `email_logs`, `email_templates`, `email_settings`, `email_unsubscribes` |
+| 008 | profile_enhancements | Campi profilo estesi + `athlete_stats` |
+| 008b | tournament_start_notifications | Notifica avvio torneo |
+| 009 | allow_authenticated_create_notifications | RLS creazione notifiche |
+| 010 | simplified_tournament_system | Tipi torneo semplificati, gestione fasi |
+| 011 | make_dates_optional | Date torneo opzionali |
+| 012 | tournament_matches_bracket_columns | Colonne bracket |
+| 013 | tennis_scoring_system | Formattazione punteggio match |
+| 014 | add_booking_confirmation_columns | `coach_confirmed`, `manager_confirmed` |
+| 015 | add_profiles_rls_for_bookings | RLS profili per prenotazioni |
+| 015 | dashboard_refactor_features_SAFE | Refactoring funzioni dashboard |
+| 016 | fix_rls_infinite_recursion | Fix ricorsione RLS (SECURITY DEFINER) |
+| 017 | fix_all_remaining_rls | Revisione completa policy RLS |
+| 018 | chat_storage | Bucket `chat-attachments` + RLS |
+| 019 | add_email_notifications_preference | Preferenza notifiche email |
+| 020 | add_user_presence_system | `user_presence`, `typing_indicators` |
+| 020b | fix_rls_security | Hardening RLS |
+| 021 | add_promo_banner_settings | Impostazioni banner promozionale |
+| 021b | video_lessons | Tabella `video_lessons` |
+| 022 | fix_recruitment_applications | Fix candidature |
+| 023 | create_email_campaigns | Campagne email |
+| 024 | create_activity_log | `activity_log` (audit) |
+| 025 | create_email_log | Audit email |
+| 026 | create_courts_settings | `courts_settings` + 4 campi default |
+| 027 | create_video_assignments | `video_assignments` |
+| 028 | chat_groups | `chat_groups`, `chat_group_members` |
+| 029 | fix_chat_groups_rls | Fix RLS chat di gruppo |
+| 030 | fix_profiles_insert_rls | Fix RLS insert profili |
+| 031 | add_handle_new_user_trigger | Trigger auto-creazione profilo |
+| 032 | add_booking_participants | `booking_participants` (1–4 atleti) |
+| 033 | add_phone_to_booking_participants | Campo `phone` partecipanti |
+| 034 | create_email_logs_table_if_missing | Garanzia esistenza `email_logs` |
+| 035 | support_external_players | Supporto giocatori ospiti nelle prenotazioni |
+| 036 | fix_all_rls_recursion_comprehensive | Fix completo ricorsione RLS |
+| 037 | add_notes_to_video_lessons | Note video |
+| 038 | allow_maestro_video_assignments | Permessi maestro su assegnazioni video |
+| 039 | allow_maestro_delete_own_video_lessons | Maestro elimina i propri video |
+| 040 | add_is_disabled_to_court_blocks | `is_disabled` su blocchi campo |
+| 041 | add_awaiting_score_to_arena_challenges | Stato `awaiting_score` Arena |
+| 042 | fix_arena_challenges_status_constraint_awaiting_score | Fix vincolo stato Arena |
+| 043 | fix_handle_new_user_trigger | Fix trigger creazione utente |
+| 044 | add_created_by_to_bookings | `created_by` su prenotazioni |
+| 045 | update_arena_points_system | Sistema punti Arena basato sul risultato |
+| 046 | add_sets_won_to_arena_stats | `sets_won` + trigger aggiornato |
+| 047 | add_bookings_no_overlap_constraint | Vincolo GIST anti-sovrapposizione |
+| 048 | add_court_name_to_courses | `court_name` sui corsi |
+| 049 | create_course_enrollments | `course_enrollments` |
+| 050 | create_lesson_attendance | `lesson_attendance` |
+| 051 | add_fee_to_course_enrollments | Quota iscrizione |
+| 052 | create_payments_table | `payments` |
+| 053 | create_certificates_bucket | Bucket `certificates` |
+| 054 | course_enrollments_guest_support | Iscrizioni corsi per ospiti |
+| 055 | lesson_attendance_guest_support | Presenze per ospiti |
+| 056 | courses_schedule_periods | Programmazione multi-periodo |
+| 057 | courses_cancelled_dates | Date annullate |
+| 058 | courses_extra_dates | Date extra |
+| 060 | courses_lesson_time_overrides | Override orario lezione |
+| 061 | courses_created_by | `created_by` sui corsi |
+| 062 | payments_guest_support | Pagamenti per ospiti |

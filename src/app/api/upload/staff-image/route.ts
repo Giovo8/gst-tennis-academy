@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+    if (!isAdmin(auth.role)) return forbidden();
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const oldImageUrl = formData.get("oldImageUrl") as string | null;

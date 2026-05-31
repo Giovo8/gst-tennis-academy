@@ -1,143 +1,38 @@
-# GST Tennis Academy - Documentazione
+# Documentazione — GST Tennis Academy
 
-Documentazione tecnica e guide per il progetto GST Tennis Academy.
+Documentazione tecnica completa della piattaforma di gestione dell'accademia di tennis.
 
-## 📚 Indice Documentazione
+GST Tennis Academy è un'applicazione **Next.js 16 / React 19** con backend **Supabase
+(PostgreSQL + Auth + Storage)**, sistema email **Resend** e deploy su **Vercel**.
 
-### 🎯 Guide Principali
+---
 
-#### Setup & Deployment
-- [**DEPLOYMENT.md**](./DEPLOYMENT.md) - Guida al deployment in produzione
-- [**EMAIL_SETUP.md**](./EMAIL_SETUP.md) - Configurazione email con Resend
-- [**RESEND_SETUP.md**](./RESEND_SETUP.md) - Setup dettagliato Resend API
-- [**DATABASE.md**](./DATABASE.md) - Schema database e struttura
+## Indice della documentazione
 
-#### Features & Funzionalità
-- [**FEATURES.md**](./FEATURES.md) - Lista completa features implementate
-- [**ARENA.md**](./ARENA.md) - Sistema Arena Challenge
-- [**ARENA_MAESTRO.md**](./ARENA_MAESTRO.md) - Arena per maestri
-- [**ARENA_TENNIS_RULES.md**](./ARENA_TENNIS_RULES.md) - Regole tennis arena
-- [**API.md**](./API.md) - Documentazione API endpoints
+| Documento | Contenuto |
+|-----------|-----------|
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Stack tecnologico, struttura del progetto, client Supabase, middleware, sicurezza, variabili d'ambiente |
+| **[DATABASE.md](DATABASE.md)** | Schema completo: tabelle, funzioni, trigger, policy RLS, storage bucket, elenco migrazioni |
+| **[API.md](API.md)** | Inventario completo degli endpoint API (~69 route) con metodi, autenticazione e payload |
+| **[FEATURES.md](FEATURES.md)** | Funzionalità della piattaforma, mappa delle pagine e permessi per ruolo |
+| **[ROLES.md](ROLES.md)** | Sistema multi-ruolo, gerarchia dei permessi e funzioni helper |
+| **[ARENA.md](ARENA.md)** | Sistema Arena (sfide 1v1): regole, punteggi, ranking e flussi |
+| **[EMAIL.md](EMAIL.md)** | Sistema email transazionale con Resend, notifiche e logging |
+| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Setup locale, configurazione database, variabili d'ambiente, deploy su Vercel, cron job |
+| **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** | Sistema di design: colori, tipografia, componenti UI, glassmorphism |
+| **[FRONTEND.md](FRONTEND.md)** | Linee guida frontend, ottimizzazione mobile e accessibilità |
 
-#### Design & Frontend
-- [**DESIGN_SYSTEM.md**](./DESIGN_SYSTEM.md) - Design system e componenti UI
-- [**FRONTEND_BEST_PRACTICES.md**](./FRONTEND_BEST_PRACTICES.md) - Best practices frontend
-- [**MOBILE_OPTIMIZATION_SUMMARY.md**](./MOBILE_OPTIMIZATION_SUMMARY.md) - Ottimizzazioni mobile
-- [**HOMEPAGE.md**](./HOMEPAGE.md) - Struttura homepage
+---
 
-#### Email & Marketing
-- [**EMAIL_TEMPLATES_BEST_PRACTICES.md**](./EMAIL_TEMPLATES_BEST_PRACTICES.md) - Best practices template email
+## Panoramica rapida
 
-### 📁 Struttura Progetto
+- **Multi-ruolo**: `atleta`, `maestro`, `gestore`, `admin`, con dashboard dedicate.
+- **Prenotazioni**: campi, lezioni private e di gruppo con calendario e vincolo anti-sovrapposizione.
+- **Tornei**: eliminazione diretta, girone + eliminazione e campionato (round-robin) con punteggi tennis reali.
+- **Arena**: sfide 1v1 con ranking, punti e livelli (Bronzo → Diamante).
+- **Corsi**: iscrizioni, presenze, pagamenti, programmazione avanzata e supporto ospiti.
+- **Comunicazione**: chat in tempo reale, messaggi interni, notifiche in-app ed email.
+- **Contenuti**: news, annunci, video lezioni, homepage dinamica.
 
-```
-docs/
-├── README.md                              # Questo file
-├── archive/                              # Documentazione storica
-│   ├── ARENA_COUNTER_PROPOSAL.md
-│   ├── PROMO_BANNER_ADMIN.md
-│   ├── TORNEI_CLICCABILI.md
-│   ├── PRENOTAZIONI_MULTIPLE.md
-│   └── BLOCCO_CAMPI_REAL_TIME.md
-└── [guide principali]                    # Vedi sopra
-```
-
-## 🚀 Quick Start
-
-### Per sviluppatori nuovi al progetto
-1. Leggi [FEATURES.md](./FEATURES.md) per panoramica generale
-2. Consulta [DATABASE.md](./DATABASE.md) per schema dati
-3. Segui [DEPLOYMENT.md](./DEPLOYMENT.md) per setup ambiente
-4. Vedi [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) per componenti UI
-
-### Per deployment
-1. [DEPLOYMENT.md](./DEPLOYMENT.md) - Setup ambiente produzione
-2. [EMAIL_SETUP.md](./EMAIL_SETUP.md) - Configurazione email
-3. [DATABASE.md](./DATABASE.md) - Setup database Supabase
-
-### Per sviluppo frontend
-1. [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - Componenti e stili
-2. [FRONTEND_BEST_PRACTICES.md](./FRONTEND_BEST_PRACTICES.md) - Convenzioni codice
-3. [MOBILE_OPTIMIZATION_SUMMARY.md](./MOBILE_OPTIMIZATION_SUMMARY.md) - Mobile responsive
-
-### Per API & Backend
-1. [API.md](./API.md) - Endpoints disponibili
-2. [DATABASE.md](./DATABASE.md) - Schema e relazioni
-3. [../supabase/README.md](../supabase/README.md) - Scripts SQL
-
-## 🎮 Features Principali
-
-### Sistema Arena
-Sistema di sfide tra giocatori con ranking ELO:
-- [ARENA.md](./ARENA.md) - Panoramica generale
-- [ARENA_MAESTRO.md](./ARENA_MAESTRO.md) - Versione per maestri
-- [ARENA_TENNIS_RULES.md](./ARENA_TENNIS_RULES.md) - Regole complete
-
-### Tornei
-Sistema gestione tornei multi-formato:
-- Eliminazione diretta
-- Girone + Eliminazione
-- Campionato
-- Vedi [FEATURES.md](./FEATURES.md) sezione Tornei
-
-### Prenotazioni
-Sistema prenotazione campi con:
-- Conferma manager
-- Blocco campi
-- Calendario real-time
-- Vedi [FEATURES.md](./FEATURES.md) sezione Prenotazioni
-
-### Email & Notifiche
-Sistema email transazionali:
-- [EMAIL_SETUP.md](./EMAIL_SETUP.md) - Setup
-- [EMAIL_TEMPLATES_BEST_PRACTICES.md](./EMAIL_TEMPLATES_BEST_PRACTICES.md) - Template
-
-## 📖 Convenzioni
-
-### Documentazione
-- File in **UPPERCASE** per guide principali
-- File in **lowercase** per documentazione secondaria
-- Formato Markdown con intestazioni H1-H6
-- Includere sempre indice per documenti >100 righe
-
-### Codice
-- Vedere [FRONTEND_BEST_PRACTICES.md](./FRONTEND_BEST_PRACTICES.md)
-- TypeScript strict mode
-- Componenti funzionali React
-- Tailwind CSS per styling
-
-### Database
-- Vedere [DATABASE.md](./DATABASE.md)
-- Migrations sequenziali numeriche
-- RLS policies per security
-- Vedere [../supabase/README.md](../supabase/README.md)
-
-## 🔄 Aggiornamenti
-
-### Quando aggiungere nuova documentazione
-1. Nuova feature → Creare o aggiornare file in `docs/`
-2. API changes → Aggiornare `API.md`
-3. Schema changes → Aggiornare `DATABASE.md`
-4. UI changes → Aggiornare `DESIGN_SYSTEM.md`
-
-### Workflow
-1. Creare/aggiornare file doc
-2. Aggiungere link in questo README
-3. Update `FEATURES.md` se nuova feature
-4. Commit con messaggio descrittivo
-
-## 📞 Supporto
-
-Per domande o problemi:
-1. Consultare documentazione pertinente
-2. Verificare `FEATURES.md` per funzionalità esistenti
-3. Controllare `../supabase/README.md` per script database
-
-## 🗂️ Archivio
-
-Documentazione storica o obsoleta in `archive/`:
-- Feature deprecate
-- Proposte non implementate
-- Vecchie versioni sostituire
-
-Non eliminare archivio - utile per riferimento storico.
+Per la guida d'installazione e i comandi principali vedi il [README del progetto](../README.md)
+e [DEPLOYMENT.md](DEPLOYMENT.md).

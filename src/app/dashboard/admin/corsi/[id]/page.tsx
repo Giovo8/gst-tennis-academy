@@ -446,7 +446,7 @@ export default function CorsoDetailPage() {
       {/* Header card */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}
+        style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}
       >
         <div className="flex items-start gap-6">
           <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -606,7 +606,7 @@ export default function CorsoDetailPage() {
               const inner = (
                 <div
                   className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                  style={{ background: "#075985" }}
+                  style={{ background: "var(--color-frozen-lake-900)" }}
                 >
                   <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                     <span className="text-sm font-bold text-white leading-none">{initials}</span>
@@ -769,7 +769,7 @@ export default function CorsoDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4" style={{ background: "#075985" }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ background: "var(--color-frozen-lake-900)" }}>
               <h3 className="text-lg font-semibold text-white">Modifica lezione</h3>
               <button
                 type="button"

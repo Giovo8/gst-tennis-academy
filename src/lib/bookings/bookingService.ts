@@ -25,6 +25,10 @@ import { resolveBookingEmailAthleteContext } from "@/lib/bookings/bookingEmailAt
 import { getAdminBookingNotificationLink } from "@/lib/notifications/links";
 import logger from "@/lib/logger/secure-logger";
 
+// Basic email format validation for outbound notification recipients.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (email: string): boolean => EMAIL_REGEX.test(email);
+
 // ─── Shared types ────────────────────────────────────────────────────────────
 
 interface AuthUser {
@@ -212,7 +216,7 @@ export async function handleBookingCreatedSideEffects({
     );
     const participantEmailsFromPayload = (participants || [])
       .map((p) => p.email?.trim().toLowerCase())
-      .filter((email): email is string => Boolean(email && email.includes("@")));
+      .filter((email): email is string => Boolean(email && isValidEmail(email)));
 
     const participantEmailsFromProfilesById = new Map<string, string>();
     if (participantUserIds.length > 0) {
@@ -229,7 +233,7 @@ export async function handleBookingCreatedSideEffects({
       } else {
         for (const pp of participantProfiles || []) {
           const normalizedEmail = pp.email?.trim().toLowerCase();
-          if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+          if (!normalizedEmail || !isValidEmail(normalizedEmail)) continue;
           participantEmailsFromProfilesById.set(pp.id, normalizedEmail);
         }
       }
@@ -243,7 +247,7 @@ export async function handleBookingCreatedSideEffects({
           ...participantUserIds
             .map((uid) => participantEmailsFromProfilesById.get(uid))
             .filter((email): email is string => Boolean(email)),
-        ].filter((email): email is string => Boolean(email && email.includes("@")))
+        ].filter((email): email is string => Boolean(email && isValidEmail(email)))
       )
     );
 
@@ -428,7 +432,7 @@ export async function handleBookingDeletedSideEffects({
     } else {
       for (const pp of participantProfiles || []) {
         const normalizedEmail = pp.email?.trim().toLowerCase();
-        if (!normalizedEmail || !normalizedEmail.includes("@")) continue;
+        if (!normalizedEmail || !isValidEmail(normalizedEmail)) continue;
         participantEmailsFromProfilesById.set(pp.id, normalizedEmail);
       }
     }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
+import logger from "@/lib/logger/secure-logger";
+
+const SERVER_ERROR = "Errore interno del server";
 
 // GET - Fetch user notifications
 export async function GET(request: NextRequest) {
@@ -19,6 +22,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // IDOR check: utenti normali possono leggere solo le proprie notifiche
+    if (userId !== auth.user.id && !isAdmin(auth.role)) {
+      return forbidden();
+    }
+
     let query = supabaseServer
       .from("notifications")
       .select("*")
@@ -32,12 +40,14 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logger.error("notifications GET query failed", error);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
     return NextResponse.json({ notifications: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    logger.error("notifications GET exception", err);
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }
 
@@ -71,12 +81,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logger.error("notifications POST insert failed", error);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
     return NextResponse.json({ notification: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    logger.error("notifications POST exception", err);
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }
 
@@ -97,7 +109,8 @@ export async function PATCH(request: NextRequest) {
         .eq("is_read", false);
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logger.error("notifications PATCH mark-all-read failed", error);
+        return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
       }
 
       return NextResponse.json({ message: "All notifications marked as read" });
@@ -118,12 +131,14 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logger.error("notifications PATCH update failed", error);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
     return NextResponse.json({ notification: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    logger.error("notifications PATCH exception", err);
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }
 
@@ -149,11 +164,13 @@ export async function DELETE(request: NextRequest) {
       .eq("id", notificationId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logger.error("notifications DELETE failed", error);
+      return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
     }
 
     return NextResponse.json({ message: "Notification deleted" });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    logger.error("notifications DELETE exception", err);
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 500 });
   }
 }

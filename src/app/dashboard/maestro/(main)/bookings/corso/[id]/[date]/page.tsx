@@ -104,8 +104,8 @@ export default function CourseBookingDetailPage() {
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
         style={{
-          backgroundColor: "#075985",
-          borderColor: "#075985",
+          backgroundColor: "var(--color-frozen-lake-900)",
+          borderColor: "var(--color-frozen-lake-900)",
           borderLeftColor: "#023047",
         }}
       >
@@ -149,7 +149,7 @@ export default function CourseBookingDetailPage() {
         {dateStr && (
           <Link
             href={`/dashboard/maestro/corsi/${courseId}/lezioni/${dateStr}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#075985] rounded-lg hover:bg-[#075985]/90 transition-all font-medium"
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all font-medium"
           >
             Presenze lezione
           </Link>

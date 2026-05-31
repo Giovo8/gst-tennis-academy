@@ -199,7 +199,7 @@ function RegisterForm() {
                 <a
                   href="https://wa.me/393791958651"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-secondary text-white rounded-md text-sm font-semibold hover:opacity-90 transition-all"
                 >
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

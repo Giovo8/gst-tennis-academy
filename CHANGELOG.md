@@ -5,6 +5,47 @@ All notable changes to GST Tennis Academy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-06-01
+
+### Added
+
+#### Arena (Sfide 1v1)
+- **Sistema Sfide tra Atleti**: partite 1v1 con ranking e statistiche
+  - Tabelle `arena_challenges` e `arena_stats` con trigger automatici per l'aggiornamento delle statistiche
+  - Sistema punti aggiornato e tracking dei set vinti (`sets_won`)
+  - Stati sfida con gestione del punteggio in attesa (`awaiting_score`)
+  - Prenotazione campo diretta per le sfide accettate e chat integrata
+  - Documentazione: `docs/ARENA.md`
+
+#### Sistema Corsi Completo
+- **Iscrizioni Corsi**: tabella `course_enrollments` con quote (`fee`) e supporto ospiti/esterni
+- **Presenze Lezioni**: tabella `lesson_attendance` con tracciamento per lezione e supporto ospiti
+- **Pagamenti**: tabella `payments` con supporto ospiti per la gestione delle quote
+- **Certificati**: bucket storage dedicato per i certificati
+- **Programmazione Avanzata**: periodi di calendario, date annullate, date extra e override orari per singola lezione
+
+#### Giocatori Esterni / Ospiti
+- Supporto a partecipanti esterni nelle prenotazioni, iscrizioni corsi, presenze e pagamenti
+- Partecipanti prenotazione con numero di telefono dedicato
+
+### Changed
+- **Prenotazioni**: aggiunto vincolo di non sovrapposizione a livello database (`bookings_no_overlap_constraint`) e colonna `created_by`
+- **Gestione Campi**: blocchi campo con eccezioni e flag `is_disabled`
+
+### Fixed
+- Risolte in modo organico le ricorsioni infinite nelle RLS policy (`036_fix_all_rls_recursion_comprehensive.sql`)
+- Corretto il trigger `handle_new_user` per la creazione automatica dei profili
+- Corretti i vincoli di stato delle sfide Arena
+
+### Security
+- Policy RLS estese e consolidate per Arena, corsi, pagamenti e presenze
+- Trigger `handle_new_user` per la creazione sicura dei profili in fase di registrazione
+
+### Documentation
+- **Riscrittura completa della documentazione** in `docs/`: nuova struttura consolidata
+  (ARCHITECTURE, DATABASE, API, FEATURES, ROLES, ARENA, EMAIL, DEPLOYMENT, DESIGN_SYSTEM, FRONTEND)
+  allineata allo stato attuale del codice
+
 ## [1.3.0] - 2025-12-29
 
 ### Changed

@@ -27,11 +27,15 @@ export async function GET(req: Request) {
     if (urls.length === 0) {
       // Try to scrape recent posts by username if provided and no token available
       if (queryUsername) {
+        // Validate Instagram username format (1-30 chars: letters, digits, '.', '_')
+        if (!/^[A-Za-z0-9._]{1,30}$/.test(queryUsername)) {
+          return NextResponse.json({ ok: false, message: 'Invalid username format' }, { status: 400 });
+        }
         const scraped = await (async function fetchRecentByUsername(username: string) {
           try {
             // Try the JSON endpoint first
             const jsonEndpoint = `https://www.instagram.com/${encodeURIComponent(username)}/?__a=1`;
-            let res = await fetch(jsonEndpoint, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+            let res = await fetch(jsonEndpoint, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(5000) });
             if (res.ok) {
               const data = await res.json();
               // traverse to media edges (best-effort for common schema)
@@ -46,7 +50,7 @@ export async function GET(req: Request) {
             }
 
             // Fallback: fetch HTML and extract shortcodes via regex
-            res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+            res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(5000) });
             if (!res.ok) return [];
             const html = await res.text();
             const matches = Array.from(html.matchAll(/"shortcode":"([A-Za-z0-9_-]{5,})"/g));
@@ -82,7 +86,7 @@ export async function GET(req: Request) {
       if (token) {
         try {
           const endpoint = `https://graph.facebook.com/v17.0/instagram_oembed?url=${encodeURIComponent(postUrl)}&access_token=${encodeURIComponent(token)}`;
-          const res = await fetch(endpoint);
+          const res = await fetch(endpoint, { signal: AbortSignal.timeout(5000) });
           if (!res.ok) {
             const text = await res.text();
             return { ok: false, url: postUrl, status: res.status, text };

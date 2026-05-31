@@ -2,11 +2,11 @@
 
 🎾 **Piattaforma completa per la gestione di un'accademia di tennis** con sistema di prenotazioni, tornei professionali, corsi, video lezioni, messaggistica e molto altro.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-92%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/Tests-236%20passing-brightgreen)]()
 
 ---
 
@@ -83,7 +83,7 @@
 - Editor rich text
 - Gestione pubblicazione/bozze
 
-### � Homepage Professionale
+### 🏠 Homepage Professionale
 
 - **Landing Page Moderna**: Design responsive e accattivante
 - **10 Sezioni Modulari**: Hero, Servizi, Tornei, Staff, News, CTA
@@ -92,9 +92,9 @@
 - **Accessibilità**: Skip links, ARIA labels, keyboard navigation
 - **Performance Ottimizzate**: Lazy loading, fallback data, code splitting
 
-Documentazione: [HOMEPAGE.md](docs/HOMEPAGE.md)
+Documentazione: [FEATURES.md](docs/FEATURES.md)
 
-### �🎥 Video Lezioni
+### 🎥 Video Lezioni
 
 - Assegnazione video personalizzati agli atleti
 - Supporto YouTube, Vimeo e video diretti
@@ -106,15 +106,20 @@ Documentazione: [HOMEPAGE.md](docs/HOMEPAGE.md)
 
 ## 📖 Documentazione
 
-La documentazione completa è disponibile nella cartella `docs/`:
+La documentazione completa è disponibile nella cartella `docs/` (indice in [docs/README.md](docs/README.md)):
 
 | Documento | Descrizione |
 |-----------|-------------|
-| **[DATABASE.md](docs/DATABASE.md)** | Schema completo database, tabelle, RLS policies, migrazioni, funzioni helper |
-| **[API.md](docs/API.md)** | Documentazione completa API endpoints con esempi |
-| **[FEATURES.md](docs/FEATURES.md)** | Guida completa a tutte le funzionalità del sistema |
-| **[HOMEPAGE.md](docs/HOMEPAGE.md)** | Documentazione dettagliata homepage e componenti landing |
-| **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Guida setup, deployment, variabili ambiente, configurazione |
+| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Stack tecnologico, struttura, client Supabase, middleware, variabili d'ambiente |
+| **[DATABASE.md](docs/DATABASE.md)** | Schema completo: tabelle, funzioni, trigger, RLS, storage, migrazioni |
+| **[API.md](docs/API.md)** | Inventario completo degli endpoint API con metodi e autenticazione |
+| **[FEATURES.md](docs/FEATURES.md)** | Funzionalità, mappa delle pagine e permessi per ruolo |
+| **[ROLES.md](docs/ROLES.md)** | Sistema multi-ruolo e gerarchia dei permessi |
+| **[ARENA.md](docs/ARENA.md)** | Sistema Arena (sfide 1v1): regole, punteggi e ranking |
+| **[EMAIL.md](docs/EMAIL.md)** | Sistema email transazionale con Resend |
+| **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Setup, deployment, variabili ambiente, cron job |
+| **[DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** | Palette, tipografia e componenti UI |
+| **[FRONTEND.md](docs/FRONTEND.md)** | Linee guida frontend, mobile e accessibilità |
 
 ---
 
@@ -185,8 +190,8 @@ NEXT_PUBLIC_ACADEMY_NAME=GST Tennis Academy
 001_create_tournaments_and_participants.sql
 002_rls_policies_tournaments.sql
 ... (tutte le migrazioni in ordine numerico)
-020_fix_rls_security.sql
-021_video_lessons.sql
+061_courses_created_by.sql
+062_payments_guest_support.sql
 ```
 
 Documentazione completa: [DATABASE.md](docs/DATABASE.md)
@@ -213,7 +218,7 @@ WHERE email = 'your-email@example.com';
 ## 🛠 Tecnologie
 
 ### Frontend
-- **Next.js 15** - React framework con App Router
+- **Next.js 16** - React framework con App Router
 - **React 19** - UI library
 - **TypeScript 5** - Type safety
 - **Tailwind CSS 4** - Utility-first styling
@@ -308,7 +313,7 @@ npm run test:coverage
 npx jest --testPathPatterns="auth|bookings|rls"
 ```
 
-**Test Coverage** (92 test):
+**Test Coverage** (236 test):
 - ✅ **Auth**: Verifica funzioni `isAdminOrGestore`, `canManageUsers`
 - ✅ **Bookings**: Validazione campi, regola 24h, overlap temporali, conflitti, batch
 - ✅ **RLS Policies**: Verifica permessi per tutti i ruoli (atleta, maestro, gestore, admin)

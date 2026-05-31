@@ -2,6 +2,37 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const method = request.method;
+
+  // --- Protezione CSRF per richieste state-changing verso API route ---
+  // Si applica solo quando l'header Origin è presente (richieste browser con cookie).
+  // Le chiamate server-to-server (webhook, integrazioni) non inviano Origin e vengono lasciate passare.
+  const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  const isApiRoute = pathname.startsWith("/api/");
+  const isWebhook = pathname.startsWith("/api/webhooks/");
+
+  if (isMutating && isApiRoute && !isWebhook) {
+    const origin = request.headers.get("origin");
+    if (origin) {
+      const host = request.headers.get("host");
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      const allowed = [
+        host ? `https://${host}` : null,
+        host ? `http://${host}` : null,
+        siteUrl ?? null,
+      ].filter(Boolean) as string[];
+
+      if (!allowed.some((a) => origin === a)) {
+        return NextResponse.json(
+          { error: "Richiesta non autorizzata (CSRF)" },
+          { status: 403 }
+        );
+      }
+    }
+  }
+  // --- Fine protezione CSRF ---
+
   let supabaseResponse = NextResponse.next({
     request,
   });

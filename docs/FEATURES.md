@@ -1,677 +1,173 @@
-# Features Documentation - GST Tennis Academy
+# Funzionalità
 
-**Ultima revisione**: 30 Dicembre 2025  
-**Versione**: 2.0
-
-## Panoramica
-
-GST Tennis Academy è una piattaforma web completa per la gestione di un'accademia di tennis. Include funzionalità per utenti, prenotazioni, tornei, corsi, messaggistica e molto altro.
+Mappa completa delle funzionalità, delle pagine e dei permessi di GST Tennis Academy.
 
 ---
 
-## Sistema Multi-Ruolo
+## Sistema prenotazioni
 
-### Ruoli Utente
+Tre tipi di prenotazione:
 
-#### 1. Atleta (`atleta`)
-- **Dashboard**: `/dashboard/athlete`
-- **Funzionalità**:
-  - Prenotazione campi
-  - Visualizzazione corsi disponibili
-  - Iscrizione tornei
-  - Gestione profilo personale
-  - Messaggistica con maestri e staff
-  - Visualizzazione storico prenotazioni
-  - Accesso news e annunci
+- **Campo** — prenotazione del campo senza maestro.
+- **Lezione privata** — campo + maestro assegnato.
+- **Lezione di gruppo** — lezione multi-partecipante con limite di capienza (max 4 atleti).
 
-#### 2. Maestro/Coach (`maestro`)
-- **Dashboard**: `/dashboard/maestro`
-- **Funzionalità**:
-  - Visualizzazione tutte le prenotazioni
-  - Gestione lezioni private/gruppo
-  - Calendario completo
-  - Creazione e gestione corsi
-  - Inserimento risultati tornei
-  - Messaggistica con atleti
-  - Gestione disponibilità
+Caratteristiche:
 
-#### 3. Gestore (`gestore`)
-- **Dashboard**: `/dashboard/admin`
-- **Funzionalità**:
-  - Gestione utenti (no admin)
-  - Creazione account atleti, coach, gestori
-  - Gestione tornei completa
-  - Gestione corsi
-  - Visualizzazione statistiche
-  - Gestione news e annunci
-  - Moderazione chat
-  - Gestione prenotazioni
-
-#### 4. Admin (`admin`)
-- **Dashboard**: `/dashboard/admin`
-- **Funzionalità**:
-  - Accesso completo a tutte le funzionalità
-  - Creazione altri admin
-  - Gestione configurazione sistema
-  - Accesso logs email
-  - Gestione staff e subscriptions
-  - Configurazione homepage
+- Calendario interattivo con disponibilità in tempo reale.
+- Vincolo a livello database che impedisce le sovrapposizioni sullo stesso campo.
+- Orari di apertura configurabili: lun–ven 07:00–20:30, sabato 07:00–18:00, domenica 07:00–13:00.
+- Flusso di conferma multi-livello (`coach_confirmed`, `manager_confirmed`).
+- Notifiche email automatiche ad atleta, maestro e gestori.
+- Partecipanti registrati o ospiti, con nome/email/telefono.
+- Ricerca e filtri per campo, data, tipo, maestro; storico prenotazioni.
 
 ---
 
-## Sistema Prenotazioni
+## Sistema tornei
 
-### Tipi di Prenotazione
+Tre tipi di competizione:
 
-1. **Prenotazione Campo** (`campo`)
-   - Selezione campo (1-8)
-   - Selezione data e orario
-   - Durata configurabile (30min, 1h, 1.5h, 2h)
-   - Prevenzione sovrapposizioni automatica
+1. **Eliminazione diretta** — tabellone classico (2, 4, 8, 16, 32… partecipanti) con seeding e bye automatici.
+2. **Girone + eliminazione** — fase a gironi (round-robin) seguita da knockout; distribuzione
+   automatica e classifiche con tiebreak (punti → differenza set → differenza game → scontri diretti).
+3. **Campionato** — round-robin "tutti contro tutti" con classifica unica.
 
-2. **Lezione Privata** (`lezione_privata`)
-   - Prenotazione campo + assegnazione maestro
-   - Calendario sincronizzato con maestro
-   - Notifiche email automatiche
+Caratteristiche:
 
-3. **Lezione di Gruppo** (`lezione_gruppo`)
-   - Prenotazione per gruppi
-   - Sistema crediti settimanali per abbonamenti
-   - Gestione capienza massima
-
-### Features Prenotazioni
-
-- **Calendario Interattivo**: Visualizzazione disponibilità in tempo reale
-- **Filtri**: Per campo, tipo prenotazione, maestro
-- **Conferme Email**: Automatiche tramite sistema email
-- **Cancellazione**: Possibile fino a X ore prima (configurabile)
-- **Storico**: Visualizzazione prenotazioni passate
-- **Statistiche**: Per utente e per campo
-
-### Vincoli
-
-- Nessuna sovrapposizione su stesso campo (gestito da DB)
-- Orari di apertura: 08:00 - 22:00 (configurabile)
-- Durata minima: 30 minuti
-- Preavviso cancellazione: 24 ore
+- Inserimento punteggi set-per-set con regole tennis autentiche (set, game, tie-break).
+- Iscrizione manuale o automatica dei partecipanti.
+- Rendering del tabellone in tempo reale e statistiche per partecipante.
+- Workflow di stato: registrazione → in corso → concluso.
+- Visibilità pubblica con possibilità di iscrizione per gli utenti loggati.
 
 ---
 
-## Sistema Tornei (v2.0 Semplificato)
+## Arena (sfide 1v1)
 
-### 3 Tipi di Torneo
+Sistema competitivo a ranking in cui gli atleti si sfidano in partite individuali. Vedi
+[ARENA.md](ARENA.md) per le regole complete e il sistema di punteggio.
 
-#### 1. Eliminazione Diretta (`eliminazione_diretta`)
-
-**Caratteristiche**:
-- Bracket classico ad eliminazione
-- Partecipanti: 2, 4, 8, 16, 32, 64, 128
-- Seeding automatico
-- Round: ottavi → quarti → semifinali → finale
-
-**Workflow**:
-```
-1. Creazione torneo
-2. Iscrizioni atleti
-3. Chiusura iscrizioni
-4. Generazione bracket automatico
-5. Inserimento risultati partite
-6. Avanzamento automatico vincitori
-7. Completamento torneo
-```
-
-**Generazione Bracket**:
-- Algoritmo seeding standard
-- Bye automatici se partecipanti < potenza di 2
-- Posizionamento teste di serie
-
-#### 2. Girone + Eliminazione (`girone_eliminazione`)
-
-**Caratteristiche**:
-- Fase a gironi (round-robin)
-- Fase eliminazione diretta per qualificati
-- Configurazione gironi:
-  - Numero gironi: 2-8
-  - Partecipanti per girone: 3-8
-  - Qualificati per girone: 1-4
-
-**Workflow**:
-```
-1. Creazione torneo con configurazione gironi
-2. Iscrizioni atleti
-3. Generazione gironi automatica (distribuzione bilanciata)
-4. Generazione partite gironi
-5. Inserimento risultati fase gironi
-6. Calcolo classifiche automatico
-7. Avanzamento migliori X per girone
-8. Generazione bracket eliminazione
-9. Fase eliminazione diretta
-10. Completamento torneo
-```
-
-**Calcolo Classifica Gironi**:
-- Punti: 2 vittoria, 0 sconfitta
-- Criteri ordine:
-  1. Punti totali
-  2. Differenza set
-  3. Differenza game
-  4. Scontro diretto (se applicabile)
-
-#### 3. Campionato (`campionato`)
-
-**Caratteristiche**:
-- Round-robin (tutti contro tutti)
-- Classifica unica
-- Nessuna fase eliminazione
-
-**Workflow**:
-```
-1. Creazione campionato
-2. Iscrizioni atleti
-3. Generazione calendario partite (tutti vs tutti)
-4. Inserimento risultati
-5. Aggiornamento classifica automatico
-6. Completamento campionato
-```
-
-### Features Tornei
-
-**Gestione Partecipanti**:
-- Iscrizione manuale da admin
-- Auto-iscrizione atleti
-- Ricerca utenti con filtri
-- Rimozione partecipanti (solo fase iscrizioni)
-- Visualizzazione lista partecipanti
-
-**Gestione Partite**:
-- Visualizzazione bracket/gironi
-- Inserimento punteggi dettagliati (set per set)
-- Validazione risultati
-- Aggiornamento statistiche automatico
-- Notifiche avanzamenti
-
-**Statistiche Partecipanti**:
-- Partite giocate
-- Vittorie/Sconfitte
-- Set vinti/persi
-- Game vinti/persi
-- Punti classifica
-
-**Visualizzazioni**:
-- Bracket ad eliminazione interattivo
-- Gironi con classifiche
-- Calendario partite
-- Storico risultati
-
-**Stati Torneo**:
-- `Aperto`: Iscrizioni aperte
-- `In Corso`: Torneo iniziato
-- `Concluso`: Torneo terminato
-- `Annullato`: Torneo cancellato
-
-**Fasi Torneo**:
-- `iscrizioni`: Raccolta partecipanti
-- `gironi`: Fase a gironi (se applicabile)
-- `eliminazione`: Fase eliminazione diretta
-- `completato`: Torneo finito
-- `annullato`: Torneo cancellato
+In sintesi: creazione sfida (singolo/doppio, best of 1/3/5), ciclo di vita
+pending → accepted/declined → awaiting_score → completed, controproposte, punteggio set-per-set,
+ranking automatico con livelli da **Bronzo** a **Diamante**, prenotazione campo collegata e chat.
 
 ---
 
-## Sistema Corsi
+## Corsi
 
-### Gestione Corsi
-
-**Campi Corso**:
-- Titolo e descrizione
-- Coach assegnato
-- Date inizio/fine
-- Orari (schedule testuale o JSON)
-- Capienza massima
-- Prezzo
-- Livello: principiante, intermedio, avanzato
-- Fascia età: bambini, junior, adulti, senior
-- Immagine corso
-
-**Stati Corso**:
-- Attivo/Inattivo
-- Posti disponibili
-- Partecipanti attuali
-
-### Iscrizioni Corsi
-
-**Features**:
-- Iscrizione online atleti
-- Gestione stato iscrizione: pending, confirmed, cancelled, completed
-- Stato pagamento: pending, paid, refunded
-- Conferme email automatiche
-- Lista d'attesa se corso pieno
-- Storico iscrizioni per utente
-
-**Workflow Iscrizione**:
-```
-1. Atleta visualizza corsi disponibili
-2. Clicca "Iscriviti"
-3. Sistema verifica posti disponibili
-4. Crea enrollment con status 'pending'
-5. Invia email conferma
-6. Gestore conferma iscrizione
-7. Atleta effettua pagamento
-8. Status → 'confirmed' e 'paid'
-9. Corso inizia
-10. Al termine: status → 'completed'
-```
+- Creazione di corsi ricorrenti con giorni, fasce orarie, campo, capienza, prezzo e periodo.
+- Programmazione avanzata: periodi multipli, date annullate, date extra, override orario.
+- Iscrizioni (atleti registrati o ospiti, con quota).
+- Tracciamento presenze per singola lezione.
+- Sistema di crediti settimanali per le lezioni di gruppo.
+- Assegnazione del maestro al corso.
 
 ---
 
-## Sistema Messaggistica
+## Video lezioni
 
-### Conversazioni
-
-**Tipi**:
-- **1-to-1**: Chat privata tra due utenti
-- **Gruppo**: Chat di gruppo con più partecipanti
-
-**Features**:
-- Conversazioni in tempo reale (polling o websocket)
-- Stato lettura messaggi
-- Contatore non letti
-- Anteprima ultimo messaggio
-- Ricerca conversazioni
-- Archiviazione conversazioni
-- Mute notifiche
-
-### Messaggi
-
-**Tipi Messaggio**:
-- `text`: Messaggio testuale
-- `image`: Immagine allegata
-- `file`: File allegato
-- `system`: Messaggio di sistema
-- `booking`: Condivisione prenotazione
-- `lesson`: Condivisione lezione
-
-**Features**:
-- Invio messaggi testuali
-- Upload file e immagini
-- Modifica messaggi inviati
-- Eliminazione messaggi
-- Risposta a messaggi (threading)
-- Timestamp e stato lettura
-- Paginazione messaggi
-
-### Partecipanti Conversazione
-
-**Campi**:
-- Data adesione
-- Ultima lettura
-- Contatore non letti
-- Admin conversazione (per gruppi)
-- Mute/Archived status
+- Libreria di video categorizzati per livello e tema.
+- Assegnazione dei video a utenti specifici.
+- Tracciamento delle visualizzazioni (conteggio e data per utente).
+- I maestri possono creare/eliminare i propri video (migrazioni 038–039).
 
 ---
 
-## Sistema Email
+## Chat e comunicazione
 
-### Email Transazionali
-
-**Provider**: Resend (configurabile)
-
-**Template Disponibili**:
-- `booking_confirmation`: Conferma prenotazione
-- `booking_reminder`: Promemoria prenotazione
-- `booking_cancelled`: Cancellazione prenotazione
-- `tournament_registration`: Iscrizione torneo
-- `tournament_match_scheduled`: Partita programmata
-- `tournament_results`: Risultati partita
-- `course_enrollment`: Iscrizione corso
-- `course_reminder`: Promemoria inizio corso
-- `welcome`: Email benvenuto nuovi utenti
-- `password_reset`: Reset password
-
-### Gestione Template
-
-**Campi Template**:
-- Nome univoco
-- Display name
-- Descrizione
-- Subject con placeholder
-- HTML template
-- Text fallback
-- Categoria: transactional, marketing, notification, system
-- Variabili disponibili (array JSON)
-- Stato attivo/inattivo
-
-**Placeholder System**:
-```html
-Subject: Conferma Prenotazione - {{court_name}}
-
-Ciao {{user_name}},
-
-La tua prenotazione per {{court_name}} 
-il {{booking_date}} alle {{booking_time}} è confermata.
-```
-
-### Email Logs
-
-**Tracking**:
-- Destinatario
-- Template usato
-- Dati template (JSON)
-- Status: pending, sent, delivered, failed, bounced, opened, clicked
-- Provider message ID
-- Timestamp invio/consegna/apertura/click
-- Errori e retry count
-- Metadata aggiuntivi
-
-### Unsubscribe
-
-**Features**:
-- Gestione disiscrizione per tipo
-- Tipi: all, marketing, notifications
-- Motivo disiscrizione
-- Rispetto preferenze in invii automatici
-
-### Webhooks
-
-**Eventi Resend**:
-- `email.sent`: Email inviata
-- `email.delivered`: Email consegnata
-- `email.opened`: Email aperta
-- `email.clicked`: Link cliccato
-- `email.bounced`: Email rimbalzata
-- `email.failed`: Invio fallito
-
-**Endpoint**: `/api/webhooks/email`
+- **Chat in tempo reale** con conversazioni 1:1 e di gruppo (Supabase Realtime).
+- **Indicatori di presenza** (online/offline) e di digitazione.
+- **Messaggi interni** con oggetto e thread.
+- **Allegati** (immagini/PDF) con validazione MIME e magic bytes.
+- Conteggio messaggi non letti.
 
 ---
 
-## News e Annunci
+## News e annunci
 
-### News
-
-**Campi**:
-- Titolo
-- Categoria
-- Sommario
-- Immagine
-- Data pubblicazione
-- Stato pubblicato/bozza
-- Autore
-
-**Categorie**:
-- Tornei
-- Corsi
-- Eventi
-- Generale
-- Risultati
-
-**Features**:
-- Pubblicazione programmata
-- Bozze
-- Editor rich text
-- Upload immagini
-- Filtro per categoria
-- Paginazione
-- SEO metadata
-
-### Annunci
-
-Sistema annunci gestito tramite migrazione 006_announcements_system.sql
-
-**Features**:
-- Annunci homepage
-- Popup annunci urgenti
-- Data scadenza
-- Priorità visualizzazione
+- Articoli news con categoria, immagine, stato pubblicazione e pagine di dettaglio.
+- Annunci/bacheca con priorità, visibilità per ruolo, scadenza e pinning.
+- Editor admin con sanitizzazione HTML.
 
 ---
 
-## Dashboard e Statistiche
+## Notifiche
 
-### Dashboard Atleta
-
-**Widget**:
-- Prossime prenotazioni
-- Tornei attivi
-- Corsi iscritti
-- Messaggi non letti
-- News recenti
-
-### Dashboard Maestro
-
-**Widget**:
-- Calendario lezioni giornaliero
-- Prossime lezioni private
-- Corsi gestiti
-- Statistiche mensili (ore insegnamento, atleti seguiti)
-
-### Dashboard Admin
-
-**Widget**:
-- Statistiche generali:
-  - Utenti totali (per ruolo)
-  - Prenotazioni oggi/settimana
-  - Tornei attivi
-  - Corsi attivi
-  - Revenue mensile
-- Grafici:
-  - Prenotazioni nel tempo
-  - Iscrizioni tornei
-  - Partecipazione corsi
-- Quick actions:
-  - Crea torneo
-  - Crea corso
-  - Crea news
-  - Gestisci utenti
+- Notifiche in-app (dropdown a campanella) con routing per ruolo.
+- Notifiche email configurabili per utente.
+- Tipi: conferme/cancellazioni prenotazioni, aggiornamenti sfide, iscrizioni tornei, annunci, alert di sistema.
 
 ---
 
-## Pagamenti e Abbonamenti
+## Profilo e statistiche
 
-### Subscription Credits
-
-**Sistema**:
-- Piano abbonamento con crediti settimanali
-- Reset automatico ogni lunedì
-- Tracciamento crediti disponibili
-- Consumo credito per lezioni gruppo
-
-**Piani**:
-- Monosettimanale: 1 credito/settimana
-- Bisettimanale: 2 crediti/settimana
-- Trisettimanale: 3 crediti/settimana
-- Personalizzati
-
-**Funzioni**:
-```sql
--- Reset automatico crediti (cron job)
-reset_weekly_credits()
-
--- Consuma credito
-consume_group_credit(user_id)
-```
-
-### Payments
-
-**Tracciamento Pagamenti**:
-- Tipo: subscription, booking, course, event, product
-- Metodo: stripe, cash, bank_transfer
-- Status: pending, completed, failed, refunded
-- Link a risorsa correlata (reference_id)
-- Metadata aggiuntivi
-
-**Integrazione Stripe** (opzionale):
-- Checkout sessions
-- Payment intents
-- Webhooks per conferme
-- Gestione refund
+- Profilo utente con dati anagrafici, avatar, preferenze e percentuale di completamento.
+- Statistiche atleta: ranking e punti Arena, storico match, set/game, attività.
+- Profilo maestro con bio, stato "prenotabile" e statistiche lezioni.
 
 ---
 
-## Homepage Dinamica
+## Email
 
-### Sezioni Configurabili
-
-**Gestione via Admin**:
-- Hero section con immagini
-- Sezioni servizi
-- Sezione staff
-- Sezione tornei
-- Sezione news
-- Footer con contatti
-
-**API**: `/api/homepage-sections`
-
-**Features**:
-- Ordinamento sezioni
-- Abilitazione/Disabilitazione
-- Contenuto dinamico
-- Immagini responsive
+Sistema transazionale basato su Resend con notifiche automatiche e campagne admin. Vedi
+[EMAIL.md](EMAIL.md).
 
 ---
 
-## SEO e Performance
+## Homepage
 
-### SEO
-
-**Features**:
-- Metadata dinamici per pagina
-- Open Graph tags
-- Twitter cards
-- Sitemap.xml generato
-- Robots.txt
-- Schema.org markup
-
-**Componenti**:
-- `<MetaTags />`: Metadata dinamici
-- `<JsonLd />`: Structured data
-
-### Performance
-
-**Ottimizzazioni**:
-- Next.js Image optimization
-- Code splitting automatico
-- Font optimization
-- CSS modules
-- API route caching headers
-- Database indexing ottimizzato
+Landing page modulare: hero, scroll loghi partner, tornei in evidenza, staff, news, sezioni
+CTA, navbar pubblica e footer con link legali. Contenuti caricati dinamicamente dal database.
 
 ---
 
-## Sicurezza
+## Mappa delle pagine
 
-### Row Level Security (RLS)
+### Pagine pubbliche
 
-**Tutte le tabelle** hanno policies RLS:
-- Utenti vedono solo i propri dati
-- Admin/Gestore accesso completo
-- Maestri accesso lezioni/prenotazioni
-- Protezione da SQL injection
+| Route | Descrizione |
+|-------|-------------|
+| `/` | Homepage |
+| `/login`, `/register` | Autenticazione e registrazione |
+| `/auth/callback`, `/auth/reset-password`, `/auth/auth-code-error` | Flussi auth |
+| `/news`, `/news/[id]` | News pubbliche e dettaglio |
+| `/tornei`, `/tornei/[id]` | Tornei pubblici e dettaglio (iscrizione se loggato) |
+| `/classifiche` | Classifiche pubbliche |
+| `/lavora-con-noi` | Candidature di lavoro |
+| `/privacy`, `/terms`, `/cookie-policy`, `/refund-policy`, `/accessibility` | Pagine legali |
 
-### Autenticazione
+### Pagine autenticate (tutti i ruoli)
 
-**Supabase Auth**:
-- JWT tokens
-- Email + Password
-- OAuth providers (opzionale)
-- Password reset
-- Email verification
+| Route | Descrizione |
+|-------|-------------|
+| `/dashboard` | Redirect alla dashboard del ruolo |
+| `/profile` | Gestione profilo |
+| `/chat` | Messaggistica |
 
-### Authorization
+### Dashboard Atleta (`/dashboard/atleta/`)
 
-**Middleware**:
-- Verifica ruolo utente
-- Service role per admin APIs
-- CSRF protection
-- Rate limiting (da implementare)
+Prenotazioni, corsi, tornei, **Arena** (scelta avversario, configurazione e gestione sfide),
+video, posta, profilo.
 
----
+### Dashboard Maestro (`/dashboard/maestro/`)
 
-## Testing
+Prenotazioni e lezioni, corsi gestiti, tornei, Arena, video, posta, profilo.
 
-### Test Implementati
+### Dashboard Admin/Gestore (`/dashboard/admin/`)
 
-**File Test**:
-- `__tests__/tournaments.test.ts`: Test sistema tornei
-- `__tests__/tournament-flows.test.ts`: Test flussi completi
-
-**Coverage**:
-- Creazione tornei
-- Iscrizione partecipanti
-- Generazione gironi e bracket
-- Inserimento risultati
-- Calcolo statistiche
-
-**Script**:
-```bash
-npm test                    # Run tutti i test
-npm test tournaments        # Test tornei
-npm test -- --coverage      # Con coverage
-```
+Utenti, prenotazioni, corsi, tornei, video lezioni, staff, campi, annunci, chat, news,
+notifiche, statistiche, mail marketing, invite code, candidature, platform log, gallery,
+design system demo.
 
 ---
 
-## Deployment
+## Protezione delle rotte
 
-### Requisiti
+- Le pagine pubbliche sono accessibili senza login.
+- Le rotte protette verificano la sessione e applicano il controllo per ruolo a livello di
+  componente (`AuthGuard`).
+- Il redirect post-login porta alla dashboard appropriata (`getDestinationForRole`).
+- Redirect legacy: `/dashboard/coach/*` → `/dashboard/maestro/*`.
 
-- Node.js 18+
-- PostgreSQL 14+ (via Supabase)
-- Provider email (Resend)
-- Storage per file (Supabase Storage)
-
-### Variabili Ambiente
-
-**Essenziali**:
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-RESEND_API_KEY=
-```
-
-**Opzionali**:
-```env
-NEXT_PUBLIC_SITE_URL=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-```
-
-### Platform
-
-**Consigliato**: Vercel
-- Deploy automatico da Git
-- Edge functions
-- Preview deployments
-- Analytics integrato
-
----
-
-## Prossimi Sviluppi
-
-### Roadmap
-
-**In Pianificazione**:
-- [ ] App mobile (React Native)
-- [ ] Sistema notifiche push
-- [ ] Pagamenti Stripe completi
-- [ ] Video lezioni on-demand
-- [ ] Live streaming tornei
-- [ ] Classifica ATP-style
-- [ ] Statistiche avanzate match
-- [ ] Sistema referral atleti
-- [ ] Calendario Google sync
-- [ ] Export PDF certificati/diplomi
-
-**In Valutazione**:
-- [ ] Multi-tenancy per più academy
-- [ ] Marketplace attrezzatura
-- [ ] Social features (feed, like, commenti)
-- [ ] Gamification (badges, achievements)
-- [ ] AI match analysis
-- [ ] Prenotazioni ricorrenti automatiche
-
----
-
-**Fine Documentazione Features**
+Per i dettagli sui permessi vedi [ROLES.md](ROLES.md).

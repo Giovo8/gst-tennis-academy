@@ -201,7 +201,7 @@ export default function CorsiAdminPage() {
               <div
                 key={course.id}
                 className="rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                style={{ background: "#075985", opacity: course.is_active ? 1 : 0.55 }}
+                style={{ background: "var(--color-frozen-lake-900)", opacity: course.is_active ? 1 : 0.55 }}
                 onClick={() => router.push(`/dashboard/admin/corsi/${course.id}`)}
               >
                 <div className="flex items-center gap-4 py-3 px-3">

@@ -22,9 +22,8 @@ export async function GET(req: Request) {
   if (!authResult.success) {
     return authResult.response;
   }
-  if (!isAdminOrGestore(authResult.data.profile?.role)) {
-    return NextResponse.json({ error: ERROR_MESSAGES.FORBIDDEN ?? "Permessi insufficienti" }, { status: 403 });
-  }
+  const isPrivileged = isAdminOrGestore(authResult.data.profile?.role);
+  const currentUserId = authResult.data.user.id;
 
   try {
     const url = new URL(req.url);
@@ -55,6 +54,14 @@ export async function GET(req: Request) {
         );
       }
 
+      // Non-privileged users may only read their own bookings
+      if (!isPrivileged && booking.user_id !== currentUserId) {
+        return NextResponse.json(
+          { error: ERROR_MESSAGES.FORBIDDEN ?? "Permessi insufficienti" },
+          { status: 403 }
+        );
+      }
+
       // Fetch participants
       const { data: participants } = await supabaseServer
         .from("booking_participants")
@@ -77,7 +84,12 @@ export async function GET(req: Request) {
       .select("*")
       .order("start_time", { ascending: true });
     
-    if (user_id) query = query.eq("user_id", user_id);
+    if (!isPrivileged) {
+      // Non-privileged users are always scoped to their own bookings
+      query = query.eq("user_id", currentUserId);
+    } else if (user_id) {
+      query = query.eq("user_id", user_id);
+    }
     if (coach_id) query = query.eq("coach_id", coach_id);
     
     const { data: bookings, error } = await query;

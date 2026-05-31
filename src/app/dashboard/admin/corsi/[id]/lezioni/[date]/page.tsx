@@ -261,7 +261,7 @@ export default function LezionePresenzePage() {
       {/* Header */}
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
-        style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}
+        style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}
       >
         <div className="flex items-start gap-6">
           <UserCheck className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await getRouteAuth();
+  if (!auth) return unauthorized();
+  if (!isAdmin(auth.role)) return forbidden();
+
   const { id: codeId } = await params;
 
   // 1. Fetch the invite code to get the code string

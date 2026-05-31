@@ -22,7 +22,7 @@ export async function POST(
       );
     }
 
-    const token = authHeader.substring(7); // Remove "Bearer "
+    const token = authHeader.replace(/^Bearer\s+/i, "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json(

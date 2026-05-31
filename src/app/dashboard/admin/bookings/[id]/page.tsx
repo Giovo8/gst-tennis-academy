@@ -459,7 +459,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
           <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
         </div>
         <div className="rounded-xl border-t border-r border-b p-6 border-l-4"
-          style={{ backgroundColor: "#075985", borderColor: "#075985", borderLeftColor: "#075985" }}>
+          style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}>
           <div className="flex items-start gap-6">
             <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1">
@@ -548,7 +548,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link href={`${basePath}/corsi/${bookingId}/lezioni/${courseDate}`}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#075985] rounded-lg shadow-sm hover:bg-[#075985]/90 transition-all font-medium">
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg shadow-sm hover:bg-[#022431]/90 transition-all font-medium">
             Presenze lezione
           </Link>
           <Link href={`${basePath}/corsi/${bookingId}`}
@@ -662,9 +662,9 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             return "var(--secondary)";
           })(),
           borderLeftColor: (() => {
-            if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") return "#011a24";
-            if (booking.type === "arena") return "var(--color-frozen-lake-900)";
-            return "#023047";
+            if (booking.type === "lezione_privata" || booking.type === "lezione_gruppo") return "#023047";
+            if (booking.type === "arena") return "var(--color-frozen-lake-600)";
+            return "var(--secondary)";
           })(),
         }}
       >

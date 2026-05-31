@@ -143,7 +143,7 @@ export default function AthletesSelector({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none"
         >
           <span className={selectedAthletes.length > 0 ? "" : "text-secondary/40"}>
             Cerca Utenti

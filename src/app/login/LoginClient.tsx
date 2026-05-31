@@ -149,6 +149,7 @@ export default function LoginClient() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/60 hover:text-secondary transition-colors p-2"
+                  aria-pressed={showPassword}
                   aria-label={showPassword ? "Nascondi password" : "Mostra password"}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -187,7 +188,7 @@ export default function LoginClient() {
             <a
               href="https://wa.me/393791958651"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex h-12 items-center gap-2 px-5 bg-secondary text-white rounded-md text-sm font-semibold hover:opacity-90 transition-all"
             >
               WhatsApp

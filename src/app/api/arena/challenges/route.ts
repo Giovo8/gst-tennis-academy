@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
-import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
 import {
   fetchEnrichedChallenge,
   fetchEnrichedChallenges,
@@ -38,6 +38,9 @@ export async function GET(req: Request) {
 // POST - Create new challenge
 export async function POST(req: Request) {
   try {
+    const auth = await getRouteAuth();
+    if (!auth) return unauthorized();
+
     const body = await req.json();
     const {
       challenger_id,
@@ -54,25 +57,13 @@ export async function POST(req: Request) {
       booking_id,
     } = body;
 
-    const authHeader = req.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-    let creatorRole: string | null = null;
-    if (token) {
-      const { data: authData } = await supabaseServer.auth.getUser(token);
-      const creatorId = authData.user?.id;
-      if (creatorId) {
-        const { data: creatorProfile } = await supabaseServer
-          .from("profiles")
-          .select("role")
-          .eq("id", creatorId)
-          .maybeSingle();
-        creatorRole = creatorProfile?.role || null;
-      }
+    // Solo admin/gestore possono creare sfide a nome di altri utenti
+    if (challenger_id !== auth.user.id && !isAdmin(auth.role)) {
+      return forbidden();
     }
 
     const initialStatus =
-      creatorRole === "admin" || creatorRole === "gestore" ? "accepted" : "pending";
+      isAdmin(auth.role) ? "accepted" : "pending";
 
     if (!challenger_id || !opponent_id) {
       return NextResponse.json(

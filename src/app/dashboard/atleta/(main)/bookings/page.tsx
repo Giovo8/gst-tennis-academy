@@ -955,7 +955,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               const start = new Date(lesson.dateStr + "T12:00:00");
               return (
                 <Link key={`corso-${lesson.courseId}`} href={`/dashboard/maestro/bookings/${lesson.courseId}?date=${lesson.dateStr}`} className="block">
-                  <div className="rounded-lg overflow-visible hover:opacity-95 transition-opacity" style={{ background: "#075985" }}>
+                  <div className="rounded-lg overflow-visible hover:opacity-95 transition-opacity" style={{ background: "var(--color-frozen-lake-900)" }}>
                     <div className="flex items-center gap-4 py-3 px-3">
                       <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                         <span className="text-[10px] uppercase font-bold text-white/70 leading-none">

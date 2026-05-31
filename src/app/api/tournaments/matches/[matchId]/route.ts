@@ -34,8 +34,8 @@ export async function PUT(
   try {
     const { profile } = await getUserProfile(req);
     
-    // Permetti a gestore, admin e maestro di aggiornare
-    if (!profile || !["gestore", "admin", "maestro"].includes(String(profile.role).toLowerCase())) {
+    // Solo admin e gestore possono aggiornare i risultati delle partite
+    if (!profile || !["gestore", "admin"].includes(String(profile.role).toLowerCase())) {
       return NextResponse.json(
         { error: "Non hai i permessi" },
         { status: 403 }

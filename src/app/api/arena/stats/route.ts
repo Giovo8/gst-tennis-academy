@@ -102,7 +102,7 @@ export async function GET(req: Request) {
     }
   } catch (error: any) {
     logger.error("Error in GET /api/arena/stats:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Errore interno del server" }, { status: 500 });
   }
 }
 

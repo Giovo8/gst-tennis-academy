@@ -57,7 +57,7 @@ export function SearchableSelect({
         onClick={handleToggle}
         className={
           triggerClassName ??
-          "w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+          "w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50"
         }
       >
         <span className={selectedOption ? "" : "text-secondary/40"}>

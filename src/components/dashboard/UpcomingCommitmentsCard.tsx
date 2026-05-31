@@ -38,7 +38,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function getItemBg(item: UpcomingBooking, currentUserId?: string): string {
-  if (item.isCourse) return "#075985";
+  if (item.isCourse) return "var(--color-frozen-lake-900)";
   const isCoach = item.coach_id === currentUserId;
   if (isCoach) {
     switch (item.type) {
@@ -221,7 +221,7 @@ export function UpcomingCommitmentsCard({
                     <Link
                       href={`${basePath}/corsi/${item.id}`}
                       className="flex items-center gap-4 py-3.5 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                      style={{ background: "#075985" }}
+                      style={{ background: "var(--color-frozen-lake-900)" }}
                     >
                       <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                         <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
