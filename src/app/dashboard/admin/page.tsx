@@ -154,12 +154,14 @@ export default function AdminDashboard() {
     if (profile) setUserName(profile.full_name || "Admin");
 
     try {
-      // Bookings per timeline (include anche giorni precedenti)
-      const { data: allBookingsData } = await supabase
-        .from("bookings")
-        .select("*")
-        .order("start_time", { ascending: false })
-        .limit(500);
+      // Round 1: prenotazioni e corsi in parallelo
+      const [{ data: allBookingsData }, { data: coursesData }] = await Promise.all([
+        supabase.from("bookings").select("*").order("start_time", { ascending: false }).limit(500),
+        supabase
+          .from("courses")
+          .select("id, name, schedule_days, schedule_time, schedule_periods, court_name, start_date, end_date, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides")
+          .eq("is_active", true),
+      ]);
 
       if (allBookingsData && allBookingsData.length > 0) {
         const allUserIds = [
@@ -169,22 +171,24 @@ export default function AdminDashboard() {
           ]),
         ];
 
-        const { data: allProfiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, phone")
-          .in("id", allUserIds);
-
-        const allProfilesMap = new Map(allProfiles?.map((p) => [p.id, p]) || []);
-
         const allBookingIds = allBookingsData.map((b) => b.id);
         let timelineParticipantsData: TimelineBooking["participants"] | null = null;
 
-        const participantsQuery = await supabase
-          .from("booking_participants")
-          .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
-          .in("booking_id", allBookingIds)
-          .order("booking_id", { ascending: true })
-          .order("order_index", { ascending: true });
+        // Round 2: profili utenti e partecipanti in parallelo
+        const [{ data: allProfiles }, participantsQuery] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, email, phone")
+            .in("id", allUserIds),
+          supabase
+            .from("booking_participants")
+            .select("id, booking_id, full_name, email, phone, is_registered, user_id, order_index")
+            .in("booking_id", allBookingIds)
+            .order("booking_id", { ascending: true })
+            .order("order_index", { ascending: true }),
+        ]);
+
+        const allProfilesMap = new Map(allProfiles?.map((p) => [p.id, p]) || []);
 
         if (participantsQuery.error?.message?.toLowerCase().includes("phone")) {
           const fallbackQuery = await supabase
@@ -211,12 +215,7 @@ export default function AdminDashboard() {
         setTimelineBookings(enrichedTimelineBookings);
       }
 
-      // Carica prossime occorrenze dei corsi attivi
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("id, name, schedule_days, schedule_time, schedule_periods, court_name, start_date, end_date, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides")
-        .eq("is_active", true);
-
+      // Processa le prossime occorrenze dei corsi (già caricati nel round 1)
       if (coursesData && coursesData.length > 0) {
         const occurrences: UpcomingCourse[] = [];
         const now2 = new Date();

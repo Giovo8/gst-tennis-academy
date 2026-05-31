@@ -72,38 +72,46 @@ export default function AtletaDashboard() {
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
+    const now = new Date().toISOString();
+
+    // Round 1: profilo, prenotazioni e iscrizioni ai corsi in parallelo
+    const [{ data: profile }, { data: bookingsData }, { data: enrollments }] = await Promise.all([
+      supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+      supabase
+        .from("bookings")
+        .select("id, court, type, notes, start_time, end_time, coach_id")
+        .eq("user_id", user.id)
+        .neq("status", "cancelled")
+        .gte("start_time", now)
+        .order("start_time", { ascending: true })
+        .limit(20),
+      supabase.from("course_enrollments").select("course_id").eq("user_id", user.id),
+    ]);
 
     if (profile) setUserName(profile.full_name || "Atleta");
 
-    const now = new Date().toISOString();
-
-    const { data: bookingsData } = await supabase
-      .from("bookings")
-      .select("id, court, type, notes, start_time, end_time, coach_id")
-      .eq("user_id", user.id)
-      .neq("status", "cancelled")
-      .gte("start_time", now)
-      .order("start_time", { ascending: true })
-      .limit(20);
-
     const bookings = (bookingsData || []) as UpcomingBooking[];
     const coachIds = Array.from(new Set(bookings.map((b) => b.coach_id).filter(Boolean))) as string[];
+    const enrollmentIds = (enrollments ?? []).map((e: { course_id: string }) => e.course_id);
+
+    // Round 2: coaches e corsi in parallelo (dipendono entrambi dal round 1)
+    const [coachesData, coursesData] = await Promise.all([
+      coachIds.length > 0
+        ? supabase.from("profiles").select("id, full_name").in("id", coachIds).then((r) => r.data)
+        : Promise.resolve(null),
+      enrollmentIds.length > 0
+        ? supabase
+            .from("courses")
+            .select("id, name, schedule_days, schedule_time, start_date, end_date")
+            .in("id", enrollmentIds)
+            .eq("is_active", true)
+            .then((r) => r.data)
+        : Promise.resolve(null),
+    ]);
 
     const coachNameById = new Map<string, string>();
-    if (coachIds.length > 0) {
-      const { data: coaches } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", coachIds);
-
-      for (const coach of coaches || []) {
-        coachNameById.set(coach.id, coach.full_name || "Maestro");
-      }
+    for (const coach of coachesData || []) {
+      coachNameById.set(coach.id, coach.full_name || "Maestro");
     }
 
     setUpcomingBookings(
@@ -115,20 +123,7 @@ export default function AtletaDashboard() {
       }))
     );
 
-    // Fetch enrolled courses and compute next lesson dates
-    const { data: enrollments } = await supabase
-      .from("course_enrollments")
-      .select("course_id")
-      .eq("user_id", user.id);
-
-    if (enrollments?.length) {
-      const ids = enrollments.map((e: { course_id: string }) => e.course_id);
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("id, name, schedule_days, schedule_time, start_date, end_date")
-        .in("id", ids)
-        .eq("is_active", true);
-
+    if (enrollmentIds.length > 0) {
       const lessons: UpcomingCourseLesson[] = [];
       const nowDate = new Date();
       nowDate.setHours(0, 0, 0, 0);

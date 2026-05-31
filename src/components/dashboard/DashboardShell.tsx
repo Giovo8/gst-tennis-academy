@@ -7,11 +7,10 @@ import Image from "next/image";
 import {
   LogOut,
   Search,
-  Menu,
-  X,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
+import { MenuCloseIcon } from "@/components/ui/MenuCloseIcon";
 import NotificationsDropdown from "@/components/notifications/NotificationsDropdown";
 import { type UserRole } from "@/lib/roles";
 import { handleLogout } from "@/lib/auth/logout";
@@ -135,7 +134,7 @@ export default function DashboardShell({
             className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors focus:outline-none ${mobileOpen ? "bg-secondary text-white" : "hover:bg-gray-100 text-secondary"}`}
             aria-label="Apri menu"
           >
-            {mobileOpen ? <X className="h-5 w-5" strokeWidth={2.5} /> : <Menu className="h-5 w-5" strokeWidth={2.5} />}
+            <MenuCloseIcon isOpen={mobileOpen} size={36} />
           </button>
           <Link href="/" aria-label="Home" className="absolute left-1/2 -translate-x-1/2" onClick={() => setNotifCloseSignal(s => s + 1)}>
             <Image src="/images/logo-tennis.png" alt="GST" width={40} height={40} className="h-10 w-10 object-contain" />
