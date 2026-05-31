@@ -87,6 +87,7 @@ export default function LezionePresenzePage() {
       .select("user_id, guest_name")
       .eq("course_id", courseId);
 
+    const all: Participant[] = [];
     if (enrollments && enrollments.length > 0) {
       const registeredIds = enrollments
         .filter((e: { user_id: string | null }) => e.user_id)
@@ -94,7 +95,6 @@ export default function LezionePresenzePage() {
       const guestEnrollments = enrollments.filter(
         (e: { user_id: string | null; guest_name: string | null }) => !e.user_id && e.guest_name
       );
-      const all: Participant[] = [];
       if (registeredIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
