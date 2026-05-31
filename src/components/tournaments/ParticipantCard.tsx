@@ -92,9 +92,9 @@ export function ParticipantCard({
               onClick={() =>
                 onMenuToggle(openMenuId === participant.id ? null : participant.id)
               }
-              className="p-2 rounded-md hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors"
+              className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-gray-100 text-secondary/60 hover:text-secondary transition-colors touch-manipulation min-w-[40px] min-h-[40px]"
             >
-              <MoreVertical className="h-4 w-4" />
+              <MoreVertical className="h-5 w-5" />
             </button>
             {openMenuId === participant.id && (
               <div

@@ -680,10 +680,10 @@ export default function CorsoDetailPage() {
                       <button
                         type="button"
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
-                        className="flex-shrink-0 p-1.5 rounded hover:bg-white/10 text-white/50 hover:text-white transition-all"
+                        className="flex-shrink-0 p-2.5 -mr-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                         aria-label="Opzioni lezione"
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreVertical className="h-5 w-5" />
                       </button>
                     </div>
                   </Link>
@@ -703,6 +703,14 @@ export default function CorsoDetailPage() {
                           </p>
                         )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
+                        className="flex-shrink-0 p-2.5 -mr-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        aria-label="Opzioni lezione"
+                      >
+                        <MoreVertical className="h-5 w-5" />
+                      </button>
                     </div>
                   )}
                   {openMenuLesson === dateStr && menuPosition && (

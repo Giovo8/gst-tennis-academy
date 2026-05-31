@@ -773,7 +773,7 @@ export default function AtletaMailPage() {
                     </button>
                   )}
 
-                  <button className="p-2 hover:bg-white/10 rounded-lg text-white">
+                  <button className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white touch-manipulation min-w-[40px] min-h-[40px]">
                     <MoreVertical className="h-5 w-5" />
                   </button>
                 </div>

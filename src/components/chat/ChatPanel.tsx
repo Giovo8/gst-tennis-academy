@@ -651,7 +651,7 @@ export default function ChatPanel() {
               )}
             </div>
             
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+            <button className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 touch-manipulation min-w-[40px] min-h-[40px]">
               <MoreVertical className="w-5 h-5 text-gray-600" />
             </button>
           </div>

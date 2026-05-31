@@ -158,9 +158,9 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                       <div className="relative">
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id); }}
-                          className="p-1.5 rounded-md hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                          className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors touch-manipulation min-w-[40px] min-h-[40px]"
                         >
-                          <MoreVertical className="h-4 w-4" />
+                          <MoreVertical className="h-5 w-5" />
                         </button>
                         {openParticipantMenuId === participant.id && (
                           <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>

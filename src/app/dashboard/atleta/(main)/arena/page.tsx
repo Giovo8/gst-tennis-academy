@@ -383,8 +383,8 @@ export default function AthleteArenaPage() {
               challenge.status !== "completed";
 
             const menuButtonClassName = isPending
-              ? "inline-flex items-center justify-center p-1.5 rounded hover:bg-black/5 text-secondary/60 hover:text-secondary transition-all focus:outline-none w-8 h-8"
-              : "inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8";
+              ? "inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-black/5 text-secondary/60 hover:text-secondary transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]"
+              : "inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]";
 
             return (
               <div
@@ -427,7 +427,7 @@ export default function AthleteArenaPage() {
                       className={menuButtonClassName}
                       aria-label="Azioni"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreVertical className="h-5 w-5" />
                     </button>
 
                     {openMenuId === challenge.id && (

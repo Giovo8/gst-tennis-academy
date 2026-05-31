@@ -454,9 +454,9 @@ export default function CourtsBlockPage() {
                         }
                         openActionMenu(block.id, e.currentTarget.getBoundingClientRect());
                       }}
-                      className="inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none w-8 h-8"
+                      className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreVertical className="h-5 w-5" />
                     </button>
                     {openMenuId === block.id && menuPosition && (
                       <>
