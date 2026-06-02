@@ -1,7 +1,7 @@
-"use client";
-
+import { Suspense } from "react";
 import AdminNewsBoard from "@/components/news/AdminNewsBoard";
 import PublicNavbar from "@/components/layout/PublicNavbar";
+import { Loader2 } from "lucide-react";
 
 export default function NewsPage() {
   return (
@@ -18,7 +18,9 @@ export default function NewsPage() {
               Aggiornamenti della scuola tennis e notizie ATP/WTA dal mondo del tennis.
             </p>
           </div>
-          <AdminNewsBoard />
+          <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-secondary" /></div>}>
+            <AdminNewsBoard />
+          </Suspense>
         </div>
         </main>
       </div>
