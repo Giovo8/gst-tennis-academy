@@ -3,7 +3,7 @@ import Link from "next/link";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 import NewsShareButtons from "@/components/news/NewsShareButtons";
 import env from "@/lib/config/env";
-import { supabaseServer } from "@/lib/supabase/serverClient";
+import { createClient } from "@/lib/supabase/server";
 import { sanitizeHtml } from "@/lib/security/sanitize";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
 
@@ -74,8 +74,9 @@ export default async function NewsDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = await createClient();
 
-  const { data: post, error } = await supabaseServer
+  const { data: post, error } = await supabase
     .from("news")
     .select("*")
     .eq("id", id)
@@ -85,7 +86,7 @@ export default async function NewsDetailPage({
     notFound();
   }
 
-  const { data: relatedPostsRaw } = await supabaseServer
+  const { data: relatedPostsRaw } = await supabase
     .from("news")
     .select("*")
     .eq("category", post.category)
