@@ -29,11 +29,10 @@ export default function NewsShareButtons({ url, title }: Props) {
 
   const links = useMemo(() => {
     const encodedUrl = encodeURIComponent(url);
-    const encodedText = encodeURIComponent(`${title} ${url}`);
     const encodedTitle = encodeURIComponent(title);
 
     return {
-      whatsapp: `https://wa.me/?text=${encodedText}`,
+      whatsapp: `https://wa.me/?text=${encodedUrl}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
       x: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
     };
