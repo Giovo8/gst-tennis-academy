@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 import NotificationsList from "@/components/dashboard/NotificationsList";
+import AthleteNewsCarousel from "@/components/dashboard/AthleteNewsCarousel";
 
 interface UpcomingBooking {
   id: string;
@@ -58,6 +59,9 @@ export default function AtletaDashboard() {
   const [userName, setUserName] = useState("");
   const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingCourseLesson[]>([]);
+
+  const dashboardCardClassName = "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden";
+  const dashboardCardHeaderClassName = "px-6 py-4 border-b border-gray-200 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent";
 
   useEffect(() => {
     void loadDashboardData();
@@ -166,8 +170,8 @@ export default function AtletaDashboard() {
 
       <WeatherCard />
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className={dashboardCardClassName}>
+        <div className={dashboardCardHeaderClassName}>
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossimi Impegni</h2>
         </div>
         <div className="px-6 py-4">
@@ -281,8 +285,26 @@ export default function AtletaDashboard() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+      <div className={dashboardCardClassName}>
+        <div className={dashboardCardHeaderClassName}>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">News</h2>
+        </div>
+        <div className="px-6 py-4">
+          <AthleteNewsCarousel />
+        </div>
+      </div>
+
+      <div className="-mt-3">
+        <Link
+          href="/news"
+          className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-white bg-secondary rounded-xl shadow-sm hover:bg-secondary/90 transition-colors"
+        >
+          Vedi tutte le news
+        </Link>
+      </div>
+
+      <div className={dashboardCardClassName}>
+        <div className={`${dashboardCardHeaderClassName} justify-between`}>
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
         </div>
         <div className="px-6 py-4">
@@ -290,31 +312,31 @@ export default function AtletaDashboard() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className={dashboardCardClassName}>
+        <div className={dashboardCardHeaderClassName}>
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Azioni Rapide</h2>
         </div>
         <div className="px-6 py-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Link href="/dashboard/atleta/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <CalendarPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Nuova Prenotazione</span>
             </Link>
-            <Link href="/dashboard/atleta/arena" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/arena" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Swords className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Vai ad Arena</span>
             </Link>
-            <Link href="/dashboard/atleta/videos" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/videos" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Apri Video Lab</span>
             </Link>
-            <Link href="/dashboard/atleta/tornei" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/tornei" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Trophy className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>

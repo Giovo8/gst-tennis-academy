@@ -42,6 +42,8 @@ export default function EditBookingPage() {
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
   const bookingId = params?.id as string;
+  const bookingCardClassName = "bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent";
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -419,7 +421,7 @@ export default function EditBookingPage() {
         </div>
         <Link
           href={`${dashboardBase}/bookings`}
-          className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-md hover:bg-secondary hover:text-white transition-all self-start"
+          className="p-2.5 text-secondary/70 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-secondary hover:text-white transition-all self-start"
           title="Torna alla lista"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -498,7 +500,7 @@ export default function EditBookingPage() {
           </div>
 
           {/* Area Principale */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-6">
+          <div className={bookingCardClassName}>
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
@@ -507,12 +509,12 @@ export default function EditBookingPage() {
             ) : (
               <>
                 {/* Titolo form */}
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
+                <div className={bookingCardHeaderClassName}>
+                  <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
                 </div>
 
                 {/* Dettagli prenotazione */}
-                <div className="space-y-6 mt-6">
+                <div className="space-y-6 p-4 sm:p-6">
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione *</label>
@@ -600,12 +602,14 @@ export default function EditBookingPage() {
                   </div>
                 </div>
 
-                <p className="text-sm font-semibold text-secondary mt-6 mb-2">Orari disponibili</p>
+                <div className="px-4 sm:px-6 pb-2">
+                  <p className="text-sm font-semibold text-secondary">Orari disponibili</p>
+                </div>
 
                 {/* Timeline orizzontale */}
                 <div 
                   ref={scrollRef}
-                  className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                  className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing px-4 sm:px-6 pb-6"
                   style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -743,7 +747,7 @@ export default function EditBookingPage() {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+            className="w-full px-6 py-3 bg-secondary shadow-sm hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
           >
             {submitting ? (
               <>

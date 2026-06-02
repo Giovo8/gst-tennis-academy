@@ -70,6 +70,8 @@ function NewBookingPageInner() {
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
+  const bookingCardClassName = "bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -678,7 +680,7 @@ function NewBookingPageInner() {
           </div>
 
           {/* Area Principale */}
-          <div className="bg-white border border-gray-200 rounded-xl">
+          <div className={bookingCardClassName}>
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-12 w-12 animate-spin text-secondary mb-4" />
@@ -687,7 +689,7 @@ function NewBookingPageInner() {
             ) : (
               <>
                 {/* Titolo form */}
-                  <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <div className={`${bookingCardHeaderClassName} flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4`}>
                     <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
                     <p className="text-xs text-secondary/60 sm:text-right">
                       Il Campo 4 ha superficie sintetica
@@ -795,8 +797,8 @@ function NewBookingPageInner() {
           </div>
 
           {/* Card Partecipanti */}
-          <div className="bg-white border border-gray-200 rounded-xl">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className={bookingCardClassName}>
+            <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -828,8 +830,8 @@ function NewBookingPageInner() {
           </div>
 
           {/* Card Orari disponibili */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className={bookingCardClassName}>
+            <div className={`${bookingCardHeaderClassName} flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4`}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
               <p className="text-xs text-secondary/60 sm:text-right">
                 Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
@@ -929,8 +931,8 @@ function NewBookingPageInner() {
           </div>
 
           {/* Card Note */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className={bookingCardClassName}>
+            <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -948,7 +950,7 @@ function NewBookingPageInner() {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+            className="w-full px-6 py-3 bg-secondary shadow-sm hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
           >
             {submitting ? (
               <>

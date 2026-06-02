@@ -298,13 +298,13 @@ export default function NotificationsList({
               placeholder="Cerca per titolo, messaggio o data..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 shadow-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
             />
           </div>
           <button
             type="button"
             onClick={() => setIsFilterModalOpen(true)}
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border shadow-sm transition-colors ${
               hasActiveFilters
                 ? "border-secondary bg-secondary text-white hover:opacity-90"
                 : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"

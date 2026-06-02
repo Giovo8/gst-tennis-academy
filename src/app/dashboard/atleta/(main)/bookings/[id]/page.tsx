@@ -103,6 +103,8 @@ export default function BookingDetailPage() {
   const dashboardBase = pathname.split("/bookings")[0];
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const bookingSectionClassName = "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden";
+  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent";
 
   const searchParams = useSearchParams();
   const courseDate = searchParams?.get("date");
@@ -489,7 +491,7 @@ export default function BookingDetailPage() {
         <div>
           <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
         </div>
-        <div className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        <div className="rounded-2xl border-t border-r border-b p-6 border-l-4 shadow-sm"
           style={{ backgroundColor: "var(--color-frozen-lake-900)", borderColor: "var(--color-frozen-lake-900)", borderLeftColor: "var(--color-frozen-lake-900)" }}>
           <div className="flex items-start gap-6">
             <GraduationCap className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -498,8 +500,8 @@ export default function BookingDetailPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className={bookingSectionClassName}>
+          <div className={bookingSectionHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
           </div>
           <div className="px-6 py-4">
@@ -529,8 +531,8 @@ export default function BookingDetailPage() {
             )}
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className={bookingSectionClassName}>
+          <div className={bookingSectionHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
           </div>
           <div className="p-6"><div className="space-y-6">
@@ -656,7 +658,7 @@ export default function BookingDetailPage() {
 
       {/* Header con info prenotazione */}
       <div
-        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        className="rounded-2xl border-t border-r border-b p-6 border-l-4 shadow-sm"
         style={{
           backgroundColor: bookingStyle.backgroundColor,
           borderColor: bookingStyle.borderColor,
@@ -675,8 +677,8 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className={bookingSectionClassName}>
+        <div className={bookingSectionHeaderClassName}>
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         <div className="px-6 py-4">
@@ -728,8 +730,8 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Dettagli prenotazione */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className={bookingSectionClassName}>
+        <div className={bookingSectionHeaderClassName}>
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
         </div>
 
@@ -840,8 +842,8 @@ export default function BookingDetailPage() {
 
       {/* Note */}
       {booking.notes && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className={bookingSectionClassName}>
+          <div className={bookingSectionHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
           </div>
           <div className="px-6 py-6">

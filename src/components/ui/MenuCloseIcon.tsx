@@ -25,7 +25,9 @@ export function MenuCloseIcon({
     >
       <motion.line
         x1="10"
+        y1="12"
         x2="30"
+        y2="12"
         stroke={color}
         strokeWidth={2.5}
         strokeLinecap="round"
@@ -51,7 +53,9 @@ export function MenuCloseIcon({
       />
       <motion.line
         x1="10"
+        y1="28"
         x2="30"
+        y2="28"
         stroke={color}
         strokeWidth={2.5}
         strokeLinecap="round"
