@@ -146,13 +146,13 @@ export async function generateMetadata(
       description,
       images: [
         {
-          url: defaultOgImageUrl,
+          url: articleImageUrl,
           width: 1200,
           height: 630,
           alt: title,
         },
         {
-          url: articleImageUrl,
+          url: defaultOgImageUrl,
           width: 1200,
           height: 630,
           alt: title,
