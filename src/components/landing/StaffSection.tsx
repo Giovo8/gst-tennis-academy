@@ -91,6 +91,74 @@ export default function StaffSection() {
   const [staff, setStaff] = useState<StaffMember[]>(defaultStaff);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startScrollLeft = useRef(0);
+  const draggedDistance = useRef(0);
+  const suppressNextClick = useRef(false);
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    isDragging.current = true;
+    startX.current = event.clientX;
+    startScrollLeft.current = el.scrollLeft;
+    draggedDistance.current = 0;
+    suppressNextClick.current = false;
+
+    el.style.cursor = "grabbing";
+    el.style.userSelect = "none";
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const el = scrollRef.current;
+    if (!el || !isDragging.current) return;
+
+    if ((event.buttons & 1) === 0) {
+      stopDragging();
+      return;
+    }
+
+    const deltaX = event.clientX - startX.current;
+    draggedDistance.current = Math.max(draggedDistance.current, Math.abs(deltaX));
+    el.scrollLeft = startScrollLeft.current - deltaX * 1.8;
+
+    if (draggedDistance.current > 10) {
+      suppressNextClick.current = true;
+    }
+
+    if (draggedDistance.current > 2) {
+      event.preventDefault();
+    }
+  }
+
+  function stopDragging() {
+    const el = scrollRef.current;
+
+    isDragging.current = false;
+    if (draggedDistance.current <= 10) {
+      suppressNextClick.current = false;
+    }
+
+    if (el) {
+      el.style.cursor = "grab";
+      el.style.userSelect = "auto";
+    }
+  }
+
+  function handleLinkClickCapture(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (suppressNextClick.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressNextClick.current = false;
+    }
+  }
+
+  function preventNativeDrag(event: React.DragEvent<HTMLElement>) {
+    event.preventDefault();
+  }
 
   function scrollTo(direction: "left" | "right") {
     const el = scrollRef.current;
@@ -165,7 +233,13 @@ export default function StaffSection() {
         {/* Staff Scroll Row */}
         <div
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [padding-inline:calc(50%-9rem)] sm:[padding-inline:0]"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={() => stopDragging()}
+          onPointerCancel={() => stopDragging()}
+          onPointerLeave={() => stopDragging()}
+          onDragStart={preventNativeDrag}
+          className="flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 cursor-grab select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [padding-inline:calc(50%-9rem)] sm:[padding-inline:0]"
         >
           {staff.map((member, i) => (
             <article
@@ -178,6 +252,8 @@ export default function StaffSection() {
                   <img
                     src={member.image_url}
                     alt={member.full_name}
+                    draggable={false}
+                    onDragStart={preventNativeDrag}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
@@ -210,6 +286,7 @@ export default function StaffSection() {
                         href={member.facebook_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClickCapture={handleLinkClickCapture}
                         aria-label={`Facebook di ${member.full_name}`}
                         className="p-2 rounded-full text-secondary hover:bg-secondary hover:text-white transition-colors"
                       >
@@ -221,6 +298,7 @@ export default function StaffSection() {
                         href={member.instagram_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClickCapture={handleLinkClickCapture}
                         aria-label={`Instagram di ${member.full_name}`}
                         className="p-2 rounded-full text-secondary hover:bg-secondary hover:text-white transition-colors"
                       >
@@ -232,6 +310,7 @@ export default function StaffSection() {
                         href={member.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClickCapture={handleLinkClickCapture}
                         aria-label={`LinkedIn di ${member.full_name}`}
                         className="p-2 rounded-full text-secondary hover:bg-secondary hover:text-white transition-colors"
                       >
@@ -243,6 +322,7 @@ export default function StaffSection() {
                         href={member.twitter_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClickCapture={handleLinkClickCapture}
                         aria-label={`Twitter di ${member.full_name}`}
                         className="p-2 rounded-full text-secondary hover:bg-secondary hover:text-white transition-colors"
                       >

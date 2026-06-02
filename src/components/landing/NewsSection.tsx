@@ -22,6 +22,7 @@ function NewsImage({ src, alt }: { src: string; alt: string }) {
     <img
       src={src}
       alt={alt}
+      draggable={false}
       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
       onError={() => setError(true)}
     />
@@ -108,7 +109,74 @@ export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isPaused = useRef(false);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startScrollLeft = useRef(0);
+  const draggedDistance = useRef(0);
+  const suppressNextClick = useRef(false);
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    isDragging.current = true;
+    startX.current = event.clientX;
+    startScrollLeft.current = el.scrollLeft;
+    draggedDistance.current = 0;
+    suppressNextClick.current = false;
+
+    el.style.cursor = "grabbing";
+    el.style.userSelect = "none";
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const el = scrollRef.current;
+    if (!el || !isDragging.current) return;
+
+    if ((event.buttons & 1) === 0) {
+      stopDragging();
+      return;
+    }
+
+    const deltaX = event.clientX - startX.current;
+    draggedDistance.current = Math.max(draggedDistance.current, Math.abs(deltaX));
+    el.scrollLeft = startScrollLeft.current - deltaX * 1.8;
+
+    if (draggedDistance.current > 10) {
+      suppressNextClick.current = true;
+    }
+
+    if (draggedDistance.current > 2) {
+      event.preventDefault();
+    }
+  }
+
+  function stopDragging() {
+    const el = scrollRef.current;
+
+    isDragging.current = false;
+    if (draggedDistance.current <= 10) {
+      suppressNextClick.current = false;
+    }
+
+    if (el) {
+      el.style.cursor = "grab";
+      el.style.userSelect = "auto";
+    }
+  }
+
+  function handleCardClickCapture(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (suppressNextClick.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressNextClick.current = false;
+    }
+  }
+
+  function preventNativeDrag(event: React.DragEvent<HTMLElement>) {
+    event.preventDefault();
+  }
 
   function scrollTo(direction: "left" | "right") {
     const el = scrollRef.current;
@@ -188,12 +256,12 @@ export default function NewsSection() {
         (() => {
           const isCarousel = news.length > 3;
           const gridClass = isCarousel
-            ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-0"
+            ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 cursor-grab select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-0"
             : news.length === 1
             ? "grid grid-cols-1 max-w-md mx-auto gap-6 mb-12"
             : news.length === 2
-            ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-2 md:max-w-3xl md:mx-auto md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12"
-            : "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12";
+            ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 cursor-grab select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-2 md:max-w-3xl md:mx-auto md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12"
+            : "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 cursor-grab select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12";
 
           const displayItems = news;
           const cards = displayItems.map((item, i) => {
@@ -206,6 +274,9 @@ export default function NewsSection() {
               <Link
                 key={item.id}
                 href={`/news/${item.id}`}
+                draggable={false}
+                onDragStart={preventNativeDrag}
+                onClickCapture={handleCardClickCapture}
                 className={`flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer${isCarousel ? " flex-shrink-0 w-72 sm:w-80 snap-center" : news.length >= 2 ? " flex-shrink-0 w-72 sm:w-80 snap-center md:w-full" : ""}`}
               >
                 {/* Immagine */}
@@ -258,14 +329,29 @@ export default function NewsSection() {
           return isCarousel ? (
             <div
               ref={scrollRef}
-              onMouseEnter={() => { isPaused.current = true; }}
-              onMouseLeave={() => { isPaused.current = false; }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={() => stopDragging()}
+              onPointerCancel={() => stopDragging()}
+              onPointerLeave={() => stopDragging()}
+              onDragStart={preventNativeDrag}
               className={gridClass}
             >
               {cards}
             </div>
           ) : news.length >= 2 ? (
-            <div ref={scrollRef} className={gridClass}>{cards}</div>
+            <div
+              ref={scrollRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={() => stopDragging()}
+              onPointerCancel={() => stopDragging()}
+              onPointerLeave={() => stopDragging()}
+              onDragStart={preventNativeDrag}
+              className={gridClass}
+            >
+              {cards}
+            </div>
           ) : (
             <div className={gridClass}>{cards}</div>
           );
