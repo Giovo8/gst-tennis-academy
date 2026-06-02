@@ -26,12 +26,17 @@ const store = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every minute
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
+  const cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of store.entries()) {
       if (now > entry.resetTime) store.delete(key);
     }
   }, 60_000);
+
+  // Avoid keeping the Node.js event loop alive in tests/runtime shutdown.
+  if (typeof (cleanupInterval as { unref?: () => void }).unref === "function") {
+    (cleanupInterval as { unref: () => void }).unref();
+  }
 }
 
 /**
