@@ -35,11 +35,18 @@ type NewsItem = {
   content: string;
   excerpt?: string;
   image_url: string | null;
+  stato?: string | null;
   is_published: boolean;
   published_at?: string;
   created_at: string;
   updated_at: string;
 };
+
+function isPublishedNews(item: Partial<NewsItem> | null | undefined): boolean {
+  if (!item) return false;
+  if (typeof item.is_published === "boolean") return item.is_published;
+  return String(item.stato ?? "").toLowerCase() === "pubblicata";
+}
 
 const defaultNews: NewsItem[] = [
   {
@@ -98,7 +105,7 @@ function normalizeLegacyTitle(title: string): string {
 }
 
 export default function NewsSection() {
-  const [news, setNews] = useState<NewsItem[]>(defaultNews);
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isPaused = useRef(false);
@@ -134,11 +141,11 @@ export default function NewsSection() {
 
     if (error) {
       console.error("Error loading news:", error);
-      setNews(defaultNews);
+      setNews([]);
     } else if (data && data.length > 0) {
-      setNews(data);
+      setNews((data as NewsItem[]).filter((item) => isPublishedNews(item)));
     } else {
-      setNews(defaultNews);
+      setNews([]);
     }
     setLoading(false);
   }
@@ -173,7 +180,12 @@ export default function NewsSection() {
         </div>
 
         {/* Cards */}
-        {(() => {
+        {news.length === 0 ? (
+          <div className="text-center py-12 border border-gray-200 rounded-2xl bg-white">
+            <p className="text-secondary/80 font-medium">Nessuna news pubblicata al momento.</p>
+          </div>
+        ) : (
+        (() => {
           const isCarousel = news.length > 3;
           const gridClass = isCarousel
             ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-0"
@@ -257,7 +269,8 @@ export default function NewsSection() {
           ) : (
             <div className={gridClass}>{cards}</div>
           );
-        })()}
+        })()
+        )}
 
         {/* Nav buttons — carosello e mobile scroll */}
         {news.length >= 2 && (

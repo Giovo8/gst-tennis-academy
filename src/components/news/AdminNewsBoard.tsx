@@ -25,10 +25,17 @@ type NewsPost = {
   image_url: string | null;
   content: string;
   excerpt?: string;
+  stato?: string | null;
   is_published: boolean;
   published_at?: string;
   created_at: string;
 };
+
+function isPublishedNews(post: Partial<NewsPost> | null | undefined): boolean {
+  if (!post) return false;
+  if (typeof post.is_published === "boolean") return post.is_published;
+  return String(post.stato ?? "").toLowerCase() === "pubblicata";
+}
 
 function sanitizePost(post: NewsPost): NewsPost {
   return {
@@ -70,7 +77,7 @@ const defaultPosts: NewsPost[] = [
 ];
 
 export default function AdminNewsBoard() {
-  const [posts, setPosts] = useState<NewsPost[]>(defaultPosts);
+  const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("tutte");
 
@@ -83,11 +90,14 @@ export default function AdminNewsBoard() {
 
     if (error) {
       console.error("Error loading news:", error);
-      setPosts(defaultPosts);
+      setPosts([]);
     } else if (data && data.length > 0) {
-      setPosts((data as NewsPost[]).map(sanitizePost));
+      const published = (data as NewsPost[])
+        .filter((post) => isPublishedNews(post))
+        .map(sanitizePost);
+      setPosts(published);
     } else {
-      setPosts(defaultPosts);
+      setPosts([]);
     }
     setLoading(false);
   }
@@ -108,6 +118,14 @@ export default function AdminNewsBoard() {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
+
+  if (filteredPosts.length === 0) {
+    return (
+      <div className="text-center py-12 border border-gray-200 rounded-2xl bg-white">
+        <p className="text-secondary/80 font-medium">Nessuna news disponibile al momento.</p>
       </div>
     );
   }

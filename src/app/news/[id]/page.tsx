@@ -13,12 +13,19 @@ type NewsPost = {
   category: string;
   image_url: string | null;
   fonte_url?: string | null;
+  stato?: string | null;
   content: string;
   excerpt?: string;
   is_published: boolean;
   published_at?: string;
   created_at: string;
 };
+
+function isPublishedNews(post: Partial<NewsPost> & { stato?: string | null } | null | undefined): boolean {
+  if (!post) return false;
+  if (typeof post.is_published === "boolean") return post.is_published;
+  return String(post.stato ?? "").toLowerCase() === "pubblicata";
+}
 
 function normalizeLegacyTitle(title: string): string {
   return title.replace(/\s*\.\.\.$/, "").trim();
@@ -72,21 +79,19 @@ export default async function NewsDetailPage({
     .from("news")
     .select("*")
     .eq("id", id)
-    .eq("is_published", true)
-    .single();
+    .maybeSingle();
 
-  if (error || !post) {
+  if (error || !post || !isPublishedNews(post as NewsPost)) {
     notFound();
   }
 
-  const { data: relatedPosts } = await supabaseServer
+  const { data: relatedPostsRaw } = await supabaseServer
     .from("news")
     .select("*")
-    .eq("is_published", true)
     .eq("category", post.category)
     .neq("id", id)
     .order("published_at", { ascending: false })
-    .limit(3);
+    .limit(20);
 
   const typedPost = post as NewsPost;
   const sanitizedPost: NewsPost = {
@@ -95,7 +100,10 @@ export default async function NewsDetailPage({
     content: sanitizeAINewsBody(typedPost.content || ""),
     excerpt: typedPost.excerpt ? sanitizeAINewsBody(typedPost.excerpt) : typedPost.excerpt,
   };
-  const typedRelated = ((relatedPosts ?? []) as NewsPost[]).map((item) => ({
+  const typedRelated = ((relatedPostsRaw ?? []) as NewsPost[])
+    .filter((item) => isPublishedNews(item))
+    .slice(0, 3)
+    .map((item) => ({
     ...item,
     title: sanitizeAINewsTitle(item.title || ""),
     content: sanitizeAINewsBody(item.content || ""),
