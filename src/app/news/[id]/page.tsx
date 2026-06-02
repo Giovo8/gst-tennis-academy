@@ -128,7 +128,8 @@ export async function generateMetadata(
   const title = sanitizeAINewsTitle(post.title || "News");
   const description = sanitizeAINewsBody(post.excerpt || post.content || "").slice(0, 220);
   const canonicalUrl = buildAbsoluteUrl(`/news/${post.id}`);
-  const imageUrl = buildAbsoluteUrl(post.image_url || "/images/1.jpeg");
+  const defaultOgImageUrl = buildAbsoluteUrl("/images/1.jpeg");
+  const articleImageUrl = post.image_url ? buildAbsoluteUrl(post.image_url) : defaultOgImageUrl;
 
   return {
     title,
@@ -145,7 +146,13 @@ export async function generateMetadata(
       description,
       images: [
         {
-          url: imageUrl,
+          url: defaultOgImageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+        {
+          url: articleImageUrl,
           width: 1200,
           height: 630,
           alt: title,
@@ -157,7 +164,7 @@ export async function generateMetadata(
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
+      images: [defaultOgImageUrl],
     },
   };
 }
