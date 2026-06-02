@@ -31,5 +31,11 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", ".next", "**/__tests__/**", "src/__tests__/**"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "**/__tests__/**",
+    "src/__tests__/**",
+    "supabase/functions/**"
+  ]
 }

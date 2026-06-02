@@ -421,7 +421,10 @@ async function generateFallbackFromRss(categoria: string | null) {
       }
 
       for (const articolo of articoli) {
-        const fonteUrl = articolo.link || articolo.guid || null;
+        const articleTitle = typeof articolo.title === "string" ? articolo.title : "";
+        const articleSnippet = typeof articolo.contentSnippet === "string" ? articolo.contentSnippet : "";
+        const articleContent = typeof articolo.content === "string" ? articolo.content : "";
+        const fonteUrl = firstHttpUrl(articolo.link, articolo.guid);
         if (!fonteUrl) {
           skippate += 1;
           continue;
@@ -430,7 +433,7 @@ async function generateFallbackFromRss(categoria: string | null) {
         const imageUrl = await resolveNewsImageUrl(
           extractRssImageUrl(articolo as Record<string, unknown>),
           fonteUrl,
-          `${fonte.nome}-${articolo.title || fonteUrl}`
+          `${fonte.nome}-${articleTitle || fonteUrl}`
         );
 
         const { data: existing } = await supabaseServer
@@ -446,8 +449,8 @@ async function generateFallbackFromRss(categoria: string | null) {
         }
 
         const fallback = await buildFallbackText(
-          articolo.title || "News Tennis",
-          articolo.contentSnippet || articolo.content || "",
+          articleTitle || "News Tennis",
+          articleSnippet || articleContent,
           fonte.nome,
           parseRssDate(articolo as Record<string, unknown>)?.toISOString() ?? null,
           fonteUrl
