@@ -16,6 +16,7 @@ export type AiNewsDraft = {
 export type AiNewsConfig = {
   id: string;
   pubblicazione_auto: boolean;
+  numero_post: number;
   aggiornato_a: string;
   aggiornato_da: string | null;
 };

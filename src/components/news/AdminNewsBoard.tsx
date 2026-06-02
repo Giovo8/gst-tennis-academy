@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
+
+const ITEMS_PER_PAGE = 21;
 
 function formatNewsDate(dateString: string | undefined): string {
   if (!dateString) return "";
@@ -80,6 +83,9 @@ export default function AdminNewsBoard() {
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("tutte");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   async function loadNews() {
     const { data, error } = await supabase
@@ -114,6 +120,37 @@ export default function AdminNewsBoard() {
     activeCategory === "tutte" ? true : post.category === activeCategory
   );
 
+  const rawPage = Number.parseInt(searchParams.get("page") || "1", 10);
+  const currentPage = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  function updatePage(page: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(page));
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }
+
+  function handleCategoryChange(category: string) {
+    setActiveCategory(category);
+    if (safeCurrentPage !== 1) {
+      updatePage(1);
+    }
+  }
+
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) {
+      updatePage(safeCurrentPage);
+    }
+  }, [currentPage, safeCurrentPage]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -135,7 +172,7 @@ export default function AdminNewsBoard() {
       {/* Category Filters */}
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button
-          onClick={() => setActiveCategory("tutte")}
+          onClick={() => handleCategoryChange("tutte")}
           className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
             activeCategory === "tutte"
               ? "bg-secondary text-white"
@@ -147,7 +184,7 @@ export default function AdminNewsBoard() {
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setActiveCategory(cat)}
+            onClick={() => handleCategoryChange(cat)}
             className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
               activeCategory === cat
                 ? "bg-secondary text-white"
@@ -161,7 +198,7 @@ export default function AdminNewsBoard() {
 
       {/* News Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {filteredPosts.map((post) => (
+        {paginatedPosts.map((post) => (
           <Link
             key={post.id}
             href={`/news/${post.id}`}
@@ -218,6 +255,28 @@ export default function AdminNewsBoard() {
           </Link>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => updatePage(safeCurrentPage - 1)}
+            disabled={safeCurrentPage <= 1}
+            className="px-4 py-2 rounded-xl border border-gray-200 text-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed hover:border-secondary hover:text-secondary transition-colors"
+          >
+            Precedente
+          </button>
+          <span className="text-sm text-gray-500 min-w-[120px] text-center">
+            Pagina {safeCurrentPage} di {totalPages}
+          </span>
+          <button
+            onClick={() => updatePage(safeCurrentPage + 1)}
+            disabled={safeCurrentPage >= totalPages}
+            className="px-4 py-2 rounded-xl border border-gray-200 text-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed hover:border-secondary hover:text-secondary transition-colors"
+          >
+            Successiva
+          </button>
+        </div>
+      )}
     </div>
   );
 }

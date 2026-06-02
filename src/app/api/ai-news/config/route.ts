@@ -16,7 +16,7 @@ async function ensureConfigRow(userId?: string) {
 
   const { data, error } = await supabaseServer
     .from("ai_news_config")
-    .insert({ pubblicazione_auto: false, aggiornato_da: userId ?? null })
+    .insert({ pubblicazione_auto: false, numero_post: 5, aggiornato_da: userId ?? null })
     .select("*")
     .single();
 
@@ -46,13 +46,17 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const pubblicazioneAuto = Boolean(body?.pubblicazione_auto);
-
     const existing = await ensureConfigRow(authResult.auth.user.id);
+    const parsedNumeroPost = Number(body?.numero_post);
+    const numeroPost = Number.isFinite(parsedNumeroPost) && parsedNumeroPost > 0
+      ? Math.floor(parsedNumeroPost)
+      : Number((existing as { numero_post?: number | null } | null)?.numero_post ?? 5);
 
     const { data, error } = await supabaseServer
       .from("ai_news_config")
       .update({
         pubblicazione_auto: pubblicazioneAuto,
+        numero_post: numeroPost,
         aggiornato_a: new Date().toISOString(),
         aggiornato_da: authResult.auth.user.id,
       })

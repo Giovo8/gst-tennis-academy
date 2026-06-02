@@ -581,7 +581,7 @@ Deno.serve(async (req) => {
 
     const { data: config, error: configError } = await supabase
       .from("ai_news_config")
-      .select("pubblicazione_auto")
+      .select("pubblicazione_auto, numero_post")
       .order("aggiornato_a", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -589,6 +589,7 @@ Deno.serve(async (req) => {
     if (configError) throw new Error(configError.message);
 
     const pubblicazioneAuto = Boolean(config?.pubblicazione_auto);
+  const numeroPost = Math.max(1, Math.floor(Number(config?.numero_post ?? 5) || 5));
 
     let promptCustom: string | null = null;
     if (cronId) {
@@ -622,6 +623,8 @@ Deno.serve(async (req) => {
     let skippedCount = 0;
 
     for (const fonte of (fonti ?? []) as Fonte[]) {
+      if (generateCount >= numeroPost) break;
+
       try {
         const now = new Date();
         const sourceLoad = await loadRecentItemsForSource(parser, fonte, 3, now);
@@ -634,6 +637,8 @@ Deno.serve(async (req) => {
         }
 
         for (const articolo of articoli) {
+          if (generateCount >= numeroPost) break;
+
           const fonteUrl = articolo.link || articolo.guid || null;
           if (!fonteUrl) {
             skippedCount += 1;
