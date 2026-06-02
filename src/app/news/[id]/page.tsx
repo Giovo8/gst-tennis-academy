@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import PublicNavbar from "@/components/layout/PublicNavbar";
@@ -19,6 +20,15 @@ type NewsPost = {
   published_at?: string;
   created_at: string;
 };
+
+function buildAbsoluteUrl(pathOrUrl: string): string {
+  const baseUrl = env.publicSiteUrl.replace(/\/$/, "");
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+    return pathOrUrl;
+  }
+  const normalizedPath = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+  return `${baseUrl}${normalizedPath}`;
+}
 
 function isPublishedNews(post: Partial<NewsPost> & { stato?: string | null } | null | undefined): boolean {
   if (!post) return false;
@@ -87,23 +97,84 @@ const formatDate = (dateString?: string): string => {
   return `${day} ${monthCapitalized} ${year}`;
 };
 
+async function getPublishedNewsById(id: string): Promise<NewsPost | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("news")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const post = data as NewsPost;
+  if (!isPublishedNews(post)) return null;
+  return post;
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params;
+  const post = await getPublishedNewsById(id);
+
+  if (!post) {
+    return {
+      title: "News non trovata | GST Tennis Academy",
+      description: "La notizia richiesta non e disponibile.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = sanitizeAINewsTitle(post.title || "News");
+  const description = sanitizeAINewsBody(post.excerpt || post.content || "").slice(0, 220);
+  const canonicalUrl = buildAbsoluteUrl(`/news/${post.id}`);
+  const imageUrl = buildAbsoluteUrl(post.image_url || "/images/1.jpeg");
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: "article",
+      locale: "it_IT",
+      url: canonicalUrl,
+      siteName: "GST Tennis Academy",
+      title,
+      description,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      publishedTime: post.published_at || post.created_at,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
+
 export default async function NewsDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const post = await getPublishedNewsById(id);
 
-  const { data: post, error } = await supabase
-    .from("news")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error || !post || !isPublishedNews(post as NewsPost)) {
+  if (!post) {
     notFound();
   }
+
+  const supabase = await createClient();
 
   const { data: relatedPostsRaw } = await supabase
     .from("news")

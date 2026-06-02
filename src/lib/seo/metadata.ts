@@ -25,7 +25,7 @@ export const defaultMetadata: Metadata = {
     description: 'Scuola tennis a Roma con corsi per tutti i livelli. Prenota lezioni, partecipa ai tornei e migliora il tuo gioco.',
     images: [
       {
-        url: '/images/og-image.jpg',
+        url: '/images/1.jpeg',
         width: 1200,
         height: 630,
         alt: 'GST Tennis Academy - Scuola Tennis Roma',
@@ -36,7 +36,7 @@ export const defaultMetadata: Metadata = {
     card: 'summary_large_image',
     title: 'GST Tennis Academy | Scuola Tennis Roma',
     description: 'Scuola tennis a Roma con corsi per tutti i livelli. Prenota lezioni, partecipa ai tornei.',
-    images: ['/images/og-image.jpg'],
+    images: ['/images/1.jpeg'],
   },
   robots: {
     index: true,
@@ -60,7 +60,7 @@ export function generateOrganizationSchema() {
     description: 'Scuola tennis a Roma con corsi per tutti i livelli',
     url: 'https://www.gstacademy.it',
     logo: 'https://www.gstacademy.it/images/logo-tennis.png',
-    image: 'https://www.gstacademy.it/images/og-image.jpg',
+    image: 'https://www.gstacademy.it/images/1.jpeg',
     telephone: '+39 379 195 8651',
     address: {
       '@type': 'PostalAddress',
