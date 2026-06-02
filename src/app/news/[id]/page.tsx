@@ -4,7 +4,6 @@ import PublicNavbar from "@/components/layout/PublicNavbar";
 import NewsShareButtons from "@/components/news/NewsShareButtons";
 import env from "@/lib/config/env";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeHtml } from "@/lib/security/sanitize";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
 
 type NewsPost = {
@@ -29,6 +28,26 @@ function isPublishedNews(post: Partial<NewsPost> & { stato?: string | null } | n
 
 function normalizeLegacyTitle(title: string): string {
   return title.replace(/\s*\.\.\.$/, "").trim();
+}
+
+function formatCategoryLabel(category: string | null | undefined): string {
+  const safeCategory = String(category ?? "notizie").trim();
+  if (!safeCategory) return "Notizie";
+  return safeCategory.charAt(0).toUpperCase() + safeCategory.slice(1);
+}
+
+function renderBoldText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={index} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
 }
 
 async function recoverTitleFromSource(sourceUrl: string): Promise<string | null> {
@@ -147,7 +166,7 @@ export default async function NewsDetailPage({
             {/* Meta information */}
             <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-secondary/70">
               <span className="font-semibold">
-                {typedPost.category.charAt(0).toUpperCase() + typedPost.category.slice(1)}
+                {formatCategoryLabel(typedPost.category)}
               </span>
               <time dateTime={sanitizedPost.published_at || sanitizedPost.created_at}>
                 {formatDate(sanitizedPost.published_at || sanitizedPost.created_at)}
@@ -182,26 +201,20 @@ export default async function NewsDetailPage({
               if (paragraph.startsWith("- ")) {
                 return (
                   <li key={index} className="ml-6 mb-2">
-                    {paragraph.substring(2).replace(/\*\*(.*?)\*\*/g, (_, text) => text)}
+                    {renderBoldText(paragraph.substring(2))}
                   </li>
                 );
               }
               if (paragraph.trim() === "") {
                 return <br key={index} />;
               }
-              // Handle bold text **text** and sanitize HTML
-              const contentWithBold = paragraph.replace(
-                /\*\*(.*?)\*\*/g,
-                '<strong class="font-semibold">$1</strong>'
-              );
-              // Sanitize HTML to prevent XSS
-              const sanitized = sanitizeHtml(contentWithBold);
               return (
                 <p
                   key={index}
                   className="mb-4 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: sanitized }}
-                />
+                >
+                  {renderBoldText(paragraph)}
+                </p>
               );
             })}
           </div>
@@ -261,7 +274,7 @@ export default async function NewsDetailPage({
                           {formatDate(relatedPost.published_at || relatedPost.created_at)}
                         </span>
                         <span className="text-xs font-semibold text-secondary">
-                          {relatedPost.category.charAt(0).toUpperCase() + relatedPost.category.slice(1)}
+                          {formatCategoryLabel(relatedPost.category)}
                         </span>
                       </div>
                     </div>
