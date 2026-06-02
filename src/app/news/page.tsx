@@ -15,7 +15,7 @@ export default function NewsPage() {
               News
             </h1>
             <p className="text-base sm:text-lg max-w-2xl text-gray-500">
-              Risultati, orari, novità e iscrizioni.
+              Aggiornamenti della scuola tennis e notizie ATP/WTA dal mondo del tennis.
             </p>
           </div>
           <AdminNewsBoard />

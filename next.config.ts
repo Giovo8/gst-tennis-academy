@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
               `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://cdn.sanity.io",
+              "img-src 'self' data: blob: https: https://images.unsplash.com https://*.supabase.co https://cdn.sanity.io",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com",
               "frame-ancestors 'none'",
             ].join("; "),

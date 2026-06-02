@@ -30,6 +30,12 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /* Exception: quick filter chips */
+  button.filter-chip {
+    min-height: unset;
+    min-width: unset;
+  }
   
   /* Disable hover effects on touch devices */
   *:hover {
@@ -318,13 +324,27 @@ body {
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.6;
+  /* 100dvh (dynamic viewport) avoids dead scroll space on mobile, where 100vh
+     equals the viewport WITHOUT the address bar and is taller than the visible
+     area. Fallback to 100vh for browsers without dvh support. */
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color var(--transition-base), color var(--transition-base);
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   -webkit-tap-highlight-color: transparent;
+}
+
+/* On mobile/tablet, full-height page wrappers using `min-h-screen` (100vh)
+   are taller than the visible area because mobile 100vh ignores the browser
+   address bar, leaving dead scroll space below short pages. Remap them to the
+   dynamic viewport height so the page never exceeds the visible viewport. */
+@media (max-width: 1023px) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
 }
 
 /* Typography Scale - Enterprise */
@@ -633,21 +653,19 @@ h6, .text-h6 {
 @keyframes fadeIn {
   from { 
     opacity: 0; 
-    transform: translateY(10px); 
   }
   to { 
     opacity: 1; 
-    transform: translateY(0); 
   }
 }
 
 @keyframes slideIn {
   from { 
-    transform: translateX(-10px); 
+    transform: scale(0.95); 
     opacity: 0; 
   }
   to { 
-    transform: translateX(0); 
+    transform: scale(1); 
     opacity: 1; 
   }
 }
@@ -715,11 +733,13 @@ h6, .text-h6 {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.1s ease-out forwards;
+  will-change: opacity;
 }
 
 .animate-slide-in {
-  animation: slideIn 0.3s ease-out forwards;
+  animation: slideIn 0.1s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-slide-up {
@@ -807,8 +827,11 @@ h6, .text-h6 {
     backface-visibility: hidden;
   }
   
-  /* Reduce padding on sections */
-  section {
+  /* Reduce padding on sections.
+     Exclude live regions (e.g. the Sonner toaster wrapper, which renders an
+     empty <section aria-live="polite">); otherwise the empty section gets
+     3rem top/bottom padding and adds dead scroll space below the footer. */
+  section:not([aria-live]) {
     padding-top: 3rem;
     padding-bottom: 3rem;
   }
@@ -823,6 +846,11 @@ h6, .text-h6 {
 @media (hover: none) and (pointer: coarse) {
   button, a, input, select, textarea {
     min-height: 44px;
+  }
+
+  button.filter-chip {
+    min-height: unset;
+    min-width: unset;
   }
 }
 

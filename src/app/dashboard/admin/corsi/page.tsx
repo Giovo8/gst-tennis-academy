@@ -133,7 +133,7 @@ export default function CorsiAdminPage() {
         <h1 className="text-4xl font-bold text-secondary">Corsi</h1>
         <Link
           href="/dashboard/admin/corsi/new"
-          className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+          className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
         >
           Nuovo Corso
         </Link>
@@ -148,13 +148,13 @@ export default function CorsiAdminPage() {
             placeholder="Cerca per nome, maestro o campo..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 shadow-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
           />
         </div>
         <button
           type="button"
           onClick={() => setIsFilterModalOpen(true)}
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+          className={`inline-flex py-2.5 px-2.5 items-center justify-center rounded-md border shadow-sm transition-colors ${
             hasActiveFilters
               ? "border-secondary bg-secondary text-white hover:opacity-90"
               : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
@@ -200,8 +200,8 @@ export default function CorsiAdminPage() {
             return (
               <div
                 key={course.id}
-                className="rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                style={{ background: "var(--color-frozen-lake-900)", opacity: course.is_active ? 1 : 0.55 }}
+                className={`rounded-lg overflow-visible cursor-pointer transition-all hover:opacity-95 hover:shadow-[0_0_18px_rgba(8,179,247,0.35)]${!course.is_active ? " opacity-[0.55]" : ""}`}
+                style={{ background: "var(--color-frozen-lake-900)" }}
                 onClick={() => router.push(`/dashboard/admin/corsi/${course.id}`)}
               >
                 <div className="flex items-center gap-4 py-3 px-3">

@@ -93,53 +93,44 @@ function formatNewsDate(dateString: string | undefined): string {
   return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
 }
 
+function normalizeLegacyTitle(title: string): string {
+  return title.replace(/\s*\.\.\.$/, "").trim();
+}
+
 export default function NewsSection() {
   const [news, setNews] = useState<NewsItem[]>(defaultNews);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPaused = useRef(false);
 
   function scrollTo(direction: "left" | "right") {
     const el = scrollRef.current;
     if (!el) return;
     const cardWidth = 320 + 24; // w-80 + gap-6
-    if (news.length > 3) {
-      // Infinite loop: array is doubled, reset silently at midpoint
-      const half = cardWidth * news.length; // exact width of one copy
-      if (direction === "right") {
-        if (el.scrollLeft + cardWidth >= half) el.scrollLeft -= half;
-        el.scrollBy({ left: cardWidth, behavior: "smooth" });
+    const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+
+    if (direction === "right") {
+      if (el.scrollLeft + cardWidth >= maxScrollLeft - 4) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
       } else {
-        if (el.scrollLeft - cardWidth < 0) el.scrollLeft += half;
-        el.scrollBy({ left: -cardWidth, behavior: "smooth" });
+        el.scrollBy({ left: cardWidth, behavior: "smooth" });
       }
+      return;
+    }
+
+    if (el.scrollLeft <= 4) {
+      el.scrollTo({ left: maxScrollLeft, behavior: "smooth" });
     } else {
-      el.scrollBy({ left: direction === "right" ? cardWidth : -cardWidth, behavior: "smooth" });
+      el.scrollBy({ left: -cardWidth, behavior: "smooth" });
     }
   }
-
-  useEffect(() => {
-    if (news.length <= 3) return;
-    const cardWidth = 320 + 24;
-    const half = cardWidth * news.length;
-    autoScrollRef.current = setInterval(() => {
-      if (isPaused.current) return;
-      const el = scrollRef.current;
-      if (!el) return;
-      if (el.scrollLeft + 10 >= half) el.scrollLeft -= half;
-      el.scrollBy({ left: cardWidth, behavior: "smooth" });
-    }, 3000);
-    return () => { if (autoScrollRef.current) clearInterval(autoScrollRef.current); };
-  }, [news.length]);
 
   async function loadNews() {
     const { data, error } = await supabase
       .from("news")
       .select("*")
       .eq("is_published", true)
-      .order("published_at", { ascending: false })
-      .limit(6);
+      .order("published_at", { ascending: false });
 
     if (error) {
       console.error("Error loading news:", error);
@@ -177,7 +168,7 @@ export default function NewsSection() {
             News
           </h2>
           <p className="text-base sm:text-lg max-w-2xl text-gray-500">
-            Risultati, orari, novità e iscrizioni.
+            Aggiornamenti della scuola tennis e notizie ATP/WTA dal mondo del tennis.
           </p>
         </div>
 
@@ -192,29 +183,23 @@ export default function NewsSection() {
             ? "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-2 md:max-w-3xl md:mx-auto md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12"
             : "flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-[calc(50vw-9rem)] sm:px-4 md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0 md:snap-none md:px-0 md:mb-12";
 
-          const displayItems = isCarousel ? [...news, ...news] : news;
+          const displayItems = news;
           const cards = displayItems.map((item, i) => {
-            const relativeDate = (() => {
+            const dateLabel = (() => {
               const ref = item.published_at || item.created_at;
-              if (!ref) return "";
-              const diff = Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
-              if (diff === 0) return "Oggi";
-              if (diff === 1) return "Ieri";
-              if (diff < 7) return `${diff} giorni fa`;
-              if (diff < 30) return `${Math.floor(diff / 7)} settimane fa`;
               return formatNewsDate(ref);
             })();
 
             return (
               <Link
-                key={isCarousel ? `${item.id}-${i}` : item.id}
+                key={item.id}
                 href={`/news/${item.id}`}
                 className={`flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer${isCarousel ? " flex-shrink-0 w-72 sm:w-80 snap-center" : news.length >= 2 ? " flex-shrink-0 w-72 sm:w-80 snap-center md:w-full" : ""}`}
               >
                 {/* Immagine */}
                 <div className="w-full aspect-[16/9] overflow-hidden">
                   {item.image_url ? (
-                    <NewsImage src={item.image_url} alt={item.title} />
+                    <NewsImage src={item.image_url} alt={normalizeLegacyTitle(item.title)} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-secondary/5">
                       <svg
@@ -238,7 +223,7 @@ export default function NewsSection() {
 
                 {/* Titolo */}
                 <h3 className="text-xl sm:text-2xl font-bold text-secondary mb-3 tracking-tight leading-tight group-hover:text-secondary/80 transition-colors">
-                  {item.title}
+                  {normalizeLegacyTitle(item.title)}
                 </h3>
 
                 {/* Descrizione */}
@@ -248,7 +233,7 @@ export default function NewsSection() {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-5 border-t border-gray-200">
-                  <span className="text-xs text-gray-400">{relativeDate}</span>
+                  <span className="text-xs text-gray-400">{dateLabel}</span>
                   <span className="text-xs font-semibold text-secondary">
                     {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
                   </span>

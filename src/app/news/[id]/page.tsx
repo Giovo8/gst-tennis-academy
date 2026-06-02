@@ -1,21 +1,55 @@
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Tag } from "lucide-react";
 import Link from "next/link";
 import PublicNavbar from "@/components/layout/PublicNavbar";
+import NewsShareButtons from "@/components/news/NewsShareButtons";
+import env from "@/lib/config/env";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { sanitizeHtml } from "@/lib/security/sanitize";
+import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
 
 type NewsPost = {
   id: string;
   title: string;
   category: string;
   image_url: string | null;
+  fonte_url?: string | null;
   content: string;
   excerpt?: string;
   is_published: boolean;
   published_at?: string;
   created_at: string;
 };
+
+function normalizeLegacyTitle(title: string): string {
+  return title.replace(/\s*\.\.\.$/, "").trim();
+}
+
+async function recoverTitleFromSource(sourceUrl: string): Promise<string | null> {
+  try {
+    const response = await fetch(sourceUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; GST-News/1.0)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+      cache: "no-store",
+    });
+
+    if (!response.ok) return null;
+
+    const html = await response.text();
+    const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1];
+    const twitterTitle = html.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i)?.[1];
+    const documentTitle = html.match(/<title>([^<]+)<\/title>/i)?.[1];
+
+    const candidate = (ogTitle || twitterTitle || documentTitle || "").trim();
+    if (!candidate) return null;
+
+    return candidate.replace(/\s*\|\s*.*$/, "").replace(/\s*-\s*.*$/, "").trim();
+  } catch {
+    return null;
+  }
+}
 
 const formatDate = (dateString?: string): string => {
   if (!dateString) return "";
@@ -55,31 +89,39 @@ export default async function NewsDetailPage({
     .limit(3);
 
   const typedPost = post as NewsPost;
-  const typedRelated = (relatedPosts ?? []) as NewsPost[];
+  const sanitizedPost: NewsPost = {
+    ...typedPost,
+    title: sanitizeAINewsTitle(typedPost.title || ""),
+    content: sanitizeAINewsBody(typedPost.content || ""),
+    excerpt: typedPost.excerpt ? sanitizeAINewsBody(typedPost.excerpt) : typedPost.excerpt,
+  };
+  const typedRelated = ((relatedPosts ?? []) as NewsPost[]).map((item) => ({
+    ...item,
+    title: sanitizeAINewsTitle(item.title || ""),
+    content: sanitizeAINewsBody(item.content || ""),
+    excerpt: item.excerpt ? sanitizeAINewsBody(item.excerpt) : item.excerpt,
+  }));
+  const normalizedStoredTitle = normalizeLegacyTitle(sanitizedPost.title);
+  const shouldRecoverTitle = sanitizedPost.title.trim().endsWith("...") && Boolean(sanitizedPost.fonte_url);
+  const recoveredTitle = shouldRecoverTitle && typedPost.fonte_url
+    ? await recoverTitleFromSource(sanitizedPost.fonte_url)
+    : null;
+  const displayTitle = recoveredTitle || normalizedStoredTitle;
+  const baseUrl = env.publicSiteUrl.replace(/\/$/, "");
+  const shareUrl = `${baseUrl}/news/${id}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto bg-white">
         <PublicNavbar />
         <main>
-          {/* Back link */}
-          <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pt-10">
-            <Link
-              href="/news"
-              className="inline-flex items-center gap-2 text-sm text-secondary/60 hover:text-secondary transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Tutte le news
-            </Link>
-          </div>
-
           {/* Hero Image */}
-          {typedPost.image_url && (
-            <div className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pt-6 mb-8">
+          {sanitizedPost.image_url && (
+            <div className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8 pt-6 mb-8">
               <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl">
                 <img
-                  src={typedPost.image_url}
-                  alt={typedPost.title}
+                  src={sanitizedPost.image_url}
+                  alt={displayTitle}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -87,31 +129,25 @@ export default async function NewsDetailPage({
           )}
 
           {/* Article Content */}
-          <article className="mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 pb-12">
-            {/* Meta information */}
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              <div className="flex items-center text-sm text-secondary/70">
-                <Tag className="w-4 h-4 mr-2" />
-                <span className="font-semibold">
-                  {typedPost.category.charAt(0).toUpperCase() + typedPost.category.slice(1)}
-                </span>
-              </div>
-              <div className="flex items-center text-sm text-secondary/70">
-                <Calendar className="w-4 h-4 mr-2" />
-                <time dateTime={typedPost.published_at || typedPost.created_at}>
-                  {formatDate(typedPost.published_at || typedPost.created_at)}
-                </time>
-              </div>
-            </div>
-
+          <article className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8 pb-12">
             {/* Title */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary mb-8 leading-tight tracking-tight">
-              {typedPost.title}
+              {displayTitle}
             </h1>
+
+            {/* Meta information */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-secondary/70">
+              <span className="font-semibold">
+                {typedPost.category.charAt(0).toUpperCase() + typedPost.category.slice(1)}
+              </span>
+              <time dateTime={sanitizedPost.published_at || sanitizedPost.created_at}>
+                {formatDate(sanitizedPost.published_at || sanitizedPost.created_at)}
+              </time>
+            </div>
 
           {/* Content */}
           <div className="prose prose-lg max-w-none text-secondary/90">
-            {typedPost.content.split("\n").map((paragraph, index) => {
+            {sanitizedPost.content.split("\n").map((paragraph, index) => {
               // Handle markdown-like syntax
               if (paragraph.startsWith("# ")) {
                 return (
@@ -160,6 +196,10 @@ export default async function NewsDetailPage({
               );
             })}
           </div>
+
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <NewsShareButtons url={shareUrl} title={displayTitle} />
+          </div>
           </article>
 
           {/* Related Posts */}
@@ -179,7 +219,7 @@ export default async function NewsDetailPage({
                       {relatedPost.image_url ? (
                         <img
                           src={relatedPost.image_url}
-                          alt={relatedPost.title}
+                          alt={normalizeLegacyTitle(relatedPost.title)}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
@@ -202,7 +242,7 @@ export default async function NewsDetailPage({
                     </div>
                     <div className="flex flex-col flex-grow p-7">
                       <h3 className="text-xl font-bold text-secondary mb-3 tracking-tight leading-tight group-hover:text-secondary/80 transition-colors">
-                        {relatedPost.title}
+                        {normalizeLegacyTitle(relatedPost.title)}
                       </h3>
                       <p className="text-sm text-gray-500 line-clamp-2 flex-grow mb-5">
                         {relatedPost.excerpt || relatedPost.content.substring(0, 100)}

@@ -124,7 +124,7 @@ export default function DashboardShell({
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-dvh bg-gray-50">
 
       {/* Top Navbar - solo mobile */}
       <header className="lg:hidden fixed top-4 left-6 right-6 z-[110] bg-white border border-gray-200 shadow-sm rounded-xl [transform:translateZ(0)]">
@@ -187,10 +187,10 @@ export default function DashboardShell({
         </aside>
 
       {/* Layout desktop: container con sidebar + contenuto in riga */}
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-8 flex min-h-screen pt-[5rem] lg:pt-0">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-8 flex min-h-dvh pt-[5rem] lg:pt-0">
 
         {/* Sidebar desktop - sticky dentro il container */}
-        <aside className={`hidden lg:flex flex-col flex-shrink-0 sticky top-4 h-[calc(100vh-2rem)] bg-white border border-gray-200 rounded-2xl overflow-hidden -ml-8 mr-8 shadow-sm transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+        <aside className={`hidden lg:flex flex-col flex-shrink-0 sticky top-4 h-[calc(100vh-2rem)] bg-white border border-gray-200 rounded-2xl overflow-hidden mr-8 shadow-sm transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
           {/* Logo */}
           <div className="flex items-center justify-center gap-2 h-20 border-b border-gray-200 flex-shrink-0 px-4">
             <Link href="/" aria-label="Home" className="rounded-lg hover:opacity-80 transition-opacity flex items-center gap-2 min-w-0">
@@ -209,7 +209,7 @@ export default function DashboardShell({
                 <React.Fragment key={item.href}>
                   <Link href={item.href} title={sidebarCollapsed ? item.label : undefined}
                     className={`flex items-center gap-3 mx-2 px-3 py-2 rounded-lg transition-colors ${sidebarCollapsed ? 'justify-center' : ''} ${active ? "bg-secondary text-white" : "text-gray-700 hover:bg-gray-50"}`}>
-                    <span className={`flex-shrink-0 [&>svg]:!h-4 [&>svg]:!w-4 ${active ? "text-white" : "text-secondary/70"}`}>{item.icon}</span>
+                    <span className={`flex-shrink-0 ${sidebarCollapsed ? '[&>svg]:!h-5 [&>svg]:!w-5' : '[&>svg]:!h-4 [&>svg]:!w-4'} ${active ? "text-white" : "text-secondary/70"}`}>{item.icon}</span>
                     {!sidebarCollapsed && <span className="text-sm font-medium flex-1">{item.label}</span>}
                     {!sidebarCollapsed && item.badge && item.badge > 0 && (
                       <span className={`px-1.5 py-0.5 text-xs font-bold rounded ${active ? "bg-white text-secondary" : "bg-secondary text-white"}`}>{item.badge > 99 ? "99+" : item.badge}</span>

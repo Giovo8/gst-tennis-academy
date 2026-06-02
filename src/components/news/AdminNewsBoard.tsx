@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
 
 function formatNewsDate(dateString: string | undefined): string {
   if (!dateString) return "";
@@ -17,16 +18,6 @@ function formatNewsDate(dateString: string | undefined): string {
   return formatted.replace(/\b([a-zàáèéìíòóùú])/g, (c) => c.toUpperCase());
 }
 
-function relativeDate(dateString: string | undefined): string {
-  if (!dateString) return "";
-  const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24));
-  if (diff === 0) return "Oggi";
-  if (diff === 1) return "Ieri";
-  if (diff < 7) return `${diff} giorni fa`;
-  if (diff < 30) return `${Math.floor(diff / 7)} settimane fa`;
-  return formatNewsDate(dateString);
-}
-
 type NewsPost = {
   id: string;
   title: string;
@@ -38,6 +29,15 @@ type NewsPost = {
   published_at?: string;
   created_at: string;
 };
+
+function sanitizePost(post: NewsPost): NewsPost {
+  return {
+    ...post,
+    title: sanitizeAINewsTitle(post.title || ""),
+    content: sanitizeAINewsBody(post.content || ""),
+    excerpt: post.excerpt ? sanitizeAINewsBody(post.excerpt) : post.excerpt,
+  };
+}
 
 const defaultPosts: NewsPost[] = [
   {
@@ -85,7 +85,7 @@ export default function AdminNewsBoard() {
       console.error("Error loading news:", error);
       setPosts(defaultPosts);
     } else if (data && data.length > 0) {
-      setPosts(data);
+      setPosts((data as NewsPost[]).map(sanitizePost));
     } else {
       setPosts(defaultPosts);
     }
@@ -136,7 +136,7 @@ export default function AdminNewsBoard() {
                 : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
             }`}
           >
-            {cat}
+            {cat.charAt(0).toUpperCase() + cat.slice(1)}
           </button>
         ))}
       </div>
@@ -190,7 +190,7 @@ export default function AdminNewsBoard() {
               {/* Footer */}
               <div className="flex items-center justify-between pt-5 border-t border-gray-200">
                 <span className="text-xs text-gray-400">
-                  {relativeDate(post.published_at || post.created_at)}
+                  {formatNewsDate(post.published_at || post.created_at)}
                 </span>
                 <span className="text-xs font-semibold text-secondary">
                   {post.category.charAt(0).toUpperCase() + post.category.slice(1)}

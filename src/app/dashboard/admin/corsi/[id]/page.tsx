@@ -457,8 +457,8 @@ export default function CorsoDetailPage() {
       </div>
 
       {/* Dettagli */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
         <div className="px-6 py-6 space-y-5">
@@ -515,8 +515,8 @@ export default function CorsoDetailPage() {
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
               </h2>
@@ -563,8 +563,8 @@ export default function CorsoDetailPage() {
 
       {/* Maestri */}
       {maestros.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
           <ul className="flex flex-col gap-2 px-4 py-4">
@@ -595,8 +595,8 @@ export default function CorsoDetailPage() {
 
       {/* Partecipanti */}
       {athletes.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         {
@@ -639,8 +639,8 @@ export default function CorsoDetailPage() {
       )}
 
       {/* Lezioni */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>
         {lessonDates.length === 0 ? (
@@ -799,7 +799,7 @@ export default function CorsoDetailPage() {
                     value={editingNewDateText}
                     onChange={(e) => handleEditingDateTextChange(e.target.value)}
                     maxLength={10}
-                    className="w-44 rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-44 rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                   />
                 </div>
               </div>
@@ -808,7 +808,7 @@ export default function CorsoDetailPage() {
                 <select
                   value={editingStartTime}
                   onChange={(e) => { setEditingStartTime(e.target.value); setSlotError(null); }}
-                  className="w-44 rounded-lg border border-gray-300 px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                 >
                   <option value="">—</option>
                   {TIME_SLOTS.map((t) => (
@@ -821,7 +821,7 @@ export default function CorsoDetailPage() {
                 <select
                   value={editingEndTime}
                   onChange={(e) => { setEditingEndTime(e.target.value); setSlotError(null); }}
-                  className="w-44 rounded-lg border border-gray-300 px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                 >
                   <option value="">—</option>
                   {TIME_SLOTS.map((t) => (
@@ -834,7 +834,7 @@ export default function CorsoDetailPage() {
                 <select
                   value={editingNewCourt}
                   onChange={(e) => { setEditingNewCourt(e.target.value); setSlotError(null); }}
-                  className="w-44 rounded-lg border border-gray-300 px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                 >
                   <option value="">—</option>
                   {courts.map((court) => (

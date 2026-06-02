@@ -667,9 +667,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             <div className="flex">
               {/* Fixed court labels column */}
               <div className="flex-shrink-0 w-[70px] flex flex-col gap-3">
-                <div className="bg-secondary rounded-l-lg" style={{ height: '52px' }}></div>
+                <div className="bg-secondary rounded-l-lg shadow-sm" style={{ height: '52px' }}></div>
                 {courts.map((court) => (
-                  <div key={court} className="bg-secondary rounded-lg p-3 flex items-center justify-center" style={{ minHeight: '70px' }}>
+                  <div key={court} className="bg-secondary rounded-lg p-3 flex items-center justify-center shadow-sm border border-black/5" style={{ minHeight: '70px' }}>
                     <span className="text-xl font-bold text-white tabular-nums">
                       {court.replace(/^Campo\s+/i, "")}
                     </span>
@@ -687,7 +687,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
               >
               <div className="min-w-[3280px]">
                 {/* Header Row with Time Slots */}
-                <div className="bg-secondary rounded-r-lg mb-3">
+                <div className="bg-secondary rounded-r-lg mb-3 shadow-sm">
                   <div className="grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
                     {TIME_SLOTS.map((time) => (
                       <div
@@ -897,7 +897,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
               onMouseLeave={handleMouseLeave}
             >
               <div className="min-w-[1040px]">
-                <div className="flex bg-secondary rounded-t-lg border border-secondary overflow-hidden">
+                <div className="flex bg-secondary rounded-t-lg border border-secondary overflow-hidden shadow-sm">
                   <div className="w-[90px] flex-shrink-0 p-3 flex items-center justify-center border-r border-white/15">
                     <span className="font-bold text-white uppercase tracking-wide text-[11px]">Ora</span>
                   </div>

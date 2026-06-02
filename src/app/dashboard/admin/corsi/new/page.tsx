@@ -505,8 +505,8 @@ export default function NuovoCorsoPage() {
         )}
 
         {/* Informazioni generali */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni generali</h2>
           </div>
           <div className="p-6 space-y-6">
@@ -520,7 +520,7 @@ export default function NuovoCorsoPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="es. Tennis Under 10 – Gruppo A"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                 />
               </div>
             </div>
@@ -533,7 +533,7 @@ export default function NuovoCorsoPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Breve descrizione del corso..."
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                 />
               </div>
             </div>
@@ -550,7 +550,7 @@ export default function NuovoCorsoPage() {
                     value={pricePerMonth || ""}
                     onChange={(e) => setPricePerMonth(parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                   />
                 </div>
               </div>
@@ -561,8 +561,8 @@ export default function NuovoCorsoPage() {
         </div>
 
         {/* Maestri */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
           <div className="p-6 space-y-4">
@@ -611,8 +611,8 @@ export default function NuovoCorsoPage() {
         </div>
 
         {/* Partecipanti */}
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
           </div>
           <div className="p-6">
@@ -627,8 +627,8 @@ export default function NuovoCorsoPage() {
         </div>
 
         {periods.map((period, pidx) => (
-          <div key={pidx} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+          <div key={pidx} className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
               </h2>
@@ -663,7 +663,7 @@ export default function NuovoCorsoPage() {
                         value={periodStartTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "start", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                       />
                     </div>
                   </div>
@@ -687,7 +687,7 @@ export default function NuovoCorsoPage() {
                         value={periodEndTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "end", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                       />
                     </div>
                   </div>
@@ -702,7 +702,7 @@ export default function NuovoCorsoPage() {
                           key={day.value}
                           type="button"
                           onClick={() => toggleDay(pidx, day.value)}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
+                          className={`px-4 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all ${
                             period.days.includes(day.value)
                               ? "bg-secondary text-white border-secondary"
                               : "bg-white text-secondary border-gray-300 hover:border-secondary"
@@ -723,7 +723,7 @@ export default function NuovoCorsoPage() {
                         key={court}
                         type="button"
                         onClick={() => setPeriods((prev) => prev.map((p, pIdx) => pIdx !== pidx ? p : { ...p, court }))}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
+                        className={`px-4 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all ${
                           period.court === court
                             ? "bg-secondary text-white border-secondary"
                             : "bg-white text-secondary border-gray-300 hover:border-secondary"

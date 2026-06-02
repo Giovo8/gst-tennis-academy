@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
-import { Newspaper, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, Search, Filter, Calendar, X, RefreshCw, Download, AlertCircle } from "lucide-react";
+import { Newspaper, Plus, Pencil, Trash2, Loader2, Eye, EyeOff, Search, Filter, Calendar, X, RefreshCw, Download, AlertCircle, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ export default function AdminNewsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [aiBozzeCount, setAiBozzeCount] = useState(0);
 
   const categoryLabels: Record<string, string> = {
     'notizie': 'Notizie',
@@ -41,15 +42,23 @@ export default function AdminNewsPage() {
 
   async function loadNews() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("news")
-      .select("*")
-      .order("published_at", { ascending: false });
+    const [{ data, error }, { count }] = await Promise.all([
+      supabase
+        .from("news")
+        .select("*")
+        .order("published_at", { ascending: false }),
+      supabase
+        .from("news")
+        .select("id", { count: "exact", head: true })
+        .eq("ai_generated", true)
+        .eq("stato", "bozza"),
+    ]);
 
     if (error) {
       // Handle error silently
     } else {
       setNews(data || []);
+      setAiBozzeCount(count ?? 0);
     }
     setLoading(false);
   }
@@ -147,12 +156,27 @@ export default function AdminNewsPage() {
               <div>
                 <h1 className="text-4xl font-bold text-secondary">Gestione News</h1>
               </div>
-              <Link
-                href="/dashboard/admin/news/create"
-                className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
-              >
-                Crea News
-              </Link>
+              <div className="flex flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:items-center">
+                <Link
+                  href="/dashboard/admin/news/create"
+                  className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                >
+                  Crea News
+                </Link>
+                <Link
+                  href="/dashboard/admin/news/ai"
+                  title="Apri News AI (Gemini)"
+                  aria-label="Apri News AI (Gemini)"
+                  className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-md border border-gray-200 bg-white text-secondary shadow-sm transition-all hover:bg-gray-50 hover:border-gray-300"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {aiBozzeCount > 0 && (
+                    <span className="absolute -top-2 -right-2 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {aiBozzeCount}
+                    </span>
+                  )}
+                </Link>
+              </div>
             </div>
           </div>
         </div>

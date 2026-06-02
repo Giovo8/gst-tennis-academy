@@ -399,8 +399,8 @@ export default function ModificaLezionePage() {
       )}
 
       {/* Info */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
         <div className="p-6 space-y-6">
@@ -419,8 +419,8 @@ export default function ModificaLezionePage() {
       </div>
 
       {/* Maestri */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
         </div>
         <div className="p-6 space-y-4">
@@ -467,8 +467,8 @@ export default function ModificaLezionePage() {
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         {/* Add extra via AthletesSelector (search/add only, no selected list) */}
@@ -536,7 +536,7 @@ export default function ModificaLezionePage() {
 
       {/* Orari disponibili */}
       <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between gap-4">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
         </div>
         <div className="p-4 sm:p-6">

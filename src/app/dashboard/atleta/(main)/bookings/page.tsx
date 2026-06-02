@@ -1116,7 +1116,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
           showBuiltinClose={false}
           className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
         >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="pl-5 pr-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-lg">Filtra Prenotazioni</ModalTitle>
           </ModalHeader>
 
