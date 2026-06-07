@@ -13,10 +13,13 @@ interface CourseRecord {
   id: string;
   schedule_time: string | null;
   schedule_days: string[];
-  schedule_periods: { days: string[]; time: string | null }[] | null;
+  schedule_periods: { days: string[]; time: string | null; court?: string | null }[] | null;
   cancelled_dates: string[] | null;
   start_date: string | null;
   end_date: string | null;
+  extra_dates?: string[] | null;
+  lesson_overrides?: Record<string, string> | null;
+  lesson_time_overrides?: Record<string, string> | null;
 }
 
 const DAY_NAMES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
@@ -36,15 +39,21 @@ export function hasCourseConflict(
   const dayName = DAY_NAMES[bookingStart.getDay()];
 
   return courses.some((c) => {
-    if (!c.schedule_days.includes(dayName)) return false;
-    if (c.start_date && new Date(c.start_date) > bookingStart) return false;
-    if (c.end_date && new Date(c.end_date) < bookingStart) return false;
+    if (c.start_date && c.start_date > dateStr) return false;
+    if (c.end_date && c.end_date < dateStr) return false;
     if (c.cancelled_dates && c.cancelled_dates.includes(dateStr)) return false;
 
+    const isExtraDate = c.extra_dates && c.extra_dates.includes(dateStr);
+    const isRegularDay = c.schedule_days.includes(dayName);
+    if (!isExtraDate && !isRegularDay) return false;
+
     let timeStr: string | null = c.schedule_time ?? null;
-    if (c.schedule_periods && c.schedule_periods.length > 0) {
+    // lesson_time_overrides: per-date time override has highest priority
+    if (c.lesson_time_overrides?.[dateStr]) {
+      timeStr = c.lesson_time_overrides[dateStr];
+    } else if (c.schedule_periods && c.schedule_periods.length > 0) {
       const mp = c.schedule_periods.find((p) => p.days.includes(dayName));
-      timeStr = mp?.time ?? null;
+      if (mp) timeStr = mp.time ?? null;
     }
     if (!timeStr) return false;
 
@@ -193,6 +202,15 @@ describe("hasCourseConflict", () => {
       expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [expired])).toBe(false);
     });
 
+    it("rileva conflitto: corso attivo nel suo ultimo giorno (end_date == data prenotazione)", () => {
+      const lastDay: CourseRecord = {
+        ...courseMonday,
+        id: "c3b",
+        end_date: "2026-05-25", // stesso giorno della prenotazione
+      };
+      expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [lastDay])).toBe(true);
+    });
+
     it("rileva conflitto: corso attivo (start_date e end_date valide)", () => {
       const active: CourseRecord = {
         ...courseMonday,
@@ -298,6 +316,59 @@ describe("hasCourseConflict", () => {
         schedule_periods: null,
       };
       expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [nullTime])).toBe(false);
+    });
+  });
+
+  describe("extra_dates (lezioni extra fuori schedule)", () => {
+    it("rileva conflitto: data extra non in schedule_days", () => {
+      const withExtra: CourseRecord = {
+        id: "c13",
+        schedule_time: "09:00 - 11:00",
+        schedule_days: ["mer"], // corso normalmente mercoledì
+        schedule_periods: null,
+        cancelled_dates: null,
+        start_date: null,
+        end_date: null,
+        extra_dates: ["2026-05-25"], // lunedì extra
+      };
+      // prenotazione lunedì 09:00–11:00 → deve essere bloccata dalla lezione extra
+      expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [withExtra])).toBe(true);
+    });
+
+    it("nessun conflitto: data non è né schedule né extra", () => {
+      const noMatch: CourseRecord = {
+        id: "c14",
+        schedule_time: "09:00 - 11:00",
+        schedule_days: ["mer"],
+        schedule_periods: null,
+        cancelled_dates: null,
+        start_date: null,
+        end_date: null,
+        extra_dates: ["2026-05-27"], // mercoledì extra, non lunedì
+      };
+      expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [noMatch])).toBe(false);
+    });
+  });
+
+  describe("lesson_time_overrides (orario cambiato per una data)", () => {
+    it("rileva conflitto con orario override che si sovrappone", () => {
+      const withTimeOverride: CourseRecord = {
+        ...courseMonday,
+        id: "c15",
+        schedule_time: "14:00 - 16:00", // orario normale non sovrapposto
+        lesson_time_overrides: { "2026-05-25": "09:00 - 11:00" }, // override che si sovrappone
+      };
+      expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [withTimeOverride])).toBe(true);
+    });
+
+    it("nessun conflitto: orario override non si sovrappone", () => {
+      const withTimeOverride: CourseRecord = {
+        ...courseMonday,
+        id: "c16",
+        schedule_time: "09:00 - 11:00", // orario normale sovrapposto
+        lesson_time_overrides: { "2026-05-25": "14:00 - 16:00" }, // override che non si sovrappone
+      };
+      expect(hasCourseConflict(MON_09_11_START, MON_09_11_END, [withTimeOverride])).toBe(false);
     });
   });
 });

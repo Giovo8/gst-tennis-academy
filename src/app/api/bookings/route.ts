@@ -304,10 +304,8 @@ export async function POST(req: Request) {
 
     const { data: courseData, error: courseError } = await supabaseServer
       .from("courses")
-      .select("id, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date")
-      .eq("is_active", true)
-      .eq("court_name", court)
-      .contains("schedule_days", [dayName]);
+      .select("id, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides")
+      .eq("is_active", true);
 
     if (courseError) {
       logger.error('Error checking course conflicts', courseError, { userId: user.id, court });
@@ -318,14 +316,30 @@ export async function POST(req: Request) {
     }
 
     const hasCourseConflict = (courseData ?? []).some((c) => {
-      if (c.start_date && new Date(c.start_date) > bookingStart) return false;
-      if (c.end_date && new Date(c.end_date) < bookingStart) return false;
+      if (c.start_date && c.start_date > dateStr) return false;
+      if (c.end_date && c.end_date < dateStr) return false;
       if (c.cancelled_dates && (c.cancelled_dates as string[]).includes(dateStr)) return false;
 
+      const isExtraDate = c.extra_dates && (c.extra_dates as string[]).includes(dateStr);
+      const isRegularDay = (c.schedule_days as string[]).includes(dayName);
+      if (!isExtraDate && !isRegularDay) return false;
+
+      let courseCourtForDay: string | null = c.court_name ?? null;
       let timeStr: string | null = c.schedule_time ?? null;
-      if (c.schedule_periods && (c.schedule_periods as { days: string[]; time: string | null }[]).length > 0) {
-        const mp = (c.schedule_periods as { days: string[]; time: string | null }[]).find((p) => p.days.includes(dayName));
-        timeStr = mp?.time ?? null;
+      // lesson_overrides: per-date court override has highest priority
+      if (c.lesson_overrides && (c.lesson_overrides as Record<string, string>)[dateStr]) {
+        courseCourtForDay = (c.lesson_overrides as Record<string, string>)[dateStr];
+      } else if (c.schedule_periods && (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).length > 0) {
+        const mp = (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).find((p) => p.days.includes(dayName));
+        if (mp?.court) courseCourtForDay = mp.court;
+      }
+      if (courseCourtForDay && courseCourtForDay !== court) return false;
+      // lesson_time_overrides: per-date time override has highest priority
+      if (c.lesson_time_overrides && (c.lesson_time_overrides as Record<string, string>)[dateStr]) {
+        timeStr = (c.lesson_time_overrides as Record<string, string>)[dateStr];
+      } else if (c.schedule_periods && (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).length > 0) {
+        const mp = (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).find((p) => p.days.includes(dayName));
+        if (mp) timeStr = mp.time ?? null;
       }
       if (!timeStr) return false;
 

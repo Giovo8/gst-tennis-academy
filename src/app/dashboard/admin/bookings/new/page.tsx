@@ -427,27 +427,39 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         .gt("end_time", `${dateStr}T00:00:00.000Z`),
       supabase
         .from("courses")
-        .select("id, name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date")
-        .eq("is_active", true)
-        .eq("court_name", selectedCourt)
-        .contains("schedule_days", [(["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()]]),
+        .select("id, name, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides")
+        .eq("is_active", true),
     ]);
 
     // Filter courses within date range
+    const _dayName = (["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()];
     const activeCourses = (courseData || []).filter(c => {
-      if (c.start_date && new Date(c.start_date) > selectedDate) return false;
-      if (c.end_date && new Date(c.end_date) < selectedDate) return false;
+      if (c.start_date && c.start_date > dateStr) return false;
+      if (c.end_date && c.end_date < dateStr) return false;
       if (c.cancelled_dates && c.cancelled_dates.includes(dateStr)) return false;
-      return true;
+      const isExtraDate = c.extra_dates && (c.extra_dates as string[]).includes(dateStr);
+      const isRegularDay = (c.schedule_days as string[]).includes(_dayName);
+      return isExtraDate || isRegularDay;
     });
 
     // Build course fake-bookings for timeline
-    const _dayName = (["dom","lun","mar","mer","gio","ven","sab"])[selectedDate.getDay()];
     const coursesAsBookings: ExistingBooking[] = activeCourses.flatMap(course => {
+      let courseCourtForDay: string | null = course.court_name ?? null;
       let timeStr: string | null = course.schedule_time ?? null;
-      if (course.schedule_periods && course.schedule_periods.length > 0) {
-        const mp = course.schedule_periods.find((p: { days: string[]; time: string | null }) => p.days.includes(_dayName));
-        timeStr = mp?.time ?? null;
+      // lesson_overrides: per-date court override has highest priority
+      if (course.lesson_overrides && (course.lesson_overrides as Record<string, string>)[dateStr]) {
+        courseCourtForDay = (course.lesson_overrides as Record<string, string>)[dateStr];
+      } else if (course.schedule_periods && course.schedule_periods.length > 0) {
+        const mp = course.schedule_periods.find((p: { days: string[]; time: string | null; court: string | null }) => p.days.includes(_dayName));
+        if (mp?.court) courseCourtForDay = mp.court;
+      }
+      if (courseCourtForDay !== selectedCourt) return [];
+      // lesson_time_overrides: per-date time override has highest priority
+      if (course.lesson_time_overrides && (course.lesson_time_overrides as Record<string, string>)[dateStr]) {
+        timeStr = (course.lesson_time_overrides as Record<string, string>)[dateStr];
+      } else if (course.schedule_periods && course.schedule_periods.length > 0) {
+        const mp = course.schedule_periods.find((p: { days: string[]; time: string | null; court: string | null }) => p.days.includes(_dayName));
+        if (mp) timeStr = mp.time ?? null;
       }
       if (!timeStr) return [];
       const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
