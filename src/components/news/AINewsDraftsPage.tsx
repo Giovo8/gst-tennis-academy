@@ -142,9 +142,14 @@ export default function AINewsDraftsPage({ basePath }: Props) {
       if (!res.ok) throw new Error(json?.error ?? "Errore bonifica archivio AI");
 
       const errored = Array.isArray(json?.errors) ? json.errors.length : 0;
+      const translatedCount: number = json?.translated ?? 0;
       toast.success(
-        `Bonifica completata: ${json.updated ?? 0} aggiornate su ${json.scanned ?? 0}${errored > 0 ? ` (${errored} errori)` : ""}`
+        `Bonifica completata: ${json.updated ?? 0} aggiornate su ${json.scanned ?? 0}${translatedCount > 0 ? `, ${translatedCount} tradotte in italiano` : ""}${errored > 0 ? ` (${errored} errori)` : ""}`
       );
+
+      if (json?.geminiAvailable === false) {
+        toast.error("Gemini non configurato: le news in inglese non sono state tradotte. Imposta GEMINI_API_KEY nelle variabili d'ambiente.");
+      }
 
       if (errored > 0) {
         toast.error("Alcune righe non sono state aggiornate. Controlla i log server.");

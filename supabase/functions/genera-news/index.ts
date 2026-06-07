@@ -392,18 +392,30 @@ function cleanBaseText(input: string): string {
   return removeUnsupportedMediaMentions(normalizeBrokenUtf8(decodeHtmlEntities(input || "")))
     .replace(/\[\s*(?:\.\.\.|…)+\s*\]/g, "")
     .replace(/\b(?:continua a leggere|leggi (?:tutto|anche)|read more)\b\.?/gi, "")
+    // Rimuove stub articoli correlati da RSS: es. "RACCONTI Titolo Autore 31/03/2026 COMICS"
+    .replace(/\s+[A-ZÀÈÌÒÙ]{3,}\b[^.!?\n]{0,200}\d{2}\/\d{2}\/\d{4}[^.!?\n]*$/g, "")
+    // Rimuove ellissi residua di troncatura a fine testo
+    .replace(/\s*\.{3,}\s*$/, "")
     .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
 
 function sanitizeGeneratedTitle(title: string): string {
-  const cleaned = cleanBaseText(title)
+  // Per i titoli non si filtrano le frasi con parole media: il titolo è una
+  // frase sola e verrebbe eliminato intero. Si applicano solo decode/normalize
+  // e la rimozione del prefisso media iniziale.
+  const cleaned = normalizeBrokenUtf8(decodeHtmlEntities(title || ""))
+    .replace(/\[\s*(?:\.\.\.|…)+\s*\]/g, "")
+    .replace(/\b(?:continua a leggere|leggi (?:tutto|anche)|read more)\b\.?/gi, "")
     .replace(/^\s*(?:video|highlights?|live|diretta)\s*[:\-]\s*/i, "")
+    .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
 
-  return cleaned || "News Tennis";
+  // Tronca a max 16 parole come richiesto dal vincolo del prompt.
+  const words = cleaned.split(" ");
+  return words.length > 16 ? words.slice(0, 16).join(" ") : cleaned;
 }
 
 function formatItalianDateLabel(sourceDate: string | null): string | null {
@@ -459,7 +471,7 @@ async function buildFallbackNews(
   const lead = frasi.slice(0, 2).join(" ") || dettagli;
   const sviluppo = frasi.slice(2, 7).join(" ");
 
-  const titolo = sanitizeGeneratedTitle(cleanTitle);
+  const titolo = sanitizeGeneratedTitle(cleanTitle) || `Aggiornamento Tennis – ${fonteNome}`;
   const testo = sanitizeJournalisticText([
     `${cleanTitle}. ${lead}`,
     sviluppo || `La cronaca proposta da ${fonteNome} fotografa un passaggio importante del torneo e chiarisce i temi tecnici che possono orientare i prossimi incontri.`,
@@ -494,38 +506,21 @@ async function parseFeedWithFallback(parser: Parser, url: string) {
   }
 }
 
-function getFeedCandidates(fonte: Fonte): string[] {
-  const base = [fonte.url];
-  const tag = `${fonte.nome} ${fonte.url}`.toLowerCase();
-
-  if (tag.includes("atp")) {
-    base.push(
-      "https://www.tennisitaliano.it/feed/",
-      "https://oktennis.it/feed/",
-      "https://www.livetennis.it/feed/",
-      "https://www.tennismajors.com/feed/"
-    );
-  }
-
-  if (tag.includes("gazzetta")) {
-    base.push(
-      "https://oktennis.it/feed/",
-      "https://www.tennisitaliano.it/feed/",
-      "https://www.livetennis.it/feed/",
-      "https://www.tennismajors.com/feed/"
-    );
-  }
-
-  return [...new Set(base)];
+// Ritorna l'URL della fonte come primo candidato, poi tutte le altre fonti attive
+// configurate nel DB come fallback. Nessun URL è hardcoded.
+function getFeedCandidates(fonte: Fonte, allFontiUrls: string[]): string[] {
+  const others = allFontiUrls.filter((u) => u !== fonte.url);
+  return [fonte.url, ...others];
 }
 
 async function loadRecentItemsForSource(
   parser: Parser,
   fonte: Fonte,
   maxItems: number,
-  now: Date
+  now: Date,
+  allFontiUrls: string[]
 ): Promise<{ items: RssItemWithDate[]; usedUrl: string | null; reason: string | null }> {
-  const candidates = getFeedCandidates(fonte);
+  const candidates = getFeedCandidates(fonte, allFontiUrls);
   let lastReason: string | null = null;
 
   for (const candidateUrl of candidates) {
@@ -627,7 +622,8 @@ Deno.serve(async (req) => {
 
       try {
         const now = new Date();
-        const sourceLoad = await loadRecentItemsForSource(parser, fonte, 3, now);
+        const allFontiUrls = (fonti ?? []).map((f: Fonte) => f.url);
+        const sourceLoad = await loadRecentItemsForSource(parser, fonte, 3, now, allFontiUrls);
         const articoli = sourceLoad.items;
 
         if (articoli.length === 0) {
@@ -676,9 +672,10 @@ Deno.serve(async (req) => {
             "Sei un redattore sportivo senior per una tennis academy italiana.",
             "Scrivi una news approfondita, concreta e informativa senza inventare dati.",
             "Obiettivo: massimizzare le informazioni utili presenti nella fonte.",
+            "IMPORTANTE: scrivi SEMPRE in lingua italiana, indipendentemente dalla lingua della fonte.",
             "Vincoli:",
-            "1) Titolo chiaro e giornalistico (max 16 parole).",
-            "2) Testo lungo 4-6 paragrafi, tra 900 e 1600 caratteri.",
+            "1) Titolo chiaro e giornalistico (max 16 parole), scritto in italiano.",
+            "2) Testo lungo 4-6 paragrafi, tra 900 e 1600 caratteri, scritto in italiano.",
             "3) Includi sempre dettagli tecnici: risultati, punteggi, numeri, date, ranking, streak, statistiche quando disponibili.",
             "4) Se alcuni numeri non sono presenti nella fonte, non inventarli.",
             "5) Tono professionale, leggibile, adatto a pubblico sportivo.",
@@ -695,6 +692,7 @@ Deno.serve(async (req) => {
           const finalPrompt = promptCustom ? `${promptBase}\nPrompt extra: ${promptCustom}` : promptBase;
 
           let parsed: NewsAiPayload | null = null;
+          let usedFallback = false;
 
           try {
             const aiResponse = await model.generateContent(finalPrompt);
@@ -711,6 +709,7 @@ Deno.serve(async (req) => {
 
             if (isGeminiQuotaError(modelMessage)) {
               parsed = await buildFallbackNews(titoloRss, descrizioneRss, fonte.nome, dataRss, fonteUrl);
+              usedFallback = true;
               generateErrors.push(`Gemini in quota limit su ${fonte.nome}: usato fallback locale.`);
             } else {
               skippedCount += 1;
@@ -719,9 +718,11 @@ Deno.serve(async (req) => {
             }
           }
 
-          const stato = pubblicazioneAuto ? "pubblicata" : "bozza";
+          // Gli articoli generati con fallback locale (quota Gemini esaurita) vanno sempre
+          // in bozza per permettere revisione manuale prima della pubblicazione.
+          const stato = (!usedFallback && pubblicazioneAuto) ? "pubblicata" : "bozza";
           const isPublished = stato === "pubblicata";
-          const titoloPulito = sanitizeGeneratedTitle(parsed.titolo);
+          const titoloPulito = sanitizeGeneratedTitle(parsed.titolo) || `Aggiornamento Tennis – ${fonte.nome}`;
           const testoPulito = sanitizeJournalisticText(removeUnsupportedMediaMentions(parsed.testo));
 
           if (!testoPulito) {

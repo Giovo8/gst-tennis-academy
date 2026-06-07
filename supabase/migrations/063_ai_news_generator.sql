@@ -163,14 +163,12 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_job_name text;
-  v_ora_utc integer;
+  v_offset   integer;
+  v_ora_utc  integer;
   v_schedule text;
   v_sql text;
 BEGIN
   v_job_name := 'ai-news-' || p_cron_id::text;
-
-  -- UTC+1 base sicura: sottrai sempre 1 ora.
-  v_ora_utc := (p_ora + 23) % 24;
 
   BEGIN
     PERFORM cron.unschedule(v_job_name);
@@ -183,6 +181,13 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Calcola l'offset UTC corrente di Rome (es. +2 in estate, +1 in inverno).
+  v_offset  := ROUND(
+    EXTRACT(EPOCH FROM (
+      now() AT TIME ZONE 'Europe/Rome' - now() AT TIME ZONE 'UTC'
+    )) / 3600
+  )::integer;
+  v_ora_utc := ((p_ora - v_offset) + 24) % 24;
   v_schedule := format('%s %s * * *', p_minuto, v_ora_utc);
 
   v_sql := format(

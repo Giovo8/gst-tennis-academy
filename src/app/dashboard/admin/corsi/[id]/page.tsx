@@ -657,11 +657,13 @@ export default function CorsoDetailPage() {
               const dateStr = date.toISOString().split("T")[0];
               return (
                 <li key={i} className="relative">
-                  {athletes.length > 0 ? (
-                  <Link href={`/dashboard/admin/corsi/${courseId}/lezioni/${dateStr}`}>
-                    <div
-                      className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
-                      style={{ background: attendedDates.has(dateStr) ? "#023047" : "var(--secondary)" }}
+                  <div
+                    className="flex items-center rounded-lg overflow-hidden"
+                    style={{ background: attendedDates.has(dateStr) ? "#023047" : "var(--secondary)" }}
+                  >
+                    <Link
+                      href={`/dashboard/admin/corsi/${courseId}/lezioni/${dateStr}`}
+                      className="flex flex-1 items-center gap-4 py-3 px-3 min-w-0 hover:opacity-90 transition-opacity cursor-pointer"
                     >
                       <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                         {attendedDates.has(dateStr)
@@ -677,42 +679,16 @@ export default function CorsoDetailPage() {
                           </p>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
-                        className="flex-shrink-0 p-2.5 -mr-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
-                        aria-label="Opzioni lezione"
-                      >
-                        <MoreVertical className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </Link>
-                  ) : (
-                    <div
-                      className="flex items-center gap-4 py-3 px-3 rounded-lg cursor-default"
-                      style={{ background: attendedDates.has(dateStr) ? "#023047" : "var(--secondary)" }}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={(e) => { if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
+                      className="flex-shrink-0 p-2.5 mr-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                      aria-label="Opzioni lezione"
                     >
-                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white leading-none">{i + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {(getCourtForDate(course, dateStr) || getTimeForDate(course, dateStr)) && (
-                          <p className="text-xs text-white/70 mt-0.5">
-                            {[getCourtForDate(course, dateStr), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openMenuLesson === dateStr) { closeActionMenu(); return; } openActionMenu(dateStr, e.currentTarget.getBoundingClientRect()); }}
-                        className="flex-shrink-0 p-2.5 -mr-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
-                        aria-label="Opzioni lezione"
-                      >
-                        <MoreVertical className="h-5 w-5" />
-                      </button>
-                    </div>
-                  )}
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
+                  </div>
                   {openMenuLesson === dateStr && menuPosition && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />

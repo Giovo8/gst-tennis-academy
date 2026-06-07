@@ -328,38 +328,21 @@ async function resolveNewsImageUrl(sourceUrl: string | null, articleUrl: string 
   return pickFallbackImage(seed);
 }
 
-function getFeedCandidates(fonte: { nome: string; url: string }): string[] {
-  const base = [fonte.url];
-  const tag = `${fonte.nome} ${fonte.url}`.toLowerCase();
-
-  if (tag.includes("atp")) {
-    base.push(
-      "https://www.tennisitaliano.it/feed/",
-      "https://oktennis.it/feed/",
-      "https://www.livetennis.it/feed/",
-      "https://www.tennismajors.com/feed/"
-    );
-  }
-
-  if (tag.includes("gazzetta")) {
-    base.push(
-      "https://oktennis.it/feed/",
-      "https://www.tennisitaliano.it/feed/",
-      "https://www.livetennis.it/feed/",
-      "https://www.tennismajors.com/feed/"
-    );
-  }
-
-  return [...new Set(base)];
+// Ritorna l'URL della fonte come primo candidato, poi tutte le altre fonti attive
+// configurate nel DB come fallback. Nessun URL è hardcoded.
+function getFeedCandidates(fonte: { nome: string; url: string }, allFontiUrls: string[]): string[] {
+  const others = allFontiUrls.filter((u) => u !== fonte.url);
+  return [fonte.url, ...others];
 }
 
 async function loadRecentItemsForSource(
   parser: Parser,
   fonte: { nome: string; url: string },
   maxItems: number,
-  now: Date
+  now: Date,
+  allFontiUrls: string[]
 ): Promise<{ items: Array<Record<string, unknown>>; usedUrl: string | null; reason: string | null }> {
-  const candidates = getFeedCandidates(fonte);
+  const candidates = getFeedCandidates(fonte, allFontiUrls);
   let lastReason: string | null = null;
 
   for (const candidateUrl of candidates) {
@@ -408,10 +391,12 @@ async function generateFallbackFromRss(categoria: string | null) {
   let skippate = 0;
   const errori: string[] = [];
 
+  const allFontiUrls = (fonti ?? []).map((f: { url: string }) => f.url);
+
   for (const fonte of fonti ?? []) {
     try {
       const now = new Date();
-      const sourceLoad = await loadRecentItemsForSource(parser, fonte, 2, now);
+      const sourceLoad = await loadRecentItemsForSource(parser, fonte, 2, now, allFontiUrls);
       const articoli = sourceLoad.items;
 
       if (articoli.length === 0) {

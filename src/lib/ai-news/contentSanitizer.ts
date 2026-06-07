@@ -51,14 +51,24 @@ function cleanBaseText(input: string): string {
   return removeMediaSentences(normalizeBrokenUtf8(decodeHtmlEntities(input || "")))
     .replace(/\[\s*(?:\.\.\.|…)+\s*\]/g, "")
     .replace(/\b(?:continua a leggere|leggi (?:tutto|anche)|read more)\b\.?/gi, "")
+    // Rimuove stub articoli correlati da RSS: es. "RACCONTI Titolo Autore 31/03/2026 COMICS"
+    .replace(/\s+[A-ZÀÈÌÒÙ]{3,}\b[^.!?\n]{0,200}\d{2}\/\d{2}\/\d{4}[^.!?\n]*$/g, "")
+    // Rimuove ellissi residua di troncatura a fine testo
+    .replace(/\s*\.{3,}\s*$/, "")
     .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
 
 export function sanitizeAINewsTitle(input: string): string {
-  const cleaned = cleanBaseText(input)
+  // Per i titoli non si filtrano le frasi contenenti parole media (il titolo è
+  // una frase sola e verrebbe eliminato intero). Si applicano solo decode/normalize
+  // e la rimozione del prefisso media iniziale.
+  const cleaned = normalizeBrokenUtf8(decodeHtmlEntities(input || ""))
+    .replace(/\[\s*(?:\.\.\.|…)+\s*\]/g, "")
+    .replace(/\b(?:continua a leggere|leggi (?:tutto|anche)|read more)\b\.?/gi, "")
     .replace(/^\s*(?:video|highlights?|live|diretta)\s*[:\-]\s*/i, "")
+    .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
 

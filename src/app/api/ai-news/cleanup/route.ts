@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { requireAdminOrGestore } from "@/lib/ai-news/auth";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
 import { supabaseServer } from "@/lib/supabase/serverClient";
@@ -6,6 +7,43 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 export const dynamic = "force-dynamic";
 
 const BATCH_SIZE = 100;
+
+// Euristico leggero: controlla se il testo sembra inglese contando stopword comuni.
+function looksEnglish(text: string): boolean {
+  const sample = text.slice(0, 800).toLowerCase();
+  const hits = ["the ", " and ", " is ", " are ", " was ", " has ", " have ", " his ", " her ", " for ", " with ", " that ", " this ", " from ", " they "].filter(
+    (w) => sample.includes(w)
+  );
+  return hits.length >= 3;
+}
+
+async function translateToItalian(
+  model: InstanceType<typeof GoogleGenerativeAI>["getGenerativeModel"] extends (...args: never[]) => infer R ? R : never,
+  title: string,
+  content: string
+): Promise<{ titolo: string; testo: string } | null> {
+  const prompt = [
+    "Traduci in italiano giornalistico questo articolo di tennis.",
+    "Mantieni tutti i numeri, nomi propri, classifiche e statistiche invariati.",
+    "Rispondi SOLO con JSON valido: { titolo: '...', testo: '...' }",
+    `Titolo originale: ${title}`,
+    `Testo originale: ${content.slice(0, 3000)}`,
+  ].join("\n");
+
+  try {
+    const res = await model.generateContent(prompt);
+    const raw = res.response.text();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]);
+    if (typeof parsed?.titolo === "string" && typeof parsed?.testo === "string") {
+      return { titolo: parsed.titolo.trim(), testo: parsed.testo.trim() };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 type CleanupRow = {
   id: string;
@@ -23,8 +61,14 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const dryRun = Boolean(body?.dryRun);
 
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const gemini = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
+    const model = gemini ? gemini.getGenerativeModel({ model: "gemini-2.0-flash" }) : null;
+    const geminiAvailable = model !== null;
+
     let scanned = 0;
     let updated = 0;
+    let translated = 0;
     const errors: string[] = [];
     let offset = 0;
 
@@ -46,10 +90,36 @@ export async function POST(request: Request) {
       scanned += rows.length;
 
       for (const row of rows) {
-        const nextTitle = sanitizeAINewsTitle(row.title || "");
-        const nextContent = sanitizeAINewsBody(row.content || "");
-        const nextExcerpt = sanitizeAINewsBody(row.excerpt || nextContent).slice(0, 220);
+        // Usa fallback stringa vuota invece di "News Tennis" per non sporcare il titolo.
+        const rawSanitizedTitle = sanitizeAINewsTitle(row.title || "");
+        let nextTitle = rawSanitizedTitle === "News Tennis" ? (row.title || "").trim() : rawSanitizedTitle;
+        // Se il titolo era già "News Tennis" (fallback da bug precedente),
+        // prova a ricavarlo dalla prima frase del contenuto.
+        if (!nextTitle || nextTitle === "News Tennis") {
+          const rawContent = row.content || "";
+          const firstSentence = rawContent.split(/(?<=[.!?])\s+/)[0] ?? "";
+          const derived = firstSentence.replace(/<[^>]+>/g, "").trim().slice(0, 120);
+          if (derived) nextTitle = derived;
+        }
+        let nextContent = sanitizeAINewsBody(row.content || "");
         const nextCategory = "notizie";
+        let wasTranslated = false;
+
+        // Rilevamento e traduzione post in inglese.
+        const combinedText = `${nextTitle} ${nextContent}`;
+        if (model && looksEnglish(combinedText)) {
+          const translated_result = await translateToItalian(model, nextTitle, nextContent);
+          if (translated_result) {
+            const tTitle = sanitizeAINewsTitle(translated_result.titolo);
+            const tContent = sanitizeAINewsBody(translated_result.testo);
+            // Accetta il risultato solo se non è vuoto e Gemini non ha restituito "News Tennis".
+            if (tTitle && tTitle !== "News Tennis") nextTitle = tTitle;
+            if (tContent) nextContent = tContent;
+            wasTranslated = true;
+          }
+        }
+
+        const nextExcerpt = sanitizeAINewsBody(row.excerpt || nextContent).slice(0, 220);
 
         const hasChanges =
           nextTitle !== (row.title || "") ||
@@ -60,6 +130,7 @@ export async function POST(request: Request) {
         if (!hasChanges) continue;
 
         updated += 1;
+        if (wasTranslated) translated += 1;
         if (dryRun) continue;
 
         const { error: updateError } = await supabaseServer
@@ -87,6 +158,8 @@ export async function POST(request: Request) {
       dryRun,
       scanned,
       updated,
+      translated,
+      geminiAvailable,
       errors,
     });
   } catch {
