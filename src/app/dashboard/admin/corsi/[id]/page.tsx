@@ -288,8 +288,8 @@ export default function CorsoDetailPage() {
         .from("profiles")
         .select("id, full_name")
         .in("full_name", allMaestroNames);
-      const profileMap = new Map((profiles ?? []).map((p: { id: string; full_name: string }) => [p.full_name, p.id]));
-      setMaestros(allMaestroNames.map((name) => ({ id: profileMap.get(name), full_name: name })));
+      const profileMap = new Map<string, string>((profiles ?? []).map((p: { id: string; full_name: string }) => [p.full_name, p.id]));
+      setMaestros(allMaestroNames.map((name) => ({ id: profileMap.get(name) ?? undefined, full_name: name })));
     }
 
     const { data: enrollments } = await supabase
