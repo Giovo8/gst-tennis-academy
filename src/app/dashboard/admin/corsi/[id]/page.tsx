@@ -278,15 +278,18 @@ export default function CorsoDetailPage() {
       if (creator) setCreatorName(creator.full_name);
     }
 
-    // Load maestros by name
-    const maestroNames = (data.instructor_name ?? "").split(", ").filter(Boolean);
-    if (maestroNames.length > 0) {
+    // Load maestros by name — merge course-level + per-lesson overrides
+    const courseInstructors = (data.instructor_name ?? "").split(", ").filter(Boolean);
+    const lessonOverrideValues = Object.values((data.lesson_instructor_overrides as Record<string, string> | null) ?? {});
+    const lessonInstructors = lessonOverrideValues.flatMap((v) => v.split(", ").filter(Boolean));
+    const allMaestroNames = Array.from(new Set([...courseInstructors, ...lessonInstructors]));
+    if (allMaestroNames.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name")
-        .in("full_name", maestroNames);
+        .in("full_name", allMaestroNames);
       const profileMap = new Map((profiles ?? []).map((p: { id: string; full_name: string }) => [p.full_name, p.id]));
-      setMaestros(maestroNames.map((name) => ({ id: profileMap.get(name), full_name: name })));
+      setMaestros(allMaestroNames.map((name) => ({ id: profileMap.get(name), full_name: name })));
     }
 
     const { data: enrollments } = await supabase
