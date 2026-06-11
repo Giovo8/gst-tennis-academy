@@ -121,7 +121,7 @@ export default function ModificaLezionePage() {
     setLoading(true);
     const { data: course } = await supabase
       .from("courses")
-      .select("name, schedule_time, lesson_time_overrides, instructor_name")
+      .select("name, schedule_time, lesson_time_overrides, instructor_name, lesson_instructor_overrides")
       .eq("id", courseId)
       .single();
 
@@ -141,7 +141,10 @@ export default function ModificaLezionePage() {
         }
         setSelectedSlots(initial);
       }
-      const maestroNames = (course.instructor_name ?? "").split(", ").filter(Boolean);
+      // Use per-lesson instructor override if present, otherwise fall back to course-level instructor
+      const instructorOverrides = (course.lesson_instructor_overrides as Record<string, string> | null) ?? {};
+      const lessonInstructor = instructorOverrides[dateParam ?? ""] ?? course.instructor_name ?? "";
+      const maestroNames = lessonInstructor.split(", ").filter(Boolean);
       setSelectedMaestros(maestroNames.map((n: string) => ({ id: n, full_name: n })));
     }
 
@@ -290,9 +293,14 @@ export default function ModificaLezionePage() {
     setError("");
 
     try {
-      const updatePayload: Record<string, unknown> = {
-        instructor_name: selectedMaestros.map((m) => m.full_name).join(", ") || null,
-      };
+      const updatePayload: Record<string, unknown> = {};
+
+      // Fetch current overrides in one call
+      const { data: courseData } = await supabase
+        .from("courses")
+        .select("lesson_time_overrides, lesson_instructor_overrides")
+        .eq("id", courseId)
+        .single();
 
       if (selectedSlots.length > 0) {
         const sorted = [...selectedSlots].sort();
@@ -300,9 +308,20 @@ export default function ModificaLezionePage() {
         const [lh, lm] = sorted[sorted.length - 1].split(":").map(Number);
         const endMin = lh * 60 + lm + 30;
         const endStr = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
-        const { data: courseData } = await supabase.from("courses").select("lesson_time_overrides").eq("id", courseId).single();
         const current = (courseData?.lesson_time_overrides as Record<string, string> | null) ?? {};
         updatePayload.lesson_time_overrides = { ...current, [dateParam]: `${startStr} \u2013 ${endStr}` };
+      }
+
+      // Save instructor override for this lesson only (never touch course-level instructor_name)
+      const currentInstructorOverrides = (courseData?.lesson_instructor_overrides as Record<string, string> | null) ?? {};
+      const newInstructorValue = selectedMaestros.map((m) => m.full_name).join(", ");
+      if (newInstructorValue) {
+        updatePayload.lesson_instructor_overrides = { ...currentInstructorOverrides, [dateParam]: newInstructorValue };
+      } else {
+        // Remove override for this date (will fall back to course-level instructor)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [dateParam]: _removed, ...remaining } = currentInstructorOverrides;
+        updatePayload.lesson_instructor_overrides = remaining;
       }
 
       const { error: saveError } = await supabase

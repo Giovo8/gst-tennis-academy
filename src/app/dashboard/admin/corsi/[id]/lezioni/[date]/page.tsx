@@ -69,7 +69,7 @@ export default function LezionePresenzePage() {
     // Load course info
     const { data: course } = await supabase
       .from("courses")
-      .select("name, schedule_time, instructor_name, lesson_time_overrides, cancelled_dates")
+      .select("name, schedule_time, instructor_name, lesson_time_overrides, lesson_instructor_overrides, cancelled_dates")
       .eq("id", courseId)
       .single();
 
@@ -77,7 +77,10 @@ export default function LezionePresenzePage() {
       setCorseName(course.name ?? "");
       setLessonTimeOverrides((course.lesson_time_overrides as Record<string, string>) ?? {});
       setCancelledDates(course.cancelled_dates ?? []);
-      const names = (course.instructor_name ?? "").split(", ").filter(Boolean);
+      // Use per-lesson instructor override if present, otherwise fall back to course-level instructor
+      const instructorOverrides = (course.lesson_instructor_overrides as Record<string, string> | null) ?? {};
+      const lessonInstructor = instructorOverrides[dateParam ?? ""] ?? course.instructor_name ?? "";
+      const names = lessonInstructor.split(", ").filter(Boolean);
       setMaestroNames(names);
     }
 
