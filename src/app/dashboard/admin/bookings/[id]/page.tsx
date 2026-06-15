@@ -578,10 +578,16 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     : status;
   const StatusIcon = displayStatus.icon;
   const bookingType = typeConfig[booking.type] || typeConfig.campo;
-  const createdByName = booking.created_by_profile?.full_name
-    || (!booking.created_by ? booking.user_profile?.full_name : null)
-    || (booking.created_by === booking.user_id ? booking.user_profile?.full_name : null)
-    || "Non disponibile";
+  const isCreatedByStaff =
+    Boolean(booking.created_by) && booking.created_by !== booking.user_id;
+  const createdByName = (() => {
+    const name =
+      booking.created_by_profile?.full_name ||
+      (!booking.created_by ? booking.user_profile?.full_name : null) ||
+      (booking.created_by === booking.user_id ? booking.user_profile?.full_name : null) ||
+      "Non disponibile";
+    return isCreatedByStaff ? `${name} (Staff)` : name;
+  })();
   const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
   const isArenaBooking =
     booking.type === "arena" ||
@@ -856,52 +862,48 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       )}
 
       {/* Pulsanti azioni */}
-      {(!isPastBooking || (isArenaBooking && Boolean(linkedChallenge?.id))) && (
-        <div className="flex flex-col sm:flex-row gap-3">
-            {isArenaBooking && linkedChallenge?.id && (
-              <Link
-                href={`${basePath}/arena/challenge/${linkedChallenge.id}`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg shadow-sm hover:bg-[#035f80]/90 transition-all font-medium"
-              >
-                Dettagli Sfida
-              </Link>
-            )}
-            {!isPastBooking && booking.status !== "cancelled" && (
-              <Link
-                href={`${basePath}/bookings/modifica?id=${booking.id}`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all font-medium"
-              >
-                Modifica
-              </Link>
-            )}
+      <div className="flex flex-col sm:flex-row gap-3">
+          {isArenaBooking && linkedChallenge?.id && (
+            <Link
+              href={`${basePath}/arena/challenge/${linkedChallenge.id}`}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#035f80] rounded-lg shadow-sm hover:bg-[#035f80]/90 transition-all font-medium"
+            >
+              Dettagli Sfida
+            </Link>
+          )}
+          {!isPastBooking && booking.status !== "cancelled" && (
+            <Link
+              href={`${basePath}/bookings/modifica?id=${booking.id}`}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all font-medium"
+            >
+              Modifica
+            </Link>
+          )}
 
-            {!isPastBooking && canCancel && (
-              <button
-                onClick={cancelBooking}
-                disabled={actionLoading}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg shadow-sm hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {actionLoading && !deleting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : null}
-                Annulla
-              </button>
-            )}
+          {!isPastBooking && canCancel && (
+            <button
+              onClick={cancelBooking}
+              disabled={actionLoading}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg shadow-sm hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {actionLoading && !deleting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : null}
+              Annulla
+            </button>
+          )}
 
-            {!isPastBooking && (
-              <button
-                onClick={deleteBooking}
-                disabled={actionLoading}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg shadow-sm hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {actionLoading && deleting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : null}
-                Elimina
-              </button>
-            )}
-        </div>
-      )}
+          <button
+            onClick={deleteBooking}
+            disabled={actionLoading}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#022431] rounded-lg shadow-sm hover:bg-[#022431]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading && deleting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : null}
+            Elimina
+          </button>
+      </div>
     </div>
   );
 }
