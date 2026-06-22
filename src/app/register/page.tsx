@@ -197,7 +197,7 @@ function RegisterForm() {
               </p>
               <div className="flex flex-col gap-3">
                 <a
-                  href="https://wa.me/393791958651"
+                  href="https://wa.me/393762351777"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-secondary text-white rounded-md text-sm font-semibold hover:opacity-90 transition-all"

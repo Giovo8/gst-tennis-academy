@@ -377,6 +377,113 @@ export async function handleBookingCreatedSideEffects({
 // ─── DELETE side effects ──────────────────────────────────────────────────────
 
 /**
+ * Side effects when a private-lesson booking is created in PENDING state.
+ * - Notifies all admins/gestori: new request awaiting approval.
+ * - Notifies the assigned coach: approval required.
+ * Does NOT send the regular "booking created" emails — those are sent on confirm.
+ */
+export async function handleBookingPendingSideEffects({
+  booking,
+  user,
+  profile,
+  participants,
+  userId,
+  ipAddress,
+  userAgent,
+  participantsInserted,
+}: {
+  booking: any;
+  user: AuthUser;
+  profile: AuthProfile | null;
+  participants?: BookingParticipantInput[];
+  userId: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  participantsInserted: number;
+}): Promise<void> {
+  const startDate = new Date(booking.start_time).toLocaleDateString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Rome",
+  });
+  const startTimeLabel = new Date(booking.start_time).toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Rome",
+  });
+
+  const { data: userProfile } = await supabaseServer
+    .from("profiles")
+    .select("full_name, email, role")
+    .eq("id", userId)
+    .single();
+
+  const athleteName = userProfile?.full_name || profile?.full_name || user.email || "Un atleta";
+
+  let coachDisplayName: string | null = null;
+  if (booking.coach_id) {
+    const { data: coachProfile } = await supabaseServer
+      .from("profiles")
+      .select("full_name")
+      .eq("id", booking.coach_id)
+      .single();
+    coachDisplayName = coachProfile?.full_name ?? null;
+  }
+
+  const adminLink = getAdminBookingNotificationLink(booking.id);
+  const coachSuffix = coachDisplayName ? ` · Maestro: ${coachDisplayName}` : "";
+
+  // Notify admins / gestori
+  await notifyAdmins({
+    type: "booking",
+    title: "Richiesta lezione privata",
+    message: `${athleteName} ha richiesto una lezione privata sul ${booking.court} il ${startDate} alle ${startTimeLabel}${coachSuffix}. Conferma o rifiuta dalla sezione prenotazioni.`,
+    link: adminLink,
+  });
+
+  // Notify the assigned coach
+  if (booking.coach_id) {
+    const { error: coachNotifError } = await supabaseServer
+      .from("notifications")
+      .insert({
+        user_id: booking.coach_id,
+        type: "booking",
+        title: "Richiesta lezione privata",
+        message: `${athleteName} ha richiesto una lezione privata sul ${booking.court} il ${startDate} alle ${startTimeLabel}. Conferma o rifiuta dalla sezione prenotazioni.`,
+        link: `/dashboard/maestro/bookings/${booking.id}`,
+        is_read: false,
+      });
+
+    if (coachNotifError) {
+      logger.warn("Failed to create coach pending lesson notification", {
+        bookingId: booking.id,
+        coachId: booking.coach_id,
+        error: coachNotifError.message,
+      });
+    }
+  }
+
+  // Activity log
+  await logActivityServer({
+    userId,
+    action: "booking.create",
+    entityType: "booking",
+    entityId: booking.id,
+    ipAddress: ipAddress ?? undefined,
+    userAgent: userAgent ?? undefined,
+    metadata: {
+      court: booking.court,
+      type: booking.type,
+      startTime: booking.start_time,
+      endTime: booking.end_time,
+      status: booking.status,
+      participantsCount: participantsInserted,
+    },
+  });
+}
+
+/**
  * After a booking is deleted from DB, send email to all recipients,
  * push notification to the athlete (if deleted by staff), and notify admins.
  * Mirrors the exact logic previously inline in the DELETE handler.

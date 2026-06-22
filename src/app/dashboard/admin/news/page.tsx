@@ -28,6 +28,7 @@ export default function AdminNewsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [aiBozzeCount, setAiBozzeCount] = useState(0);
+  const [deletingDrafts, setDeletingDrafts] = useState(false);
 
   const categoryLabels: Record<string, string> = {
     'notizie': 'Notizie',
@@ -79,7 +80,9 @@ export default function AdminNewsPage() {
     // Not needed anymore
   }
 
-  async function deleteNews(id: string) {
+  async function deleteNews(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm("Sei sicuro di voler eliminare questa news?")) return;
 
     const { error } = await supabase.from("news").delete().eq("id", id);
@@ -87,6 +90,24 @@ export default function AdminNewsPage() {
     if (error) {
       toast.error("Errore durante l'eliminazione: " + error.message);
     } else {
+      loadNews();
+    }
+  }
+
+  async function deleteAllDrafts() {
+    const drafts = news.filter((n) => !n.is_published);
+    if (drafts.length === 0) { toast.info("Nessuna bozza da eliminare"); return; }
+    if (!confirm(`Sei sicuro di voler eliminare ${drafts.length} bozze? Questa azione è irreversibile.`)) return;
+
+    setDeletingDrafts(true);
+    const ids = drafts.map((n) => n.id);
+    const { error } = await supabase.from("news").delete().in("id", ids);
+    setDeletingDrafts(false);
+
+    if (error) {
+      toast.error("Errore durante l'eliminazione: " + error.message);
+    } else {
+      toast.success(`${ids.length} bozze eliminate`);
       loadNews();
     }
   }
@@ -163,6 +184,16 @@ export default function AdminNewsPage() {
                 >
                   Crea News
                 </Link>
+                {news.some((n) => !n.is_published) && (
+                  <button
+                    onClick={deleteAllDrafts}
+                    disabled={deletingDrafts}
+                    className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-[#023b52] rounded-md hover:bg-[#023b52]/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {deletingDrafts ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    Elimina bozze
+                  </button>
+                )}
                 <Link
                   href="/dashboard/admin/news/ai"
                   title="Apri News AI (Gemini)"
@@ -226,69 +257,54 @@ export default function AdminNewsPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
               {filteredNews.map((item) => (
                 <Link
                   key={item.id}
                   href={`/dashboard/admin/news/${item.id}`}
-                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-secondary/40 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="relative aspect-video bg-gray-100 overflow-hidden">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const parent = e.currentTarget.parentElement;
-                            if (parent) {
-                              const placeholder = parent.querySelector('.placeholder');
-                              if (placeholder) {
-                                (placeholder as HTMLElement).style.display = 'flex';
-                              }
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div className={`placeholder w-full h-full flex items-center justify-center bg-secondary/5 ${item.image_url ? 'hidden' : ''}`}>
-                        <svg
-                          className="w-12 h-12 text-secondary/20"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
+                  {/* Immagine thumbnail */}
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-secondary/5">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Newspaper className="w-5 h-5 text-secondary/20" />
                       </div>
+                    )}
                   </div>
 
-                  <div className="p-4 flex flex-col gap-2 flex-1">
-                      {/* Category */}
-                      <span className="inline-block text-xs font-semibold text-secondary">
-                        {categoryLabels[item.category] || item.category}
-                      </span>
-
-                      {/* Title */}
-                      <h3 className="font-bold text-secondary text-xl sm:text-2xl line-clamp-2 leading-tight">
-                        {item.title}
-                      </h3>
-
-                      {/* Description */}
-                      <p className="text-xs text-secondary/60 line-clamp-2">
-                        {item.excerpt || item.content.substring(0, 150)}
-                      </p>
+                  {/* Titolo + categoria */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-secondary text-sm truncate">{item.title}</p>
+                    <p className="text-xs text-secondary/50 mt-0.5">
+                      {categoryLabels[item.category] || item.category}
+                      {" · "}
+                      {new Date(item.created_at).toLocaleDateString("it-IT")}
+                    </p>
                   </div>
 
-                  <div className="px-4 py-2.5 bg-secondary text-xs text-white">
-                    {new Date(item.created_at).toLocaleDateString("it-IT")}
-                    {!item.is_published && <span className="ml-2 opacity-90">• Bozza</span>}
-                  </div>
+                  {/* Badge stato */}
+                  <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    item.is_published
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {item.is_published ? "Pubblicata" : "Bozza"}
+                  </span>
+                  <button
+                    onClick={(e) => deleteNews(item.id, e)}
+                    className="flex-shrink-0 p-1.5 text-secondary/30 hover:text-red-600 transition-colors rounded"
+                    title="Elimina"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </Link>
               ))}
             </div>

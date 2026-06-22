@@ -77,7 +77,7 @@ export default function TextHeroSection() {
               Prenota un campo
             </button>
             <a
-              href="https://wa.me/393791958651"
+              href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-6 py-3.5 sm:py-3 text-white bg-[#023047] rounded-lg shadow-sm hover:bg-[#023047]/90 transition-all font-medium whitespace-nowrap"

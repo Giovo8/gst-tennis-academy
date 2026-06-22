@@ -718,9 +718,7 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Gli articoli generati con fallback locale (quota Gemini esaurita) vanno sempre
-          // in bozza per permettere revisione manuale prima della pubblicazione.
-          const stato = (!usedFallback && pubblicazioneAuto) ? "pubblicata" : "bozza";
+          const stato = pubblicazioneAuto ? "pubblicata" : "bozza";
           const isPublished = stato === "pubblicata";
           const titoloPulito = sanitizeGeneratedTitle(parsed.titolo) || `Aggiornamento Tennis – ${fonte.nome}`;
           const testoPulito = sanitizeJournalisticText(removeUnsupportedMediaMentions(parsed.testo));

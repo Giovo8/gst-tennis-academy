@@ -155,8 +155,8 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
       .single();
 
-    // Create profile if not auto-created by trigger
-    if (!profile && !profileCheckError) {
+    // Create profile if not auto-created by trigger (profile is null when trigger fails)
+    if (!profile) {
       const { error: profileError } = await supabaseAdmin.from('profiles').insert({
         id: userId,
         email,
@@ -196,8 +196,8 @@ export async function POST(request: NextRequest) {
           user_id: userId,
         });
 
-        // Log invite code usage in activity_logs
-        await supabaseAdmin.from('activity_logs').insert({
+        // Log invite code usage in activity_log
+        await supabaseAdmin.from('activity_log').insert({
           action: 'invite_code_used',
           entity_type: 'invite_code',
           entity_id: inviteCode,
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
 
     // Log successful registration
     logger.auth('User registered', userId, true);
-    await supabaseAdmin.from('activity_logs').insert({
+    await supabaseAdmin.from('activity_log').insert({
       action: 'user_registered',
       entity_type: 'user',
       entity_id: userId,

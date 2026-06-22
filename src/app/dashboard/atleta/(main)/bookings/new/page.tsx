@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
-  Calendar,
   Clock,
   Loader2,
   AlertCircle,
@@ -22,8 +21,6 @@ import {
   ModalFooter,
 } from "@/components/ui";
 import Link from "next/link";
-import { addDays, format } from "date-fns";
-import { it } from "date-fns/locale";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
@@ -484,9 +481,24 @@ function NewBookingPageInner() {
     return slot ? slot.available : false;
   };
 
-  const fullDateLabel = (() => { const s = format(selectedDate, "EEEE dd MMMM yyyy", { locale: it }); return s.charAt(0).toUpperCase() + s.slice(1); })();
-  const mobileWeekdayLabel = format(selectedDate, "EEE", { locale: it });
-  const mobileDateLabel = (() => { const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${format(selectedDate, "dd MMM yyyy", { locale: it })}`; return raw.replace(/(\d{2} )(\w)/, (_, d, c) => d + c.toUpperCase()); })();
+  function formatDateHeader(short: boolean = false): string {
+    if (short) {
+      const formatted = selectedDate.toLocaleDateString("it-IT", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      return formatted.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    }
+    const formatted = selectedDate.toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    return formatted.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
 
   const handleDateInputChange = (value: string) => {
     if (!value) return;
@@ -635,15 +647,15 @@ function NewBookingPageInner() {
       <div>
         <div className="space-y-6">
           {/* Selettore Data */}
-          <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
+          <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
             <button
-              onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-              className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
+              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
 
-            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center sm:static sm:inset-auto sm:translate-x-0 sm:min-w-0 sm:justify-center">
+            <div className="min-w-0 flex justify-center">
               <button
                 type="button"
                 onClick={openDatePickerModal}
@@ -651,29 +663,21 @@ function NewBookingPageInner() {
                 title="Scegli data"
               >
                 <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
-                  <Calendar className="h-5 w-5 text-white shrink-0" />
-                  <span
-                    className="font-bold text-white text-lg leading-none text-center whitespace-nowrap"
-                    style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
-                  >
-                    {mobileDateLabel}
+                  <span className="font-bold text-white text-xl leading-none text-center whitespace-nowrap">
+                    {formatDateHeader(true)}
                   </span>
                 </span>
                 <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
-                  <Calendar className="h-5 w-5 text-white shrink-0" />
-                  <span
-                    className="font-bold text-white text-lg leading-none text-left min-w-0 truncate max-w-none capitalize"
-                    style={{ fontFamily: 'var(--font-urbanist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
-                  >
-                    {fullDateLabel}
+                  <span className="font-bold text-white text-xl leading-none text-left min-w-0 truncate max-w-none capitalize">
+                    {formatDateHeader()}
                   </span>
                 </span>
               </button>
             </div>
 
             <button
-              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-              className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
+              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>

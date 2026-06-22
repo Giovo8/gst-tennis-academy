@@ -1046,7 +1046,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
                   </span>
 
                   {!isMaestroDashboard && (<div className="relative flex items-center justify-center flex-shrink-0">
-                    {!isMaestroDashboard && (
+                    {!isMaestroDashboard && false && (
                     <button
                       type="button"
                       onClick={(e) => {

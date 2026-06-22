@@ -16,7 +16,9 @@ export function normalizeBookingMutation<
   T extends Record<string, unknown> & { status?: string | null }
 >(bookingData: T): NormalizedBookingMutation<T> {
   const normalizedStatus =
-    bookingData.status === BOOKING_STATUS.CANCELLED || bookingData.status === BOOKING_STATUS.CANCELLATION_REQUESTED
+    bookingData.status === BOOKING_STATUS.CANCELLED ||
+    bookingData.status === BOOKING_STATUS.CANCELLATION_REQUESTED ||
+    bookingData.status === BOOKING_STATUS.PENDING
       ? bookingData.status
       : BOOKING_STATUS.CONFIRMED;
 

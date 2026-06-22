@@ -24,6 +24,8 @@ import {
   Mail,
   Phone,
   Save,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { toast } from 'sonner';
 
@@ -414,6 +416,64 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     } catch (error) {
       console.error("Errore:", error);
       toast.error(error instanceof Error ? error.message : "Errore durante l'annullamento");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function confirmBooking() {
+    if (!booking) return;
+    setActionLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) throw new Error("Sessione non valida.");
+
+      const res = await fetch(`/api/bookings/confirm?id=${booking.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        if (json.conflict) {
+          toast.error(json.error || "Conflitto: slot non più disponibile.");
+          router.push(`${basePath}/bookings/modifica?id=${booking.id}`);
+          return;
+        }
+        throw new Error(json.error || "Errore durante la conferma.");
+      }
+
+      toast.success("Lezione privata confermata.");
+      await loadBooking();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante la conferma.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function rejectBooking() {
+    if (!booking) return;
+    if (!confirm("Sei sicuro di voler rifiutare questa richiesta di lezione?")) return;
+    setActionLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) throw new Error("Sessione non valida.");
+
+      const res = await fetch(`/api/bookings/reject?id=${booking.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) throw new Error(json.error || "Errore durante il rifiuto.");
+
+      toast.success("Richiesta rifiutata.");
+      await loadBooking();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante il rifiuto.");
     } finally {
       setActionLoading(false);
     }
@@ -862,7 +922,31 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
       )}
 
       {/* Pulsanti azioni */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3">
+          {booking.type === "lezione_privata" && booking.status === "pending" && !isPastBooking && (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={confirmBooking}
+                  disabled={actionLoading}
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                  Conferma
+                </button>
+                <button
+                  onClick={rejectBooking}
+                  disabled={actionLoading}
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg shadow-sm hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                  Rifiuta
+                </button>
+              </div>
+              <hr className="border-gray-200" />
+            </>
+          )}
+          <div className="flex flex-col sm:flex-row gap-3">
           {isArenaBooking && linkedChallenge?.id && (
             <Link
               href={`${basePath}/arena/challenge/${linkedChallenge.id}`}
@@ -903,6 +987,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
             ) : null}
             Elimina
           </button>
+          </div>
       </div>
     </div>
   );

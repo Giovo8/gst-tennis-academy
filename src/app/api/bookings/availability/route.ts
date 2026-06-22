@@ -41,6 +41,7 @@ export async function GET(request: Request) {
         .eq("court", court)
         .neq("status", "cancelled")
         .neq("status", "rejected")
+        .neq("status", "pending")
         .lt("start_time", endOfDay)
         .gt("end_time", startOfDay);
 
@@ -149,6 +150,7 @@ export async function GET(request: Request) {
       .eq("court", court)
       .neq("status", "cancelled")
       .neq("status", "rejected")
+      .neq("status", "pending")
       .or(`and(start_time.lt.${slotEnd.toISOString()},end_time.gt.${slotStart.toISOString()})`);
 
     if (error) {

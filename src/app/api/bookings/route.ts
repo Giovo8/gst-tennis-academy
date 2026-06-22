@@ -12,6 +12,7 @@ import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutatio
 import { validateRestrictedBookingHours, parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
 import {
   handleBookingCreatedSideEffects,
+  handleBookingPendingSideEffects,
   handleBookingDeletedSideEffects,
 } from "@/lib/bookings/bookingService";
 
@@ -225,13 +226,20 @@ export async function POST(req: Request) {
       }
     }
 
-    // Check for overlapping active bookings on the same court
+    // Determine if this should be a pending booking:
+    // only when an athlete books a private lesson (coach approves later).
+    const shouldBePending =
+      type === "lezione_privata" && profile?.role === "atleta";
+
+    // Check for overlapping CONFIRMED bookings on the same court.
+    // Pending bookings do not occupy the slot and are intentionally excluded.
     const { data: conflicts, error: conflictError } = await supabaseServer
       .from("bookings")
       .select("id, user_id, status, start_time, end_time")
       .eq("court", court)
       .neq("status", BOOKING_STATUS.CANCELLED)
       .neq("status", BOOKING_STATUS.REJECTED)
+      .neq("status", BOOKING_STATUS.PENDING)
       .or(`and(start_time.lt.${end_time},end_time.gt.${start_time})`);
 
     if (conflictError) {
@@ -366,7 +374,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const normalizedBooking = normalizeBookingMutation(bookingData);
+    // If the booking should be pending, inject the status before normalizing.
+    // normalizeBookingMutation now passes `pending` through unchanged.
+    const bookingDataWithStatus = shouldBePending
+      ? { ...bookingData, status: BOOKING_STATUS.PENDING }
+      : bookingData;
+
+    const normalizedBooking = normalizeBookingMutation(bookingDataWithStatus);
 
     const { data, error } = await supabaseServer
       .from("bookings")
@@ -459,18 +473,32 @@ export async function POST(req: Request) {
       }
     }
 
-    // Trigger notifications, emails, and activity log
+    // Trigger notifications, emails, and activity log.
+    // Pending bookings use a separate handler that notifies admins + coach for approval.
     if (data && data[0]) {
-      await handleBookingCreatedSideEffects({
-        booking: data[0],
-        user,
-        profile,
-        participants,
-        userId: user_id,
-        ipAddress: req.headers.get("x-forwarded-for"),
-        userAgent: req.headers.get("user-agent"),
-        participantsInserted,
-      });
+      if (data[0].status === BOOKING_STATUS.PENDING) {
+        await handleBookingPendingSideEffects({
+          booking: data[0],
+          user,
+          profile,
+          participants,
+          userId: user_id,
+          ipAddress: req.headers.get("x-forwarded-for"),
+          userAgent: req.headers.get("user-agent"),
+          participantsInserted,
+        });
+      } else {
+        await handleBookingCreatedSideEffects({
+          booking: data[0],
+          user,
+          profile,
+          participants,
+          userId: user_id,
+          ipAddress: req.headers.get("x-forwarded-for"),
+          userAgent: req.headers.get("user-agent"),
+          participantsInserted,
+        });
+      }
     }
 
     const duration = Date.now() - startTime;
@@ -579,6 +607,7 @@ export async function PUT(req: Request) {
       .neq("id", id)
       .neq("status", BOOKING_STATUS.CANCELLED)
       .neq("status", BOOKING_STATUS.REJECTED)
+      .neq("status", BOOKING_STATUS.PENDING)
       .or(`and(start_time.lt.${newEndTime},end_time.gt.${newStartTime})`);
 
     if (conflictError) {

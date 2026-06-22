@@ -17,6 +17,8 @@ import {
   Target,
   Handshake,
   GraduationCap,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { toast } from 'sonner';
 
@@ -115,6 +117,8 @@ export default function BookingDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [course, setCourse] = useState<CourseData | null>(null);
   const [courseEnrollments, setCourseEnrollments] = useState<CourseEnrollment[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const hasParticipants = (currentBooking: Booking | null) =>
     (currentBooking?.participants?.length || 0) > 0;
@@ -161,6 +165,22 @@ export default function BookingDetailPage() {
       loadBooking();
     }
   }, [bookingId]);
+
+  // Load current user identity once on mount
+  useEffect(() => {
+    async function loadCurrentUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setCurrentUserId(user.id);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      setCurrentUserRole(prof?.role ?? null);
+    }
+    void loadCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (!isMaestroDashboard || !courseDate || !bookingId) return;
@@ -333,6 +353,65 @@ export default function BookingDetailPage() {
       router.push(`${dashboardBase}/bookings`);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function confirmBooking() {
+    if (!booking) return;
+    setActionLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) throw new Error("Sessione non valida.");
+
+      const res = await fetch(`/api/bookings/confirm?id=${booking.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        if (json.conflict) {
+          // Slot taken — redirect to edit so they can pick a new time
+          toast.error(json.error || "Conflitto: modifica la prenotazione.");
+          router.push(`${dashboardBase}/bookings/${booking.id}/edit`);
+          return;
+        }
+        throw new Error(json.error || "Errore durante la conferma.");
+      }
+
+      toast.success("Lezione privata confermata.");
+      await loadBooking();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante la conferma.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function rejectBooking() {
+    if (!booking) return;
+    if (!confirm("Sei sicuro di voler rifiutare questa richiesta di lezione?")) return;
+    setActionLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) throw new Error("Sessione non valida.");
+
+      const res = await fetch(`/api/bookings/reject?id=${booking.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+
+      if (!res.ok) throw new Error(json.error || "Errore durante il rifiuto.");
+
+      toast.success("Richiesta rifiutata.");
+      await loadBooking();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante il rifiuto.");
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -600,7 +679,22 @@ export default function BookingDetailPage() {
   const StatusIcon = effectiveStatus.icon;
   const isCancelled = booking.status === "cancelled";
   const isCancellationRequested = booking.status === "cancellation_requested";
-  const canCancel = !isCancelled && !isCancellationRequested && !isPast;
+  const isPending = booking.status === "pending";
+  const isConfirmedPrivateLesson =
+    booking.type === "lezione_privata" && booking.status === "confirmed";
+  const canCancel =
+    !isCancelled && !isCancellationRequested && !isPending && !isPast && !isConfirmedPrivateLesson;
+  const canCancelPendingLesson =
+    booking.type === "lezione_privata" && isPending && !isPast;
+
+  // Conferma/Rifiuta: admin, gestore, o il maestro assegnato alla lezione
+  const canApprove =
+    isPending &&
+    booking.type === "lezione_privata" &&
+    (currentUserRole === "admin" ||
+      currentUserRole === "gestore" ||
+      (currentUserRole === "maestro" && currentUserId === booking.coach_id));
+
   const displayParticipants = getDisplayParticipants(booking);
 
   // Determina icona e stile in base al tipo
@@ -619,7 +713,7 @@ export default function BookingDetailPage() {
         icon: Users,
         backgroundColor: "#023047",
         borderColor: "#023047",
-        leftBorderColor: "#011a24",
+        leftBorderColor: "#023047",
       };
     }
 
@@ -636,7 +730,7 @@ export default function BookingDetailPage() {
       icon: CalendarClock,
       backgroundColor: "var(--secondary)",
       borderColor: "var(--secondary)",
-      leftBorderColor: "#023047",
+      leftBorderColor: "var(--secondary)",
     };
   }
 
@@ -862,18 +956,45 @@ export default function BookingDetailPage() {
             Dettagli Sfida
           </Link>
         )}
-        {canCancel && (
-          <button
-            onClick={cancelBooking}
-            disabled={actionLoading}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : null
-            }
-            Annulla
-          </button>
+        {canApprove && (
+          <>
+            <button
+              onClick={confirmBooking}
+              disabled={actionLoading}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsUp className="h-5 w-5" />}
+              Conferma
+            </button>
+            <button
+              onClick={rejectBooking}
+              disabled={actionLoading}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsDown className="h-5 w-5" />}
+              Rifiuta
+            </button>
+          </>
+        )}
+        {(canCancel || canCancelPendingLesson) && (
+          <>
+            <Link
+              href={`${dashboardBase}/bookings/${booking.id}/edit`}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:opacity-90 transition-all font-medium"
+            >
+              Modifica
+            </Link>
+            <button
+              onClick={cancelBooking}
+              disabled={actionLoading}
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {actionLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : null}
+              Annulla
+            </button>
+          </>
         )}
         {isCancellationRequested && (
           <span className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg font-medium">

@@ -18,7 +18,7 @@ export default function CTASection() {
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
             <a
-              href="https://wa.me/393791958651"
+              href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all font-medium whitespace-nowrap"

@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { getDestinationForRole, type UserRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/activity/logActivity";
-import PublicNavbar from "@/components/layout/PublicNavbar";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -59,13 +59,17 @@ export default function LoginClient() {
         // Errore durante il caricamento del profilo
         console.error("Errore profilo:", profileError);
         await supabase.auth.signOut();
-        throw new Error(`Errore accesso: ${profileError.message || "Profilo non configurato"}`);
+        // PGRST116 = 0 rows returned (profilo non esiste)
+        const isNotFound = (profileError as { code?: string }).code === 'PGRST116';
+        throw new Error(isNotFound
+          ? "Profilo non trovato. Contatta l'amministratore."
+          : `Errore accesso: ${profileError.message || "Profilo non configurato"}`);
       }
 
       if (!profile) {
         // Profilo non trovato - logout e mostra errore
         await supabase.auth.signOut();
-        throw new Error("Profilo non configurato. Contatta l'amministratore.");
+        throw new Error("Profilo non trovato. Contatta l'amministratore.");
       }
 
       // Log login activity
@@ -90,7 +94,6 @@ export default function LoginClient() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto min-h-screen flex flex-col bg-gray-50">
-        <PublicNavbar />
 
         {/* Login Form */}
         <main className="flex-1 flex items-center justify-center px-6 sm:px-4 py-10">
@@ -98,7 +101,17 @@ export default function LoginClient() {
           {/* Login Card */}
           <div className="mb-4 sm:mb-10">
           <div className="mb-6 sm:mb-10 text-center">
-            <h2 className="text-[2.45rem] sm:text-4xl md:text-5xl font-bold text-secondary mb-1 sm:mb-3">Benvenuto</h2>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <Image
+                src="/images/logo-tennis.png"
+                alt="GST Tennis Academy"
+                width={48}
+                height={48}
+                priority
+                className="h-10 w-10"
+              />
+              <span className="text-3xl sm:text-4xl font-bold text-secondary">Area GST</span>
+            </div>
             <p className="text-[1.22rem] sm:text-lg text-secondary opacity-70">Accedi al tuo account</p>
           </div>
 
@@ -186,7 +199,7 @@ export default function LoginClient() {
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <a
-              href="https://wa.me/393791958651"
+              href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-12 items-center gap-2 px-5 bg-secondary text-white rounded-md text-sm font-semibold hover:opacity-90 transition-all"
