@@ -341,7 +341,10 @@ export async function POST(req: Request) {
         const mp = (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).find((p) => p.days.includes(dayName));
         if (mp?.court) courseCourtForDay = mp.court;
       }
-      if (courseCourtForDay && courseCourtForDay !== court) return false;
+      const normalizedCourseCourt = courseCourtForDay?.trim();
+      // Courses without a resolved court for the day must not block court bookings.
+      if (!normalizedCourseCourt) return false;
+      if (normalizedCourseCourt !== court) return false;
       // lesson_time_overrides: per-date time override has highest priority
       if (c.lesson_time_overrides && (c.lesson_time_overrides as Record<string, string>)[dateStr]) {
         timeStr = (c.lesson_time_overrides as Record<string, string>)[dateStr];
