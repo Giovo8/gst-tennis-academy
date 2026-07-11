@@ -348,7 +348,7 @@ export default function CreateNewsPage() {
         {/* Main Content */}
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni News</h2>
               </div>
@@ -365,7 +365,7 @@ export default function CreateNewsPage() {
                       placeholder="Es. Torneo di Primavera 2026"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                       required
                     />
                   </div>
@@ -380,7 +380,7 @@ export default function CreateNewsPage() {
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-black/10"
                       required
                     >
                       <option value="">Seleziona categoria</option>
@@ -420,7 +420,7 @@ export default function CreateNewsPage() {
                       )}
                     </div>
                     {imageUrl && (
-                      <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 bg-secondary/5 mt-3">
+                      <div className="relative w-full rounded-xl overflow-hidden border border-black/10 bg-secondary/5 mt-3">
                         <div className="aspect-video w-full">
                           <img
                             src={imageUrl}
@@ -456,7 +456,7 @@ export default function CreateNewsPage() {
                       value={summary}
                       onChange={(e) => setSummary(e.target.value)}
                       rows={8}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
                       required
                     />
                     <p className="text-xs text-secondary/50 mt-1">{summary.length} caratteri</p>
@@ -562,7 +562,7 @@ export default function CreateNewsPage() {
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
                       placeholder="https://esempio.com/immagine.jpg"
-                      className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                      className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
                       onKeyDown={(e) => e.key === "Enter" && handleImageUrl()}
                     />
                     <button

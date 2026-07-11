@@ -916,7 +916,7 @@ export default function MaestroOverviewPage({
 
       {/* DISTRIBUZIONE SETTIMANA + FASCE ORARIE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">
               Distribuzione oraria
@@ -927,7 +927,7 @@ export default function MaestroOverviewPage({
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">
               Ore questa settimana
@@ -940,7 +940,7 @@ export default function MaestroOverviewPage({
       </div>
 
       {/* MONTHLY BAR CHART */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">
             Storico lezioni
@@ -1020,9 +1020,9 @@ function WeekdayChart({ data, todayIdx }: { data: WeekdayPoint[]; todayIdx: numb
               {d.label}
             </span>
             <div className="flex-1 relative h-8">
-              <div className="absolute inset-0 bg-secondary/5 rounded-md" />
+              <div className="absolute inset-0 bg-secondary/5 rounded-lg" />
               <div
-                className={`absolute inset-y-0 left-0 rounded-md transition-all flex items-center justify-end pr-2`}
+                className={`absolute inset-y-0 left-0 rounded-lg transition-all flex items-center justify-end pr-2`}
                 style={{
                   width: `${pct}%`,
                   minWidth: d.count > 0 ? '2.5rem' : '0',
@@ -1062,9 +1062,9 @@ function HourBucketChart({ data }: { data: HourBucketPoint[] }) {
         return (
           <div key={d.label} className="flex flex-col items-center gap-1.5 flex-1 h-full">
             <div className="w-full flex-1 relative">
-              <div className="absolute inset-0 bg-secondary/5 rounded-md" />
+              <div className="absolute inset-0 bg-secondary/5 rounded-lg" />
               <div
-                className="absolute bottom-0 left-0 right-0 rounded-md transition-all flex items-start justify-center pt-1.5"
+                className="absolute bottom-0 left-0 right-0 rounded-lg transition-all flex items-start justify-center pt-1.5"
                 style={{
                   height: `${pct}%`,
                   minHeight: '2.5rem',
@@ -1118,9 +1118,9 @@ function MonthlyLessonsChart({ data }: { data: MonthlyPoint[] }) {
           return (
             <div key={point.monthKey} className="flex flex-col items-center gap-1.5 flex-1 min-w-[2rem] h-full">
               <div className="w-full flex-1 relative">
-                <div className="absolute inset-0 bg-secondary/5 rounded-md" />
+                <div className="absolute inset-0 bg-secondary/5 rounded-lg" />
                 <div
-                  className="absolute bottom-0 left-0 right-0 rounded-md transition-all flex items-start justify-center pt-3"
+                  className="absolute bottom-0 left-0 right-0 rounded-lg transition-all flex items-start justify-center pt-3"
                   style={{
                     height: `${pct}%`,
                     minHeight: point.lessonsCount === 0 ? '0.5rem' : '2.5rem',
@@ -1263,7 +1263,7 @@ function UpcomingItem({
           </p>
           <div className="mt-1.5">
             <span
-              className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide ${typeCls}`}
+              className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wide ${typeCls}`}
             >
               {typeLabel}
             </span>

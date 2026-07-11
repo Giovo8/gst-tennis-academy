@@ -68,7 +68,7 @@ export default function PublicNavbar({ home = false }: PublicNavbarProps) {
     <nav
       className={home
         ? "bg-secondary fixed top-4 left-6 right-6 z-50 border border-black/10 rounded-lg shadow-none [transform:translateZ(0)] lg:sticky lg:top-0 lg:mx-0 lg:mt-0 lg:border lg:border-black/10 lg:rounded-none lg:shadow-sm"
-        : "bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-gray-200 [transform:translateZ(0)]"
+        : "bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-black/10 [transform:translateZ(0)]"
       }
     >
       <div className={home ? "relative max-w-7xl mx-auto px-4" : "relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"}>

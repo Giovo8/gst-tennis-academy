@@ -228,7 +228,7 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Video Info & Details Combined */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
           </div>
@@ -281,7 +281,7 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Assigned Users */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
           </div>
@@ -318,14 +318,14 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Note */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-3">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             {notesDirty && (
               <button
                 onClick={handleSaveNotes}
                 disabled={notesSaving}
-                className="px-4 py-1.5 text-xs font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all disabled:opacity-60 inline-flex items-center gap-2"
+                className="px-4 py-1.5 text-xs font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all disabled:opacity-60 inline-flex items-center gap-2"
               >
                 {notesSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Salva
@@ -341,7 +341,7 @@ export default function VideoDetailPage() {
               }}
               rows={5}
               placeholder="Aggiungi note interne su questo video..."
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 resize-y"
+              className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-y"
             />
           </div>
         </div>

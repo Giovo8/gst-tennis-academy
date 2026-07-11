@@ -207,7 +207,7 @@ export default function NewTournamentPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit}>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+        <div className="bg-white rounded-xl border border-black/10 p-6 space-y-6">
           {/* Tipo competizione */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -270,7 +270,7 @@ export default function NewTournamentPage() {
                     max="8"
                     value={formData.num_groups}
                     onChange={(e) => handleGroupConfigChange('num_groups', Number(e.target.value))}
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function NewTournamentPage() {
                     max="8"
                     value={formData.teams_per_group}
                     onChange={(e) => handleGroupConfigChange('teams_per_group', Number(e.target.value))}
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
@@ -302,7 +302,7 @@ export default function NewTournamentPage() {
                     max={formData.teams_per_group - 1}
                     value={formData.teams_advancing}
                     onChange={(e) => handleGroupConfigChange('teams_advancing', Number(e.target.value))}
-                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function NewTournamentPage() {
                   max="30"
                   value={formData.max_participants}
                   onChange={(e) => handleParticipantsChange(Number(e.target.value))}
-                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
@@ -354,7 +354,7 @@ export default function NewTournamentPage() {
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Es: Torneo Open Estivo 2025"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
               />
             </div>
           </div>
@@ -370,7 +370,7 @@ export default function NewTournamentPage() {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Descrivi il torneo..."
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
               />
             </div>
           </div>
@@ -387,7 +387,7 @@ export default function NewTournamentPage() {
                   type="date"
                   value={formData.start_date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
               <div>
@@ -396,7 +396,7 @@ export default function NewTournamentPage() {
                   type="date"
                   value={formData.end_date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
@@ -411,7 +411,7 @@ export default function NewTournamentPage() {
               <select
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="Open">Open</option>
                 <option value="Under 18">Under 18</option>
@@ -431,7 +431,7 @@ export default function NewTournamentPage() {
               <select
                 value={formData.match_format}
                 onChange={(e) => setFormData(prev => ({ ...prev, match_format: e.target.value }))}
-                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/50"
+                className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="best_of_3">Al meglio di 3 set</option>
                 <option value="best_of_5">Al meglio di 5 set</option>

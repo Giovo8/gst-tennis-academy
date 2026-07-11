@@ -172,7 +172,7 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-secondary outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
+                  className="w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-secondary outline-none focus:ring-0 focus:border-black/10 transition-all"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nome e Cognome"
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="email"
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-secondary/60 outline-none cursor-not-allowed"
+                  className="w-full rounded-lg border border-black/10 bg-gray-50 px-4 py-2.5 text-secondary/60 outline-none cursor-not-allowed"
                   value={profile?.email ?? ""}
                   readOnly
                 />
@@ -243,7 +243,7 @@ export default function ProfilePage() {
             </button>
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-2 justify-center rounded-lg border border-gray-200 px-6 py-2.5 text-sm font-semibold text-secondary transition hover:bg-gray-50"
+              className="inline-flex items-center gap-2 justify-center rounded-lg border border-black/10 px-6 py-2.5 text-sm font-semibold text-secondary transition hover:bg-gray-50"
             >
               <LogOut className="h-4 w-4" />
               Logout

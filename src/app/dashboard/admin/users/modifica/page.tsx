@@ -637,34 +637,16 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <div>
-          <p className="breadcrumb text-secondary/60 mb-1">
-            <Link
-              href={`${basePath}/users`}
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Gestione Utenti
-            </Link>
-            {" › "}
-            <span>Modifica Utente</span>
-          </p>
-          <h1 className="text-4xl font-bold text-secondary">Modifica Utente</h1>
-        </div>
-      </div>
+    <div className="space-y-6 pt-3">
 
       {/* Header card utente */}
       {(() => {
         const RoleIcon = roleLabels[formData.role].icon;
         return (
           <div
-            className="rounded-xl border-t border-r border-b p-6 border-l-4 transition-all"
+            className="rounded-lg border border-black/10 p-6 transition-all"
             style={{
               backgroundColor: roleLabels[formData.role].bgColor,
-              borderColor: roleLabels[formData.role].bgColor,
-              borderLeftColor: roleLabels[formData.role].borderLeftColor,
             }}
           >
             <div className="flex items-start gap-6">
@@ -681,8 +663,8 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
       <form onSubmit={updateUser} className="space-y-6">
         {/* Sezione Dati Anagrafici */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Anagrafici</h2>
           </div>
           <div className="px-6 py-6">
@@ -695,7 +677,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="text"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Mario Rossi"
                   required
                 />
@@ -710,7 +692,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="utente@esempio.com"
                   required
                 />
@@ -725,7 +707,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="+39 123 456 7890"
                 />
               </div>
@@ -750,7 +732,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     value={dateTexts.date_of_birth}
                     onChange={(e) => handleDateTextChange("date_of_birth", e.target.value)}
                     maxLength={10}
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
@@ -764,7 +746,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="text"
                   value={formData.birth_city}
                   onChange={(e) => setFormData({ ...formData, birth_city: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Roma"
                 />
               </div>
@@ -778,7 +760,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="text"
                   value={formData.fiscal_code}
                   onChange={(e) => setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
                   placeholder="RSSMRA80A01H501U"
                   maxLength={16}
                 />
@@ -793,7 +775,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Via Roma, 123"
                 />
               </div>
@@ -807,7 +789,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Milano"
                 />
                 <div className="flex gap-2 sm:gap-3">
@@ -815,7 +797,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     type="text"
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
-                    className="w-20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
+                    className="w-20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
                     placeholder="MI"
                     maxLength={2}
                   />
@@ -823,7 +805,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     type="text"
                     value={formData.postal_code}
                     onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                    className="w-24 sm:w-28 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-24 sm:w-28 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="20100"
                     maxLength={5}
                   />
@@ -834,7 +816,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             {/* Ruolo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Ruolo *</label>
-              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {Object.entries(roleLabels).map(([role, info]) => (
                   <button
                     key={role}
@@ -846,7 +828,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                         also_maestro: ["admin", "gestore"].includes(role) ? prev.also_maestro : false,
                       }))
                     }
-                    className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                    className={`w-full px-4 py-2 text-sm text-center rounded-lg border transition-all ${
                       formData.role === role
                         ? 'bg-secondary text-white border-secondary'
                         : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -887,7 +869,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Eventuali note..."
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
                 />
               </div>
             </div>
@@ -895,9 +877,10 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           </div>
         </div>
 
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
         {/* Sezione Informazioni Corsi */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-1">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
           </div>
           <div className="px-6 py-6">
@@ -907,12 +890,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
                 <div className="flex-1 space-y-3">
                   {formData.certificato_medico_url ? (
-                    <div className="flex items-center gap-3">
+                    <div className="flex w-full items-stretch gap-2">
                       <a
                         href={formData.certificato_medico_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 h-12 px-4 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
                       >
                         Visualizza PDF
                       </a>
@@ -927,12 +910,12 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                       </button>
                     </div>
                   ) : (
-                    <div>
+                    <div className="flex w-full items-stretch gap-2">
                       <button
                         type="button"
                         onClick={() => setShowCertificatoModal(true)}
                         disabled={uploadingCertificato}
-                        className="h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-lg border border-secondary bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {uploadingCertificato ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         {uploadingCertificato ? "Caricamento..." : "Carica PDF"}
@@ -961,7 +944,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                       value={dateTexts.certificato_medico_scadenza}
                       onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
                       maxLength={10}
-                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                   </div>
                 </div>
@@ -996,7 +979,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     type="text"
                     value={formData.numero_tessera}
                     onChange={(e) => setFormData({ ...formData, numero_tessera: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="es. FIT-123456"
                   />
                 </div>
@@ -1021,7 +1004,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                       value={dateTexts.tesserato_scadenza}
                       onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
                       maxLength={10}
-                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                   </div>
                 </div>
@@ -1032,49 +1015,62 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         </div>
 
         {/* Sezione Avatar */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-2">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
           </div>
           <div className="px-6 py-6">
-            <div className="flex flex-col items-start gap-4">
-            <div className="w-80 h-80 rounded-xl bg-secondary/10 overflow-hidden flex items-center justify-center border border-gray-200 flex-shrink-0">
-              {uploadingAvatar ? (
-                <Loader2 className="h-7 w-7 animate-spin text-secondary" />
-              ) : user.avatar_url ? (
-                <img src={user.avatar_url} alt={user.full_name || "Avatar"} className="w-full h-full object-cover" />
-              ) : (
-                <User className="h-40 w-40 text-secondary" />
-              )}
-            </div>
-            <div className={`w-80 ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
-              <button
-                type="button"
-                onClick={() => setShowAvatarModal(true)}
-                disabled={uploadingAvatar}
-                className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${user.avatar_url ? "flex-1" : "w-full"}`}
-              >
-                Cambia Avatar
-              </button>
-              {user.avatar_url && (
+            <div className="flex flex-col gap-4">
+              <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden border border-black/10 lg:aspect-[4/3]">
+                {uploadingAvatar ? (
+                  <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                    <Loader2 className="h-7 w-7 animate-spin text-secondary" />
+                  </div>
+                ) : user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.full_name || "Avatar"}
+                    className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
+                  />
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                    <span className="text-5xl font-bold text-secondary">
+                      {getInitials(user.full_name, user.email)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className={`w-full ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
                 <button
                   type="button"
-                  onClick={handleRemoveAvatar}
+                  onClick={() => setShowAvatarModal(true)}
                   disabled={uploadingAvatar}
-                  aria-label="Elimina avatar"
-                  className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    user.avatar_url ? "flex-1" : "w-full"
+                  }`}
                 >
-                  <X className="h-4 w-4" />
+                  Cambia Avatar
                 </button>
-              )}
-            </div>
+                {user.avatar_url && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={uploadingAvatar}
+                    aria-label="Elimina avatar"
+                    className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
+        </div>
 
         {/* Sezione Info Sistema */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Info Sistema</h2>
           </div>
           <div className="px-6 py-6">
@@ -1120,7 +1116,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           <button
             type="submit"
             disabled={updating}
-            className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
+            className="flex-1 min-w-[140px] px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50"
           >
             {updating ? "Salvataggio..." : "Salva Modifiche"}
           </button>
@@ -1129,7 +1125,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             type="button"
             onClick={handleResetPassword}
             disabled={resettingPassword}
-            className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-w-[140px] px-6 py-3 text-sm font-medium text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resettingPassword ? "Invio in corso..." : "Resetta Password"}
           </button>
@@ -1138,7 +1134,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
             type="button"
             onClick={handleDeleteUser}
             disabled={deletingUser}
-            className="flex-1 min-w-[140px] px-8 py-4 text-base font-semibold text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-w-[140px] px-6 py-3 text-sm font-medium text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {deletingUser ? "Eliminazione..." : "Elimina"}
           </button>
@@ -1155,11 +1151,11 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           </ModalHeader>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
             <div className="space-y-3">
-            <div className="space-y-6 pt-3">
+              <div className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -1170,7 +1166,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -1190,7 +1186,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth
@@ -1288,7 +1284,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     value={certificatoLinkUrl}
                     onChange={(e) => setCertificatoLinkUrl(e.target.value)}
                     placeholder="https://esempio.com/certificato.pdf"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                    className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                     onKeyDown={(e) => e.key === 'Enter' && handleCertificatoUrl()}
                   />
                   <button
@@ -1370,7 +1366,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                    className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                     onKeyDown={(e) => e.key === 'Enter' && handleAvatarUrl()}
                   />
                   <button

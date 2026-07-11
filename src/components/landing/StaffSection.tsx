@@ -244,7 +244,7 @@ export default function StaffSection() {
           {staff.map((member, i) => (
             <article
               key={`${member.id}-${i}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex-shrink-0 w-72 sm:w-80 snap-center"
+              className="group flex flex-col bg-white border border-black/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex-shrink-0 w-72 sm:w-80 snap-center"
             >
               {/* 16/9 image */}
               <div className="relative w-full aspect-square overflow-hidden bg-gray-100">

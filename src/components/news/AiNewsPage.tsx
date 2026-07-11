@@ -218,7 +218,7 @@ export default function AiNewsPage() {
               const isEditing = editingId === item.id;
               const itemSaving = savingId === item.id;
               return (
-                <article key={item.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <article key={item.id} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span className="rounded-full bg-violet-100 px-2 py-1 text-xs font-semibold text-violet-700">AI</span>
                     {item.category ? (
@@ -300,7 +300,7 @@ export default function AiNewsPage() {
           </div>
         )}
 
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-secondary/80">
+        <div className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-secondary/80">
           Bozze in attesa visualizzate: <strong>{pendingCount}</strong>
           <button type="button" onClick={() => loadNews()} className="ml-3 inline-flex items-center gap-1 text-secondary hover:underline">
             <RefreshCw className="h-4 w-4" /> Aggiorna

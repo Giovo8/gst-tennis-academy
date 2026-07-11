@@ -13,12 +13,19 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get("limit") || "50");
+    const action = url.searchParams.get("action");
 
-    const { data: logs, error } = await supabaseServer
+    let query = supabaseServer
       .from("activity_log")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(limit);
+
+    if (action) {
+      query = query.eq("action", action);
+    }
+
+    const { data: logs, error } = await query;
 
     if (error) {
       logger.error("Error loading activity logs:", error);

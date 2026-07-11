@@ -225,7 +225,7 @@ export default function MaestroCorsoDetailPage() {
       </div>
 
       {/* Dettagli */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
@@ -262,7 +262,7 @@ export default function MaestroCorsoDetailPage() {
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div key={i} className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
@@ -310,7 +310,7 @@ export default function MaestroCorsoDetailPage() {
 
       {/* Maestri */}
       {maestros.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
@@ -341,7 +341,7 @@ export default function MaestroCorsoDetailPage() {
       )}
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -388,7 +388,7 @@ export default function MaestroCorsoDetailPage() {
       </div>
 
       {/* Lezioni */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>

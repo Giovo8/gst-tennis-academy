@@ -300,7 +300,7 @@ export default function NotificationsList({
               placeholder="Cerca per titolo, messaggio o data..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
             />
           </div>
           {showFilterButton && (
@@ -309,7 +309,7 @@ export default function NotificationsList({
               onClick={() => setIsFilterModalOpen(true)}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
                 hasActiveFilters
-                  ? "border-secondary bg-secondary text-white hover:opacity-90"
+                  ? "border-black/10 bg-secondary text-white hover:opacity-90"
                   : "border-black/10 bg-white text-secondary hover:bg-gray-50"
               }`}
               aria-label="Apri filtri notifiche"
@@ -465,7 +465,7 @@ export default function NotificationsList({
                 value={userFilter}
                 onChange={(e) => setUserFilter(e.target.value)}
                 placeholder="Es. Mario Rossi"
-                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
               />
             </div>
 
@@ -477,7 +477,7 @@ export default function NotificationsList({
                 id="notifications-read-filter"
                 value={readFilter}
                 onChange={(e) => setReadFilter(e.target.value as "all" | "unread" | "read")}
-                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="all">Tutte</option>
                 <option value="unread">Solo non lette</option>
@@ -493,7 +493,7 @@ export default function NotificationsList({
                 id="notifications-type-filter"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="all">Tutti i tipi</option>
                 {notificationTypes.map((type) => (

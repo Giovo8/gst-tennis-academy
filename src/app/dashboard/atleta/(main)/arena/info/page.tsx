@@ -24,7 +24,7 @@ export default function InfoPage() {
       {/* Content */}
       <div className="space-y-6">
           {/* Regole Generali */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Regole Generali</h2>
             </div>
@@ -51,7 +51,7 @@ export default function InfoPage() {
           </div>
 
           {/* Sistema di Punteggio */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Sistema di Punteggio</h2>
             </div>
@@ -60,7 +60,7 @@ export default function InfoPage() {
               {/* Best-of-1 */}
               <div>
                 <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Set singolo</p>
-                <div className="overflow-hidden rounded-lg border border-gray-200">
+                <div className="overflow-hidden rounded-lg border border-black/10">
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr>
@@ -83,7 +83,7 @@ export default function InfoPage() {
               {/* Best-of-3 */}
               <div>
                 <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 3 set</p>
-                <div className="overflow-hidden rounded-lg border border-gray-200">
+                <div className="overflow-hidden rounded-lg border border-black/10">
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr>
@@ -111,7 +111,7 @@ export default function InfoPage() {
               {/* Best-of-5 */}
               <div>
                 <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 5 set</p>
-                <div className="overflow-hidden rounded-lg border border-gray-200">
+                <div className="overflow-hidden rounded-lg border border-black/10">
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr>

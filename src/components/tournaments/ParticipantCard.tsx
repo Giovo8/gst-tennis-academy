@@ -41,7 +41,7 @@ export function ParticipantCard({
 
   return (
     <div
-      className={`bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4 ${
+      className={`bg-white rounded-lg px-5 py-4 border border-black/10 hover:border-gray-300 transition-all border-l-4 ${
         isGuest ? "border-l-gray-300" : "border-l-secondary"
       }`}
     >
@@ -98,7 +98,7 @@ export function ParticipantCard({
             </button>
             {openMenuId === participant.id && (
               <div
-                className="absolute right-0 top-9 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1"
+                className="absolute right-0 top-9 z-20 bg-white border border-black/10 rounded-lg shadow-lg min-w-[160px] py-1"
                 onClick={() => onMenuToggle(null)}
               >
                 {currentPhase === "iscrizioni" && (

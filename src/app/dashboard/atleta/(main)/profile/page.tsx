@@ -334,7 +334,7 @@ export default function AthleteProfilePage({
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
           </div>
           <div className="flex flex-1 p-6">
-            <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden flex-1 border border-gray-200 lg:min-h-[360px]">
+            <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden flex-1 border border-black/10 lg:min-h-[360px]">
               {user.avatar_url ? (
                 <img
                   src={user.avatar_url}
@@ -610,7 +610,7 @@ export default function AthleteProfilePage({
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
-                    className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary"
+                    className="flex-1 rounded-lg border border-black/10 bg-white px-4 py-3 text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
                     onKeyDown={(e) => e.key === "Enter" && handleAvatarUrl()}
                   />
                   <button

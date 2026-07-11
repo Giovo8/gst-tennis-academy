@@ -133,7 +133,7 @@ export default function LoginClient() {
               <input
                 id="email"
                 type="email"
-                className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 placeholder="nome@esempio.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -151,7 +151,7 @@ export default function LoginClient() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 pr-12"
+                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

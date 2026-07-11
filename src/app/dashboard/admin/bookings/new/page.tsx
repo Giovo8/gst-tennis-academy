@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -899,7 +899,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
             <button
               onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
-              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
@@ -908,7 +908,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
               <button
                 type="button"
                 onClick={openDatePickerModal}
-                className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
+                className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
                 <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
@@ -926,7 +926,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
             <button
               onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
-              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>
@@ -1168,7 +1168,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                           <div
                             key={booking.id}
                             onClick={() => openEntryModal(booking)}
-                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-pointer hover:opacity-90 transition-opacity"
                             style={{
                               ...getBookingStyle(),
                               left: `${(startSlot / 32) * 100}%`,
@@ -1295,7 +1295,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -1306,7 +1306,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -1326,7 +1326,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth

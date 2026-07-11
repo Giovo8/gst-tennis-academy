@@ -123,7 +123,7 @@ function AdminTorneiPageInner() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => router.push('/dashboard/admin/tornei/new')}
-            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             Nuovo Torneo
           </button>
@@ -139,13 +139,13 @@ function AdminTorneiPageInner() {
             placeholder="Cerca per nome, descrizione o categoria..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
         <button
           type="button"
           onClick={() => setIsFilterModalOpen(true)}
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
             hasActiveFilters
               ? "border-secondary bg-secondary text-white hover:opacity-90"
               : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
@@ -164,7 +164,7 @@ function AdminTorneiPageInner() {
           <p className="mt-4 text-secondary/60">Caricamento tornei...</p>
         </div>
       ) : filteredTournaments.length === 0 ? (
-        <div className="text-center py-20 rounded-md bg-white">
+        <div className="text-center py-20 rounded-lg bg-white">
           <Trophy className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessun torneo trovato</h3>
           <p className="text-secondary/60">Crea il tuo primo torneo</p>
@@ -249,7 +249,7 @@ function AdminTorneiPageInner() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setMenuPosition(null); }} />
                         <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
                           style={{ top: menuPosition.top, right: menuPosition.right }}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -298,7 +298,7 @@ function AdminTorneiPageInner() {
             <h3 className="text-xl font-bold text-secondary">Gestione torneo</h3>
             <button
               onClick={() => setManagingTournamentId(null)}
-              className="px-4 py-2 text-sm font-medium text-secondary/70 bg-secondary/5 rounded-md hover:bg-secondary/10 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-secondary/70 bg-secondary/5 rounded-lg hover:bg-secondary/10 transition-colors"
             >
               Chiudi
             </button>
@@ -347,7 +347,7 @@ function AdminTorneiPageInner() {
                 id="tornei-type-filter"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="all">Tutti i tipi</option>
                 <option value="eliminazione_diretta">Eliminazione Diretta</option>
@@ -364,7 +364,7 @@ function AdminTorneiPageInner() {
                 id="tornei-status-filter"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 <option value="all">Tutti gli stati</option>
                 <option value="Aperto">Aperto</option>

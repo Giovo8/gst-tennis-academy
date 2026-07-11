@@ -109,7 +109,7 @@ export default function AdminNewsDetailPage() {
             <h1 className="text-4xl font-bold text-secondary">Dettaglio News</h1>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-black/10 p-6">
             <p className="text-secondary/60">{error || "News non trovata"}</p>
           </div>
         </div>
@@ -129,14 +129,14 @@ export default function AdminNewsDetailPage() {
           <h1 className="text-4xl font-bold text-secondary">Dettaglio News</h1>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni News</h2>
           </div>
 
           <div className="p-6 space-y-6">
             {news.image_url && (
-              <div className="rounded-xl overflow-hidden border border-gray-200 bg-secondary/5">
+              <div className="rounded-xl overflow-hidden border border-black/10 bg-secondary/5">
                 <img src={news.image_url} alt={news.title} className="w-full h-auto object-cover" />
               </div>
             )}

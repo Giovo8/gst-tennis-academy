@@ -161,7 +161,7 @@ export default function AdminNewsBoard() {
 
   if (filteredPosts.length === 0) {
     return (
-      <div className="text-center py-12 border border-gray-200 rounded-2xl bg-white">
+      <div className="text-center py-12 border border-black/10 rounded-2xl bg-white">
         <p className="text-secondary/80 font-medium">Nessuna news disponibile al momento.</p>
       </div>
     );
@@ -176,7 +176,7 @@ export default function AdminNewsBoard() {
           className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
             activeCategory === "tutte"
               ? "bg-secondary text-white"
-              : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
+              : "border border-black/10 text-secondary/70 hover:border-secondary hover:text-secondary"
           }`}
         >
           Tutte
@@ -188,7 +188,7 @@ export default function AdminNewsBoard() {
             className={`text-sm px-4 py-2 rounded-xl font-medium transition-colors ${
               activeCategory === cat
                 ? "bg-secondary text-white"
-                : "border border-gray-200 text-secondary/70 hover:border-secondary hover:text-secondary"
+                : "border border-black/10 text-secondary/70 hover:border-secondary hover:text-secondary"
             }`}
           >
             {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -202,7 +202,7 @@ export default function AdminNewsBoard() {
           <Link
             key={post.id}
             href={`/news/${post.id}`}
-            className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+            className="flex flex-col bg-white border border-black/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           >
             {/* Image */}
             <div className="w-full aspect-[16/9] overflow-hidden">
@@ -261,7 +261,7 @@ export default function AdminNewsBoard() {
           <button
             onClick={() => updatePage(safeCurrentPage - 1)}
             disabled={safeCurrentPage <= 1}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed hover:border-secondary hover:text-secondary transition-colors"
+            className="px-4 py-2 rounded-xl border border-black/10 text-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed hover:border-secondary hover:text-secondary transition-colors"
           >
             Precedente
           </button>
@@ -271,7 +271,7 @@ export default function AdminNewsBoard() {
           <button
             onClick={() => updatePage(safeCurrentPage + 1)}
             disabled={safeCurrentPage >= totalPages}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed hover:border-secondary hover:text-secondary transition-colors"
+            className="px-4 py-2 rounded-xl border border-black/10 text-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed hover:border-secondary hover:text-secondary transition-colors"
           >
             Successiva
           </button>

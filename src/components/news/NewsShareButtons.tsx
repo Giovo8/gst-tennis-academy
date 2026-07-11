@@ -56,7 +56,7 @@ export default function NewsShareButtons({ url, title }: Props) {
           href={links.whatsapp}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
           aria-label="Condividi su WhatsApp"
         >
           <WhatsAppBrandIcon className="h-4 w-4" />
@@ -66,7 +66,7 @@ export default function NewsShareButtons({ url, title }: Props) {
           href={links.facebook}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
           aria-label="Condividi su Facebook"
         >
           <Facebook className="h-4 w-4" />
@@ -76,7 +76,7 @@ export default function NewsShareButtons({ url, title }: Props) {
           href={links.x}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
           aria-label="Condividi su X"
         >
           <XBrandIcon className="h-4 w-4" />
@@ -85,7 +85,7 @@ export default function NewsShareButtons({ url, title }: Props) {
         <button
           type="button"
           onClick={copyLink}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-white p-0 text-sm font-medium text-secondary hover:bg-gray-50 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-2"
           aria-label="Copia link della notizia"
         >
           {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}

@@ -193,7 +193,7 @@ export default function InviteCodeDetailPage() {
       </div>
 
       {/* Dettagli */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Codice</h2>
         </div>
@@ -256,7 +256,7 @@ export default function InviteCodeDetailPage() {
       </div>
 
       {/* Utilizzatori */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Utilizzatori</h2>
         </div>
@@ -272,7 +272,7 @@ export default function InviteCodeDetailPage() {
                   placeholder="Cerca per nome o email..."
                   value={usersSearch}
                   onChange={(e) => setUsersSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
               {(() => {

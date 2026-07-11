@@ -247,7 +247,7 @@ function AtletaTournamentDetailInner() {
           <p className="text-secondary/70 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
           <button
             onClick={() => router.push(`${dashboardBase}/tornei`)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-md font-medium hover:opacity-90 transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-lg font-medium hover:opacity-90 transition-all"
           >
             Torna ai Tornei
           </button>
@@ -282,7 +282,7 @@ function AtletaTournamentDetailInner() {
 
       {/* Messaggio errore globale */}
       {error && (
-        <div className="p-4 rounded-md bg-red-50 border border-red-200">
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200">
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
@@ -302,7 +302,7 @@ function AtletaTournamentDetailInner() {
 
       {/* Badge iscritto */}
       {joined && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 border-l-4" style={{ borderLeftColor: 'var(--primary)' }}>
+        <div className="bg-white border border-black/10 rounded-xl p-4 border-l-4" style={{ borderLeftColor: 'var(--primary)' }}>
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--primary)' }} />
             <h3 className="text-lg font-bold text-secondary">Sei iscritto a questo torneo</h3>
@@ -311,7 +311,7 @@ function AtletaTournamentDetailInner() {
       )}
 
       {/* Dettagli torneo */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white border border-black/10 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
 
         <div className="space-y-6">
@@ -415,7 +415,7 @@ function AtletaTournamentDetailInner() {
 
       {/* Tournament Manager (Partecipanti/Tabellone/Gironi/Calendario/Classifica) */}
       {currentParticipants > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border border-black/10 rounded-xl p-6">
           <TournamentManagerWrapper
             tournamentId={tournament.id}
             isAdmin={false}

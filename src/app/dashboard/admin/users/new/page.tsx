@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { UserPlus, Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useEffect } from "react";
 
@@ -124,16 +123,6 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
 
   return (
     <div className="space-y-6 pt-3">
-      {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link href={`${basePath}/users`} className="hover:text-secondary/80 transition-colors">Anagrafica Utenti</Link>
-          {" › "}
-          <span>Crea Utente</span>
-        </p>
-        <h1 className="text-4xl font-bold text-secondary">Crea Utente</h1>
-      </div>
-
       {/* Messages */}
       {error && (
         <div className="mt-2">
@@ -161,7 +150,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informazioni Account */}
-        <div className="bg-white border border-gray-200 rounded-xl">
+        <div className="bg-white border border-black/10 rounded-xl">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
           </div>
@@ -170,27 +159,24 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
             {/* Email */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Email *
+                Email
               </label>
               <div className="flex-1">
                 <input
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="utente@esempio.com"
                   required
                 />
-                <p className="text-xs text-secondary/50 mt-2">
-                  Assicurati che l&apos;email abbia un dominio valido (es: @esempio.com)
-                </p>
               </div>
             </div>
 
             {/* Password */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200 pt-6">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Password *
+                Password
               </label>
               <div className="flex-1">
                 <div className="relative">
@@ -198,7 +184,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                     type={showPassword ? "text" : "password"}
                     value={newUser.password}
                     onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 pr-12"
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
                     placeholder="Minimo 6 caratteri"
                     required
                   />
@@ -210,16 +196,13 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                <p className="text-xs text-secondary/50 mt-2">
-                  La password deve contenere almeno 6 caratteri
-                </p>
               </div>
             </div>
 
             {/* Conferma Password */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pt-6">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Conferma Password *
+                Conferma Password
               </label>
               <div className="flex-1">
                 <div className="relative">
@@ -227,7 +210,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 pr-12"
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
                     placeholder="Reinserisci la password"
                     required
                   />
@@ -245,7 +228,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         </div>
 
         {/* Informazioni Utente */}
-        <div className="bg-white border border-gray-200 rounded-xl">
+        <div className="bg-white border border-black/10 rounded-xl">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
           </div>
@@ -254,14 +237,14 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
             {/* Nome Completo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Nome Completo *
+                Nome Completo
               </label>
               <div className="flex-1">
                 <input
                   type="text"
                   value={newUser.full_name}
                   onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Mario Rossi"
                   required
                 />
@@ -278,7 +261,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="tel"
                   value={newUser.phone}
                   onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="+39 123 456 7890"
                 />
               </div>
@@ -294,7 +277,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="date"
                   value={newUser.date_of_birth}
                   onChange={(e) => setNewUser({ ...newUser, date_of_birth: e.target.value })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
@@ -309,7 +292,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="text"
                   value={newUser.birth_city}
                   onChange={(e) => setNewUser({ ...newUser, birth_city: e.target.value })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Roma"
                 />
               </div>
@@ -325,7 +308,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="text"
                   value={newUser.fiscal_code}
                   onChange={(e) => setNewUser({ ...newUser, fiscal_code: e.target.value.toUpperCase() })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
                   placeholder="RSSMRA80A01H501U"
                   maxLength={16}
                 />
@@ -342,7 +325,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="text"
                   value={newUser.address}
                   onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Via Roma, 123"
                 />
               </div>
@@ -358,14 +341,14 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="text"
                   value={newUser.city}
                   onChange={(e) => setNewUser({ ...newUser, city: e.target.value })}
-                  className="flex-1 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="flex-1 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Milano"
                 />
                 <input
                   type="text"
                   value={newUser.province}
                   onChange={(e) => setNewUser({ ...newUser, province: e.target.value.toUpperCase() })}
-                  className="w-full sm:w-20 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
+                  className="w-full sm:w-20 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
                   placeholder="MI"
                   maxLength={2}
                 />
@@ -373,7 +356,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   type="text"
                   value={newUser.postal_code}
                   onChange={(e) => setNewUser({ ...newUser, postal_code: e.target.value })}
-                  className="w-full sm:w-28 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full sm:w-28 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="20100"
                   maxLength={5}
                 />
@@ -383,7 +366,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         </div>
 
         {/* Informazioni Piattaforma */}
-        <div className="bg-white border border-gray-200 rounded-xl">
+        <div className="bg-white border border-black/10 rounded-xl">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Piattaforma</h2>
           </div>
@@ -392,16 +375,16 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
             {/* Ruolo */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
-                Ruolo *
+                Ruolo
               </label>
               <div className="flex-1">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                   {Object.entries(roleLabels).map(([role, info]) => (
                     <button
                       key={role}
                       type="button"
                       onClick={() => setNewUser({ ...newUser, role: role as "admin" | "gestore" | "maestro" | "atleta" })}
-                      className={`px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                      className={`w-full px-4 py-2 text-sm text-center rounded-lg border transition-all ${
                         newUser.role === role
                           ? 'bg-secondary text-white border-secondary'
                           : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -424,7 +407,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
                   value={newUser.notes}
                   onChange={(e) => setNewUser({ ...newUser, notes: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
                   placeholder="Informazioni aggiuntive, problemi di salute, preferenze..."
                 />
               </div>
@@ -435,7 +418,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
         <button
           type="submit"
           disabled={creating}
-          className="w-full px-8 py-4 text-base font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full px-6 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all flex items-center justify-center disabled:opacity-50"
         >
           {creating ? (
             <>
@@ -443,10 +426,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
               Creazione in corso...
             </>
           ) : (
-            <>
-              <UserPlus className="h-4 w-4" />
-              Crea Utente
-            </>
+            "Crea Utente"
           )}
         </button>
       </form>

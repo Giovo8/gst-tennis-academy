@@ -267,7 +267,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
           </div>
         </div>
 
-        <section className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <section className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Impostazioni generali</h2>
           </div>
@@ -311,7 +311,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                   max={50}
                   value={numeroPost}
                   onChange={(e) => setNumeroPost(Math.max(1, Number(e.target.value) || 1))}
-                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full sm:max-w-xs rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
                 <button
                   type="button"
@@ -326,7 +326,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
           </div>
         </section>
 
-        <section className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <section className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between gap-4">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">B. Cron job</h2>
             <button
@@ -344,7 +344,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
               </div>
             )}
 
-            <form onSubmit={saveCron} className="space-y-0 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+            <form onSubmit={saveCron} className="space-y-0 rounded-xl border border-black/10 bg-white p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome cron</label>
                 <div className="flex-1">
@@ -352,7 +352,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                     value={cronForm.nome}
                     onChange={(e) => setCronForm((prev) => ({ ...prev, nome: e.target.value }))}
                     placeholder="Nome cron"
-                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     required
                   />
                 </div>
@@ -363,7 +363,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                   <select
                     value={cronForm.ora}
                     onChange={(e) => setCronForm((prev) => ({ ...prev, ora: Number(e.target.value) }))}
-                    className="rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   >
                     {Array.from({ length: 24 }).map((_, h) => (
                       <option key={h} value={h}>{String(h).padStart(2, "0")}</option>
@@ -372,7 +372,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                   <select
                     value={cronForm.minuto}
                     onChange={(e) => setCronForm((prev) => ({ ...prev, minuto: Number(e.target.value) }))}
-                    className="rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   >
                     {[0, 15, 30, 45].map((m) => (
                       <option key={m} value={m}>{String(m).padStart(2, "0")}</option>
@@ -387,7 +387,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                     value={cronForm.prompt_custom}
                     onChange={(e) => setCronForm((prev) => ({ ...prev, prompt_custom: e.target.value }))}
                     placeholder="Prompt aggiuntivo opzionale"
-                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-3 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     rows={2}
                   />
                 </div>
@@ -412,7 +412,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
 
             <div className="space-y-3">
               {crons.map((cron) => (
-                <div key={cron.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div key={cron.id} className="rounded-xl border border-black/10 bg-white p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-semibold text-secondary">{cron.nome}</p>
@@ -436,7 +436,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                           attivo: cron.attivo,
                         })
                       }
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-secondary"
+                      className="rounded-lg border border-black/10 px-3 py-2 text-xs font-semibold text-secondary"
                     >
                       Modifica
                     </button>
@@ -455,7 +455,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5">
+        <section className="rounded-2xl border border-black/10 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-secondary">C. Fonti RSS</h2>
             <button
@@ -467,25 +467,25 @@ export default function AINewsConfigPage({ basePath }: Props) {
             </button>
           </div>
 
-          <form onSubmit={saveFonte} className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 md:grid-cols-2">
+          <form onSubmit={saveFonte} className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-black/10 bg-gray-50 p-4 md:grid-cols-2">
             <input
               value={fonteForm.nome}
               onChange={(e) => setFonteForm((prev) => ({ ...prev, nome: e.target.value }))}
               placeholder="Nome fonte"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              className="rounded-lg border border-black/10 px-3 py-2 text-sm"
               required
             />
             <input
               value={fonteForm.url}
               onChange={(e) => setFonteForm((prev) => ({ ...prev, url: e.target.value }))}
               placeholder="URL feed RSS"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              className="rounded-lg border border-black/10 px-3 py-2 text-sm"
               required
             />
             <select
               value={fonteForm.categoria}
               onChange={(e) => setFonteForm((prev) => ({ ...prev, categoria: e.target.value }))}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              className="rounded-lg border border-black/10 px-3 py-2 text-sm"
             >
               {CATEGORIE.filter((c) => c !== "tutte").map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -509,7 +509,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
               const isDefault = DEFAULT_SOURCE_URLS.has(fonte.url);
 
               return (
-                <div key={fonte.id} className="rounded-xl border border-gray-200 p-3">
+                <div key={fonte.id} className="rounded-xl border border-black/10 p-3">
                   <p className="font-semibold text-secondary">{fonte.nome}</p>
                   <p className="text-xs text-secondary/70">{fonte.url}</p>
                   <p className="mt-1 text-xs text-secondary/70">Categoria: {fonte.categoria || "generale"}</p>
@@ -524,7 +524,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
                           attiva: fonte.attiva,
                         })
                       }
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-secondary"
+                      className="rounded-lg border border-black/10 px-3 py-2 text-xs font-semibold text-secondary"
                     >
                       Modifica
                     </button>
@@ -544,10 +544,10 @@ export default function AINewsConfigPage({ basePath }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5">
+        <section className="rounded-2xl border border-black/10 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-secondary">D. Log ultime generazioni</h2>
-            <button onClick={loadAll} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-secondary">
+            <button onClick={loadAll} className="inline-flex items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm font-semibold text-secondary">
               <RefreshCw className="h-4 w-4" />
               Aggiorna log
             </button>

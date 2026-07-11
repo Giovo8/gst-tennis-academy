@@ -43,7 +43,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
   };
 
   return (
-    <div className="rounded-xl overflow-hidden bg-white border border-gray-200">
+    <div className="rounded-xl overflow-hidden bg-white border border-black/10">
       {/* Match Header - colored */}
       <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'var(--secondary)' }}>
         <span className="text-xs font-bold text-white uppercase tracking-wide">
@@ -81,7 +81,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
         <div className={`p-3 space-y-1.5 ${isPending ? 'opacity-60' : ''}`}>
           {/* Player 1 */}
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: isCompleted && !isWinner(match.player1?.id) ? '#9ca3af' : isCompleted ? '#023047' : 'var(--secondary)' }}>
-            <div className="flex-shrink-0 w-8 h-8 rounded-md bg-white/10 flex items-center justify-center">
+            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-sm font-bold text-white leading-none">
                 {getPlayerName(match.player1).charAt(0).toUpperCase()}
               </span>
@@ -105,7 +105,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
 
           {/* Player 2 */}
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: isCompleted && !isWinner(match.player2?.id) ? '#9ca3af' : isCompleted ? '#023047' : 'var(--secondary)' }}>
-            <div className="flex-shrink-0 w-8 h-8 rounded-md bg-white/10 flex items-center justify-center">
+            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-sm font-bold text-white leading-none">
                 {getPlayerName(match.player2).charAt(0).toUpperCase()}
               </span>

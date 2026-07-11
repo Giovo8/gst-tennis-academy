@@ -505,7 +505,7 @@ export default function NuovoCorsoPage() {
         )}
 
         {/* Informazioni generali */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="bg-white border border-black/10 shadow-sm rounded-xl">
           <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni generali</h2>
           </div>
@@ -520,7 +520,7 @@ export default function NuovoCorsoPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="es. Tennis Under 10 – Gruppo A"
-                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
@@ -533,7 +533,7 @@ export default function NuovoCorsoPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Breve descrizione del corso..."
-                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 resize-none focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
@@ -550,7 +550,7 @@ export default function NuovoCorsoPage() {
                     value={pricePerMonth || ""}
                     onChange={(e) => setPricePerMonth(parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
@@ -561,7 +561,7 @@ export default function NuovoCorsoPage() {
         </div>
 
         {/* Maestri */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="bg-white border border-black/10 shadow-sm rounded-xl">
           <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
@@ -611,7 +611,7 @@ export default function NuovoCorsoPage() {
         </div>
 
         {/* Partecipanti */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="bg-white border border-black/10 shadow-sm rounded-xl">
           <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
           </div>
@@ -627,7 +627,7 @@ export default function NuovoCorsoPage() {
         </div>
 
         {periods.map((period, pidx) => (
-          <div key={pidx} className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+          <div key={pidx} className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
@@ -663,7 +663,7 @@ export default function NuovoCorsoPage() {
                         value={periodStartTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "start", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                     </div>
                   </div>
@@ -687,7 +687,7 @@ export default function NuovoCorsoPage() {
                         value={periodEndTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "end", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                     </div>
                   </div>
@@ -832,7 +832,7 @@ export default function NuovoCorsoPage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -843,7 +843,7 @@ export default function NuovoCorsoPage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -863,7 +863,7 @@ export default function NuovoCorsoPage() {
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth

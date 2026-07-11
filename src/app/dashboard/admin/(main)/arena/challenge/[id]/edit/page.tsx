@@ -693,7 +693,7 @@ export default function AdminEditChallengePage() {
           <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
             <button
               onClick={() => handleDateChange(addDays(selectedDate, -1))}
-              className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
@@ -702,7 +702,7 @@ export default function AdminEditChallengePage() {
               <button
                 type="button"
                 onClick={openDatePickerModal}
-                className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
+                className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
                 <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
@@ -722,14 +722,14 @@ export default function AdminEditChallengePage() {
 
             <button
               onClick={() => handleDateChange(addDays(selectedDate, 1))}
-              className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>
           </div>
 
           {/* Area Principale */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
             </div>
@@ -830,7 +830,7 @@ export default function AdminEditChallengePage() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl">
+          <div className="bg-white border border-black/10 rounded-xl">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
@@ -864,7 +864,7 @@ export default function AdminEditChallengePage() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
             </div>
@@ -932,7 +932,7 @@ export default function AdminEditChallengePage() {
                           <div
                             key={booking.id}
                             onClick={() => openEntryModal(booking)}
-                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-pointer hover:opacity-90 transition-opacity"
+                            className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-pointer hover:opacity-90 transition-opacity"
                             style={{
                               ...getBookingStyle(),
                               left: `${(startSlot / 32) * 100}%`,
@@ -1017,7 +1017,7 @@ export default function AdminEditChallengePage() {
           <button
             onClick={handleSubmit}
             disabled={saving || !challenger || !opponent || selectedSlots.length === 0}
-            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
           >
             {saving ? (
               <>
@@ -1048,7 +1048,7 @@ export default function AdminEditChallengePage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -1059,7 +1059,7 @@ export default function AdminEditChallengePage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -1080,7 +1080,7 @@ export default function AdminEditChallengePage() {
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth

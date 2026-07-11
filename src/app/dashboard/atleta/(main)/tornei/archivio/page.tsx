@@ -139,7 +139,7 @@ function ArchivioPageInner() {
           placeholder="Cerca nell'archivio..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
         />
       </div>
 
@@ -200,7 +200,7 @@ function ArchivioPageInner() {
                 <div
                   key={tournament.id}
                   onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
-                  className="bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
+                  className="bg-white border border-black/10 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
                   style={{ borderLeftColor: 'var(--foreground-muted)' }}
                 >
                   <div className="flex items-center gap-4">
@@ -235,7 +235,7 @@ function ArchivioPageInner() {
                     </div>
 
                     <div className="w-24 flex-shrink-0 text-center">
-                      <span className="px-3 py-1 text-xs font-semibold rounded-md bg-gray-100 text-gray-600">
+                      <span className="px-3 py-1 text-xs font-semibold rounded-lg bg-gray-100 text-gray-600">
                         {tournament.status}
                       </span>
                     </div>

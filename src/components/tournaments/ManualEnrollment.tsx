@@ -205,7 +205,7 @@ export default function ManualEnrollment({
                   placeholder="Cerca per nome o email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>

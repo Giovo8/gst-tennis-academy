@@ -243,6 +243,15 @@ export default function DashboardShell({
     });
   });
 
+  const isAdminUsersNewPath = pathname === "/dashboard/admin/users/new";
+  const desktopHeaderCrumbs = isAdminUsersNewPath
+    ? [
+        { label: "Dashboard", href: dashboardRootHref },
+        { label: "Utenti", href: `${dashboardRootHref}/users` },
+        { label: "Nuovo Utente", href: `${dashboardRootHref}/users/new` },
+      ]
+    : desktopCrumbs;
+
   return (
     <div className="min-h-dvh bg-gray-50">
 
@@ -293,7 +302,7 @@ export default function DashboardShell({
               return (
                 <React.Fragment key={item.href}>
                   <Link href={item.href} onClick={() => setMobileOpen(false)}
-                    className={`group flex h-9 items-center gap-2.5 mx-2 my-1 px-3 rounded-md ${active ? "bg-secondary text-white" : "text-secondary hover:bg-secondary hover:text-white"}`}>
+                    className={`group flex h-9 items-center gap-2.5 mx-2 my-1 px-3 rounded-lg ${active ? "bg-secondary text-white" : "text-secondary hover:bg-secondary hover:text-white"}`}>
                     <span className={`flex-shrink-0 [&>svg]:!h-4 [&>svg]:!w-4 ${active ? "text-white" : "text-secondary/70 group-hover:text-white"}`}>{item.icon}</span>
                     <span className="text-sm leading-5 font-medium flex-1">{item.label}</span>
                     {item.badge && item.badge > 0 && (
@@ -309,7 +318,7 @@ export default function DashboardShell({
           <div className="p-3">
             <div className="flex items-center gap-1.5">
               <Link href={profileHref} onClick={() => setMobileOpen(false)} className="group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-secondary hover:text-white flex-1 min-w-0">
-                <div className="w-7 h-7 rounded-md overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0 ring-1 ring-transparent group-hover:bg-white group-hover:text-secondary">
+                <div className="w-7 h-7 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0 ring-1 ring-transparent group-hover:bg-white group-hover:text-secondary">
                   {userAvatar ? <img src={userAvatar} alt={userName || "User"} className="w-full h-full object-cover" /> : <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>}
                 </div>
                 {userName && <span className="text-sm font-semibold tracking-tight text-gray-700 truncate group-hover:text-white">{userName}</span>}
@@ -348,7 +357,7 @@ export default function DashboardShell({
               return (
                 <React.Fragment key={item.href}>
                   <Link href={item.href} title={sidebarCollapsed ? item.label : undefined}
-                    className={`group flex h-9 items-center gap-2.5 mx-2 my-1 px-3 rounded-md ${sidebarCollapsed ? 'justify-center' : ''} ${active ? "bg-secondary text-white" : "text-gray-700 hover:bg-secondary hover:text-white"}`}>
+                    className={`group flex h-9 items-center gap-2.5 mx-2 my-1 px-3 rounded-lg ${sidebarCollapsed ? 'justify-center' : ''} ${active ? "bg-secondary text-white" : "text-gray-700 hover:bg-secondary hover:text-white"}`}>
                     <span className={`flex-shrink-0 ${sidebarCollapsed ? '[&>svg]:!h-5 [&>svg]:!w-5' : '[&>svg]:!h-4 [&>svg]:!w-4'} ${active ? "text-white" : "text-secondary/70 group-hover:text-white"}`}>{item.icon}</span>
                     {!sidebarCollapsed && <span className="text-sm leading-5 font-medium flex-1">{item.label}</span>}
                     {!sidebarCollapsed && item.badge && item.badge > 0 && (
@@ -367,7 +376,7 @@ export default function DashboardShell({
               {/* Profilo */}
               {sidebarCollapsed ? (
                 <Link href={profileHref} title={userName || 'Profilo'} className="group flex items-center justify-center w-9 h-9 mx-auto rounded-lg hover:bg-secondary">
-                  <div className="w-7 h-7 rounded-md overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold group-hover:bg-white group-hover:text-secondary">
+                  <div className="w-7 h-7 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold group-hover:bg-white group-hover:text-secondary">
                     {userAvatar ? <img src={userAvatar} alt={userName || "User"} className="w-full h-full object-cover" /> : <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>}
                   </div>
                 </Link>
@@ -378,7 +387,7 @@ export default function DashboardShell({
                     className="group flex items-center gap-2.5 px-3 py-2 flex-1 min-w-0 text-left"
                     aria-label="Vai al profilo"
                   >
-                    <div className="w-7 h-7 rounded-md overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                    <div className="w-7 h-7 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
                       {userAvatar ? <img src={userAvatar} alt={userName || "User"} className="w-full h-full object-cover" /> : <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>}
                     </div>
                     {userName && <span className="text-sm font-semibold tracking-tight text-gray-700 truncate transition-colors group-hover:text-secondary">{userName}</span>}
@@ -386,12 +395,12 @@ export default function DashboardShell({
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex items-center justify-center w-7 h-7 rounded-md transition-colors border bg-white text-secondary border-black/10 hover:bg-secondary hover:text-white hover:border-secondary"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors border bg-white text-secondary border-black/10 hover:bg-secondary hover:text-white hover:border-black/20"
                     aria-label="Esci"
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
-                  <NotificationsDropdown buttonSize="w-7 h-7" buttonRounded="rounded-md" />
+                  <NotificationsDropdown buttonSize="w-7 h-7" buttonRounded="rounded-lg" />
                 </div>
               )}
             </div>
@@ -402,7 +411,7 @@ export default function DashboardShell({
         <main className="flex-1 min-w-0">
           <div className="hidden lg:flex sticky top-0 z-30 h-20 border-b border-black/10 bg-white items-center justify-center">
             <h1 className="text-2xl font-bold text-secondary leading-none flex items-center gap-2">
-              {desktopCrumbs.map((crumb, index) => (
+              {desktopHeaderCrumbs.map((crumb, index) => (
                 <React.Fragment key={crumb.href}>
                   {index > 0 && <span className="text-secondary/60">/</span>}
                   <Link href={crumb.href} className="hover:text-secondary/80 transition-colors">

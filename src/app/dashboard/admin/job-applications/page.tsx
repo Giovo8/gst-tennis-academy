@@ -166,7 +166,7 @@ export default function JobApplicationsPage() {
           placeholder="Cerca per nome o email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
         />
       </div>
 
@@ -177,7 +177,7 @@ export default function JobApplicationsPage() {
           <p className="mt-4 text-secondary/60">Caricamento candidature...</p>
         </div>
       ) : sortedApplications.length === 0 ? (
-        <div className="text-center py-20 rounded-md bg-white">
+        <div className="text-center py-20 rounded-lg bg-white">
           <FileText className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna candidatura trovata</h3>
           <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
@@ -243,7 +243,7 @@ export default function JobApplicationsPage() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
                         <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
                           style={{ top: menuPosition.top, left: menuPosition.left }}
                           onClick={(e) => e.stopPropagation()}
                         >

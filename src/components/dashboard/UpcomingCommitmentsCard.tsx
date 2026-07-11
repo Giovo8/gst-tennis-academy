@@ -183,14 +183,14 @@ export function UpcomingCommitmentsCard({
             placeholder="Cerca per nome, corso o campo..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
         {showFilterButton && (
           <button
             type="button"
             onClick={() => setIsFilterModalOpen(true)}
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
               hasActiveFilters
                 ? "border-secondary bg-secondary text-white hover:opacity-90"
                 : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
@@ -312,7 +312,7 @@ export function UpcomingCommitmentsCard({
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
               >
                 {TYPE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -326,7 +326,7 @@ export function UpcomingCommitmentsCard({
                 <select
                   value={filterUser}
                   onChange={(e) => setFilterUser(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="all">Tutti gli utenti</option>
                   {userOptions.map((name) => (
@@ -342,7 +342,7 @@ export function UpcomingCommitmentsCard({
                 <select
                   value={filterCoach}
                   onChange={(e) => setFilterCoach(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="all">Tutti i maestri</option>
                   {coachOptions.map((name) => (
@@ -358,7 +358,7 @@ export function UpcomingCommitmentsCard({
                 <select
                   value={filterCourt}
                   onChange={(e) => setFilterCourt(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="all">Tutti i campi</option>
                   {courtOptions.map((c) => (
@@ -375,7 +375,7 @@ export function UpcomingCommitmentsCard({
                   type="date"
                   value={filterDateFrom}
                   onChange={(e) => setFilterDateFrom(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
               <div className="space-y-1">
@@ -384,7 +384,7 @@ export function UpcomingCommitmentsCard({
                   type="date"
                   value={filterDateTo}
                   onChange={(e) => setFilterDateTo(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>

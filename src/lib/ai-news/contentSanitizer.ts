@@ -1,4 +1,4 @@
-const MEDIA_KEYWORD_REGEX = /\b(video|clip|highlights?|youtube|filmato|guarda|diretta|live\b|streaming)\b/i;
+const MEDIA_KEYWORD_REGEX = /\b(video|clip|highlights?|youtube|filmato|guarda|diretta|live\b|streaming|podcast|puntata|episodio|ascolta|spotify|webinar|vlog)\b/i;
 
 const NAMED_ENTITIES: Record<string, string> = {
   amp: "&",
@@ -67,7 +67,7 @@ export function sanitizeAINewsTitle(input: string): string {
   const cleaned = normalizeBrokenUtf8(decodeHtmlEntities(input || ""))
     .replace(/\[\s*(?:\.\.\.|…)+\s*\]/g, "")
     .replace(/\b(?:continua a leggere|leggi (?:tutto|anche)|read more)\b\.?/gi, "")
-    .replace(/^\s*(?:video|highlights?|live|diretta)\s*[:\-]\s*/i, "")
+    .replace(/^\s*(?:video|podcast|audio|highlights?|live|diretta)\s*[:\-|]\s*/i, "")
     .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -84,7 +84,7 @@ export function sanitizeAINewsBody(input: string): string {
     .replace(/\n\nL'aggiornamento e datato[\s\S]*?\.?/gi, "")
     .replace(/\n\nIl passaggio piu rilevante resta[\s\S]*?\.?/gi, "")
     .replace(/\n\nIl quadro si aggiorna al[\s\S]*?tabellone\.?/gi, "")
-    .replace(/\n\n[^\n]*(?:video|clip|highlights?|youtube|filmato|guarda|diretta|live|streaming)[^\n]*/gi, "")
+    .replace(/\n\n[^\n]*(?:video|clip|highlights?|youtube|filmato|guarda|diretta|live|streaming|podcast|puntata|episodio|ascolta|spotify)[^\n]*/gi, "")
     .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\s{2,}/g, " ")

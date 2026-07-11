@@ -81,15 +81,15 @@ export function SearchableSelect({
   const dropdown = open ? (
     <div
       style={dropdownStyle}
-      className={dropdownClassName ?? "rounded-lg border border-gray-200 bg-white shadow-lg"}
+      className={dropdownClassName ?? "rounded-lg border border-black/10 bg-white shadow-lg"}
     >
-      <div className="p-2 border-b border-gray-100">
+      <div className="p-2 border-b border-black/10">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={searchPlaceholder || "Cerca..."}
-          className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-secondary/30 focus:border-secondary/50"
+          className="w-full rounded-lg border border-black/10 bg-white px-2 py-1 text-xs text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           autoFocus
         />
       </div>
@@ -108,7 +108,7 @@ export function SearchableSelect({
                 handleSelect(opt.value);
               }}
               className={`w-full px-3 ${itemClassName ?? "py-1.5"} text-left text-sm hover:bg-secondary/5 ${
-                opt.value === value ? "bg-secondary/10 font-semibold" : ""
+                opt.value === value ? "bg-gray-50 font-semibold" : ""
               }`}
             >
               {opt.label}
@@ -127,7 +127,7 @@ export function SearchableSelect({
         onClick={handleToggle}
         className={
           triggerClassName ??
-          "w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50"
+          "w-full rounded-lg border border-black/10 bg-white shadow-sm px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-0 focus-visible:border-black/10"
         }
       >
         <span className={selectedOption ? "" : "text-secondary/40"}>

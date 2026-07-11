@@ -102,7 +102,7 @@ export default function WorkWithUsPage() {
 
         {/* Posizioni Aperte - Card stile admin */}
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 mb-6">
-          <div className="bg-white rounded-lg p-5 border border-gray-200 border-l-4 border-l-secondary hover:shadow-sm transition-all">
+          <div className="bg-white rounded-lg p-5 border border-black/10 border-l-4 border-l-secondary hover:shadow-sm transition-all">
             <div className="flex items-center gap-3 mb-4">
               <div className="inline-flex rounded-full bg-secondary/10 p-2.5">
                 <Users className="h-5 w-5 text-secondary" />
@@ -128,7 +128,7 @@ export default function WorkWithUsPage() {
             </ul>
           </div>
 
-          <div className="bg-white rounded-lg p-5 border border-gray-200 border-l-4 border-l-secondary hover:shadow-sm transition-all">
+          <div className="bg-white rounded-lg p-5 border border-black/10 border-l-4 border-l-secondary hover:shadow-sm transition-all">
             <div className="flex items-center gap-3 mb-4">
               <div className="inline-flex rounded-full bg-secondary/10 p-2.5">
                 <Dumbbell className="h-5 w-5 text-secondary" />
@@ -179,7 +179,7 @@ export default function WorkWithUsPage() {
         {/* Form Candidatura - stile admin users/new */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Dati Personali */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Personali</h2>
             </div>
@@ -195,7 +195,7 @@ export default function WorkWithUsPage() {
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="Mario Rossi"
                     required
                   />
@@ -212,7 +212,7 @@ export default function WorkWithUsPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="mario.rossi@email.it"
                     required
                   />
@@ -256,7 +256,7 @@ export default function WorkWithUsPage() {
           </div>
 
           {/* Candidatura */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Candidatura</h2>
             </div>
@@ -272,7 +272,7 @@ export default function WorkWithUsPage() {
                     type="url"
                     value={cvUrl}
                     onChange={(e) => { setCvUrl(e.target.value); setCvUrlError(null); }}
-                    className={`w-full px-4 py-2 text-sm rounded-lg border bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 ${
+                    className={`w-full px-4 py-2 text-sm rounded-lg border bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 ${
                       cvUrlError ? "border-red-400" : "border-gray-300"
                     }`}
                     placeholder="https://drive.google.com/... o LinkedIn"
@@ -297,7 +297,7 @@ export default function WorkWithUsPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                    className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
                     placeholder="Parlaci delle tue esperienze, certificazioni, disponibilità e motivazioni..."
                   />
                 </div>

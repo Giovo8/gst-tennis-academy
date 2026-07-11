@@ -58,7 +58,7 @@ export default function TextHeroSection() {
   };
 
   return (
-    <section className="bg-white pt-24 sm:pt-24 md:pt-32 pb-0 sm:pb-8 md:pb-10 lg:pb-0 overflow-hidden">
+    <section className="bg-white pt-24 sm:pt-24 md:pt-24 pb-0 sm:pb-8 md:pb-10 lg:pb-0 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
         <div className="text-center flex flex-col items-center justify-center">
           <h1 className="text-[14vw] md:text-8xl lg:text-8xl font-extrabold mb-5 sm:mb-6 text-secondary leading-[1.05] tracking-tight">
@@ -101,7 +101,7 @@ export default function TextHeroSection() {
             ))}
           </div>
         </div>
-        <p className="text-xs text-gray-400 text-center mt-6">Powered by</p>
+        <p className="text-xs text-gray-400 text-center mt-6 sm:mb-10">Powered by</p>
       </div>
       <style>{`
         @keyframes marquee {

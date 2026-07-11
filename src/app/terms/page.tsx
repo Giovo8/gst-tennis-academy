@@ -24,7 +24,7 @@ export default function TermsPage() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-black/10 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
           <div className="space-y-8">
             <section>
               <h2 className="text-2xl font-semibold text-secondary mb-4">
@@ -67,7 +67,7 @@ export default function TermsPage() {
                 4. Prenotazioni e Iscrizioni
               </h2>
               <div className="space-y-4">
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-medium text-secondary mb-2">
                     Prenotazioni Campi:
                   </h3>
@@ -78,7 +78,7 @@ export default function TermsPage() {
                     <li>Non è permesso il subaffitto o la cessione delle prenotazioni</li>
                   </ul>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-medium text-secondary mb-2">
                     Iscrizioni a corsi e tornei:
                   </h3>

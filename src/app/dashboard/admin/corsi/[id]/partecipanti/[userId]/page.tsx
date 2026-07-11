@@ -240,7 +240,7 @@ export default function PartecipantePresenzePage() {
       </div>
 
       {/* Info partecipante */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
@@ -285,7 +285,7 @@ export default function PartecipantePresenzePage() {
       </div>
 
       {/* Lezioni */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>
@@ -351,7 +351,7 @@ export default function PartecipantePresenzePage() {
           return m ?? "—";
         };
         return (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+          <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Contabilità</h2>
             </div>
@@ -431,7 +431,7 @@ export default function PartecipantePresenzePage() {
                       value={newAmount}
                       onChange={(e) => setNewAmount(e.target.value)}
                       placeholder="0.00"
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                      className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3">
@@ -439,7 +439,7 @@ export default function PartecipantePresenzePage() {
                     <select
                       value={newMethod}
                       onChange={(e) => setNewMethod(e.target.value)}
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                      className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                     >
                       <option value="cash">Contanti</option>
                       <option value="bank_transfer">Bonifico</option>
@@ -452,7 +452,7 @@ export default function PartecipantePresenzePage() {
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                       placeholder="es. Rata gennaio"
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                      className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                   </div>
                 </div>
@@ -489,7 +489,7 @@ export default function PartecipantePresenzePage() {
                     value={feeInput}
                     onChange={(e) => setFeeInput(e.target.value)}
                     placeholder={enrollmentFee != null ? enrollmentFee.toFixed(2) : "0.00"}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                    className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
                 <div className="flex gap-3 mt-4">

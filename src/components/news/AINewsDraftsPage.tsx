@@ -229,7 +229,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
             <button
               onClick={generaOra}
               disabled={generating || cleaningArchive}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md bg-secondary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-60"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Genera ora
@@ -237,7 +237,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
             <button
               onClick={bonificaArchivioAi}
               disabled={generating || cleaningArchive}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-secondary shadow-sm hover:bg-gray-50 disabled:opacity-60"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-secondary shadow-sm hover:bg-gray-50 disabled:opacity-60"
             >
               {cleaningArchive ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               Bonifica archivio AI
@@ -245,7 +245,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
             <Link
               href={`${basePath}/configurazione`}
               title="Configurazione News AI"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-gray-200 bg-white text-secondary shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-black/10 bg-white text-secondary shadow-sm transition-all hover:border-gray-300 hover:bg-gray-50"
             >
               <Settings className="h-4 w-4" />
             </Link>
@@ -253,7 +253,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
         </div>
 
         {pubblicazioneAuto && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             Modalita automatica attiva - le news vengono pubblicate senza approvazione
           </div>
         )}
@@ -265,7 +265,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cerca per titolo, testo, categoria o fonte..."
-            className="w-full rounded-md border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-secondary shadow-sm placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full rounded-lg border border-black/10 bg-white py-2.5 pl-10 pr-4 text-secondary shadow-sm placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
 
@@ -279,10 +279,10 @@ export default function AINewsDraftsPage({ basePath }: Props) {
             <button
               key={opt.key}
               onClick={() => setFiltro(opt.key as typeof filtro)}
-              className={`rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
+              className={`rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
                 filtro === opt.key
                   ? "border border-secondary bg-secondary text-white"
-                  : "border border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+                  : "border border-black/10 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
               }`}
             >
               {opt.label}
@@ -296,7 +296,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
             <p className="mt-4 text-secondary/60">Caricamento bozze AI...</p>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="rounded-md bg-white py-20 text-center">
+          <div className="rounded-lg bg-white py-20 text-center">
             <Bot className="mx-auto mb-3 h-12 w-12 text-secondary/20" />
             <h2 className="text-xl font-semibold text-secondary">Nessuna bozza trovata</h2>
             <p className="mt-1 text-sm text-secondary/70">Prova a generare nuove news o modifica filtri e ricerca</p>
@@ -307,7 +307,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
               const values = draftValues[item.id] ?? { titolo: item.title, testo: item.content };
 
               return (
-                <div key={item.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div key={item.id} className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-1 text-xs font-bold text-violet-700">
                       AI
@@ -330,7 +330,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                         onChange={(e) =>
                           setDraftValues((prev) => ({ ...prev, [item.id]: { ...values, titolo: e.target.value } }))
                         }
-                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-lg font-bold text-secondary shadow-sm"
+                        className="w-full rounded-lg border border-black/10 px-3 py-2 text-lg font-bold text-secondary shadow-sm"
                       />
                     ) : (
                       <button
@@ -349,7 +349,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                           setDraftValues((prev) => ({ ...prev, [item.id]: { ...values, testo: e.target.value } }))
                         }
                         rows={4}
-                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-secondary shadow-sm"
+                        className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm text-secondary shadow-sm"
                       />
                     ) : (
                       <button
@@ -370,7 +370,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                     <button
                       onClick={() => approva(item.id)}
                       disabled={savingId === item.id}
-                      className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                     >
                       {savingId === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                       Approva
@@ -378,7 +378,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                     <button
                       onClick={() => salvaModifiche(item.id)}
                       disabled={savingId === item.id}
-                      className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-secondary shadow-sm hover:bg-gray-50 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-secondary shadow-sm hover:bg-gray-50 disabled:opacity-60"
                     >
                       <RefreshCw className="h-3 w-3" />
                       Salva modifiche
@@ -386,7 +386,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
                     <button
                       onClick={() => scarta(item.id)}
                       disabled={savingId === item.id}
-                      className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
                     >
                       <X className="h-3 w-3" />
                       Scarta

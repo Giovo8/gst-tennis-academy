@@ -36,7 +36,7 @@ function sanitizeJournalisticText(text: string): string {
     .replace(/\n\nL'aggiornamento e datato[\s\S]*?\.?/gi, "")
     .replace(/\n\nIl passaggio piu rilevante resta[\s\S]*?\.?/gi, "")
     .replace(/\n\nIl quadro si aggiorna al[\s\S]*?tabellone\.?/gi, "")
-    .replace(/\n\n[^\n]*(?:video|clip|highlights?|youtube|filmato|guarda)[^\n]*/gi, "")
+    .replace(/\n\n[^\n]*(?:video|clip|highlights?|youtube|filmato|guarda|diretta|live|streaming|podcast|puntata|episodio|ascolta|spotify)[^\n]*/gi, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -129,6 +129,28 @@ function isRecentToday(item: Record<string, unknown>, now: Date): boolean {
   if (!parsed) return false;
   if (parsed.getTime() > now.getTime()) return false;
   return getRomeDateKey(parsed) === getRomeDateKey(now);
+}
+
+// Item RSS da scartare a monte: annunci di podcast/video/promo, non vere notizie.
+const NON_NEWS_TITLE_REGEX = /\b(podcast|puntata|episodio|ep\.\s*\d+|video|vlog|highlights?|guarda\s+(?:il|la|qui)|rivivi|diretta|live\s*blog|streaming|spotify|youtube|twitch|quiz|sondaggio|newsletter|abbonati|promo(?:zione)?|sconto|fotogallery|gallery)\b/i;
+
+// Path URL tipici di contenuti multimediali o non-notizia.
+const NON_NEWS_URL_REGEX = /\/(podcasts?|videos?|audio|gallery|photogallery|fotogallery|live|quiz|shop)(?:\/|$|\?)/i;
+
+// La notizia deve riguardare il tennis.
+const TENNIS_TOPIC_REGEX = /\b(tennis|tennist\w*|atp|wta|itf|fitp|slam|wimbledon|roland\s*garros|us\s*open|australian\s*open|masters\s*1000|challenger|coppa\s+davis|davis\s+cup|billie\s*jean\s*king|united\s+cup|tie-?break|racchett\w*|tabellone|torneo|tornei|circuito|qualificazion\w*|sinner|alcaraz|djokovic|musetti|paolini|errani|berrettini)\b/i;
+
+function isUsableTennisItem(item: Record<string, unknown>): boolean {
+  const title = typeof item.title === "string" ? item.title : "";
+  const link = typeof item.link === "string" ? item.link : "";
+  const snippet = typeof item.contentSnippet === "string" ? item.contentSnippet : "";
+  const content = typeof item.content === "string" ? stripHtml(item.content) : "";
+
+  if (NON_NEWS_TITLE_REGEX.test(title)) return false;
+  if (NON_NEWS_URL_REGEX.test(link)) return false;
+
+  const combined = `${title} ${snippet} ${content}`.slice(0, 3000);
+  return TENNIS_TOPIC_REGEX.test(combined);
 }
 
 function firstHttpUrl(...candidates: Array<unknown>): string | null {
@@ -350,6 +372,7 @@ async function loadRecentItemsForSource(
       const feed = await parser.parseURL(candidateUrl);
       const recentItems = (feed.items ?? [])
         .filter((item) => isRecentToday(item as Record<string, unknown>, now))
+        .filter((item) => isUsableTennisItem(item as Record<string, unknown>))
         .slice(0, maxItems) as Array<Record<string, unknown>>;
 
       if (recentItems.length > 0) {

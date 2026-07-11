@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, User, Mail, Phone, Calendar, MapPin, CreditCard, FileText, Award, Crown, Dumbbell, Home, UserCheck, Pencil, Shield, Trash2, KeyRound } from "lucide-react";
+import { Loader2, AlertCircle, User, Crown, Dumbbell, Home } from "lucide-react";
 
 type UserProfile = {
   id: string;
@@ -175,31 +175,21 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
 
   const roleInfo = roleLabels[user.role];
   const RoleIcon = roleInfo.icon;
+  const dateOfBirth = user.date_of_birth;
+  const formatOptionalDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleDateString("it-IT") : "-";
+  const sectionCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden h-full";
+  const sectionCardHeaderClassName =
+    "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
 
   return (
     <div className="space-y-6 pt-3">
-      {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link
-            href={`${basePath}/users`}
-            className="hover:text-secondary/80 transition-colors"
-          >
-            Gestione Utenti
-          </Link>
-          {" › "}
-          <span>Profilo Utente</span>
-        </p>
-        <h1 className="text-4xl font-bold text-secondary">Profilo Utente</h1>
-      </div>
+      <h1 className="text-4xl font-bold text-secondary">Profilo Utente</h1>
 
-      {/* Header card utente */}
       <div
-        className="rounded-xl border-t border-r border-b p-6 border-l-4"
+        className="rounded-lg border border-black/10 p-6"
         style={{
           backgroundColor: roleInfo.bgColor,
-          borderColor: roleInfo.bgColor,
-          borderLeftColor: roleInfo.bgColor,
         }}
       >
         <div className="flex items-start gap-6">
@@ -212,270 +202,210 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
         </div>
       </div>
 
-      <div className="flex flex-col gap-6">
-
-      {/* Informazioni Utente */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
+      <div className="grid gap-6 lg:grid-cols-2 lg:auto-rows-min lg:items-stretch">
+        <div className={`${sectionCardClassName} flex flex-col lg:col-start-2 lg:row-start-1`}>
+          <div className={sectionCardHeaderClassName}>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
+          </div>
+          <div className="flex flex-1 p-6">
+            <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden flex-1 border border-black/10 lg:min-h-[360px]">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.full_name || "Avatar"}
+                  className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
+                />
+              ) : (
+                <div className="flex min-h-[260px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                  <User className="h-40 w-40 text-secondary" />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="px-6 py-6">
-          <div className="space-y-6">
-          {/* Nome Completo */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Nome Completo
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{user.full_name || "-"}</p>
-            </div>
-          </div>
 
-          {/* Data di nascita */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Data di Nascita
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString("it-IT") : "-"}
-              </p>
-            </div>
+        <div className={`${sectionCardClassName} lg:col-start-1 lg:row-start-1`}>
+          <div className={sectionCardHeaderClassName}>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
           </div>
-
-          {/* Città di Nascita */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Città di Nascita
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{user.metadata?.birth_city || "-"}</p>
-            </div>
-          </div>
-
-          {/* Residenza - Indirizzo */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Indirizzo
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{user.metadata?.address || "-"}</p>
-            </div>
-          </div>
-
-          {/* Residenza - Città, Provincia, CAP */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Città / Provincia / CAP
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">
-                {[user.metadata?.city, user.metadata?.province, user.metadata?.postal_code]
-                  .filter(Boolean)
-                  .join(", ") || "-"}
-              </p>
-            </div>
-          </div>
-
-          {/* Codice Fiscale */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-              Codice Fiscale
-            </label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold font-mono">{user.metadata?.fiscal_code || "-"}</p>
-            </div>
-          </div>
-
-            {/* Telefono */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Telefono
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{user.phone || "-"}</p>
+          <div className="px-6 py-6">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Nome Completo</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.full_name || "-"}</p>
+                </div>
               </div>
-            </div>
 
-            {/* Email */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Email
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold break-all">{user.email}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{formatOptionalDate(dateOfBirth)}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta di Nascita</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.metadata?.birth_city || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Indirizzo</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.metadata?.address || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Citta / Provincia / CAP</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {[user.metadata?.city, user.metadata?.province, user.metadata?.postal_code]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Codice Fiscale</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold font-mono">{user.metadata?.fiscal_code || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Telefono</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.phone || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Email</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold break-all">{user.email}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Informazioni Corsi */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
-        </div>
-        <div className="px-6 py-6">
-          <div className="space-y-6">
-            {/* Certificato Medico */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Certificato Medico
-              </label>
-              <div className="flex-1">
-                {user.metadata?.certificato_medico_url ? (
-                  <a
-                    href={user.metadata.certificato_medico_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center h-12 px-4 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
-                  >
-                    Visualizza PDF
-                  </a>
-                ) : (
-                  <p className="text-secondary font-semibold">-</p>
-                )}
+        <div className={`${sectionCardClassName} lg:col-start-1 lg:row-start-2`}>
+          <div className={sectionCardHeaderClassName}>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
+          </div>
+          <div className="px-6 py-6">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data Registrazione</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {new Date(user.created_at).toLocaleDateString("it-IT", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Scadenza Certificato */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Scadenza Certificato
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {user.metadata?.certificato_medico_scadenza
-                    ? new Date(user.metadata.certificato_medico_scadenza).toLocaleDateString("it-IT")
-                    : "-"}
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">ID Utente</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold break-all">{user.id}</p>
+                </div>
               </div>
-            </div>
 
-            {/* Tesserato */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Tesserato
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{user.metadata?.tesserato || "-"}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ruolo</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{roleInfo.label}</p>
+                </div>
               </div>
-            </div>
 
-            {/* Numero Tessera */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Numero Tessera
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{user.metadata?.numero_tessera || "-"}</p>
-              </div>
-            </div>
-
-            {/* Scadenza Tesseramento */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Scadenza Tesseramento
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {user.metadata?.tesserato_scadenza
-                    ? new Date(user.metadata.tesserato_scadenza).toLocaleDateString("it-IT")
-                    : "-"}
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Rank Arena</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{arenaStats?.level || "-"}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Informazioni Account */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
-        </div>
-        <div className="px-6 py-6">
-          <div className="space-y-6">
-            {/* Data Registrazione */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Data Registrazione
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">
-                  {new Date(user.created_at).toLocaleDateString("it-IT", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric"
-                  })}
-                </p>
+        <div className={`${sectionCardClassName} lg:col-start-2 lg:row-start-2`}>
+          <div className={sectionCardHeaderClassName}>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+          </div>
+          <div className="px-6 py-6">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
+                <div className="flex-1">
+                  {user.metadata?.certificato_medico_url ? (
+                    <a
+                      href={user.metadata.certificato_medico_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center h-12 px-4 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
+                    >
+                      Visualizza PDF
+                    </a>
+                  ) : (
+                    <p className="text-secondary font-semibold">-</p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* ID Utente */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                ID Utente
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold break-all">{user.id}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {formatOptionalDate(user.metadata?.certificato_medico_scadenza)}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Ruolo */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Ruolo
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{roleInfo.label}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.metadata?.tesserato || "-"}</p>
+                </div>
               </div>
-            </div>
 
-            {/* Rank Arena */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Rank Arena
-              </label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{arenaStats?.level || "-"}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">{user.metadata?.numero_tessera || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
+                <div className="flex-1">
+                  <p className="text-secondary font-semibold">
+                    {formatOptionalDate(user.metadata?.tesserato_scadenza)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Avatar */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
-        </div>
-        <div className="px-6 py-6">
-          <div className="w-80 h-80 rounded-xl bg-secondary/10 overflow-hidden flex items-center justify-center border border-gray-200">
-            {user.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.full_name || "Avatar"}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <User className="h-40 w-40 text-secondary" />
-            )}
+      {user.bio && user.bio.trim() ? (
+        <div className={sectionCardClassName}>
+          <div className={sectionCardHeaderClassName}>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
+          </div>
+          <div className="px-6 py-6">
+            <p className="text-secondary whitespace-pre-wrap">{user.bio}</p>
           </div>
         </div>
-      </div>
-
-      </div>
-
-      {/* Note */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
-        </div>
-        <div className="px-6 py-6">
-          <p className="text-secondary whitespace-pre-wrap">{user.bio || "Nessuna nota disponibile"}</p>
-        </div>
-      </div>
+      ) : null}
 
       {/* Bottone Modifica */}
       <div className="flex flex-col sm:flex-row gap-3">

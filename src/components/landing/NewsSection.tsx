@@ -249,7 +249,7 @@ export default function NewsSection() {
 
         {/* Cards */}
         {news.length === 0 ? (
-          <div className="text-center py-12 border border-gray-200 rounded-2xl bg-white">
+          <div className="text-center py-12 border border-black/10 rounded-2xl bg-white">
             <p className="text-secondary/80 font-medium">Nessuna news pubblicata al momento.</p>
           </div>
         ) : (
@@ -277,7 +277,7 @@ export default function NewsSection() {
                 draggable={false}
                 onDragStart={preventNativeDrag}
                 onClickCapture={handleCardClickCapture}
-                className={`flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer${isCarousel ? " flex-shrink-0 w-72 sm:w-80 snap-center" : news.length >= 2 ? " flex-shrink-0 w-72 sm:w-80 snap-center md:w-full" : ""}`}
+                className={`flex flex-col bg-white border border-black/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer${isCarousel ? " flex-shrink-0 w-72 sm:w-80 snap-center" : news.length >= 2 ? " flex-shrink-0 w-72 sm:w-80 snap-center md:w-full" : ""}`}
               >
                 {/* Immagine */}
                 <div className="w-full aspect-[16/9] overflow-hidden">

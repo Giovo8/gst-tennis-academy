@@ -200,7 +200,7 @@ export default function TournamentDetail() {
             <p className="text-sm text-secondary/70 mb-6">Il torneo che stai cercando non esiste o è stato rimosso.</p>
             <button
               onClick={() => router.push('/tornei')}
-              className="inline-flex items-center gap-2 rounded-md bg-secondary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-secondary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               Torna ai Tornei
@@ -268,7 +268,7 @@ export default function TournamentDetail() {
         </div>
 
         {/* Dettagli torneo */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+        <div className="bg-white border border-black/10 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
           
           <div className="space-y-6">
@@ -361,7 +361,7 @@ export default function TournamentDetail() {
 
         {/* Action Section */}
         {!isManager && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+        <div className="bg-white border border-black/10 rounded-xl p-6 mb-6">
             {joined ? (
               <div>
                 <p className="text-lg font-bold text-secondary mb-2">✓ Sei iscritto a questo torneo</p>
@@ -378,7 +378,7 @@ export default function TournamentDetail() {
                 <button 
                   onClick={handleJoin} 
                   disabled={actionLoading} 
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold bg-secondary text-white rounded-md hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold bg-secondary text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                 >
                   {actionLoading ? (
                     <>
@@ -407,7 +407,7 @@ export default function TournamentDetail() {
         )}
 
         {/* Competition View Section */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border border-black/10 rounded-xl p-6">
           <TournamentManagerWrapper
             tournamentId={id}
             isAdmin={false}

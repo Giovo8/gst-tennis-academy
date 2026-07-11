@@ -80,11 +80,11 @@ export default function AdminStaffDetailPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-4xl font-bold text-secondary">Dettaglio Staff</h1>
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-xl border border-black/10 p-8 text-center">
           <p className="text-secondary/70">Membro staff non trovato.</p>
           <Link
             href="/dashboard/admin/staff"
-            className="inline-flex mt-4 px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all"
+            className="inline-flex mt-4 px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all"
           >
             Torna alla lista
           </Link>
@@ -113,7 +113,7 @@ export default function AdminStaffDetailPage() {
         <h1 className="text-4xl font-bold text-secondary">Dettaglio Staff</h1>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
@@ -126,10 +126,10 @@ export default function AdminStaffDetailPage() {
                 <img
                   src={staff.image_url}
                   alt={staff.full_name}
-                  className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg object-contain object-left bg-secondary/5 border border-gray-200 md:border-0"
+                  className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg object-contain object-left bg-secondary/5 border border-black/10 md:border-0"
                 />
               ) : (
-                <div className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg bg-secondary/10 border border-gray-200 md:border-0 flex items-center justify-center">
+                <div className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg bg-secondary/10 border border-black/10 md:border-0 flex items-center justify-center">
                   <span className="font-bold text-4xl text-secondary">{staff.full_name.charAt(0).toUpperCase()}</span>
                 </div>
               )}

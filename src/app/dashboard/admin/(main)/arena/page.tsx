@@ -305,7 +305,7 @@ export default function AdminArenaPage() {
       case "oro":
         return "bg-amber-100 text-amber-700 border border-amber-200";
       case "argento":
-        return "bg-gray-100 text-gray-700 border border-gray-200";
+        return "bg-gray-100 text-gray-700 border border-black/10";
       case "bronzo":
         return "bg-orange-100 text-orange-700 border border-orange-200";
       case "platino":
@@ -374,13 +374,13 @@ export default function AdminArenaPage() {
           placeholder={placeholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
         />
       </div>
       <button
         type="button"
         onClick={() => setIsFilterModalOpen(true)}
-        className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+        className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
           hasActiveFilters
             ? "border-secondary bg-secondary text-white hover:opacity-90"
             : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
@@ -406,17 +406,17 @@ export default function AdminArenaPage() {
               setActiveTab("gestione");
               router.push("/dashboard/admin/arena/create-challenge");
             }}
-            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             Crea Sfida
           </button>
 
           <button
             onClick={() => setActiveTab(activeTab === "info" ? "gestione" : "info")}
-            className={`p-2.5 rounded-md transition-all ${
+            className={`p-2.5 rounded-lg transition-all ${
               activeTab === "info"
                 ? "text-white bg-secondary"
-                : "text-secondary/70 bg-white border border-gray-200 hover:bg-secondary hover:text-white"
+                : "text-secondary/70 bg-white border border-black/10 hover:bg-secondary hover:text-white"
             }`}
             title="Info"
           >
@@ -448,7 +448,7 @@ export default function AdminArenaPage() {
           }).sort((left, right) => getChallengeSortTimestamp(left) - getChallengeSortTimestamp(right));
 
           return filteredChallenges.length === 0 ? (
-          <div className="text-center py-20 rounded-md bg-white">
+          <div className="text-center py-20 rounded-lg bg-white">
             <Swords className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
             <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna sfida trovata</h3>
             <p className="text-secondary/60">Crea la prima sfida per iniziare</p>
@@ -500,7 +500,7 @@ export default function AdminArenaPage() {
                   key={challenge.id}
                   onClick={() => router.push(`/dashboard/admin/arena/challenge/${challenge.id}`)}
                   className={`rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity ${
-                    isPending ? "border border-gray-200" : ""
+                    isPending ? "border border-black/10" : ""
                   }`}
                   style={{ background: cardBg }}
                 >
@@ -541,7 +541,7 @@ export default function AdminArenaPage() {
                       {openMenuId === challenge.id && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-                          <div className="absolute right-0 top-9 z-30 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-1">
+                          <div className="absolute right-0 top-9 z-30 w-52 bg-white rounded-lg shadow-xl border border-black/10 py-1">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -644,7 +644,7 @@ export default function AdminArenaPage() {
         })()}
 
       {/* Classifica Section */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica Arena</h2>
         </div>
@@ -760,7 +760,7 @@ export default function AdminArenaPage() {
       {/* Info Tab */}
       {activeTab === "info" && (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Sistema di Punteggio</h2>
               </div>
@@ -769,7 +769,7 @@ export default function AdminArenaPage() {
                   {/* Best-of-1 */}
                   <div>
                     <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Set singolo</p>
-                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <div className="overflow-hidden rounded-lg border border-black/10">
                       <table className="min-w-full text-sm">
                         <thead className="bg-gray-50">
                           <tr>
@@ -792,7 +792,7 @@ export default function AdminArenaPage() {
                   {/* Best-of-3 */}
                   <div>
                     <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 3 set</p>
-                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <div className="overflow-hidden rounded-lg border border-black/10">
                       <table className="min-w-full text-sm">
                         <thead className="bg-gray-50">
                           <tr>
@@ -820,7 +820,7 @@ export default function AdminArenaPage() {
                   {/* Best-of-5 */}
                   <div>
                     <p className="text-xs font-semibold text-secondary/50 uppercase tracking-wider mb-2">Al meglio dei 5 set</p>
-                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <div className="overflow-hidden rounded-lg border border-black/10">
                       <table className="min-w-full text-sm">
                         <thead className="bg-gray-50">
                           <tr>
@@ -894,7 +894,7 @@ export default function AdminArenaPage() {
                   id="arena-status-filter"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="all">Tutte</option>
                   <option value="active">Attivo</option>

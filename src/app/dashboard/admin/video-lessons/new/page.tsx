@@ -323,7 +323,7 @@ export default function VideoLessonFormPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Video</h2>
             </div>
@@ -337,7 +337,7 @@ export default function VideoLessonFormPage() {
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-black/10"
                 placeholder="Es: Dritto in slice"
                 required
               />
@@ -352,7 +352,7 @@ export default function VideoLessonFormPage() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-black/10"
                 placeholder="Descrizione dettagliata del video..."
               />
             </div>
@@ -366,7 +366,7 @@ export default function VideoLessonFormPage() {
                 type="url"
                 value={formData.video_url}
                 onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-black/10"
                 placeholder="https://youtube.com/..."
                 required
               />
@@ -381,14 +381,14 @@ export default function VideoLessonFormPage() {
                 type="url"
                 value={formData.thumbnail_url}
                 onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-0 focus:border-black/10"
                 placeholder="https://..."
               />
             </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200">
+          <div className="bg-white rounded-xl border border-black/10">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
             </div>

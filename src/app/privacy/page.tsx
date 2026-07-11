@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-black/10 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
           <div className="space-y-8">
             <section>
               <h2 className="text-2xl font-semibold text-secondary mb-4">
@@ -41,7 +41,7 @@ export default function PrivacyPage() {
                 2. Dati che raccogliamo
               </h2>
               <div className="space-y-4">
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-medium text-secondary mb-2">
                     Dati forniti direttamente:
                   </h3>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                     <li>Informazioni relative a prenotazioni, iscrizioni e preferenze di utilizzo</li>
                   </ul>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-medium text-secondary mb-2">
                     Dati raccolti automaticamente:
                   </h3>

@@ -418,7 +418,7 @@ export default function ModificaLezionePage() {
       )}
 
       {/* Info */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
@@ -438,7 +438,7 @@ export default function ModificaLezionePage() {
       </div>
 
       {/* Maestri */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
         </div>
@@ -486,7 +486,7 @@ export default function ModificaLezionePage() {
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -554,7 +554,7 @@ export default function ModificaLezionePage() {
       </div>
 
       {/* Orari disponibili */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between gap-4">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
         </div>
@@ -609,7 +609,7 @@ export default function ModificaLezionePage() {
                     return (
                       <div
                         key={b.id}
-                        className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 pointer-events-none"
+                        className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 pointer-events-none"
                         style={{ ...getBookingStyle(), left: `${(startSlot / 32) * 100}%`, width: `calc(${(duration / 32) * 100}% - 4px)`, top: '4px', bottom: '4px', marginLeft: '2px' }}
                       />
                     );

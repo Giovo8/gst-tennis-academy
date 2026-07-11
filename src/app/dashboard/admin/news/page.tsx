@@ -180,7 +180,7 @@ export default function AdminNewsPage() {
               <div className="flex flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:items-center">
                 <Link
                   href="/dashboard/admin/news/create"
-                  className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
                 >
                   Crea News
                 </Link>
@@ -188,7 +188,7 @@ export default function AdminNewsPage() {
                   <button
                     onClick={deleteAllDrafts}
                     disabled={deletingDrafts}
-                    className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-[#023b52] rounded-md hover:bg-[#023b52]/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {deletingDrafts ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     Elimina bozze
@@ -198,7 +198,7 @@ export default function AdminNewsPage() {
                   href="/dashboard/admin/news/ai"
                   title="Apri News AI (Gemini)"
                   aria-label="Apri News AI (Gemini)"
-                  className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-md border border-gray-200 bg-white text-secondary shadow-sm transition-all hover:bg-gray-50 hover:border-gray-300"
+                  className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-lg border border-black/10 bg-white text-secondary shadow-sm transition-all hover:bg-gray-50 hover:border-gray-300"
                 >
                   <Sparkles className="h-4 w-4" />
                   {aiBozzeCount > 0 && (
@@ -222,7 +222,7 @@ export default function AdminNewsPage() {
               placeholder="Cerca per titolo o contenuto..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+              className="w-full rounded-xl border border-black/10 bg-white pl-12 pr-4 py-3 text-secondary placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-black/10"
             />
           </div>
           
@@ -234,7 +234,7 @@ export default function AdminNewsPage() {
               </div>
             </div>
           ) : filteredNews.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+            <div className="text-center py-12 bg-white rounded-xl border border-black/10">
               <Newspaper className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <h3 className="text-lg font-semibold text-secondary">
                 {searchQuery || filterCategory !== "all" 
@@ -257,7 +257,7 @@ export default function AdminNewsPage() {
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+            <div className="bg-white rounded-xl border border-black/10 overflow-hidden divide-y divide-gray-100">
               {filteredNews.map((item) => (
                 <Link
                   key={item.id}

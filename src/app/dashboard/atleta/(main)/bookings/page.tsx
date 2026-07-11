@@ -885,7 +885,7 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
               placeholder="Cerca per nome atleta, maestro, email o campo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
             />
           </div>
 

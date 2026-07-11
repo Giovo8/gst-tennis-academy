@@ -288,7 +288,7 @@ export default function NotificationsDropdown({ iconSize = "h-4 w-4", buttonSize
           />
           {/* Dropdown */}
           <div
-            className="hidden lg:block fixed w-96 bg-white rounded-md shadow-xl border border-black/10"
+            className="hidden lg:block fixed w-96 bg-white rounded-lg shadow-xl border border-black/10"
             style={{ zIndex: 9999, bottom: dropdownPos.bottom, left: dropdownPos.left }}
           >
             <div className="px-4 py-3 bg-secondary border-b border-black/10 flex items-center justify-between rounded-t-md">

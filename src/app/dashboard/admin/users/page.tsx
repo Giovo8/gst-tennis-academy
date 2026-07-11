@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Users, Loader2, Search, Crown, GraduationCap, Home, UserCheck, Ticket, Plus, UserPlus, Trash2, Edit2, X, Check, Eye, MoreVertical, SlidersHorizontal, KeyRound } from "lucide-react";
+import { Users, Loader2, Search, Crown, GraduationCap, Home, UserCheck, Ticket, Plus, UserPlus, Trash2, Edit2, X, Check, Eye, MoreVertical, SlidersHorizontal, KeyRound, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui";
 
 type Profile = {
   id: string;
@@ -30,7 +29,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "gestore" | "maestro" | "atleta">("all");
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -205,33 +204,10 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
     atleta: users.filter(u => u.role === "atleta").length,
   };
 
-  return (
-    <div className="space-y-6 pt-3">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-secondary">
-            Anagrafica Utenti
-          </h1>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Link
-            href={`${basePath}/users/new`}
-            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            Crea Utente
-          </Link>
-          <Link
-            href="/dashboard/admin/invite-codes"
-            title="Codici Invito"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-gray-200 bg-white text-secondary/70 hover:bg-secondary/5 transition-all flex-shrink-0"
-          >
-            <Ticket className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+  const hasActiveFilters = filterRole !== "all";
 
-      {/* Search + filtro */}
+  const renderSearchWithFilter = () => (
+    <div className="flex flex-col gap-3 w-full">
       <div className="flex items-center gap-2 w-full">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
@@ -240,21 +216,116 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
             placeholder="Cerca per nome, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
         <button
           type="button"
-          onClick={() => setIsFilterModalOpen(true)}
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
-            filterRole !== "all"
+          onClick={() => setIsFilterPanelOpen((prev) => !prev)}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+            hasActiveFilters || isFilterPanelOpen
               ? "border-secondary bg-secondary text-white hover:opacity-90"
-              : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+              : "border-black/10 bg-white text-secondary hover:bg-gray-50"
           }`}
+          aria-label="Mostra o nascondi filtri"
           title="Filtri"
         >
           <SlidersHorizontal className="h-5 w-5" />
         </button>
+      </div>
+
+      {isFilterPanelOpen && (
+        <div className="flex items-center gap-2 w-full">
+          <button
+            type="button"
+            onClick={() => {
+              if (sortBy !== "name") {
+                setSortBy("name");
+                setSortOrder("asc");
+                return;
+              }
+              setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+            }}
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+              sortBy === "name"
+                ? "border-[#023047] bg-[#023047] text-white hover:opacity-90"
+                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+            }`}
+            aria-label="Inverti ordinamento"
+            title="Inverti ordinamento"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+
+          <div className="flex flex-1 items-center gap-2">
+            {[
+              { value: "all", label: "Tutti" },
+              { value: "admin", label: "Admin" },
+              { value: "gestore", label: "Gestore" },
+              { value: "maestro", label: "Maestro" },
+              { value: "atleta", label: "Atleta" },
+            ].map((option) => {
+              const isSelected = filterRole === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFilterRole(option.value as typeof filterRole)}
+                  className={`h-11 flex-1 rounded-lg border px-2 text-sm font-semibold transition-colors ${
+                    isSelected
+                      ? "border-secondary bg-secondary text-white"
+                      : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setFilterRole("all");
+              setSortBy(null);
+              setSortOrder("asc");
+            }}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
+            aria-label="Reset filtri"
+            title="Reset filtri"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 pt-3">
+      {/* Header actions */}
+      <div className="w-full flex items-center gap-2">
+        <Link
+          href={`${basePath}/users/new`}
+          className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Crea Utente</span>
+        </Link>
+        <Link
+          href="/dashboard/admin/invite-codes"
+          title="Codici Invito"
+          className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-[#023047] rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+        >
+          <Ticket className="h-4 w-4" />
+          <span>Codici Invito</span>
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col gap-3">
+        {renderSearchWithFilter()}
       </div>
 
       {/* Users List */}
@@ -264,7 +335,7 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
           <p className="mt-4 text-secondary/60">Caricamento utenti...</p>
         </div>
       ) : filteredUsers.length === 0 ? (
-        <div className="text-center py-20 rounded-md bg-white">
+        <div className="text-center py-20 rounded-lg bg-white">
           <Users className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">Nessun utente trovato</h3>
           <p className="text-secondary/60">Prova a modificare i filtri di ricerca</p>
@@ -314,49 +385,6 @@ export default function UsersPage({ basePath = "/dashboard/admin" }: UsersPagePr
           })}
         </div>
       )}
-      <Modal open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-        <ModalContent
-          size="md"
-          showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
-        >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
-            <ModalTitle className="text-white text-lg">Filtra Utenti</ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white space-y-4">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wide text-secondary/70">Ruolo</label>
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value as typeof filterRole)}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
-              >
-                <option value="all">Tutti i ruoli</option>
-                <option value="admin">Admin</option>
-                <option value="gestore">Gestore</option>
-                <option value="maestro">Maestro</option>
-                <option value="atleta">Atleta</option>
-              </select>
-            </div>
-          </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button
-              type="button"
-              onClick={() => setFilterRole("all")}
-              className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Rimuovi filtri
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsFilterModalOpen(false)}
-              className="w-1/2 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity rounded-br-lg"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </div>
   );
 }

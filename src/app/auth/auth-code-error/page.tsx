@@ -32,7 +32,7 @@ export default function AuthCodeErrorPage() {
           <div className="space-y-4">
             <Link
               href="/login"
-              className="block w-full py-3 px-4 bg-secondary text-white font-semibold rounded-md text-base hover:opacity-90 transition-all"
+              className="block w-full py-3 px-4 bg-secondary text-white font-semibold rounded-lg text-base hover:opacity-90 transition-all"
             >
               Vai al Login
             </Link>

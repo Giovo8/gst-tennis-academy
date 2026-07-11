@@ -272,7 +272,7 @@ export default function GroupStageView({
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+      <div className="rounded-lg border border-black/10 bg-white p-6 text-center">
         <Target className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
         <h3 className="text-lg font-semibold text-secondary mb-2">Gironi non ancora generati</h3>
         <p className="text-sm text-secondary/70 mb-6">
@@ -282,7 +282,7 @@ export default function GroupStageView({
           <button
             onClick={handleGenerateGroups}
             disabled={generating}
-            className="rounded-md bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2 shadow-sm"
+            className="rounded-lg bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2 shadow-sm"
           >
             <RefreshCw className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
             {generating ? 'Generazione...' : 'Genera Gironi'}
@@ -302,10 +302,10 @@ export default function GroupStageView({
             <button
               key={group.id}
               onClick={() => setSelectedGroup(group.id)}
-              className={`rounded-md px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                 selectedGroup === group.id
                   ? 'bg-secondary text-white'
-                  : 'bg-white border border-gray-200 text-secondary/80 hover:bg-secondary/5'
+                  : 'bg-white border border-black/10 text-secondary/80 hover:bg-secondary/5'
               }`}
             >
               {group.group_name}
@@ -315,10 +315,10 @@ export default function GroupStageView({
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab('standings')}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               activeTab === 'standings'
                 ? 'border border-secondary bg-secondary text-white'
-                : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
             }`}
           >
             <Trophy className="h-4 w-4" />
@@ -326,10 +326,10 @@ export default function GroupStageView({
           </button>
           <button
             onClick={() => setActiveTab('matches')}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
               activeTab === 'matches'
                 ? 'border border-secondary bg-secondary text-white'
-                : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
             }`}
           >
             <Calendar className="h-4 w-4" />
@@ -353,7 +353,7 @@ export default function GroupStageView({
             return (
               <div
                 key={participant.id}
-                className="bg-white rounded-md px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
+                className="bg-white rounded-lg px-5 py-4 hover:shadow-md transition-all border-l-4 border-secondary"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
@@ -383,7 +383,7 @@ export default function GroupStageView({
                   {isAdmin && (
                     <button
                       type="button"
-                      className="px-3 py-1.5 text-xs text-[#022431] hover:bg-[#022431]/10 rounded-md font-medium whitespace-nowrap transition-colors"
+                      className="px-3 py-1.5 text-xs text-[#022431] hover:bg-[#022431]/10 rounded-lg font-medium whitespace-nowrap transition-colors"
                       onClick={() => {
                         if (confirm(`Rimuovere ${fullName} dal torneo?`)) {
                           toast.info('Funzione rimozione partecipante da collegare (admin).');
@@ -447,7 +447,7 @@ export default function GroupStageView({
                   return (
                     <div
                       key={participant.id}
-                      className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                      className="bg-white rounded-lg px-5 py-4 border border-black/10 hover:border-gray-300 transition-all border-l-4"
                       style={{ borderLeftColor }}
                     >
                       <div className="grid grid-cols-[50px_40px_1fr_80px_100px_100px] gap-4 items-center">
@@ -498,7 +498,7 @@ export default function GroupStageView({
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
                 </div>
               ) : matches.length === 0 ? (
-                <div className="rounded-md border border-gray-200 bg-white p-8 text-center">
+                <div className="rounded-lg border border-black/10 bg-white p-8 text-center">
                   <p className="text-sm text-secondary/70">Nessuna partita generata per questo girone</p>
                 </div>
               ) : (

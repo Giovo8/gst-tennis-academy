@@ -15,6 +15,7 @@ import {
   handleBookingPendingSideEffects,
   handleBookingDeletedSideEffects,
 } from "@/lib/bookings/bookingService";
+import { logActivityServer } from "@/lib/activity/logActivity";
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -708,6 +709,21 @@ export async function PUT(req: Request) {
         });
       }
     }
+
+    await logActivityServer({
+      userId: user.id,
+      action: "booking.update",
+      entityType: "booking",
+      entityId: id,
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+      metadata: {
+        updatedByRole: profile?.role || null,
+        updatedByManager,
+        updatedFields: Object.keys(normalizedUpdate || {}),
+        ownerUserId: booking.user_id,
+      },
+    });
     
     const duration = Date.now() - startTime;
     logger.apiResponse('PUT', '/api/bookings', HTTP_STATUS.OK, duration);
@@ -846,6 +862,21 @@ export async function DELETE(req: Request) {
       shouldNotifyAthlete,
       shouldNotifyAdmins,
       deletedByOwner,
+    });
+
+    await logActivityServer({
+      userId: user.id,
+      action: "booking.cancel",
+      entityType: "booking",
+      entityId: id,
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+      metadata: {
+        deletedByRole: profile?.role || null,
+        deletedByManager,
+        deletedByOwner,
+        ownerUserId: booking.user_id,
+      },
     });
 
     logger.info('Booking deleted', { userId: user.id, bookingId: id });

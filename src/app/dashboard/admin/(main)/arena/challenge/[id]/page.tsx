@@ -622,7 +622,7 @@ export default function AdminChallengeDetailPage() {
       </div>
 
       {/* Players Section */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -673,7 +673,7 @@ export default function AdminChallengeDetailPage() {
       </div>
 
       {/* Match Details */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Match</h2>
         </div>
@@ -745,7 +745,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Risultato */}
       {(challenge.status === "completed" || !!challenge.winner_id || showScoreForm || canEnterScore || challenge.status === "awaiting_score") && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Risultato</h2>
           </div>
@@ -753,7 +753,7 @@ export default function AdminChallengeDetailPage() {
             {!showScoreForm && challenge.winner_id && (
               <div className="space-y-3">
                 {scoreGrid && (
-                  <div className="mt-2 overflow-x-auto rounded-lg border border-gray-200">
+                  <div className="mt-2 overflow-x-auto rounded-lg border border-black/10">
                     <table className="min-w-full text-xs sm:text-sm">
                       <thead className="bg-gray-100 text-secondary">
                         <tr>
@@ -816,7 +816,7 @@ export default function AdminChallengeDetailPage() {
                       placeholder="es: 6-4, 6-3"
                       inputMode="text"
                       pattern="\d+-\d+(,\s*\d+-\d+)*"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                     <p className="text-xs text-secondary/60 mt-2">
                       Formato: 6-4, 6-3 · Il vincitore e i punti vengono calcolati automaticamente dai set.
@@ -845,7 +845,7 @@ export default function AdminChallengeDetailPage() {
                   <button
                     onClick={handleSaveScore}
                     disabled={savingScore || !score.trim()}
-                    className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                   >
                     {savingScore ? (
                       <>
@@ -864,7 +864,7 @@ export default function AdminChallengeDetailPage() {
                       setScore(challenge.score || "");
                     }}
                     disabled={savingScore}
-                    className="px-4 py-2.5 text-sm font-medium text-secondary bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="px-4 py-2.5 text-sm font-medium text-secondary bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Annulla
                   </button>
@@ -877,7 +877,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Booking Info */}
       {challenge.booking && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Prenotazione Campo</h2>
           </div>
@@ -920,7 +920,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Message */}
       {challenge.message && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio</h2>
           </div>

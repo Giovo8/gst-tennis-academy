@@ -624,7 +624,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
         <button
           onClick={() => changeDate(-1)}
-          className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+          className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
         >
           <span className="text-lg font-semibold text-white">&lt;</span>
         </button>
@@ -632,7 +632,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         <div className="min-w-0 flex justify-center">
           <button
             type="button"
-            className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
+            className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
             title="Scegli data"
             onClick={openDatePickerModal}
           >
@@ -655,7 +655,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
         <button
           onClick={() => changeDate(1)}
-          className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+          className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
         >
           <span className="text-lg font-semibold text-white">&gt;</span>
         </button>
@@ -728,7 +728,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               <div
                                 key={booking.id}
                                 onClick={isClickable ? () => openEntryModal(booking) : undefined}
-                                className={`absolute p-2 text-white text-[11px] font-bold flex flex-col justify-center rounded-md z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
+                                className={`absolute p-2 text-white text-[11px] font-bold flex flex-col justify-center rounded-lg z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
@@ -804,7 +804,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             return (
                               <div
                                 key={`foreign-${i}`}
-                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-default"
+                                className="absolute p-2.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-default"
                                 style={{
                                   background: '#94a3b8',
                                   left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
@@ -1007,7 +1007,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               <div
                                 key={`swap-${court}-${booking.id}`}
                                 onClick={isClickable ? () => openEntryModal(booking) : undefined}
-                                className={`absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
+                                className={`absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
@@ -1082,7 +1082,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             return (
                               <div
                                 key={`swap-foreign-${court}-${i}`}
-                                className="absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-md z-10 cursor-default"
+                                className="absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-default"
                                 style={{
                                   background: '#94a3b8',
                                   left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
@@ -1135,7 +1135,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -1146,7 +1146,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -1169,7 +1169,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth

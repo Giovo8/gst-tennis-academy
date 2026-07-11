@@ -757,7 +757,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             placeholder="Cerca per nome atleta, maestro, email o campo..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
         <button
@@ -776,7 +776,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       </div>
 
       {isFilterPanelOpen && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-2 w-full">
           <button
             type="button"
             onClick={() => {
@@ -789,7 +789,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             }}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
               sortBy === "date" && sortOrder === "desc"
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
+                ? "border-[#023047] bg-[#023047] text-white hover:opacity-90"
                 : "border-black/10 bg-white text-secondary hover:bg-gray-50"
             }`}
             aria-label="Inverti ordinamento"
@@ -798,28 +798,51 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             <ArrowUpDown className="h-4 w-4" />
           </button>
 
-          {[
-            { value: "active", label: "Attive" },
-            { value: "today", label: "Oggi" },
-            { value: "all", label: "Tutte" },
-            { value: "archived", label: "Archiviate" },
-          ].map((option) => {
-            const isSelected = filterVisibility === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setFilterVisibility(option.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
-                className={`h-11 rounded-lg border px-4 text-sm font-semibold transition-colors ${
-                  isSelected
-                    ? "border-secondary bg-secondary text-white"
-                    : "border-black/10 bg-white text-secondary hover:bg-gray-50"
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
+          <div className="flex flex-1 items-center gap-2">
+            {[
+              { value: "active", label: "Attive" },
+              { value: "today", label: "Oggi" },
+              { value: "all", label: "Tutte" },
+              { value: "archived", label: "Archiviate" },
+            ].map((option) => {
+              const isSelected = filterVisibility === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFilterVisibility(option.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
+                  className={`h-11 flex-1 rounded-lg border px-2 text-sm font-semibold transition-colors ${
+                    isSelected
+                      ? "border-secondary bg-secondary text-white"
+                      : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setFilterVisibility("active");
+              setFilterUser("all");
+              setFilterCoach("all");
+              setFilterType("all");
+              setFilterCourt("all");
+              setFilterDateFrom("");
+              setFilterDateTo("");
+              setSortBy("date");
+              setSortOrder("desc");
+            }}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
+            aria-label="Reset filtri"
+            title="Reset filtri"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
     </div>

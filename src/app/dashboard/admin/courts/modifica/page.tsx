@@ -587,7 +587,7 @@ export default function CourtBlockEditPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Date bloccate</h2>
         </div>
@@ -634,7 +634,7 @@ export default function CourtBlockEditPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli blocco</h2>
         </div>
@@ -689,7 +689,7 @@ export default function CourtBlockEditPage() {
                       value={customBlockType}
                       onChange={(e) => setCustomBlockType(e.target.value)}
                       placeholder="Es. intervento tecnico esterno"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                   </div>
                 )}
@@ -699,7 +699,7 @@ export default function CourtBlockEditPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Periodo</h2>
         </div>
@@ -711,7 +711,7 @@ export default function CourtBlockEditPage() {
                 <button
                   type="button"
                   onClick={() => openDatePickerModal("start")}
-                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   {formatDateButtonLabel(startDate)}
                 </button>
@@ -724,7 +724,7 @@ export default function CourtBlockEditPage() {
                 <button
                   type="button"
                   onClick={() => openDatePickerModal("end")}
-                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   {formatDateButtonLabel(endDate)}
                 </button>
@@ -759,7 +759,7 @@ export default function CourtBlockEditPage() {
                 <select
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   {TIME_SLOTS.map((time) => (
                     <option key={time} value={time}>{time}</option>
@@ -774,7 +774,7 @@ export default function CourtBlockEditPage() {
                 <select
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   {TIME_SLOTS.map((time) => (
                     <option key={time} value={time}>{time}</option>
@@ -786,7 +786,7 @@ export default function CourtBlockEditPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
         </div>
@@ -796,7 +796,7 @@ export default function CourtBlockEditPage() {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Aggiungi dettagli aggiuntivi..."
             rows={4}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary resize-none focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
       </div>
@@ -857,7 +857,7 @@ export default function CourtBlockEditPage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -867,7 +867,7 @@ export default function CourtBlockEditPage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -888,7 +888,7 @@ export default function CourtBlockEditPage() {
                       key={date.toISOString()}
                       type="button"
                       onClick={() => setPendingDate(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth

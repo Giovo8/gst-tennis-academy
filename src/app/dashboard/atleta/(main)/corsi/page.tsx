@@ -65,7 +65,7 @@ export default function AtletaCorsiPage() {
           placeholder="Cerca per nome o maestro..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
         />
       </div>
 
@@ -76,7 +76,7 @@ export default function AtletaCorsiPage() {
           <p className="mt-3 text-secondary/60">Caricamento corsi...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 rounded-md bg-white">
+        <div className="text-center py-20 rounded-lg bg-white">
           <GraduationCap className="w-16 h-16 mx-auto text-secondary/20 mb-4" />
           <h3 className="text-xl font-semibold text-secondary mb-2">
             {search ? "Nessun corso trovato" : "Nessun corso presente"}

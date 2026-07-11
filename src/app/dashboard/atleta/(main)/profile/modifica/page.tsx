@@ -642,7 +642,7 @@ export default function AthleteProfileEditPage({
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="Mario Rossi"
                   />
                 </div>
@@ -667,7 +667,7 @@ export default function AthleteProfileEditPage({
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="+39 123 456 7890"
                   />
                 </div>
@@ -691,7 +691,7 @@ export default function AthleteProfileEditPage({
                       value={dateTexts.birth_date}
                       onChange={(e) => handleDateTextChange("birth_date", e.target.value)}
                       maxLength={10}
-                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
                   </div>
                 </div>
@@ -704,7 +704,7 @@ export default function AthleteProfileEditPage({
                     type="text"
                     value={formData.birth_city}
                     onChange={(e) => setFormData({ ...formData, birth_city: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="Roma"
                   />
                 </div>
@@ -717,7 +717,7 @@ export default function AthleteProfileEditPage({
                     type="text"
                     value={formData.fiscal_code}
                     onChange={(e) => setFormData({ ...formData, fiscal_code: e.target.value.toUpperCase() })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase"
                     placeholder="RSSMRA80A01H501U"
                     maxLength={16}
                   />
@@ -731,7 +731,7 @@ export default function AthleteProfileEditPage({
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="Via Roma, 123"
                   />
                 </div>
@@ -744,14 +744,14 @@ export default function AthleteProfileEditPage({
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="col-span-2 sm:col-span-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="col-span-2 sm:col-span-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                     placeholder="Milano"
                   />
                   <input
                     type="text"
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
-                    className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
+                    className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 uppercase text-center"
                     placeholder="MI"
                     maxLength={2}
                   />
@@ -759,7 +759,7 @@ export default function AthleteProfileEditPage({
                     type="text"
                     value={formData.postal_code}
                     onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                    className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 text-center"
+                    className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 text-center"
                     placeholder="20100"
                     maxLength={5}
                   />
@@ -774,7 +774,7 @@ export default function AthleteProfileEditPage({
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     placeholder="Eventuali note..."
                     rows={3}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
                   />
                 </div>
               </div>
@@ -789,7 +789,7 @@ export default function AthleteProfileEditPage({
             </div>
             <div className="px-6 py-6">
               <div className="flex flex-col gap-4">
-                <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden border border-gray-200 lg:aspect-[4/3]">
+                <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden border border-black/10 lg:aspect-[4/3]">
                   {uploadingAvatar ? (
                     <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
                       <Loader2 className="h-7 w-7 animate-spin text-secondary" />
@@ -896,7 +896,7 @@ export default function AthleteProfileEditPage({
                         value={dateTexts.certificato_medico_scadenza}
                         onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                     </div>
                   </div>
@@ -929,7 +929,7 @@ export default function AthleteProfileEditPage({
                       type="text"
                       value={formData.numero_tessera}
                       onChange={(e) => setFormData({ ...formData, numero_tessera: e.target.value })}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                       placeholder="es. FIT-123456"
                     />
                   </div>
@@ -953,7 +953,7 @@ export default function AthleteProfileEditPage({
                         value={dateTexts.tesserato_scadenza}
                         onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                     </div>
                   </div>
@@ -1048,7 +1048,7 @@ export default function AthleteProfileEditPage({
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -1059,7 +1059,7 @@ export default function AthleteProfileEditPage({
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -1080,7 +1080,7 @@ export default function AthleteProfileEditPage({
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isCurrentMonth
@@ -1164,7 +1164,7 @@ export default function AthleteProfileEditPage({
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://esempio.com/immagine.jpg"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
                     onKeyDown={(e) => e.key === "Enter" && handleAvatarUrl()}
                   />
                   <button
@@ -1238,7 +1238,7 @@ export default function AthleteProfileEditPage({
                     value={certificatoLinkUrl}
                     onChange={(e) => setCertificatoLinkUrl(e.target.value)}
                     placeholder="https://esempio.com/certificato.pdf"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    className="flex-1 px-4 py-3 rounded-lg border border-black/10 bg-white text-gray-900 focus:outline-none focus:ring-0 focus:border-black/10"
                     onKeyDown={(e) => e.key === "Enter" && handleCertificatoUrl()}
                   />
                   <button

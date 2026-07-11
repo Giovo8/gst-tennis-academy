@@ -165,7 +165,7 @@ function ResetPasswordForm() {
             </p>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center px-8 py-4 bg-secondary text-white font-semibold rounded-md text-base hover:opacity-90 transition-all"
+              className="inline-flex items-center justify-center px-8 py-4 bg-secondary text-white font-semibold rounded-lg text-base hover:opacity-90 transition-all"
             >
               Vai al Login
             </Link>
@@ -207,7 +207,7 @@ function ResetPasswordForm() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-md text-base text-secondary placeholder-secondary/40 focus:outline-none focus:border-secondary transition-all pr-12"
+                  className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none transition-all pr-12"
                   placeholder="Minimo 8 caratteri"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -237,7 +237,7 @@ function ResetPasswordForm() {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   required
-                  className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-md text-base text-secondary placeholder-secondary/40 focus:outline-none focus:border-secondary transition-all pr-12"
+                  className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none transition-all pr-12"
                   placeholder="Ripeti la password"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -256,7 +256,7 @@ function ResetPasswordForm() {
 
             {/* Error Message */}
             {error && (
-              <div className="rounded-md bg-secondary/5 border border-secondary/10 p-4">
+              <div className="rounded-lg bg-secondary/5 border border-secondary/10 p-4">
                 <p className="text-sm text-secondary font-medium">{error}</p>
               </div>
             )}
@@ -264,7 +264,7 @@ function ResetPasswordForm() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-4 px-4 bg-secondary text-white font-semibold rounded-md text-base hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 px-4 bg-secondary text-white font-semibold rounded-lg text-base hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (

@@ -127,7 +127,7 @@ function StatistichePageInner() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-lg p-6 border border-black/10">
           <div className="flex items-center justify-between mb-2">
             <Trophy className="h-8 w-8 text-secondary/40" />
             <span className="text-3xl font-bold text-secondary">{stats.totalParticipations}</span>
@@ -135,7 +135,7 @@ function StatistichePageInner() {
           <p className="text-sm font-semibold text-secondary/70">Tornei totali</p>
         </div>
 
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-lg p-6 border border-black/10">
           <div className="flex items-center justify-between mb-2">
             <Target className="h-8 w-8 text-emerald-500/60" />
             <span className="text-3xl font-bold text-secondary">{stats.activeTournaments}</span>
@@ -143,7 +143,7 @@ function StatistichePageInner() {
           <p className="text-sm font-semibold text-secondary/70">In corso</p>
         </div>
 
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-lg p-6 border border-black/10">
           <div className="flex items-center justify-between mb-2">
             <Award className="h-8 w-8 text-amber-500/60" />
             <span className="text-3xl font-bold text-secondary">{stats.completedTournaments}</span>
@@ -151,7 +151,7 @@ function StatistichePageInner() {
           <p className="text-sm font-semibold text-secondary/70">Completati</p>
         </div>
 
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-lg p-6 border border-black/10">
           <div className="flex items-center justify-between mb-2">
             <BarChart3 className="h-8 w-8 text-secondary/40" />
             <span className="text-3xl font-bold text-secondary">{stats.winRate}%</span>
@@ -161,7 +161,7 @@ function StatistichePageInner() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-lg p-6 border border-gray-200">
+      <div className="bg-white rounded-lg p-6 border border-black/10">
         <h3 className="text-lg font-bold text-secondary mb-4 flex items-center gap-2">
           <Calendar className="h-5 w-5" />
           Attività recente
@@ -192,7 +192,7 @@ function StatistichePageInner() {
                       </p>
                     </div>
                   </div>
-                  <span className="px-3 py-1 text-xs font-semibold rounded-md bg-secondary text-white">
+                  <span className="px-3 py-1 text-xs font-semibold rounded-lg bg-secondary text-white">
                     {tournament.status}
                   </span>
                 </div>

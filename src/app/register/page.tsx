@@ -255,7 +255,7 @@ function RegisterForm() {
                   id="fullName"
                   type="text"
                   required
-                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="Mario Rossi"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -272,7 +272,7 @@ function RegisterForm() {
                   id="email"
                   type="email"
                   required
-                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="nome@esempio.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -288,7 +288,7 @@ function RegisterForm() {
                 <input
                   id="phone"
                   type="tel"
-                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   placeholder="+39 123 456 7890"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -306,7 +306,7 @@ function RegisterForm() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required
-                    className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 pr-12"
+                    className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
                     placeholder="Minimo 8 caratteri"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -336,7 +336,7 @@ function RegisterForm() {
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     required
-                    className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 pr-12"
+                    className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 pr-12"
                     placeholder="Ripeti la password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}

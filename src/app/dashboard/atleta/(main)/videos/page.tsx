@@ -144,7 +144,7 @@ export default function AtletaVideosPage() {
         {isMaestroView && (
           <Link
             href={`${basePath}/videos/new`}
-            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             <span>Crea Video</span>
           </Link>
@@ -159,13 +159,13 @@ export default function AtletaVideosPage() {
           placeholder="Cerca per titolo, descrizione..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
         />
       </div>
 
       {/* Videos List */}
       {filteredVideos.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl border border-black/10 p-12 text-center">
           <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun video trovato</h3>
           <p className="text-gray-600">
@@ -190,7 +190,7 @@ export default function AtletaVideosPage() {
               <Link
                 key={video.id}
                 href={`${basePath}/videos/${video.id}`}
-                className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-secondary/40 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                className="group bg-white rounded-xl border border-black/10 overflow-hidden hover:border-secondary/40 hover:shadow-md transition-all cursor-pointer flex flex-col"
               >
                 <div className="relative aspect-video bg-gray-100 overflow-hidden">
                   {thumbnailUrl ? (

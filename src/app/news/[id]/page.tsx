@@ -313,7 +313,7 @@ export default async function NewsDetailPage({
                   <Link
                     key={relatedPost.id}
                     href={`/news/${relatedPost.id}`}
-                    className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                    className="flex flex-col bg-white border border-black/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
                   >
                     <div className="w-full aspect-[16/9] overflow-hidden">
                       {relatedPost.image_url ? (

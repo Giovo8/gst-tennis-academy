@@ -64,8 +64,8 @@ export default function AthletesSelector({
   avatarByUserId = {},
   inlineMode = false,
   searchPlaceholder,
-  keepNeutralSelectedBorder = false,
-  keepNeutralInputFocus = false,
+  keepNeutralSelectedBorder = true,
+  keepNeutralInputFocus = true,
   hideEmptyMessages = false,
 }: AthletesSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -169,7 +169,7 @@ export default function AthletesSelector({
           <button
             type="button"
             onClick={() => setIsOpen((prev) => !prev)}
-            className="h-11 w-full rounded-lg border border-black/10 bg-white px-4 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="h-11 w-full rounded-lg border border-black/10 bg-white px-4 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus:ring-0 focus:border-black/10"
           >
             <span className={selectedAthletes.length > 0 ? "" : "text-secondary/40"}>
               Cerca Utenti
@@ -193,7 +193,7 @@ export default function AthletesSelector({
                   placeholder={inputPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`${inlineMode ? "h-11 w-full" : "w-full"} rounded-lg border border-black/10 bg-white pl-4 pr-10 ${inlineMode ? "" : "py-3"} text-secondary placeholder:text-secondary/40 focus:outline-none ${keepNeutralInputFocus ? "focus:ring-0 focus:border-black/10" : "focus:ring-2 focus:ring-secondary/20"}`}
+                  className={`${inlineMode ? "h-11 w-full" : "w-full"} rounded-lg border border-black/10 bg-white pl-4 pr-10 ${inlineMode ? "" : "py-3"} text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10`}
                 />
                 {searchTerm.trim().length > 0 && (
                   <button
@@ -351,21 +351,21 @@ export default function AthletesSelector({
                           placeholder="Nome e cognome"
                           value={guestName}
                           onChange={(e) => setGuestName(e.target.value)}
-                          className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                          className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                         />
                         <input
                           type="email"
                           placeholder="Email"
                           value={guestEmail}
                           onChange={(e) => setGuestEmail(e.target.value)}
-                          className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                          className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                         />
                         <input
                           type="tel"
                           placeholder="Telefono"
                           value={guestPhone}
                           onChange={(e) => setGuestPhone(e.target.value)}
-                          className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary/40"
+                          className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                         />
                         <button
                           onClick={handleAddGuest}

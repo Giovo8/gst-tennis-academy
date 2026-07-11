@@ -143,7 +143,7 @@ export default function TennisScoreInput({
   const setsToWin = Math.ceil(bestOf / 2);
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+    <div className="rounded-lg border border-black/10 bg-white overflow-hidden shadow-md hover:shadow-lg transition-shadow">
       {/* Header */}
       <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -152,11 +152,11 @@ export default function TennisScoreInput({
             <p className="text-xs text-secondary/60 mt-0.5">Al meglio di {bestOf} set (vince con {setsToWin} set)</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="bg-secondary/10 px-3 py-1.5 rounded-md">
+            <div className="bg-secondary/10 px-3 py-1.5 rounded-lg">
               <span className="text-lg font-bold text-secondary">{setsWon.p1}</span>
             </div>
             <span className="text-secondary/40 font-semibold">-</span>
-            <div className="bg-secondary/10 px-3 py-1.5 rounded-md">
+            <div className="bg-secondary/10 px-3 py-1.5 rounded-lg">
               <span className="text-lg font-bold text-secondary">{setsWon.p2}</span>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function TennisScoreInput({
               </div>
 
               {/* Player 1 Row */}
-              <div className={`flex items-center gap-3 px-5 py-4 rounded-md border-l-4 transition-all ${
+              <div className={`flex items-center gap-3 px-5 py-4 rounded-lg border-l-4 transition-all ${
                 isPlayer1Winning 
                   ? 'border-secondary bg-secondary/5' 
                   : 'border-gray-200 bg-gray-50'
@@ -198,7 +198,7 @@ export default function TennisScoreInput({
                   type="number"
                   value={set.player1_score}
                   onChange={(e) => updateSet(index, 'player1', e.target.value)}
-                  className="w-20 rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-20 rounded-lg border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   min="0"
                   max="99"
                   placeholder="0"
@@ -206,7 +206,7 @@ export default function TennisScoreInput({
               </div>
 
               {/* Player 2 Row */}
-              <div className={`flex items-center gap-3 px-5 py-4 rounded-md border-l-4 transition-all ${
+              <div className={`flex items-center gap-3 px-5 py-4 rounded-lg border-l-4 transition-all ${
                 isPlayer2Winning 
                   ? 'border-secondary bg-secondary/5' 
                   : 'border-gray-200 bg-gray-50'
@@ -218,7 +218,7 @@ export default function TennisScoreInput({
                   type="number"
                   value={set.player2_score}
                   onChange={(e) => updateSet(index, 'player2', e.target.value)}
-                  className="w-20 rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                  className="w-20 rounded-lg border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                   min="0"
                   max="99"
                   placeholder="0"
@@ -232,7 +232,7 @@ export default function TennisScoreInput({
         {sets.length < bestOf && (
           <button
             onClick={addSet}
-            className="w-full rounded-md border-2 border-dashed border-secondary/30 bg-white px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/5 hover:border-secondary/50 transition-all flex items-center justify-center gap-2"
+            className="w-full rounded-lg border-2 border-dashed border-secondary/30 bg-white px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/5 hover:border-secondary/50 transition-all flex items-center justify-center gap-2"
             type="button"
           >
             <Plus className="h-4 w-4" />
@@ -242,7 +242,7 @@ export default function TennisScoreInput({
 
         {/* Error Message */}
         {error && (
-          <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
+          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
             {error}
           </div>
         )}
@@ -252,7 +252,7 @@ export default function TennisScoreInput({
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 rounded-md bg-secondary px-5 py-3 text-sm font-semibold text-white hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm"
+            className="flex-1 rounded-lg bg-secondary px-5 py-3 text-sm font-semibold text-white hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             <Check className="h-4 w-4" />
             {submitting ? 'Salvataggio...' : 'Salva Punteggio'}
@@ -260,7 +260,7 @@ export default function TennisScoreInput({
           <button
             onClick={onCancel}
             disabled={submitting}
-            className="rounded-md border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-secondary hover:bg-gray-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-secondary hover:bg-gray-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
             <X className="h-4 w-4" />
             Annulla

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
@@ -502,7 +502,7 @@ export default function EditBookingPage() {
             <button
               type="button"
               onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); setSelectedSlots([]); }}
-              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&lt;</span>
             </button>
@@ -511,7 +511,7 @@ export default function EditBookingPage() {
               <button
                 type="button"
                 onClick={openDatePickerModal}
-                className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
+                className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
                 title="Scegli data"
               >
                 <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
@@ -530,7 +530,7 @@ export default function EditBookingPage() {
             <button
               type="button"
               onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); setSelectedSlots([]); }}
-              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
             >
               <span className="text-lg font-semibold text-white">&gt;</span>
             </button>
@@ -806,7 +806,7 @@ export default function EditBookingPage() {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Eventuali note..."
               rows={3}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 resize-none"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-0 focus-visible:border-black/10 resize-none"
             />
           </div>
         </div>
@@ -851,7 +851,7 @@ export default function EditBookingPage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese precedente"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -862,7 +862,7 @@ export default function EditBookingPage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                   aria-label="Mese successivo"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -882,7 +882,7 @@ export default function EditBookingPage() {
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected
                           ? "bg-secondary text-white font-semibold"
                           : isTodayDate
@@ -911,7 +911,7 @@ export default function EditBookingPage() {
               <button
                 type="button"
                 onClick={() => setDatePickerModalOpen(false)}
-                className="px-3 py-1.5 text-sm font-medium text-secondary border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-secondary border border-black/10 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Annulla
               </button>

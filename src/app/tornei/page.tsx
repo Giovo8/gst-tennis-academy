@@ -124,7 +124,7 @@ export default function TorneiPage() {
               <p className="mt-4 text-sm text-secondary/70">Caricamento tornei...</p>
             </div>
           ) : error ? (
-            <div className="max-w-xl mx-auto bg-red-50 text-red-800 rounded-md px-4 py-3 text-sm text-center">
+            <div className="max-w-xl mx-auto bg-red-50 text-red-800 rounded-lg px-4 py-3 text-sm text-center">
               {error}
             </div>
           ) : tournaments.length === 0 ? (
@@ -170,7 +170,7 @@ export default function TorneiPage() {
                       <Link
                         key={t.id}
                         href={`/tornei/${t.id}`}
-                        className="bg-white px-0 py-0 flex flex-row items-stretch border-l-4 border border-gray-200 rounded-md overflow-hidden hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="bg-white px-0 py-0 flex flex-row items-stretch border-l-4 border border-black/10 rounded-lg overflow-hidden hover:bg-gray-50 transition-colors cursor-pointer"
                         style={{ borderLeftColor: getBorderColor() }}
                       >
                         {/* Colonna data */}

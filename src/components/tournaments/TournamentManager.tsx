@@ -117,7 +117,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
   const renderParticipantsSection = () => {
     if (participants.length === 0) return null;
     return (
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -129,7 +129,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               placeholder="Cerca partecipante..."
               value={participantSearch}
               onChange={(e) => setParticipantSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-md bg-white border border-gray-200 text-secondary text-sm placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white border border-black/10 text-secondary text-sm placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
             />
           </div>
           <ul className="flex flex-col gap-2 max-h-[296px] overflow-y-auto pr-1">
@@ -163,7 +163,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                           <MoreVertical className="h-5 w-5" />
                         </button>
                         {openParticipantMenuId === participant.id && (
-                          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
+                          <div className="absolute right-0 top-8 z-20 bg-white border border-black/10 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
                             <button
                               onClick={() => handleRemoveParticipant(participant.id, fullName)}
                               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
@@ -205,7 +205,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
 
         {/* Tabellone - eliminazione_diretta */}
         {type === 'eliminazione_diretta' && (phase === 'eliminazione' || phase === 'completato') && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
             </div>
@@ -217,7 +217,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
 
         {/* Gironi - girone_eliminazione */}
         {type === 'girone_eliminazione' && (phase === 'gironi' || phase === 'eliminazione' || phase === 'completato') && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
             </div>
@@ -229,7 +229,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
 
         {/* Tabellone - girone_eliminazione fase eliminazione */}
         {type === 'girone_eliminazione' && (phase === 'eliminazione' || phase === 'completato') && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
             </div>
@@ -242,7 +242,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Calendario + Classifica - campionato */}
         {type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
           <>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
               </div>
@@ -250,7 +250,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                 <ChampionshipStandingsView tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
               </div>
@@ -281,13 +281,13 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                 <div className="flex gap-1 sm:gap-2">
                   <button
                     onClick={() => setActiveTab('overview')}
-                    className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                    className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                   >
                     <Users className="h-4 w-4" />
                     <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                   </button>
                   <button
-                    className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                    className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                   >
                     <Trophy className="h-4 w-4" />
                     <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
@@ -315,14 +315,14 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                     {tournament.current_phase && (tournament.current_phase as string) !== 'iscrizioni' && (
                       <div className="flex gap-1 sm:gap-2">
                         <button
-                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                          className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                         >
                           <Users className="h-4 w-4" />
                           <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                         </button>
                         <button
                           onClick={() => setActiveTab('bracket')}
-                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                          className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                         >
                           <Trophy className="h-4 w-4" />
                           <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
@@ -378,14 +378,14 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                     <h2 className="text-xl font-bold text-secondary">Partecipanti Iscritti</h2>
                     <div className="flex gap-1 sm:gap-2">
                       <button
-                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                        className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                       >
                         <Users className="h-4 w-4" />
                         <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('groups')}
-                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Target className="h-4 w-4" />
                         <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
@@ -436,13 +436,13 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <div className="flex gap-1 sm:gap-2">
                     <button
                       onClick={() => setActiveTab('overview')}
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Users className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                     </button>
                     <button
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                     >
                       <Target className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
@@ -450,7 +450,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                     {(tournament.current_phase === 'eliminazione' || tournament.current_phase === 'completato') && (
                       <button
                         onClick={() => setActiveTab('bracket')}
-                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Trophy className="h-4 w-4" />
                         <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
@@ -480,21 +480,21 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                     <h2 className="text-xl font-bold text-secondary">Partecipanti</h2>
                     <div className="flex gap-1 sm:gap-2">
                       <button
-                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                        className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                       >
                         <Users className="h-4 w-4" />
                         <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('groups')}
-                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Target className="h-4 w-4" />
                         <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('bracket')}
-                        className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                        className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                       >
                         <Trophy className="h-4 w-4" />
                         <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
@@ -547,20 +547,20 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <div className="flex gap-1 sm:gap-2">
                     <button
                       onClick={() => setActiveTab('overview')}
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Users className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                     </button>
                     <button
                       onClick={() => setActiveTab('groups')}
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Target className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
                     </button>
                     <button
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                     >
                       <Trophy className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
@@ -594,21 +594,21 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                     {tournament.current_phase && (tournament.current_phase as string) !== 'iscrizioni' && (
                       <div className="flex gap-1 sm:gap-2">
                         <button
-                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                          className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                         >
                           <Users className="h-4 w-4" />
                           <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                         </button>
                         <button
                           onClick={() => setActiveTab('calendar')}
-                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                          className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                         >
                           <Calendar className="h-4 w-4" />
                           <span className="text-xs sm:text-sm font-medium hidden sm:inline">Calendario</span>
                         </button>
                         <button
                           onClick={() => setActiveTab('standings')}
-                          className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                          className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                         >
                           <Trophy className="h-4 w-4" />
                           <span className="text-xs sm:text-sm font-medium hidden sm:inline">Classifica</span>
@@ -658,20 +658,20 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <div className="flex gap-1 sm:gap-2">
                     <button
                       onClick={() => setActiveTab('overview')}
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Users className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                     </button>
                     <button
                       onClick={() => setActiveTab('calendar')}
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                     >
                       <Calendar className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Calendario</span>
                     </button>
                     <button
-                      className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                      className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                     >
                       <Trophy className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Classifica</span>
@@ -699,20 +699,20 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <div className="flex gap-1 sm:gap-2">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Users className="h-4 w-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
                 </button>
                 <button
-                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                  className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
                 >
                   <Calendar className="h-4 w-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Calendario</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('standings')}
-                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Trophy className="h-4 w-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Classifica</span>
@@ -744,7 +744,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
             <div className="flex gap-1 sm:gap-2">
               {/* Tab Partecipanti - sempre per primo */}
               <button
-                className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
+                className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-secondary bg-secondary text-white"
               >
                 <Users className="h-4 w-4" />
                 <span className="text-xs sm:text-sm font-medium hidden sm:inline">Partecipanti</span>
@@ -754,7 +754,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               {tournament.tournament_type === 'eliminazione_diretta' && tournament.current_phase !== 'iscrizioni' && (
                 <button
                   onClick={() => setActiveTab('bracket')}
-                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Trophy className="h-4 w-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>
@@ -763,7 +763,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               {tournament.tournament_type === 'girone_eliminazione' && tournament.current_phase === 'gironi' && (
                 <button
                   onClick={() => setActiveTab('groups')}
-                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Target className="h-4 w-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Gironi</span>
@@ -772,7 +772,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               {tournament.tournament_type === 'girone_eliminazione' && tournament.current_phase === 'eliminazione' && (
                 <button
                   onClick={() => setActiveTab('bracket')}
-                  className="px-2 sm:px-4 py-2 rounded-md transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
+                  className="px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center gap-1 sm:gap-2 border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary"
                 >
                   <Trophy className="h-4 w-4" />
                   <span className="text-xs sm:text-sm font-medium hidden sm:inline">Tabellone</span>

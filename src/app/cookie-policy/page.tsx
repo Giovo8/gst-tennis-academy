@@ -24,7 +24,7 @@ export default function CookiePolicyPage() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-black/10 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
           <div className="space-y-8">
             <section>
               <h2 className="text-2xl font-semibold text-secondary mb-4">
@@ -40,7 +40,7 @@ export default function CookiePolicyPage() {
                 2. Tipi di Cookie che Utilizziamo
               </h2>
               <div className="space-y-4">
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-semibold text-secondary mb-3">
                     Cookie Essenziali
                   </h3>
@@ -54,7 +54,7 @@ export default function CookiePolicyPage() {
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-semibold text-secondary mb-3">
                     Cookie Funzionali
                   </h3>
@@ -68,7 +68,7 @@ export default function CookiePolicyPage() {
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-semibold text-secondary mb-3">
                     Cookie Tecnici di Sicurezza e Prestazioni
                   </h3>
@@ -82,7 +82,7 @@ export default function CookiePolicyPage() {
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <p className="text-secondary/80 leading-relaxed">
                     In base alla configurazione attuale del sito, non utilizziamo cookie di marketing o profilazione per pubblicità personalizzata.
                   </p>
@@ -95,7 +95,7 @@ export default function CookiePolicyPage() {
                 3. Durata dei Cookie
               </h2>
               <div className="space-y-4">
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-medium text-secondary mb-2">
                     Cookie di Sessione:
                   </h3>
@@ -103,7 +103,7 @@ export default function CookiePolicyPage() {
                     Vengono eliminati automaticamente quando chiudi il browser.
                   </p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border border-black/10 bg-gray-50 p-5">
                   <h3 className="text-lg font-medium text-secondary mb-2">
                     Cookie Permanenti:
                   </h3>
@@ -126,7 +126,7 @@ export default function CookiePolicyPage() {
                 <li><strong>Preferenze del Sito:</strong> Eventuali strumenti di consenso presenti sul sito possono permetterti di aggiornare le tue scelte</li>
                 <li><strong>Strumenti di Terze Parti:</strong> Puoi utilizzare estensioni come uBlock Origin o Privacy Badger</li>
               </ul>
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 mt-4">
+              <div className="bg-gray-50 rounded-xl border border-black/10 p-4 mt-4">
                 <p className="text-secondary/70 text-sm">
                   <strong>Nota:</strong> Disabilitare alcuni cookie potrebbe influire sulla funzionalità del sito e sulla tua esperienza utente.
                 </p>

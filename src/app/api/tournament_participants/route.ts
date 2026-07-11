@@ -111,7 +111,7 @@ export async function POST(req: Request) {
     // Log activity
     if (data && data[0]) {
       await logActivityServer({
-        userId: user_id,
+        userId: user.id,
         action: "tournament.join",
         entityType: "tournament",
         entityId: tournament_id,
@@ -121,6 +121,7 @@ export async function POST(req: Request) {
           participantId: data[0].id,
           registeredBy: profile.id,
           registeredByName: profile.full_name,
+          targetUserId: user_id,
         },
       });
     }
@@ -191,6 +192,22 @@ export async function PATCH(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
+    await logActivityServer({
+      userId: user.id,
+      action: "tournament.participant_update",
+      entityType: "tournament",
+      entityId: participant.tournament_id,
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+      metadata: {
+        participantId: id,
+        previousUserId: participant.user_id,
+        newUserId: user_id,
+        updatedBy: profile.id,
+        updatedByName: profile.full_name,
+      },
+    });
+
     return NextResponse.json({ participant: data?.[0] });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -206,7 +223,7 @@ export async function DELETE(req: Request) {
 
     if (id) {
       // find participant to check permissions
-      const { data: part, error: pErr } = await supabaseServer.from("tournament_participants").select("id, user_id").eq("id", id).single();
+      const { data: part, error: pErr } = await supabaseServer.from("tournament_participants").select("id, user_id, tournament_id").eq("id", id).single();
       if (pErr) return NextResponse.json({ error: pErr.message }, { status: 404 });
 
       const { user, profile } = await getUserProfileFromRequest(req);
@@ -231,6 +248,22 @@ export async function DELETE(req: Request) {
 
       const { error } = await supabaseServer.from("tournament_participants").delete().eq("id", id);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+      await logActivityServer({
+        userId: user.id,
+        action: "tournament.leave",
+        entityType: "tournament",
+        entityId: part.tournament_id || undefined,
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+        metadata: {
+          participantId: part.id,
+          removedUserId: part.user_id,
+          removedBy: profile.id,
+          removedByName: profile.full_name,
+        },
+      });
+
       return NextResponse.json({ success: true });
     }
 
@@ -260,6 +293,21 @@ export async function DELETE(req: Request) {
         .eq("user_id", user_id)
         .eq("tournament_id", tournament_id);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+      await logActivityServer({
+        userId: user.id,
+        action: "tournament.leave",
+        entityType: "tournament",
+        entityId: tournament_id,
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+        metadata: {
+          removedUserId: user_id,
+          removedBy: profile.id,
+          removedByName: profile.full_name,
+        },
+      });
+
       return NextResponse.json({ success: true });
     }
 

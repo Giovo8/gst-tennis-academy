@@ -645,7 +645,7 @@ export default function ConfigureChallengePage() {
       <div className="relative rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
         <button
           onClick={() => handleDateChange(addDays(selectedDate, -1))}
-          className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+          className="relative z-10 justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
         >
           <span className="text-lg font-semibold text-white">&lt;</span>
         </button>
@@ -654,7 +654,7 @@ export default function ConfigureChallengePage() {
           <button
             type="button"
             onClick={openDatePickerModal}
-            className="relative inline-flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
+            className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
             title="Scegli data"
           >
             <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
@@ -674,14 +674,14 @@ export default function ConfigureChallengePage() {
 
         <button
           onClick={() => handleDateChange(addDays(selectedDate, 1))}
-          className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-md transition-colors hover:bg-white/10 inline-flex items-center justify-center"
+          className="relative z-10 justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
         >
           <span className="text-lg font-semibold text-white">&gt;</span>
         </button>
       </div>
 
       {/* Dettagli Sfida */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
         </div>
@@ -777,7 +777,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -817,7 +817,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Card Orari disponibili */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
           <p className="text-xs text-secondary/60 sm:text-right">
@@ -917,7 +917,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Note */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio (opzionale)</h2>
         </div>
@@ -928,7 +928,7 @@ export default function ConfigureChallengePage() {
             placeholder="Aggiungi un messaggio alla tua sfida..."
             rows={3}
             maxLength={500}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 resize-none"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10 resize-none"
           />
           <p className="text-xs text-secondary/50 mt-2">{message.length}/500 caratteri</p>
         </div>
@@ -938,7 +938,7 @@ export default function ConfigureChallengePage() {
       <button
         onClick={handleSubmit}
         disabled={sending || !canSubmit}
-        className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md transition-all flex items-center justify-center gap-3"
+        className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
       >
         {sending ? (
           <>
@@ -968,7 +968,7 @@ export default function ConfigureChallengePage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -978,7 +978,7 @@ export default function ConfigureChallengePage() {
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -1003,7 +1003,7 @@ export default function ConfigureChallengePage() {
                       type="button"
                       onClick={() => !isDisabled && selectCalendarDay(date)}
                       disabled={isDisabled}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isDisabled
                           ? "text-gray-300 cursor-not-allowed"
                           : isSelected

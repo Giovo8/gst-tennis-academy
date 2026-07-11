@@ -229,7 +229,7 @@ export default function EliminationBracket({
 
   if (matches.length === 0) {
     return (
-      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+      <div className="rounded-lg border border-black/10 bg-white p-6 text-center">
         <Trophy className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
         <h3 className="text-lg font-semibold text-secondary mb-2">Bracket non ancora generato</h3>
         <p className="text-sm text-secondary/60 mb-6">
@@ -240,7 +240,7 @@ export default function EliminationBracket({
           <button
             onClick={generateBracket}
             disabled={generating}
-            className="rounded-md bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {generating ? 'Generazione...' : 'Genera Bracket'}
           </button>

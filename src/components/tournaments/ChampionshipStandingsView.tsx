@@ -293,7 +293,7 @@ export default function ChampionshipStandingsView({
 
   if (matches.length === 0 && !loading) {
     return (
-      <div className="rounded-md border border-gray-200 bg-white p-6 text-center">
+      <div className="rounded-lg border border-black/10 bg-white p-6 text-center">
         <Calendar className="mx-auto h-12 w-12 text-secondary/40 mb-4" />
         <h3 className="text-lg font-semibold text-secondary mb-2">Calendario non ancora generato</h3>
         <p className="text-sm text-secondary/70 mb-6">
@@ -303,7 +303,7 @@ export default function ChampionshipStandingsView({
           <button
             onClick={handleGenerateChampionship}
             disabled={generating}
-            className="rounded-md bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+            className="rounded-lg bg-secondary px-6 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
             {generating ? 'Generazione...' : 'Genera Calendario'}
@@ -322,10 +322,10 @@ export default function ChampionshipStandingsView({
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('participants')}
-              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
                 activeTab === 'participants'
                   ? 'border border-secondary bg-secondary text-white'
-                  : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                  : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
               }`}
             >
               <Users className="h-4 w-4" />
@@ -333,10 +333,10 @@ export default function ChampionshipStandingsView({
             </button>
             <button
               onClick={() => setActiveTab('calendar')}
-              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
                 activeTab === 'calendar'
                   ? 'border border-secondary bg-secondary text-white'
-                  : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                  : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
               }`}
             >
               <Calendar className="h-4 w-4" />
@@ -344,10 +344,10 @@ export default function ChampionshipStandingsView({
             </button>
             <button
               onClick={() => setActiveTab('standings')}
-              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
                 activeTab === 'standings'
                   ? 'border border-secondary bg-secondary text-white'
-                  : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                  : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
               }`}
             >
               <Trophy className="h-4 w-4" />
@@ -361,7 +361,7 @@ export default function ChampionshipStandingsView({
       {activeTab === 'participants' && (
         <div className="space-y-3">
           {participants.length === 0 ? (
-            <div className="bg-white rounded-md p-12 text-center">
+            <div className="bg-white rounded-lg p-12 text-center">
               <Users className="h-16 w-16 mx-auto mb-4 text-secondary/20" />
               <h3 className="text-xl font-semibold text-secondary mb-2">Nessun partecipante</h3>
               <p className="text-secondary/60">Nessun atleta iscritto al momento</p>
@@ -391,7 +391,7 @@ export default function ChampionshipStandingsView({
                 return (
                   <div
                     key={participant.id}
-                    className="bg-white rounded-lg px-5 py-4 border border-gray-200 hover:border-gray-300 transition-all border-l-4"
+                    className="bg-white rounded-lg px-5 py-4 border border-black/10 hover:border-gray-300 transition-all border-l-4"
                     style={{ borderLeftColor: "#0f4c7c" }}
                   >
                     <div className="flex items-center gap-4">
@@ -456,10 +456,10 @@ export default function ChampionshipStandingsView({
             >
                 <button
                   onClick={() => setSelectedRound(null)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                     selectedRound === null
                       ? 'border border-secondary bg-secondary text-white'
-                      : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                      : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
                   }`}
                 >
                   Tutte
@@ -468,10 +468,10 @@ export default function ChampionshipStandingsView({
                   <button
                     key={round}
                     onClick={() => setSelectedRound(round)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+                    className={`flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                       selectedRound === round
                         ? 'border border-secondary bg-secondary text-white'
-                        : 'border border-gray-200 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                        : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
                     }`}
                   >
                     Giornata {round}
@@ -481,11 +481,11 @@ export default function ChampionshipStandingsView({
           )}
 
           {loading ? (
-            <div className="bg-white rounded-md p-12 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-12 flex items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
             </div>
           ) : filteredMatches.length === 0 ? (
-            <div className="bg-white rounded-md p-12 text-center">
+            <div className="bg-white rounded-lg p-12 text-center">
               <Calendar className="h-16 w-16 mx-auto mb-4 text-secondary/20" />
               <h3 className="text-xl font-semibold text-secondary mb-2">Nessuna partita</h3>
               <p className="text-secondary/60">Nessuna partita trovata per questa giornata</p>

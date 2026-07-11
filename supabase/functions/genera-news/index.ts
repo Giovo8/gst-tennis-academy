@@ -42,7 +42,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MEDIA_KEYWORD_REGEX = /\b(video|clip|highlights?|youtube|filmato|guarda|diretta|live\b|streaming)\b/i;
+const MEDIA_KEYWORD_REGEX = /\b(video|clip|highlights?|youtube|filmato|guarda|diretta|live\b|streaming|podcast|puntata|episodio|ascolta|spotify|webinar|vlog)\b/i;
+
+// Item RSS da scartare a monte: annunci di podcast/video/promo, non vere notizie.
+const NON_NEWS_TITLE_REGEX = /\b(podcast|puntata|episodio|ep\.\s*\d+|video|vlog|highlights?|guarda\s+(?:il|la|qui)|rivivi|diretta|live\s*blog|streaming|spotify|youtube|twitch|quiz|sondaggio|newsletter|abbonati|promo(?:zione)?|sconto|fotogallery|gallery)\b/i;
+
+// Path URL tipici di contenuti multimediali o non-notizia.
+const NON_NEWS_URL_REGEX = /\/(podcasts?|videos?|audio|gallery|photogallery|fotogallery|live|quiz|shop)(?:\/|$|\?)/i;
+
+// La notizia deve riguardare il tennis.
+const TENNIS_TOPIC_REGEX = /\b(tennis|tennist\w*|atp|wta|itf|fitp|slam|wimbledon|roland\s*garros|us\s*open|australian\s*open|masters\s*1000|challenger|coppa\s+davis|davis\s+cup|billie\s*jean\s*king|united\s+cup|tie-?break|racchett\w*|tabellone|torneo|tornei|circuito|qualificazion\w*|sinner|alcaraz|djokovic|musetti|paolini|errani|berrettini)\b/i;
+
+function isUsableTennisItem(item: RssItemWithDate): boolean {
+  const title = typeof item.title === "string" ? item.title : "";
+  const link = typeof item.link === "string" ? item.link : "";
+  const snippet = typeof item.contentSnippet === "string" ? item.contentSnippet : "";
+  const content = typeof item.content === "string" ? stripHtml(item.content) : "";
+
+  // Scarta annunci podcast/video/promo gia dal titolo o dall'URL.
+  if (NON_NEWS_TITLE_REGEX.test(title)) return false;
+  if (NON_NEWS_URL_REGEX.test(link)) return false;
+
+  // Richiede pertinenza esplicita con il tennis nel testo disponibile.
+  const combined = `${title} ${snippet} ${content}`.slice(0, 3000);
+  return TENNIS_TOPIC_REGEX.test(combined);
+}
 
 const NAMED_ENTITIES: Record<string, string> = {
   amp: "&",
@@ -60,12 +84,35 @@ const NAMED_ENTITIES: Record<string, string> = {
   hellip: "...",
 };
 
-function safeJsonParse(text: string): { titolo: string; testo: string } | null {
+type GeminiParseResult =
+  | { kind: "news"; titolo: string; testo: string }
+  | { kind: "skip"; motivo: string }
+  | null;
+
+function interpretParsedJson(parsed: unknown): GeminiParseResult {
+  if (!parsed || typeof parsed !== "object") return null;
+  const record = parsed as Record<string, unknown>;
+
+  if (record.skip === true) {
+    return {
+      kind: "skip",
+      motivo: typeof record.motivo === "string" && record.motivo.trim()
+        ? record.motivo.trim()
+        : "Contenuto sorgente non adatto",
+    };
+  }
+
+  if (typeof record.titolo === "string" && typeof record.testo === "string") {
+    return { kind: "news", titolo: record.titolo.trim(), testo: record.testo.trim() };
+  }
+
+  return null;
+}
+
+function safeJsonParse(text: string): GeminiParseResult {
   try {
-    const parsed = JSON.parse(text);
-    if (typeof parsed?.titolo === "string" && typeof parsed?.testo === "string") {
-      return { titolo: parsed.titolo.trim(), testo: parsed.testo.trim() };
-    }
+    const result = interpretParsedJson(JSON.parse(text));
+    if (result) return result;
   } catch {
     // Proviamo fallback sotto.
   }
@@ -74,15 +121,10 @@ function safeJsonParse(text: string): { titolo: string; testo: string } | null {
   if (!match) return null;
 
   try {
-    const parsed = JSON.parse(match[0]);
-    if (typeof parsed?.titolo === "string" && typeof parsed?.testo === "string") {
-      return { titolo: parsed.titolo.trim(), testo: parsed.testo.trim() };
-    }
+    return interpretParsedJson(JSON.parse(match[0]));
   } catch {
     return null;
   }
-
-  return null;
 }
 
 function isGeminiQuotaError(message: string): boolean {
@@ -373,7 +415,7 @@ function sanitizeJournalisticText(text: string): string {
     .replace(/\n\nL'aggiornamento e datato[\s\S]*?\.?/gi, "")
     .replace(/\n\nIl passaggio piu rilevante resta[\s\S]*?\.?/gi, "")
     .replace(/\n\nIl quadro si aggiorna al[\s\S]*?tabellone\.?/gi, "")
-    .replace(/\n\n[^\n]*(?:video|clip|highlights?|youtube|filmato|guarda|diretta|live|streaming)[^\n]*/gi, "")
+    .replace(/\n\n[^\n]*(?:video|clip|highlights?|youtube|filmato|guarda|diretta|live|streaming|podcast|puntata|episodio|ascolta|spotify)[^\n]*/gi, "")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -408,7 +450,7 @@ function sanitizeGeneratedTitle(title: string): string {
   const cleaned = normalizeBrokenUtf8(decodeHtmlEntities(title || ""))
     .replace(/\[\s*(?:\.\.\.|…)+\s*\]/g, "")
     .replace(/\b(?:continua a leggere|leggi (?:tutto|anche)|read more)\b\.?/gi, "")
-    .replace(/^\s*(?:video|highlights?|live|diretta)\s*[:\-]\s*/i, "")
+    .replace(/^\s*(?:video|podcast|audio|highlights?|live|diretta)\s*[:\-|]\s*/i, "")
     .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -528,6 +570,7 @@ async function loadRecentItemsForSource(
       const feed = await parseFeedWithFallback(parser, candidateUrl);
       const recentItems = (feed.items ?? [])
         .filter((item) => isRecentToday(item as RssItemWithDate, now))
+        .filter((item) => isUsableTennisItem(item as RssItemWithDate))
         .slice(0, maxItems) as RssItemWithDate[];
 
       if (recentItems.length > 0) {
@@ -669,20 +712,21 @@ Deno.serve(async (req) => {
           ).slice(0, 5000);
 
           const promptBase = [
-            "Sei un redattore sportivo senior per una tennis academy italiana.",
-            "Scrivi una news approfondita, concreta e informativa senza inventare dati.",
-            "Obiettivo: massimizzare le informazioni utili presenti nella fonte.",
+            "Sei un redattore sportivo senior della sezione news della web app di una tennis academy italiana.",
+            "Riscrivi la notizia della fonte come articolo giornalistico originale, autonomo e completo, senza inventare dati.",
+            "L'articolo deve riguardare ESCLUSIVAMENTE il tennis: tornei, partite, risultati, ranking, atleti, circuito ATP/WTA/ITF, tennis giovanile o di club.",
+            "CONTROLLO PRELIMINARE OBBLIGATORIO: se il contenuto sorgente NON e una vera notizia di tennis — ad esempio annuncio di podcast, puntata audio o video, clip, highlights, diretta/live, quiz, sondaggio, newsletter, promozione, raccolta link o contenuto su altri sport — NON scrivere l'articolo e rispondi SOLO con: {\"skip\": true, \"motivo\": \"breve spiegazione\"}",
             "IMPORTANTE: scrivi SEMPRE in lingua italiana, indipendentemente dalla lingua della fonte.",
-            "Vincoli:",
-            "1) Titolo chiaro e giornalistico (max 16 parole), scritto in italiano.",
+            "Vincoli per l'articolo:",
+            "1) Titolo chiaro e giornalistico (max 16 parole), in italiano, senza prefissi come VIDEO:, PODCAST:, LIVE:.",
             "2) Testo lungo 4-6 paragrafi, tra 900 e 1600 caratteri, scritto in italiano.",
-            "3) Includi sempre dettagli tecnici: risultati, punteggi, numeri, date, ranking, streak, statistiche quando disponibili.",
+            "3) Includi sempre i dettagli tecnici presenti nella fonte: risultati, punteggi, numeri, date, ranking, streak, statistiche.",
             "4) Se alcuni numeri non sono presenti nella fonte, non inventarli.",
-            "5) Tono professionale, leggibile, adatto a pubblico sportivo.",
-            "6) Non citare video, clip, highlights o contenuti multimediali non incorporati nell'articolo pubblicato.",
-            "7) Stile cronaca: racconta fatti e contesto tecnico, senza inviti a guardare contenuti esterni.",
+            "5) Tono professionale da cronaca sportiva, leggibile, adatto agli utenti di una tennis academy.",
+            "6) Non menzionare MAI podcast, video, clip, highlights, dirette, streaming, link esterni o inviti a guardare/ascoltare altri contenuti.",
+            "7) L'articolo deve reggersi da solo come testo scritto: solo cronaca e contesto tecnico, nessun riferimento a contenuti multimediali.",
             "8) Non inserire mai marker di testo troncato come [...] o […].",
-            "Rispondi SOLO con JSON valido: { titolo: '...', testo: '...' }",
+            "Rispondi SOLO con JSON valido: {\"titolo\": \"...\", \"testo\": \"...\"} oppure {\"skip\": true, \"motivo\": \"...\"}",
             `Fonte: ${fonte.nome}`,
             `URL articolo: ${fonteUrl}`,
             `Data feed: ${dataRss ?? "non disponibile"}`,
@@ -697,13 +741,21 @@ Deno.serve(async (req) => {
           try {
             const aiResponse = await model.generateContent(finalPrompt);
             const outputText = aiResponse.response.text();
-            parsed = safeJsonParse(outputText);
+            const parseResult = safeJsonParse(outputText);
 
-            if (!parsed) {
+            if (!parseResult) {
               skippedCount += 1;
               generateErrors.push(`Parsing JSON fallito per fonte ${fonte.nome}: ${titoloRss}`);
               continue;
             }
+
+            if (parseResult.kind === "skip") {
+              skippedCount += 1;
+              generateErrors.push(`Contenuto scartato dall'AI (${fonte.nome}): ${titoloRss} — ${parseResult.motivo}`);
+              continue;
+            }
+
+            parsed = { titolo: parseResult.titolo, testo: parseResult.testo };
           } catch (modelError) {
             const modelMessage = modelError instanceof Error ? modelError.message : "Errore Gemini";
 

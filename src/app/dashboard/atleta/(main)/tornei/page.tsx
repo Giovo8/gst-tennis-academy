@@ -192,14 +192,14 @@ function AtletaTorneiPageInner() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link
             href={`${dashboardBase}/tornei/archivio`}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all bg-white text-secondary/70 border border-gray-200 hover:bg-secondary hover:text-white hover:border-secondary"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-white text-secondary/70 border border-black/10 hover:bg-secondary hover:text-white hover:border-secondary"
           >
             <Archive className="h-5 w-5" />
             <span>Archivio</span>
           </Link>
           <Link
             href={`${dashboardBase}/tornei/statistiche`}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all bg-white text-secondary/70 border border-gray-200 hover:bg-secondary hover:text-white hover:border-secondary"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-white text-secondary/70 border border-black/10 hover:bg-secondary hover:text-white hover:border-secondary"
           >
             <BarChart3 className="h-5 w-5" />
             <span>Statistiche</span>
@@ -210,7 +210,7 @@ function AtletaTorneiPageInner() {
       {/* Filters */}
       <div className="flex flex-col gap-3">
         {/* Tab Toggle */}
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-md p-1 w-full sm:w-auto">
+        <div className="flex gap-1 bg-white border border-black/10 rounded-lg p-1 w-full sm:w-auto">
           <button
             onClick={() => setActiveTab("all")}
             className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center ${
@@ -251,7 +251,7 @@ function AtletaTorneiPageInner() {
             placeholder="Cerca per nome, descrizione o categoria..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
           />
         </div>
       </div>
@@ -332,7 +332,7 @@ function AtletaTorneiPageInner() {
                   <div
                     key={tournament.id}
                     onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
-                    className="bg-white border border-gray-200 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
+                    className="bg-white border border-black/10 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
                     style={{ borderLeftColor: borderColor }}
                   >
                     <div className="flex items-center gap-4">

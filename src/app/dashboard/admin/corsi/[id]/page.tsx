@@ -460,7 +460,7 @@ export default function CorsoDetailPage() {
       </div>
 
       {/* Dettagli */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
@@ -518,7 +518,7 @@ export default function CorsoDetailPage() {
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
-          <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+          <div key={i} className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
@@ -566,7 +566,7 @@ export default function CorsoDetailPage() {
 
       {/* Maestri */}
       {maestros.length > 0 && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
@@ -598,7 +598,7 @@ export default function CorsoDetailPage() {
 
       {/* Partecipanti */}
       {athletes.length > 0 && (
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -642,7 +642,7 @@ export default function CorsoDetailPage() {
       )}
 
       {/* Lezioni */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>
@@ -696,7 +696,7 @@ export default function CorsoDetailPage() {
                     <>
                       <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
                       <div
-                        className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                        className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
                         style={{ top: menuPosition.top, left: menuPosition.left }}
                       >
                         <button
@@ -778,7 +778,7 @@ export default function CorsoDetailPage() {
                     value={editingNewDateText}
                     onChange={(e) => handleEditingDateTextChange(e.target.value)}
                     maxLength={10}
-                    className="w-44 rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="w-44 rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
@@ -787,7 +787,7 @@ export default function CorsoDetailPage() {
                 <select
                   value={editingStartTime}
                   onChange={(e) => { setEditingStartTime(e.target.value); setSlotError(null); }}
-                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="">—</option>
                   {TIME_SLOTS.map((t) => (
@@ -800,7 +800,7 @@ export default function CorsoDetailPage() {
                 <select
                   value={editingEndTime}
                   onChange={(e) => { setEditingEndTime(e.target.value); setSlotError(null); }}
-                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="">—</option>
                   {TIME_SLOTS.map((t) => (
@@ -813,7 +813,7 @@ export default function CorsoDetailPage() {
                 <select
                   value={editingNewCourt}
                   onChange={(e) => { setEditingNewCourt(e.target.value); setSlotError(null); }}
-                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                  className="w-44 rounded-lg border border-gray-300 shadow-sm px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
                 >
                   <option value="">—</option>
                   {courts.map((court) => (
@@ -854,9 +854,9 @@ export default function CorsoDetailPage() {
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"><ChevronLeft className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"><ChevronLeft className="h-4 w-4" /></button>
                 <p className="text-sm font-semibold text-gray-900 capitalize">{getCalendarMonthLabel(calendarViewDate)}</p>
-                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"><ChevronRight className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"><ChevronRight className="h-4 w-4" /></button>
               </div>
               <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
                 {WEEK_DAYS_CAL.map((d) => <span key={d} className="py-1">{d}</span>)}
@@ -870,7 +870,7 @@ export default function CorsoDetailPage() {
                       key={date.toISOString()}
                       type="button"
                       onClick={() => setPendingDate(normalizeDate(date))}
-                      className={`h-9 rounded-md text-sm transition-colors ${
+                      className={`h-9 rounded-lg text-sm transition-colors ${
                         isSelected ? "bg-secondary text-white font-semibold" :
                         isCurrentMonth ? "text-gray-800 hover:bg-gray-100" : "text-gray-400 hover:bg-gray-50"
                       } ${!isSelected && isToday ? "ring-1 ring-secondary/40" : ""}`}
