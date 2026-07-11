@@ -306,7 +306,7 @@ export default function VideoLessonFormPage() {
 
   return (
     <AuthGuard allowedRoles={[...allowedRoles]}>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         {/* Header */}
         <div>
           <p className="breadcrumb text-secondary/60">

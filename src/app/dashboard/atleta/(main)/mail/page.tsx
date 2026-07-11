@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
 import { getMessageNotificationLink } from "@/lib/notifications/links";
@@ -11,7 +11,6 @@ import {
   User,
   Send,
   ArrowLeft,
-  MoreVertical,
   Plus,
   Users,
   Settings,
@@ -110,11 +109,13 @@ export default function AtletaMailPage() {
   const [groupDescription, setGroupDescription] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<UserProfile[]>([]);
   const [creatingGroup, setCreatingGroup] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const [chatContainerHeight, setChatContainerHeight] = useState<number>(520);
 
   useEffect(() => {
     loadConversations();
     subscribeToNewMessages();
-  }, []);
+  }, [activeModal]);
 
   function subscribeToNewMessages() {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -509,7 +510,9 @@ export default function AtletaMailPage() {
   }
 
   async function createGroup() {
-    if (!groupName.trim() || selectedMembers.length === 0) return;
+    if (selectedMembers.length === 0) return;
+
+    const resolvedGroupName = groupName.trim() || getDefaultGroupName();
 
     setCreatingGroup(true);
     try {
@@ -526,7 +529,7 @@ export default function AtletaMailPage() {
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          name: groupName.trim(),
+          name: resolvedGroupName,
           description: groupDescription.trim() || null,
           member_ids: selectedMembers.map(m => m.id)
         })
@@ -610,44 +613,235 @@ export default function AtletaMailPage() {
     conv.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  function getDefaultGroupName() {
+    const usedNumbers = conversations
+      .filter((conv) => conv.type === "group")
+      .map((conv) => {
+        const match = conv.name.match(/^Gruppo\s+(\d+)$/i);
+        return match ? Number(match[1]) : 0;
+      });
+
+    const nextNumber = (usedNumbers.length > 0 ? Math.max(...usedNumbers) : 0) + 1;
+    return `Gruppo ${nextNumber}`;
+  }
+
+  function getInitials(name: string) {
+    return name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  }
+
+  const visibleMemberOptions = [
+    ...selectedMembers,
+    ...searchResults.filter((user) => !selectedMembers.some((member) => member.id === user.id)),
+  ];
+
+  useEffect(() => {
+    const updateChatHeight = () => {
+      if (!chatContainerRef.current || typeof window === "undefined") return;
+
+      const top = chatContainerRef.current.getBoundingClientRect().top;
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const bottomSpacing = window.innerWidth >= 1024 ? 44 : 36;
+      const nextHeight = Math.max(320, Math.floor(viewportHeight - top - bottomSpacing));
+
+      setChatContainerHeight((prev) => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev));
+    };
+
+    updateChatHeight();
+    window.addEventListener("resize", updateChatHeight);
+    window.addEventListener("orientationchange", updateChatHeight);
+    window.visualViewport?.addEventListener("resize", updateChatHeight);
+    window.visualViewport?.addEventListener("scroll", updateChatHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateChatHeight);
+      window.removeEventListener("orientationchange", updateChatHeight);
+      window.visualViewport?.removeEventListener("resize", updateChatHeight);
+      window.visualViewport?.removeEventListener("scroll", updateChatHeight);
+    };
+  }, [activeModal]);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-secondary">Chat</h1>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+    <div className="space-y-6 pt-3">
+      <h1 className="text-4xl font-bold text-secondary">Chat</h1>
+
+      {activeModal !== "newChat" && (
+        <div className="w-full">
           <button
             onClick={() => setActiveModal("newChat")}
-            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
           >
             Nuova Chat
           </button>
         </div>
-      </div>
+      )}
+
+      {activeModal === "newChat" && (
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">
+                {selectedMembers.length > 1 ? "Nuovo Gruppo" : "Nuova Chat"}
+              </h2>
+            </div>
+            <button
+              onClick={closeModal}
+              className="rounded-lg p-2 text-secondary/70 hover:bg-secondary/10 hover:text-secondary transition-colors"
+              aria-label="Chiudi nuova chat"
+              title="Chiudi"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="p-6 border-b border-black/10 bg-white space-y-4">
+            {selectedMembers.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-2">
+                  Nome del gruppo
+                </label>
+                <input
+                  type="text"
+                  placeholder={`Es. ${getDefaultGroupName()}`}
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-2">Cerca persone</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+                <input
+                  type="text"
+                  placeholder="Cerca per nome o email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full rounded-lg border border-black/10 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                />
+              </div>
+            </div>
+          </div>
+
+          {(selectedMembers.length > 0 || userSearch.trim().length > 0) && (
+            <div className="p-6 bg-white max-h-[360px] overflow-y-auto">
+              {visibleMemberOptions.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-secondary/60">
+                  {userSearch.length > 1
+                    ? "Nessun utente trovato"
+                    : "Cerca un utente per iniziare"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {visibleMemberOptions.map((user) => {
+                  const isSelected = selectedMembers.some((m) => m.id === user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => toggleMemberSelection(user)}
+                      className="flex items-center gap-3 rounded-lg border border-secondary bg-secondary text-white p-3 cursor-pointer transition-all hover:opacity-95"
+                    >
+                      <div className="w-5 h-5 flex-shrink-0 rounded border-2 border-white bg-white flex items-center justify-center transition-colors">
+                        {isSelected && <Check className="h-3 w-3 text-secondary" />}
+                      </div>
+                      <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-white/10 text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                        {user.avatar_url ? (
+                          <img
+                            src={user.avatar_url}
+                            alt={user.full_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{getInitials(user.full_name)}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate text-white">{user.full_name}</p>
+                          <p className="text-xs mt-0.5 truncate text-white/80">{user.email}</p>
+                        </div>
+                        <span className="flex-shrink-0 text-xs font-semibold uppercase tracking-wide text-white/80">
+                          {user.role}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              )}
+            </div>
+          )}
+
+          <div className="p-6 bg-white">
+            <button
+              onClick={() => {
+                if (selectedMembers.length === 1) {
+                  startNewChat(selectedMembers[0]);
+                } else if (selectedMembers.length > 1) {
+                  createGroup();
+                }
+              }}
+              disabled={selectedMembers.length === 0 || creatingGroup}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creatingGroup ? (
+                <>
+                  <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creazione in corso...
+                </>
+              ) : selectedMembers.length > 1 ? (
+                <>Crea Gruppo</>
+              ) : selectedMembers.length === 1 ? (
+                <>Avvia Chat</>
+              ) : (
+                <>Seleziona almeno una persona</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Chat Container */}
-      <div className="h-[calc(100vh-10rem)] flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div
+        ref={chatContainerRef}
+        style={{ height: `${chatContainerHeight}px` }}
+        className="min-h-[320px] flex flex-col bg-white rounded-lg border border-black/10 overflow-hidden"
+      >
         <div className="flex h-full">
           {/* Sidebar - Lista conversazioni */}
-          <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+          <div
+            className={`w-full ${selectedConversation ? 'md:w-80 border-r border-gray-200' : 'md:w-full border-r-0'} flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}
+          >
+            {/* Sidebar Header */}
+            <div className="h-16 px-6 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Chat</h2>
+            </div>
+
             {/* Search */}
-            <div className="px-4 py-3 border-b border-white/10 bg-secondary flex items-center">
+            <div className="px-6 pt-4 bg-white">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
                 <input
                   type="text"
                   placeholder="Cerca conversazioni..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 bg-white rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 h-10"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
             </div>
 
             {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto px-6 pt-3 pb-4">
               {loading ? (
                 <div className="p-8 text-center text-gray-500">Caricamento...</div>
               ) : filteredConversations.length === 0 ? (
@@ -662,67 +856,72 @@ export default function AtletaMailPage() {
                   </button>
                 </div>
               ) : (
-                filteredConversations.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => selectConversation(conv)}
-                    className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
-                      selectedConversation?.id === conv.id ? "bg-blue-50" : ""
-                    }`}
-                  >
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 relative">
-                        {conv.type === "group" ? (
-                          <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
-                            <Users className="h-6 w-6 text-secondary" />
+                <ul className="space-y-2">
+                  {filteredConversations.map((conv) => {
+                    const isUnread = conv.unreadCount > 0;
+                    const isSelected = selectedConversation?.id === conv.id;
+                    const useDarkCard = isSelected ? !isUnread : isUnread;
+
+                    return (
+                      <li key={conv.id}>
+                        <button
+                          onClick={() => selectConversation(conv)}
+                          className={`w-full text-left rounded-lg border transition-all ${
+                            useDarkCard
+                              ? "text-white hover:opacity-95"
+                              : "bg-white border-black/10 hover:border-black/20"
+                          }`}
+                          style={useDarkCard ? { background: "var(--secondary)", borderColor: "var(--secondary)" } : undefined}
+                        >
+                          <div className="flex items-center gap-3 py-3 px-3">
+                            <div className="flex-shrink-0 relative">
+                              {conv.type === "group" ? (
+                                <div className="w-11 h-11 rounded-lg flex items-center justify-center" style={{ background: useDarkCard ? "rgba(255,255,255,0.16)" : "var(--secondary)" }}>
+                                  <Users className="h-6 w-6 text-white" />
+                                </div>
+                              ) : conv.avatar ? (
+                                <img
+                                  src={conv.avatar}
+                                  alt={conv.name}
+                                  className="w-11 h-11 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div
+                                  className="w-11 h-11 rounded-lg flex items-center justify-center overflow-hidden"
+                                  style={{ background: useDarkCard ? "rgba(255,255,255,0.16)" : "var(--secondary)" }}
+                                >
+                                  <span className="text-sm font-bold text-white leading-none">
+                                    {getInitials(conv.name)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h3 className={`font-semibold text-sm truncate ${useDarkCard ? "text-white" : "text-secondary"}`}>
+                                  {conv.name}
+                                </h3>
+                              </div>
+
+                              <p className={`text-xs mt-0.5 truncate ${useDarkCard ? "text-white/80" : "text-secondary/60"}`}>
+                                {conv.type === "group" && conv.memberCount
+                                  ? `${conv.memberCount} membri · ${conv.lastMessage || "Inizia una conversazione"}`
+                                  : conv.lastMessage || "Inizia una conversazione"}
+                              </p>
+                            </div>
                           </div>
-                        ) : conv.avatar ? (
-                          <img
-                            src={conv.avatar}
-                            alt={conv.name}
-                            className="w-12 h-12 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <User className="h-6 w-6 text-gray-500" />
-                          </div>
-                        )}
-                        {conv.unreadCount > 0 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                            {conv.unreadCount}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between mb-1">
-                          <h3 className={`font-semibold text-sm truncate ${conv.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
-                            {conv.name}
-                          </h3>
-                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                            {formatDistanceToNow(new Date(conv.lastMessageTime), {
-                              addSuffix: true,
-                              locale: it,
-                            })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {conv.type === "group" && (
-                            <span className="text-xs text-secondary/60">{conv.memberCount} membri · </span>
-                          )}
-                          <p className={`text-sm truncate flex-1 ${conv.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-                            {conv.lastMessage || "Inizia una conversazione"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </div>
           </div>
 
           {/* Main Chat Area */}
-          <div className={`flex-1 flex flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
+          <div className={`flex-1 flex flex-col ${selectedConversation ? 'flex' : 'hidden'}`}>
             {!selectedConversation ? (
               <div className="flex-1 flex items-center justify-center bg-gray-50">
                 <div className="text-center">
@@ -733,48 +932,44 @@ export default function AtletaMailPage() {
             ) : (
               <>
                 {/* Chat Header */}
-                <div className="px-4 py-3 border-b border-white/10 bg-secondary flex items-center gap-3">
+                <div className="h-16 px-6 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center gap-3">
                   <button
                     onClick={() => setSelectedConversation(null)}
-                    className="md:hidden p-2 hover:bg-white/10 rounded-lg text-white"
+                    className="md:hidden p-2 hover:bg-secondary/10 rounded-lg text-secondary"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
 
                   {selectedConversation.type === "group" ? (
-                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-white" />
+                    <div className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center">
+                      <Users className="h-6 w-6 text-white" />
                     </div>
                   ) : selectedConversation.avatar ? (
                     <img
                       src={selectedConversation.avatar}
                       alt={selectedConversation.name}
-                      className="w-10 h-10 rounded-lg object-cover"
+                      className="w-11 h-11 rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-white" />
+                    <div className="w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden" style={{ background: "var(--secondary)" }}>
+                      <span className="text-sm font-bold text-white leading-none">
+                        {getInitials(selectedConversation.name)}
+                      </span>
                     </div>
                   )}
 
                   <div className="flex-1">
-                    <h2 className="font-semibold text-white">{selectedConversation.name}</h2>
-                    {selectedConversation.type === "group" && (
-                      <p className="text-xs text-white/70">{selectedConversation.memberCount} membri</p>
-                    )}
+                    <h2 className="font-semibold text-secondary">{selectedConversation.name}</h2>
                   </div>
 
-                  {selectedConversation.type === "group" && (
-                    <button
-                      onClick={() => setActiveModal("groupSettings")}
-                      className="p-2 hover:bg-white/10 rounded-lg text-white"
-                    >
-                      <Settings className="h-5 w-5" />
-                    </button>
-                  )}
-
-                  <button className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white touch-manipulation min-w-[40px] min-h-[40px]">
-                    <MoreVertical className="h-5 w-5" />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedConversation(null)}
+                    className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-secondary/10 text-secondary touch-manipulation min-w-[40px] min-h-[40px]"
+                    aria-label="Chiudi conversazione"
+                    title="Chiudi"
+                  >
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
 
@@ -798,8 +993,10 @@ export default function AtletaMailPage() {
                                   className="w-8 h-8 rounded-lg object-cover"
                                 />
                               ) : (
-                                <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-gray-500" />
+                                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+                                  <span className="text-xs font-bold text-white leading-none">
+                                    {getInitials(msg.sender?.full_name || "Utente")}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -832,8 +1029,8 @@ export default function AtletaMailPage() {
                 </div>
 
                 {/* Message Input */}
-                <div className="p-4 bg-secondary border-t border-white/10">
-                  <div className="flex gap-2">
+                <div className="p-4 bg-white border-t border-black/10">
+                  <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={messageInput}
@@ -845,13 +1042,13 @@ export default function AtletaMailPage() {
                         }
                       }}
                       placeholder="Scrivi un messaggio..."
-                      className="flex-1 px-4 py-2 border border-gray-300 bg-white rounded-full text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30"
+                      className="h-11 flex-1 px-4 border border-gray-300 bg-white rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20"
                       disabled={sending}
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={!messageInput.trim() || sending}
-                      className="p-3 bg-white text-secondary rounded-full hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex h-11 w-11 items-center justify-center bg-secondary text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="h-5 w-5" />
                     </button>
@@ -862,180 +1059,6 @@ export default function AtletaMailPage() {
           </div>
         </div>
       </div>
-
-      {/* New Chat Modal */}
-      {activeModal === "newChat" && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeModal();
-          }}
-        >
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-t-xl">
-              <div className="flex items-center gap-3">
-                {selectedMembers.length > 0 ? <Users className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
-                <h3 className="text-lg font-bold text-white">{selectedMembers.length > 0 ? `Nuovo Gruppo (${selectedMembers.length} membri)` : 'Nuova Chat'}</h3>
-              </div>
-              <button
-                onClick={closeModal}
-                className="rounded-lg p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="p-6 border-b border-gray-200 bg-gray-50 space-y-4">
-              {selectedMembers.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">
-                    Nome del gruppo *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Es. Team Agonisti"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-2">
-                  {selectedMembers.length > 0 ? `Membri selezionati (${selectedMembers.length})` : 'Cerca persone'}
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-                  <input
-                    type="text"
-                    placeholder="Cerca per nome o email..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
-                  />
-                </div>
-                {selectedMembers.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {selectedMembers.map((member) => (
-                      <span
-                        key={member.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-white rounded-full text-xs font-medium"
-                      >
-                        {member.full_name}
-                        <button
-                          onClick={() => toggleMemberSelection(member)}
-                          className="hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* User List */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-              {searchResults.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-secondary/60">
-                    {userSearch.length > 1
-                      ? "Nessun utente trovato"
-                      : "Cerca un utente per iniziare"}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {searchResults.map((user) => {
-                    const isSelected = selectedMembers.some((m) => m.id === user.id);
-                    return (
-                      <div
-                        key={user.id}
-                        onClick={() => toggleMemberSelection(user)}
-                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-secondary bg-secondary/5 shadow-sm'
-                            : 'border-gray-200 bg-white hover:border-secondary/50 hover:shadow-sm'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? 'border-secondary bg-secondary'
-                            : 'border-gray-300'
-                        }`}>
-                          {isSelected && <Check className="h-3 w-3 text-white" />}
-                        </div>
-                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
-                          {user.avatar_url ? (
-                            <img
-                              src={user.avatar_url}
-                              alt={user.full_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{user.full_name.charAt(0).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-secondary text-sm truncate">{user.full_name}</p>
-                          </div>
-                          <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
-                            <p className="text-xs text-secondary/70 truncate">{user.email}</p>
-                          </div>
-                          <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium capitalize">
-                            {user.role}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            
-            {/* Footer */}
-            <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
-              <button
-                onClick={() => {
-                  if (selectedMembers.length === 1) {
-                    startNewChat(selectedMembers[0]);
-                  } else if (selectedMembers.length > 1) {
-                    createGroup();
-                  }
-                }}
-                disabled={selectedMembers.length === 0 || (selectedMembers.length > 1 && !groupName.trim()) || creatingGroup}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {creatingGroup ? (
-                  <>
-                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Creazione in corso...
-                  </>
-                ) : selectedMembers.length > 1 ? (
-                  <>
-                    <Users className="h-5 w-5" />
-                    Crea Gruppo ({selectedMembers.length} membri)
-                  </>
-                ) : selectedMembers.length === 1 ? (
-                  <>
-                    <Plus className="h-5 w-5" />
-                    Avvia Chat
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-5 w-5" />
-                    Seleziona almeno una persona
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* New Group Modal */}
       {activeModal === "newGroup" && (
@@ -1064,11 +1087,11 @@ export default function AtletaMailPage() {
             <div className="p-6 border-b border-gray-200 bg-white space-y-4">
               <div>
                 <label className="block text-sm font-medium text-secondary mb-2">
-                  Nome del gruppo *
+                  Nome del gruppo
                 </label>
                 <input
                   type="text"
-                  placeholder="Es. Team Agonisti"
+                  placeholder={`Es. ${getDefaultGroupName()}`}
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-secondary placeholder:text-secondary/40 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
@@ -1143,21 +1166,13 @@ export default function AtletaMailPage() {
                       <div
                         key={user.id}
                         onClick={() => toggleMemberSelection(user)}
-                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-secondary bg-secondary/5 shadow-sm'
-                            : 'border-gray-200 bg-white hover:border-secondary/50 hover:shadow-sm'
-                        }`}
+                        className="flex items-center gap-3 rounded-lg border border-secondary bg-secondary text-white p-3 cursor-pointer transition-all hover:opacity-95"
                       >
-                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? 'border-secondary bg-secondary'
-                            : 'border-gray-300'
-                        }`}>
-                          {isSelected && <Check className="h-3 w-3 text-white" />}
+                        <div className="w-5 h-5 flex-shrink-0 rounded border-2 border-white bg-white flex items-center justify-center transition-colors">
+                          {isSelected && <Check className="h-3 w-3 text-secondary" />}
                         </div>
 
-                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                        <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-white/10 text-white flex items-center justify-center text-sm font-bold overflow-hidden">
                           {user.avatar_url ? (
                             <img
                               src={user.avatar_url}
@@ -1165,18 +1180,16 @@ export default function AtletaMailPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span>{user.full_name.charAt(0).toUpperCase()}</span>
+                            <span>{getInitials(user.full_name)}</span>
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0 flex items-center gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-secondary text-sm truncate">{user.full_name}</p>
+                            <p className="font-semibold text-sm truncate text-white">{user.full_name}</p>
+                            <p className="text-xs mt-0.5 truncate text-white/80">{user.email}</p>
                           </div>
-                          <div className="flex-shrink-0 hidden sm:block max-w-[200px]">
-                            <p className="text-xs text-secondary/70 truncate">{user.email}</p>
-                          </div>
-                          <span className="flex-shrink-0 rounded-full bg-secondary/10 px-2.5 py-1 text-xs text-secondary font-medium capitalize">
+                          <span className="flex-shrink-0 text-xs font-semibold uppercase tracking-wide text-white/80">
                             {user.role}
                           </span>
                         </div>
@@ -1191,7 +1204,7 @@ export default function AtletaMailPage() {
             <div className="border-t border-gray-200 p-6 flex-shrink-0 bg-white">
               <button
                 onClick={createGroup}
-                disabled={!groupName.trim() || selectedMembers.length === 0 || creatingGroup}
+                disabled={selectedMembers.length === 0 || creatingGroup}
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creatingGroup ? (
@@ -1200,10 +1213,7 @@ export default function AtletaMailPage() {
                     Creazione in corso...
                   </>
                 ) : (
-                  <>
-                    <Users className="h-5 w-5" />
-                    Crea Gruppo {selectedMembers.length > 0 && `(${selectedMembers.length} membri)`}
-                  </>
+                  <>Crea Gruppo</>
                 )}
               </button>
             </div>

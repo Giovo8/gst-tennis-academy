@@ -10,6 +10,7 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 import {
   Modal,
@@ -20,11 +21,9 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
-import Link from "next/link";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
-import SearchableSelect from "@/components/bookings/SearchableSelect";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
@@ -67,8 +66,8 @@ function NewBookingPageInner() {
   const pathname = usePathname();
   const dashboardBase = pathname.split("/bookings")[0];
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
-  const bookingCardClassName = "bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -607,21 +606,11 @@ function NewBookingPageInner() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link href={`${dashboardBase}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-          {" › "}
-          <span>Nuova Prenotazione</span>
-        </p>
-        <h1 className="text-4xl font-bold text-secondary">Nuova Prenotazione</h1>
-      </div>
-
+    <div className="space-y-6 pt-3">
       {/* Messages */}
       {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+        <div>
+          <div className="bg-red-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-red-900">Errore</p>
@@ -632,8 +621,8 @@ function NewBookingPageInner() {
       )}
 
       {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+        <div>
+          <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-green-900">Successo</p>
@@ -693,11 +682,8 @@ function NewBookingPageInner() {
             ) : (
               <>
                 {/* Titolo form */}
-                  <div className={`${bookingCardHeaderClassName} flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4`}>
-                    <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
-                    <p className="text-xs text-secondary/60 sm:text-right">
-                      Il Campo 4 ha superficie sintetica
-                    </p>
+                <div className={bookingCardHeaderClassName}>
+                  <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
                 </div>
 
                 {/* Dettagli prenotazione */}
@@ -705,13 +691,13 @@ function NewBookingPageInner() {
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
-                    <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                       {BOOKING_TYPES.map((type) => (
                         <button
                           key={type.value}
                           type="button"
                           onClick={() => setBookingType(type.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                          className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                             bookingType === type.value
                               ? 'bg-secondary text-white border-secondary'
                               : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -728,13 +714,13 @@ function NewBookingPageInner() {
                   {bookingType === "campo" && (
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                       <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
-                      <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                      <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                         {MATCH_FORMATS.map((formatOption) => (
                           <button
                             key={formatOption.value}
                             type="button"
                             onClick={() => setMatchFormat(formatOption.value)}
-                            className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                               matchFormat === formatOption.value
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -749,29 +735,10 @@ function NewBookingPageInner() {
 
                   {/* Partecipanti — estratto in card separata */}
 
-                  {/* Maestro - solo per lezione privata */}
-                  {bookingType === "lezione_privata" && (
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                      <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Maestro</label>
-                      <div className="flex-1">
-                        <SearchableSelect
-                          value={selectedCoach}
-                          onChange={setSelectedCoach}
-                          options={coaches.map((coach) => ({
-                            value: coach.id,
-                            label: coach.full_name,
-                          }))}
-                          placeholder="Seleziona maestro"
-                          searchPlaceholder="Cerca maestro"
-                        />
-                      </div>
-                    </div>
-                  )}
-
                   {/* Campo */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                    <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
                       {courtsLoading ? (
                         <div className="flex items-center gap-2 text-secondary/60">
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -783,7 +750,7 @@ function NewBookingPageInner() {
                             key={court}
                             type="button"
                             onClick={() => setSelectedCourt(court)}
-                            className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border transition-all ${
+                            className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                               selectedCourt === court
                                 ? 'bg-secondary text-white border-secondary'
                                 : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -800,8 +767,53 @@ function NewBookingPageInner() {
             )}
           </div>
 
+          {selectedCourt === "Campo 4" && (
+            <div className="w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-secondary text-center cursor-default select-none">
+              Il Campo 4 ha superficie sintetica
+            </div>
+          )}
+
+          {bookingType === "lezione_privata" && (
+            <div className={bookingCardClassName}>
+              <div className={bookingCardHeaderClassName}>
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <AthletesSelector
+                  athletes={coaches.map((coach) => ({
+                    id: coach.id,
+                    full_name: coach.full_name,
+                    email: "",
+                    phone: null,
+                    role: "maestro" as UserRole,
+                  }))}
+                  selectedAthletes={selectedCoach
+                    ? [{
+                        userId: selectedCoach,
+                        fullName: coaches.find((coach) => coach.id === selectedCoach)?.full_name || "Maestro",
+                        isRegistered: true,
+                      }]
+                    : []}
+                  inlineMode={true}
+                  allowGuestParticipants={false}
+                  searchPlaceholder="Cerca maestro"
+                  participantToneByIndex={() => "dark"}
+                  maxAthletes={null}
+                  onAthleteAdd={(athlete) => {
+                    if (athlete.userId) {
+                      setSelectedCoach(athlete.userId);
+                    }
+                  }}
+                  onAthleteRemove={() => {
+                    setSelectedCoach("");
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Card Partecipanti */}
-          <div className={bookingCardClassName}>
+          <div className={`${bookingCardClassName} overflow-visible relative z-20`}>
             <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
@@ -809,6 +821,8 @@ function NewBookingPageInner() {
               <AthletesSelector
                 athletes={athletes.filter((a) => a.id !== currentUserId)}
                 selectedAthletes={selectedAthletes}
+                nonRemovableUserIds={currentUserId ? [currentUserId] : []}
+                inlineMode={true}
                 onAthleteAdd={(athlete) => {
                   if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
                     setSelectedAthletes([...selectedAthletes, athlete]);
@@ -823,23 +837,13 @@ function NewBookingPageInner() {
                 }}
                 maxAthletes={maxAthletesAllowed}
               />
-              <p className="mt-2 text-xs text-gray-500">
-                {maxAthletesAllowed === null
-                  ? isMaestroDashboard
-                    ? "Seleziona gli atleti partecipanti alla lezione privata."
-                    : "Il tuo profilo è incluso automaticamente. Puoi aggiungere altri partecipanti alla lezione privata."
-                  : `Il tuo profilo è incluso automaticamente. Puoi aggiungere fino a ${maxAthletesAllowed - 1} ${(maxAthletesAllowed - 1) === 1 ? "partecipante" : "partecipanti"}.`}
-              </p>
             </div>
           </div>
 
           {/* Card Orari disponibili */}
           <div className={bookingCardClassName}>
-            <div className={`${bookingCardHeaderClassName} flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4`}>
+            <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
-              <p className="text-xs text-secondary/60 sm:text-right">
-                Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
-              </p>
             </div>
             <div className="p-4 sm:p-6">
               <div 
@@ -954,7 +958,7 @@ function NewBookingPageInner() {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="w-full px-6 py-3 bg-secondary shadow-sm hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
+            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
           >
             {submitting ? (
               <>

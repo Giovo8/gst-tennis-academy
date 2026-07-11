@@ -76,6 +76,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/* Keep login fields white even with browser autofill */
+input.login-input:-webkit-autofill,
+input.login-input:-webkit-autofill:hover,
+input.login-input:-webkit-autofill:focus,
+input.login-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #034863 !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Prevent zoom on input focus (iOS) */
 @media screen and (max-width: 768px) {
   input[type="text"],
@@ -88,6 +99,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   textarea,
   select {
     font-size: 16px !important;
+  }
+}
+
+/* Hide scrollbar visuals on mobile while keeping scroll enabled */
+@media screen and (max-width: 1023px) {
+  html,
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
   }
 }
 
@@ -609,22 +635,15 @@ h6, .text-h6 {
 }
 
 /* Scrollbar */
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--background-subtle);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--secondary-light);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--secondary);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* Hide scrollbar utility */
@@ -960,4 +979,31 @@ h6, .text-h6 {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
+}
+
+.dashboard-content .breadcrumb {
+  display: none !important;
+}
+
+.dashboard-content h1 {
+  display: none !important;
+}
+
+.dashboard-content .breadcrumb + h1 {
+  display: none !important;
+}
+
+.dashboard-content > div:first-child:has(> .breadcrumb):has(> h1) {
+  display: none !important;
+}
+
+/* Tailwind space-y uses DOM sibling selectors and still applies margins even
+   when the first header block is display:none; reset that phantom top gap. */
+.dashboard-content .space-y-6.pt-3 > div:first-child:has(.breadcrumb):has(h1) + * {
+  margin-top: 0 !important;
+}
+
+.dashboard-content .space-y-6.pt-3 > .breadcrumb:first-child + *,
+.dashboard-content .space-y-6.pt-3 > h1:first-child + * {
+  margin-top: 0 !important;
 }

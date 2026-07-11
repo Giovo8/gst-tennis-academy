@@ -54,6 +54,7 @@ export async function POST(request: Request) {
       .in("court", courts)
       .neq("status", "cancelled")
       .neq("status", "rejected")
+      .neq("status", "pending")
       .lt("start_time", maxEnd)
       .gt("end_time", minStart);
 

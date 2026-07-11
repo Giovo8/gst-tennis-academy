@@ -95,7 +95,7 @@ export default function VideoLessonsPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">{/* Header */}
+      <div className="space-y-6 pt-3">{/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div>

@@ -123,7 +123,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">

@@ -104,6 +104,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("id");
+  const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [selectedCourt, setSelectedCourt] = useState("");
@@ -723,23 +725,11 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link href={`${basePath}/bookings`} className="hover:text-secondary/80 transition-colors">
-            Prenotazioni
-          </Link>
-          {" › "}
-          <span>Modifica Prenotazione</span>
-        </p>
-        <h1 className="text-4xl font-bold text-secondary">Modifica Prenotazione</h1>
-      </div>
-
+    <div className="space-y-6 pt-3">
       {/* Messages */}
       {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+        <div>
+          <div className="bg-red-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-red-900">Errore</p>
@@ -750,8 +740,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
       )}
 
       {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+        <div>
+          <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-green-900">Successo</p>
@@ -810,8 +800,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             )}
 
             {/* Card Dettagli prenotazione */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className={bookingCardClassName}>
+              <div className={bookingCardHeaderClassName}>
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
               </div>
               {courtsLoading ? (
@@ -824,7 +814,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                 {/* Tipo prenotazione */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
-                  <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                     {BOOKING_TYPES.map((type) => (
                       <button
                         key={type.value}
@@ -832,7 +822,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         onClick={() => {
                           setBookingType(type.value);
                         }}
-                        className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
+                        className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                           bookingType === type.value
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -849,13 +839,13 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                 {bookingType === "campo" && (
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
-                    <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                       {MATCH_FORMATS.map((formatOption) => (
                         <button
                           key={formatOption.value}
                           type="button"
                           onClick={() => handleMatchFormatChange(formatOption.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
+                          className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                             matchFormat === formatOption.value
                               ? "bg-secondary text-white border-secondary"
                               : "bg-white text-secondary border-gray-300 hover:border-secondary"
@@ -871,7 +861,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                 {/* Campo */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
                     {courts.map((c) => (
                       <button
                         key={c}
@@ -880,7 +870,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                           setSelectedCourt(c);
                           setSelectedSlots([]);
                         }}
-                        className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
+                        className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                           selectedCourt === c
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -897,8 +887,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
             {/* Card Maestro - solo per lezione privata/gruppo */}
             {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+              <div className={bookingCardClassName}>
+                <div className={bookingCardHeaderClassName}>
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
                 </div>
                 <div className="p-4 sm:p-6 space-y-3">
@@ -909,6 +899,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         setSelectedCoaches([...selectedCoaches, id]);
                       }
                     }}
+                    triggerClassName="w-full rounded-lg border border-black/10 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50"
+                    dropdownClassName="rounded-lg border border-black/10 bg-white"
                     options={coaches
                       .filter((c) => !selectedCoaches.includes(c.id))
                       .map((coach) => ({
@@ -956,8 +948,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             )}
 
             {/* Card Partecipanti */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className={`${bookingCardClassName} overflow-visible relative z-20`}>
+              <div className={bookingCardHeaderClassName}>
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
               </div>
               <div className="p-4 sm:p-6">
@@ -980,8 +972,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             </div>
 
             {/* Card Orari disponibili */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+            <div className={bookingCardClassName}>
+              <div className={`${bookingCardHeaderClassName} flex items-center justify-between gap-4`}>
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
               </div>
               <div className="p-4 sm:p-6">
@@ -1109,8 +1101,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             </div>
 
             {/* Card Note */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className={bookingCardClassName}>
+              <div className={bookingCardHeaderClassName}>
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
               </div>
               <div className="p-4 sm:p-6">
@@ -1119,7 +1111,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Eventuali note..."
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 resize-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 resize-none"
                 />
               </div>
             </div>
@@ -1129,7 +1121,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
               type="button"
               onClick={handleSave}
               disabled={saving || !canSave}
-              className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md shadow-sm transition-all flex items-center justify-center gap-3"
+              className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
             >
               {saving ? (
                 <>
@@ -1149,7 +1141,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" className="overflow-hidden rounded-xl !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200" showBuiltinClose={false}>
+        <ModalContent size="sm" className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200" showBuiltinClose={false}>
           <div className="flex items-center justify-between px-4 py-3 bg-secondary border-b border-secondary">
             <h3 className="text-base font-semibold text-white">Seleziona Data</h3>
             <button

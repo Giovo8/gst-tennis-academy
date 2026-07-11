@@ -142,7 +142,7 @@ export default function JobApplicationDetailPage() {
   const RoleIcon = application.role === "maestro" ? Users : Dumbbell;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60">

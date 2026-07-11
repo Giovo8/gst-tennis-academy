@@ -6,12 +6,13 @@ import Footer from "./Footer";
 export default function ConditionalFooter() {
   const pathname = usePathname();
   
-  // Non mostrare il footer nelle pagine dashboard, login e homepage (ha il proprio footer nel container)
+  // Non mostrare il footer nelle pagine dashboard, auth e homepage (ha il proprio footer nel container)
   const isDashboard = pathname?.startsWith("/dashboard");
   const isLogin = pathname?.startsWith("/login");
+  const isRegister = pathname?.startsWith("/register");
   const isHome = pathname === "/";
   
-  if (isDashboard || isLogin || isHome) {
+  if (isDashboard || isLogin || isRegister || isHome) {
     return null;
   }
   

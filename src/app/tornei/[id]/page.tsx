@@ -176,7 +176,7 @@ export default function TournamentDetail() {
     return (
       <div className="min-h-screen bg-white">
 
-        <PublicNavbar />
+        <PublicNavbar home />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center">
@@ -192,7 +192,7 @@ export default function TournamentDetail() {
   if (!tournament) {
     return (
       <div className="min-h-screen bg-white">
-        <PublicNavbar />
+        <PublicNavbar home />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center py-16">
             <Trophy className="h-16 w-16 text-secondary/40 mx-auto mb-4" />
@@ -245,7 +245,7 @@ export default function TournamentDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PublicNavbar />
+      <PublicNavbar home />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
         {/* Header con info torneo */}

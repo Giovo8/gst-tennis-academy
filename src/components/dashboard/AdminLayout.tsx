@@ -6,17 +6,13 @@ import DashboardShell, { NavItem } from "@/components/dashboard/DashboardShell";
 import { supabase } from "@/lib/supabase/client";
 import { getSecondaryRoles } from "@/lib/roles";
 import {
-  Home,
   LayoutGrid,
   Calendar,
   Trophy,
   Dumbbell,
   Users,
-  MessageSquare,
   Mail,
-  Key,
   Newspaper,
-  Image,
   Video,
   Briefcase,
   Swords,
@@ -24,6 +20,7 @@ import {
   Activity,
   BarChart2,
   GraduationCap,
+  Shield,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -101,6 +98,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Corsi",
       href: "/dashboard/admin/corsi",
       icon: <GraduationCap className="h-5 w-5" />,
+    },
+    {
+      label: "Blocco Campi",
+      href: "/dashboard/admin/courts",
+      icon: <Shield className="h-5 w-5" />,
     },
     {
       label: "Video Lab",

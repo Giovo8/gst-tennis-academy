@@ -25,11 +25,9 @@ import {
   ModalBody,
   ModalFooter,
 } from "@/components/ui";
-import Link from "next/link";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { SearchableSelect } from "@/components/bookings/SearchableSelect";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
@@ -99,6 +97,8 @@ type NewAdminBookingPageProps = {
 function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBookingPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -106,7 +106,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
-  const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
 
   // Form state
   const [bookingType, setBookingType] = useState("campo");
@@ -365,28 +364,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       if (athleteData) setAthletes(athleteData);
 
-      // Load previous unregistered guests (deduplicated by name)
-      const { data: guestsData } = await supabase
-        .from("booking_participants")
-        .select("full_name, email, phone")
-        .eq("is_registered", false)
-        .order("full_name");
-
-      if (guestsData) {
-        type GuestRecord = { full_name: string; email: string | null; phone: string | null };
-        type PreviousGuest = { fullName: string; email?: string; phone?: string };
-        const guestRecords = guestsData as GuestRecord[];
-        const seen = new Set<string>();
-        const deduped = guestRecords.reduce((acc: PreviousGuest[], g) => {
-          const key = g.full_name.trim().toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
-            acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
-          }
-          return acc;
-        }, []);
-        setPreviousGuests(deduped);
-      }
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -889,21 +866,11 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const mobileDateLabel = (() => { const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${selectedDate.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}`; return raw.replace(/(\d{2} )(\w)/, (_, d, c) => d + c.toUpperCase()); })();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="breadcrumb text-secondary/60">
-          <Link href={`${basePath}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-          {" › "}
-          <span>Nuova Prenotazione</span>
-        </p>
-        <h1 className="text-4xl font-bold text-secondary">Nuova Prenotazione</h1>
-      </div>
-
+    <div className="space-y-6 pt-3">
       {/* Messages */}
       {error && (
-        <div className="mt-2">
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+        <div>
+          <div className="bg-red-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-red-900">Errore</p>
@@ -914,8 +881,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       )}
       
       {success && (
-        <div className="mt-2">
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+        <div>
+          <div className="bg-green-50 border border-black/10 rounded-lg p-4 flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-green-900">Successo</p>
@@ -966,8 +933,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
 
           {/* Card Dettagli prenotazione */}
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className={bookingCardClassName}>
+            <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli prenotazione</h2>
             </div>
             {courtsLoading ? (
@@ -986,7 +953,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                         key={type.value}
                         type="button"
                         onClick={() => setBookingType(type.value)}
-                        className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
+                        className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                           bookingType === type.value
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1003,13 +970,13 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 {bookingType === "campo" && (
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Modalità</label>
-                    <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                       {MATCH_FORMATS.map((formatOption) => (
                         <button
                           key={formatOption.value}
                           type="button"
                           onClick={() => setMatchFormat(formatOption.value)}
-                          className={`px-3 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
+                          className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                             matchFormat === formatOption.value
                               ? 'bg-secondary text-white border-secondary'
                               : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1025,13 +992,13 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 {/* Campo */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
                     {courts.map((court) => (
                       <button
                         key={court}
                         type="button"
                         onClick={() => setSelectedCourt(court)}
-                        className={`px-4 sm:px-5 py-2 text-sm text-left rounded-lg border shadow-sm transition-all ${
+                        className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                           selectedCourt === court
                             ? 'bg-secondary text-white border-secondary'
                             : 'bg-white text-secondary border-gray-300 hover:border-secondary'
@@ -1046,75 +1013,69 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
             )}
           </div>
 
+          {selectedCourt === "Campo 4" && (
+            <div className="w-full">
+              <div className="w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-secondary text-center cursor-default select-none">
+                Il Campo 4 ha superficie sintetica
+              </div>
+            </div>
+          )}
+
           {/* Card Maestro - solo per lezione privata */}
           {bookingType === "lezione_privata" && (
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className={bookingCardClassName}>
+              <div className={bookingCardHeaderClassName}>
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
               </div>
-              <div className="p-4 sm:p-6 space-y-3">
-                <SearchableSelect
-                  value=""
-                  onChange={(id) => {
-                    if (!selectedCoaches.includes(id)) {
-                      setSelectedCoaches([...selectedCoaches, id]);
+              <div className="p-4 sm:p-6">
+                <AthletesSelector
+                  athletes={coaches.map((coach) => ({
+                    id: coach.id,
+                    full_name: coach.full_name,
+                    email: coach.email || "",
+                    phone: null,
+                    role: "maestro" as UserRole,
+                  }))}
+                  selectedAthletes={selectedCoaches[0]
+                    ? [{
+                        userId: selectedCoaches[0],
+                        fullName: coaches.find((coach) => coach.id === selectedCoaches[0])?.full_name || "Maestro",
+                        isRegistered: true,
+                      }]
+                    : []}
+                  inlineMode={true}
+                  keepNeutralSelectedBorder={true}
+                  keepNeutralInputFocus={true}
+                  allowGuestParticipants={false}
+                  searchPlaceholder="Cerca maestro"
+                  participantToneByIndex={() => "dark"}
+                  maxAthletes={null}
+                  onAthleteAdd={(athlete) => {
+                    if (athlete.userId) {
+                      setSelectedCoaches([athlete.userId]);
                     }
                   }}
-                  options={coaches
-                    .filter((c) => !selectedCoaches.includes(c.id))
-                    .map((coach) => ({
-                      value: coach.id,
-                      label: coach.full_name,
-                    }))}
-                  placeholder="Seleziona maestro"
-                  searchPlaceholder="Cerca maestro"
+                  onAthleteRemove={() => {
+                    setSelectedCoaches([]);
+                  }}
                 />
-                {selectedCoaches.length > 0 && (
-                  <ul className="flex flex-col gap-2">
-                    {selectedCoaches.map((coachId) => {
-                      const coach = coaches.find((c) => c.id === coachId);
-                      if (!coach) return null;
-                      return (
-                        <li key={coachId}>
-                          <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "#023047" }}>
-                            <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                              <span className="text-sm font-bold text-white leading-none">
-                                {coach.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-white text-sm truncate">{coach.full_name}</p>
-                              {coach.email && (
-                                <p className="text-xs text-white/60 mt-0.5 truncate">{coach.email}</p>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedCoaches(selectedCoaches.filter((id) => id !== coachId))}
-                              className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
-                              aria-label={`Rimuovi ${coach.full_name}`}
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
               </div>
             </div>
           )}
 
           {/* Card Partecipanti */}
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className={`${bookingCardClassName} overflow-visible relative z-20`}>
+            <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
             <div className="p-4 sm:p-6">
               <AthletesSelector
                 athletes={athletes}
                 selectedAthletes={selectedAthletes}
+                inlineMode={true}
+                keepNeutralSelectedBorder={true}
+                keepNeutralInputFocus={true}
+                hideEmptyMessages={true}
                 onAthleteAdd={(athlete) => {
                   if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
                     setSelectedAthletes([...selectedAthletes, athlete]);
@@ -1124,14 +1085,13 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                   setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
                 }}
                 maxAthletes={maxAthletesAllowed}
-                previousGuests={previousGuests}
               />
             </div>
           </div>
 
           {/* Card Orari disponibili */}
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+          <div className={bookingCardClassName}>
+            <div className={`${bookingCardHeaderClassName} flex items-center justify-between gap-4`}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -1287,8 +1247,8 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           </div>
 
           {/* Card Note */}
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className={bookingCardClassName}>
+            <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -1297,7 +1257,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Eventuali note..."
                 rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 resize-none"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus-visible:ring-0 focus-visible:border-gray-300 resize-none"
               />
             </div>
           </div>
@@ -1306,7 +1266,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
-            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-md shadow-sm transition-all flex items-center justify-center gap-3"
+            className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
           >
             {submitting ? (
               <>
@@ -1325,11 +1285,11 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       {/* Date Picker Modal */}
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 flex flex-col max-h-[90dvh]">
           <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
           </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white overflow-y-auto flex-1">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <button
@@ -1381,18 +1341,18 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
               </div>
             </div>
           </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="px-7! py-3! border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
             <button
               type="button"
               onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+              className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 rounded-lg transition-colors"
             >
               Oggi
             </button>
             <button
               type="button"
               onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+              className="flex-1 py-2.5 bg-secondary text-white font-semibold hover:opacity-90 rounded-lg transition-opacity"
             >
               Applica
             </button>

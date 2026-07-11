@@ -93,7 +93,7 @@ export default function MaestroOspitePresenzePage() {
   const presentCount = lessonDates.filter((d) => attendance[d.toISOString().split("T")[0]] === true).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">

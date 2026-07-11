@@ -82,11 +82,13 @@ export function UpcomingCommitmentsCard({
   currentUserId,
   basePath = "/dashboard/maestro",
   title = "Prossimi impegni",
+  showFilterButton = true,
 }: {
   bookings: UpcomingBooking[];
   currentUserId?: string;
   basePath?: string;
   title?: string;
+  showFilterButton?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -169,8 +171,8 @@ export function UpcomingCommitmentsCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
+    <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+      <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">{title}</h2>
       </div>
       <div className="px-6 pt-4 pb-3 flex items-center gap-2 w-full">
@@ -184,19 +186,21 @@ export function UpcomingCommitmentsCard({
             className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white border border-gray-200 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setIsFilterModalOpen(true)}
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
-            hasActiveFilters
-              ? "border-secondary bg-secondary text-white hover:opacity-90"
-              : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
-          }`}
-          aria-label="Filtri"
-          title="Filtri"
-        >
-          <SlidersHorizontal className="h-5 w-5" />
-        </button>
+        {showFilterButton && (
+          <button
+            type="button"
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-md border transition-colors ${
+              hasActiveFilters
+                ? "border-secondary bg-secondary text-white hover:opacity-90"
+                : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+            }`}
+            aria-label="Filtri"
+            title="Filtri"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       <div className="px-6 pb-4">

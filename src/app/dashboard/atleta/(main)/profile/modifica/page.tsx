@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -13,8 +13,21 @@ import {
   Upload,
   Link as LinkIcon,
   X,
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from 'sonner';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui";
+
+const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
 
 type Profile = {
   id: string;
@@ -34,18 +47,44 @@ type Profile = {
     city?: string;
     province?: string;
     postal_code?: string;
+    certificato_medico_url?: string;
+    certificato_medico_scadenza?: string;
+    tesserato?: string;
+    numero_tessera?: string;
+    tesserato_scadenza?: string;
   } | null;
 };
 
-export default function AthleteProfileEditPage() {
+type AthleteProfileEditPageProps = {
+  profilePath?: string;
+};
+
+export default function AthleteProfileEditPage({
+  profilePath = "/dashboard/atleta/profile",
+}: AthleteProfileEditPageProps) {
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCertificato, setUploadingCertificato] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showCertificatoModal, setShowCertificatoModal] = useState(false);
+  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
+  const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita">("certificato");
+  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [dateTexts, setDateTexts] = useState({
+    birth_date: "",
+    certificato_medico_scadenza: "",
+    tesserato_scadenza: "",
+  });
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [certificatoLinkUrl, setCertificatoLinkUrl] = useState("");
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -57,6 +96,11 @@ export default function AthleteProfileEditPage() {
     province: "",
     postal_code: "",
     notes: "",
+    certificato_medico_url: "",
+    certificato_medico_scadenza: "",
+    tesserato: "No" as "Sì" | "No" | "Agonista",
+    numero_tessera: "",
+    tesserato_scadenza: "",
   });
 
   const roleLabels = {
@@ -66,11 +110,7 @@ export default function AthleteProfileEditPage() {
     atleta: { label: "Atleta", icon: User, bgColor: "var(--secondary)", borderLeftColor: "#023047" },
   };
 
-  useEffect(() => {
-    void loadProfile();
-  }, []);
-
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     try {
       const {
         data: { user: authUser },
@@ -89,7 +129,7 @@ export default function AthleteProfileEditPage() {
 
       if (error || !data) {
         toast.error("Profilo non trovato");
-        router.push("/dashboard/atleta/profile");
+        router.push(profilePath);
         return;
       }
 
@@ -106,15 +146,29 @@ export default function AthleteProfileEditPage() {
         province: metadata.province || "",
         postal_code: metadata.postal_code || "",
         notes: data.bio || "",
+        certificato_medico_url: metadata.certificato_medico_url || "",
+        certificato_medico_scadenza: metadata.certificato_medico_scadenza || "",
+        tesserato: metadata.tesserato || "No",
+        numero_tessera: metadata.numero_tessera || "",
+        tesserato_scadenza: metadata.tesserato_scadenza || "",
+      });
+      setDateTexts({
+        birth_date: isoToDisplay(data.birth_date || data.date_of_birth || ""),
+        certificato_medico_scadenza: isoToDisplay(metadata.certificato_medico_scadenza || ""),
+        tesserato_scadenza: isoToDisplay(metadata.tesserato_scadenza || ""),
       });
     } catch (error) {
       console.error("Error loading profile:", error);
       toast.error("Errore nel caricamento del profilo");
-      router.push("/dashboard/atleta/profile");
+      router.push(profilePath);
     } finally {
       setLoading(false);
     }
-  }
+  }, [profilePath, router]);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   async function updateProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -126,31 +180,63 @@ export default function AthleteProfileEditPage() {
         ? user.metadata
         : {};
 
-      const { error } = await supabase
+      const baseUpdatePayload = {
+        full_name: formData.full_name || null,
+        phone: formData.phone || null,
+        bio: formData.notes || null,
+        metadata: {
+          ...(existingMetadata as Record<string, unknown>),
+          birth_city: formData.birth_city || "",
+          fiscal_code: formData.fiscal_code || "",
+          address: formData.address || "",
+          city: formData.city || "",
+          province: formData.province || "",
+          postal_code: formData.postal_code || "",
+          certificato_medico_url: formData.certificato_medico_url || "",
+          certificato_medico_scadenza: formData.certificato_medico_scadenza || "",
+          tesserato: formData.tesserato || "No",
+          numero_tessera: formData.numero_tessera || "",
+          tesserato_scadenza: formData.tesserato_scadenza || "",
+        },
+      };
+
+      const hasBirthDateColumn = Object.prototype.hasOwnProperty.call(user, "birth_date");
+      const primaryDateColumn: "birth_date" | "date_of_birth" = hasBirthDateColumn
+        ? "birth_date"
+        : "date_of_birth";
+      const fallbackDateColumn: "birth_date" | "date_of_birth" =
+        primaryDateColumn === "birth_date" ? "date_of_birth" : "birth_date";
+
+      let { error } = await supabase
         .from("profiles")
         .update({
-          full_name: formData.full_name || null,
-          phone: formData.phone || null,
-          birth_date: formData.birth_date || null,
-          bio: formData.notes || null,
-          metadata: {
-            ...(existingMetadata as Record<string, unknown>),
-            birth_city: formData.birth_city || "",
-            fiscal_code: formData.fiscal_code || "",
-            address: formData.address || "",
-            city: formData.city || "",
-            province: formData.province || "",
-            postal_code: formData.postal_code || "",
-          },
+          ...baseUpdatePayload,
+          [primaryDateColumn]: formData.birth_date || null,
         })
         .eq("id", user.id);
 
+      const missingPrimaryDateColumn =
+        !!error &&
+        typeof error.message === "string" &&
+        error.message.toLowerCase().includes(primaryDateColumn);
+
+      if (missingPrimaryDateColumn) {
+        const retry = await supabase
+          .from("profiles")
+          .update({
+            ...baseUpdatePayload,
+            [fallbackDateColumn]: formData.birth_date || null,
+          })
+          .eq("id", user.id);
+        error = retry.error;
+      }
+
       if (error) throw error;
 
-      router.push("/dashboard/atleta/profile");
-    } catch (err: any) {
+      router.push(profilePath);
+    } catch (err: unknown) {
       console.error("Error updating profile:", err);
-      toast.error(err?.message || "Errore durante il salvataggio del profilo");
+      toast.error(err instanceof Error ? err.message : "Errore durante il salvataggio del profilo");
     } finally {
       setUpdating(false);
     }
@@ -277,6 +363,204 @@ export default function AthleteProfileEditPage() {
     }
   }
 
+  function handleCertificatoUrl() {
+    if (!certificatoLinkUrl) return;
+
+    try {
+      new URL(certificatoLinkUrl);
+    } catch {
+      toast.warning("Inserisci un URL valido");
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, certificato_medico_url: certificatoLinkUrl }));
+    setCertificatoLinkUrl("");
+    setShowCertificatoModal(false);
+  }
+
+  async function handleCertificatoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.warning("Il file deve essere inferiore a 10MB");
+      return;
+    }
+
+    if (file.type !== "application/pdf") {
+      toast.warning("Il file deve essere un PDF");
+      return;
+    }
+
+    setUploadingCertificato(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      uploadFormData.append("targetUserId", user.id);
+      if (formData.certificato_medico_url) {
+        uploadFormData.append("oldCertificateUrl", formData.certificato_medico_url);
+      }
+
+      const uploadResponse = await fetch("/api/upload/certificate", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const uploadPayload = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || !uploadPayload?.url) {
+        throw new Error(uploadPayload?.error || "Errore durante il caricamento del certificato");
+      }
+
+      setFormData((prev) => ({ ...prev, certificato_medico_url: uploadPayload.url as string }));
+      toast.success("Certificato caricato con successo.");
+    } catch (error) {
+      console.error("Error uploading certificate:", error);
+      toast.error(error instanceof Error ? error.message : "Errore durante il caricamento del certificato");
+    } finally {
+      setUploadingCertificato(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleRemoveCertificato() {
+    if (!formData.certificato_medico_url) return;
+
+    setUploadingCertificato(true);
+    try {
+      const deleteFormData = new FormData();
+      deleteFormData.append("deleteOnly", "true");
+      deleteFormData.append("targetUserId", user?.id || "");
+      deleteFormData.append("oldCertificateUrl", formData.certificato_medico_url);
+
+      const deleteResponse = await fetch("/api/upload/certificate", {
+        method: "POST",
+        body: deleteFormData,
+      });
+
+      const deletePayload = await deleteResponse.json().catch(() => ({}));
+      if (!deleteResponse.ok) {
+        throw new Error(deletePayload?.error || "Errore durante la rimozione del certificato");
+      }
+
+      setFormData((prev) => ({ ...prev, certificato_medico_url: "" }));
+      toast.success("Certificato rimosso.");
+    } catch (error) {
+      console.error("Error removing certificate:", error);
+      toast.error(error instanceof Error ? error.message : "Errore durante la rimozione del certificato");
+    } finally {
+      setUploadingCertificato(false);
+    }
+  }
+
+  const calendarDays = useMemo(() => {
+    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
+    const gridStartDate = new Date(firstOfMonth);
+    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
+
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStartDate);
+      date.setDate(gridStartDate.getDate() + index);
+      return {
+        date,
+        isCurrentMonth: date.getMonth() === calendarViewDate.getMonth(),
+      };
+    });
+  }, [calendarViewDate]);
+
+  function normalizeDate(date: Date): Date {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(12, 0, 0, 0);
+    return normalizedDate;
+  }
+
+  function isSameCalendarDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function openDatePicker(field: "certificato" | "tesserato" | "nascita") {
+    const existing = field === "certificato"
+      ? formData.certificato_medico_scadenza
+      : field === "tesserato"
+        ? formData.tesserato_scadenza
+        : formData.birth_date;
+    const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
+    setActiveDateField(field);
+    setPendingDate(base);
+    setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
+    setDatePickerModalOpen(true);
+  }
+
+  function changeCalendarMonth(delta: number) {
+    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  }
+
+  function selectCalendarDay(day: Date) {
+    setPendingDate(normalizeDate(day));
+  }
+
+  function applyDateSelection() {
+    const iso = pendingDate.toISOString().split("T")[0];
+    const display = isoToDisplay(iso);
+
+    if (activeDateField === "certificato") {
+      setFormData((prev) => ({ ...prev, certificato_medico_scadenza: iso }));
+      setDateTexts((prev) => ({ ...prev, certificato_medico_scadenza: display }));
+    } else if (activeDateField === "tesserato") {
+      setFormData((prev) => ({ ...prev, tesserato_scadenza: iso }));
+      setDateTexts((prev) => ({ ...prev, tesserato_scadenza: display }));
+    } else {
+      setFormData((prev) => ({ ...prev, birth_date: iso }));
+      setDateTexts((prev) => ({ ...prev, birth_date: display }));
+    }
+
+    setDatePickerModalOpen(false);
+  }
+
+  function handleDatePickerToday() {
+    const today = normalizeDate(new Date());
+    setPendingDate(today);
+    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
+
+  function getCalendarMonthLabel(date: Date): string {
+    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function getCalendarModalTitle(): string {
+    if (activeDateField === "certificato") return "Scadenza Certificato";
+    if (activeDateField === "tesserato") return "Scadenza Tesseramento";
+    return "Data di Nascita";
+  }
+
+  function isoToDisplay(iso: string): string {
+    if (!iso) return "";
+    const parts = iso.split("-");
+    if (parts.length !== 3) return "";
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  function displayToIso(text: string): string {
+    const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return "";
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+
+  function handleDateTextChange(
+    field: "birth_date" | "certificato_medico_scadenza" | "tesserato_scadenza",
+    value: string
+  ) {
+    setDateTexts((prev) => ({ ...prev, [field]: value }));
+    const iso = displayToIso(value);
+
+    if (iso) {
+      setFormData((prev) => ({ ...prev, [field]: iso }));
+    } else if (value === "") {
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+    }
+  }
+
   async function handleResetPassword() {
     if (!user) return;
 
@@ -291,9 +575,9 @@ export default function AthleteProfileEditPage() {
       if (error) throw error;
 
       toast.success("Email di reset password inviata con successo.");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error resetting password:", err);
-      toast.error(err?.message || "Errore durante l'invio del reset password");
+      toast.error(err instanceof Error ? err.message : "Errore durante l'invio del reset password");
     } finally {
       setResettingPassword(false);
     }
@@ -327,26 +611,11 @@ export default function AthleteProfileEditPage() {
   const RoleIcon = roleLabels[user.role].icon;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <div>
-          <p className="breadcrumb text-secondary/60 mb-1">
-            <Link href="/dashboard/atleta/profile" className="hover:text-secondary/80 transition-colors">
-              Profilo Utente
-            </Link>
-            {" › "}
-            <span>Modifica Profilo</span>
-          </p>
-          <h1 className="text-4xl font-bold text-secondary">Modifica Profilo</h1>
-        </div>
-      </div>
-
+    <div className="space-y-6 pt-3">
       <div
-        className="rounded-xl border-t border-r border-b p-6 border-l-4 transition-all"
+        className="rounded-lg border border-black/10 p-6 transition-all"
         style={{
           backgroundColor: roleLabels[user.role].bgColor,
-          borderColor: roleLabels[user.role].bgColor,
-          borderLeftColor: roleLabels[user.role].borderLeftColor,
         }}
       >
         <div className="flex items-start gap-6">
@@ -360,8 +629,8 @@ export default function AthleteProfileEditPage() {
       </div>
 
       <form onSubmit={updateProfile} className="space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Profilo</h2>
           </div>
           <div className="px-6 py-6">
@@ -407,12 +676,24 @@ export default function AthleteProfileEditPage() {
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
                 <div className="flex-1">
-                  <input
-                    type="date"
-                    value={formData.birth_date}
-                    onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                  />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => openDatePicker("nascita")}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                      tabIndex={-1}
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="GG/MM/AAAA"
+                      value={dateTexts.birth_date}
+                      onChange={(e) => handleDateTextChange("birth_date", e.target.value)}
+                      maxLength={10}
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -458,32 +739,30 @@ export default function AthleteProfileEditPage() {
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Citta / Provincia / CAP</label>
-                <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="flex-1 grid grid-cols-4 gap-1 sm:grid-cols-[minmax(0,1fr)_64px_92px] sm:gap-2">
                   <input
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                    className="col-span-2 sm:col-span-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
                     placeholder="Milano"
                   />
-                  <div className="flex gap-2 sm:gap-3">
-                    <input
-                      type="text"
-                      value={formData.province}
-                      onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
-                      className="w-20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
-                      placeholder="MI"
-                      maxLength={2}
-                    />
-                    <input
-                      type="text"
-                      value={formData.postal_code}
-                      onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                      className="w-24 sm:w-28 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
-                      placeholder="20100"
-                      maxLength={5}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.province}
+                    onChange={(e) => setFormData({ ...formData, province: e.target.value.toUpperCase() })}
+                    className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 uppercase text-center"
+                    placeholder="MI"
+                    maxLength={2}
+                  />
+                  <input
+                    type="text"
+                    value={formData.postal_code}
+                    onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                    className="col-span-1 rounded-lg border border-gray-300 bg-white px-2 sm:px-3 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50 text-center"
+                    placeholder="20100"
+                    maxLength={5}
+                  />
                 </div>
               </div>
 
@@ -503,52 +782,190 @@ export default function AthleteProfileEditPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
-          </div>
-          <div className="px-6 py-6">
-            <div className="flex flex-col items-start gap-4">
-              <div className="w-80 h-80 rounded-xl bg-secondary/10 overflow-hidden flex items-center justify-center border border-gray-200 flex-shrink-0">
-                {uploadingAvatar ? (
-                  <Loader2 className="h-7 w-7 animate-spin text-secondary" />
-                ) : user.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.full_name || "Avatar"} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-5xl font-bold text-secondary">
-                    {getInitials(user.full_name, user.email)}
-                  </span>
-                )}
-              </div>
-              <div className={`w-80 ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
-                <button
-                  type="button"
-                  onClick={() => setShowAvatarModal(true)}
-                  disabled={uploadingAvatar}
-                  className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    user.avatar_url ? "flex-1" : "w-full"
-                  }`}
-                >
-                  Cambia Avatar
-                </button>
-                {user.avatar_url && (
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+          <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-2">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
+            </div>
+            <div className="px-6 py-6">
+              <div className="flex flex-col gap-4">
+                <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden border border-gray-200 lg:aspect-[4/3]">
+                  {uploadingAvatar ? (
+                    <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                      <Loader2 className="h-7 w-7 animate-spin text-secondary" />
+                    </div>
+                  ) : user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name || "Avatar"}
+                      className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
+                    />
+                  ) : (
+                    <div className="flex min-h-[220px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                      <span className="text-5xl font-bold text-secondary">
+                        {getInitials(user.full_name, user.email)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className={`w-full ${user.avatar_url ? "flex items-center gap-2" : ""}`}>
                   <button
                     type="button"
-                    onClick={handleRemoveAvatar}
+                    onClick={() => setShowAvatarModal(true)}
                     disabled={uploadingAvatar}
-                    aria-label="Elimina avatar"
-                    className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`h-12 px-4 text-sm font-medium text-white bg-secondary border border-secondary rounded-lg hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      user.avatar_url ? "flex-1" : "w-full"
+                    }`}
                   >
-                    <X className="h-4 w-4" />
+                    Cambia Avatar
                   </button>
-                )}
+                  {user.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={uploadingAvatar}
+                      aria-label="Elimina avatar"
+                      className="h-12 w-12 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-1">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
+            </div>
+            <div className="px-6 py-6">
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Certificato Medico</label>
+                  <div className="flex-1 space-y-3">
+                    {formData.certificato_medico_url ? (
+                      <div className="flex w-full items-stretch gap-2">
+                        <a
+                          href={formData.certificato_medico_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all"
+                        >
+                          Visualizza PDF
+                        </a>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCertificato}
+                          disabled={uploadingCertificato}
+                          className="flex-shrink-0 self-stretch aspect-square min-w-10 inline-flex items-center justify-center text-white bg-[#022431] rounded-lg hover:bg-[#022431]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Rimuovi certificato"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowCertificatoModal(true)}
+                        disabled={uploadingCertificato}
+                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-lg border border-secondary bg-secondary text-white hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {uploadingCertificato ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {uploadingCertificato ? "Caricamento..." : "Carica PDF"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => openDatePicker("certificato")}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                        tabIndex={-1}
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="text"
+                        placeholder="GG/MM/AAAA"
+                        value={dateTexts.certificato_medico_scadenza}
+                        onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
+                        maxLength={10}
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tesserato</label>
+                  <div className="flex-1 grid grid-cols-3 gap-1 sm:gap-2">
+                    {(["Sì", "No", "Agonista"] as const).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, tesserato: option })}
+                        className={`w-full inline-flex items-center justify-center px-5 py-2 text-sm rounded-lg border transition-all ${
+                          formData.tesserato === option
+                            ? "bg-secondary text-white border-secondary"
+                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Numero Tessera</label>
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={formData.numero_tessera}
+                      onChange={(e) => setFormData({ ...formData, numero_tessera: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      placeholder="es. FIT-123456"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => openDatePicker("tesserato")}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
+                        tabIndex={-1}
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="text"
+                        placeholder="GG/MM/AAAA"
+                        value={dateTexts.tesserato_scadenza}
+                        onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
+                        maxLength={10}
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Info Sistema</h2>
           </div>
           <div className="px-6 py-6">
@@ -618,6 +1035,85 @@ export default function AthleteProfileEditPage() {
         </div>
       </form>
 
+      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
+        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
+            <ModalTitle className="text-white text-lg">
+              {getCalendarModalTitle()}
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = isSameCalendarDay(date, pendingDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`h-9 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white font-semibold"
+                          : isCurrentMonth
+                            ? "text-gray-800 hover:bg-gray-100"
+                            : "text-gray-400 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+            <button
+              type="button"
+              onClick={handleDatePickerToday}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={applyDateSelection}
+              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
+            >
+              Applica
+            </button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
@@ -633,7 +1129,7 @@ export default function AthleteProfileEditPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Carica un'immagine</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Carica un&apos;immagine</label>
                 <button
                   onClick={() => document.getElementById("avatar-upload")?.click()}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all"
@@ -679,7 +1175,82 @@ export default function AthleteProfileEditPage() {
                     <LinkIcon className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Incolla l'URL di un'immagine gia caricata online</p>
+                <p className="text-xs text-gray-500 mt-2">Incolla l&apos;URL di un&apos;immagine gia caricata online</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <input
+        id="cert-upload"
+        type="file"
+        accept="application/pdf"
+        onChange={handleCertificatoUpload}
+        className="hidden"
+      />
+
+      {showCertificatoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-secondary rounded-t-xl">
+              <h3 className="text-xl font-bold text-white">Certificato Medico</h3>
+              <button
+                type="button"
+                onClick={() => setShowCertificatoModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="h-5 w-5 text-white/80" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Carica un PDF</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCertificatoModal(false);
+                    requestAnimationFrame(() => document.getElementById("cert-upload")?.click());
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all"
+                >
+                  <Upload className="h-5 w-5" />
+                  Scegli File
+                </button>
+                <p className="text-xs text-gray-500 mt-2">Massimo 10MB - solo PDF</p>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500 font-medium">oppure</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Inserisci URL del certificato</label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={certificatoLinkUrl}
+                    onChange={(e) => setCertificatoLinkUrl(e.target.value)}
+                    placeholder="https://esempio.com/certificato.pdf"
+                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    onKeyDown={(e) => e.key === "Enter" && handleCertificatoUrl()}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCertificatoUrl}
+                    disabled={!certificatoLinkUrl}
+                    className="px-4 py-3 bg-secondary text-white rounded-xl font-semibold hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <LinkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Incolla l&apos;URL di un PDF gia caricato online</p>
               </div>
             </div>
           </div>

@@ -6,10 +6,14 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export default function PublicNavbar() {
+type PublicNavbarProps = {
+  home?: boolean;
+};
+
+export default function PublicNavbar({ home = false }: PublicNavbarProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userFullName, setUserFullName] = useState<string | null>(null);
+
   useEffect(() => {
     // Check current user
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -24,7 +28,6 @@ export default function PublicNavbar() {
           .then(({ data }) => {
             if (data) {
               setUserRole(data.role);
-              setUserFullName(data.full_name);
             }
           });
       }
@@ -42,22 +45,15 @@ export default function PublicNavbar() {
           .then(({ data }) => {
             if (data) {
               setUserRole(data.role);
-              setUserFullName(data.full_name);
             }
           });
       } else {
         setUserRole(null);
-        setUserFullName(null);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
 
   const getDashboardLink = () => {
     if (!userRole) return "/login";
@@ -67,45 +63,46 @@ export default function PublicNavbar() {
     return "/dashboard";
   };
 
-  // Handle protected links - redirect to login with return URL
-  const handleProtectedLink = (targetPath: string) => (e: React.MouseEvent) => {
-    if (!user) {
-      e.preventDefault();
-      window.location.href = `/login?redirect=${encodeURIComponent(targetPath)}`;
-    }
-  };
-
   return (
     <>
-    <nav className="bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-gray-200 [transform:translateZ(0)]">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo - left */}
-          <Link href="/" aria-label="Home - GST Tennis Academy" className="flex items-center gap-2 flex-shrink-0">
+    <nav
+      className={home
+        ? "bg-secondary fixed top-4 left-6 right-6 z-50 border border-black/10 rounded-lg shadow-none [transform:translateZ(0)] lg:sticky lg:top-0 lg:mx-0 lg:mt-0 lg:border lg:border-black/10 lg:rounded-none lg:shadow-sm"
+        : "bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-gray-200 [transform:translateZ(0)]"
+      }
+    >
+      <div className={home ? "relative max-w-7xl mx-auto px-4" : "relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"}>
+        <div className={home ? "relative flex items-center h-16" : "relative flex items-center h-[4.5rem] lg:h-[5rem]"}>
+          {/* Logo + title, left aligned on all breakpoints */}
+          <Link
+            href="/"
+            aria-label="Home - GST Tennis Academy"
+            className="flex items-center gap-1.5 lg:gap-2 min-w-0"
+          >
             <Image 
               src="/images/logo-tennis.png" 
               alt="GST Tennis Academy" 
               width={48} 
               height={48}
               priority
-              className="h-8 w-8"
+              className={home ? "h-7 w-7 lg:h-8 lg:w-8" : "h-8 w-8"}
             />
-            <span className="text-lg font-bold text-secondary">GST Academy</span>
+            <span className={home ? "text-base lg:text-lg font-bold leading-none text-white whitespace-nowrap" : "text-lg font-bold leading-none text-secondary"}>GST Academy</span>
           </Link>
 
-          {/* Area GST Button - right */}
           <Link
             href={getDashboardLink()}
-            className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-white bg-secondary shadow-sm hover:opacity-90 transition-all whitespace-nowrap"
+            className={home
+              ? "ml-auto inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-secondary bg-white hover:bg-white/90 transition-colors"
+              : "ml-auto inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-secondary hover:bg-secondary/90 transition-colors"
+            }
           >
-            Area GST
+            {user ? "Area GST" : "Accedi"}
           </Link>
         </div>
-
-
       </div>
     </nav>
-    <div className="h-[4.5rem] lg:hidden" aria-hidden="true" />
+    <div className={home ? "h-16 lg:hidden" : "h-[4.5rem] lg:hidden"} aria-hidden="true" />
     </>
   );
 }

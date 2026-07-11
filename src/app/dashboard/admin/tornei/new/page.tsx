@@ -163,7 +163,7 @@ export default function NewTournamentPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div>

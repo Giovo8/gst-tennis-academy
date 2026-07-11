@@ -97,7 +97,7 @@ export default function LoginClient() {
 
         {/* Login Form */}
         <main className="flex-1 flex items-center justify-center px-6 sm:px-4 py-10">
-        <div className="w-full sm:max-w-md bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-10">
+        <div className="w-full sm:max-w-md bg-white rounded-lg border border-black/10 px-8 py-10">
           {/* Login Card */}
           <div className="mb-4 sm:mb-10">
           <div className="mb-6 sm:mb-10 text-center">
@@ -117,7 +117,7 @@ export default function LoginClient() {
 
           {/* Redirect Info Message */}
           {redirectPath && (
-            <div className="mb-6 sm:mb-8 rounded-md bg-secondary/5 border border-secondary/10 p-4">
+            <div className="mb-6 sm:mb-8 rounded-lg bg-secondary/5 border border-black/10 p-4">
               <p className="text-sm text-secondary font-medium">
                 Accedi per continuare alla pagina richiesta
               </p>
@@ -133,7 +133,7 @@ export default function LoginClient() {
               <input
                 id="email"
                 type="email"
-                className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-md text-base text-secondary placeholder-secondary/40 focus:outline-none focus:border-secondary transition-all"
+                className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
                 placeholder="nome@esempio.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -151,7 +151,7 @@ export default function LoginClient() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-4 py-3.5 sm:py-4 bg-white border-2 border-secondary/20 rounded-md text-base text-secondary placeholder-secondary/40 focus:outline-none focus:border-secondary transition-all pr-12"
+                  className="login-input w-full px-4 py-3.5 sm:py-4 bg-white border border-black/10 rounded-lg text-base text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20 pr-12"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -172,7 +172,7 @@ export default function LoginClient() {
 
             {/* Error Message */}
             {error && (
-              <div className="rounded-md bg-secondary/5 border border-secondary/10 p-4">
+              <div className="rounded-lg bg-secondary/5 border border-black/10 p-4">
                 <p className="text-sm text-secondary font-medium">{error}</p>
               </div>
             )}
@@ -180,7 +180,7 @@ export default function LoginClient() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-4 px-4 bg-secondary text-white font-semibold rounded-md text-base hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 px-4 bg-secondary text-white font-semibold rounded-lg text-base hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (
@@ -197,29 +197,22 @@ export default function LoginClient() {
           <p className="text-sm text-secondary opacity-70 mb-4 sm:mb-5">
             Non hai un account? Contatta l&apos;amministrazione
           </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="flex w-full items-center justify-center gap-3">
             <a
               href="https://wa.me/393762351777"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center gap-2 px-5 bg-secondary text-white rounded-md text-sm font-semibold hover:opacity-90 transition-all"
+              className="inline-flex flex-1 h-12 items-center justify-center gap-2 px-5 bg-secondary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-all"
             >
               WhatsApp
             </a>
             <a
               href="mailto:info@gstennisacademy.it"
-              className="inline-flex h-12 items-center gap-2 px-5 bg-white border-2 border-secondary/20 text-secondary rounded-md text-sm font-semibold hover:border-secondary/40 transition-all"
+              className="inline-flex flex-1 h-12 items-center justify-center gap-2 px-5 bg-[#023047] border border-[#023047] text-white rounded-lg text-sm font-semibold hover:bg-[#023047]/90 transition-all"
             >
               Email
             </a>
           </div>
-        </div>
-
-        {/* Back to Home */}
-        <div className="mt-5 text-center">
-          <Link href="/" className="text-sm text-secondary opacity-70 hover:opacity-100 transition-opacity font-medium">
-            Torna alla homepage
-          </Link>
         </div>
         </div>
         </main>

@@ -8,7 +8,7 @@ export default function InfoPage() {
   const dashboardBase = pathname.split("/arena")[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
         <Link href={`${dashboardBase}/arena`} className="hover:text-secondary/80 transition-colors">Arena</Link>

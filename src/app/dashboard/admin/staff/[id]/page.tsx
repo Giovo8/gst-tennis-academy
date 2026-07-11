@@ -101,7 +101,7 @@ export default function AdminStaffDetailPage() {
   ].filter((item) => Boolean(item.url));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       <div>
         <p className="breadcrumb text-secondary/60">
           <Link href="/dashboard/admin/staff" className="hover:text-secondary/80 transition-colors">

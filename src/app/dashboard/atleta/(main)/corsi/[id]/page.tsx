@@ -139,7 +139,7 @@ export default function AtletaCorsoDetailPage() {
   const totalDue = enrollmentFee != null ? enrollmentFee - totalPaid : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">

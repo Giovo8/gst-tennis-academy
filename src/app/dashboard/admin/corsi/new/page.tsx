@@ -475,7 +475,7 @@ export default function NuovoCorsoPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         {/* Breadcrumb + Title */}
         <div>
           <p className="breadcrumb text-secondary/60">

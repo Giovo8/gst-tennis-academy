@@ -86,7 +86,7 @@ export default function CourseBookingDetailPage() {
     : "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <p className="breadcrumb text-secondary/60">
         <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">

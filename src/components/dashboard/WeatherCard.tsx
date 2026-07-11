@@ -58,7 +58,7 @@ export default function WeatherCard({
   const { weather, loading } = useWeather();
 
   return (
-    <div className="bg-secondary rounded-xl p-4 sm:p-5 text-white">
+    <div className="bg-secondary rounded-lg border border-black/10 p-4 sm:p-5 text-white">
       <div className="flex flex-row items-center justify-between gap-3 sm:gap-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-lg sm:text-lg">{title}</h3>

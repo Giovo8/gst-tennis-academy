@@ -169,7 +169,7 @@ export default function AdminNewsPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         {/* Header */}
         <div className="flex flex-col gap-2">
           <div>

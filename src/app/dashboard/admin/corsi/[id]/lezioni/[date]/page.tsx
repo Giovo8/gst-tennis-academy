@@ -248,7 +248,7 @@ export default function LezionePresenzePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">

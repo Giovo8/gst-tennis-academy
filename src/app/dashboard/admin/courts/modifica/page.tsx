@@ -555,7 +555,7 @@ export default function CourtBlockEditPage() {
   const headerCardBg = getBlockCardBg(blockStyle.type);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       <div>
         <p className="breadcrumb text-secondary/60">
           <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">

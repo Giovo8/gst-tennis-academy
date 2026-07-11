@@ -213,7 +213,7 @@ export default function PartecipantePresenzePage() {
   const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
       <div>
         <p className="breadcrumb text-secondary/60">

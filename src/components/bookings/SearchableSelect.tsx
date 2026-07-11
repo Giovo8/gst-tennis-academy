@@ -17,6 +17,7 @@ interface SearchableSelectProps {
   searchPlaceholder?: string;
   triggerClassName?: string;
   itemClassName?: string;
+  dropdownClassName?: string;
 }
 
 export function SearchableSelect({
@@ -27,6 +28,7 @@ export function SearchableSelect({
   searchPlaceholder,
   triggerClassName,
   itemClassName,
+  dropdownClassName,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -79,7 +81,7 @@ export function SearchableSelect({
   const dropdown = open ? (
     <div
       style={dropdownStyle}
-      className="rounded-lg border border-gray-200 bg-white shadow-lg"
+      className={dropdownClassName ?? "rounded-lg border border-gray-200 bg-white shadow-lg"}
     >
       <div className="p-2 border-b border-gray-100">
         <input

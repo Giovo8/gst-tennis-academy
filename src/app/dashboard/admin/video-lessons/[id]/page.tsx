@@ -199,9 +199,9 @@ export default function VideoDetailPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         {/* Video Player */}
-        <div className="bg-black rounded-xl overflow-hidden aspect-video mt-8">
+        <div className="bg-black rounded-xl overflow-hidden aspect-video">
           {youtubeId ? (
             <iframe
               src={`https://www.youtube.com/embed/${youtubeId}`}

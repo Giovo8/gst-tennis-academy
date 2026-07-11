@@ -387,7 +387,7 @@ function AdminTournamentDetailInner() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Breadcrumb + Titolo */}
       <div>
         <p className="breadcrumb text-secondary/60">

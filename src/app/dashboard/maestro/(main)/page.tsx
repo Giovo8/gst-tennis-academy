@@ -302,7 +302,7 @@ export default function MaestroDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-4xl font-bold text-secondary mb-2">Dashboard</h1>
@@ -340,25 +340,25 @@ export default function MaestroDashboardPage() {
         </div>
         <div className="px-6 py-5">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <Link href="/dashboard/maestro/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/maestro/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <PlusCircle className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Prenotazione</span>
             </Link>
-            <Link href="/dashboard/maestro/videos/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/maestro/videos/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Video Lab</span>
             </Link>
-            <Link href="/dashboard/maestro/maestro" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/maestro/maestro" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Dumbbell className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Area Maestro</span>
             </Link>
-            <Link href="/dashboard/maestro/mail" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/maestro/mail" className="group flex items-center gap-3 bg-secondary rounded-xl px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <MessageSquare className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>

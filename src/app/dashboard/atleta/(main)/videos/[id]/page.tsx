@@ -246,7 +246,7 @@ export default function VideoPlayerPage() {
 
   if (error || !video) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         <Link
           href={`${dashboardBase}/videos`}
           className="inline-flex items-center gap-2 text-secondary hover:opacity-80 transition-colors"
@@ -279,7 +279,7 @@ export default function VideoPlayerPage() {
   const canManageMaestroVideo = isMaestroView && video.created_by === currentUserId;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Video Player */}
       <div className="bg-black rounded-xl overflow-hidden aspect-video mt-2">
         {youtubeId ? (

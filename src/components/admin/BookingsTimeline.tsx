@@ -84,6 +84,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const getBookingDisplayName = (booking: Booking) =>
     getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
 
+  const getCourseInstructorName = (booking: Booking) => {
+    if (!booking.isCourse) return null;
+    return booking.coach_profile?.full_name || booking.user_profile?.full_name || null;
+  };
+
   const getParticipantNames = (booking: Booking): string[] => {
     const names =
       booking.participants
@@ -664,21 +669,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
       ) : (
         <div className="space-y-4">
           {!swapAxes ? (
-            <div className="flex">
-              {/* Fixed court labels column */}
-              <div className="flex-shrink-0 w-[70px] flex flex-col gap-3">
-                <div className="bg-secondary rounded-l-lg shadow-sm" style={{ height: '52px' }}></div>
-                {courts.map((court) => (
-                  <div key={court} className="bg-secondary rounded-lg p-3 flex items-center justify-center shadow-sm border border-black/5" style={{ minHeight: '70px' }}>
-                    <span className="text-xl font-bold text-white tabular-nums">
-                      {court.replace(/^Campo\s+/i, "")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div
+            <div
                 ref={scrollRef}
-                className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing flex-1"
+                className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
                 style={{ overflowX: 'scroll', WebkitOverflowScrolling: 'touch' }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -687,16 +680,19 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
               >
               <div className="min-w-[3280px]">
                 {/* Header Row with Time Slots */}
-                <div className="bg-secondary rounded-r-lg mb-3 shadow-sm">
-                  <div className="grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
-                    {TIME_SLOTS.map((time) => (
-                      <div
-                        key={time}
-                        className="p-3 text-center font-bold text-white text-xl whitespace-nowrap flex items-center justify-center"
-                      >
-                        {time}
-                      </div>
-                    ))}
+                <div className="flex mb-3">
+                  <div className="sticky left-0 z-20 flex-shrink-0 w-[70px] bg-secondary rounded-l-lg shadow-sm" style={{ height: '52px' }} />
+                  <div className="bg-secondary rounded-r-lg shadow-sm flex-1">
+                    <div className="grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
+                      {TIME_SLOTS.map((time) => (
+                        <div
+                          key={time}
+                          className="p-3 text-center font-bold text-white text-xl whitespace-nowrap flex items-center justify-center"
+                        >
+                          {time}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -705,9 +701,16 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                 {courts.map((court) => (
                   <div
                     key={court}
+                    className="flex"
                   >
+                    {/* Sticky court label */}
+                    <div className="sticky left-0 z-20 flex-shrink-0 w-[70px] bg-secondary rounded-lg p-3 flex items-center justify-center shadow-sm border border-black/5" style={{ minHeight: '70px' }}>
+                      <span className="text-xl font-bold text-white tabular-nums">
+                        {court.replace(/^Campo\s+/i, "")}
+                      </span>
+                    </div>
                     {/* Time Slots Container */}
-                    <div className="grid timeline-grid relative bg-white border border-l-0 border-gray-200 rounded-r-lg hover:bg-gray-50/50 transition-colors" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
+                    <div className="grid timeline-grid relative bg-white border border-l-0 border-gray-200 rounded-r-lg hover:bg-gray-50/50 transition-colors flex-1" style={{ gridTemplateColumns: 'repeat(16, 1fr)', minHeight: '70px' }}>
                       {/* Prenotazioni esistenti come blocchi sovrapposti */}
                       {(() => {
                         const ownIds = new Set(bookingsForSelectedDate.filter(b => b.court === court).map(b => b.id));
@@ -747,8 +750,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                     ) : (
                                       <>
                                         <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
-                                        {booking.user_profile?.full_name && (
-                                          <div className="truncate text-white/80 mt-0.5 text-[9px] leading-tight">{booking.user_profile.full_name}</div>
+                                        {getCourseInstructorName(booking) && (
+                                          <div className="truncate text-white/80 mt-0.5 text-[9px] leading-tight">{getCourseInstructorName(booking)}</div>
                                         )}
                                         <div className="text-white/90 text-[8px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
                                       </>
@@ -885,7 +888,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                 </div>
               </div>
               </div>
-            </div>
           ) : (
             <div
               ref={scrollRef}
@@ -1026,8 +1028,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                     ) : (
                                       <>
                                         <div className="truncate leading-tight mt-0.5">{booking.notes}</div>
-                                        {booking.user_profile?.full_name && (
-                                          <div className="truncate text-white/80 mt-0.5 text-[9px] leading-tight">{booking.user_profile.full_name}</div>
+                                        {getCourseInstructorName(booking) && (
+                                          <div className="truncate text-white/80 mt-0.5 text-[9px] leading-tight">{getCourseInstructorName(booking)}</div>
                                         )}
                                         <div className="text-white/90 text-[8px] mt-0.5 uppercase tracking-wide leading-tight">Corso</div>
                                       </>

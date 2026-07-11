@@ -898,7 +898,7 @@ export default function MaestroOverviewPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* HERO */}
       <div>
         <h1 className="text-4xl font-bold text-secondary mb-2">Area Maestro</h1>

@@ -1155,7 +1155,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
           </ModalHeader>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="space-y-6 pt-3">
                 <button
                   type="button"
                   onClick={() => changeCalendarMonth(-1)}

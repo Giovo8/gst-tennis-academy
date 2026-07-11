@@ -82,6 +82,7 @@ interface NotificationsListProps {
   limit?: number;
   showHeader?: boolean;
   showSearch?: boolean;
+  showFilterButton?: boolean;
   showTableHeader?: boolean;
   maxVisibleRows?: number;
 }
@@ -124,6 +125,7 @@ export default function NotificationsList({
   limit = 6,
   showHeader = true,
   showSearch = false,
+  showFilterButton = true,
   showTableHeader = false,
   maxVisibleRows,
 }: NotificationsListProps) {
@@ -298,22 +300,24 @@ export default function NotificationsList({
               placeholder="Cerca per titolo, messaggio o data..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 shadow-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setIsFilterModalOpen(true)}
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border shadow-sm transition-colors ${
-              hasActiveFilters
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
-            }`}
-            aria-label="Apri filtri notifiche"
-            title="Filtri"
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-          </button>
+          {showFilterButton && (
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(true)}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+                hasActiveFilters
+                  ? "border-secondary bg-secondary text-white hover:opacity-90"
+                  : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+              }`}
+              aria-label="Apri filtri notifiche"
+              title="Filtri"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </button>
+          )}
         </div>
       )}
 
@@ -364,10 +368,10 @@ export default function NotificationsList({
                 <li key={n.id}>
                   <button
                     type="button"
-                    className={`w-full text-left rounded-lg border hover:shadow-sm transition-all ${
+                    className={`w-full text-left rounded-lg border hover:transition-all ${
                       isUnread
                         ? "text-white hover:opacity-95"
-                        : "bg-white border-gray-200 hover:border-gray-300"
+                        : "bg-white border-black/10 hover:border-black/20"
                     }`}
                     style={isUnread ? { background: bg, borderColor: bg } : undefined}
                     onClick={() => handleClick(n)}
@@ -398,14 +402,14 @@ export default function NotificationsList({
       )}
 
       <Modal open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
+        <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-black/10 !bg-white dark:!bg-white dark:!border-black/10">
           <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-lg">Dettaglio Notifica</ModalTitle>
           </ModalHeader>
 
           <ModalBody className="px-0 py-0 bg-white dark:!bg-white">
             {selected && (
-              <div className="text-sm bg-white dark:!bg-white divide-y divide-gray-200">
+              <div className="text-sm bg-white dark:!bg-white divide-y divide-black/10">
                 <div className="px-4 py-3 bg-white">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900">{selected.title}</p>
@@ -428,7 +432,7 @@ export default function NotificationsList({
             )}
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="p-0 border-t border-black/10 bg-white dark:!bg-white dark:!border-black/10">
             <button
               type="button"
               onClick={goToNotificationSection}
@@ -444,7 +448,7 @@ export default function NotificationsList({
         <ModalContent
           size="md"
           showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
+          className="overflow-hidden rounded-lg !border-black/10 !bg-white dark:!bg-white dark:!border-black/10"
         >
           <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="text-white text-lg">Filtra Notifiche</ModalTitle>
@@ -461,7 +465,7 @@ export default function NotificationsList({
                 value={userFilter}
                 onChange={(e) => setUserFilter(e.target.value)}
                 placeholder="Es. Mario Rossi"
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-2 focus:ring-secondary/20"
               />
             </div>
 
@@ -473,7 +477,7 @@ export default function NotificationsList({
                 id="notifications-read-filter"
                 value={readFilter}
                 onChange={(e) => setReadFilter(e.target.value as "all" | "unread" | "read")}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
               >
                 <option value="all">Tutte</option>
                 <option value="unread">Solo non lette</option>
@@ -489,7 +493,7 @@ export default function NotificationsList({
                 id="notifications-type-filter"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
               >
                 <option value="all">Tutti i tipi</option>
                 {notificationTypes.map((type) => (
@@ -501,7 +505,7 @@ export default function NotificationsList({
             </div>
           </ModalBody>
 
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
+          <ModalFooter className="p-0 border-t border-black/10 bg-white dark:!bg-white dark:!border-black/10">
             <button
               type="button"
               onClick={() => {
@@ -509,7 +513,7 @@ export default function NotificationsList({
                 setTypeFilter("all");
                 setUserFilter("");
               }}
-              className="w-1/2 py-3 border-r border-gray-200 text-secondary font-semibold hover:bg-gray-50 transition-colors"
+              className="w-1/2 py-3 border-r border-black/10 text-secondary font-semibold hover:bg-gray-50 transition-colors"
             >
               Rimuovi filtri
             </button>

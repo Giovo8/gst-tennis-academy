@@ -197,7 +197,7 @@ export default function AthleteNewsCarousel() {
               draggable={false}
               onDragStart={preventNativeDrag}
               onClickCapture={handleCardClickCapture}
-              className="group flex-shrink-0 w-[280px] sm:w-[320px] border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all"
+              className="group flex-shrink-0 w-[280px] sm:w-[320px] border border-black/10 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all"
             >
               <div className="w-full aspect-[16/9] overflow-hidden bg-secondary/5">
                 {item.image_url ? (

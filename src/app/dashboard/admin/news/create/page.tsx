@@ -309,7 +309,7 @@ export default function CreateNewsPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         {/* Header */}
         <div>
           <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">

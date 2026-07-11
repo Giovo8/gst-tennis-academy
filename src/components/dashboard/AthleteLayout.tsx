@@ -8,10 +8,11 @@ import {
   Calendar,
   Trophy,
   Video,
-  Mail,
+  MessageSquare,
   LayoutGrid,
   Swords,
   GraduationCap,
+  User,
 } from "lucide-react";
 
 interface AthleteLayoutProps {
@@ -122,10 +123,15 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       icon: <Swords className="h-5 w-5" />,
     },
     {
-      label: "Messaggi",
+      label: "Chat",
       href: "/dashboard/atleta/mail",
-      icon: <Mail className="h-5 w-5" />,
+      icon: <MessageSquare className="h-5 w-5" />,
       badge: unreadMessages > 0 ? unreadMessages : undefined,
+    },
+    {
+      label: "Profilo",
+      href: "/dashboard/atleta/profile",
+      icon: <User className="h-5 w-5" />,
     },
   ];
 

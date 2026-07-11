@@ -114,7 +114,7 @@ export function useTimelineData({
     const dayCode = DAY_CODES[selectedDate.getDay()];
     const dateStr = selectedDate.toISOString().split("T")[0];
     const selectFields =
-      "id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, schedule_periods";
+      "id, name, court_name, instructor_name, schedule_time, schedule_days, start_date, end_date, is_active, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, lesson_instructor_overrides, schedule_periods";
 
     const [q1, q2] = await Promise.all([
       supabase
@@ -193,7 +193,13 @@ export function useTimelineData({
       const endTime = new Date(selectedDate);
       endTime.setHours(endHour, endMinute, 0, 0);
 
-      const instructorNames = (c.instructor_name ?? "").split(", ").filter(Boolean);
+      const instructorOverrides =
+        (c.lesson_instructor_overrides as Record<string, string> | null) ?? {};
+      const lessonInstructor = instructorOverrides[dateStr] ?? c.instructor_name ?? "";
+      const instructorNames = lessonInstructor
+        .split(",")
+        .map((name: string) => name.trim())
+        .filter(Boolean);
       const instructorIds = instructorNames
         .map((n: string) => nameToId.get(n))
         .filter(Boolean) as string[];
@@ -203,6 +209,10 @@ export function useTimelineData({
             ? highlightUserId
             : instructorIds[0]
           : null;
+      const resolvedCoachName =
+        highlightUserId && resolvedCoachId === highlightUserId
+          ? instructorNames.find((name: string) => nameToId.get(name) === highlightUserId) ?? instructorNames[0] ?? null
+          : instructorNames[0] ?? null;
 
       entries.push({
         id: c.id,
@@ -215,7 +225,8 @@ export function useTimelineData({
         type: "corso",
         notes: c.name,
         isCourse: true,
-        user_profile: c.instructor_name ? { full_name: c.instructor_name, email: "" } : null,
+        user_profile: lessonInstructor ? { full_name: lessonInstructor, email: "" } : null,
+        coach_profile: resolvedCoachName ? { full_name: resolvedCoachName, email: "" } : null,
       } as Booking);
     }
     setCourseEntries(entries);

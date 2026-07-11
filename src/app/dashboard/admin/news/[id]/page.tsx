@@ -119,7 +119,7 @@ export default function AdminNewsDetailPage() {
 
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-3">
         <div>
           <p className="breadcrumb text-secondary/60">
             <Link href="/dashboard/admin/news" className="hover:text-secondary/80 transition-colors">News</Link>

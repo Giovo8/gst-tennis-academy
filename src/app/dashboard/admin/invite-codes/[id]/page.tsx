@@ -160,7 +160,7 @@ export default function InviteCodeDetailPage() {
     new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       {/* Header */}
       <div>
         <p className="breadcrumb text-secondary/60 mb-1">

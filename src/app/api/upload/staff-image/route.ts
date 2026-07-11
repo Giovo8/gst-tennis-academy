@@ -6,17 +6,44 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await getRouteAuth();
     if (!auth) return unauthorized();
-    if (!isAdmin(auth.role)) return forbidden();
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const oldImageUrl = formData.get("oldImageUrl") as string | null;
     const deleteOnly = formData.get("deleteOnly") === "true";
+    const targetUserId = formData.get("targetUserId") as string | null;
+
+    const isAdminUser = isAdmin(auth.role);
+    const effectiveTargetUserId = targetUserId || auth.user.id;
+
+    if (!isAdminUser && effectiveTargetUserId !== auth.user.id) {
+      return forbidden();
+    }
+
+    let currentProfileAvatarUrl: string | null = null;
+    if (!isAdminUser) {
+      const { data: profile, error: profileError } = await supabaseServer
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", auth.user.id)
+        .single();
+
+      if (profileError) {
+        return NextResponse.json(
+          { error: "Impossibile verificare l'avatar corrente" },
+          { status: 500 }
+        );
+      }
+
+      currentProfileAvatarUrl = profile?.avatar_url ?? null;
+    }
+
+    const removableOldImageUrl = isAdminUser ? oldImageUrl : currentProfileAvatarUrl;
 
     if (deleteOnly) {
-      if (oldImageUrl) {
+      if (removableOldImageUrl) {
         try {
-          const oldPath = oldImageUrl.split("/avatars/").pop();
+          const oldPath = removableOldImageUrl.split("/avatars/").pop();
           if (oldPath) {
             await supabaseServer.storage.from("avatars").remove([oldPath]);
           }
@@ -43,9 +70,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Remove old image if exists
-    if (oldImageUrl) {
+    if (removableOldImageUrl) {
       try {
-        const oldPath = oldImageUrl.split("/avatars/").pop();
+        const oldPath = removableOldImageUrl.split("/avatars/").pop();
         if (oldPath) {
           await supabaseServer.storage.from("avatars").remove([oldPath]);
         }

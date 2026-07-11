@@ -43,7 +43,7 @@ export default function Home() {
         <AuthCodeHandler />
       </Suspense>
       <div className="max-w-[1400px] mx-auto bg-white">
-        <PublicNavbar />
+        <PublicNavbar home />
         <main>
           {/* Accessibility skip link */}
           <a href="#main-content" className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4">Vai al contenuto</a>

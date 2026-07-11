@@ -105,8 +105,8 @@ export default function BookingDetailPage() {
   const dashboardBase = pathname.split("/bookings")[0];
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const bookingSectionClassName = "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden";
-  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingSectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
+  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
 
   const searchParams = useSearchParams();
   const courseDate = searchParams?.get("date");
@@ -703,8 +703,6 @@ export default function BookingDetailPage() {
       return {
         icon: Calendar,
         backgroundColor: "var(--secondary)",
-        borderColor: "var(--secondary)",
-        leftBorderColor: "var(--secondary)",
       };
     }
 
@@ -712,8 +710,6 @@ export default function BookingDetailPage() {
       return {
         icon: Users,
         backgroundColor: "#023047",
-        borderColor: "#023047",
-        leftBorderColor: "#023047",
       };
     }
 
@@ -721,16 +717,12 @@ export default function BookingDetailPage() {
       return {
         icon: isRankedArenaBooking ? Target : Handshake,
         backgroundColor: "#023b52",
-        borderColor: "#023b52",
-        leftBorderColor: "#023b52",
       };
     }
 
     return {
       icon: CalendarClock,
       backgroundColor: "var(--secondary)",
-      borderColor: "var(--secondary)",
-      leftBorderColor: "var(--secondary)",
     };
   }
 
@@ -738,25 +730,12 @@ export default function BookingDetailPage() {
   const BookingIcon = bookingStyle.icon;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <p className="breadcrumb text-secondary/60">
-        <Link href={`${dashboardBase}/bookings`} className="hover:text-secondary/80 transition-colors">Prenotazioni</Link>
-        {" › "}
-        <span>Dettagli Prenotazione</span>
-      </p>
-
-      <div>
-        <h1 className="text-4xl font-bold text-secondary">Dettagli Prenotazione</h1>
-      </div>
-
+    <div className="space-y-6 pt-3">
       {/* Header con info prenotazione */}
       <div
-        className="rounded-2xl border-t border-r border-b p-6 border-l-4 shadow-sm"
+        className="rounded-lg border border-black/10 p-6 overflow-hidden"
         style={{
           backgroundColor: bookingStyle.backgroundColor,
-          borderColor: bookingStyle.borderColor,
-          borderLeftColor: bookingStyle.leftBorderColor,
         }}
       >
         <div className="flex items-start gap-6">

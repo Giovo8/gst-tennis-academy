@@ -280,7 +280,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       <h1 className="text-4xl font-bold text-secondary">Dashboard</h1>
 
       <WeatherCard />
@@ -316,46 +316,47 @@ export default function AdminDashboard() {
               bookings={upcomingItems}
               basePath="/dashboard/admin"
               title="Prenotazioni"
+              showFilterButton={false}
             />
           );
         })()}
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full flex flex-col">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+            <NotificationsList limit={0} showSearch={true} showFilterButton={false} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
           </div>
         </div>
       </div>
 
       {/* AZIONI RAPIDE */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+        <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Azioni Rapide</h2>
         </div>
         <div className="px-6 py-5">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <Link href="/dashboard/admin/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl shadow-sm px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/admin/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <CalendarPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Prenotazione</span>
             </Link>
-            <Link href="/dashboard/admin/users/new" className="group flex items-center gap-3 bg-secondary rounded-xl shadow-sm px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/admin/users/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <UserPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Utente</span>
             </Link>
-            <Link href="/dashboard/admin/video-lessons/new" className="group flex items-center gap-3 bg-secondary rounded-xl shadow-sm px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/admin/video-lessons/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Crea Video Lab</span>
             </Link>
-            <Link href="/dashboard/admin/news/create" className="group flex items-center gap-3 bg-secondary rounded-xl shadow-sm px-4 py-4 hover:opacity-90 transition-all">
+            <Link href="/dashboard/admin/news/create" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Newspaper className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>

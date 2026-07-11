@@ -226,7 +226,7 @@ export default function CourtBlockDetailPage() {
   const lastDate = new Date(allBlocks[allBlocks.length - 1].end_time);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       <p className="breadcrumb text-secondary/60">
         <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">
           Blocco Campi

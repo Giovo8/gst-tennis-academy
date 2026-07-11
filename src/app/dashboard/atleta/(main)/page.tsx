@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
-  CalendarClock,
   CalendarPlus,
   Trophy,
   Video,
@@ -60,8 +59,8 @@ export default function AtletaDashboard() {
   const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingCourseLesson[]>([]);
 
-  const dashboardCardClassName = "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden";
-  const dashboardCardHeaderClassName = "px-6 py-4 border-b border-gray-200 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent";
+  const dashboardCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
+  const dashboardCardHeaderClassName = "px-6 py-4 border-b border-black/10 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent";
 
   useEffect(() => {
     void loadDashboardData();
@@ -165,60 +164,88 @@ export default function AtletaDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-3">
       <h1 className="text-4xl font-bold text-secondary">Dashboard</h1>
 
       <WeatherCard />
 
-      <div className={dashboardCardClassName}>
-        <div className={dashboardCardHeaderClassName}>
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossimi Impegni</h2>
-        </div>
-        <div className="px-6 py-4">
-          {(() => {
-            const todayD = new Date(); todayD.setHours(0, 0, 0, 0);
-            const tomorrowD = new Date(todayD); tomorrowD.setDate(todayD.getDate() + 1);
-            const dayAfterD = new Date(todayD); dayAfterD.setDate(todayD.getDate() + 2);
-            const allItems = [
-              ...upcomingBookings.map((b) => ({ kind: "booking" as const, date: new Date(b.start_time), booking: b })),
-              ...upcomingLessons.map((l) => ({ kind: "lesson" as const, date: l.lessonDate, lesson: l })),
-            ].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 5);
+      {(upcomingBookings.length > 0 || upcomingLessons.length > 0) && (
+        <div className={dashboardCardClassName}>
+          <div className={dashboardCardHeaderClassName}>
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Prossimi Impegni</h2>
+          </div>
+          <div className="px-6 py-4">
+            {(() => {
+              const todayD = new Date(); todayD.setHours(0, 0, 0, 0);
+              const tomorrowD = new Date(todayD); tomorrowD.setDate(todayD.getDate() + 1);
+              const dayAfterD = new Date(todayD); dayAfterD.setDate(todayD.getDate() + 2);
+              const allItems = [
+                ...upcomingBookings.map((b) => ({ kind: "booking" as const, date: new Date(b.start_time), booking: b })),
+                ...upcomingLessons.map((l) => ({ kind: "lesson" as const, date: l.lessonDate, lesson: l })),
+              ].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 5);
 
-            if (allItems.length === 0) {
               return (
-                <div className="flex flex-col items-center justify-center py-8 text-secondary/40">
-                  <CalendarClock className="h-8 w-8 mb-2" />
-                  <p className="text-sm font-medium">Nessun impegno in arrivo</p>
-                </div>
-              );
-            }
+                <ul className="flex flex-col gap-2">
+                  {allItems.map((item, idx) => {
+                    let dayPill: { text: string; cls: string } | null = null;
+                    if (item.date >= todayD && item.date < tomorrowD) {
+                      dayPill = { text: "Oggi", cls: "bg-primary text-white" };
+                    } else if (item.date >= tomorrowD && item.date < dayAfterD) {
+                      dayPill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
+                    }
 
-            return (
-              <ul className="flex flex-col gap-2">
-                {allItems.map((item, idx) => {
-                  let dayPill: { text: string; cls: string } | null = null;
-                  if (item.date >= todayD && item.date < tomorrowD) {
-                    dayPill = { text: "Oggi", cls: "bg-primary text-white" };
-                  } else if (item.date >= tomorrowD && item.date < dayAfterD) {
-                    dayPill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
-                  }
+                    if (item.kind === "booking") {
+                      const booking = item.booking;
+                      const isArena = booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
+                      const typeColors: Record<string, string> = {
+                        lezione_privata: "#023047",
+                        lezione_gruppo: "#023047",
+                        campo: "var(--secondary)",
+                        lezione: "#023047",
+                      };
+                      const typeBg = isArena ? "#023b52" : (typeColors[booking.type] || "var(--secondary)");
+                      return (
+                        <li key={`b-${booking.id}`}>
+                          <Link
+                            href={`/dashboard/atleta/bookings/${booking.id}`}
+                            className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
+                            style={{ background: typeBg }}
+                          >
+                            <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                              <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                                {item.date.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                              </span>
+                              <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                                {item.date.getDate()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-white text-sm truncate">
+                                {booking.coach_name
+                                  ? `${formatBookingType(booking.type, isArena)} - ${booking.coach_name}`
+                                  : formatBookingType(booking.type, isArena)}
+                              </p>
+                              <p className="text-xs text-white/70 mt-0.5">
+                                {formatBookingTimeRange(booking.start_time, booking.end_time)} · {booking.court}
+                              </p>
+                            </div>
+                            {dayPill && (
+                              <span className={`text-[10px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ${dayPill.cls}`}>
+                                {dayPill.text}
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    }
 
-                  if (item.kind === "booking") {
-                    const booking = item.booking;
-                    const isArena = booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
-                    const typeColors: Record<string, string> = {
-                      lezione_privata: "#023047",
-                      lezione_gruppo: "#023047",
-                      campo: "var(--secondary)",
-                      lezione: "#023047",
-                    };
-                    const typeBg = isArena ? "#023b52" : (typeColors[booking.type] || "var(--secondary)");
+                    const lesson = item.lesson;
                     return (
-                      <li key={`b-${booking.id}`}>
+                      <li key={`l-${lesson.courseId}-${idx}`}>
                         <Link
-                          href={`/dashboard/atleta/bookings/${booking.id}`}
+                          href={`/dashboard/atleta/corsi/${lesson.courseId}`}
                           className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                          style={{ background: typeBg }}
+                          style={{ background: "#023047" }}
                         >
                           <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
                             <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
@@ -229,14 +256,10 @@ export default function AtletaDashboard() {
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white text-sm truncate">
-                              {booking.coach_name
-                                ? `${formatBookingType(booking.type, isArena)} - ${booking.coach_name}`
-                                : formatBookingType(booking.type, isArena)}
-                            </p>
-                            <p className="text-xs text-white/70 mt-0.5">
-                              {formatBookingTimeRange(booking.start_time, booking.end_time)} · {booking.court}
-                            </p>
+                            <p className="font-semibold text-white text-sm truncate">{lesson.courseName}</p>
+                            {lesson.scheduleTime && (
+                              <p className="text-xs text-white/70 mt-0.5">{lesson.scheduleTime}</p>
+                            )}
                           </div>
                           {dayPill && (
                             <span className={`text-[10px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ${dayPill.cls}`}>
@@ -246,44 +269,13 @@ export default function AtletaDashboard() {
                         </Link>
                       </li>
                     );
-                  }
-
-                  const lesson = item.lesson;
-                  return (
-                    <li key={`l-${lesson.courseId}-${idx}`}>
-                      <Link
-                        href={`/dashboard/atleta/corsi/${lesson.courseId}`}
-                        className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-                        style={{ background: "#023047" }}
-                      >
-                        <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                          <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                            {item.date.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-                          </span>
-                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
-                            {item.date.getDate()}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white text-sm truncate">{lesson.courseName}</p>
-                          {lesson.scheduleTime && (
-                            <p className="text-xs text-white/70 mt-0.5">{lesson.scheduleTime}</p>
-                          )}
-                        </div>
-                        {dayPill && (
-                          <span className={`text-[10px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ${dayPill.cls}`}>
-                            {dayPill.text}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            );
-          })()}
+                  })}
+                </ul>
+              );
+            })()}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={dashboardCardClassName}>
         <div className={dashboardCardHeaderClassName}>
@@ -297,7 +289,7 @@ export default function AtletaDashboard() {
       <div className="-mt-3">
         <Link
           href="/news"
-          className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-white bg-secondary rounded-xl shadow-sm hover:bg-secondary/90 transition-colors"
+          className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-colors"
         >
           Vedi tutte le news
         </Link>
@@ -308,7 +300,7 @@ export default function AtletaDashboard() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
         </div>
         <div className="px-6 py-4">
-          <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+          <NotificationsList limit={0} showSearch={true} showFilterButton={false} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
         </div>
       </div>
 
@@ -318,25 +310,25 @@ export default function AtletaDashboard() {
         </div>
         <div className="px-6 py-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Link href="/dashboard/atleta/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/bookings/new" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <CalendarPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Nuova Prenotazione</span>
             </Link>
-            <Link href="/dashboard/atleta/arena" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/arena" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Swords className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Vai ad Arena</span>
             </Link>
-            <Link href="/dashboard/atleta/videos" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/videos" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Video className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-medium text-white">Apri Video Lab</span>
             </Link>
-            <Link href="/dashboard/atleta/tornei" className="group flex items-center gap-3 bg-secondary rounded-xl px-4 py-4 shadow-sm hover:opacity-90 transition-all">
+            <Link href="/dashboard/atleta/tornei" className="group flex items-center gap-3 bg-secondary rounded-lg px-3 py-3.5 hover:opacity-90 transition-all">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Trophy className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
