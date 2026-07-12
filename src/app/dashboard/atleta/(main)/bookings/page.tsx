@@ -16,6 +16,7 @@ import {
   Search,
   ArrowUpDown,
   SlidersHorizontal,
+  X,
   Users,
   Trophy,
   MoreVertical,
@@ -905,43 +906,68 @@ export default function BookingsPage({ mode = "default" }: BookingsPageProps) {
         </div>
 
         {isAdvancedFiltersOpen && (
-          <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
-              sortDirection === "desc"
-                ? "border-secondary bg-secondary text-white hover:opacity-90"
-                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
-            }`}
-            aria-label="Inverti ordinamento"
-            title="Inverti ordinamento"
-          >
-            <ArrowUpDown className="h-4 w-4" />
-          </button>
-
-          {[
-            { value: "active", label: "Attive" },
-            { value: "today", label: "Oggi" },
-            { value: "all", label: "Tutte" },
-            { value: "archived", label: "Archiviate" },
-          ].map((option) => {
-            const isSelected = filterVisibility === option.value;
-            return (
+          <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
               <button
-                key={option.value}
                 type="button"
-                onClick={() => setFilterVisibility(option.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
-                className={`h-11 rounded-lg border px-4 text-sm font-semibold transition-colors ${
-                  isSelected
-                    ? "border-secondary bg-secondary text-white"
+                onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+                className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+                  sortDirection === "desc"
+                    ? "border-secondary bg-secondary text-white hover:opacity-90"
                     : "border-black/10 bg-white text-secondary hover:bg-gray-50"
                 }`}
+                aria-label="Inverti ordinamento"
+                title="Inverti ordinamento"
               >
-                {option.label}
+                <ArrowUpDown className="h-4 w-4" />
               </button>
-            );
-          })}
+
+              <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
+                {[
+                  { value: "active", label: "Attive" },
+                  { value: "today", label: "Oggi" },
+                  { value: "all", label: "Tutte" },
+                  { value: "archived", label: "Archiviate" },
+                ].map((option) => {
+                  const isSelected = filterVisibility === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFilterVisibility(option.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
+                      className={`h-11 shrink-0 rounded-lg border px-4 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
+                        isSelected
+                          ? "border-secondary bg-secondary text-white"
+                          : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setFilterVisibility("active");
+                  setFilterUser("all");
+                  setFilterCoach("all");
+                  setFilterType("all");
+                  setFilterCourt("all");
+                  setFilterDateFrom("");
+                  setFilterDateTo("");
+                  setSortField("start_time");
+                  setSortDirection("asc");
+                }}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
+                aria-label="Reset filtri"
+                title="Reset filtri"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
 

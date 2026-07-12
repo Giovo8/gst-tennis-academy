@@ -93,7 +93,7 @@ export default function PublicNavbar({ home = false }: PublicNavbarProps) {
           <Link
             href={getDashboardLink()}
             className={home
-              ? "ml-auto inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-secondary bg-white hover:bg-white/90 transition-colors"
+              ? "ml-auto inline-flex !h-9 !min-h-0 items-center justify-center px-4 !py-0 rounded-lg text-sm font-semibold text-secondary bg-white hover:bg-white/90 transition-colors"
               : "ml-auto inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-secondary hover:bg-secondary/90 transition-colors"
             }
           >

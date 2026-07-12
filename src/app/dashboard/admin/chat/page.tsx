@@ -10,7 +10,6 @@ import {
   X,
   User,
   Send,
-  ArrowLeft,
   Plus,
   Users,
   Settings,
@@ -933,13 +932,6 @@ export default function AdminChatPage() {
               <>
                 {/* Chat Header */}
                 <div className="h-16 px-6 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center gap-3">
-                  <button
-                    onClick={() => setSelectedConversation(null)}
-                    className="md:hidden p-2 hover:bg-secondary/10 rounded-lg text-secondary"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-
                   {selectedConversation.type === "group" ? (
                     <div className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center">
                       <Users className="h-6 w-6 text-white" />

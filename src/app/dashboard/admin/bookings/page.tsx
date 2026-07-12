@@ -776,7 +776,8 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
       </div>
 
       {isFilterPanelOpen && (
-        <div className="flex items-center gap-2 w-full">
+        <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
           <button
             type="button"
             onClick={() => {
@@ -798,7 +799,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             <ArrowUpDown className="h-4 w-4" />
           </button>
 
-          <div className="flex flex-1 items-center gap-2">
+          <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
             {[
               { value: "active", label: "Attive" },
               { value: "today", label: "Oggi" },
@@ -811,7 +812,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
                   key={option.value}
                   type="button"
                   onClick={() => setFilterVisibility(option.value as "active" | "today" | "archived" | "cancelled" | "past" | "all")}
-                  className={`h-11 flex-1 rounded-lg border px-2 text-sm font-semibold transition-colors ${
+                  className={`h-11 shrink-0 rounded-lg border px-3 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
                     isSelected
                       ? "border-secondary bg-secondary text-white"
                       : "border-black/10 bg-white text-secondary hover:bg-gray-50"
@@ -843,6 +844,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           >
             <X className="h-4 w-4" />
           </button>
+          </div>
         </div>
       )}
     </div>
