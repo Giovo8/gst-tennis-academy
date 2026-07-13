@@ -240,8 +240,8 @@ export default function PartecipantePresenzePage() {
       </div>
 
       {/* Info partecipante */}
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+      <div className="page-card">
+        <div className="page-card-header">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
         <div className="px-6 py-6 space-y-5">
@@ -285,8 +285,8 @@ export default function PartecipantePresenzePage() {
       </div>
 
       {/* Lezioni */}
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+      <div className="page-card">
+        <div className="page-card-header">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>
         {lessonDates.length === 0 ? (
@@ -351,8 +351,8 @@ export default function PartecipantePresenzePage() {
           return m ?? "—";
         };
         return (
-          <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="page-card">
+            <div className="page-card-header">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Contabilità</h2>
             </div>
 

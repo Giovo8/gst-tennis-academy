@@ -285,8 +285,8 @@ export default function LezionePresenzePage() {
       )}
 
       {/* Maestro */}
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center gap-2">
+      <div className="page-card">
+        <div className="page-card-header flex items-center gap-2">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
         </div>
         {maestroNames.length > 0 ? (
@@ -317,8 +317,8 @@ export default function LezionePresenzePage() {
       </div>
 
       {/* Presenze */}
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between">
+      <div className="page-card">
+        <div className="page-card-header flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Presenze</h2>
 
         </div>

@@ -1,173 +1,111 @@
-# Funzionalità
+# Funzionalità per modulo
 
-Mappa completa delle funzionalità, delle pagine e dei permessi di GST Tennis Academy.
-
----
-
-## Sistema prenotazioni
-
-Tre tipi di prenotazione:
-
-- **Campo** — prenotazione del campo senza maestro.
-- **Lezione privata** — campo + maestro assegnato.
-- **Lezione di gruppo** — lezione multi-partecipante con limite di capienza (max 4 atleti).
-
-Caratteristiche:
-
-- Calendario interattivo con disponibilità in tempo reale.
-- Vincolo a livello database che impedisce le sovrapposizioni sullo stesso campo.
-- Orari di apertura configurabili: lun–ven 07:00–20:30, sabato 07:00–18:00, domenica 07:00–13:00.
-- Flusso di conferma multi-livello (`coach_confirmed`, `manager_confirmed`).
-- Notifiche email automatiche ad atleta, maestro e gestori.
-- Partecipanti registrati o ospiti, con nome/email/telefono.
-- Ricerca e filtri per campo, data, tipo, maestro; storico prenotazioni.
+Panoramica delle funzionalità della piattaforma, verificate sul codice. Per i dettagli su ruoli e permessi vedi [ROLES.md](ROLES.md); per le API vedi [API.md](API.md); per lo schema dati vedi [DATABASE.md](DATABASE.md).
 
 ---
 
-## Sistema tornei
+## Prenotazioni (campi e lezioni)
 
-Tre tipi di competizione:
+Pagine: `dashboard/{atleta,maestro}/(main)/bookings`, `dashboard/admin/bookings`. API principali: `/api/bookings` (+ `availability`, `confirm`, `reject`, `batch`, `participants`).
 
-1. **Eliminazione diretta** — tabellone classico (2, 4, 8, 16, 32… partecipanti) con seeding e bye automatici.
-2. **Girone + eliminazione** — fase a gironi (round-robin) seguita da knockout; distribuzione
-   automatica e classifiche con tiebreak (punti → differenza set → differenza game → scontri diretti).
-3. **Campionato** — round-robin "tutti contro tutti" con classifica unica.
-
-Caratteristiche:
-
-- Inserimento punteggi set-per-set con regole tennis autentiche (set, game, tie-break).
-- Iscrizione manuale o automatica dei partecipanti.
-- Rendering del tabellone in tempo reale e statistiche per partecipante.
-- Workflow di stato: registrazione → in corso → concluso.
-- Visibilità pubblica con possibilità di iscrizione per gli utenti loggati.
-
----
-
-## Arena (sfide 1v1)
-
-Sistema competitivo a ranking in cui gli atleti si sfidano in partite individuali. Vedi
-[ARENA.md](ARENA.md) per le regole complete e il sistema di punteggio.
-
-In sintesi: creazione sfida (singolo/doppio, best of 1/3/5), ciclo di vita
-pending → accepted/declined → awaiting_score → completed, controproposte, punteggio set-per-set,
-ranking automatico con livelli da **Bronzo** a **Diamante**, prenotazione campo collegata e chat.
-
----
+- **Tipi di prenotazione**: campo, lezione (privata o di gruppo). L'enum `booking_type` e i template email distinguono `campo`, `lezione`, `lezione_privata`, `lezione_gruppo`.
+- **Multi-partecipante (max 4)**: tabella `booking_participants` (migrazione `032`), con CHECK su `order_index < 4` e trigger `check_booking_participants_limit()`. I partecipanti possono essere atleti registrati o ospiti (`participant_type`). Selezione in UI via `src/components/bookings/AthletesSelector.tsx`.
+- **Anti-sovrapposizione a livello DB**: constraint `bookings_no_overlap` (migrazione `047`, `EXCLUDE USING gist` su campo + `tstzrange(start_time, end_time)` con `btree_gist`), che ignora gli stati `cancelled`, `rejected`, `cancellation_requested`.
+- **Flusso di conferma**: le lezioni richiedono conferma del maestro e/o del gestore (`/api/bookings/[id]/confirm` e `reject`); il gestore può creare prenotazioni per conto degli atleti.
+- **Crediti settimanali**: tabella `subscription_credits` con funzioni `consume_group_credit()` e `reset_weekly_credits()` (reset il lunedì). Definite in `supabase/schema.sql`; la logica è a livello database, senza chiamate dirette dal codice applicativo in `src/`.
+- **Creazione**: `POST /api/bookings` applica rate limiting, validazione Zod (`createBookingSchema`), sanitizzazione input, restrizioni sugli orari prenotabili e logging attività.
+- **Email**: notifiche automatiche a gestori, maestro e atleta su creazione/eliminazione (vedi [EMAIL.md](EMAIL.md)).
+- **Blocchi campo**: tabella `court_blocks` gestita da admin/gestore (`/dashboard/admin/courts`).
 
 ## Corsi
 
-- Creazione di corsi ricorrenti con giorni, fasce orarie, campo, capienza, prezzo e periodo.
-- Programmazione avanzata: periodi multipli, date annullate, date extra, override orario.
-- Iscrizioni (atleti registrati o ospiti, con quota).
-- Tracciamento presenze per singola lezione.
-- Sistema di crediti settimanali per le lezioni di gruppo.
-- Assegnazione del maestro al corso.
+Pagine: `dashboard/admin/corsi` (gestione), `dashboard/{atleta,maestro}/(main)/corsi`. Tabelle: `courses`, `course_enrollments`, `lesson_attendance`.
 
----
+- Creazione corsi con calendario delle lezioni e maestro assegnato.
+- Iscrizioni degli atleti (`course_enrollments`).
+- Registro presenze per lezione (`lesson_attendance`), compilabile dal maestro.
 
-## Video lezioni
+## Video-lezioni
 
-- Libreria di video categorizzati per livello e tema.
-- Assegnazione dei video a utenti specifici.
-- Tracciamento delle visualizzazioni (conteggio e data per utente).
-- I maestri possono creare/eliminare i propri video (migrazioni 038–039).
+Pagine: `dashboard/admin/video-lessons`, `dashboard/{atleta,maestro}/(main)/videos`. Tabelle: `video_lessons`, `video_assignments`.
 
----
+- Caricamento/gestione di video-lezioni da parte di maestro/admin.
+- Assegnazione dei video a singoli atleti; visualizzazione tracciata (azione `video_lesson.view` nel log attività).
 
-## Chat e comunicazione
+## Tornei
 
-- **Chat in tempo reale** con conversazioni 1:1 e di gruppo (Supabase Realtime).
-- **Indicatori di presenza** (online/offline) e di digitazione.
-- **Messaggi interni** con oggetto e thread.
-- **Allegati** (immagini/PDF) con validazione MIME e magic bytes.
-- Conteggio messaggi non letti.
+Pagine: `/tornei` (pubblica), `dashboard/admin/tornei` (gestione), sezioni tornei nelle dashboard atleta/maestro. Tabelle: `tournaments` (con `rounds_data`/`groups_data` JSONB), `tournament_participants`, `tournament_matches`, `tournament_groups`.
 
----
+- **Tre formati** (`competition_type` in `src/lib/types/tournament.ts` e `src/lib/constants/app.ts`): eliminazione diretta (`knockout` / `eliminazione_diretta`), girone all'italiana (`round_robin`), gironi + eliminazione (`groups_then_knockout` / `girone_eliminazione`).
+- **Bracket generati automaticamente** con seed e avanzamento del vincitore (`next_match_id`).
+- **Punteggi tennis**: set per set, formato best-of-1/3/5, superficie del campo.
+- Stati del torneo: `draft → open → in_progress → completed`; visibilità `public`/`private`; deadline di iscrizione.
+- Classifiche gironi con vittorie/sconfitte, set e game (`GroupStanding`).
 
-## News e annunci
+## Arena (sfide 1v1)
 
-- Articoli news con categoria, immagine, stato pubblicazione e pagine di dettaglio.
-- Annunci/bacheca con priorità, visibilità per ruolo, scadenza e pinning.
-- Editor admin con sanitizzazione HTML.
+Sistema competitivo a punti con livelli Bronzo→Diamante, streak e classifica. Sfide singolo/doppio, formati best-of-1/3/5, tipo `ranked` o `amichevole`. Documentazione dedicata: [ARENA.md](ARENA.md).
 
----
+## Chat
+
+Pagine: `/chat` (+ vista admin `dashboard/admin/chat`). Tabelle: `conversations`, `internal_messages`, `chat_groups`, `chat_group_members`, `message_reads`, `typing_indicators`, `user_presence`.
+
+- Conversazioni dirette 1:1 e gruppi.
+- Indicatori di digitazione e presenza online (`src/lib/chat/presence.ts`, tabelle `typing_indicators` e `user_presence`, pulizia periodica via `cleanup_old_typing_indicators()`).
+- Ricevute di lettura (`message_reads`) e allegati.
+- Aggiornamenti in tempo reale via Supabase Realtime.
+- L'Arena usa la chat per notificare creazione e cambi di stato delle sfide (messaggi in `internal_messages`).
+
+## Notizie
+
+Pagine: `/news`, `/news/[id]` (pubbliche), `dashboard/admin/news` (gestione). Tabella: `news`.
+
+- Notizie manuali create dall'admin e notizie **generate con AI** da feed RSS + Gemini, con workflow bozza → approva/modifica/scarta. Pipeline completa in [AI-NEWS.md](AI-NEWS.md).
+- Upload immagini via `/api/upload/news-image`.
 
 ## Notifiche
 
-- Notifiche in-app (dropdown a campanella) con routing per ruolo.
-- Notifiche email configurabili per utente.
-- Tipi: conferme/cancellazioni prenotazioni, aggiornamenti sfide, iscrizioni tornei, annunci, alert di sistema.
+Tabella `notifications`, API `/api/notifications`, campanella in dashboard con Realtime.
 
----
+- Notifiche in-app per prenotazioni, sfide Arena, messaggi e comunicazioni.
+- Lettura tracciata (azione `notification.read`).
 
-## Profilo e statistiche
+## Codici invito
 
-- Profilo utente con dati anagrafici, avatar, preferenze e percentuale di completamento.
-- Statistiche atleta: ranking e punti Arena, storico match, set/game, attività.
-- Profilo maestro con bio, stato "prenotabile" e statistiche lezioni.
+Pagina: `dashboard/admin/invite-codes`. Tabelle: `invite_codes`, `invite_code_uses`. API: `/api/invite-codes` (+ `[id]`, `validate`).
 
----
+- Admin/gestore genera codici con ruolo predefinito e limiti d'uso; alla registrazione il codice viene validato e il profilo configurato di conseguenza.
 
-## Email
+## Candidature (lavora con noi)
 
-Sistema transazionale basato su Resend con notifiche automatiche e campagne admin. Vedi
-[EMAIL.md](EMAIL.md).
+Pagina pubblica: `/lavora-con-noi`; gestione in `dashboard/admin/job-applications`. Tabella: `recruitment_applications` (enum `recruitment_role`).
 
----
+- Form pubblico di candidatura con upload documenti; revisione delle candidature da parte di admin/gestore.
 
-## Homepage
+## Staff
 
-Landing page modulare: hero, scroll loghi partner, tornei in evidenza, staff, news, sezioni
-CTA, navbar pubblica e footer con link legali. Contenuti caricati dinamicamente dal database.
+Pagina: `dashboard/admin/staff`; tabella `staff`; upload foto via `/api/upload/staff-image`.
 
----
+- Gestione delle schede staff mostrate sul sito pubblico.
 
-## Mappa delle pagine
+## Log attività
 
-### Pagine pubbliche
+Modulo `src/lib/activity/`: `logActivity()` (client) e `logActivityServer()` (server, usato dalle API route) scrivono sulla tabella `activity_log` azioni tipizzate come `user.register`, `booking.create`, `tournament.join`, `email.send`, `court.block`, `invite_code.create`, `video_lesson.view`, `notification.read`.
 
-| Route | Descrizione |
-|-------|-------------|
-| `/` | Homepage |
-| `/login`, `/register` | Autenticazione e registrazione |
-| `/auth/callback`, `/auth/reset-password`, `/auth/auth-code-error` | Flussi auth |
-| `/news`, `/news/[id]` | News pubbliche e dettaglio |
-| `/tornei`, `/tornei/[id]` | Tornei pubblici e dettaglio (iscrizione se loggato) |
-| `/classifiche` | Classifiche pubbliche |
-| `/lavora-con-noi` | Candidature di lavoro |
-| `/privacy`, `/terms`, `/cookie-policy`, `/refund-policy`, `/accessibility` | Pagine legali |
+- Consultazione admin: pagina `/dashboard/admin/platform-logs`, che interroga `GET /api/activity-logs` (riservata ad admin/gestore, con filtri per azione e limite).
 
-### Pagine autenticate (tutti i ruoli)
+## Meteo
 
-| Route | Descrizione |
-|-------|-------------|
-| `/dashboard` | Redirect alla dashboard del ruolo |
-| `/profile` | Gestione profilo |
-| `/chat` | Messaggistica |
+API: `/api/weather` (rate limited). Interroga **Open-Meteo** (forecast 7 giorni, coordinate della struttura, timezone Europe/Rome) per il widget meteo in dashboard (`useWeather`).
 
-### Dashboard Atleta (`/dashboard/atleta/`)
+## Feed Instagram
 
-Prenotazioni, corsi, tornei, **Arena** (scelta avversario, configurazione e gestione sfide),
-video, posta, profilo.
+API: `/api/social/instagram`. Usa l'endpoint oEmbed di Meta con `INSTAGRAM_OEMBED_TOKEN` (post configurati in `INSTAGRAM_POST_URLS`); in assenza di token ricade su scraping HTML (fragile). Timeout 5s. Alimenta la sezione social della homepage.
 
-### Dashboard Maestro (`/dashboard/maestro/`)
+## Email transazionali
 
-Prenotazioni e lezioni, corsi gestiti, tornei, Arena, video, posta, profilo.
+Invio via Resend con logging in `email_logs`: prenotazioni create/eliminate e notifica registrazione ai gestori. Dettagli in [EMAIL.md](EMAIL.md).
 
-### Dashboard Admin/Gestore (`/dashboard/admin/`)
+## Contenuti homepage
 
-Utenti, prenotazioni, corsi, tornei, video lezioni, staff, campi, annunci, chat, news,
-notifiche, statistiche, mail marketing, invite code, candidature, platform log, gallery,
-design system demo.
-
----
-
-## Protezione delle rotte
-
-- Le pagine pubbliche sono accessibili senza login.
-- Le rotte protette verificano la sessione e applicano il controllo per ruolo a livello di
-  componente (`AuthGuard`).
-- Il redirect post-login porta alla dashboard appropriata (`getDestinationForRole`).
-- Redirect legacy: `/dashboard/coach/*` → `/dashboard/maestro/*`.
-
-Per i dettagli sui permessi vedi [ROLES.md](ROLES.md).
+Tabelle `hero_content`, `hero_images`, `homepage_sections`, `promo_banner_settings`, `services`, `events` + `event_registrations`: sezioni della landing configurabili da admin.

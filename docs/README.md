@@ -1,38 +1,24 @@
 # Documentazione — GST Tennis Academy
 
-Documentazione tecnica completa della piattaforma di gestione dell'accademia di tennis.
+GST Tennis Academy è una piattaforma web per la gestione completa di un'accademia di tennis: prenotazione campi e lezioni, corsi con presenze, tornei, sfide competitive (Arena), chat interna, notizie generate con AI e area amministrativa multi-ruolo (`atleta`, `maestro`, `gestore`, `admin`).
 
-GST Tennis Academy è un'applicazione **Next.js 16 / React 19** con backend **Supabase
-(PostgreSQL + Auth + Storage)**, sistema email **Resend** e deploy su **Vercel**.
+Stack: **Next.js 16** (App Router) + **React 19** + **TypeScript** + **Tailwind CSS v4**, backend **Supabase** (Auth, PostgreSQL, Storage, Realtime), email **Resend**, notizie AI con **Google Gemini**. Deploy su Vercel.
 
----
+Numeri chiave: **89 API route handler**, **67 migrazioni SQL** (~60 tabelle, RLS su 50+), **231 test passing** (23 skipped), 4 ruoli utente.
 
 ## Indice della documentazione
 
 | Documento | Contenuto |
-|-----------|-----------|
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Stack tecnologico, struttura del progetto, client Supabase, middleware, sicurezza, variabili d'ambiente |
-| **[DATABASE.md](DATABASE.md)** | Schema completo: tabelle, funzioni, trigger, policy RLS, storage bucket, elenco migrazioni |
-| **[API.md](API.md)** | Inventario completo degli endpoint API (~69 route) con metodi, autenticazione e payload |
-| **[FEATURES.md](FEATURES.md)** | Funzionalità della piattaforma, mappa delle pagine e permessi per ruolo |
-| **[ROLES.md](ROLES.md)** | Sistema multi-ruolo, gerarchia dei permessi e funzioni helper |
-| **[ARENA.md](ARENA.md)** | Sistema Arena (sfide 1v1): regole, punteggi, ranking e flussi |
-| **[EMAIL.md](EMAIL.md)** | Sistema email transazionale con Resend, notifiche e logging |
-| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Setup locale, configurazione database, variabili d'ambiente, deploy su Vercel, cron job |
-| **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** | Sistema di design: colori, tipografia, componenti UI, glassmorphism |
-| **[FRONTEND.md](FRONTEND.md)** | Linee guida frontend, ottimizzazione mobile e accessibilità |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Stack con versioni, struttura del progetto, middleware (CSRF + sessione), pattern di auth, client Supabase, configurazioni notevoli |
+| [API.md](API.md) | Le 89 API route raggruppate per dominio, con metodi HTTP e autenticazione richiesta per ciascuna |
+| [DATABASE.md](DATABASE.md) | Schema per dominio, enum, RLS e helper `get_my_role()`, funzioni e trigger, storage bucket, come applicare le migrazioni |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy su Vercel: variabili d'ambiente, migrazioni Supabase, Edge Function `genera-news`, note operative |
+| [ROLES.md](ROLES.md) | Sistema multi-ruolo e permessi per area |
+| [FEATURES.md](FEATURES.md) | Funzionalità per modulo (prenotazioni, corsi, tornei, chat, ...) |
+| [ARENA.md](ARENA.md) | Sistema di sfide 1v1: punteggi, livelli, streak |
+| [EMAIL.md](EMAIL.md) | Email transazionali via Resend, template e logging |
+| [AI-NEWS.md](AI-NEWS.md) | Pipeline notizie AI: fonti RSS, Gemini, workflow bozza/approvazione, cron su Supabase |
+| [FRONTEND.md](FRONTEND.md) | Convenzioni UI e design system (colori, componenti, layout) |
 
----
-
-## Panoramica rapida
-
-- **Multi-ruolo**: `atleta`, `maestro`, `gestore`, `admin`, con dashboard dedicate.
-- **Prenotazioni**: campi, lezioni private e di gruppo con calendario e vincolo anti-sovrapposizione.
-- **Tornei**: eliminazione diretta, girone + eliminazione e campionato (round-robin) con punteggi tennis reali.
-- **Arena**: sfide 1v1 con ranking, punti e livelli (Bronzo → Diamante).
-- **Corsi**: iscrizioni, presenze, pagamenti, programmazione avanzata e supporto ospiti.
-- **Comunicazione**: chat in tempo reale, messaggi interni, notifiche in-app ed email.
-- **Contenuti**: news, annunci, video lezioni, homepage dinamica.
-
-Per la guida d'installazione e i comandi principali vedi il [README del progetto](../README.md)
-e [DEPLOYMENT.md](DEPLOYMENT.md).
+Il [README principale](../README.md) nella root del repository contiene overview, setup locale e comandi.

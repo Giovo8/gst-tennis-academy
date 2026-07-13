@@ -1,166 +1,133 @@
 # Architettura
 
-Panoramica dell'architettura tecnica di GST Tennis Academy.
-
----
+Panoramica tecnica di GST Tennis Academy: stack, struttura del progetto, middleware, pattern di autenticazione/autorizzazione e configurazioni notevoli.
 
 ## Stack tecnologico
 
-### Framework e runtime
+| Tecnologia | Versione (package.json) | Uso |
+|---|---|---|
+| Next.js | ^16.2.6 | Framework full-stack (App Router, Turbopack) |
+| React / React DOM | 19.2.3 | UI |
+| TypeScript | ^5.9.3 | Linguaggio (`strict: false`, vedi sotto) |
+| Tailwind CSS | v4 (`@tailwindcss/postcss`) | Styling |
+| @supabase/supabase-js | ^2.88.0 | Auth, PostgreSQL, Storage, Realtime |
+| @supabase/ssr | ^0.8.0 | Sessione via cookie (browser + server) |
+| Zod | ^3.24.1 | Validazione input |
+| Resend | ^6.9.3 | Email transazionali |
+| @google/generative-ai | ^0.24.1 | Notizie AI (Gemini 2.0 Flash) |
+| rss-parser | ^3.13.0 | Parsing feed RSS per le notizie AI |
+| isomorphic-dompurify | ^2.18.0 | Sanitizzazione HTML |
+| framer-motion / lucide-react / sonner / date-fns / clsx / tailwind-merge | — | Animazioni, icone, toast, date, utility CSS |
+| Jest ^30.2.0 + Testing Library | — | Test (231 passing, 23 skipped) |
 
-| Tecnologia | Versione | Ruolo |
-|------------|----------|-------|
-| Next.js | 16.2.6 | Framework React con App Router, API routes, middleware |
-| React | 19.2.3 | Libreria UI |
-| TypeScript | 5.9.3 | Type safety (modalità `strict` disabilitata in `tsconfig.json`) |
-| Node.js | ≥ 20.19 | Runtime |
-
-### Librerie principali
-
-| Pacchetto | Versione | Uso |
-|-----------|----------|-----|
-| `@supabase/supabase-js` | 2.88.0 | Client Supabase |
-| `@supabase/ssr` | 0.8.0 | Gestione sessione/auth lato server |
-| `resend` | 6.9.3 | Invio email transazionali |
-| `zod` | 3.24.1 | Validazione input e schemi |
-| `date-fns` | 4.1.0 | Manipolazione date |
-| `framer-motion` | 12.40.0 | Animazioni |
-| `sonner` | 2.0.7 | Toast/notifiche UI |
-| `lucide-react` | 0.562.0 | Icone |
-| `isomorphic-dompurify` | 2.18.0 | Sanitizzazione XSS (server e client) |
-| `clsx` + `tailwind-merge` | 2.1.1 / 3.4.0 | Composizione classi CSS |
-
-### Styling, testing e tooling
-
-- **Tailwind CSS 4** con `@tailwindcss/postcss`.
-- **Jest 30** + Testing Library (`jsdom`) — **236 test** in `src/__tests__/`.
-- **ESLint 9** (config Next.js), **Prettier 2**, **Husky 8** + **lint-staged 13** per gli hook pre-commit.
-- Deploy su **Vercel** con cron support.
-
----
+Non integrati: **Stripe** e **Sentry**. I pagamenti sono tracciati solo a livello dati (tabella `payments`, colonna `stripe_payment_id` predisposta ma senza provider collegato).
 
 ## Struttura del progetto
 
 ```
-gst-tennis-academy/
-├── docs/                       # Documentazione tecnica
-├── public/                     # Asset statici (robots.txt, sitemap, immagini)
+.
 ├── src/
-│   ├── middleware.ts           # CSRF + refresh sessione su ogni richiesta
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/                # API route handlers (~69 route)
-│   │   ├── dashboard/          # Dashboard per ruolo (atleta, maestro, admin)
-│   │   ├── tornei/             # Tornei pubblici
-│   │   ├── classifiche/        # Classifiche pubbliche
-│   │   ├── news/               # News pubbliche
-│   │   ├── auth/, login/, register/   # Autenticazione
-│   │   └── (pagine legali e statiche)
-│   ├── components/             # Componenti React per dominio
-│   │   ├── admin/ arena/ auth/ bookings/ chat/ dashboard/
-│   │   ├── landing/ layout/ news/ notifications/ profile/
-│   │   ├── theme/ tournaments/ ui/
-│   ├── lib/                    # Logica applicativa e utility
-│   │   ├── supabase/           # 3 client (browser, server, service role)
-│   │   ├── auth/ roles.ts      # Autenticazione e ruoli
-│   │   ├── bookings/ arena/ courts/ tournaments
-│   │   ├── email/ notifications/ activity/ logger/
-│   │   ├── validation/ security/ config/ constants/
-│   │   ├── seo/ hooks/ utils/ types/
-│   └── __tests__/              # Test Jest
+│   ├── app/                      # App Router (~100 pagine, 89 API route handler)
+│   │   ├── page.tsx              # Landing pubblica
+│   │   ├── login/ register/ news/ tornei/ lavora-con-noi/ …  # Area pubblica
+│   │   ├── auth/                 # reset-password
+│   │   ├── dashboard/
+│   │   │   ├── atleta/(main)/    # bookings, corsi, arena, tornei, videos, profile
+│   │   │   ├── maestro/(main)/   # bookings, corsi, arena, tornei, videos, mail
+│   │   │   └── admin/            # users, corsi, courts, tornei, news+AI, staff, …
+│   │   ├── chat/                 # messaggistica interna
+│   │   └── api/                  # 89 route handler REST (vedi docs/API.md)
+│   ├── components/               # admin, arena, auth, bookings, chat, dashboard,
+│   │                             # landing, layout, news, notifications, profile,
+│   │                             # theme, tournaments, ui
+│   ├── lib/
+│   │   ├── auth/                 # verifyAuth (Bearer), routeAuth (cookie), logout
+│   │   ├── supabase/             # client.ts, server.ts, serverClient.ts (vedi sotto)
+│   │   ├── email/                # client Resend, template, logging su email_logs
+│   │   ├── ai-news/              # auth helper, sanitizer, tipi notizie AI
+│   │   ├── security/             # rate-limiter (in-memory), sanitize, XSS prevention
+│   │   ├── validation/           # schemi Zod (schemas.ts)
+│   │   ├── logger/               # secure-logger (redazione dati sensibili)
+│   │   ├── bookings/ arena/ courts/ notifications/ chat/ activity/  # logica di dominio
+│   │   └── config/ constants/ hooks/ roles.ts / seo/ types/ utils/
+│   └── middleware.ts             # CSRF + refresh sessione Supabase
 ├── supabase/
-│   ├── schema.sql              # Schema base
-│   └── migrations/             # Migrazioni 001 → 062
-├── next.config.ts              # Config Next.js (header sicurezza, immagini, redirect)
-├── jest.config.js              # Config testing
-├── vercel.json                 # Cron job
-└── package.json
+│   ├── migrations/               # 67 migrazioni SQL (001–067) + archive/
+│   ├── functions/genera-news/    # Edge Function per la generazione notizie AI
+│   ├── scripts/                  # utilities e fix una tantum (es. bucket avatars)
+│   └── schema.sql                # schema base di riferimento
+├── docs/                         # documentazione (indice: docs/README.md)
+├── public/                       # asset statici
+├── next.config.ts                # security headers, redirects, immagini
+├── tsconfig.json                 # strict: false
+├── jest.config.js                # coverage threshold 10%
+└── .env.example                  # template variabili d'ambiente
 ```
 
----
+## Middleware (`src/middleware.ts`)
+
+Il middleware esegue due compiti, su tutte le richieste tranne gli asset statici:
+
+1. **Protezione CSRF** — per le richieste mutanti (`POST/PUT/PATCH/DELETE`) verso `/api/*`: se l'header `Origin` è presente e non corrisponde all'host corrente (http/https) o a `NEXT_PUBLIC_SITE_URL`, la richiesta viene rifiutata con 403. Le richieste senza `Origin` (server-to-server) passano; il path `/api/webhooks/*` è escluso.
+2. **Refresh della sessione Supabase** — tramite `createServerClient` di `@supabase/ssr` viene chiamato `supabase.auth.getUser()`, che rinnova il token nei cookie e mantiene viva la sessione tra le richieste.
+
+Il middleware **non esegue alcun controllo di ruolo** sulle route `/dashboard/*`: la protezione delle pagine è client-side (vedi sotto).
+
+## Autenticazione e autorizzazione
+
+Il sistema usa Supabase Auth con quattro ruoli (`atleta | maestro | gestore | admin`, enum PostgreSQL `user_role` salvato in `profiles.role`). Tre livelli di difesa:
+
+### 1. API route
+
+Due helper, a seconda di come la route viene chiamata:
+
+- **`verifyAuth(req, allowedRoles?)`** — `src/lib/auth/verifyAuth.ts`. Verifica l'header `Authorization: Bearer <token>` con `supabaseServer.auth.getUser(token)`, carica il profilo e, se `allowedRoles` è passato, restituisce 403 quando il ruolo non è incluso. Ritorna un'unione discriminata `AuthSuccessResponse | AuthErrorResponse`. Da usare nelle route chiamate via `fetch` con header esplicito.
+- **`getRouteAuth()`** — `src/lib/auth/routeAuth.ts`. Legge la sessione dai **cookie** (via `createClient()` di `src/lib/supabase/server.ts`) e restituisce `{ user, role }` o `null`. Le route applicano poi i controlli con gli helper `isAdmin(role)` (vero per `admin` e `gestore`), `unauthorized()`, `forbidden()`. Il modulo AI-news ha il wrapper `requireAdminOrGestore()` (`src/lib/ai-news/auth.ts`).
+
+Alcune route legacy replicano la verifica manualmente (`supabase.auth.getUser(token)` + lettura di `profiles.role`), in particolare nel dominio tornei. Il dettaglio per singola route è in [API.md](API.md).
+
+### 2. Pagine dashboard
+
+La protezione delle pagine `/dashboard/*` è **solo client-side** tramite il componente `AuthGuard` (`src/components/auth/AuthGuard.tsx`): né il middleware né i layout server verificano il ruolo. I dati restano protetti da API e RLS, ma l'UI può renderizzarsi brevemente per utenti con ruolo sbagliato prima del redirect.
+
+### 3. Row Level Security (RLS)
+
+Ultima linea di difesa sui dati: RLS attiva su 50+ tabelle, con policy self-access (`auth.uid() = user_id`) e role-based tramite la funzione helper `get_my_role()` (SECURITY DEFINER, evita la ricorsione delle policy su `profiles`). Dettagli in [DATABASE.md](DATABASE.md).
 
 ## Client Supabase
 
-L'applicazione usa **tre client distinti** in base al contesto di sicurezza:
+Tre client distinti in `src/lib/supabase/`:
 
-| Client | File | Chiave | RLS | Uso |
-|--------|------|--------|-----|-----|
-| **Browser** | `src/lib/supabase/client.ts` | Anon key (pubblica) | ✅ Applicata | Componenti React lato client; rispetta la sessione utente (flusso PKCE) |
-| **Server** | `src/lib/supabase/server.ts` | Anon key | ✅ Applicata | Route handler e server component; gestisce i cookie di sessione |
-| **Service Role** | `src/lib/supabase/serverClient.ts` | Service role key (**segreta**) | ⚠️ **Bypassata** | Operazioni admin, cron, webhook; solo lato server, mai esposta al client |
+| File | Client | Chiave | Contesto |
+|---|---|---|---|
+| `client.ts` | `createBrowserClient` (@supabase/ssr, flusso PKCE) | anon | Browser: la sessione è salvata nei cookie, così è leggibile anche dai route handler |
+| `server.ts` | `createServerClient` (@supabase/ssr) | anon | Server: legge la sessione dell'utente dai cookie (`getRouteAuth`, Server Components) |
+| `serverClient.ts` | `createClient` (supabase-js) | **service role** | Solo server: **bypassa la RLS**, accesso completo al DB. Mai esporre lato client |
 
-> ⚠️ Il client service role bypassa tutte le policy RLS: usarlo esclusivamente in
-> codice server-side per operazioni amministrative controllate.
+`serverClient.ts` è un singleton usato dalle API route per operazioni privilegiate; dove viene usato, l'ownership check applicativo sostituisce la RLS.
 
----
+## Realtime
 
-## Middleware e sicurezza
+Supabase Realtime è usato lato client per: aggiornamenti prenotazioni, notifiche, messaggi chat (conversazioni e gruppi), presenza online (`user_presence`) e indicatori di digitazione (`typing_indicators`).
 
-`src/middleware.ts` viene eseguito su ogni richiesta e si occupa di:
+## Configurazioni notevoli
 
-- **Protezione CSRF**: valida l'`Origin` per tutte le richieste mutanti (POST/PUT/PATCH/DELETE)
-  verso `/api/*`. Le route `/api/webhooks/*` sono esentate (richieste server-to-server).
-  Origin non valido → `403 Forbidden`.
-- **Refresh sessione**: rigenera i token di sessione Supabase mantenendoli aggiornati.
+### `next.config.ts`
 
-### Header di sicurezza (`next.config.ts`)
+- **Security headers** su tutte le route: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, HSTS (`max-age=31536000; includeSubDomains`) e una **Content-Security-Policy** con `script-src 'self' 'unsafe-inline'` (più `'unsafe-eval'` solo in dev; nel file c'è un TODO per migrare a CSP con nonce), `connect-src` limitato a Supabase e Open-Meteo, `frame-ancestors 'none'`.
+- Immagini remote consentite: `images.unsplash.com`, `cdn.sanity.io`, `*.supabase.co`; formati AVIF/WebP.
+- Redirect permanente legacy: `/dashboard/coach/*` → `/dashboard/maestro/*`.
 
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Strict-Transport-Security` (max-age 1 anno)
-- `Content-Security-Policy` (con `'unsafe-inline'` per gli stili; TODO: migrazione a CSP nonce-based)
+### `tsconfig.json`
 
-### Difese applicative (`src/lib/security/`)
+`strict: false` e `noImplicitAny: false`: il type-checking è permissivo (debito tecnico noto, con ~442 occorrenze di `any` segnalate da ESLint). Alias `@/*` → `./src/*`. Le cartelle `__tests__` e `supabase/functions` sono escluse dal check.
 
-- **Sanitizzazione**: `sanitize-server.ts` (escaping HTML/SQL, email/URL/UUID lato server) e
-  `sanitize.ts` (`sanitizeHtml()` con DOMPurify e whitelist di tag sicuri).
-- **Rate limiting**: `rate-limiter.ts` con sliding window in memoria e limiti per endpoint
-  (auth 5/15min, signup 3/ora, lettura API 100/min, email 10/ora).
-- **Validazione**: schemi **Zod** in `src/lib/validation/schemas.ts` per ogni input utente.
-- **Logging sicuro**: `src/lib/logger/secure-logger.ts` con redazione automatica dei campi sensibili.
+### `jest.config.js`
 
----
+Configurato con `next/jest` e ambiente `jsdom`. **Coverage threshold globale al 10%** (branches, functions, lines, statements): soglia bassa, pensata come safety net minima. Stato attuale: 231 test passing, 23 skipped.
 
-## Variabili d'ambiente
+### Qualità del codice
 
-Gestite in modo type-safe da `src/lib/config/env.ts` (validazione Zod con fallback).
-
-### Obbligatorie
-
-| Variabile | Descrizione |
-|-----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL del progetto Supabase (pubblica) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chiave anonima Supabase (pubblica) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chiave service role (**segreta, solo server**) |
-
-### Opzionali / per funzionalità
-
-| Variabile | Default | Uso |
-|-----------|---------|-----|
-| `SUPABASE_URL` | fallback su `NEXT_PUBLIC_SUPABASE_URL` | Override URL lato server |
-| `NEXT_PUBLIC_APP_URL` | `https://www.gstacademy.it` (prod) | URL app per link/redirect |
-| `NEXT_PUBLIC_SITE_URL` | fallback su `NEXT_PUBLIC_APP_URL` | Validazione origin CSRF |
-| `RESEND_API_KEY` | — | API key email (email disabilitate se assente) |
-| `EMAIL_FROM` | `GST Tennis Academy <onboarding@resend.dev>` | Mittente email |
-| `CRON_SECRET` | — | Protezione endpoint cron `/api/email/scheduler` |
-| `INSTAGRAM_OEMBED_TOKEN` / `FACEBOOK_APP_ACCESS_TOKEN` / `INSTAGRAM_POST_URLS` | — | Feed social homepage |
-| `LOG_LEVEL` | `info` (prod) / `debug` (dev) | Verbosità log |
-| `ENABLE_RATE_LIMITING` | `true` | Abilita rate limiting |
-| `NODE_ENV` | `development` | Modalità ambiente |
-
-> ⚠️ **Mai** usare il prefisso `NEXT_PUBLIC_` per `SUPABASE_SERVICE_ROLE_KEY`,
-> `RESEND_API_KEY` o `CRON_SECRET`: sono segreti server-only.
-
----
-
-## Script disponibili
-
-```bash
-npm run dev            # Server di sviluppo (http://localhost:3000)
-npm run build          # Build di produzione
-npm run start          # Avvio in produzione
-npm run lint           # ESLint
-npm run format         # Prettier
-npm test               # Jest (236 test)
-npm run test:watch     # Jest in watch mode
-npm run test:coverage  # Report di copertura
-```
+- ESLint 9 (`eslint-config-next`) + Prettier; pre-commit Husky + lint-staged (Prettier sui file staged).
+- Rate limiting in-memory (`src/lib/security/rate-limiter.ts`), attivabile con `ENABLE_RATE_LIMITING`; applicato a signup, ricerca utenti, weather e ad alcune route bookings/tournaments. Essendo in-memory, su serverless si azzera a ogni cold start e non è condiviso tra istanze.
+- Logger custom (`src/lib/logger/secure-logger.ts`) con redazione dei dati sensibili e livelli configurabili via `LOG_LEVEL`.

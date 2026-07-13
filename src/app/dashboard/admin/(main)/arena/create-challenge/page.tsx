@@ -668,7 +668,7 @@ export default function CreateChallengePage() {
           </div>
 
           {/* Area Principale */}
-          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+          <div className="page-card">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
             </div>
@@ -771,7 +771,7 @@ export default function CreateChallengePage() {
             </div>
           </div>
 
-          <div className="bg-white border border-black/10 rounded-xl">
+          <div className="page-card">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
@@ -805,7 +805,7 @@ export default function CreateChallengePage() {
             </div>
           </div>
 
-          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+          <div className="page-card">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
             </div>
@@ -959,7 +959,7 @@ export default function CreateChallengePage() {
             </div>
           </div>
 
-          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+          <div className="page-card">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             </div>

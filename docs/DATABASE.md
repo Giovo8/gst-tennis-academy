@@ -1,296 +1,199 @@
 # Database
 
-Schema completo del database **Supabase / PostgreSQL** di GST Tennis Academy.
-Comprende ~50 tabelle, funzioni e trigger, policy RLS, storage bucket e 62 migrazioni.
-
----
+Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy: ~60 tabelle definite da **67 migrazioni** (`supabase/migrations/001–067`) più lo schema base di riferimento `supabase/schema.sql`.
 
 ## Estensioni
 
-| Estensione | Uso |
-|------------|-----|
-| `pgcrypto` | Generazione UUID, cifratura |
-| `btree_gist` | Vincolo anti-sovrapposizione prenotazioni (GIST) |
+| Estensione | Dove | Uso |
+|---|---|---|
+| `pgcrypto` | migrazione 001 | `gen_random_uuid()` per le primary key |
+| `btree_gist` | schema.sql / migrazione 047 | Vincolo di esclusione anti-sovrapposizione su `bookings` |
+| `pg_cron` | migrazione 063 (opzionale) | Schedulazione generazione notizie AI |
+| `pg_net` | migrazione 063 (opzionale) | Chiamata HTTP dalla funzione cron alla Edge Function `genera-news` |
 
----
+## Enum
 
-## Tabelle
+| Tipo | Valori |
+|---|---|
+| `user_role` | `atleta`, `maestro`, `gestore`, `admin` |
+| `booking_type` | `campo`, `lezione_privata`, `lezione_gruppo` |
+| `competition_type` | `torneo`, `campionato` |
+| `competition_format` | formati torneo (eliminazione, round robin, gironi+eliminazione) |
+| `recruitment_role` | `maestro`, `personale` |
+
+## Tabelle per dominio
 
 ### Utenti e profili
 
-#### `profiles`
-Profilo utente e gestione ruolo. PK `id` (→ `auth.users`).
-Campi chiave: `email` (unique), `full_name`, `role` (`atleta`/`maestro`/`gestore`/`admin`),
-`subscription_type`, `bio`, `birth_date`, `skill_level`, `tennis_stats` (JSONB),
-`emergency_contact` (JSONB), `preferred_times` (array), `profile_completion_percentage`,
-`social_media` (JSONB). **RLS**: utente vede il proprio profilo, lo staff vede tutto,
-i maestri vedono gli atleti, tutti gli autenticati possono cercare profili per la messaggistica.
+| Tabella | Colonne chiave / note |
+|---|---|
+| `profiles` | `id` (FK `auth.users`), `email`, `full_name`, `role user_role` (default `atleta`), `subscription_type`, `avatar_url`, `metadata`; creato automaticamente dal trigger `handle_new_user` (migrazioni 031/043, backfill 067) |
+| `user_presence` | Stato online per la chat (migrazione 020) |
+| `staff` | Membri staff mostrati nella landing: `full_name`, `role`, `bio`, `image_url`, `order_index`, `active` |
+| `recruitment_applications` | Candidature "lavora con noi": `full_name`, `email`, `role recruitment_role`, `message`, `cv_url` |
 
-#### `athlete_stats`
-Statistiche tennistiche dettagliate dell'atleta (1:1 con `profiles`).
-Match (giocati/vinti/persi, win rate), set e game, statistiche di servizio (ace, doppi falli,
-% prima), risposta, qualità dei punti (winner, errori non forzati), streak, attività.
+### Prenotazioni
 
-#### `recruitment_applications`
-Candidature per posizioni `maestro` / `personale` (chiunque può inserire, staff legge).
-
-### Prenotazioni e campi
-
-#### `bookings`
-Prenotazioni campi e lezioni. Campi: `user_id`, `coach_id`, `court`,
-`type` (`campo`/`lezione_privata`/`lezione_gruppo`), `start_time`, `end_time`, `status`,
-`coach_confirmed`, `manager_confirmed`, `notes`, `created_by`.
-**Vincoli**: `end_time > start_time`; **`bookings_no_overlap`** (GIST) impedisce sovrapposizioni
-sullo stesso campo. **RLS**: utente vede le proprie, il coach quelle assegnate, lo staff tutte.
-
-#### `booking_participants`
-Più atleti per una stessa prenotazione (max 4). Campi: `booking_id`, `user_id`, `full_name`,
-`email`, `phone`, `is_registered`, `participant_type` (`atleta`/`ospite`), `order_index` (0–3).
-Trigger di limite a 4 partecipanti; unique `(booking_id, order_index)`.
-
-#### `courts_settings`
-Configurazione campi (`court_name` unique, `display_order`, `is_active`). Default: 4 campi.
-
-#### `court_blocks`
-Blocco di fasce orarie su un campo (range, motivo, ricorrenza, `is_disabled`).
-
-### Corsi e lezioni
-
-| Tabella | Scopo |
-|---------|-------|
-| `courses` | Corsi di gruppo: coach, date, `schedule_periods` (JSONB), capienza, prezzo, livello, fascia d'età, `court_name`, `created_by` |
-| `course_enrollments` | Iscrizioni (con `fee` e supporto ospiti); unique `(course_id, user_id)` |
-| `lesson_attendance` | Presenze per lezione (`lesson_date`, `present`); supporto ospiti |
-| `courses_cancelled_dates` | Date di lezione annullate |
-| `courses_extra_dates` | Date di lezione extra |
-| `lesson_time_overrides` | Override orario per una data specifica |
+| Tabella | Colonne chiave / note |
+|---|---|
+| `bookings` | `user_id`, `coach_id`, `court`, `type booking_type`, `start_time`/`end_time`, `status` (default `pending`), `coach_confirmed`, `manager_confirmed`, `created_by` (044). **Vincolo di esclusione GIST `bookings_no_overlap`**: stesso campo + intervalli `tstzrange` sovrapposti = rifiutato a livello DB |
+| `booking_participants` | Fino a **4 partecipanti** per prenotazione: `booking_id`, `user_id` (null per ospiti), `full_name`, `email`, `phone`, `is_registered`, `participant_type` (`atleta`/`ospite`), `order_index` 0–3 con `unique(booking_id, order_index)` (migrazioni 032–035) |
+| `court_blocks` | Blocchi campo (manutenzione/eventi): `court_id`, `start_time`/`end_time`, `reason`, `is_disabled` (040), `created_by` |
+| `courts_settings` | Configurazione dei campi (nomi, attivazione) — sorgente per `getCourts()` (migrazione 026) |
+| `subscription_credits` | Crediti settimanali abbonamento: `plan`, `weekly_credits`, `credits_available`, `last_reset` |
 
 ### Tornei
 
-#### `tournaments`
-Tornei e campionati. Campi: `title`, date, `max_participants`, `status`
-(`Aperto`/`In Corso`/`Concluso`/`Annullato`), `competition_type` (`torneo`/`campionato`),
-`format` (`eliminazione_diretta`/`round_robin`/`girone_eliminazione`),
-`match_format` (`best_of_1/3/5`), `surface_type`, `current_stage`, `rounds_data`/`groups_data`/`standings` (JSONB),
-`entry_fee`, `prize_money`, `created_by`.
+| Tabella | Colonne chiave / note |
+|---|---|
+| `tournaments` | `title`, `start_date`/`end_date`, `max_participants`, `status`, `competition_type`, `format`, `match_format` (best-of-1/3/5), `surface_type`, più JSONB `rounds_data`, `groups_data`, `standings` |
+| `tournament_participants` | Iscritti: `tournament_id`, `user_id`, seed, statistiche match; supporto giocatori esterni (035) |
+| `tournament_matches` | Match con punteggio tennis per set, `stage` (`groups`/`knockout`), `round_order`, `winner_id` (migrazioni 004, 012, 013) |
+| `tournament_groups` | Gironi con classifiche (migrazioni 004, 010) |
 
-#### `tournament_participants`
-Iscrizioni ai tornei. Campi: `tournament_id`, `user_id`, `seed`, `group_id`, `group_name`,
-`stats` (JSONB: match, set, game, punti); unique `(tournament_id, user_id)`.
+### Arena (sfide 1v1)
 
-#### `tournament_groups`
-Gironi per i tornei a fase a gruppi (`group_name`, `group_order`, `max_participants`,
-`advancement_count`).
+| Tabella | Colonne chiave / note |
+|---|---|
+| `arena_challenges` | `challenger_id`, `opponent_id`, `status` (pending/accepted/awaiting_score/completed/cancelled, migrazioni 041–042), `winner_id`, `score`, `match_type` (singolo/doppio con partner), `challenge_type` (ranked), `booking_id` collegato |
+| `arena_stats` | Classifica: punti, vittorie/sconfitte, streak, `sets_won` (046), livelli Bronzo→Diamante calcolati dai punti |
 
-#### `tournament_matches`
-Partite con punteggio tennis. Campi: `round_name`, `stage` (`groups`/`knockout`),
-`player1_id`/`player2_id`, `player1_sets`/`player2_sets`, `score_detail` (JSONB set-per-set),
-`winner_id`, `match_status`, orari, `court_number`, `surface_type`, `stats` (JSONB).
+### Corsi e video-lezioni
 
-### Arena
+| Tabella | Colonne chiave / note |
+|---|---|
+| `courses` | Corsi con calendario: `court_name` (048), periodi di schedule (056), date annullate (057) ed extra (058), override orario (060) e istruttore (066) per singola lezione, `created_by` (061) |
+| `course_enrollments` | Iscrizioni con quota `fee` (051) e supporto ospiti (054) — migrazione 049 |
+| `lesson_attendance` | Registro presenze per lezione, anche per ospiti (050, 055) |
+| `enrollments` | Iscrizioni generiche dello schema base |
+| `video_lessons` | Video-lezioni: titolo, URL, `notes` (037); i maestri possono gestire le proprie (038–039) |
+| `video_assignments` | Assegnazione video ad atleti (027) |
 
-#### `arena_challenges`
-Sfide 1v1 tra giocatori. Campi: `challenger_id`, `opponent_id`,
-`status` (`pending`/`accepted`/`declined`/`completed`/`cancelled`/`counter_proposal`/`awaiting_score`),
-`scheduled_date`, `court`, `booking_id`, `message`, `winner_id`, `score`.
-**Vincoli**: sfidante ≠ avversario; se `completed` richiede `winner_id`.
-Trigger di aggiornamento statistiche al completamento.
+### Chat e messaggistica
 
-#### `arena_stats`
-Ranking e statistiche Arena (PK `user_id`). Campi: `ranking`, `points`, `total_matches`,
-`wins`, `losses`, `win_rate`, `sets_won`, `current_streak`, `longest_win_streak`,
-`level` (`Bronzo`/`Argento`/`Oro`/`Platino`/`Diamante`). **RLS**: lettura pubblica (classifica),
-modifica admin/gestore. Vedi [ARENA.md](ARENA.md) per il sistema punti.
+| Tabella | Colonne chiave / note |
+|---|---|
+| `conversations` | Conversazioni 1:1 con `last_message` e contatori non letti aggiornati da trigger (migrazione 005) |
+| `messages` | Messaggi delle conversazioni (allegati sul bucket `chat-attachments`, migrazione 018) |
+| `internal_messages` | Messaggi interni stile mail (006b) |
+| `chat_groups`, `chat_group_members` | Gruppi con ruolo membro `admin`/`member` (028–029) |
+| `message_reads` | Ricevute di lettura |
+| `typing_indicators` | Indicatori di digitazione, ripuliti da `cleanup_old_typing_indicators()` |
+| `user_presence` | Presenza online (020) |
 
-### Eventi
+### News e generatore AI
 
-| Tabella | Scopo |
-|---------|-------|
-| `events` | Eventi/attività sociali (`event_type`: `torneo`/`evento_sociale`/`workshop`/`camp`) |
-| `event_registrations` | Iscrizioni agli eventi con `status` e `payment_status` |
+| Tabella | Colonne chiave / note |
+|---|---|
+| `news` | Articoli: `title`, `category`, `summary`, `image_url`, `published`; il modulo AI (063) aggiunge `stato` (`bozza`/`pubblicata`/`scartata`), `ai_generated`, `fonte_url` (dedup), `fonte_nome` |
+| `ai_news_config` | Configurazione: `pubblicazione_auto` |
+| `ai_news_fonti` | Fonti RSS: `nome`, `url` (unique), `attiva`, `categoria`; 3 fonti predefinite seed (Gazzetta, ATP Tour, Ubitennis) |
+| `ai_news_cron` | Schedulazioni: `ora`, `minuto` (0/15/30/45), `categoria`, `prompt_custom`, `attivo`, `ultimo_eseguito` |
+| `ai_news_generation_logs` | Log esecuzioni: `tipo` (`manuale`/`cron`), `generate`, `skippate`, `errori` JSONB |
 
-### Comunicazione
+### Pagamenti
 
-| Tabella | Scopo |
-|---------|-------|
-| `conversations` | Conversazioni dirette e di gruppo (`is_group`, `last_message_at`, anteprima) |
-| `conversation_participants` | Membri conversazione (`unread_count`, `last_read_at`, `is_admin`, `is_muted`) |
-| `messages` | Messaggi chat (`message_type`, allegati, reply, edit/delete soft) |
-| `message_reads` | Stato lettura per messaggio |
-| `chat_groups` / `chat_group_members` | Chat di gruppo con ruoli (`admin`/`member`) |
-| `internal_messages` | Messaggi diretti 1:1 con oggetto e thread (sistema legacy) |
-| `user_presence` | Stato online/offline/away/busy con `last_seen` |
-| `typing_indicators` | Indicatori "sta scrivendo" in tempo reale |
+| Tabella | Colonne chiave / note |
+|---|---|
+| `payments` | Pagamenti (corsi, iscrizioni) con supporto ospiti (052, 062); la colonna `stripe_payment_id` è predisposta ma **nessun provider è integrato** |
+| `orders` | Ordini dello schema base |
+| `subscriptions` | **Legacy** (vedi sotto) — i crediti reali sono in `subscription_credits` |
 
-### News e annunci
+### Contenuti e homepage
 
-| Tabella | Scopo |
-|---------|-------|
-| `news` | Articoli/news con categoria, immagine, stato pubblicazione |
-| `announcements` | Annunci/bacheca con priorità, visibilità per ruolo, scadenza, pinning, `view_count` |
-| `announcement_views` | Tracciamento visualizzazioni annunci (trigger incrementa il contatore) |
+| Tabella | Colonne chiave / note |
+|---|---|
+| `services`, `products` | Servizi e prodotti dell'accademia |
+| `events`, `event_registrations` | Eventi e iscrizioni |
+| `hero_content`, `hero_images`, `homepage_sections`, `promo_banner_settings` | Contenuti configurabili della landing (021) |
 
-### Notifiche
+### Sistema e log
 
-#### `notifications`
-Notifiche in-app per utente (`type`: `info`/`success`/`warning`/`error`, `title`, `message`,
-`link`, `is_read`).
+| Tabella | Colonne chiave / note |
+|---|---|
+| `notifications` | Notifiche in-app per utente |
+| `activity_log` | Log attività applicative, scritto via `log_activity()` (024) |
+| `email_logs` | Esiti invii Resend (025, 034) |
+| `email_campaigns`, `email_settings`, `email_templates`, `email_unsubscribes` | Sistema campagne email (007b, 023) — templates/settings solo configurazione |
+| `system_settings` | Impostazioni chiave/valore |
+| `invite_codes`, `invite_code_uses` | Codici invito con `role`, `max_uses`, `uses_remaining`, `expires_at` e log utilizzi |
 
-### Pagamenti e commercio
+### Tabelle legacy / candidate alla rimozione
 
-| Tabella | Scopo |
-|---------|-------|
-| `services` | Servizi offerti (lezione privata/gruppo, corso, campo) con prezzo e durata |
-| `products` | Prodotti shop |
-| `orders` | Ordini shop (creati via webhook) |
-| `payments` | Transazioni (`payment_type`: subscription/booking/course/event/product; `status`; supporto ospiti) |
-| `subscription_credits` | Crediti settimanali per le lezioni di gruppo |
+Presenti nello schema ma senza uso riscontrato nel codice applicativo:
 
-### Email, log e video
+- `chat_rooms` — sostituita da `conversations` + `chat_groups`
+- `programs` — non referenziata
+- `athlete_stats` (008) — sostituita da `arena_stats`
+- `subscriptions` — sostituita da `subscription_credits`
 
-| Tabella | Scopo |
-|---------|-------|
-| `email_logs` | Audit trail email (stato, provider, message id, timestamp apertura/click) |
-| `email_templates` | Gestione template email |
-| `email_settings` | Configurazione email |
-| `email_unsubscribes` | Preferenze di disiscrizione (`all`/`marketing`/`notifications`) |
-| `activity_log` | Audit completo delle azioni utente (action, entity, metadata, IP, user agent) |
-| `video_lessons` | Video lezioni (URL, durata, note, creatore) |
-| `video_assignments` | Assegnazione video agli atleti con tracciamento visualizzazione |
+## Row Level Security
 
----
+RLS attiva su 50+ tabelle. Pattern ricorrenti:
+
+1. **Self-access** — `auth.uid() = user_id` (o `= id` su `profiles`): l'utente vede/modifica solo le proprie righe.
+2. **Role-based** — `public.get_my_role() IN ('admin', 'gestore')` per l'accesso amministrativo.
+3. **Ibridi** — es. su `bookings`: proprietario o `coach_id`, più visibilità estesa a `maestro/admin/gestore`; su `booking_participants`: proprietario della prenotazione, coach o admin.
+
+### Helper `get_my_role()`
+
+```sql
+create or replace function public.get_my_role()
+returns text
+language sql
+security definer
+stable
+as $$
+  select role from public.profiles where id = auth.uid();
+$$;
+```
+
+`SECURITY DEFINER` è essenziale: consente alle policy di leggere `profiles.role` senza innescare ricorsione RLS (fix nelle migrazioni 016, 017, 036).
+
+Nota: le API route che usano `serverClient.ts` (service role) **bypassano la RLS**; in quei percorsi l'autorizzazione è applicativa (vedi [API.md](API.md)).
 
 ## Funzioni e trigger principali
 
-### Funzioni core
-
-| Funzione | Descrizione |
-|----------|-------------|
-| `get_my_role()` | **SECURITY DEFINER** — restituisce il ruolo dell'utente corrente senza ricorsione RLS |
-| `update_updated_at_column()` | Trigger generico per aggiornare `updated_at` |
-| `handle_new_user()` | Crea automaticamente il profilo alla registrazione (trigger `on_auth_user_created`) |
-| `check_booking_participants_limit()` | Impedisce più di 4 partecipanti per prenotazione |
-| `calculate_profile_completion(id)` | Calcola la percentuale di completamento del profilo |
-
-### Funzioni di dominio
-
-| Funzione | Descrizione |
-|----------|-------------|
-| `update_arena_stats_on_challenge_complete()` | Aggiorna stats, punti, ranking e livello al completamento di una sfida Arena |
-| `calculate_group_standings(group_uuid)` | Calcola la classifica di un girone (punti, set/game diff, scontri diretti) |
-| `reset_weekly_credits()` | Reimposta i crediti settimanali (lezioni di gruppo) |
-| `consume_group_credit(user_id)` | Consuma un credito per la partecipazione a una lezione di gruppo |
-| `is_user_unsubscribed(email, category)` | Verifica disiscrizione email |
-| `get_email_stats(start, end)` | Statistiche email per intervallo |
-| `increment_announcement_views()` | Incrementa il contatore visualizzazioni annunci |
-| `cleanup_old_typing_indicators()` | Rimuove gli indicatori di digitazione obsoleti |
-
----
-
-## Row Level Security (RLS)
-
-La sicurezza a livello di riga è abilitata su tutte le tabelle sensibili. L'autorizzazione
-si basa sulla funzione **`public.get_my_role()`** (`SECURITY DEFINER`, evita la ricorsione
-infinita delle policy).
-
-### Pattern principali
-
-| Pattern | Implementazione | Esempi |
-|---------|-----------------|--------|
-| Self + admin | `auth.uid() = id OR get_my_role() IN ('admin','gestore')` | profiles, notifications, payments |
-| Basato sul ruolo | `get_my_role() IN ('admin','gestore','maestro')` | gestione contenuti, impostazioni |
-| Relazionale | `auth.uid() = user_id OR auth.uid() = coach_id` | bookings, messages |
-| Pubblico in lettura | `is_active = true` + override staff | courses, services, events |
-| Visibilità broadcast | enum `visibility` + match ruolo | announcements |
-| Classifica pubblica | `USING (true)` | arena_stats |
-
-> **Prevenzione ricorsione**: le policy non leggono direttamente `profiles` ma usano
-> `get_my_role()` in `SECURITY DEFINER`. Le migrazioni 016, 017, 020b, 029, 036 hanno
-> consolidato questo approccio.
-
----
+| Funzione | Tipo | Scopo |
+|---|---|---|
+| `update_updated_at_column()` | trigger (25+ tabelle) | Aggiorna `updated_at` a ogni UPDATE |
+| `handle_new_user()` | trigger su `auth.users` | Crea la riga `profiles` alla registrazione (031, 043) |
+| `check_booking_participants_limit()` | trigger BEFORE INSERT | Blocca oltre 4 partecipanti per prenotazione |
+| `consume_group_credit(p_user_id)` | funzione | Scala atomicamente un credito settimanale (ritorna `false` se esauriti) |
+| `reset_weekly_credits()` | funzione (job schedulato) | Ripristina i crediti al lunedì |
+| `update_arena_stats_on_challenge_complete()` | trigger su `arena_challenges` | Aggiorna punti, W/L, streak e set vinti al completamento sfida (045, 046) |
+| `cleanup_old_typing_indicators()` | funzione (pulizia periodica) | Rimuove gli indicatori di digitazione obsoleti (020) |
+| `ai_news_sync_cron_job(...)` | funzione SECURITY DEFINER | Sincronizza una riga `ai_news_cron` con `pg_cron` (conversione orario Europe/Rome→UTC) e programma la `net.http_post` verso la Edge Function `genera-news` (063, fix timezone 065) |
+| `get_or_create_conversation()`, `update_conversation_last_message()`, `update_unread_counts()`, `reset_unread_count()` | funzioni/trigger chat | Gestione conversazioni e contatori non letti (005) |
+| `calculate_group_standings()`, `update_participant_stats_from_match()`, `update_match_stats()` | funzioni/trigger tornei | Classifiche gironi e statistiche partecipanti (004, 010) |
+| `is_court_blocked()`, `validate_invite_code()`, `log_activity()` | funzioni | Utility per blocchi campo, codici invito e activity log (015) |
 
 ## Storage bucket
 
-| Bucket | Scopo | Note |
-|--------|-------|------|
-| `chat-attachments` | Allegati dei messaggi | Upload autenticato; cancellazione per cartella `auth.uid()` |
-| `certificates` | Certificati medici/PDF | Limite 10 MB, solo `application/pdf`; insert/delete admin/gestore |
-| `images/` (public) | Logo e branding | In `public/images/` |
-| Video lessons | Registrazioni video | URL in `video_lessons` |
+| Bucket | Creato da | Contenuto |
+|---|---|---|
+| `avatars` | `supabase/scripts/utilities/CREATE_AVATARS_BUCKET.sql` | Avatar utenti e foto staff |
+| `certificates` | migrazione 053 (limiti dimensione e MIME type) | Certificati medici |
+| `chat-attachments` | migrazione 018 | Allegati della chat |
 
----
+## Migrazioni
 
-## Elenco migrazioni
+Le migrazioni sono in `supabase/migrations/`, numerate `001`–`067` (con alcune varianti `b` e una cartella `archive/` di versioni superate, da non applicare).
 
-Le migrazioni si trovano in `supabase/migrations/` e vanno applicate in ordine numerico.
+### Come applicarle
 
-| # | File | Descrizione |
-|---|------|-------------|
-| 001 | create_tournaments_and_participants | Tabelle base tornei |
-| 002 | rls_policies_tournaments | Policy RLS tornei |
-| 003 | add_competition_types | Enum `competition_type`/`format`, colonne JSONB |
-| 004 | tennis_tournament_system | `tournament_groups`, `tournament_matches`, scoring tennis |
-| 005 | chat_messaging_system | `conversations`, `messages`, `message_reads` |
-| 006 | announcements_system | Annunci + tracciamento viste |
-| 006b | create_messages_system | `internal_messages` (1:1) |
-| 007 | allow_users_search | RLS ricerca profili |
-| 007b | email_system | `email_logs`, `email_templates`, `email_settings`, `email_unsubscribes` |
-| 008 | profile_enhancements | Campi profilo estesi + `athlete_stats` |
-| 008b | tournament_start_notifications | Notifica avvio torneo |
-| 009 | allow_authenticated_create_notifications | RLS creazione notifiche |
-| 010 | simplified_tournament_system | Tipi torneo semplificati, gestione fasi |
-| 011 | make_dates_optional | Date torneo opzionali |
-| 012 | tournament_matches_bracket_columns | Colonne bracket |
-| 013 | tennis_scoring_system | Formattazione punteggio match |
-| 014 | add_booking_confirmation_columns | `coach_confirmed`, `manager_confirmed` |
-| 015 | add_profiles_rls_for_bookings | RLS profili per prenotazioni |
-| 015 | dashboard_refactor_features_SAFE | Refactoring funzioni dashboard |
-| 016 | fix_rls_infinite_recursion | Fix ricorsione RLS (SECURITY DEFINER) |
-| 017 | fix_all_remaining_rls | Revisione completa policy RLS |
-| 018 | chat_storage | Bucket `chat-attachments` + RLS |
-| 019 | add_email_notifications_preference | Preferenza notifiche email |
-| 020 | add_user_presence_system | `user_presence`, `typing_indicators` |
-| 020b | fix_rls_security | Hardening RLS |
-| 021 | add_promo_banner_settings | Impostazioni banner promozionale |
-| 021b | video_lessons | Tabella `video_lessons` |
-| 022 | fix_recruitment_applications | Fix candidature |
-| 023 | create_email_campaigns | Campagne email |
-| 024 | create_activity_log | `activity_log` (audit) |
-| 025 | create_email_log | Audit email |
-| 026 | create_courts_settings | `courts_settings` + 4 campi default |
-| 027 | create_video_assignments | `video_assignments` |
-| 028 | chat_groups | `chat_groups`, `chat_group_members` |
-| 029 | fix_chat_groups_rls | Fix RLS chat di gruppo |
-| 030 | fix_profiles_insert_rls | Fix RLS insert profili |
-| 031 | add_handle_new_user_trigger | Trigger auto-creazione profilo |
-| 032 | add_booking_participants | `booking_participants` (1–4 atleti) |
-| 033 | add_phone_to_booking_participants | Campo `phone` partecipanti |
-| 034 | create_email_logs_table_if_missing | Garanzia esistenza `email_logs` |
-| 035 | support_external_players | Supporto giocatori ospiti nelle prenotazioni |
-| 036 | fix_all_rls_recursion_comprehensive | Fix completo ricorsione RLS |
-| 037 | add_notes_to_video_lessons | Note video |
-| 038 | allow_maestro_video_assignments | Permessi maestro su assegnazioni video |
-| 039 | allow_maestro_delete_own_video_lessons | Maestro elimina i propri video |
-| 040 | add_is_disabled_to_court_blocks | `is_disabled` su blocchi campo |
-| 041 | add_awaiting_score_to_arena_challenges | Stato `awaiting_score` Arena |
-| 042 | fix_arena_challenges_status_constraint_awaiting_score | Fix vincolo stato Arena |
-| 043 | fix_handle_new_user_trigger | Fix trigger creazione utente |
-| 044 | add_created_by_to_bookings | `created_by` su prenotazioni |
-| 045 | update_arena_points_system | Sistema punti Arena basato sul risultato |
-| 046 | add_sets_won_to_arena_stats | `sets_won` + trigger aggiornato |
-| 047 | add_bookings_no_overlap_constraint | Vincolo GIST anti-sovrapposizione |
-| 048 | add_court_name_to_courses | `court_name` sui corsi |
-| 049 | create_course_enrollments | `course_enrollments` |
-| 050 | create_lesson_attendance | `lesson_attendance` |
-| 051 | add_fee_to_course_enrollments | Quota iscrizione |
-| 052 | create_payments_table | `payments` |
-| 053 | create_certificates_bucket | Bucket `certificates` |
-| 054 | course_enrollments_guest_support | Iscrizioni corsi per ospiti |
-| 055 | lesson_attendance_guest_support | Presenze per ospiti |
-| 056 | courses_schedule_periods | Programmazione multi-periodo |
-| 057 | courses_cancelled_dates | Date annullate |
-| 058 | courses_extra_dates | Date extra |
-| 060 | courses_lesson_time_overrides | Override orario lezione |
-| 061 | courses_created_by | `created_by` sui corsi |
-| 062 | payments_guest_support | Pagamenti per ospiti |
+Con Supabase CLI:
+
+```bash
+supabase link --project-ref <project-id>
+supabase db push
+```
+
+In alternativa, eseguire i file `*.sql` **in ordine numerico** (001→067) dallo SQL Editor di Supabase. Le migrazioni sono in gran parte idempotenti (`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`), ma l'ordine va rispettato per le dipendenze (es. `get_my_role()` prima delle policy che la usano).
+
+Note:
+
+- `schema.sql` è lo **schema base di riferimento** (profiles, bookings, tornei, contenuti): utile per un setup da zero, ma le migrazioni restano la fonte di verità dell'evoluzione.
+- La migrazione 063 richiede le estensioni `pg_cron` e `pg_net` (disponibili sui progetti Supabase; abilitarle dal dashboard se necessario).
+- Il bucket `avatars` va creato con lo script dedicato in `supabase/scripts/utilities/` perché non è incluso nelle migrazioni.
+- `supabase/scripts/` contiene inoltre utilities e fix una tantum, non parte della catena di migrazione.

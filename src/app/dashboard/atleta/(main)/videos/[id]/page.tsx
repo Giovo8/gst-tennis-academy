@@ -255,7 +255,7 @@ export default function VideoPlayerPage() {
           Torna ai video
         </Link>
 
-        <div className="bg-white rounded-xl border border-black/10 p-12 text-center">
+        <div className="page-card p-12 text-center">
           <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-2">
             {error || "Video non trovato"}
@@ -308,7 +308,7 @@ export default function VideoPlayerPage() {
       </div>
 
       {/* Video Info & Details */}
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
         </div>
@@ -357,7 +357,7 @@ export default function VideoPlayerPage() {
       </div>
 
       {isMaestroView && (
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
           </div>

@@ -323,7 +323,7 @@ export default function MaestroDashboardPage() {
           basePath="/dashboard/maestro"
         />
 
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden h-full flex flex-col">
+        <div className="page-card h-full flex flex-col">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between flex-shrink-0">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
           </div>
@@ -334,7 +334,7 @@ export default function MaestroDashboardPage() {
       </div>
 
       {/* AZIONI RAPIDE */}
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Azioni Rapide</h2>
         </div>

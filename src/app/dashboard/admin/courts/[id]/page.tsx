@@ -255,7 +255,7 @@ export default function CourtBlockDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-black/10 p-6">
+      <div className="page-card p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">
           Date bloccate
         </h2>
@@ -309,7 +309,7 @@ export default function CourtBlockDetailPage() {
         </ul>
       </div>
 
-      <div className="bg-white rounded-xl border border-black/10 p-6">
+      <div className="page-card p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli blocco</h2>
 
         <div className="space-y-6">

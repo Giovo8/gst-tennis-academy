@@ -268,7 +268,7 @@ export default function TournamentDetail() {
         </div>
 
         {/* Dettagli torneo */}
-        <div className="bg-white border border-black/10 rounded-xl p-6 mb-6">
+        <div className="page-card p-6 mb-6">
           <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
           
           <div className="space-y-6">
@@ -361,7 +361,7 @@ export default function TournamentDetail() {
 
         {/* Action Section */}
         {!isManager && (
-        <div className="bg-white border border-black/10 rounded-xl p-6 mb-6">
+        <div className="page-card p-6 mb-6">
             {joined ? (
               <div>
                 <p className="text-lg font-bold text-secondary mb-2">✓ Sei iscritto a questo torneo</p>
@@ -407,7 +407,7 @@ export default function TournamentDetail() {
         )}
 
         {/* Competition View Section */}
-        <div className="bg-white border border-black/10 rounded-xl p-6">
+        <div className="page-card p-6">
           <TournamentManagerWrapper
             tournamentId={id}
             isAdmin={false}

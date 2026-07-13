@@ -234,7 +234,7 @@ export default function AdminNewsPage() {
               </div>
             </div>
           ) : filteredNews.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-black/10">
+            <div className="page-card text-center py-12">
               <Newspaper className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <h3 className="text-lg font-semibold text-secondary">
                 {searchQuery || filterCategory !== "all" 
@@ -257,7 +257,7 @@ export default function AdminNewsPage() {
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-black/10 overflow-hidden divide-y divide-gray-100">
+            <div className="page-card divide-y divide-gray-100">
               {filteredNews.map((item) => (
                 <Link
                   key={item.id}

@@ -109,7 +109,7 @@ export default function AdminNewsDetailPage() {
             <h1 className="text-4xl font-bold text-secondary">Dettaglio News</h1>
           </div>
 
-          <div className="bg-white rounded-xl border border-black/10 p-6">
+          <div className="page-card p-6">
             <p className="text-secondary/60">{error || "News non trovata"}</p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function AdminNewsDetailPage() {
           <h1 className="text-4xl font-bold text-secondary">Dettaglio News</h1>
         </div>
 
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni News</h2>
           </div>

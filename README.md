@@ -1,407 +1,205 @@
 # GST Tennis Academy
 
-🎾 **Piattaforma completa per la gestione di un'accademia di tennis** con sistema di prenotazioni, tornei professionali, corsi, video lezioni, messaggistica e molto altro.
+Piattaforma web completa per la gestione di un'accademia di tennis: prenotazione campi e lezioni, corsi, tornei, sfide competitive (Arena), chat interna, notizie generate con AI e area amministrativa multi-ruolo.
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)](https://supabase.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-236%20passing-brightgreen)]()
+**Stack**: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Supabase (auth, database, storage, realtime) · Resend · Google Gemini
 
 ---
 
-## 📋 Indice
+## Indice
 
-- [Caratteristiche Principali](#-caratteristiche-principali)
-- [Documentazione](#-documentazione)
-- [Quick Start](#-quick-start)
-- [Tecnologie](#-tecnologie)
-- [Struttura Progetto](#-struttura-progetto)
-- [Testing](#-testing)
-- [Deploy](#-deploy)
-- [Contribuire](#-contribuire)
-- [Licenza](#-licenza)
+- [Stack tecnologico](#stack-tecnologico)
+- [Architettura](#architettura)
+- [Setup locale](#setup-locale)
+- [Struttura cartelle](#struttura-cartelle)
+- [Deploy su Vercel](#deploy-su-vercel)
+- [Cron e job schedulati](#cron-e-job-schedulati)
+- [Documentazione dettagliata](#documentazione-dettagliata)
 
 ---
 
-## ✨ Caratteristiche Principali
+## Stack tecnologico
 
-### 🎾 Sistema Tornei Professionale (v2.0)
+| Tecnologia | Versione | Uso |
+|---|---|---|
+| [Next.js](https://nextjs.org) | ^16.2.6 | Framework (App Router, Turbopack) |
+| [React](https://react.dev) | 19.2.3 | UI |
+| [TypeScript](https://www.typescriptlang.org) | ^5.9.3 | Linguaggio (`strict: false` in tsconfig) |
+| [Tailwind CSS](https://tailwindcss.com) | v4 | Styling (via `@tailwindcss/postcss`) |
+| [Supabase](https://supabase.com) | supabase-js ^2.88, ssr ^0.8 | Auth, PostgreSQL, Storage, Realtime |
+| [Zod](https://zod.dev) | ^3.24 | Validazione input |
+| [Resend](https://resend.com) | ^6.9 | Email transazionali |
+| [@google/generative-ai](https://ai.google.dev) | ^0.24 | Generazione/traduzione notizie (Gemini 2.0 Flash) |
+| [rss-parser](https://github.com/rbren/rss-parser) | ^3.13 | Parsing feed RSS per le notizie AI |
+| framer-motion, lucide-react, sonner, date-fns | — | Animazioni, icone, toast, date |
+| [Jest](https://jestjs.io) 30 + Testing Library | — | Test (231 passing, 23 skipped) |
 
-**3 Tipi di Torneo**:
-- **Eliminazione Diretta**: Bracket classico ad eliminazione
-- **Girone + Eliminazione**: Fase a gironi seguita da knockout
-- **Campionato**: Round-robin (tutti contro tutti)
+> Non integrati (nonostante vecchi riferimenti): **Stripe** e **Sentry**. I pagamenti sono tracciati a livello di dati (tabella `payments`) ma senza provider collegato.
 
-**Features**:
-- Wizard creazione intuitivo in 3 step
-- Gestione partite con punteggi tennis autentici (set, game, tie-break)
-- Classifiche e statistiche avanzate
-- Dashboard specifiche per ogni ruolo
-- Pagina classifiche pubblica con podio
+## Architettura
 
-### 📅 Sistema Prenotazioni
+### Ruoli
 
-- Calendario interattivo per prenotazione campi
-- Lezioni private e di gruppo
-- Sistema conferme multi-livello
-- Gestione crediti settimanali per abbonamenti
-- Storico prenotazioni e statistiche
+Quattro ruoli utente, definiti dall'enum PostgreSQL `user_role` e salvati in `profiles.role`:
 
-### 👥 Sistema Multi-Ruolo
+| Ruolo | Descrizione |
+|---|---|
+| `atleta` | Prenota campi/lezioni, si iscrive a corsi e tornei, partecipa all'Arena e alla chat |
+| `maestro` | Gestisce le proprie lezioni/prenotazioni, corsi, video-lezioni e comunicazioni |
+| `gestore` | Gestione operativa della struttura (equivale ad admin nella maggior parte delle API) |
+| `admin` | Accesso completo: utenti, campi, tornei, news/AI, statistiche, log |
 
-- **Admin**: Controllo completo sistema
-- **Gestore**: Gestione operativa
-- **Maestro**: Gestione corsi e lezioni
-- **Atleta**: Prenotazioni e iscrizione tornei
+### Autenticazione e autorizzazione
 
-### 💬 Chat e Comunicazione
+- **Supabase Auth** con sessione gestita dal middleware (`src/middleware.ts`, via `@supabase/ssr`).
+- Le **API route** verificano il Bearer token con `verifyAuth()` (`src/lib/auth/verifyAuth.ts`), che accetta un parametro `allowedRoles` per il controllo ruolo.
+- Il middleware applica anche una **protezione CSRF**: le richieste mutanti (`POST/PUT/PATCH/DELETE`) verso `/api/*` con header `Origin` non in whitelist vengono rifiutate (403).
+- La protezione delle pagine dashboard è affidata a `AuthGuard` (client-side) + **RLS** sul database come ultima linea di difesa.
 
-- Messaggistica in tempo reale
-- Conversazioni 1-to-1 e di gruppo
-- Notifiche messaggi non letti
-- Supporto allegati
+### Moduli principali
 
-### 📧 Sistema Email
+- **Prenotazioni** — campi e lezioni (private/di gruppo), fino a 4 partecipanti per prenotazione, conferma maestro/gestore, vincolo anti-sovrapposizione a livello DB (`btree_gist`), crediti settimanali per abbonamenti.
+- **Corsi** — creazione corsi con calendario, iscrizioni, registro presenze, video-lezioni assegnabili.
+- **Tornei** — eliminazione diretta, round robin o gironi+eliminazione; bracket generati automaticamente; punteggi tennis (set, formato best-of-1/3/5, superficie).
+- **Arena** — sfide 1v1 tra atleti con classifica a punti, livelli (Bronzo→Diamante) e streak.
+- **Notizie AI** — generazione automatica di notizie tennis: feed RSS configurabili in DB (`ai_news_fonti`) → filtri anti-duplicato/anti-podcast → Gemini per riscrittura/traduzione → workflow bozza/approva/scarta in dashboard admin. Fallback a solo parsing RSS se Gemini non è configurato o in rate limit.
+- **Chat** — conversazioni dirette e gruppi, indicatori di digitazione, presenza online, allegati (Supabase Realtime).
+- **Email** — notifiche transazionali via Resend (prenotazioni create/confermate/annullate/rifiutate, registrazioni); esiti tracciati in `email_logs`. Se `RESEND_API_KEY` manca, l'invio viene saltato senza errori.
+- **Amministrazione** — gestione utenti, staff, campi e blocchi, codici invito, candidature (lavora-con-noi), statistiche, log attività.
 
-- 11 template email HTML con branding
-- Automazione trigger per eventi
-- Dashboard analytics con metriche
-- Webhook tracking (aperture, click, bounce)
+### Numeri del progetto
 
-### 📚 Gestione Corsi
+- ~100 pagine (App Router), **89 API route handler** in `src/app/api`
+- **67 migrazioni SQL** (`supabase/migrations/001–067`), ~60 tabelle, RLS su 50+ tabelle
+- Storage: bucket `avatars` e `certificates`
 
-- Creazione e gestione corsi
-- Sistema iscrizioni online
-- Gestione capienza e liste d'attesa
-- Conferme email automatiche
+## Setup locale
 
-### 📰 News e Annunci
+### Prerequisiti
 
-- Sistema news con categorie
-- Annunci homepage
-- Editor rich text
-- Gestione pubblicazione/bozze
+- Node.js 20+
+- Un progetto [Supabase](https://supabase.com) (gratuito)
+- Facoltativi: API key [Resend](https://resend.com) (email) e [Gemini](https://ai.google.dev) (notizie AI)
 
-### 🏠 Homepage Professionale
-
-- **Landing Page Moderna**: Design responsive e accattivante
-- **10 Sezioni Modulari**: Hero, Servizi, Tornei, Staff, News, CTA
-- **Promo Banner Configurabile**: Admin può personalizzare banner promozionale
-- **Contenuti Dinamici**: Tornei, News e Staff caricati da database
-- **Accessibilità**: Skip links, ARIA labels, keyboard navigation
-- **Performance Ottimizzate**: Lazy loading, fallback data, code splitting
-
-Documentazione: [FEATURES.md](docs/FEATURES.md)
-
-### 🎥 Video Lezioni
-
-- Assegnazione video personalizzati agli atleti
-- Supporto YouTube, Vimeo e video diretti
-- Tracciamento visualizzazioni
-- Dashboard admin per gestione video
-- Categorie: tecnica, tattica, match analysis
-
----
-
-## 📖 Documentazione
-
-La documentazione completa è disponibile nella cartella `docs/` (indice in [docs/README.md](docs/README.md)):
-
-| Documento | Descrizione |
-|-----------|-------------|
-| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Stack tecnologico, struttura, client Supabase, middleware, variabili d'ambiente |
-| **[DATABASE.md](docs/DATABASE.md)** | Schema completo: tabelle, funzioni, trigger, RLS, storage, migrazioni |
-| **[API.md](docs/API.md)** | Inventario completo degli endpoint API con metodi e autenticazione |
-| **[FEATURES.md](docs/FEATURES.md)** | Funzionalità, mappa delle pagine e permessi per ruolo |
-| **[ROLES.md](docs/ROLES.md)** | Sistema multi-ruolo e gerarchia dei permessi |
-| **[ARENA.md](docs/ARENA.md)** | Sistema Arena (sfide 1v1): regole, punteggi e ranking |
-| **[EMAIL.md](docs/EMAIL.md)** | Sistema email transazionale con Resend |
-| **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Setup, deployment, variabili ambiente, cron job |
-| **[DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** | Palette, tipografia e componenti UI |
-| **[FRONTEND.md](docs/FRONTEND.md)** | Linee guida frontend, mobile e accessibilità |
-
----
-
-## 🚀 Quick Start
-
-### 1. Clona Repository
+### Passi
 
 ```bash
-git clone https://github.com/your-org/gst-tennis-academy.git
+# 1. Clona e installa
+git clone <repo-url>
 cd gst-tennis-academy
-```
-
-### 2. Installa Dipendenze
-
-```bash
 npm install
-```
 
-### 3. Configura Environment
+# 2. Configura le variabili d'ambiente
+cp .env.example .env.local
+# compila .env.local con le chiavi del tuo progetto Supabase (vedi commenti nel file)
 
-Crea `.env.local`:
+# 3. Applica le migrazioni al database
+# Con Supabase CLI:
+supabase link --project-ref <project-id>
+supabase db push
+# In alternativa: esegui i file supabase/migrations/*.sql in ordine (001→067)
+# dallo SQL Editor di Supabase.
 
-```env
-# ==========================================
-# SUPABASE (Obbligatorio)
-# ==========================================
-# URL del progetto Supabase (dalla dashboard)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-
-# Chiave anonima (pubblica, sicura da esporre)
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Chiave service role (PRIVATA - mai esporre!)
-# Usata solo server-side per operazioni admin
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# ==========================================
-# RESEND EMAIL (Opzionale)
-# ==========================================
-# API Key per invio email transazionali
-RESEND_API_KEY=re_your_api_key
-
-# Email mittente verificata su Resend
-EMAIL_FROM=noreply@yourdomain.com
-
-# ==========================================
-# SITE CONFIG
-# ==========================================
-# URL pubblico del sito
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-
-# Nome accademia (per email e SEO)
-NEXT_PUBLIC_ACADEMY_NAME=GST Tennis Academy
-```
-
-> ⚠️ **IMPORTANTE**: Non usare mai `NEXT_PUBLIC_` per la service role key!
-
-### 4. Setup Database
-
-1. Vai su [Supabase Dashboard](https://app.supabase.com)
-2. Crea nuovo progetto
-3. Vai su **SQL Editor**
-4. Esegui le migrazioni in ordine dalla cartella `supabase/migrations/`
-5. Verifica che le funzioni helper siano create (`get_my_role()`)
-
-```bash
-# Ordine consigliato migrazioni
-001_create_tournaments_and_participants.sql
-002_rls_policies_tournaments.sql
-... (tutte le migrazioni in ordine numerico)
-061_courses_created_by.sql
-062_payments_guest_support.sql
-```
-
-Documentazione completa: [DATABASE.md](docs/DATABASE.md)
-
-### 5. Avvia Development Server
-
-```bash
+# 4. Avvia
 npm run dev
 ```
 
-Apri [http://localhost:3000](http://localhost:3000)
+### Comandi
 
-### 6. Crea Primo Admin
+| Comando | Descrizione |
+|---|---|
+| `npm run dev` | Dev server (Turbopack) |
+| `npm run build` | Build di produzione |
+| `npm start` | Avvio build di produzione |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier su ts/tsx/js/json/md |
+| `npm test` | Test Jest |
+| `npm run test:watch` / `test:coverage` | Test in watch / con coverage |
 
-```sql
--- In Supabase SQL Editor
-UPDATE profiles 
-SET role = 'admin' 
-WHERE email = 'your-email@example.com';
-```
+Pre-commit: Husky + lint-staged (Prettier automatico sui file staged).
 
----
-
-## 🛠 Tecnologie
-
-### Frontend
-- **Next.js 16** - React framework con App Router
-- **React 19** - UI library
-- **TypeScript 5** - Type safety
-- **Tailwind CSS 4** - Utility-first styling
-- **Lucide React** - Icon library
-
-### Backend
-- **Supabase** - PostgreSQL database + Auth + Storage
-- **PostgreSQL 14+** - Database relazionale
-- **Row Level Security** - Sicurezza a livello database
-
-### Integrations
-- **Resend** - Email transazionali
-- **Vercel** - Hosting e deployment
-- **Vercel Cron** - Scheduled jobs
-- **Stripe** - Pagamenti (opzionale)
-
-### Dev Tools
-- **Jest** - Testing framework
-- **ESLint + Prettier** - Code quality
-- **TypeScript** - Type checking
-
----
-
-## 📁 Struttura Progetto
+## Struttura cartelle
 
 ```
-gst-tennis-academy/
-├── docs/                           # 📖 Documentazione
-│   ├── DATABASE.md                # Schema database completo
-│   ├── API.md                     # API endpoints
-│   ├── FEATURES.md                # Guida funzionalità
-│   └── DEPLOYMENT.md              # Guida deploy
+.
 ├── src/
-│   ├── app/                       # Next.js App Router
-│   │   ├── api/                  # API Routes
-│   │   │   ├── admin/           # Admin endpoints
-│   │   │   ├── tournaments/     # Tornei endpoints
-│   │   │   ├── bookings/        # Prenotazioni
-│   │   │   ├── courses/         # Corsi
-│   │   │   ├── email/           # Email system
-│   │   │   └── webhooks/        # Webhooks esterni
-│   │   ├── dashboard/           # Dashboard per ruolo
-│   │   │   ├── admin/
-│   │   │   ├── gestore/
-│   │   │   ├── maestro/
-│   │   │   └── atleta/
-│   │   ├── tornei/              # Tornei pubblici
-│   │   ├── classifiche/         # Classifiche pubbliche
-│   │   ├── bookings/            # Prenotazioni
-│   │   ├── courses/             # Corsi
-│   │   ├── news/                # News
-│   │   └── profile/             # Profilo utente
-│   ├── components/              # React components
-│   │   ├── tournaments/         # Sistema tornei
-│   │   ├── bookings/            # Sistema prenotazioni
-│   │   ├── chat/                # Sistema chat
-│   │   ├── email/               # Email dashboard
-│   │   ├── profile/             # Profilo e stats
-│   │   ├── auth/                # Autenticazione
-│   │   └── layout/              # Layout components
-│   ├── lib/                     # Utilities
-│   │   ├── supabase/           # Supabase clients
-│   │   ├── email/              # Email service
-│   │   ├── seo/                # SEO utils
-│   │   └── roles.ts            # Role checking
-│   └── __tests__/              # Test files
-├── supabase/                    # Database
-│   ├── schema.sql              # Schema base
-│   └── migrations/             # Migrazioni SQL
-├── scripts/                     # Utility scripts
-├── public/                      # Assets statici
-└── vercel.json                 # Vercel config
+│   ├── app/                    # App Router
+│   │   ├── (pagine pubbliche)  # /, /login, /register, /news, /tornei, legali…
+│   │   ├── dashboard/
+│   │   │   ├── atleta/(main)/  # bookings, corsi, arena, tornei, videos, profile
+│   │   │   ├── maestro/(main)/ # bookings, corsi, arena, tornei, videos, mail
+│   │   │   └── admin/          # users, corsi, courts, tornei, news+AI, staff…
+│   │   ├── chat/               # messaging
+│   │   └── api/                # 89 route handler (REST)
+│   ├── components/             # UI per area: admin, arena, auth, bookings,
+│   │                           # chat, dashboard (layout per ruolo), landing,
+│   │                           # news, notifications, profile, tournaments, ui
+│   ├── lib/                    # Logica condivisa:
+│   │   ├── auth/               # verifyAuth, route auth, logout
+│   │   ├── supabase/           # client browser + server (service role)
+│   │   ├── email/              # client Resend, template, logging
+│   │   ├── ai-news/            # sanitizer, tipi e utilità notizie AI
+│   │   ├── security/           # rate limiter, sanitize, XSS prevention
+│   │   ├── validation/         # schemi Zod
+│   │   ├── logger/             # secure-logger (redazione dati sensibili)
+│   │   └── …                   # bookings, arena, notifications, hooks, types
+│   └── middleware.ts           # CSRF + refresh sessione Supabase
+├── supabase/
+│   ├── migrations/             # 001–067 (schema versionato)
+│   ├── scripts/                # utilities e fix una tantum
+│   └── schema.sql              # schema completo di riferimento
+├── docs/                       # documentazione dettagliata (vedi sotto)
+├── public/                     # asset statici
+└── .env.example                # template variabili d'ambiente
 ```
 
----
+## Deploy su Vercel
 
-## 🧪 Testing
+1. Importa il repository su Vercel (framework: **Next.js**, build command di default `next build`).
+2. Configura le variabili d'ambiente nel progetto Vercel:
 
-### Test Automatici
+| Variabile | Obbligatoria | Note |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | URL progetto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Chiave anon (pubblica) |
+| `SUPABASE_URL` | ✅ | Uguale all'URL sopra, lato server |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | **Solo server** — mai `NEXT_PUBLIC_` |
+| `NEXT_PUBLIC_APP_URL` | ✅ | URL pubblico del sito |
+| `NEXT_PUBLIC_SITE_URL` | ✅ | Usato per la whitelist CSRF |
+| `RESEND_API_KEY`, `EMAIL_FROM` | ⚪ | Senza, le email vengono saltate |
+| `GEMINI_API_KEY` | ⚪ | Senza, le notizie AI usano solo RSS |
+| `INSTAGRAM_OEMBED_TOKEN`, `INSTAGRAM_POST_URLS` | ⚪ | Feed Instagram in homepage |
+| `ENABLE_RATE_LIMITING`, `LOG_LEVEL` | ⚪ | Default: `true`, `info` |
 
-```bash
-# Esegui tutti i test
-npm test
+3. Applica le migrazioni Supabase (vedi setup) prima del primo deploy.
 
-# Watch mode
-npm run test:watch
+Header di sicurezza (CSP, HSTS, X-Frame-Options, Permissions-Policy) sono configurati in `next.config.ts`.
 
-# Con coverage
-npm run test:coverage
+> Nota: il rate limiter è in-memory e su serverless si azzera a ogni cold start; `ENABLE_RATE_LIMITING` resta comunque consigliato.
 
-# Test specifici
-npx jest --testPathPatterns="auth|bookings|rls"
-```
+## Cron e job schedulati
 
-**Test Coverage** (236 test):
-- ✅ **Auth**: Verifica funzioni `isAdminOrGestore`, `canManageUsers`
-- ✅ **Bookings**: Validazione campi, regola 24h, overlap temporali, conflitti, batch
-- ✅ **RLS Policies**: Verifica permessi per tutti i ruoli (atleta, maestro, gestore, admin)
-- ✅ **Tornei**: Flussi completi (3 tipi di torneo)
-- ✅ **Scoring**: Sistema punteggi tennis autentici
+- **Notizie AI**: gli orari di generazione sono configurati **nel database** (tabella `ai_news_cron`: ora, minuto, categoria, prompt custom) e gestiti dalla dashboard admin (`/dashboard/admin/news`). L'esecuzione avviene tramite la Edge Function Supabase `genera-news` (invocata con service role key), con supporto `pg_cron` lato database.
+- **Non esistono cron Vercel**: il file `vercel.json` è stato rimosso perché puntava a un endpoint mai implementato.
+- Job DB accessori: reset settimanale crediti abbonamento (`reset_weekly_credits()`), pulizia typing indicators (`cleanup_old_typing_indicators()`).
 
-### Test Manuali
+## Documentazione dettagliata
 
-Scenari critici da verificare:
-1. **Prenotazioni**: Nessun overlap su stesso campo
-2. **Tornei**: Bracket generation corretto
-3. **Ruoli**: Admin/Gestore possono tutto, Atleta limitato
-4. **Video**: Solo destinatari vedono propri video
+La documentazione completa è in [`docs/`](docs/README.md):
 
----
+| Documento | Contenuto |
+|---|---|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, struttura, middleware, pattern |
+| [DATABASE.md](docs/DATABASE.md) | Tabelle, RLS, funzioni, trigger, migrazioni |
+| [API.md](docs/API.md) | Le 89 API route con auth richiesta |
+| [ROLES.md](docs/ROLES.md) | Sistema multi-ruolo e permessi |
+| [FEATURES.md](docs/FEATURES.md) | Funzionalità per modulo |
+| [ARENA.md](docs/ARENA.md) | Sistema sfide 1v1 e punteggi |
+| [EMAIL.md](docs/EMAIL.md) | Sistema email e logging |
+| [AI-NEWS.md](docs/AI-NEWS.md) | Pipeline notizie AI (RSS + Gemini) |
+| [FRONTEND.md](docs/FRONTEND.md) | Convenzioni UI e design system |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy e configurazione |
 
-## 🚀 Deploy
+## Licenza
 
-### Vercel (Raccomandato)
-
-1. **Push su GitHub**
-   ```bash
-   git push origin main
-   ```
-
-2. **Connetti Vercel**
-   - Vai su [vercel.com](https://vercel.com)
-   - Importa repository
-   - Configura variabili ambiente
-
-3. **Deploy Automatico**
-   - Deploy automatico su ogni push
-   - Preview deployments per PR
-   - SSL automatico
-
-Guida completa: [DEPLOYMENT.md](docs/DEPLOYMENT.md)
-
----
-
-## 🤝 Contribuire
-
-Contributi benvenuti! Per iniziare:
-
-1. Fork il progetto
-2. Crea feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit modifiche (`git commit -m 'feat: add amazing feature'`)
-4. Push branch (`git push origin feature/amazing-feature`)
-5. Apri Pull Request
-
-### Commit Convention
-
-Usa [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` Nuove funzionalità
-- `fix:` Bug fix
-- `docs:` Documentazione
-- `style:` Formattazione
-- `refactor:` Refactoring
-- `test:` Test
-- `chore:` Manutenzione
-
----
-
-## 📄 Licenza
-
-Questo progetto è sotto licenza MIT. Vedi file [LICENSE](LICENSE) per dettagli.
-
----
-
-## 🙏 Ringraziamenti
-
-- [Next.js](https://nextjs.org/) - React framework
-- [Supabase](https://supabase.com/) - Backend as a Service
-- [Resend](https://resend.com/) - Email infrastructure
-- [Vercel](https://vercel.com/) - Hosting platform
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [Lucide](https://lucide.dev/) - Icon library
-
----
-
-## 📞 Supporto
-
-Per domande o supporto:
-
-- 📧 Email: info@gst-tennis-academy.com
-- 🐛 Issues: [GitHub Issues](https://github.com/your-org/gst-tennis-academy/issues)
-- 📖 Docs: [docs/](docs/)
-
----
-
-**Made with ❤️ and 🎾 by GST Tennis Academy Team**
-
+Progetto privato — tutti i diritti riservati.

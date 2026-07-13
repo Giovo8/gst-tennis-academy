@@ -622,7 +622,7 @@ export default function AdminChallengeDetailPage() {
       </div>
 
       {/* Players Section */}
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -673,7 +673,7 @@ export default function AdminChallengeDetailPage() {
       </div>
 
       {/* Match Details */}
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Match</h2>
         </div>
@@ -745,7 +745,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Risultato */}
       {(challenge.status === "completed" || !!challenge.winner_id || showScoreForm || canEnterScore || challenge.status === "awaiting_score") && (
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Risultato</h2>
           </div>
@@ -877,7 +877,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Booking Info */}
       {challenge.booking && (
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Prenotazione Campo</h2>
           </div>
@@ -920,7 +920,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Message */}
       {challenge.message && (
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio</h2>
           </div>

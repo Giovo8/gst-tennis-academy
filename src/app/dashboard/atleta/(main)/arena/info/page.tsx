@@ -24,7 +24,7 @@ export default function InfoPage() {
       {/* Content */}
       <div className="space-y-6">
           {/* Regole Generali */}
-          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Regole Generali</h2>
             </div>
@@ -51,7 +51,7 @@ export default function InfoPage() {
           </div>
 
           {/* Sistema di Punteggio */}
-          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Sistema di Punteggio</h2>
             </div>

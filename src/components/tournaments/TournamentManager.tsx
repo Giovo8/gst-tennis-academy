@@ -117,7 +117,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
   const renderParticipantsSection = () => {
     if (participants.length === 0) return null;
     return (
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -205,7 +205,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
 
         {/* Tabellone - eliminazione_diretta */}
         {type === 'eliminazione_diretta' && (phase === 'eliminazione' || phase === 'completato') && (
-          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
             </div>
@@ -217,7 +217,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
 
         {/* Gironi - girone_eliminazione */}
         {type === 'girone_eliminazione' && (phase === 'gironi' || phase === 'eliminazione' || phase === 'completato') && (
-          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
             </div>
@@ -229,7 +229,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
 
         {/* Tabellone - girone_eliminazione fase eliminazione */}
         {type === 'girone_eliminazione' && (phase === 'eliminazione' || phase === 'completato') && (
-          <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
             </div>
@@ -242,7 +242,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Calendario + Classifica - campionato */}
         {type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
           <>
-            <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+            <div className="page-card">
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
               </div>
@@ -250,7 +250,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                 <ChampionshipStandingsView tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+            <div className="page-card">
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
               </div>

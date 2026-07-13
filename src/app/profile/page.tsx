@@ -148,7 +148,7 @@ export default function ProfilePage() {
       ) : (
         <>
           {/* Profile Info Card */}
-          <div className="bg-white rounded-xl p-6 space-y-6">
+          <div className="page-card p-6 space-y-6">
             {/* Role Badge */}
             {profile && (
               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
@@ -196,7 +196,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Notification Preferences Card */}
-          <div className="bg-white rounded-xl p-6">
+          <div className="page-card p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2 rounded-lg bg-secondary/10">
                 <Bell className="h-5 w-5 text-secondary" />

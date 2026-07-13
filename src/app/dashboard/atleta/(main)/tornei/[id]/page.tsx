@@ -302,7 +302,7 @@ function AtletaTournamentDetailInner() {
 
       {/* Badge iscritto */}
       {joined && (
-        <div className="bg-white border border-black/10 rounded-xl p-4 border-l-4" style={{ borderLeftColor: 'var(--primary)' }}>
+        <div className="bg-white border border-black/10 rounded-lg p-4 border-l-4" style={{ borderLeftColor: 'var(--primary)' }}>
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--primary)' }} />
             <h3 className="text-lg font-bold text-secondary">Sei iscritto a questo torneo</h3>
@@ -311,7 +311,7 @@ function AtletaTournamentDetailInner() {
       )}
 
       {/* Dettagli torneo */}
-      <div className="bg-white border border-black/10 rounded-xl p-6">
+      <div className="page-card p-6">
         <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
 
         <div className="space-y-6">
@@ -415,7 +415,7 @@ function AtletaTournamentDetailInner() {
 
       {/* Tournament Manager (Partecipanti/Tabellone/Gironi/Calendario/Classifica) */}
       {currentParticipants > 0 && (
-        <div className="bg-white border border-black/10 rounded-xl p-6">
+        <div className="page-card p-6">
           <TournamentManagerWrapper
             tournamentId={tournament.id}
             isAdmin={false}

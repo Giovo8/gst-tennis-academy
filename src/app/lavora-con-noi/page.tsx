@@ -179,7 +179,7 @@ export default function WorkWithUsPage() {
         {/* Form Candidatura - stile admin users/new */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Dati Personali */}
-          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Personali</h2>
             </div>
@@ -256,7 +256,7 @@ export default function WorkWithUsPage() {
           </div>
 
           {/* Candidatura */}
-          <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+          <div className="page-card">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Candidatura</h2>
             </div>

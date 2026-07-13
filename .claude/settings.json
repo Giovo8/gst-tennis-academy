@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(awk '/return \\\\\\(/{print NR\": \"$0; c++} c&&c<3' src/components/dashboard/NotificationsList.tsx)",
+      "Bash(curl -s -o /dev/null -w \"corsi/new -> %{http_code}\\\\n\" http://localhost:3000/dashboard/admin/corsi/new)",
+      "Bash(curl -s -o /tmp/corsi_new.html -w \"corsi/new -> %{http_code}\\\\n\" http://localhost:3000/dashboard/admin/corsi/new)",
+      "Read(//tmp/**)",
+      "Bash(tail -60 /tmp/devserver.log)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(command -v chromium-cli chromium chromium-browser google-chrome chrome)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Program Files \\\\\\(x86\\\\\\)/Microsoft/Edge/Application/**)",
+      "Bash(npx eslint *)"
     ]
   }
 }

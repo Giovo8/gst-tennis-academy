@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-black/10 shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
+        <div className="page-card max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12">
           <div className="space-y-8">
             <section>
               <h2 className="text-2xl font-semibold text-secondary mb-4">

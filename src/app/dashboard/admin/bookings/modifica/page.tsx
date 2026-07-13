@@ -14,8 +14,8 @@ import {
 import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
-import { SearchableSelect } from "@/components/bookings/SearchableSelect";
+import ParticipantsCard from "@/components/bookings/ParticipantsCard";
+import CoachCard from "@/components/bookings/CoachCard";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
@@ -887,89 +887,24 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
             {/* Card Maestro - solo per lezione privata/gruppo */}
             {(bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && (
-              <div className={bookingCardClassName}>
-                <div className={bookingCardHeaderClassName}>
-                  <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
-                </div>
-                <div className="p-4 sm:p-6 space-y-3">
-                  <SearchableSelect
-                    value=""
-                    onChange={(id) => {
-                      if (!selectedCoaches.includes(id)) {
-                        setSelectedCoaches([...selectedCoaches, id]);
-                      }
-                    }}
-                    triggerClassName="w-full rounded-lg border border-black/10 bg-white px-4 py-2 text-sm text-left text-secondary flex items-center justify-between focus:outline-none focus-visible:ring-0 focus-visible:border-black/10"
-                    dropdownClassName="rounded-lg border border-black/10 bg-white"
-                    options={coaches
-                      .filter((c) => !selectedCoaches.includes(c.id))
-                      .map((coach) => ({
-                        value: coach.id,
-                        label: coach.full_name,
-                      }))}
-                    placeholder="Seleziona maestro"
-                    searchPlaceholder="Cerca maestro"
-                  />
-                  {selectedCoaches.length > 0 && (
-                    <ul className="flex flex-col gap-2">
-                      {selectedCoaches.map((coachId) => {
-                        const coach = coaches.find((c) => c.id === coachId);
-                        if (!coach) return null;
-                        return (
-                          <li key={coachId}>
-                            <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "#023047" }}>
-                              <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                                <span className="text-sm font-bold text-white leading-none">
-                                  {coach.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
-                                </span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-white text-sm truncate">{coach.full_name}</p>
-                                {coach.email && (
-                                  <p className="text-xs text-white/60 mt-0.5 truncate">{coach.email}</p>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedCoaches(selectedCoaches.filter((id) => id !== coachId))}
-                                className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
-                                aria-label={`Rimuovi ${coach.full_name}`}
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              </div>
+              <CoachCard
+                coaches={coaches}
+                selectedCoaches={selectedCoaches}
+                onChange={setSelectedCoaches}
+              />
             )}
 
             {/* Card Partecipanti */}
-            <div className={`${bookingCardClassName} overflow-visible relative z-20`}>
-              <div className={bookingCardHeaderClassName}>
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
-              </div>
-              <div className="p-4 sm:p-6">
-                <AthletesSelector
-                  athletes={athletes}
-                  selectedAthletes={selectedAthletes}
-                  onAthleteAdd={(athlete) => {
-                    if (selectedAthletes.length < maxAthletesAllowed) {
-                      setSelectedAthletes([...selectedAthletes, athlete]);
-                    }
-                  }}
-                  onAthleteRemove={(index) => {
-                    setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                  }}
-                  maxAthletes={maxAthletesAllowed}
-                  useSecondaryParticipantBorder
-                  previousGuests={previousGuests}
-                />
-              </div>
-            </div>
+            <ParticipantsCard
+              athletes={athletes}
+              selectedAthletes={selectedAthletes}
+              onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
+              onAthleteRemove={(index) =>
+                setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))
+              }
+              maxAthletes={maxAthletesAllowed}
+              previousGuests={previousGuests}
+            />
 
             {/* Card Orari disponibili */}
             <div className={bookingCardClassName}>

@@ -681,7 +681,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Dettagli Sfida */}
-      <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+      <div className="page-card">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
         </div>
@@ -777,7 +777,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Partecipanti */}
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
@@ -817,7 +817,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Card Orari disponibili */}
-      <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+      <div className="page-card">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
           <p className="text-xs text-secondary/60 sm:text-right">
@@ -917,7 +917,7 @@ export default function ConfigureChallengePage() {
       </div>
 
       {/* Note */}
-      <div className="bg-white border border-black/10 rounded-xl overflow-hidden">
+      <div className="page-card">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio (opzionale)</h2>
         </div>

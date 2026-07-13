@@ -267,7 +267,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
           </div>
         </div>
 
-        <section className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
+        <section className="page-card">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Impostazioni generali</h2>
           </div>
@@ -326,7 +326,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
           </div>
         </section>
 
-        <section className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
+        <section className="page-card">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between gap-4">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">B. Cron job</h2>
             <button
@@ -344,7 +344,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
               </div>
             )}
 
-            <form onSubmit={saveCron} className="space-y-0 rounded-xl border border-black/10 bg-white p-4 sm:p-6">
+            <form onSubmit={saveCron} className="space-y-0 page-card p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Nome cron</label>
                 <div className="flex-1">
@@ -412,7 +412,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
 
             <div className="space-y-3">
               {crons.map((cron) => (
-                <div key={cron.id} className="rounded-xl border border-black/10 bg-white p-4 shadow-sm">
+                <div key={cron.id} className="page-card p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-semibold text-secondary">{cron.nome}</p>

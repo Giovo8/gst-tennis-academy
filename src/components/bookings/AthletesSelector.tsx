@@ -5,7 +5,7 @@ import { ChevronDown, Search, X } from "lucide-react";
 import { type UserRole } from "@/lib/roles";
 import { toast } from "sonner";
 
-interface Athlete {
+export interface Athlete {
   id: string;
   full_name: string | null;
   email: string;
@@ -13,7 +13,7 @@ interface Athlete {
   role: UserRole;
 }
 
-interface SelectedAthlete {
+export interface SelectedAthlete {
   userId?: string;
   fullName: string;
   email?: string;

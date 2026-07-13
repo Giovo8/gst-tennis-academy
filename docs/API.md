@@ -1,154 +1,201 @@
 # API Reference
 
-Inventario completo degli endpoint API di GST Tennis Academy (~69 route handler in
-`src/app/api/`). Tutte le rotte mutanti (POST/PUT/PATCH/DELETE) verso `/api/*` sono protette
-da validazione CSRF nel middleware (eccetto `/api/webhooks/*`).
+Inventario completo delle **89 API route** in `src/app/api/`, raggruppate per dominio, con metodi HTTP, autenticazione richiesta e descrizione. La colonna "Auth" è verificata leggendo il codice di ogni route.
 
-## Pattern di autenticazione
+Tutte le richieste mutanti (POST/PUT/PATCH/DELETE) verso `/api/*` passano inoltre dalla **protezione CSRF** del middleware (`src/middleware.ts`): se l'header `Origin` è presente e non è in whitelist, la richiesta è rifiutata con 403.
 
-| Pattern | Descrizione |
-|---------|-------------|
-| **Sessione** | `verifyAuth(req)` / `getRouteAuth()` — richiede sessione valida via cookie |
-| **Bearer token** | Header `Authorization: Bearer <token>` validato con `supabaseServer.auth.getUser()` |
-| **Rate limited** | Limitazione per IP/endpoint (`src/lib/security/rate-limiter.ts`) |
-| **Pubblico** | Nessuna autenticazione richiesta |
+## Legenda autenticazione
+
+| Valore | Significato |
+|---|---|
+| Nessuna | Endpoint pubblico, nessuna verifica |
+| Bearer | Header `Authorization: Bearer <token>` (`verifyAuth` o verifica manuale del token) |
+| Sessione | Cookie di sessione Supabase (`getRouteAuth` / `createClient` server) |
+| + admin/gestore ecc. | Oltre all'autenticazione è richiesto il ruolo indicato |
+
+`admin/gestore` corrisponde all'helper `isAdmin()` di `src/lib/auth/routeAuth.ts`, che considera equivalenti i due ruoli.
 
 ---
+
+## Auth e registrazione
+
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/auth/signup` | POST | Nessuna (rate limited) | Registrazione utente con validazione Zod; ruoli consentiti solo `atleta` e `maestro`, supporto codice invito; invia email di notifica |
+| `/api/invite-codes/validate` | GET | Nessuna | Valida un codice invito (esistenza, scadenza, usi residui) con service role |
+| `/api/invite-codes/validate` | POST | Nessuna | Consuma il codice in fase di registrazione e fa upsert del profilo con service role (non verifica che il chiamante sia lo `user_id` del body — vulnerabilità nota) |
 
 ## Prenotazioni
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/bookings` | GET, POST, PATCH, DELETE | CRUD prenotazioni (filtri `id`/`user_id`/`coach_id`); RLS scoped | Sessione |
-| `/api/bookings/availability` | GET | Disponibilità slot (modalità giornaliera o singolo slot) | Pubblico |
-| `/api/bookings/batch` | POST | Creazione atomica di più prenotazioni con check conflitti + email/notifiche | Sessione |
-| `/api/bookings/participants` | GET, POST | Partecipanti di una prenotazione (max 4) | Sessione |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/bookings` | GET | Bearer | Elenco prenotazioni (filtrate per ruolo/utente) |
+| `/api/bookings` | POST | Bearer | Crea prenotazione (campo, lezione privata/di gruppo); restrizioni orarie per atleti/maestri, lezioni private in stato `pending`, crediti settimanali |
+| `/api/bookings` | PUT | Bearer | Modifica prenotazione con ricontrollo conflitti |
+| `/api/bookings` | DELETE | Bearer | Annulla prenotazione; notifica l'atleta se annullata da gestore |
+| `/api/bookings/availability` | GET | Nessuna | Disponibilità slot per campo/giorno; espone bookings, court_blocks e corsi (nessuna autenticazione — nota di sicurezza) |
+| `/api/bookings/batch` | POST | Sessione | Creazione multipla di prenotazioni (es. ricorrenze) |
+| `/api/bookings/confirm` | POST | Bearer + admin/gestore o maestro assegnato | Conferma una lezione privata `pending` dopo ricontrollo conflitti |
+| `/api/bookings/reject` | POST | Bearer + admin/gestore o maestro assegnato | Rifiuta una lezione privata `pending` con notifica |
+| `/api/bookings/participants` | GET, POST, DELETE | Bearer | Gestione partecipanti di una prenotazione (max 4, vincolo a livello DB) |
+| `/api/court-blocks` | GET | Bearer | Elenco blocchi campo (manutenzione, eventi) |
+| `/api/court-blocks` | POST, DELETE | Bearer + admin/gestore | Crea/elimina blocchi campo |
 
 ## Tornei
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/tournaments` | GET, POST | Lista/creazione tornei (filtri `id`/`upcoming`/`type`/`includeCounts`) | GET pubblico / POST staff |
-| `/api/tournaments/create` | POST | Creazione semplificata (3 tipi torneo) | Admin/Gestore |
-| `/api/tournaments/[id]/start` | POST | Avvia torneo (inizializza la fase) | Admin/Gestore |
-| `/api/tournaments/[id]/matches` | GET, POST | Partite del torneo (filtri `stage`/`status`) | GET pubblico / POST staff |
-| `/api/tournaments/[id]/matches/[matchId]` | GET, PUT | Dettaglio/aggiornamento punteggio (validazione tennis) | PUT staff/partecipanti |
-| `/api/tournaments/[id]/groups` | GET, POST | Gironi e classifiche | GET pubblico / POST staff |
-| `/api/tournaments/[id]/generate-bracket` | POST | Genera tabellone eliminazione diretta | Admin/Gestore |
-| `/api/tournaments/[id]/generate-championship` | POST | Genera tutte le partite del campionato (round-robin) | Admin/Gestore |
-| `/api/tournaments/[id]/generate-groups` | POST | Genera gironi e partite (snake draft) | Bearer |
-| `/api/tournaments/[id]/group-matches` | GET | Partite con filtri `group_id`/`phase` | Pubblico |
-| `/api/tournaments/[id]/advance-stage` | POST | Avanza dai gironi al tabellone | Admin/Gestore |
-| `/api/tournaments/[id]/advance-from-groups` | POST | Avanza i qualificati dalla fase a gironi | Admin/Gestore |
-| `/api/tournaments/[id]/complete` | POST | Conclude il torneo | Admin/Gestore |
-| `/api/tournaments/[id]/delete-matches` | DELETE | Elimina tutte le partite | Admin/Gestore |
-| `/api/tournaments/[id]/knockout` | GET | Tabellone knockout per round | Pubblico |
-| `/api/tournaments/stats` | GET | Statistiche tornei | Sessione |
-| `/api/tournaments/reports` | GET | Report con statistiche giocatori | Pubblico |
-| `/api/tournament_participants` | GET, POST | Iscrizioni torneo (maestro può iscrivere solo atleti) | GET pubblico / POST sessione |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/tournaments` | GET | Nessuna | Elenco/dettaglio tornei (usato anche dalle pagine pubbliche `/tornei`) |
+| `/api/tournaments` | POST, PUT, DELETE | Bearer + gestore/admin | Crea/aggiorna/elimina torneo (JSONB `rounds_data`/`groups_data`) |
+| `/api/tournaments/create` | POST | Bearer + gestore/admin | Creazione torneo (endpoint dedicato, validazione manuale) |
+| `/api/tournaments/reports` | GET | Nessuna | Report aggregato tornei + partecipanti (nessuna autenticazione) |
+| `/api/tournaments/stats` | GET | Sessione | Statistiche complessive tornei |
+| `/api/tournaments/matches/[matchId]` | GET | Nessuna | Dettaglio match |
+| `/api/tournaments/matches/[matchId]` | PUT | Bearer + gestore/admin | Aggiorna risultato match |
+| `/api/tournaments/[id]/start` | POST | Bearer + gestore/admin | Avvia il torneo (transizione di stato) |
+| `/api/tournaments/[id]/complete` | POST | Bearer + admin/gestore | Chiude il torneo |
+| `/api/tournaments/[id]/advance-stage` | POST | Sessione + admin/gestore | Avanza alla fase successiva |
+| `/api/tournaments/[id]/advance-from-groups` | POST | Bearer + admin/gestore | Passa da gironi a eliminazione diretta |
+| `/api/tournaments/[id]/generate-bracket` | POST | Bearer + gestore/admin | Genera il tabellone a eliminazione |
+| `/api/tournaments/[id]/generate-groups` | POST | Bearer + admin/gestore | Genera i gironi |
+| `/api/tournaments/[id]/generate-championship` | POST | Bearer + admin/gestore | Genera il calendario round robin |
+| `/api/tournaments/[id]/groups` | GET | Nessuna | Gironi con partecipanti e classifiche |
+| `/api/tournaments/[id]/groups` | POST | Sessione + admin/gestore | Crea/aggiorna gironi |
+| `/api/tournaments/[id]/group-matches` | GET | Nessuna | Match dei gironi (filtri per girone/fase) |
+| `/api/tournaments/[id]/group-matches` | POST | Bearer + gestore/admin | Crea/aggiorna match dei gironi |
+| `/api/tournaments/[id]/knockout` | GET | Nessuna | Tabellone a eliminazione organizzato per round |
+| `/api/tournaments/[id]/matches` | GET | Nessuna | Match del torneo (filtri stage/status) |
+| `/api/tournaments/[id]/matches` | POST | Sessione + admin/gestore | Crea match |
+| `/api/tournaments/[id]/matches/[matchId]` | GET | Nessuna | Dettaglio match con punteggio tennis |
+| `/api/tournaments/[id]/matches/[matchId]` | PUT | Bearer + admin/gestore | Aggiorna punteggio/vincitore |
+| `/api/tournaments/[id]/matches/[matchId]` | PATCH, DELETE | Sessione + admin/gestore | Modifica parziale / eliminazione match |
+| `/api/tournaments/[id]/delete-matches` | DELETE | Bearer + gestore/admin | Elimina tutti i match del torneo (reset) |
+| `/api/tournament_participants` | GET | Nessuna | Elenco iscritti (filtri user_id/tournament_id) |
+| `/api/tournament_participants` | POST, DELETE | Bearer | Iscrizione/disiscrizione: l'atleta per sé, admin/gestore per chiunque |
+| `/api/tournament_participants` | PATCH | Bearer + gestore/admin | Aggiorna dati partecipante (seed, stato) |
 
-## Arena
+## Arena (sfide 1v1)
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/arena/players` | GET | Lista giocatori con stats (email solo admin) | Sessione |
-| `/api/arena/challenges` | GET, POST | Sfide (filtri `user_id`/`status`); creazione | Sessione |
-| `/api/arena/challenges/[id]` | GET | Dettaglio sfida | Sessione |
-| `/api/arena/stats` | GET | Statistiche utente o classifica (`limit`) | Sessione |
-| `/api/arena/reset-season` | POST | Reset stagione (`confirm: "RESET_ARENA_SEASON"`) | Admin |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/arena/challenges` | GET | Sessione | Elenco sfide (filtri user/status) o dettaglio singolo |
+| `/api/arena/challenges` | POST | Sessione | Crea sfida; per conto di altri solo admin/gestore (che la creano già `accepted`) |
+| `/api/arena/challenges` | PATCH, PUT, DELETE | **Nessuna** | Aggiorna stato/punteggio o elimina sfida — **manca la verifica di autenticazione** (protetti solo dal CSRF check del middleware; nota di sicurezza) |
+| `/api/arena/challenges/[id]` | GET | Sessione | Dettaglio sfida arricchito |
+| `/api/arena/players` | GET | Bearer | Giocatori Arena con statistiche |
+| `/api/arena/stats` | GET | Sessione | Classifica/statistiche Arena |
+| `/api/arena/stats` | POST | Sessione + admin/gestore | Ricalcolo/gestione statistiche |
+| `/api/arena/reset-season` | POST | Sessione + admin/gestore | Reset stagione (azzera classifica) |
 
-## Chat e messaggi
+## Notizie AI
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/chat-groups` | GET, POST | Gruppi chat dell'utente / creazione | Sessione |
-| `/api/chat-groups/[id]` | GET, PATCH | Dettaglio / modifica (admin gruppo) | Sessione + membro |
-| `/api/chat-groups/[id]/messages` | GET, POST | Messaggi del gruppo (paginati) | Sessione + membro |
-| `/api/chat-groups/[id]/members` | POST, DELETE | Aggiungi membri (admin) / esci-rimuovi | Sessione |
-| `/api/conversations` | GET | Conversazioni con unread e ultimo messaggio | Sessione |
-| `/api/conversations/[id]` | GET | Dettaglio conversazione + messaggi | Sessione + partecipante |
-| `/api/messages` | POST | Invia messaggio a una conversazione | Sessione |
-| `/api/messages/[id]` | PUT | Modifica messaggio / marca letto | Sessione |
-| `/api/messages/unread-count` | GET | Conteggio messaggi non letti | Sessione |
-| `/api/messages/upload` | POST | Upload allegato (max 10MB, immagini/pdf, check magic bytes) | Sessione |
-| `/api/internal-messages` | GET, POST | Messaggi interni (inbox/sent/all, ricerca) | Sessione |
-| `/api/internal-messages/[id]` | GET, PATCH | Dettaglio + thread / marca letto | Sessione + interessato |
+Tutte le route del modulo richiedono **sessione + admin/gestore** tramite `requireAdminOrGestore()` (`src/lib/ai-news/auth.ts`).
 
-## Autenticazione e utenti
+| Route | Metodi | Descrizione |
+|---|---|---|
+| `/api/ai-news/config` | GET, POST | Configurazione (pubblicazione automatica) |
+| `/api/ai-news/genera` | POST | Genera bozze: fetch RSS dalle fonti attive, dedup su `fonte_url`, riscrittura con Gemini (fallback a solo RSS) |
+| `/api/ai-news/bozze` | GET | Elenco bozze in attesa di revisione |
+| `/api/ai-news/[id]/approva` | PATCH | Approva e pubblica la bozza |
+| `/api/ai-news/[id]/modifica` | PATCH | Modifica il contenuto della bozza |
+| `/api/ai-news/[id]/scarta` | PATCH | Scarta la bozza |
+| `/api/ai-news/fonti` | GET, POST | Elenco/creazione fonti RSS (`ai_news_fonti`) |
+| `/api/ai-news/fonti/[id]` | PATCH, DELETE | Aggiorna/elimina fonte (le predefinite non sono eliminabili) |
+| `/api/ai-news/fonti/[id]/test` | GET | Testa il parsing del feed della fonte |
+| `/api/ai-news/cron` | GET, POST | Elenco/creazione schedulazioni (`ai_news_cron`) |
+| `/api/ai-news/cron/[id]` | PATCH, DELETE | Aggiorna/elimina schedulazione (sincronizza `pg_cron`) |
+| `/api/ai-news/cron/[id]/esegui` | POST | Esecuzione manuale immediata di una schedulazione |
+| `/api/ai-news/cron/sync` | POST | Risincronizza tutti i job `pg_cron` con la tabella |
+| `/api/ai-news/logs` | GET | Log delle generazioni (`ai_news_generation_logs`) |
+| `/api/ai-news/cleanup` | POST | Pulizia/traduzione EN→IT delle news esistenti via Gemini |
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/auth/signup` | POST | Registrazione con validazione password e invite code | Pubblico (rate limited) |
-| `/api/users` | GET | Lista utenti filtrata per ruolo/capacità (`is_bookable_coach`) | Bearer |
-| `/api/users/search` | GET | Ricerca utenti per messaggistica (`q` min 3 char) | Sessione (rate limited) |
-| `/api/admin/users` | GET, POST | Lista / creazione utenti | Admin/Gestore (Bearer) |
-| `/api/admin/users/reset-password` | POST | Invia email reset password | Admin/Gestore (Bearer) |
+## Chat e messaggistica
 
-## Admin e statistiche
-
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/admin/stats` | GET | Statistiche dashboard admin | Admin |
-| `/api/admin/video-lessons` | GET | Tutti i video con assegnazioni | Admin/Gestore |
-| `/api/dashboard/stats` | GET | Statistiche dashboard specifiche per ruolo | Sessione |
-| `/api/stats/coach` | GET | Statistiche maestro (`user_id`, check IDOR) | Sessione |
-| `/api/stats/admin` | GET | Statistiche admin/gestore (utenti, prenotazioni, ricavi) | Admin/Gestore |
-
-## News e contenuti
-
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/news` | GET, POST, PATCH, DELETE | News (pubblicate o tutte con `?all=true`) | GET pubblico / scrittura admin |
-| `/api/staff` | GET, POST, PATCH, DELETE | Membri staff homepage | GET pubblico / scrittura admin |
-| `/api/services` | GET, POST, PUT, DELETE | Servizi offerti | GET pubblico / scrittura admin/gestore |
-| `/api/events` | GET, POST, PUT, DELETE | Eventi (filtri `id`/`event_type`/`upcoming`) | GET pubblico / scrittura admin |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/conversations` | GET, POST | Sessione | Elenco conversazioni dell'utente / crea (o recupera) conversazione 1:1 |
+| `/api/conversations/[id]` | GET, PUT | Sessione (partecipante) | Messaggi e aggiornamento conversazione |
+| `/api/conversations/[id]` | DELETE | Sessione (partecipante o admin/gestore) | Elimina conversazione |
+| `/api/messages` | POST | Sessione | Invia messaggio in una conversazione |
+| `/api/messages/[id]` | PUT | Sessione (autore) | Modifica messaggio |
+| `/api/messages/[id]` | DELETE | Sessione (autore o admin/gestore) | Elimina messaggio |
+| `/api/messages/unread-count` | GET | Sessione | Conteggio messaggi non letti |
+| `/api/messages/upload` | POST | Sessione | Upload allegati (bucket `chat-attachments`) |
+| `/api/internal-messages` | GET, POST | Sessione | Casella messaggi interni (stile mail) |
+| `/api/internal-messages/[id]` | GET, PATCH, DELETE | Sessione | Lettura/aggiornamento/eliminazione messaggio interno |
+| `/api/chat-groups` | GET, POST | Bearer | Elenco gruppi dell'utente / crea gruppo |
+| `/api/chat-groups/[id]` | GET | Bearer (membro) | Dettaglio gruppo |
+| `/api/chat-groups/[id]` | PATCH, DELETE | Bearer (admin del gruppo) | Rinomina/elimina gruppo |
+| `/api/chat-groups/[id]/members` | POST, PATCH, DELETE | Bearer (admin del gruppo; uscita self consentita) | Gestione membri e ruoli del gruppo |
+| `/api/chat-groups/[id]/messages` | GET, POST | Bearer (membro) | Messaggi del gruppo |
 
 ## Notifiche
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/notifications` | GET, POST, PATCH | Notifiche utente (`user_id`, `unread_only`, check IDOR) | Sessione |
-| `/api/notifications/notify-admins` | POST | Notifica tutti gli admin/gestori | Admin |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/notifications` | GET | Sessione (per altri utenti solo admin/gestore) | Notifiche dell'utente |
+| `/api/notifications` | POST | Sessione | Crea notifica — non verifica che il `user_id` destinatario sia lecito (vulnerabilità nota) |
+| `/api/notifications` | PATCH, DELETE | Sessione | Segna come letta / elimina |
+| `/api/notifications/notify-admins` | POST | Sessione + admin/gestore | Invia notifica a tutti gli admin/gestori |
 
-## Reclutamento e invite code
+## Utenti e amministrazione
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/recruitment-applications` | GET, PATCH, DELETE | Candidature di lavoro | Admin |
-| `/api/invite-codes` | GET, POST | Codici invito (`max_uses` 1–10000, scadenza) | Admin/Gestore (Bearer) |
-| `/api/invite-codes/validate` | GET, POST | Valida / usa codice invito | Pubblico |
-| `/api/invite-codes/[id]/uses` | GET | Utilizzi di un codice | Admin |
-| `/api/invite-code-logs` | GET | Log di utilizzo codici (`limit`) | Admin |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/users` | GET | Bearer | Elenco utenti per prenotazioni/iscrizioni (atleti vedono i maestri prenotabili) |
+| `/api/users/search` | GET | Sessione (rate limited) | Ricerca utenti per la chat (query sanificata, Zod) |
+| `/api/admin/users` | GET, POST, PATCH, DELETE | Bearer + admin/gestore | CRUD utenti; il gestore non può promuovere ad admin né eliminare admin |
+| `/api/admin/users/reset-password` | POST | Bearer + admin/gestore | Reset password di un utente |
+| `/api/admin/stats` | GET | Sessione + admin/gestore | Statistiche dashboard admin |
+| `/api/admin/video-lessons` | GET | Bearer + admin/gestore | Vista amministrativa delle video-lezioni |
+| `/api/stats/admin` | GET | Sessione + admin/gestore | Statistiche aggregate (prenotazioni, utenti) |
+| `/api/stats/coach` | GET | Sessione (self o admin/gestore) | Statistiche del maestro |
+| `/api/dashboard/stats` | GET | Sessione | Statistiche della dashboard, calcolate in base al ruolo |
+| `/api/staff` | GET | Nessuna | Elenco staff pubblico (variante `?all=true` inclusa, senza check aggiuntivo) |
+| `/api/staff` | POST, PATCH, DELETE | Sessione + admin/gestore | Gestione membri staff |
+| `/api/invite-codes` | GET, POST, DELETE | Bearer + admin/gestore | Gestione codici invito |
+| `/api/invite-codes/[id]/uses` | GET | Sessione + admin/gestore | Utilizzi di un codice invito |
+| `/api/invite-code-logs` | GET | **Nessuna** | Log utilizzi codici invito — **manca la verifica di autenticazione** (nota di sicurezza) |
+| `/api/registration-logs` | GET | Sessione + admin/gestore | Log registrazioni |
+| `/api/activity-logs` | GET | Sessione + admin/gestore | Log attività (`activity_log`) |
+| `/api/email-logs` | GET | Sessione + admin/gestore | Esiti invii email (`email_logs`) |
+| `/api/recruitment-applications` | GET, PATCH, DELETE | Sessione + admin/gestore | Gestione candidature "lavora con noi" |
 
-## Campi, log e video
+## Contenuti
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/court-blocks` | GET, POST | Blocchi campo (con check conflitti) | Bearer / Admin-Gestore |
-| `/api/activity-logs` | GET | Log attività (`limit`) | Admin |
-| `/api/registration-logs` | GET | Log registrazioni | Admin |
-| `/api/email-logs` | GET | Log consegna email (`limit` 1–200) | Admin |
-| `/api/video-lessons` | GET | Video lezioni (filtri per ruolo) | Sessione |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/news` | GET | Nessuna | News pubblicate (con `?all=true` restituisce anche le bozze; cache solo sulla variante pubblica) |
+| `/api/news` | POST, PATCH, DELETE | Sessione + admin/gestore | CRUD news |
+| `/api/events` | GET | Nessuna | Eventi (filtri tipo/futuri) |
+| `/api/events` | POST, PUT, DELETE | Sessione + admin/gestore | CRUD eventi |
+| `/api/services` | GET | Nessuna | Servizi dell'accademia |
+| `/api/services` | POST, PUT, DELETE | Bearer + admin/gestore | CRUD servizi |
+| `/api/video-lessons` | GET | Bearer | Video-lezioni visibili in base al ruolo (atleta: assegnate; maestro: proprie; admin: tutte) |
+| `/api/video-lessons` | POST | Bearer + admin/gestore/maestro | Crea video-lezione |
+| `/api/video-lessons` | PUT | Bearer | Aggiorna (staff o maestro proprietario, con controlli interni) |
+| `/api/video-lessons` | DELETE | Bearer + admin/gestore | Elimina video-lezione |
 
-## Utility ed esterni
+## Upload
 
-| Endpoint | Metodi | Descrizione | Auth |
-|----------|--------|-------------|------|
-| `/api/health` | GET | Health check | Pubblico |
-| `/api/weather` | GET | Previsioni meteo (Open-Meteo, cache 5min) | Pubblico (rate limited) |
-| `/api/social/instagram` | GET | Post Instagram (oEmbed/scraping) | Pubblico |
-| `/api/upload/news-image` | POST | Upload immagine news (protezione SSRF) | Admin |
-| `/api/upload/staff-image` | POST | Upload immagine staff | Admin |
-| `/api/email/scheduler` | GET/POST | Job email schedulato (cron giornaliero) | `CRON_SECRET` |
-| `/api/webhooks/*` | POST | Webhook esterni (esenti da CSRF) | Firma/segreto |
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/upload/news-image` | POST | **Nessuna** | Upload immagine news (file o URL esterno con protezione SSRF) — **manca la verifica di autenticazione** (nota di sicurezza) |
+| `/api/upload/staff-image` | POST | Sessione (self; admin/gestore per altri utenti) | Upload avatar/foto staff (bucket `avatars`) |
+| `/api/upload/certificate` | POST | Sessione (self; admin/gestore per altri utenti) | Upload certificato medico (bucket `certificates`) |
+
+## Utilità e integrazioni
+
+| Route | Metodi | Auth | Descrizione |
+|---|---|---|---|
+| `/api/health` | GET | Nessuna | Health check (`{ status: "ok" }`) |
+| `/api/weather` | GET | Nessuna (rate limited) | Meteo via Open-Meteo, cache 5 minuti |
+| `/api/social/instagram` | GET | Nessuna | Feed Instagram via oEmbed Meta (token opzionale, fallback scraping) |
 
 ---
 
-## Note di sicurezza
+## Note trasversali
 
-1. **RLS**: prenotazioni e messaggi sono strettamente scoped all'utente.
-2. **Protezione IDOR**: l'utente accede solo a notifiche/statistiche proprie salvo ruolo admin.
-3. **Sanitizzazione input**: telefoni, UUID e query di ricerca sanitizzati lato server.
-4. **Validazione MIME**: gli upload verificano MIME dichiarato e magic bytes effettivi.
-5. **Protezione SSRF**: gli endpoint di upload bloccano gli IP privati.
-6. **Service role**: usato per i flussi di registrazione/invite code che devono bypassare la RLS.
+- **Route senza autenticazione che dovrebbero averla** (rilevate a luglio 2026, da correggere): `PATCH/PUT/DELETE /api/arena/challenges`, `GET /api/invite-code-logs`, `POST /api/upload/news-image`, `GET /api/bookings/availability` (information disclosure), `POST /api/invite-codes/validate` (upsert profilo senza ownership check), `GET /api/tournaments/reports`.
+- **Rate limiting** (`src/lib/security/rate-limiter.ts`, in-memory): applicato a signup, ricerca utenti, weather e ad alcune route bookings/tournaments. Non copre il login (gestito client-side da Supabase Auth).
+- La directory `src/app/api/email/scheduler/` esiste ma è vuota: non è una route attiva e non è conteggiata tra le 89.

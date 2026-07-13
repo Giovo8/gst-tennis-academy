@@ -307,7 +307,7 @@ export default function AINewsDraftsPage({ basePath }: Props) {
               const values = draftValues[item.id] ?? { titolo: item.title, testo: item.content };
 
               return (
-                <div key={item.id} className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
+                <div key={item.id} className="page-card p-4">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-1 text-xs font-bold text-violet-700">
                       AI

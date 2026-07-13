@@ -193,6 +193,9 @@ input.login-input:-webkit-autofill:active {
   --border-radius-lg: 12px;
   --border-radius-xl: 16px;
   --border-radius-2xl: 24px;
+
+  /* Card/section border - neutro sottile (= border-black/10) */
+  --card-border: rgba(0, 0, 0, 0.1);
   
   /* Elevation System - Enterprise Shadows */
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
@@ -278,6 +281,7 @@ input.login-input:-webkit-autofill:active {
   --border: #2a2a2a;            /* Dark border */
   --border-light: #1a1a1a;      /* Subtle border */
   --border-strong: #3a3a3a;     /* Strong border */
+  --card-border: rgba(255, 255, 255, 0.1); /* bordo card visibile su fondo scuro */
 
   /* Light cyan shadows for depth */
   --shadow-xs: 0 1px 2px 0 rgb(8 179 247 / 0.15);
@@ -491,6 +495,22 @@ h6, .text-h6 {
   margin-right: auto;
   padding-left: var(--space-6);
   padding-right: var(--space-6);
+}
+
+/* Page section card - stile canonico condiviso (no ombra) */
+.page-card {
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;            /* = rounded-lg */
+  overflow: hidden;
+}
+
+/* Header interno della sezione card. Le utility di layout (flex/justify/gap)
+   restano inline sui singoli header dove servono. */
+.page-card-header {
+  padding: 1rem 1.5rem;          /* = py-4 px-6 */
+  border-bottom: 1px solid var(--card-border);
+  background: linear-gradient(to right, rgba(3, 72, 99, 0.05), transparent); /* from-secondary/5 */
 }
 
 /* Cards */
@@ -993,17 +1013,12 @@ html {
   display: none !important;
 }
 
-.dashboard-content > div:first-child:has(> .breadcrumb):has(> h1) {
+/* Il wrapper del breadcrumb+h1 può essere figlio diretto di .dashboard-content
+   oppure annidato dentro un contenitore Tailwind "space-y-*" (es. <div className="space-y-6 pt-3">).
+   In quel caso va nascosto l'intero wrapper, non solo il testo al suo interno:
+   altrimenti resta un div vuoto ma visibile che riceve comunque il margin-bottom
+   di space-y-6, creando uno spazio "fantasma" prima del primo elemento reale. */
+.dashboard-content > div:first-child:has(> .breadcrumb):has(> h1),
+.dashboard-content [class*="space-y-"] > div:first-child:has(> .breadcrumb):has(> h1) {
   display: none !important;
-}
-
-/* Tailwind space-y uses DOM sibling selectors and still applies margins even
-   when the first header block is display:none; reset that phantom top gap. */
-.dashboard-content .space-y-6.pt-3 > div:first-child:has(.breadcrumb):has(h1) + * {
-  margin-top: 0 !important;
-}
-
-.dashboard-content .space-y-6.pt-3 > .breadcrumb:first-child + *,
-.dashboard-content .space-y-6.pt-3 > h1:first-child + * {
-  margin-top: 0 !important;
 }

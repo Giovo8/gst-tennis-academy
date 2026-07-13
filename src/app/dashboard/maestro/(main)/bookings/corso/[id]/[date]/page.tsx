@@ -118,7 +118,7 @@ export default function CourseBookingDetailPage() {
       </div>
 
       {/* Dettagli lezione */}
-      <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+      <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli lezione</h2>
         </div>

@@ -228,7 +228,7 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Video Info & Details Combined */}
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
           </div>
@@ -281,7 +281,7 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Assigned Users */}
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
           </div>
@@ -318,7 +318,7 @@ export default function VideoDetailPage() {
         </div>
 
         {/* Note */}
-        <div className="bg-white rounded-xl border border-black/10 overflow-hidden">
+        <div className="page-card">
           <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-3">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             {notesDirty && (

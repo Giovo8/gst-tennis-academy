@@ -460,13 +460,13 @@ export default function CorsoDetailPage() {
       </div>
 
       {/* Dettagli */}
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+      <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+        <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
         <div className="px-6 py-6 space-y-5">
           {course.description && (
-            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-5 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
                 Descrizione
               </label>
@@ -475,7 +475,7 @@ export default function CorsoDetailPage() {
           )}
 
           {course.price_per_month > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
                 Quota
               </label>
@@ -486,7 +486,7 @@ export default function CorsoDetailPage() {
           )}
 
           {creatorName && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
                 Creato da
               </label>
@@ -518,8 +518,8 @@ export default function CorsoDetailPage() {
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
-          <div key={i} className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div key={i} className="bg-white rounded-lg border border-black/10 overflow-hidden">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
               </h2>
@@ -527,13 +527,13 @@ export default function CorsoDetailPage() {
             <div className="px-6 py-6 space-y-5">
               {(p.start_date || p.end_date) && (
                 <>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
                     <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
                     <p className="text-secondary font-semibold">
                       {p.start_date ? new Date(p.start_date).toLocaleDateString("it-IT") : "—"}
                     </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
                     <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
                     <p className="text-secondary font-semibold">
                       {p.end_date ? new Date(p.end_date).toLocaleDateString("it-IT") : "—"}
@@ -542,13 +542,13 @@ export default function CorsoDetailPage() {
                 </>
               )}
               {(p.days ?? []).length > 0 && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
                   <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni</label>
                   <p className="text-secondary font-semibold">{(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}</p>
                 </div>
               )}
               {p.court && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
                   <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
                   <p className="text-secondary font-semibold">{p.court}</p>
                 </div>
@@ -566,8 +566,8 @@ export default function CorsoDetailPage() {
 
       {/* Maestri */}
       {maestros.length > 0 && (
-        <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
           <ul className="flex flex-col gap-2 px-4 py-4">
@@ -598,8 +598,8 @@ export default function CorsoDetailPage() {
 
       {/* Partecipanti */}
       {athletes.length > 0 && (
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+      <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+        <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         {
@@ -642,8 +642,8 @@ export default function CorsoDetailPage() {
       )}
 
       {/* Lezioni */}
-      <div className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+      <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+        <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>
         {lessonDates.length === 0 ? (

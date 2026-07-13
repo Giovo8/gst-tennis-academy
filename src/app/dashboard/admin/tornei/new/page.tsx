@@ -207,7 +207,7 @@ export default function NewTournamentPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit}>
-        <div className="bg-white rounded-xl border border-black/10 p-6 space-y-6">
+        <div className="page-card p-6 space-y-6">
           {/* Tipo competizione */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">

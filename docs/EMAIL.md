@@ -1,88 +1,61 @@
 # Sistema Email
 
-GST Tennis Academy invia email transazionali tramite **Resend** (`resend@6.9.3`). Tutte le
-funzioni email risiedono in `src/lib/email/` e vengono eseguite **solo lato server**.
-
----
+Le email transazionali sono inviate tramite **Resend**. Tutto il codice email risiede in `src/lib/email/` e viene eseguito **solo lato server**. Non esistono webhook Resend né scheduler: l'invio è sempre sincrono, innescato dalle API route al momento dell'evento.
 
 ## Configurazione
 
-Variabili d'ambiente:
-
 | Variabile | Descrizione |
-|-----------|-------------|
-| `RESEND_API_KEY` | API key Resend. Se assente, l'invio email è disabilitato (warning a log) |
-| `EMAIL_FROM` | Mittente. Default: `GST Tennis Academy <onboarding@resend.dev>` |
+|---|---|
+| `RESEND_API_KEY` | API key Resend. **Se assente, l'invio viene saltato silenziosamente** (un solo warning a log, poi nessun errore) |
+| `EMAIL_FROM` | Mittente. Se non impostata: `GST Tennis Academy <onboarding@resend.dev>` |
 
-> ⚠️ `RESEND_API_KEY` è un segreto: **mai** usare il prefisso `NEXT_PUBLIC_`.
+`RESEND_API_KEY` è un segreto: mai usare il prefisso `NEXT_PUBLIC_`. Entrambe le variabili sono lette tramite lo schema Zod di `src/lib/config/env.ts` (`env.resendApiKey`, `env.emailFrom`).
 
-### Setup Resend
+## Client Resend
 
-1. Crea un account su [resend.com](https://resend.com).
-2. Verifica il tuo dominio (record DNS SPF/DKIM) per inviare da un indirizzo personalizzato.
-3. Genera una API key e impostala in `RESEND_API_KEY`.
-4. Imposta `EMAIL_FROM` con un mittente verificato sul dominio.
+`src/lib/email/resend-client.ts`:
 
----
+- `getResendClient()` — **singleton** lazy: istanzia `Resend` una sola volta; ritorna `null` se `RESEND_API_KEY` manca (il warning "Email delivery is disabled" viene loggato una sola volta per processo). Ogni funzione di invio inizia con `if (!resend) return;` — da qui lo skip silenzioso.
+- `getEmailFromAddress()` — mittente da `EMAIL_FROM` con fallback al dominio di test Resend.
 
-## Moduli (`src/lib/email/`)
+## Moduli
 
-| File | Responsabilità |
-|------|----------------|
-| `resend-client.ts` | `getResendClient()` (singleton lazy) e `getEmailFromAddress()` |
-| `email-utils.ts` | `normalizeEmail()`, `escapeHtml()`, `getGestoreRecipients()` |
-| `booking-notifications.ts` | Email di creazione/cancellazione prenotazione (atleta, maestro, gestore) |
-| `booking-email-copy.ts` | Testi/oggetti localizzati per tipo di prenotazione |
-| `signup-notifications.ts` | Email di benvenuto/verifica alla registrazione |
-| `email-log.ts` | `logEmailDispatch()` — registra le email inviate per audit/retry |
+| File | Contenuto |
+|---|---|
+| `src/lib/email/resend-client.ts` | Singleton client + mittente |
+| `src/lib/email/booking-notifications.ts` | Email prenotazioni (creazione ed eliminazione) |
+| `src/lib/email/booking-email-copy.ts` | Testi per tipo prenotazione (`campo`, `lezione`, `lezione_privata`, `lezione_gruppo`) e azione (`created`/`deleted`) |
+| `src/lib/email/signup-notifications.ts` | Notifica di nuova registrazione |
+| `src/lib/email/email-utils.ts` | `normalizeEmail()`, `escapeHtml()` (anti-XSS nei template), `getGestoreRecipients()` (tutti i profili con ruolo `gestore`) |
+| `src/lib/email/email-log.ts` | Persistenza esiti in `email_logs` |
 
----
+## Email inviate
 
-## Notifiche automatiche
+Template HTML inline (header con logo, tabella dettagli, CTA verso la dashboard del destinatario) + versione testuale. Date e orari formattati in `it-IT`, timezone `Europe/Rome`. Tutti i valori dinamici passano da `escapeHtml()`.
 
-| Evento | Destinatari |
-|--------|-------------|
-| Nuova prenotazione | Atleta (conferma), maestro (se assegnato), gestori (notifica) |
-| Cancellazione prenotazione | Tutte le parti coinvolte |
-| Registrazione utente | Email di benvenuto all'utente; notifica ai gestori |
-| Iscrizione torneo | Conferma all'atleta |
-| Aggiornamenti sfida Arena | Parti coinvolte |
-| Lezione privata | Notifica dedicata (`privateLessonNotifications`) |
+| Funzione | Quando | Destinatari |
+|---|---|---|
+| `sendBookingCreatedEmailToGestore` | Prenotazione creata da un atleta (`bookingService.ts`, `POST /api/bookings`, `POST /api/bookings/batch`) | Atleta + primo gestore (segreteria), con gli altri gestori e l'eventuale maestro (lezione privata) in CC |
+| `sendBookingCreatedEmailToAthlete` | Prenotazione creata da gestore/admin per conto dell'atleta | Atleta/i (email di conferma) |
+| `sendBookingCreatedEmailToMaestro` | Lezione privata creata da gestore/admin | Maestro assegnato |
+| `sendBookingDeletedEmailToRecipients` | Prenotazione eliminata/annullata | Atleta + segreteria (CC come sopra), con indicazione di chi ha eliminato |
+| `sendSignupEmailToGestori` | Nuova registrazione (`POST /api/auth/signup`) | Tutti i gestori; opzionalmente anche l'atleta stesso (`notifyAthlete`) |
 
-Le copie email sono localizzate in italiano e differenziate per tipo di prenotazione
-(`lezione_privata`, `lezione_gruppo`, `campo`) e per azione (creazione / cancellazione).
+Note:
 
----
+- La **conferma/rifiuto** di una prenotazione da parte di maestro/gestore (`/api/bookings/confirm`, `/api/bookings/reject`) genera solo **notifiche in-app** (tabella `notifications`), non email.
+- Ogni funzione è avvolta in try/catch e **non fa mai fallire** l'operazione principale (prenotazione/registrazione): gli errori vengono solo loggati con `secure-logger`.
 
-## Logging e tracciamento
+## Logging degli esiti
 
-- Ogni invio viene registrato nella tabella `email_logs` (vedi [DATABASE.md](DATABASE.md)) con
-  stato, provider, message id e timestamp di apertura/click.
-- L'endpoint `GET /api/email-logs` (admin) espone i log con stato di consegna.
-- La funzione `get_email_stats(start, end)` fornisce statistiche aggregate.
-- `is_user_unsubscribed(email, category)` rispetta le preferenze di disiscrizione
-  (`email_unsubscribes`: `all` / `marketing` / `notifications`).
+`logEmailDispatch()` (`src/lib/email/email-log.ts`) registra ogni tentativo, riuscito o fallito:
 
----
+1. Insert in **`email_logs`** con: destinatario (email, nome, user id), `subject`, `template_name` (es. `booking_created_athlete_notification`, `booking_deleted_recipients_notification`, `signup_*`), `status` (`sent`/`failed`), `provider` (`resend`), `provider_message_id`, `error_message`, `metadata` (bookingId, ruoli, campo, orari, CC).
+2. Se l'insert fallisce, **fallback** sulla tabella legacy **`email_log`** (payload ridotto).
+3. Se fallisce anche il fallback, errore a log — l'invio email non viene mai bloccato dal logging.
 
-## Campagne (admin)
+## Cosa NON esiste
 
-Dalla sezione `/dashboard/admin/mail-marketing` gli admin/gestori possono inviare campagne
-email in blocco e consultarne lo storico.
-
----
-
-## Job schedulato
-
-`vercel.json` definisce un cron giornaliero alle **09:00 UTC** verso `/api/email/scheduler`,
-protetto da `CRON_SECRET`, per l'invio delle email programmate. Vedi [DEPLOYMENT.md](DEPLOYMENT.md).
-
----
-
-## Best practice
-
-- Usare `escapeHtml()` su tutti i contenuti dinamici inseriti nei template per prevenire XSS.
-- Normalizzare gli indirizzi con `normalizeEmail()` prima dell'invio.
-- Gestire l'assenza di `RESEND_API_KEY` senza bloccare il flusso applicativo (degradazione
-  controllata).
-- Rispettare sempre le preferenze di disiscrizione prima di inviare email marketing.
+- Webhook Resend (bounce/delivery tracking): la variabile `RESEND_WEBHOOK_SECRET` citata in vecchi file non è mai stata implementata.
+- Scheduler/digest email: nessun cron di invio; la route `/api/email/scheduler` non esiste.
+- Campagne email: le tabelle `email_campaigns`/`email_templates`/`email_settings` esistono a DB ma non sono usate dal codice di invio.

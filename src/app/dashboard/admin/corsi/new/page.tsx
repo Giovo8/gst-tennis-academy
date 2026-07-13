@@ -17,7 +17,6 @@ import { isBookableCoachProfile } from "@/lib/roles";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
-import SearchableSelect from "@/components/bookings/SearchableSelect";
 import AuthGuard from "@/components/auth/AuthGuard";
 import {
   Modal,
@@ -103,7 +102,7 @@ export default function NuovoCorsoPage() {
   const startX = useRef(0);
   const scrollLeft = useRef(0);
   const [selectedMaestros, setSelectedMaestros] = useState<{ id: string; full_name: string }[]>([]);
-  const [maestros, setMaestros] = useState<{ id: string; full_name: string }[]>([]);
+  const [maestros, setMaestros] = useState<Athlete[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
@@ -116,14 +115,14 @@ export default function NuovoCorsoPage() {
     async function loadMaestros() {
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, role, metadata")
+        .select("id, full_name, email, role, metadata")
         .in("role", ["maestro", "gestore"])
         .order("full_name");
       if (data) {
         setMaestros(
           data
             .filter((p) => isBookableCoachProfile(p))
-            .map(({ id, full_name }) => ({ id, full_name }))
+            .map(({ id, full_name, email }) => ({ id, full_name, email: email || "", role: "maestro" as const }))
         );
       }
     }
@@ -491,26 +490,26 @@ export default function NuovoCorsoPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-red-50 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm font-medium text-red-800">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-green-50 rounded-lg p-4 flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm font-medium text-green-800">{success}</p>
           </div>
         )}
 
         {/* Informazioni generali */}
-        <div className="bg-white border border-black/10 shadow-sm rounded-xl">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni generali</h2>
           </div>
-          <div className="p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+          <div className="divide-y divide-black/10">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
                 Nome corso <span className="text-red-500">*</span>
               </label>
@@ -520,12 +519,12 @@ export default function NuovoCorsoPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="es. Tennis Under 10 – Gruppo A"
-                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
               <div className="flex-1">
                 <textarea
@@ -533,15 +532,15 @@ export default function NuovoCorsoPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Breve descrizione del corso..."
-                  className="w-full rounded-lg border border-gray-300 bg-white shadow-sm px-4 py-2 text-sm text-secondary placeholder-secondary/40 resize-none focus:outline-none focus:ring-0 focus:border-black/10"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 resize-none focus:outline-none focus:ring-0 focus:border-black/10"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Quota</label>
               <div className="flex-1">
-                <div className="relative w-40">
+                <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary/50">€</span>
                   <input
                     type="number"
@@ -550,75 +549,56 @@ export default function NuovoCorsoPage() {
                     value={pricePerMonth || ""}
                     onChange={(e) => setPricePerMonth(parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    className="w-full rounded-lg border border-gray-300 bg-white pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   />
                 </div>
               </div>
             </div>
-
-
           </div>
         </div>
 
         {/* Maestri */}
-        <div className="bg-white border border-black/10 shadow-sm rounded-xl">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
-          <div className="p-6 space-y-4">
-            <SearchableSelect
-              value=""
-              onChange={(val) => {
-                const m = maestros.find((x) => x.id === val);
-                if (!m || selectedMaestros.some((sm) => sm.full_name === m.full_name)) return;
-                setSelectedMaestros((prev) => [...prev, { id: m.id, full_name: m.full_name }]);
+          <div className="p-6">
+            <AthletesSelector
+              athletes={maestros}
+              selectedAthletes={selectedMaestros.map((m) => ({ userId: m.id, fullName: m.full_name, isRegistered: true }))}
+              inlineMode={true}
+              keepNeutralSelectedBorder={true}
+              keepNeutralInputFocus={true}
+              allowGuestParticipants={false}
+              hideEmptyMessages={true}
+              searchPlaceholder="Cerca maestro"
+              participantToneByIndex={() => "dark"}
+              maxAthletes={null}
+              onAthleteAdd={(athlete) => {
+                if (athlete.userId && !selectedMaestros.some((m) => m.id === athlete.userId)) {
+                  setSelectedMaestros((prev) => [...prev, { id: athlete.userId!, full_name: athlete.fullName }]);
+                }
               }}
-              options={maestros
-                .filter((m) => !selectedMaestros.some((sm) => sm.full_name === m.full_name))
-                .map((m) => ({ value: m.id, label: m.full_name }))}
-              placeholder="Cerca maestro"
-              searchPlaceholder="Cerca maestro..."
+              onAthleteRemove={(index) => {
+                setSelectedMaestros((prev) => prev.filter((_, i) => i !== index));
+              }}
             />
-            {selectedMaestros.length > 0 && (
-              <ul className="flex flex-col gap-2">
-                {selectedMaestros.map((m) => (
-                  <li key={m.full_name}>
-                    <div className="flex items-center gap-4 py-3 px-3 rounded-lg" style={{ background: "#05384c" }}>
-                      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white leading-none">
-                          {m.full_name.trim().split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{m.full_name}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedMaestros((prev) => prev.filter((x) => x.full_name !== m.full_name))
-                        }
-                        className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
-                        aria-label={`Rimuovi ${m.full_name}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         </div>
 
         {/* Partecipanti */}
-        <div className="bg-white border border-black/10 shadow-sm rounded-xl">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
           </div>
           <div className="p-6">
             <AthletesSelector
               athletes={athletes}
               selectedAthletes={selectedAthletes}
+              inlineMode={true}
+              keepNeutralSelectedBorder={true}
+              keepNeutralInputFocus={true}
+              hideEmptyMessages={true}
               onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
               onAthleteRemove={(index) => setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))}
               maxAthletes={null}
@@ -627,8 +607,8 @@ export default function NuovoCorsoPage() {
         </div>
 
         {periods.map((period, pidx) => (
-          <div key={pidx} className="bg-white border border-black/10 shadow-sm rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between">
+          <div key={pidx} className="bg-white rounded-lg border border-black/10 overflow-hidden">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
               </h2>
@@ -643,9 +623,9 @@ export default function NuovoCorsoPage() {
                 </button>
               )}
             </div>
-            <div className="p-6 space-y-6">
+            <div className="divide-y divide-black/10">
 
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
                   <div className="flex-1">
                     <div className="relative">
@@ -663,13 +643,13 @@ export default function NuovoCorsoPage() {
                         value={periodStartTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "start", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
                   <div className="flex-1">
                     <div className="relative">
@@ -687,43 +667,41 @@ export default function NuovoCorsoPage() {
                         value={periodEndTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "end", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white shadow-sm pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
-                  <div className="flex-1">
-                    <div className="flex flex-wrap gap-2">
-                      {DAYS.map((day) => (
-                        <button
-                          key={day.value}
-                          type="button"
-                          onClick={() => toggleDay(pidx, day.value)}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all ${
-                            period.days.includes(day.value)
-                              ? "bg-secondary text-white border-secondary"
-                              : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                          }`}
-                        >
-                          {day.label}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="flex-1 grid grid-cols-4 sm:grid-cols-7 gap-2">
+                    {DAYS.map((day) => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleDay(pidx, day.value)}
+                        className={`w-full px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
+                          period.days.includes(day.value)
+                            ? "bg-secondary text-white border-secondary"
+                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 flex flex-wrap gap-2">
+                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {courts.map((court) => (
                       <button
                         key={court}
                         type="button"
                         onClick={() => setPeriods((prev) => prev.map((p, pIdx) => pIdx !== pidx ? p : { ...p, court }))}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all ${
+                        className={`w-full px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
                           period.court === court
                             ? "bg-secondary text-white border-secondary"
                             : "bg-white text-secondary border-gray-300 hover:border-secondary"
@@ -735,7 +713,7 @@ export default function NuovoCorsoPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 p-6">
                   <label className="text-sm text-secondary font-medium">Fascia oraria</label>
                   <div
                     className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
@@ -804,7 +782,7 @@ export default function NuovoCorsoPage() {
             type="button"
             onClick={handleSubmit}
             disabled={submitting || !name.trim()}
-            className="flex-1 px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
+            className="flex-1 px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-3"
           >
             {submitting ? (
               <>

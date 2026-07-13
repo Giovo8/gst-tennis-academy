@@ -27,7 +27,8 @@ import {
 } from "@/components/ui";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
+import ParticipantsCard from "@/components/bookings/ParticipantsCard";
+import CoachCard from "@/components/bookings/CoachCard";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
@@ -104,6 +105,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const [success, setSuccess] = useState("");
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [courtsLoading, setCourtsLoading] = useState(true);
 
@@ -363,6 +365,29 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
         .order("full_name");
 
       if (athleteData) setAthletes(athleteData);
+
+      // Load previous guests (ospiti non registrati usati in prenotazioni precedenti)
+      const { data: guestsData } = await supabase
+        .from("booking_participants")
+        .select("full_name, email, phone")
+        .eq("is_registered", false)
+        .order("full_name");
+
+      if (guestsData) {
+        const seen = new Set<string>();
+        const deduped: { fullName: string; email?: string; phone?: string }[] = guestsData.reduce(
+          (acc: { fullName: string; email?: string; phone?: string }[], g) => {
+            const key = g.full_name.trim().toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              acc.push({ fullName: g.full_name.trim(), email: g.email ?? undefined, phone: g.phone ?? undefined });
+            }
+            return acc;
+          },
+          []
+        );
+        setPreviousGuests(deduped);
+      }
 
     } catch (error) {
       console.error("Error loading data:", error);
@@ -1023,71 +1048,24 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
           {/* Card Maestro - solo per lezione privata */}
           {bookingType === "lezione_privata" && (
-            <div className={bookingCardClassName}>
-              <div className={bookingCardHeaderClassName}>
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
-              </div>
-              <div className="p-4 sm:p-6">
-                <AthletesSelector
-                  athletes={coaches.map((coach) => ({
-                    id: coach.id,
-                    full_name: coach.full_name,
-                    email: coach.email || "",
-                    phone: null,
-                    role: "maestro" as UserRole,
-                  }))}
-                  selectedAthletes={selectedCoaches[0]
-                    ? [{
-                        userId: selectedCoaches[0],
-                        fullName: coaches.find((coach) => coach.id === selectedCoaches[0])?.full_name || "Maestro",
-                        isRegistered: true,
-                      }]
-                    : []}
-                  inlineMode={true}
-                  keepNeutralSelectedBorder={true}
-                  keepNeutralInputFocus={true}
-                  allowGuestParticipants={false}
-                  searchPlaceholder="Cerca maestro"
-                  participantToneByIndex={() => "dark"}
-                  maxAthletes={null}
-                  onAthleteAdd={(athlete) => {
-                    if (athlete.userId) {
-                      setSelectedCoaches([athlete.userId]);
-                    }
-                  }}
-                  onAthleteRemove={() => {
-                    setSelectedCoaches([]);
-                  }}
-                />
-              </div>
-            </div>
+            <CoachCard
+              coaches={coaches}
+              selectedCoaches={selectedCoaches}
+              onChange={setSelectedCoaches}
+            />
           )}
 
           {/* Card Partecipanti */}
-          <div className={`${bookingCardClassName} overflow-visible relative z-20`}>
-            <div className={bookingCardHeaderClassName}>
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
-            </div>
-            <div className="p-4 sm:p-6">
-              <AthletesSelector
-                athletes={athletes}
-                selectedAthletes={selectedAthletes}
-                inlineMode={true}
-                keepNeutralSelectedBorder={true}
-                keepNeutralInputFocus={true}
-                hideEmptyMessages={true}
-                onAthleteAdd={(athlete) => {
-                  if (maxAthletesAllowed === null || selectedAthletes.length < maxAthletesAllowed) {
-                    setSelectedAthletes([...selectedAthletes, athlete]);
-                  }
-                }}
-                onAthleteRemove={(index) => {
-                  setSelectedAthletes(selectedAthletes.filter((_, i) => i !== index));
-                }}
-                maxAthletes={maxAthletesAllowed}
-              />
-            </div>
-          </div>
+          <ParticipantsCard
+            athletes={athletes}
+            selectedAthletes={selectedAthletes}
+            onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
+            onAthleteRemove={(index) =>
+              setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))
+            }
+            maxAthletes={maxAthletesAllowed}
+            previousGuests={previousGuests}
+          />
 
           {/* Card Orari disponibili */}
           <div className={bookingCardClassName}>
