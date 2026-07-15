@@ -128,6 +128,13 @@ export async function GET(request: NextRequest) {
     const { from, to } = getRange(period);
     const fromISO = from.toISOString();
     const toISO = to.toISOString();
+    const nowISO = new Date().toISOString();
+    // Le prenotazioni sono un ricavo "realizzato" solo quando la data/ora e' gia' passata:
+    // una prenotazione futura ha gia' un prezzo_applicato congelato alla creazione (il trigger
+    // lo calcola sempre, indipendentemente da quando si svolgera'), ma non deve comparire nei
+    // ricavi finche' non arriva la sua data. Il limite superiore della query si ferma quindi
+    // a "ora", anche se il periodo richiesto si estende nel futuro (mese/anno in corso).
+    const bookingsToISO = toISO < nowISO ? toISO : nowISO;
 
     const buckets = buildBuckets(period, from, to);
     const bucketMap = new Map<string, Bucket>(buckets.map((b) => [b.key, b]));
@@ -144,7 +151,7 @@ export async function GET(request: NextRequest) {
       .from("bookings")
       .select("court, start_time, end_time, type, prezzo_applicato")
       .gte("start_time", fromISO)
-      .lt("start_time", toISO)
+      .lt("start_time", bookingsToISO)
       .neq("status", "cancelled");
 
     for (const b of bookings || []) {

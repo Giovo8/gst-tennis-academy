@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import PriceListPanel from "@/components/contabilita/PriceListPanel";
+import NightThresholdPanel from "@/components/contabilita/NightThresholdPanel";
 
 export default function ListinoPrezziPage() {
   const [showNewForm, setShowNewForm] = useState(false);
@@ -20,6 +21,8 @@ export default function ListinoPrezziPage() {
         </p>
         <h1 className="text-4xl font-bold text-secondary">Listino prezzi</h1>
       </div>
+
+      <NightThresholdPanel />
 
       <button
         type="button"

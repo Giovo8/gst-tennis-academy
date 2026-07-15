@@ -12,21 +12,17 @@ import {
   Legend,
 } from "recharts";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { CHART_COLORS } from "./chartColors";
 
-export interface RevenuePoint {
+export interface CourseRevenuePoint {
   label: string;
-  campi: number;
   corsiQuota: number;
   corsiIncassato: number;
 }
 
-interface RevenueChartProps {
-  data: RevenuePoint[];
+interface CourseRevenueChartProps {
+  data: CourseRevenuePoint[];
 }
-
-const COLOR_CAMPI = "#08b3f7"; // frozen-lake 500 (primary)
-const COLOR_QUOTA = "#034863"; // frozen-lake 800 (secondary)
-const COLOR_INCASSATO = "#0690c6"; // frozen-lake 600
 
 // Formatta gli importi sull'asse Y in modo compatto (es. 1.2k €).
 function formatAxis(value: number): string {
@@ -65,22 +61,19 @@ function ChartTooltip({
 }
 
 /**
- * Grafico andamento entrate (Recharts): aree per ricavi campi e quota corsi,
- * linea per l'incassato corsi. Palette frozen-lake, responsive.
+ * Grafico andamento entrate corsi (Recharts): area per la quota attesa,
+ * linea tratteggiata per l'incassato reale. I corsi non hanno ancora una
+ * gestione completa, quindi restano separati dai ricavi campi (CampiRevenueChart).
  */
-export default function RevenueChart({ data }: RevenueChartProps) {
+export default function CourseRevenueChart({ data }: CourseRevenueChartProps) {
   return (
     <div className="w-full h-72">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="fillCampi" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={COLOR_CAMPI} stopOpacity={0.35} />
-              <stop offset="95%" stopColor={COLOR_CAMPI} stopOpacity={0.02} />
-            </linearGradient>
-            <linearGradient id="fillQuota" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={COLOR_QUOTA} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={COLOR_QUOTA} stopOpacity={0.02} />
+            <linearGradient id="fillQuotaCorsi" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={CHART_COLORS.quotaCorsi} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={CHART_COLORS.quotaCorsi} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#0000000d" vertical={false} />
@@ -98,31 +91,20 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             width={64}
           />
           <Tooltip content={<ChartTooltip />} />
-          <Legend
-            wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-            iconType="circle"
-          />
-          <Area
-            type="monotone"
-            dataKey="campi"
-            name="Ricavi campi"
-            stroke={COLOR_CAMPI}
-            strokeWidth={2}
-            fill="url(#fillCampi)"
-          />
+          <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" />
           <Area
             type="monotone"
             dataKey="corsiQuota"
             name="Quota corsi"
-            stroke={COLOR_QUOTA}
+            stroke={CHART_COLORS.quotaCorsi}
             strokeWidth={2}
-            fill="url(#fillQuota)"
+            fill="url(#fillQuotaCorsi)"
           />
           <Line
             type="monotone"
             dataKey="corsiIncassato"
             name="Incassato corsi"
-            stroke={COLOR_INCASSATO}
+            stroke={CHART_COLORS.incassatoCorsi}
             strokeWidth={2}
             strokeDasharray="5 4"
             dot={false}

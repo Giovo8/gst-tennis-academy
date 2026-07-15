@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, ChevronDown } from "lucide-react";
+import { Check, Loader2, ChevronDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 
 interface ListinoPrezzoRow {
   id: string;
   tipo_prenotazione: string;
+  formato: string | null;
+  fascia_oraria: string | null;
   durata_minuti: number;
   prezzo: number;
   valido_dal: string;
@@ -24,20 +26,61 @@ interface PriceListPanelProps {
   onCloseNewForm: () => void;
 }
 
+// Stessi tipi selezionabili in dashboard/admin/bookings/new.
 const TIPI: { value: string; label: string }[] = [
   { value: "campo", label: "Campo" },
-  { value: "lezione", label: "Lezione" },
   { value: "lezione_privata", label: "Lezione privata" },
-  { value: "lezione_gruppo", label: "Lezione di gruppo" },
 ];
+
+// Il campo ha un prezzo diverso per singolo (<=2 giocatori) e doppio (>2), come nel
+// selettore "Modalità" di dashboard/admin/bookings/new.
+const FORMATI_CAMPO: { value: string; label: string }[] = [
+  { value: "singolo", label: "Singolo" },
+  { value: "doppio", label: "Doppio" },
+];
+
+// La lezione privata ha un prezzo diverso per singola (1 partecipante) e doppia (2+
+// partecipanti), calcolato dal numero di partecipanti alla creazione della prenotazione.
+const FORMATI_LEZIONE_PRIVATA: { value: string; label: string }[] = [
+  { value: "singola", label: "Singola" },
+  { value: "doppia", label: "Doppia" },
+];
+
+const FORMATI_PER_TIPO: Record<string, { value: string; label: string }[]> = {
+  campo: FORMATI_CAMPO,
+  lezione_privata: FORMATI_LEZIONE_PRIVATA,
+};
+
+const TIPI_CON_FORMATO = ["campo", "lezione_privata"];
+
+const FORMATI = [...FORMATI_CAMPO, ...FORMATI_LEZIONE_PRIVATA];
+
+// Campo e lezione privata hanno un prezzo diverso in base alla fascia oraria (soglia
+// gestita a parte in "Soglia giorno/notte", perché stagionale). "Tutto il giorno" imposta un
+// prezzo unico che vale sia di giorno che di notte, senza doverli differenziare.
+const FASCE: { value: string; label: string }[] = [
+  { value: "giorno", label: "Giorno" },
+  { value: "notte", label: "Notte" },
+  { value: "unica", label: "Tutto il giorno" },
+];
+
+const TIPI_CON_FASCIA = ["campo", "lezione_privata"];
 
 const tipoLabel = (tipo: string) => TIPI.find((t) => t.value === tipo)?.label ?? tipo;
 
+const formatoLabel = (formato: string) => FORMATI.find((f) => f.value === formato)?.label ?? formato;
+
+const fasciaLabel = (fascia: string) => FASCE.find((f) => f.value === fascia)?.label ?? fascia;
+
+const rowLabel = (row: Pick<ListinoPrezzoRow, "tipo_prenotazione" | "formato" | "fascia_oraria">) => {
+  const parts = [tipoLabel(row.tipo_prenotazione)];
+  if (row.formato) parts.push(formatoLabel(row.formato));
+  if (row.fascia_oraria) parts.push(fasciaLabel(row.fascia_oraria));
+  return parts.join(" · ");
+};
+
 // Stessa palette per tipo prenotazione usata in dashboard/admin/bookings.
-const tipoColor = (tipo: string) =>
-  tipo === "lezione_privata" || tipo === "lezione_gruppo" || tipo === "lezione"
-    ? "#023047"
-    : "var(--secondary)";
+const tipoColor = (tipo: string) => (tipo === "lezione_privata" ? "#023047" : "var(--secondary)");
 
 const todayISODate = () => new Date().toISOString().slice(0, 10);
 
@@ -46,8 +89,8 @@ const dateOnlyToISO = (dateStr: string) => new Date(`${dateStr}T00:00:00`).toISO
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-function rowKey(tipo: string, durata: number) {
-  return `${tipo}::${durata}`;
+function rowKey(tipo: string, durata: number, formato: string | null, fasciaOraria: string | null) {
+  return `${tipo}::${durata}::${formato ?? ""}::${fasciaOraria ?? ""}`;
 }
 
 export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }: PriceListPanelProps) {
@@ -60,6 +103,8 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
   const [saving, setSaving] = useState(false);
 
   const [newTipo, setNewTipo] = useState("campo");
+  const [newFormato, setNewFormato] = useState("singolo");
+  const [newFasciaOraria, setNewFasciaOraria] = useState("giorno");
   const [newDurata, setNewDurata] = useState("60");
   const [newPrezzo, setNewPrezzo] = useState("");
   const [newValidoDal, setNewValidoDal] = useState(todayISODate());
@@ -68,6 +113,7 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [storico, setStorico] = useState<Record<string, ListinoPrezzoRow[]>>({});
   const [loadingStorico, setLoadingStorico] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
 
   const loadPrices = useCallback(async () => {
     setLoading(true);
@@ -89,6 +135,8 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
 
   async function submitPrice(params: {
     tipo_prenotazione: string;
+    formato?: string | null;
+    fascia_oraria?: string | null;
     durata_minuti: number;
     prezzo: number;
     valido_dal: string;
@@ -120,16 +168,18 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
     try {
       await submitPrice({
         tipo_prenotazione: row.tipo_prenotazione,
+        formato: row.formato,
+        fascia_oraria: row.fascia_oraria,
         durata_minuti: row.durata_minuti,
         prezzo: editParsed,
         valido_dal: dateOnlyToISO(editValidoDal),
         valido_al: editValidoAl ? dateOnlyToISO(editValidoAl) : null,
       });
-      toast.success(`Nuovo prezzo per ${tipoLabel(row.tipo_prenotazione)} (${row.durata_minuti} min) impostato`);
+      toast.success(`Nuovo prezzo per ${rowLabel(row)} (${row.durata_minuti} min) impostato`);
       setExpandedKey(null);
       setStorico((prev) => {
         const rest = { ...prev };
-        delete rest[rowKey(row.tipo_prenotazione, row.durata_minuti)];
+        delete rest[rowKey(row.tipo_prenotazione, row.durata_minuti, row.formato, row.fascia_oraria)];
         return rest;
       });
       await loadPrices();
@@ -143,7 +193,15 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
 
   const newParsedDurata = Number(newDurata);
   const newParsedPrezzo = Number(newPrezzo.replace(",", "."));
-  const isNewDurataTaken = rows.some((r) => r.tipo_prenotazione === newTipo && r.durata_minuti === newParsedDurata);
+  const newFormatoEffective = TIPI_CON_FORMATO.includes(newTipo) ? newFormato : null;
+  const newFasciaOrariaEffective = TIPI_CON_FASCIA.includes(newTipo) ? newFasciaOraria : null;
+  const isNewDurataTaken = rows.some(
+    (r) =>
+      r.tipo_prenotazione === newTipo &&
+      r.durata_minuti === newParsedDurata &&
+      r.formato === newFormatoEffective &&
+      r.fascia_oraria === newFasciaOrariaEffective,
+  );
   const isNewValidoAlValid = !newValidoAl || newValidoAl > newValidoDal;
   const isNewValid =
     Number.isInteger(newParsedDurata) &&
@@ -161,15 +219,21 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
     try {
       await submitPrice({
         tipo_prenotazione: newTipo,
+        formato: newFormatoEffective,
+        fascia_oraria: newFasciaOrariaEffective,
         durata_minuti: newParsedDurata,
         prezzo: newParsedPrezzo,
         valido_dal: dateOnlyToISO(newValidoDal),
         valido_al: newValidoAl ? dateOnlyToISO(newValidoAl) : null,
       });
-      toast.success(`Prezzo per ${tipoLabel(newTipo)} (${newParsedDurata} min) aggiunto al listino`);
+      toast.success(
+        `Prezzo per ${rowLabel({ tipo_prenotazione: newTipo, formato: newFormatoEffective, fascia_oraria: newFasciaOrariaEffective })} (${newParsedDurata} min) aggiunto al listino`,
+      );
       onCloseNewForm();
       setNewPrezzo("");
       setNewDurata("60");
+      setNewFormato(FORMATI_PER_TIPO[newTipo]?.[0].value ?? "singolo");
+      setNewFasciaOraria("giorno");
       setNewValidoDal(todayISODate());
       setNewValidoAl("");
       await loadPrices();
@@ -182,7 +246,7 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
   }
 
   async function toggleExpand(row: ListinoPrezzoRow) {
-    const key = rowKey(row.tipo_prenotazione, row.durata_minuti);
+    const key = rowKey(row.tipo_prenotazione, row.durata_minuti, row.formato, row.fascia_oraria);
     if (expandedKey === key) {
       setExpandedKey(null);
       return;
@@ -194,8 +258,10 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
     if (!storico[key]) {
       setLoadingStorico(key);
       try {
+        const formatoQuery = row.formato ? `&formato=${encodeURIComponent(row.formato)}` : "";
+        const fasciaQuery = row.fascia_oraria ? `&fascia_oraria=${encodeURIComponent(row.fascia_oraria)}` : "";
         const res = await fetch(
-          `/api/contabilita/listino-prezzi?storico=1&tipo=${encodeURIComponent(row.tipo_prenotazione)}&durata=${row.durata_minuti}`,
+          `/api/contabilita/listino-prezzi?storico=1&tipo=${encodeURIComponent(row.tipo_prenotazione)}&durata=${row.durata_minuti}${formatoQuery}${fasciaQuery}`,
         );
         if (!res.ok) throw new Error("Errore nel caricamento dello storico");
         const json = await res.json();
@@ -208,10 +274,54 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
     }
   }
 
-  const groups = TIPI.map((t) => ({
-    tipo: t,
-    items: rows.filter((r) => r.tipo_prenotazione === t.value),
-  })).filter((g) => g.items.length > 0);
+  async function deleteRow(row: ListinoPrezzoRow) {
+    const key = rowKey(row.tipo_prenotazione, row.durata_minuti, row.formato, row.fascia_oraria);
+    if (
+      !window.confirm(
+        `Eliminare il prezzo ${rowLabel(row)} (${row.durata_minuti} min, ${formatCurrency(row.prezzo)})? L'operazione non è reversibile.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingKey(key);
+    try {
+      const res = await fetch(`/api/contabilita/listino-prezzi?id=${encodeURIComponent(row.id)}`, {
+        method: "DELETE",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Errore durante l'eliminazione del prezzo");
+      }
+      toast.success(`Prezzo ${rowLabel(row)} (${row.durata_minuti} min) eliminato`);
+      if (expandedKey === key) setExpandedKey(null);
+      setStorico((prev) => {
+        const rest = { ...prev };
+        delete rest[key];
+        return rest;
+      });
+      await loadPrices();
+      onSaved?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Errore durante l'eliminazione del prezzo");
+    } finally {
+      setDeletingKey(null);
+    }
+  }
+
+  // Include anche eventuali tipi legacy presenti nel listino ma non più selezionabili
+  // (es. "lezione", "lezione_gruppo"), per non nascondere prezzi già impostati.
+  const tipiConDati = [
+    ...TIPI,
+    ...Array.from(new Set(rows.map((r) => r.tipo_prenotazione)))
+      .filter((v) => !TIPI.some((t) => t.value === v))
+      .map((v) => ({ value: v, label: tipoLabel(v) })),
+  ];
+  const groups = tipiConDati
+    .map((t) => ({
+      tipo: t,
+      items: rows.filter((r) => r.tipo_prenotazione === t.value),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <div className="space-y-4">
@@ -221,7 +331,12 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
             <label className="block text-xs font-semibold text-secondary/60 mb-1">Tipo</label>
             <select
               value={newTipo}
-              onChange={(e) => setNewTipo(e.target.value)}
+              onChange={(e) => {
+                const tipo = e.target.value;
+                setNewTipo(tipo);
+                const formati = FORMATI_PER_TIPO[tipo];
+                if (formati) setNewFormato(formati[0].value);
+              }}
               className="h-10 rounded-lg border border-black/10 bg-white px-3 text-secondary focus:outline-none focus:ring-0 focus:border-secondary"
             >
               {TIPI.map((t) => (
@@ -231,6 +346,38 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
               ))}
             </select>
           </div>
+          {TIPI_CON_FORMATO.includes(newTipo) && (
+            <div>
+              <label className="block text-xs font-semibold text-secondary/60 mb-1">Formato</label>
+              <select
+                value={newFormato}
+                onChange={(e) => setNewFormato(e.target.value)}
+                className="h-10 rounded-lg border border-black/10 bg-white px-3 text-secondary focus:outline-none focus:ring-0 focus:border-secondary"
+              >
+                {FORMATI_PER_TIPO[newTipo].map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {TIPI_CON_FASCIA.includes(newTipo) && (
+            <div>
+              <label className="block text-xs font-semibold text-secondary/60 mb-1">Fascia oraria</label>
+              <select
+                value={newFasciaOraria}
+                onChange={(e) => setNewFasciaOraria(e.target.value)}
+                className="h-10 rounded-lg border border-black/10 bg-white px-3 text-secondary focus:outline-none focus:ring-0 focus:border-secondary"
+              >
+                {FASCE.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold text-secondary/60 mb-1">Durata (min)</label>
             <input
@@ -291,7 +438,9 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
           )}
           {isNewDurataTaken && (
             <p className="w-full text-xs text-red-500">
-              Esiste già un prezzo attivo per {tipoLabel(newTipo)} a {newDurata} min: apri quella riga per modificarlo.
+              Esiste già un prezzo attivo per{" "}
+              {rowLabel({ tipo_prenotazione: newTipo, formato: newFormatoEffective, fascia_oraria: newFasciaOrariaEffective })}{" "}
+              a {newDurata} min: apri quella riga per modificarlo.
             </p>
           )}
         </div>
@@ -310,7 +459,7 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
           {groups.map((g) => (
             <div key={g.tipo.value} className="space-y-2">
               {g.items.map((row) => {
-                const key = rowKey(row.tipo_prenotazione, row.durata_minuti);
+                const key = rowKey(row.tipo_prenotazione, row.durata_minuti, row.formato, row.fascia_oraria);
                 const isExpanded = expandedKey === key;
                 return (
                   <div
@@ -318,31 +467,46 @@ export default function PriceListPanel({ onSaved, showNewForm, onCloseNewForm }:
                     className="rounded-lg overflow-visible transition-opacity"
                     style={{ background: tipoColor(row.tipo_prenotazione) }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(row)}
-                      className="w-full flex items-center gap-4 py-3 px-3 text-left hover:opacity-95 transition-opacity"
-                    >
-                      <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">min</span>
-                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
-                          {row.durata_minuti}
+                    <div className="w-full flex items-center gap-1 py-3 px-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(row)}
+                        className="flex-1 min-w-0 flex items-center gap-4 text-left hover:opacity-95 transition-opacity"
+                      >
+                        <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                          <span className="text-[10px] uppercase font-bold text-white/70 leading-none">min</span>
+                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                            {row.durata_minuti}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white text-sm truncate">{rowLabel(row)}</p>
+                          <p className="text-xs text-white/70 mt-0.5">
+                            dal {formatDate(row.valido_dal)}
+                            {row.valido_al ? ` al ${formatDate(row.valido_al)}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">
+                          {formatCurrency(row.prezzo)}
                         </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{tipoLabel(row.tipo_prenotazione)}</p>
-                        <p className="text-xs text-white/70 mt-0.5">
-                          dal {formatDate(row.valido_dal)}
-                          {row.valido_al ? ` al ${formatDate(row.valido_al)}` : ""}
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold text-white flex-shrink-0 tabular-nums">
-                        {formatCurrency(row.prezzo)}
-                      </span>
-                      <ChevronDown
-                        className={`h-4 w-4 text-white/70 flex-shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                      />
-                    </button>
+                        <ChevronDown
+                          className={`h-4 w-4 text-white/70 flex-shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteRow(row)}
+                        disabled={deletingKey === key}
+                        title="Elimina prezzo"
+                        className="flex-shrink-0 p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-40"
+                      >
+                        {deletingKey === key ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
 
                     {isExpanded && (
                       <div className="bg-black/10 px-3 pb-3 pt-1 space-y-3">

@@ -6,7 +6,11 @@ import { ChevronDown, Wallet, GraduationCap, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import PeriodSelector, { type Period } from "@/components/contabilita/PeriodSelector";
 import RevenueKpiCards from "@/components/contabilita/RevenueKpiCards";
-import RevenueChart, { type RevenuePoint } from "@/components/contabilita/RevenueChart";
+import CampiRevenueChart from "@/components/contabilita/CampiRevenueChart";
+import CourseRevenueChart from "@/components/contabilita/CourseRevenueChart";
+import RevenueByTypeChart from "@/components/contabilita/RevenueByTypeChart";
+import RevenueByCourtChart from "@/components/contabilita/RevenueByCourtChart";
+import CourseCollectionGauge from "@/components/contabilita/CourseCollectionGauge";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 
 interface CourtAgg {
@@ -24,6 +28,13 @@ interface CourseAgg {
   iscritti: number;
 }
 
+interface RevenuePoint {
+  label: string;
+  campi: number;
+  corsiQuota: number;
+  corsiIncassato: number;
+}
+
 interface ContabilitaData {
   period: Period;
   totals: { campi: number; corsiQuota: number; corsiIncassato: number; totale: number };
@@ -31,6 +42,7 @@ interface ContabilitaData {
   timeseries: RevenuePoint[];
   byCourt: CourtAgg[];
   byCourse: CourseAgg[];
+  byType: Record<string, number>;
 }
 
 export default function ContabilitaPage() {
@@ -80,7 +92,13 @@ export default function ContabilitaPage() {
               <div key={i} className="h-28 bg-gray-200 rounded-lg" />
             ))}
           </div>
-          <div className="h-80 bg-gray-200 rounded-lg" />
+          <div className="h-72 bg-gray-200 rounded-lg" />
+          <div className="h-72 bg-gray-200 rounded-lg" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-lg" />
+            ))}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-64 bg-gray-200 rounded-lg" />
             <div className="h-64 bg-gray-200 rounded-lg" />
@@ -96,13 +114,56 @@ export default function ContabilitaPage() {
         <>
           <RevenueKpiCards totals={data.totals} counts={data.counts} />
 
-          {/* Grafico andamento */}
+          {/* Grafico andamento ricavi campi */}
           <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
             <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Andamento entrate</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Andamento ricavi campi</h2>
             </div>
             <div className="px-4 py-5 sm:px-6">
-              <RevenueChart data={data.timeseries} />
+              <CampiRevenueChart data={data.timeseries} />
+            </div>
+          </div>
+
+          {/* Grafico andamento entrate corsi */}
+          <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Andamento entrate corsi</h2>
+              <p className="text-xs text-secondary/50 mt-0.5">
+                La gestione dei corsi è ancora in sviluppo: questi numeri sono indicativi.
+              </p>
+            </div>
+            <div className="px-4 py-5 sm:px-6">
+              <CourseRevenueChart data={data.timeseries} />
+            </div>
+          </div>
+
+          {/* Grafici di dettaglio */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Ricavi campi per tipo</h2>
+              </div>
+              <div className="px-4 py-5 sm:px-6">
+                <RevenueByTypeChart byType={data.byType} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Ricavi per campo</h2>
+              </div>
+              <div className="px-4 py-5 sm:px-6">
+                <RevenueByCourtChart data={data.byCourt} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+                <h2 className="text-base sm:text-lg font-semibold text-secondary">Incasso corsi</h2>
+              </div>
+              <div className="px-4 py-5 sm:px-6">
+                <CourseCollectionGauge quota={data.totals.corsiQuota} incassato={data.totals.corsiIncassato} />
+              </div>
             </div>
           </div>
 

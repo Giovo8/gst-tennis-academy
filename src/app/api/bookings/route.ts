@@ -386,6 +386,17 @@ export async function POST(req: Request) {
 
     const normalizedBooking = normalizeBookingMutation(bookingDataWithStatus);
 
+    // Formato calcolato una sola volta dal numero di partecipanti al momento della creazione
+    // e mai ricalcolato: campo -> singolo (<=2 giocatori) / doppio (>2); lezione_privata ->
+    // singola (1 partecipante) / doppia (2+ partecipanti).
+    const bookingType = type || "campo";
+    const bookingFormato =
+      bookingType === "campo"
+        ? (participants.length > 2 ? "doppio" : "singolo")
+        : bookingType === "lezione_privata"
+          ? (participants.length > 1 ? "doppia" : "singola")
+          : null;
+
     const { data, error } = await supabaseServer
       .from("bookings")
       .insert([
@@ -395,6 +406,7 @@ export async function POST(req: Request) {
           created_by: user.id,
           court,
           type: type || "campo",
+          formato: bookingFormato,
           start_time,
           end_time,
           status: normalizedBooking.status,

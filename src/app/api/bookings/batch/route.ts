@@ -98,19 +98,32 @@ export async function POST(request: Request) {
     const { data: insertedBookings, error: insertError } = await supabase
       .from("bookings")
       .insert(
-        bookings.map((b) => ({
-          user_id: b.user_id,
-          coach_id: b.coach_id || null,
-          created_by: auth.user.id,
-          court: b.court,
-          type: b.type || "campo",
-          start_time: b.start_time,
-          end_time: b.end_time,
-          status: b.status === "cancelled" || b.status === "cancellation_requested" ? b.status : "confirmed",
-          coach_confirmed: true,
-          manager_confirmed: true,
-          notes: b.notes || null,
-        }))
+        bookings.map((b) => {
+          const type = b.type || "campo";
+          const participantsCount = Array.isArray(b.participants) ? b.participants.length : 0;
+          return {
+            user_id: b.user_id,
+            coach_id: b.coach_id || null,
+            created_by: auth.user.id,
+            court: b.court,
+            type,
+            // Formato calcolato dal numero di partecipanti alla creazione e mai ricalcolato in
+            // seguito: campo -> singolo (<=2 giocatori) / doppio (>2); lezione_privata ->
+            // singola (1 partecipante) / doppia (2+ partecipanti).
+            formato:
+              type === "campo"
+                ? (participantsCount > 2 ? "doppio" : "singolo")
+                : type === "lezione_privata"
+                  ? (participantsCount > 1 ? "doppia" : "singola")
+                  : null,
+            start_time: b.start_time,
+            end_time: b.end_time,
+            status: b.status === "cancelled" || b.status === "cancellation_requested" ? b.status : "confirmed",
+            coach_confirmed: true,
+            manager_confirmed: true,
+            notes: b.notes || null,
+          };
+        })
       )
       .select();
 
@@ -323,12 +336,7 @@ export async function POST(request: Request) {
         await Promise.all(
           insertedBookings.map((booking, index) => {
             const sourceBooking = bookings[index];
-            const participantsCount = Array.isArray(sourceBooking?.participants)
-              ? sourceBooking.participants.length
-              : 0;
-            const bookingMode = booking.type === "campo"
-              ? (participantsCount > 2 ? "doppio" : "singolo")
-              : undefined;
+            const bookingMode = booking.formato || undefined;
             const normalizedAthleteName = athleteName.trim().toLowerCase();
             const additionalAthleteNames: string[] = Array.from(
               new Set<string>(
@@ -406,12 +414,7 @@ export async function POST(request: Request) {
             if (athleteEmailContext.athleteRecipientEmails.length === 0) {
               return Promise.resolve();
             }
-              const participantsCount = Array.isArray(sourceBooking?.participants)
-                ? sourceBooking.participants.length
-                : 0;
-            const bookingModeForBatch = booking.type === "campo"
-              ? (participantsCount > 2 ? "doppio" : "singolo")
-              : undefined;
+            const bookingModeForBatch = booking.formato || undefined;
             return sendBookingCreatedEmailToAthlete({
               bookingId: booking.id,
               bookedByName: userProfile?.full_name || athleteEmailContext.athleteName,

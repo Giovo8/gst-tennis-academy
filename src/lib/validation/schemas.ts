@@ -130,10 +130,36 @@ export const updateBookingSchema = baseBookingSchema.partial().extend({
 
 export const createListinoPrezzoSchema = z.object({
   tipo_prenotazione: z.enum(['campo', 'lezione', 'lezione_privata', 'lezione_gruppo']),
+  // Obbligatorio per 'campo' (singolo/doppio) e 'lezione_privata' (singola/doppia in base al
+  // numero di partecipanti), non ammesso per gli altri tipi.
+  formato: z.enum(['singolo', 'doppio', 'singola', 'doppia']).optional().nullable(),
+  // Obbligatoria solo per 'campo'/'lezione_privata' (prezzo diverso per giorno/notte, oppure
+  // 'unica' per un prezzo unico valido su tutta la giornata).
+  fascia_oraria: z.enum(['giorno', 'notte', 'unica']).optional().nullable(),
   durata_minuti: z.number().int('Durata non valida').positive('Durata deve essere maggiore di zero'),
   prezzo: z.number().nonnegative('Il prezzo non può essere negativo'),
   valido_dal: dateStringSchema.optional(),
   // Se assente/vuoto il prezzo resta valido a tempo indeterminato (finché non ne viene impostato un altro).
+  valido_al: dateStringSchema.optional().nullable(),
+}).refine((data) => !data.valido_al || new Date(data.valido_al) > new Date(data.valido_dal ?? Date.now()), {
+  message: 'La data di fine validità deve essere successiva alla data di decorrenza',
+  path: ['valido_al'],
+}).refine((data) => (data.tipo_prenotazione === 'campo') === ['singolo', 'doppio'].includes(data.formato ?? ''), {
+  message: "Il formato (singolo/doppio) è obbligatorio per il tipo Campo e non ammesso per gli altri tipi",
+  path: ['formato'],
+}).refine((data) => (data.tipo_prenotazione === 'lezione_privata') === ['singola', 'doppia'].includes(data.formato ?? ''), {
+  message: "Il formato (singola/doppia) è obbligatorio per la Lezione privata e non ammesso per gli altri tipi",
+  path: ['formato'],
+}).refine((data) => (['campo', 'lezione_privata'].includes(data.tipo_prenotazione)) === Boolean(data.fascia_oraria), {
+  message: "La fascia oraria (giorno/notte/unica) è obbligatoria per Campo e Lezione privata e non ammessa per gli altri tipi",
+  path: ['fascia_oraria'],
+});
+
+// ==================== SOGLIA ORARIO NOTTURNO SCHEMAS ====================
+
+export const createSogliaOrarioNotturnoSchema = z.object({
+  ora_notte: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Orario non valido (HH:MM)'),
+  valido_dal: dateStringSchema.optional(),
   valido_al: dateStringSchema.optional().nullable(),
 }).refine((data) => !data.valido_al || new Date(data.valido_al) > new Date(data.valido_dal ?? Date.now()), {
   message: 'La data di fine validità deve essere successiva alla data di decorrenza',
