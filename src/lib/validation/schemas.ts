@@ -126,6 +126,20 @@ export const updateBookingSchema = baseBookingSchema.partial().extend({
   id: uuidSchema,
 });
 
+// ==================== LISTINO PREZZI SCHEMAS ====================
+
+export const createListinoPrezzoSchema = z.object({
+  tipo_prenotazione: z.enum(['campo', 'lezione', 'lezione_privata', 'lezione_gruppo']),
+  durata_minuti: z.number().int('Durata non valida').positive('Durata deve essere maggiore di zero'),
+  prezzo: z.number().nonnegative('Il prezzo non può essere negativo'),
+  valido_dal: dateStringSchema.optional(),
+  // Se assente/vuoto il prezzo resta valido a tempo indeterminato (finché non ne viene impostato un altro).
+  valido_al: dateStringSchema.optional().nullable(),
+}).refine((data) => !data.valido_al || new Date(data.valido_al) > new Date(data.valido_dal ?? Date.now()), {
+  message: 'La data di fine validità deve essere successiva alla data di decorrenza',
+  path: ['valido_al'],
+});
+
 // ==================== TOURNAMENT SCHEMAS ====================
 
 export const tournamentStatusSchema = z.enum([
@@ -212,6 +226,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type BookingParticipant = z.infer<typeof bookingParticipantSchema>;
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 export type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
+export type CreateListinoPrezzoInput = z.infer<typeof createListinoPrezzoSchema>;
 export type CreateTournamentInput = z.infer<typeof createTournamentSchema>;
 export type UpdateTournamentInput = z.infer<typeof updateTournamentSchema>;
 export type CreateNewsInput = z.infer<typeof createNewsSchema>;

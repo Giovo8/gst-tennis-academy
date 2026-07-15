@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import {
@@ -20,6 +21,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from "@/components/ui";
+import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
 
@@ -43,33 +45,39 @@ const WEEK_DAYS = [
 
 const CALENDAR_WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
 
-const TIME_SLOTS: string[] = [];
-for (let hour = 7; hour <= 22; hour++) {
-  TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:00`);
-  if (hour < 22) {
-    TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
-  }
-}
+type CourtBlockPeriod = {
+  court: string;
+  startDate: string;
+  endDate: string;
+  weekDays: number[];
+  slots: string[];
+};
+
+const createEmptyPeriod = (): CourtBlockPeriod => ({
+  court: "",
+  startDate: "",
+  endDate: "",
+  weekDays: [],
+  slots: [],
+});
 
 export default function NewCourtBlockPage() {
   const router = useRouter();
 
-  const [selectedCourt, setSelectedCourt] = useState("");
+  const [blockName, setBlockName] = useState("");
   const [blockType, setBlockType] = useState("");
   const [customBlockType, setCustomBlockType] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("07:00");
-  const [endTime, setEndTime] = useState("22:00");
-  const [selectedWeekDays, setSelectedWeekDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [periods, setPeriods] = useState<CourtBlockPeriod[]>([createEmptyPeriod()]);
   const [notes, setNotes] = useState("");
+
+  const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
-  const [activeDateField, setActiveDateField] = useState<"start" | "end">("start");
+  const [activeDateContext, setActiveDateContext] = useState<{ pidx: number; field: "start" | "end" } | null>(null);
   const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
     const d = new Date();
@@ -130,10 +138,11 @@ export default function NewCourtBlockPage() {
     setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
   };
 
-  const openDatePickerModal = (field: "start" | "end") => {
-    setActiveDateField(field);
-    const currentValue = field === "start" ? startDate : endDate;
-    const parsed = parseDateInput(currentValue) || parseDateInput(startDate) || new Date();
+  const openDatePickerModal = (pidx: number, field: "start" | "end") => {
+    const period = periods[pidx];
+    const currentValue = field === "start" ? period.startDate : period.endDate;
+    const parsed = parseDateInput(currentValue) || parseDateInput(period.startDate) || new Date();
+    setActiveDateContext({ pidx, field });
     setPendingDate(parsed);
     setCalendarViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
     setDatePickerModalOpen(true);
@@ -146,33 +155,91 @@ export default function NewCourtBlockPage() {
   };
 
   const applyDateSelection = () => {
+    if (!activeDateContext) return;
+    const { pidx, field } = activeDateContext;
     const selected = toInputDateValue(pendingDate);
 
-    if (activeDateField === "start") {
-      setStartDate(selected);
-      if (endDate && endDate < selected) {
-        setEndDate(selected);
-      }
-    } else {
-      if (startDate && selected < startDate) {
-        setEndDate(startDate);
-      } else {
-        setEndDate(selected);
-      }
-    }
+    setPeriods((prev) =>
+      prev.map((p, i) => {
+        if (i !== pidx) return p;
+        if (field === "start") {
+          const endDate = p.endDate && p.endDate < selected ? selected : p.endDate;
+          return { ...p, startDate: selected, endDate };
+        }
+        const endDate = p.startDate && selected < p.startDate ? p.startDate : selected;
+        return { ...p, endDate };
+      }),
+    );
 
     setDatePickerModalOpen(false);
   };
 
-  const toggleWeekDay = (day: number) => {
-    setSelectedWeekDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+  const toggleWeekDay = (pidx: number, day: number) => {
+    setPeriods((prev) =>
+      prev.map((p, i) => {
+        if (i !== pidx) return p;
+        const weekDays = p.weekDays.includes(day) ? p.weekDays.filter((d) => d !== day) : [...p.weekDays, day];
+        return { ...p, weekDays };
+      }),
     );
+  };
+
+  const setPeriodCourt = (pidx: number, court: string) => {
+    setPeriods((prev) => prev.map((p, i) => (i !== pidx ? p : { ...p, court })));
   };
 
   const toMinutes = (time: string) => {
     const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
+  };
+
+  const addMinutesToTime = (time: string, minutesToAdd: number) => {
+    const total = toMinutes(time) + minutesToAdd;
+    const hours = Math.floor(total / 60).toString().padStart(2, "0");
+    const minutes = (total % 60).toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  const getPeriodTimeRange = (slots: string[]) => {
+    const sorted = [...slots].sort((a, b) => toMinutes(a) - toMinutes(b));
+    const startTime = sorted[0] || "";
+    const endTime = sorted.length > 0 ? addMinutesToTime(sorted[sorted.length - 1], 30) : "";
+    return { startTime, endTime };
+  };
+
+  const toggleSlotSelection = (pidx: number, time: string) => {
+    setPeriods((prev) =>
+      prev.map((p, i) => {
+        if (i !== pidx) return p;
+        const slots = p.slots;
+
+        if (slots.includes(time)) {
+          return { ...p, slots: slots.filter((t) => t !== time) };
+        }
+
+        if (slots.length === 0) {
+          return { ...p, slots: [time] };
+        }
+
+        const allSlots = [...slots, time].sort((a, b) => toMinutes(a) - toMinutes(b));
+
+        for (let idx = 1; idx < allSlots.length; idx++) {
+          if (toMinutes(allSlots[idx]) - toMinutes(allSlots[idx - 1]) !== 30) {
+            return { ...p, slots: [time] };
+          }
+        }
+
+        return { ...p, slots: allSlots };
+      }),
+    );
+  };
+
+  const addPeriod = () => {
+    setPeriods((prev) => [...prev, createEmptyPeriod()]);
+  };
+
+  const removePeriod = (idx: number) => {
+    setPeriods((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const getBlockReason = () => {
@@ -183,15 +250,11 @@ export default function NewCourtBlockPage() {
       typeLabel = `Altro (${customBlockType.trim()})`;
     }
 
-    return notes ? `${typeLabel} - ${notes}` : typeLabel;
+    const base = notes ? `${typeLabel} - ${notes}` : typeLabel;
+    return blockName.trim() ? `${blockName.trim()} - ${base}` : base;
   };
 
   async function handleCreateBlock() {
-    if (!selectedCourt) {
-      setError("Seleziona un campo");
-      return;
-    }
-
     if (!blockType) {
       setError("Seleziona un tipo di blocco");
       return;
@@ -202,34 +265,23 @@ export default function NewCourtBlockPage() {
       return;
     }
 
-    if (!startDate || !endDate) {
-      setError("Seleziona data inizio e data fine");
-      return;
-    }
-
-    if (selectedWeekDays.length === 0) {
-      setError("Seleziona almeno un giorno della settimana");
-      return;
-    }
-
-    const baseStartMinutes = toMinutes(startTime);
-    const baseEndMinutes = toMinutes(endTime);
-    if (baseEndMinutes <= baseStartMinutes) {
-      setError("L'orario fine deve essere successivo all'orario inizio");
-      return;
-    }
-
-    const start = parseDateInput(startDate);
-    const end = parseDateInput(endDate);
-
-    if (!start || !end) {
-      setError("Formato data non valido");
-      return;
-    }
-
-    if (end < start) {
-      setError("La data fine deve essere successiva alla data inizio");
-      return;
+    for (const period of periods) {
+      if (!period.court) {
+        setError("Seleziona un campo per ogni periodo");
+        return;
+      }
+      if (!period.startDate || !period.endDate) {
+        setError("Seleziona data inizio e data fine per ogni periodo");
+        return;
+      }
+      if (period.weekDays.length === 0) {
+        setError("Seleziona almeno un giorno della settimana per ogni periodo");
+        return;
+      }
+      if (period.slots.length === 0) {
+        setError("Seleziona l'orario per ogni periodo");
+        return;
+      }
     }
 
     try {
@@ -244,29 +296,43 @@ export default function NewCourtBlockPage() {
         reason: string;
       }> = [];
 
-      const currentDate = new Date(start);
-      while (currentDate <= end) {
-        const dayOfWeek = currentDate.getDay();
+      for (const period of periods) {
+        const start = parseDateInput(period.startDate);
+        const end = parseDateInput(period.endDate);
 
-        if (selectedWeekDays.includes(dayOfWeek)) {
-          const [startHour, startMinute] = startTime.split(":").map(Number);
-          const [endHour, endMinute] = endTime.split(":").map(Number);
-
-          const dayStart = new Date(currentDate);
-          dayStart.setHours(startHour, startMinute, 0, 0);
-
-          const dayEnd = new Date(currentDate);
-          dayEnd.setHours(endHour, endMinute, 0, 0);
-
-          blocksToInsert.push({
-            court_id: selectedCourt,
-            start_time: dayStart.toISOString(),
-            end_time: dayEnd.toISOString(),
-            reason: reasonText,
-          });
+        if (!start || !end) {
+          throw new Error("Formato data non valido");
         }
 
-        currentDate.setDate(currentDate.getDate() + 1);
+        if (end < start) {
+          throw new Error("La data fine deve essere successiva alla data inizio");
+        }
+
+        const { startTime, endTime } = getPeriodTimeRange(period.slots);
+        const [startHour, startMinute] = startTime.split(":").map(Number);
+        const [endHour, endMinute] = endTime.split(":").map(Number);
+
+        const currentDate = new Date(start);
+        while (currentDate <= end) {
+          const dayOfWeek = currentDate.getDay();
+
+          if (period.weekDays.includes(dayOfWeek)) {
+            const dayStart = new Date(currentDate);
+            dayStart.setHours(startHour, startMinute, 0, 0);
+
+            const dayEnd = new Date(currentDate);
+            dayEnd.setHours(endHour, endMinute, 0, 0);
+
+            blocksToInsert.push({
+              court_id: period.court,
+              start_time: dayStart.toISOString(),
+              end_time: dayEnd.toISOString(),
+              reason: reasonText,
+            });
+          }
+
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
       }
 
       if (blocksToInsert.length === 0) {
@@ -291,6 +357,10 @@ export default function NewCourtBlockPage() {
       setSubmitting(false);
     }
   }
+
+  const periodsValid = periods.every(
+    (p) => p.court && p.startDate && p.endDate && p.weekDays.length > 0 && p.slots.length > 0,
+  );
 
   return (
     <div className="space-y-6 pt-3">
@@ -331,162 +401,213 @@ export default function NewCourtBlockPage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli blocco</h2>
         </div>
         <div className="p-6">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-                  {COURTS.map((court) => (
-                    <button
-                      key={court}
-                      type="button"
-                      onClick={() => setSelectedCourt(court)}
-                      className={`px-5 py-2 text-sm text-left font-medium rounded-lg border transition-all ${
-                        selectedCourt === court
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {court}
-                    </button>
-                  ))}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Nome Blocco</label>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={blockName}
+                onChange={(e) => setBlockName(e.target.value)}
+                placeholder="Es. Manutenzione rete campo 2"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 mt-6">
+            <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+              Tipo blocco
+            </label>
+            <div className="flex-1">
+              <div className="flex flex-col sm:grid sm:grid-cols-5 gap-2">
+                {BLOCK_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setBlockType(type.value)}
+                    className={`w-full px-5 py-2 text-sm text-center font-medium rounded-lg border transition-all ${
+                      blockType === type.value
+                        ? "bg-secondary text-white border-secondary"
+                        : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+              {blockType === "altro" && (
+                <div className="mt-4">
+                  <label className="block text-xs text-secondary/60 mb-2">
+                    Specifica in cosa consiste
+                  </label>
+                  <input
+                    type="text"
+                    value={customBlockType}
+                    onChange={(e) => setCustomBlockType(e.target.value)}
+                    placeholder="Es. intervento tecnico esterno"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {periods.map((period, pidx) => (
+        <div key={pidx} className="page-card">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">
+              {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
+            </h2>
+            {periods.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removePeriod(pidx)}
+                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                aria-label="Rimuovi periodo"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="p-6">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
+                <div className="flex-1">
+                  <button
+                    type="button"
+                    onClick={() => openDatePickerModal(pidx, "start")}
+                    className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                  >
+                    {formatDateButtonLabel(period.startDate)}
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Tipo blocco
-              </label>
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-                  {BLOCK_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setBlockType(type.value)}
-                      className={`px-5 py-2 text-sm text-left font-medium rounded-lg border transition-all ${
-                        blockType === type.value
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
+                <div className="flex-1">
+                  <button
+                    type="button"
+                    onClick={() => openDatePickerModal(pidx, "end")}
+                    className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                  >
+                    {formatDateButtonLabel(period.endDate)}
+                  </button>
                 </div>
-                {blockType === "altro" && (
-                  <div className="mt-4">
-                    <label className="block text-xs text-secondary/60 mb-2">
-                      Specifica in cosa consiste
-                    </label>
-                    <input
-                      type="text"
-                      value={customBlockType}
-                      onChange={(e) => setCustomBlockType(e.target.value)}
-                      placeholder="Es. intervento tecnico esterno"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                    />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
+                  Giorni settimana
+                </label>
+                <div className="flex-1">
+                  <div className="flex flex-col sm:grid sm:grid-cols-7 gap-2">
+                    {WEEK_DAYS.map((day) => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleWeekDay(pidx, day.value)}
+                        className={`w-full px-4 py-2 text-sm text-center font-medium rounded-lg border transition-all ${
+                          period.weekDays.includes(day.value)
+                            ? "bg-secondary text-white border-secondary"
+                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Periodo</h2>
-        </div>
-        <div className="p-6">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
-              <div className="flex-1">
-                <button
-                  type="button"
-                  onClick={() => openDatePickerModal("start")}
-                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
+                <div className="flex-1">
+                  <div className="flex flex-col sm:grid sm:grid-cols-4 gap-2">
+                    {COURTS.map((court) => (
+                      <button
+                        key={court}
+                        type="button"
+                        onClick={() => setPeriodCourt(pidx, court)}
+                        className={`w-full px-5 py-2 text-sm text-center font-medium rounded-lg border transition-all ${
+                          period.court === court
+                            ? "bg-secondary text-white border-secondary"
+                            : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                        }`}
+                      >
+                        {court}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-sm text-secondary font-medium">Fascia oraria</label>
+                <div
+                  ref={scrollRef}
+                  className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+                  style={{ overflowX: "scroll", WebkitOverflowScrolling: "touch" }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
                 >
-                  {formatDateButtonLabel(startDate)}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
-              <div className="flex-1">
-                <button
-                  type="button"
-                  onClick={() => openDatePickerModal("end")}
-                  className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                >
-                  {formatDateButtonLabel(endDate)}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Giorni settimana
-              </label>
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-                  {WEEK_DAYS.map((day) => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleWeekDay(day.value)}
-                      className={`px-4 py-2 text-sm text-left font-medium rounded-lg border transition-all ${
-                        selectedWeekDays.includes(day.value)
-                          ? "bg-secondary text-white border-secondary"
-                          : "bg-white text-secondary border-gray-300 hover:border-secondary"
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
+                  <div className="min-w-[1280px]">
+                    <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-secondary rounded-lg mb-3">
+                      {Array.from({ length: 16 }, (_, i) => (
+                        <div key={i} className="p-3 text-center font-bold text-white text-xs flex items-center justify-center">
+                          {String(7 + i).padStart(2, "0")}:00
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-[repeat(16,_minmax(80px,_1fr))] bg-white rounded-lg" style={{ minHeight: "70px" }}>
+                      {Array.from({ length: 16 }, (_, hi) => {
+                        const hour = 7 + hi;
+                        const t1 = `${String(hour).padStart(2, "0")}:00`;
+                        const t2 = hour < 22 ? `${String(hour).padStart(2, "0")}:30` : null;
+                        return (
+                          <div key={hi} className="border-r border-gray-200 last:border-r-0 relative flex">
+                            <div
+                              className={`flex-1 transition-colors cursor-pointer ${
+                                period.slots.includes(t1) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
+                              }`}
+                              onClick={() => toggleSlotSelection(pidx, t1)}
+                              title={t1}
+                            >
+                              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px h-4 bg-gray-300 pointer-events-none" />
+                            </div>
+                            {t2 && (
+                              <div
+                                className={`flex-1 transition-colors cursor-pointer ${
+                                  period.slots.includes(t2) ? "bg-secondary" : "bg-white hover:bg-secondary/10"
+                                }`}
+                                onClick={() => toggleSlotSelection(pidx, t2)}
+                                title={t2}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ora inizio</label>
-              <div className="flex-1">
-                <select
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-black/10"
-                >
-                  {TIME_SLOTS.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Ora fine</label>
-              <div className="flex-1">
-                <select
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary appearance-none cursor-pointer focus:outline-none focus:ring-0 focus:border-black/10"
-                >
-                  {TIME_SLOTS.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addPeriod}
+        className="w-full flex items-center justify-center px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium"
+      >
+        Aggiungi periodo
+      </button>
 
       <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
@@ -505,15 +626,7 @@ export default function NewCourtBlockPage() {
 
       <button
         onClick={handleCreateBlock}
-        disabled={
-          submitting ||
-          !selectedCourt ||
-          !blockType ||
-          !startDate ||
-          !endDate ||
-          selectedWeekDays.length === 0 ||
-          (blockType === "altro" && !customBlockType.trim())
-        }
+        disabled={submitting || !blockType || !periodsValid || (blockType === "altro" && !customBlockType.trim())}
         className="w-full px-6 py-3 bg-secondary hover:opacity-90 disabled:bg-secondary/20 disabled:text-secondary/40 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-3"
       >
         {submitting ? (
@@ -534,7 +647,7 @@ export default function NewCourtBlockPage() {
         >
           <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
             <ModalTitle className="font-semibold text-white">
-              {activeDateField === "start" ? "Seleziona Data Inizio" : "Seleziona Data Fine"}
+              {activeDateContext?.field === "start" ? "Seleziona Data Inizio" : "Seleziona Data Fine"}
             </ModalTitle>
           </ModalHeader>
           <ModalBody className="px-4 py-4 bg-white dark:!bg-white">

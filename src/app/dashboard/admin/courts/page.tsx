@@ -325,7 +325,7 @@ export default function CourtsBlockPage() {
           placeholder="Cerca per campo, motivo o tipo blocco..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+          className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
         />
       </div>
       <button
@@ -334,7 +334,7 @@ export default function CourtsBlockPage() {
         className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
           hasActiveFilters
             ? "border-secondary bg-secondary text-white hover:opacity-90"
-            : "border-gray-200 bg-white text-secondary hover:border-gray-300 hover:bg-gray-50"
+            : "border-black/10 bg-white text-secondary hover:bg-gray-50"
         }`}
         aria-label="Apri filtri blocchi campi"
         title="Filtri"
@@ -346,29 +346,28 @@ export default function CourtsBlockPage() {
 
   return (
     <div className="space-y-6 pt-3">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="breadcrumb text-secondary/60">
-            <Link
-              href="/dashboard/admin/bookings"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Prenotazioni
-            </Link>
-            {" › "}
-            <span>Blocco Campi</span>
-          </p>
-          <h1 className="text-4xl font-bold text-secondary">Blocco Campi</h1>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+      <div>
+        <p className="breadcrumb text-secondary/60">
           <Link
-            href="/dashboard/admin/courts/new"
-            className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            href="/dashboard/admin/bookings"
+            className="hover:text-secondary/80 transition-colors"
           >
-            <Plus className="h-4 w-4" />
-            Crea Blocco
+            Prenotazioni
           </Link>
-        </div>
+          {" › "}
+          <span>Blocco Campi</span>
+        </p>
+        <h1 className="text-4xl font-bold text-secondary">Blocco Campi</h1>
+      </div>
+
+      <div className="w-full">
+        <Link
+          href="/dashboard/admin/courts/new"
+          className="w-full px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Crea Blocco</span>
+        </Link>
       </div>
 
       <div className="flex flex-col gap-3">

@@ -81,7 +81,26 @@ function serializeError(error: unknown): { name: string; message: string; stack?
   if (error instanceof Error) {
     return { name: error.name, message: error.message, stack: error.stack };
   }
-  return { name: 'UnknownError', message: String(error) };
+  return { name: 'UnknownError', message: describeError(error) };
+}
+
+/**
+ * Estrae un messaggio leggibile da errori non-Error (es. PostgrestError di Supabase:
+ * { message, code, details, hint }), che con String(error) darebbero solo "[object Object]".
+ */
+function describeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null) {
+    const err = error as Record<string, unknown>;
+    const parts: string[] = [];
+    if (typeof err.message === 'string' && err.message) parts.push(err.message);
+    if (typeof err.code === 'string' || typeof err.code === 'number') parts.push(`code=${err.code}`);
+    if (typeof err.details === 'string' && err.details) parts.push(`details=${err.details}`);
+    if (typeof err.hint === 'string' && err.hint) parts.push(`hint=${err.hint}`);
+    if (parts.length > 0) return parts.join(' | ');
+    return safeStringify(err);
+  }
+  return String(error);
 }
 
 class SecureLogger {
@@ -190,13 +209,13 @@ class SecureLogger {
 
   public error(message: string, error?: Error | unknown, context?: LogContext): void {
     const errorObj =
-      error instanceof Error ? error : error !== undefined ? new Error(String(error)) : undefined;
+      error instanceof Error ? error : error !== undefined ? new Error(describeError(error)) : undefined;
     this.write({ level: 'error', message, timestamp: new Date().toISOString(), context, error: errorObj });
   }
 
   public fatal(message: string, error?: Error | unknown, context?: LogContext): void {
     const errorObj =
-      error instanceof Error ? error : error !== undefined ? new Error(String(error)) : undefined;
+      error instanceof Error ? error : error !== undefined ? new Error(describeError(error)) : undefined;
     this.write({ level: 'fatal', message, timestamp: new Date().toISOString(), context, error: errorObj });
   }
 

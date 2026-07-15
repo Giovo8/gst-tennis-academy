@@ -21,6 +21,7 @@ import {
   BarChart2,
   GraduationCap,
   Shield,
+  Wallet,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -153,6 +154,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Statistiche",
       href: "/dashboard/admin/statistiche",
       icon: <BarChart2 className="h-5 w-5" />,
+    },
+    {
+      label: "Contabilità",
+      href: "/dashboard/admin/contabilita",
+      icon: <Wallet className="h-5 w-5" />,
     },
   ];
 
