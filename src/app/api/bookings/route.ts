@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
-import { createBookingSchema, updateBookingSchema } from "@/lib/validation/schemas";
+import { createBookingSchema } from "@/lib/validation/schemas";
 import { sanitizeObject, sanitizePhone, sanitizeUuid } from "@/lib/security/sanitize-server";
 import { applyRateLimit, RATE_LIMITS, getClientIdentifier } from "@/lib/security/rate-limiter";
 import { shouldNotifyAdminsForUserBookingDeletion } from "@/lib/bookings/bookingDeletionNotifications";
@@ -9,7 +9,8 @@ import { BOOKING_DELETE_SNAPSHOT_FIELDS } from "@/lib/bookings/bookingDeletionEm
 import logger from "@/lib/logger/secure-logger";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
-import { validateRestrictedBookingHours, parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
+import { validateRestrictedBookingHours } from "@/lib/bookings/bookingTimeRestrictions";
+import { findCourseConflict, COURSE_CONFLICT_SELECT } from "@/lib/bookings/courseConflicts";
 import {
   handleBookingCreatedSideEffects,
   handleBookingPendingSideEffects,
@@ -106,7 +107,7 @@ export async function GET(req: Request) {
 
     // Fetch participants for all bookings
     const bookingIds = bookings?.map(b => b.id) || [];
-    let allParticipants: any[] = [];
+    let allParticipants: Array<{ booking_id: string; [key: string]: unknown }> = [];
 
     if (bookingIds.length > 0) {
       const { data: participants } = await supabaseServer
@@ -305,15 +306,9 @@ export async function POST(req: Request) {
     }
 
     // Check for course conflicts overlapping the requested slot
-    const bookingStart = new Date(start_time);
-    const bookingEnd = new Date(end_time);
-    const dateStr = start_time.split("T")[0];
-    const DAY_NAMES_COURSE = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
-    const dayName = DAY_NAMES_COURSE[bookingStart.getDay()];
-
     const { data: courseData, error: courseError } = await supabaseServer
       .from("courses")
-      .select("id, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides")
+      .select(COURSE_CONFLICT_SELECT)
       .eq("is_active", true);
 
     if (courseError) {
@@ -324,46 +319,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const hasCourseConflict = (courseData ?? []).some((c) => {
-      if (c.start_date && c.start_date > dateStr) return false;
-      if (c.end_date && c.end_date < dateStr) return false;
-      if (c.cancelled_dates && (c.cancelled_dates as string[]).includes(dateStr)) return false;
-
-      const isExtraDate = c.extra_dates && (c.extra_dates as string[]).includes(dateStr);
-      const isRegularDay = (c.schedule_days as string[]).includes(dayName);
-      if (!isExtraDate && !isRegularDay) return false;
-
-      let courseCourtForDay: string | null = c.court_name ?? null;
-      let timeStr: string | null = c.schedule_time ?? null;
-      // lesson_overrides: per-date court override has highest priority
-      if (c.lesson_overrides && (c.lesson_overrides as Record<string, string>)[dateStr]) {
-        courseCourtForDay = (c.lesson_overrides as Record<string, string>)[dateStr];
-      } else if (c.schedule_periods && (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).length > 0) {
-        const mp = (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).find((p) => p.days.includes(dayName));
-        if (mp?.court) courseCourtForDay = mp.court;
-      }
-      const normalizedCourseCourt = courseCourtForDay?.trim();
-      // Courses without a resolved court for the day must not block court bookings.
-      if (!normalizedCourseCourt) return false;
-      if (normalizedCourseCourt !== court) return false;
-      // lesson_time_overrides: per-date time override has highest priority
-      if (c.lesson_time_overrides && (c.lesson_time_overrides as Record<string, string>)[dateStr]) {
-        timeStr = (c.lesson_time_overrides as Record<string, string>)[dateStr];
-      } else if (c.schedule_periods && (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).length > 0) {
-        const mp = (c.schedule_periods as { days: string[]; time: string | null; court: string | null }[]).find((p) => p.days.includes(dayName));
-        if (mp) timeStr = mp.time ?? null;
-      }
-      if (!timeStr) return false;
-
-      const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
-      if (!m) return false;
-
-      const courseStart = parseItalyLocalToUTC(dateStr, parseInt(m[1], 10), parseInt(m[2], 10));
-      const courseEnd = parseItalyLocalToUTC(dateStr, parseInt(m[3], 10), parseInt(m[4], 10));
-      return courseStart < bookingEnd && courseEnd > bookingStart;
-    });
-
-    if (hasCourseConflict) {
+    if (findCourseConflict(courseData, court, start_time, end_time)) {
       logger.warn('Booking blocked by scheduled course', {
         userId: user.id,
         court,
@@ -464,7 +420,11 @@ export async function POST(req: Request) {
         const missingPhoneColumn = participantsError.message?.toLowerCase().includes('phone');
 
         if (missingPhoneColumn) {
-          const fallbackParticipantsData = participantsData.map(({ phone: _phone, ...participant }) => participant);
+          const fallbackParticipantsData = participantsData.map((participant) => {
+            const rest: Record<string, unknown> = { ...participant };
+            delete rest.phone;
+            return rest;
+          });
           const { error: fallbackError, data: fallbackInsertedParticipants } = await supabaseServer
             .from("booking_participants")
             .insert(fallbackParticipantsData)
@@ -652,7 +612,71 @@ export async function PUT(req: Request) {
         { status: HTTP_STATUS.CONFLICT }
       );
     }
-    
+
+    // Check for court blocks overlapping the (possibly new) slot
+    const { data: blockConflicts, error: blockConflictError } = await supabaseServer
+      .from("court_blocks")
+      .select("id")
+      .eq("court_id", newCourt)
+      .eq("is_disabled", false)
+      .lt("start_time", newEndTime)
+      .gt("end_time", newStartTime);
+
+    if (blockConflictError) {
+      logger.error('Error checking court blocks on update', blockConflictError, {
+        userId: user.id,
+        bookingId: id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+
+    if ((blockConflicts || []).length > 0) {
+      logger.warn('Booking update blocked by court block', {
+        userId: user.id,
+        bookingId: id,
+        court: newCourt,
+      });
+      return NextResponse.json(
+        { error: "Il campo non è disponibile in questo orario.", conflict: true },
+        { status: HTTP_STATUS.CONFLICT }
+      );
+    }
+
+    // Check for scheduled-course conflicts overlapping the (possibly new) slot
+    const { data: courseData, error: courseError } = await supabaseServer
+      .from("courses")
+      .select(COURSE_CONFLICT_SELECT)
+      .eq("is_active", true);
+
+    if (courseError) {
+      logger.error('Error checking course conflicts on update', courseError, {
+        userId: user.id,
+        bookingId: id,
+      });
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.SERVER_ERROR },
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+      );
+    }
+
+    if (findCourseConflict(courseData, newCourt, newStartTime, newEndTime)) {
+      logger.warn('Booking update blocked by scheduled course', {
+        userId: user.id,
+        bookingId: id,
+        court: newCourt,
+      });
+      return NextResponse.json(
+        {
+          error: "Il campo non è disponibile in questo orario (corso programmato).",
+          conflict: true,
+        },
+        { status: HTTP_STATUS.CONFLICT }
+      );
+    }
+
     const normalizedUpdate = normalizeBookingMutation(sanitized);
 
     const { data, error } = await supabaseServer

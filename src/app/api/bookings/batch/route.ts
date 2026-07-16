@@ -10,6 +10,7 @@ import {
   shouldNotifyCoachForPrivateLesson,
 } from "@/lib/bookings/privateLessonNotifications";
 import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
+import { findCourseConflict, COURSE_CONFLICT_SELECT } from "@/lib/bookings/courseConflicts";
 
 /**
  * API per creare prenotazioni multiple in una transazione atomica
@@ -94,6 +95,62 @@ export async function POST(request: Request) {
       );
     }
 
+    // Controlla blocchi campo e corsi programmati per ogni slot
+    const [{ data: courtBlocks, error: blocksError }, { data: courseData, error: coursesError }] =
+      await Promise.all([
+        supabase
+          .from("court_blocks")
+          .select("court_id, start_time, end_time")
+          .in("court_id", courts)
+          .eq("is_disabled", false)
+          .lt("start_time", maxEnd)
+          .gt("end_time", minStart),
+        supabase
+          .from("courses")
+          .select(COURSE_CONFLICT_SELECT)
+          .eq("is_active", true),
+      ]);
+
+    if (blocksError || coursesError) {
+      return NextResponse.json(
+        {
+          error: "Error checking availability",
+          details: (blocksError || coursesError)?.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    const scheduleConflicts = [];
+    for (const booking of bookings) {
+      const blockedByCourt = (courtBlocks || []).some(
+        (bl) =>
+          bl.court_id === booking.court &&
+          bl.start_time < booking.end_time &&
+          bl.end_time > booking.start_time
+      );
+      const blockedByCourse = Boolean(
+        findCourseConflict(courseData, booking.court, booking.start_time, booking.end_time)
+      );
+      if (blockedByCourt || blockedByCourse) {
+        scheduleConflicts.push({
+          start_time: booking.start_time,
+          court: booking.court,
+          reason: blockedByCourse ? "corso" : "blocco",
+        });
+      }
+    }
+
+    if (scheduleConflicts.length > 0) {
+      return NextResponse.json(
+        {
+          error: `${scheduleConflicts.length} slot non disponibili`,
+          conflicts: scheduleConflicts,
+        },
+        { status: 409 }
+      );
+    }
+
     // Nessun conflitto: inserisci TUTTE le prenotazioni
     const { data: insertedBookings, error: insertError } = await supabase
       .from("bookings")
@@ -153,7 +210,6 @@ export async function POST(request: Request) {
         .eq("id", firstBooking.user_id)
         .single();
 
-      const bookingCount = insertedBookings.length;
       const athleteName = userProfile?.full_name || "Un utente";
 
       const normalizeName = (value: string | null | undefined): string =>
@@ -473,10 +529,10 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Batch booking error:", error);
     return NextResponse.json(
-      { error: "Internal server error", details: error.message },
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

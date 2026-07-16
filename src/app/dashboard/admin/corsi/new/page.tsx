@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase/client";
 import { isBookableCoachProfile } from "@/lib/roles";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import { findBookingsBlockedByCourse } from "@/lib/bookings/courseConflicts";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
 import AuthGuard from "@/components/auth/AuthGuard";
 import {
@@ -412,6 +413,52 @@ export default function NuovoCorsoPage() {
         end_date: allEndDates[allEndDates.length - 1] ?? null,
         is_active: true,
       };
+
+      // Avviso: prenotazioni gia' presenti negli slot che questo corso occuperebbe.
+      const involvedCourts = [
+        ...new Set(
+          [payload.court_name, ...periodsData.map((p) => p.court)].filter(
+            (c): c is string => Boolean(c)
+          )
+        ),
+      ];
+      if (involvedCourts.length > 0) {
+        const rangeStart = payload.start_date || new Date().toISOString().split("T")[0];
+        let bookingsQuery = supabase
+          .from("bookings")
+          .select("id, court, start_time, end_time")
+          .in("court", involvedCourts)
+          .neq("status", "cancelled")
+          .neq("status", "rejected")
+          .neq("status", "pending")
+          .gte("start_time", `${rangeStart}T00:00:00.000Z`);
+        if (payload.end_date) {
+          bookingsQuery = bookingsQuery.lte("start_time", `${payload.end_date}T23:59:59.999Z`);
+        }
+        const { data: existingBookings } = await bookingsQuery;
+        const blocked = findBookingsBlockedByCourse(
+          {
+            court_name: payload.court_name,
+            schedule_time: payload.schedule_time,
+            schedule_days: payload.schedule_days,
+            schedule_periods: payload.schedule_periods,
+            start_date: payload.start_date,
+            end_date: payload.end_date,
+          },
+          existingBookings || []
+        );
+        if (blocked.length > 0) {
+          const proceed = window.confirm(
+            `Attenzione: ci sono ${blocked.length} prenotazione/i gia' presenti negli orari coperti da questo corso. ` +
+              `Se salvi, resteranno sovrapposte al corso (non verranno rimosse automaticamente).\n\n` +
+              `Vuoi salvare comunque il corso?`
+          );
+          if (!proceed) {
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
 
       let err;
       let savedCourseId = courseId;

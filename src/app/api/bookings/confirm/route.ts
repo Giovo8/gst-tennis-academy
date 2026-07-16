@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
 import { sanitizeUuid } from "@/lib/security/sanitize-server";
-import { parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
+import { findCourseConflict, COURSE_CONFLICT_SELECT } from "@/lib/bookings/courseConflicts";
 import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app";
 import logger from "@/lib/logger/secure-logger";
 
@@ -122,54 +122,12 @@ export async function POST(req: Request) {
     }
 
     // Check course conflicts
-    const dateStr = booking.start_time.split("T")[0];
-    const DAY_NAMES = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
-    const bookingStart = new Date(booking.start_time);
-    const bookingEnd = new Date(booking.end_time);
-    const dayName = DAY_NAMES[bookingStart.getDay()];
-
     const { data: courseData } = await supabaseServer
       .from("courses")
-      .select(
-        "id, court_name, schedule_time, schedule_days, schedule_periods, cancelled_dates, start_date, end_date, extra_dates, lesson_overrides, lesson_time_overrides"
-      )
+      .select(COURSE_CONFLICT_SELECT)
       .eq("is_active", true);
 
-    const hasCourseConflict = (courseData ?? []).some((c) => {
-      if (c.start_date && c.start_date > dateStr) return false;
-      if (c.end_date && c.end_date < dateStr) return false;
-      if (c.cancelled_dates && (c.cancelled_dates as string[]).includes(dateStr)) return false;
-      const isExtra = c.extra_dates && (c.extra_dates as string[]).includes(dateStr);
-      const isRegular = (c.schedule_days as string[]).includes(dayName);
-      if (!isExtra && !isRegular) return false;
-
-      let courseCourtForDay: string | null = c.court_name ?? null;
-      let timeStr: string | null = c.schedule_time ?? null;
-      if (c.lesson_overrides && (c.lesson_overrides as Record<string, string>)[dateStr]) {
-        courseCourtForDay = (c.lesson_overrides as Record<string, string>)[dateStr];
-      } else if ((c.schedule_periods as any[])?.length > 0) {
-        const mp = (c.schedule_periods as any[]).find((p) => p.days.includes(dayName));
-        if (mp?.court) courseCourtForDay = mp.court;
-      }
-      const normalizedCourseCourt = courseCourtForDay?.trim();
-      // Courses without a resolved court for the day must not block court bookings.
-      if (!normalizedCourseCourt) return false;
-      if (normalizedCourseCourt !== booking.court) return false;
-      if (c.lesson_time_overrides && (c.lesson_time_overrides as Record<string, string>)[dateStr]) {
-        timeStr = (c.lesson_time_overrides as Record<string, string>)[dateStr];
-      } else if ((c.schedule_periods as any[])?.length > 0) {
-        const mp = (c.schedule_periods as any[]).find((p) => p.days.includes(dayName));
-        if (mp) timeStr = mp.time ?? null;
-      }
-      if (!timeStr) return false;
-      const m = timeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
-      if (!m) return false;
-      const cStart = parseItalyLocalToUTC(dateStr, parseInt(m[1], 10), parseInt(m[2], 10));
-      const cEnd = parseItalyLocalToUTC(dateStr, parseInt(m[3], 10), parseInt(m[4], 10));
-      return cStart < bookingEnd && cEnd > bookingStart;
-    });
-
-    if (hasCourseConflict) {
+    if (findCourseConflict(courseData, booking.court, booking.start_time, booking.end_time)) {
       return NextResponse.json(
         {
           error: "Il campo non è disponibile (corso programmato). Modifica la prenotazione prima di confermare.",
