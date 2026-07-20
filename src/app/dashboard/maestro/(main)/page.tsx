@@ -303,16 +303,12 @@ export default function MaestroDashboardPage() {
 
   return (
     <div className="space-y-6 pt-3">
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-secondary mb-2">Dashboard</h1>
-        </div>
-      </div>
+      <h1 className="text-4xl font-bold text-secondary">Dashboard</h1>
 
       <WeatherCard />
 
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} basePath="/dashboard/maestro" highlightUserId={currentUserId} showEntryModal={false} scrollToCurrentTime={true} />
+        <BookingsTimeline bookings={timelineBookings} loading={loading} basePath="/dashboard/maestro" highlightUserId={currentUserId} showEntryModal={false} scrollToCurrentTime={true} enableDragEdit={true} onBookingsChanged={load} />
       </div>
 
       {/* PROSSIMI IMPEGNI + CENTRO NOTIFICHE */}
@@ -321,6 +317,7 @@ export default function MaestroDashboardPage() {
           bookings={upcomingBookings}
           currentUserId={currentUserId}
           basePath="/dashboard/maestro"
+          showFilterButton={false}
         />
 
         <div className="page-card h-full flex flex-col">
@@ -328,7 +325,7 @@ export default function MaestroDashboardPage() {
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Centro Notifiche</h2>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <NotificationsList limit={0} showSearch={true} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
+            <NotificationsList limit={0} showSearch={true} showFilterButton={false} showTableHeader={true} showHeader={false} maxVisibleRows={5} />
           </div>
         </div>
       </div>

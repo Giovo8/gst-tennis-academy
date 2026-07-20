@@ -86,6 +86,7 @@ export default function PlatformLogsPage() {
     <div className="space-y-6 pt-3">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <p className="breadcrumb text-secondary/60">Log Piattaforma</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-2">Log Piattaforma</h1>
           <p className="text-secondary/70 font-medium">Tutte le operazioni effettuate dagli utenti</p>
         </div>

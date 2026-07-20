@@ -9,10 +9,10 @@ export default function CTASection() {
         {/* Top Section - Title and Buttons */}
         <div className="text-center">
           <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
-            Inizia la tua partita oggi
+            Scendi in campo con noi
           </h2>
           <p className="text-base sm:text-lg mb-8 text-gray-500">
-            Iscriviti subito, contattaci via mail e whatsapp
+            Contattaci su WhatsApp o via email e prenota la tua prima lezione
           </p>
           
           {/* Buttons */}

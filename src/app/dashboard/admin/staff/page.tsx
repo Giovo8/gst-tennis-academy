@@ -111,6 +111,7 @@ export default function AdminStaffPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <p className="breadcrumb text-secondary/60">Gestione Staff</p>
           <h1 className="text-4xl font-bold text-secondary">Gestione Staff</h1>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">

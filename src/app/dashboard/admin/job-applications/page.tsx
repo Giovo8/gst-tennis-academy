@@ -154,6 +154,7 @@ export default function JobApplicationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <p className="breadcrumb text-secondary/60">Candidature Lavoro</p>
           <h1 className="text-4xl font-bold text-secondary">Candidature Lavoro</h1>
         </div>
       </div>

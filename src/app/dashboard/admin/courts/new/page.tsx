@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { checkCourtBlockConflicts, formatBlockConflictMessage } from "@/lib/courts/blockConflicts";
 import {
   Modal,
   ModalBody,
@@ -337,6 +338,13 @@ export default function NewCourtBlockPage() {
 
       if (blocksToInsert.length === 0) {
         setError("Nessun blocco da creare: verifica periodo e giorni selezionati");
+        setSubmitting(false);
+        return;
+      }
+
+      const conflictResult = await checkCourtBlockConflicts(supabase, blocksToInsert);
+      if (conflictResult.hasConflict) {
+        setError(formatBlockConflictMessage(conflictResult));
         setSubmitting(false);
         return;
       }

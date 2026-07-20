@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
+import { checkCourtBlockConflicts, formatBlockConflictMessage } from "@/lib/courts/blockConflicts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -477,6 +478,13 @@ export default function CourtBlockEditPage() {
 
       if (newBlocks.length === 0) {
         toast.warning("Nessun blocco da creare: verifica giorni selezionati o disattivazioni");
+        setSubmitting(false);
+        return;
+      }
+
+      const conflictResult = await checkCourtBlockConflicts(supabase, newBlocks);
+      if (conflictResult.hasConflict) {
+        toast.error(formatBlockConflictMessage(conflictResult));
         setSubmitting(false);
         return;
       }

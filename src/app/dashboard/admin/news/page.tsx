@@ -175,6 +175,7 @@ export default function AdminNewsPage() {
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
+                <p className="breadcrumb text-secondary/60">Gestione News</p>
                 <h1 className="text-4xl font-bold text-secondary">Gestione News</h1>
               </div>
               <div className="flex flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:items-center">

@@ -99,6 +99,7 @@ export default function VideoLessonsPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div>
+              <p className="breadcrumb text-secondary/60">Video Lab</p>
               <h1 className="text-4xl font-bold text-secondary">Video Lab</h1>
             </div>
           </div>

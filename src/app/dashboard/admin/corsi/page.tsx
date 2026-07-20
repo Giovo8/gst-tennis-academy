@@ -153,16 +153,17 @@ export default function CorsiAdminPage() {
   return (
     <div className="space-y-6 pt-3">
       {/* Header */}
-      <div className="flex flex-col gap-4">
+      <div>
+        <p className="breadcrumb text-secondary/60">Corsi</p>
         <h1 className="text-4xl font-bold text-secondary">Corsi</h1>
-        <Link
-          href="/dashboard/admin/corsi/new"
-          className="w-full px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Nuovo Corso
-        </Link>
       </div>
+      <Link
+        href="/dashboard/admin/corsi/new"
+        className="w-full px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+      >
+        <Plus className="h-4 w-4" />
+        Nuovo Corso
+      </Link>
 
       {/* Search + Filter */}
       <div className="flex flex-col gap-3 w-full">

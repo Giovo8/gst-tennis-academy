@@ -227,15 +227,15 @@ export default function CourtBlockDetailPage() {
 
   return (
     <div className="space-y-6 pt-3">
-      <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">
-          Blocco Campi
-        </Link>
-        {" › "}
-        <span>Dettagli Blocco</span>
-      </p>
-
       <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/admin/courts" className="hover:text-secondary/80 transition-colors">
+            Blocco Campi
+          </Link>
+          {" › "}
+          <span>Dettagli Blocco</span>
+        </p>
+
         <h1 className="text-4xl font-bold text-secondary">Dettagli Blocco</h1>
       </div>
 

@@ -61,11 +61,13 @@ export default function TextHeroSection() {
     <section className="bg-white pt-24 sm:pt-24 md:pt-24 pb-0 sm:pb-8 md:pb-10 lg:pb-0 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
         <div className="text-center flex flex-col items-center justify-center">
-          <h1 className="text-[14vw] md:text-8xl lg:text-8xl font-extrabold mb-5 sm:mb-6 text-secondary leading-[1.05] tracking-tight">
-            Campi, Tornei<br /> e Lezioni di Tennis
+          <h1 className="text-[16vw] md:text-[6.5rem] lg:text-[7.5rem] font-extrabold mb-5 sm:mb-6 text-secondary leading-[1.05] tracking-tight">
+            <span className="block md:inline">Gioca.</span>{" "}
+            <span className="block md:inline">Impara.</span>{" "}
+            <span className="block md:inline mt-[0.09em] md:mt-0">Vinci.</span>
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-gray-500 max-w-xs sm:max-w-2xl mb-12 sm:mb-14">
-            Prenota un <span className="text-secondary">campo online</span>, iscriviti a un <span className="text-secondary">torneo</span> o inizia il tuo percorso con i nostri <span className="text-secondary">maestri certificati FITP</span>.
+            <span className="text-secondary">Campi</span>, <span className="text-secondary">tornei</span> e <span className="text-secondary">lezioni</span> con maestri certificati FITP: prenota online e scendi in campo.
           </p>
 
           {/* CTA Buttons */}

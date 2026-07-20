@@ -398,6 +398,7 @@ export default function AdminArenaPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <p className="breadcrumb text-secondary/60">Gestione Arena</p>
           <h1 className="text-4xl font-bold text-secondary">Gestione Arena</h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">

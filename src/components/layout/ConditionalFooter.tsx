@@ -16,5 +16,9 @@ export default function ConditionalFooter() {
     return null;
   }
   
-  return <Footer />;
+  return (
+    <div className="max-w-[1400px] mx-auto">
+      <Footer />
+    </div>
+  );
 }

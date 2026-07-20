@@ -11,6 +11,7 @@ import { HTTP_STATUS, ERROR_MESSAGES, BOOKING_STATUS } from "@/lib/constants/app
 import { normalizeBookingMutation } from "@/lib/bookings/normalizeBookingMutation";
 import { validateRestrictedBookingHours } from "@/lib/bookings/bookingTimeRestrictions";
 import { findCourseConflict, COURSE_CONFLICT_SELECT } from "@/lib/bookings/courseConflicts";
+import { resolveBookingUpdatePermission, pickBookingMoveFields } from "@/lib/bookings/bookingUpdateAuth";
 import {
   handleBookingCreatedSideEffects,
   handleBookingPendingSideEffects,
@@ -533,9 +534,16 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Authorization check
-    const canEdit = isAdminOrGestore(profile?.role);
-    if (!canEdit) {
+    // Authorization check.
+    // Admin/gestore: modifica completa. Maestro: può SOLO spostare/ridimensionare
+    // (court/start_time/end_time) le proprie prenotazioni — quelle in cui è
+    // l'atleta prenotante o il coach assegnato. Nessun altro ruolo può modificare.
+    const permission = resolveBookingUpdatePermission(
+      { role: profile?.role, userId: user.id },
+      { user_id: booking.user_id, coach_id: booking.coach_id }
+    );
+
+    if (!permission.allowed) {
       logger.security('Unauthorized booking update attempt', {
         userId: user.id,
         bookingId: id,
@@ -569,7 +577,14 @@ export async function PUT(req: Request) {
     }
     
     const rawBody = await req.json();
-    const sanitized = sanitizeObject(rawBody);
+    let sanitized = sanitizeObject(rawBody);
+
+    // Un maestro può solo spostare/ridimensionare: scarta ogni campo che non
+    // sia court/start_time/end_time, così non può modificare tipo, atleti,
+    // coach, stato o note tramite questo endpoint.
+    if (permission.moveOnly) {
+      sanitized = pickBookingMoveFields(sanitized);
+    }
 
     // Check for overlapping bookings if court/time is being changed
     const newCourt = (sanitized.court as string | undefined) || booking.court;

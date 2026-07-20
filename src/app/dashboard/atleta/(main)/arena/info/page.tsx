@@ -17,9 +17,7 @@ export default function InfoPage() {
       </p>
 
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-secondary">Info Arena</h1>
-      </div>
+      <h1 className="text-4xl font-bold text-secondary">Info Arena</h1>
 
       {/* Content */}
       <div className="space-y-6">

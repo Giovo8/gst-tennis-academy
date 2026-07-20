@@ -5,7 +5,7 @@ import { Facebook, Instagram, Mail, Youtube } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="pt-12 pb-8" style={{ backgroundColor: 'var(--secondary)' }}>
+    <footer className="pt-12 pb-8 mb-1 rounded-b-xl border border-black/10" style={{ backgroundColor: 'var(--secondary)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Logo centered */}
         <div className="text-center mb-8">

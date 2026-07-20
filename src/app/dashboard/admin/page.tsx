@@ -286,7 +286,7 @@ export default function AdminDashboard() {
       <WeatherCard />
 
       <div className="w-full">
-        <BookingsTimeline bookings={timelineBookings} loading={loading} showEntryModal={false} scrollToCurrentTime={true} />
+        <BookingsTimeline bookings={timelineBookings} loading={loading} showEntryModal={false} scrollToCurrentTime={true} enableDragEdit={true} onBookingsChanged={loadDashboardData} />
       </div>
 
       {/* PROSSIMI IMPEGNI + CENTRO NOTIFICHE */}

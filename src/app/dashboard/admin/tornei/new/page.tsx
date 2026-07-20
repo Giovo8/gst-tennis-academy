@@ -165,23 +165,18 @@ export default function NewTournamentPage() {
   return (
     <div className="space-y-6 pt-3">
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <div>
-          <p className="breadcrumb text-secondary/60">
-            <Link
-              href="/dashboard/admin/tornei"
-              className="hover:text-secondary/80 transition-colors"
-            >
-              Gestione Competizioni
-            </Link>
-            {" › "}
-            <span>Nuovo Torneo</span>
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea nuovo torneo</h1>
-          <p className="text-secondary/70 text-sm mt-1 max-w-2xl">
-            Configura e crea un nuovo torneo o campionato per la GST Tennis Academy
-          </p>
-        </div>
+      <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link
+            href="/dashboard/admin/tornei"
+            className="hover:text-secondary/80 transition-colors"
+          >
+            Gestione Competizioni
+          </Link>
+          {" › "}
+          <span>Nuovo Torneo</span>
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Crea nuovo torneo</h1>
       </div>
 
       {/* Messages */}
@@ -207,7 +202,11 @@ export default function NewTournamentPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit}>
-        <div className="page-card p-6 space-y-6">
+        <div className="page-card">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli torneo</h2>
+          </div>
+          <div className="p-6 space-y-6">
           {/* Tipo competizione */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">
@@ -456,6 +455,7 @@ export default function NewTournamentPage() {
                 <span>Killer point</span>
               </label>
             </div>
+          </div>
           </div>
         </div>
 

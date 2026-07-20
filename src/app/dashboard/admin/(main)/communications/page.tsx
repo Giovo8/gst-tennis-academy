@@ -181,6 +181,7 @@ export default function AdminCommunicationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <p className="breadcrumb text-secondary/60">Comunicazioni</p>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Comunicazioni</h1>
           <p className="text-[var(--foreground-muted)] mt-1">
             Gestisci annunci e notifiche agli utenti

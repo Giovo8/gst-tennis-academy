@@ -1,26 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import {
-  CalendarClock,
-  CalendarDays,
-  Clock3,
-  Dumbbell,
-  GraduationCap,
-  Timer,
-  LineChart as LineChartIcon,
-  Sun,
-  Sunrise,
-  Sunset,
-  Users,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Dumbbell } from "lucide-react";
 import { UpcomingCommitmentsCard, type UpcomingBooking } from "@/components/dashboard/UpcomingCommitmentsCard";
+import LessonsHistoryChart from "@/components/maestro/LessonsHistoryChart";
+import WeekdayHoursChart from "@/components/maestro/WeekdayHoursChart";
+import HourBucketChart from "@/components/maestro/HourBucketChart";
+import LessonsCompositionChart from "@/components/maestro/LessonsCompositionChart";
+import TodoListCard from "@/components/maestro/TodoListCard";
 import { supabase } from "@/lib/supabase/client";
-import {
-  formatShortItalianDate,
-  formatItalianTime,
-} from "@/lib/utils/formatItalianDate";
 
 type Stats = {
   totalCoachLessonsDone: number;
@@ -64,7 +52,7 @@ type MonthlyPoint = {
 };
 
 type WeekdayPoint = { label: string; count: number };
-type HourBucketPoint = { label: string; count: number; icon: React.ReactNode };
+type HourBucketPoint = { label: string; count: number };
 
 type TrendDelta = {
   current: number;
@@ -75,15 +63,14 @@ type TrendDelta = {
 type MoMTrend = {
   lessons: TrendDelta;
   hours: TrendDelta;
-  athletes: TrendDelta;
 };
 
 type TrendPeriod = "week" | "month" | "year";
 
 const PERIOD_LABELS: Record<TrendPeriod, { label: string; hint: string; previousLabel: string }> = {
-  week:  { label: "7G",  hint: "vs settimana scorsa",             previousLabel: "Sett. scorsa" },
-  month: { label: "30G", hint: "vs mese scorso",                  previousLabel: "Mese scorso" },
-  year:  { label: "1A",  hint: "vs stesso periodo anno scorso",   previousLabel: "Anno scorso" },
+  week:  { label: "Settimana",  hint: "vs settimana scorsa",             previousLabel: "Sett. scorsa" },
+  month: { label: "Mese",       hint: "vs mese scorso",                  previousLabel: "Mese scorso" },
+  year:  { label: "Anno",       hint: "vs stesso periodo anno scorso",   previousLabel: "Anno scorso" },
 };
 
 const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
@@ -117,17 +104,21 @@ export default function MaestroOverviewPage({
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [athletes, setAthletes] = useState<AthleteSummary[]>([]);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyPoint[]>([]);
-  const [weekdayDist, setWeekdayDist] = useState<WeekdayPoint[]>([]);
-  const [hourDist, setHourDist] = useState<HourBucketPoint[]>([]);
+  const [allWeekdayDist, setAllWeekdayDist] = useState<Record<TrendPeriod, WeekdayPoint[]>>({
+    week: [], month: [], year: [],
+  });
+  const [allHourDist, setAllHourDist] = useState<Record<TrendPeriod, HourBucketPoint[]>>({
+    week: [], month: [], year: [],
+  });
+  const [allComposition, setAllComposition] = useState<Record<TrendPeriod, { privata: number; corso: number }>>({
+    week: { privata: 0, corso: 0 }, month: { privata: 0, corso: 0 }, year: { privata: 0, corso: 0 },
+  });
   const [allTrends, setAllTrends] = useState<Record<TrendPeriod, MoMTrend>>({
-    week:  { lessons: { current: 0, previous: 0, diffPct: null }, hours: { current: 0, previous: 0, diffPct: null }, athletes: { current: 0, previous: 0, diffPct: null } },
-    month: { lessons: { current: 0, previous: 0, diffPct: null }, hours: { current: 0, previous: 0, diffPct: null }, athletes: { current: 0, previous: 0, diffPct: null } },
-    year:  { lessons: { current: 0, previous: 0, diffPct: null }, hours: { current: 0, previous: 0, diffPct: null }, athletes: { current: 0, previous: 0, diffPct: null } },
+    week:  { lessons: { current: 0, previous: 0, diffPct: null }, hours: { current: 0, previous: 0, diffPct: null } },
+    month: { lessons: { current: 0, previous: 0, diffPct: null }, hours: { current: 0, previous: 0, diffPct: null } },
+    year:  { lessons: { current: 0, previous: 0, diffPct: null }, hours: { current: 0, previous: 0, diffPct: null } },
   });
   const [trendPeriod, setTrendPeriod] = useState<TrendPeriod>("month");
-  const [weekStats, setWeekStats] = useState({ hours: 0, remaining: 0 });
-  const [totalMaestroHours, setTotalMaestroHours] = useState(0);
-  const [chartPeriod, setChartPeriod] = useState<"week" | "month" | "year">("year");
   const [weekChartData, setWeekChartData] = useState<MonthlyPoint[]>([]);
   const [monthChartData, setMonthChartData] = useState<MonthlyPoint[]>([]);
 
@@ -168,8 +159,6 @@ export default function MaestroOverviewPage({
     const dayIdx = (now.getDay() + 6) % 7; // Lun=0
     startOfWeek.setDate(now.getDate() - dayIdx);
     startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
     const startOfPrevWeek = new Date(startOfWeek);
     startOfPrevWeek.setDate(startOfWeek.getDate() - 7);
 
@@ -204,21 +193,20 @@ export default function MaestroOverviewPage({
         pastMonthRowsRes,
         upcomingRowsRes,
         twoMonthsRowsRes,
-        weekRowsRes,
         prevYearRowsRes,
       ] = await Promise.all([
         supabase
           .from("bookings")
           .select("id", { count: "exact", head: true })
           .eq("coach_id", user.id)
-          .in("type", ["lezione_privata", "lezione_gruppo"])
+          .eq("type", "lezione_privata")
           .neq("status", "cancelled")
           .lt("end_time", now.toISOString()),
         supabase
           .from("bookings")
           .select("id, user_id, type, start_time, end_time")
           .eq("coach_id", user.id)
-          .in("type", ["lezione_privata", "lezione_gruppo"])
+          .eq("type", "lezione_privata")
           .neq("status", "cancelled")
           .lt("end_time", now.toISOString())
           .order("start_time", { ascending: false }),
@@ -226,7 +214,7 @@ export default function MaestroOverviewPage({
           .from("bookings")
           .select("id, type, start_time, end_time, user_id")
           .eq("coach_id", user.id)
-          .in("type", ["lezione_privata", "lezione_gruppo"])
+          .eq("type", "lezione_privata")
           .neq("status", "cancelled")
           .gte("start_time", yearAgo.toISOString())
           .lt("end_time", now.toISOString()),
@@ -256,24 +244,16 @@ export default function MaestroOverviewPage({
           .from("bookings")
           .select("id, user_id, type, start_time, end_time")
           .eq("coach_id", user.id)
-          .in("type", ["lezione_privata", "lezione_gruppo"])
+          .eq("type", "lezione_privata")
           .neq("status", "cancelled")
           .gte("start_time", startOfPrevMonth.toISOString())
           .lt("end_time", now.toISOString()),
-        // Settimana corrente: ore già fatte + impegni futuri rimanenti
-        supabase
-          .from("bookings")
-          .select("id, type, start_time, end_time, status, coach_id, user_id")
-          .or(`coach_id.eq.${user.id},user_id.eq.${user.id}`)
-          .neq("status", "cancelled")
-          .gte("start_time", startOfWeek.toISOString())
-          .lt("start_time", endOfWeek.toISOString()),
         // Anno precedente stesso periodo (per trend annuale)
         supabase
           .from("bookings")
           .select("id, user_id, type, start_time, end_time")
           .eq("coach_id", user.id)
-          .in("type", ["lezione_privata", "lezione_gruppo"])
+          .eq("type", "lezione_privata")
           .neq("status", "cancelled")
           .gte("start_time", startOfPrevYear.toISOString())
           .lt("end_time", sameDayLastYear.toISOString()),
@@ -398,10 +378,6 @@ export default function MaestroOverviewPage({
         .sort((a, b) => b.lessonsCount - a.lessonsCount)
         .slice(0, 50);
 
-      const totalMaestroHrs = Array.from(athleteAccumulator.values()).reduce(
-        (acc, a) => acc + a.totalHours, 0
-      );
-
       const privateLessonsDone = coachLessonRows.filter((r) => r.type === "lezione_privata").length;
       const groupLessonsDone = coachLessonRows.filter((r) => r.type === "lezione_gruppo").length;
 
@@ -438,20 +414,6 @@ export default function MaestroOverviewPage({
         };
       });
 
-      // Weekday distribution (settimana corrente) - ore
-      const weekdayData: WeekdayPoint[] = WEEKDAY_LABELS.map((label) => ({
-        label,
-        count: 0,
-      }));
-
-      // Hour bucket distribution (popolato dopo weekRows)
-      const hourData: HourBucketPoint[] = [
-        { label: "8-12", count: 0, icon: <Sunrise className="h-4 w-4" /> },
-        { label: "12-14", count: 0, icon: <Sun className="h-4 w-4" /> },
-        { label: "14-18", count: 0, icon: <Sun className="h-4 w-4" /> },
-        { label: "18+", count: 0, icon: <Sunset className="h-4 w-4" /> },
-      ];
-
       // Trend helpers
       const buildDelta = (current: number, previous: number): TrendDelta => ({
         current,
@@ -477,11 +439,31 @@ export default function MaestroOverviewPage({
           Math.round(sumHours(curr) * 10) / 10,
           Math.round(sumHours(prev) * 10) / 10,
         ),
-        athletes: buildDelta(
-          new Set(curr.map((r) => r.user_id).filter(Boolean)).size,
-          new Set(prev.map((r) => r.user_id).filter(Boolean)).size,
-        ),
       });
+
+      // Distribuzione fasce orarie / ore per giorno, per un dato set di lezioni
+      const buildDistributions = (rows: TrendRow[]) => {
+        const weekday: WeekdayPoint[] = WEEKDAY_LABELS.map((label) => ({ label, count: 0 }));
+        const hour: HourBucketPoint[] = [
+          { label: "8-12", count: 0 },
+          { label: "12-14", count: 0 },
+          { label: "14-18", count: 0 },
+          { label: "18+", count: 0 },
+        ];
+        rows.forEach((row) => {
+          const start = new Date(row.start_time);
+          const idx = (start.getDay() + 6) % 7;
+          const hrs = (new Date(row.end_time).getTime() - start.getTime()) / (1000 * 60 * 60);
+          weekday[idx].count += Math.max(0, hrs);
+          const h = start.getHours();
+          if (h < 12) hour[0].count += 1;
+          else if (h < 14) hour[1].count += 1;
+          else if (h < 18) hour[2].count += 1;
+          else hour[3].count += 1;
+        });
+        weekday.forEach((pt) => { pt.count = Math.round(pt.count * 10) / 10; });
+        return { weekday, hour };
+      };
 
       const twoMonthsRows = (twoMonthsRowsRes.data ?? []) as TrendRow[];
 
@@ -512,42 +494,6 @@ export default function MaestroOverviewPage({
         month: buildTrend(currentMonthRows, prevMonthRows),
         year:  buildTrend(currYearRows, prevYearRows),
       };
-
-      // Settimana corrente
-      const weekRows = weekRowsRes.data ?? [];
-      const courseWeekSchedule: { start_time: string; end_time: string }[] = [];
-
-      const maestroWeekRows = weekRows.filter(
-        (r) => r.coach_id === user.id && (r.type === "lezione_privata" || r.type === "lezione_gruppo")
-      );
-
-      // Popola weekdayData con le ore della settimana corrente
-      maestroWeekRows.forEach((row) => {
-        const d = new Date(row.start_time);
-        const idx = (d.getDay() + 6) % 7;
-        const hrs = (new Date(row.end_time).getTime() - d.getTime()) / (1000 * 60 * 60);
-        weekdayData[idx].count += Math.max(0, hrs);
-      });
-
-      // Popola hourData con le lezioni della settimana corrente
-      maestroWeekRows.forEach((row) => {
-        const h = new Date(row.start_time).getHours();
-        if (h < 12) hourData[0].count += 1;
-        else if (h < 14) hourData[1].count += 1;
-        else if (h < 18) hourData[2].count += 1;
-        else hourData[3].count += 1;
-      });
-
-      const weekDoneHours = weekRows
-        .filter((r) => new Date(r.end_time) < now)
-        .reduce((acc, r) => {
-          const s = new Date(r.start_time).getTime();
-          const e = new Date(r.end_time).getTime();
-          return acc + Math.max(0, (e - s) / (1000 * 60 * 60));
-        }, 0);
-      const weekRemaining = weekRows.filter(
-        (r) => new Date(r.start_time) >= now
-      ).length;
 
       // Week chart: last 7 days (daily bars)
       const weekChartPoints: MonthlyPoint[] = [];
@@ -620,7 +566,6 @@ export default function MaestroOverviewPage({
       const maestroFullName = profile?.full_name || "";
       const courseItems: UpcomingBooking[] = [];
       let courseLessonsDone = 0;
-      let weekCourseHours = 0;
       let totalCourses = 0;
       let maestroCourseIds: string[] = [];
       const courseTrendRows: { start_time: string; end_time: string; user_id: string }[] = [];
@@ -749,37 +694,6 @@ export default function MaestroOverviewPage({
           }
         }
 
-        // Build course schedule for current week (no attendance check)
-        for (const c of coursesData ?? []) {
-          const cursor = new Date(startOfWeek);
-          while (cursor < endOfWeek) {
-            const dateStr = cursor.toISOString().split("T")[0];
-            const dayCode = DAY_CODES[cursor.getDay()];
-            const isScheduled = (c.schedule_days ?? []).includes(dayCode);
-            const isExtra = (c.extra_dates ?? []).includes(dateStr);
-            if ((isScheduled || isExtra) && !(c.cancelled_dates ?? []).includes(dateStr)) {
-              if (isScheduled && !isExtra) {
-                if (c.start_date && c.start_date > dateStr) { cursor.setDate(cursor.getDate() + 1); continue; }
-                if (c.end_date && c.end_date < dateStr) { cursor.setDate(cursor.getDate() + 1); continue; }
-              }
-              let wTimeStr: string = c.schedule_time || "";
-              if (c.lesson_time_overrides?.[dateStr]) wTimeStr = c.lesson_time_overrides[dateStr];
-              else if (c.schedule_periods?.length > 0) {
-                const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
-                if (period?.time) wTimeStr = period.time;
-              }
-              const wRng = wTimeStr.match(/(\d{1,2}):(\d{2})\s*[\u2013\-]\s*(\d{1,2}):(\d{2})/);
-              const wSh = wRng ? parseInt(wRng[1], 10) : 9;
-              const wSm = wRng ? parseInt(wRng[2], 10) : 0;
-              const wEh = wRng ? parseInt(wRng[3], 10) : wSh + 1;
-              const wEm = wRng ? parseInt(wRng[4], 10) : wSm;
-              const wStart = new Date(cursor); wStart.setHours(wSh, wSm, 0, 0);
-              const wEnd = new Date(cursor); wEnd.setHours(wEh, wEm, 0, 0);
-              courseWeekSchedule.push({ start_time: wStart.toISOString(), end_time: wEnd.toISOString() });
-            }
-            cursor.setDate(cursor.getDate() + 1);
-          }
-        }
       }
 
       const courseCurrWeekRows = courseTrendRows.filter((r) => new Date(r.start_time) >= startOfWeek);
@@ -790,6 +704,14 @@ export default function MaestroOverviewPage({
       computedTrends.week  = buildTrend([...currWeekRows, ...courseCurrWeekRows], [...prevWeekRows, ...coursePrevWeekRows]);
       computedTrends.month = buildTrend([...currentMonthRows, ...courseCurrMonthRows], [...prevMonthRows, ...coursePrevMonthRowsTrend]);
       computedTrends.year  = buildTrend([...currYearRows, ...courseCurrYearRows], [...prevYearRows, ...coursePrevYearRows]);
+
+      const distWeek = buildDistributions([...currWeekRows, ...courseCurrWeekRows]);
+      const distMonth = buildDistributions([...currentMonthRows, ...courseCurrMonthRows]);
+      const distYear = buildDistributions([...currYearRows, ...courseCurrYearRows]);
+
+      const compositionWeek = { privata: currWeekRows.length, corso: courseCurrWeekRows.length };
+      const compositionMonth = { privata: currentMonthRows.length, corso: courseCurrMonthRows.length };
+      const compositionYear = { privata: currYearRows.length, corso: courseCurrYearRows.length };
 
       // Add course sessions (attendance-based) to monthly chart
       courseTrendRows.forEach((row) => {
@@ -813,23 +735,10 @@ export default function MaestroOverviewPage({
       });
 
       setAthletes(athleteSummaries);
-      setTotalMaestroHours(Math.round(totalMaestroHrs * 10) / 10);
       setMonthlyTrend(monthlyTrendData);
-      // Aggiungi ore e bucket dei corsi dalla settimana corrente
-      courseWeekSchedule.forEach((row) => {
-        const d = new Date(row.start_time);
-        const idx = (d.getDay() + 6) % 7;
-        const hrs = (new Date(row.end_time).getTime() - d.getTime()) / (1000 * 60 * 60);
-        weekdayData[idx].count += Math.max(0, hrs);
-        const h = d.getHours();
-        if (h < 12) hourData[0].count += 1;
-        else if (h < 14) hourData[1].count += 1;
-        else if (h < 18) hourData[2].count += 1;
-        else hourData[3].count += 1;
-      });
-      weekdayData.forEach((pt) => { pt.count = Math.round(pt.count * 10) / 10; });
-      setWeekdayDist(weekdayData);
-      setHourDist(hourData);
+      setAllWeekdayDist({ week: distWeek.weekday, month: distMonth.weekday, year: distYear.weekday });
+      setAllHourDist({ week: distWeek.hour, month: distMonth.hour, year: distYear.hour });
+      setAllComposition({ week: compositionWeek, month: compositionMonth, year: compositionYear });
       // Aggiungi sessioni corsi ai chart settimanale e mensile (courseTrendRows popolato dopo il blocco if maestroFullName)
       const nowDay = new Date(now);
       nowDay.setHours(0, 0, 0, 0);
@@ -850,10 +759,6 @@ export default function MaestroOverviewPage({
       setAllTrends(computedTrends);
       setWeekChartData(weekChartPoints);
       setMonthChartData(monthChartPoints);
-      setWeekStats({
-        hours: Math.round((weekDoneHours + weekCourseHours) * 10) / 10,
-        remaining: weekRemaining,
-      });
 
       setCurrentUserId(user.id);
 
@@ -897,61 +802,131 @@ export default function MaestroOverviewPage({
     return <PageSkeleton />;
   }
 
+  const periodTrend = allTrends[trendPeriod];
+  const historyData: MonthlyPoint[] =
+    trendPeriod === "week" ? weekChartData : trendPeriod === "month" ? monthChartData : monthlyTrend;
+  const todayIdx = (new Date().getDay() + 6) % 7;
+
   return (
     <div className="space-y-6 pt-3">
       {/* HERO */}
-      <div>
-        <h1 className="text-4xl font-bold text-secondary mb-2">Area Maestro</h1>
-      </div>
+      <h1 className="text-4xl font-bold text-secondary">Area Maestro</h1>
 
       <div
         className="rounded-xl border-t border-r border-b p-6 border-l-4"
         style={{ backgroundColor: "#023047", borderColor: "#023047", borderLeftColor: "#011a24" }}
       >
-        <div className="flex items-start gap-6">
+        <div className="flex items-center gap-4 min-w-0">
           <Dumbbell className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <h2 className="text-2xl font-bold text-white truncate">{userName}</h2>
         </div>
       </div>
 
-      {/* DISTRIBUZIONE SETTIMANA + FASCE ORARIE */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Distribuzione oraria
-            </h2>
-          </div>
-          <div className="p-6">
-            <HourBucketChart data={hourDist} />
-          </div>
-        </div>
+      {/* PROSSIMI IMPEGNI */}
+      <UpcomingCommitmentsCard
+        bookings={upcoming}
+        currentUserId={currentUserId}
+        basePath={upcomingBasePath}
+        showFilterButton={false}
+      />
 
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-            <h2 className="text-base sm:text-lg font-semibold text-secondary">
-              Ore questa settimana
-            </h2>
-          </div>
-          <div className="p-6">
-            <WeekdayChart data={weekdayDist} todayIdx={(new Date().getDay() + 6) % 7} />
-          </div>
-        </div>
+      {/* AGENDA: cose da fare */}
+      <TodoListCard userId={currentUserId} />
+
+      {/* FILTRO PERIODO: vale per andamento, fasce orarie e ore per giorno */}
+      <PeriodTabs value={trendPeriod} onChange={setTrendPeriod} />
+
+      {/* STAT: lezioni svolte + ore totali nel periodo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <TrendCard
+          label="Lezioni svolte"
+          delta={periodTrend.lessons}
+          format={(n) => String(n)}
+          previousLabel={PERIOD_LABELS[trendPeriod].previousLabel}
+        />
+
+        <TrendCard
+          label="Ore totali"
+          delta={periodTrend.hours}
+          format={(n) => String(n)}
+          previousLabel={PERIOD_LABELS[trendPeriod].previousLabel}
+        />
       </div>
 
-      {/* MONTHLY BAR CHART */}
+      {/* ANDAMENTO: storico */}
       <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">
-            Storico lezioni
-          </h2>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Andamento lezioni</h2>
         </div>
-
         <div className="p-6">
-          <MonthlyLessonsChart data={monthlyTrend} />
+          <LessonsHistoryChart data={historyData} />
         </div>
       </div>
 
+      {/* ORE PER GIORNO + COMPOSIZIONE LEZIONI */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="page-card h-full flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Ore per giorno</h2>
+          </div>
+          <div className="p-6 flex-1 flex items-center">
+            <WeekdayHoursChart data={allWeekdayDist[trendPeriod]} todayIdx={todayIdx} />
+          </div>
+        </div>
+
+        <div className="page-card h-full flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Composizione lezioni</h2>
+          </div>
+          <div className="p-6 flex-1 flex items-center">
+            <LessonsCompositionChart
+              privata={allComposition[trendPeriod].privata}
+              gruppo={0}
+              corso={allComposition[trendPeriod].corso}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="page-card">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Fasce orarie</h2>
+        </div>
+        <div className="p-6">
+          <HourBucketChart data={allHourDist[trendPeriod]} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PeriodTabs({
+  value,
+  onChange,
+}: {
+  value: TrendPeriod;
+  onChange: (period: TrendPeriod) => void;
+}) {
+  return (
+    <div className="flex gap-2 w-full">
+      {(Object.keys(PERIOD_LABELS) as TrendPeriod[]).map((p) => {
+        const selected = p === value;
+        return (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            title={PERIOD_LABELS[p].hint}
+            className={`h-11 flex-1 min-w-0 rounded-lg border text-sm font-semibold transition-colors ${
+              selected
+                ? "border-[#023047] bg-[#023047] text-white"
+                : "border-secondary bg-secondary text-white hover:opacity-90"
+            }`}
+          >
+            {PERIOD_LABELS[p].label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -969,348 +944,19 @@ function TrendCard({
   format: (n: number) => string;
   previousLabel: string;
 }) {
-  const isUp = delta.diffPct !== null && delta.diffPct > 0;
-  const badgeLabel =
-    delta.diffPct === null
-      ? "Nuovo"
-      : delta.diffPct === 0
-        ? "0%"
-        : `${isUp ? "+" : "-"}${Math.abs(delta.diffPct)}%`;
-
   return (
-    <div className="bg-secondary rounded-lg p-6 hover:shadow-md transition-all">
-      <p className="text-xs text-white/60 font-semibold uppercase tracking-wide">
-        {label}
-      </p>
-      <div className="mt-2 flex items-end justify-between gap-2">
-        <p className="text-2xl font-bold text-white tabular-nums leading-none">
+    <div className="bg-secondary rounded-lg p-3.5 h-full flex items-center gap-4">
+      <div className="flex items-center justify-center bg-white/10 rounded-lg min-w-14 h-14 px-2 flex-shrink-0">
+        <span className="text-2xl font-bold text-white leading-none tabular-nums whitespace-nowrap">
           {format(delta.current)}
-        </p>
-        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold text-white bg-white/10">
-          {badgeLabel}
         </span>
       </div>
-      <p className="text-[11px] text-white/40 mt-1">
-        {previousLabel}: {format(delta.previous)}
-      </p>
-    </div>
-  );
-}
-
-function WeekdayChart({ data, todayIdx }: { data: WeekdayPoint[]; todayIdx: number }) {
-  const max = Math.max(...data.map((d) => d.count), 1);
-  const totalCount = data.reduce((acc, d) => acc + d.count, 0);
-  if (totalCount === 0) {
-    return (
-      <EmptyState
-        icon={<CalendarDays className="h-8 w-8" />}
-        title="Dati insufficienti"
-        description="La distribuzione settimanale apparirà dopo le prime lezioni."
-      />
-    );
-  }
-  return (
-    <div className="space-y-2.5">
-      {data.map((d, i) => {
-        const pct = (d.count / max) * 100;
-        const isToday = i === todayIdx;
-        return (
-          <div key={d.label} className="flex items-center gap-3">
-            <span className={`text-sm font-bold w-8 flex-shrink-0 ${isToday ? 'text-[#023047]' : 'text-secondary'}`}>
-              {d.label}
-            </span>
-            <div className="flex-1 relative h-8">
-              <div className="absolute inset-0 bg-secondary/5 rounded-lg" />
-              <div
-                className={`absolute inset-y-0 left-0 rounded-lg transition-all flex items-center justify-end pr-2`}
-                style={{
-                  width: `${pct}%`,
-                  minWidth: d.count > 0 ? '2.5rem' : '0',
-                  backgroundColor: isToday ? '#023047' : 'var(--secondary)',
-                }}
-              >
-                {d.count > 0 && (
-                  <span className="text-sm font-extrabold text-white tabular-nums">
-                    {d.count}h
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function HourBucketChart({ data }: { data: HourBucketPoint[] }) {
-  const max = Math.max(...data.map((d) => d.count), 1);
-  const totalCount = data.reduce((acc, d) => acc + d.count, 0);
-  if (totalCount === 0) {
-    return (
-      <EmptyState
-        icon={<Clock3 className="h-8 w-8" />}
-        title="Dati insufficienti"
-        description="Le fasce orarie appariranno dopo le prime lezioni."
-      />
-    );
-  }
-  return (
-    <div className="flex gap-3 h-72">
-      {data.map((d) => {
-        const pct = (d.count / max) * 100;
-        return (
-          <div key={d.label} className="flex flex-col items-center gap-1.5 flex-1 h-full">
-            <div className="w-full flex-1 relative">
-              <div className="absolute inset-0 bg-secondary/5 rounded-lg" />
-              <div
-                className="absolute bottom-0 left-0 right-0 rounded-lg transition-all flex items-start justify-center pt-1.5"
-                style={{
-                  height: `${pct}%`,
-                  minHeight: '2.5rem',
-                  backgroundColor: 'var(--secondary)',
-                }}
-              >
-                {d.count > 0 && (
-                  <span className="text-sm font-extrabold text-white tabular-nums">
-                    {d.count}
-                  </span>
-                )}
-              </div>
-            </div>
-            <span className="text-sm font-bold text-secondary text-center leading-tight whitespace-nowrap">{d.label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function MonthlyLessonsChart({ data }: { data: MonthlyPoint[] }) {
-  const maxValue = Math.max(...data.map((d) => d.lessonsCount), 1);
-  const totalCount = data.reduce((acc, d) => acc + d.lessonsCount, 0);
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-    }
-  }, [data]);
-
-  if (totalCount === 0) {
-    return (
-      <EmptyState
-        icon={<LineChartIcon className="h-8 w-8" />}
-        title="Nessun dato"
-        description="L'andamento sarà disponibile dopo le prime lezioni."
-      />
-    );
-  }
-
-  return (
-    <div ref={scrollRef} className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-      <div className="flex gap-2 h-72 w-full min-w-[700px]">
-        {data.map((point) => {
-          const pct = (point.lessonsCount / maxValue) * 100;
-          const isCurrent = point.monthKey === currentMonthKey;
-          return (
-            <div key={point.monthKey} className="flex flex-col items-center gap-1.5 flex-1 min-w-[2rem] h-full">
-              <div className="w-full flex-1 relative">
-                <div className="absolute inset-0 bg-secondary/5 rounded-lg" />
-                <div
-                  className="absolute bottom-0 left-0 right-0 rounded-lg transition-all flex items-start justify-center pt-3"
-                  style={{
-                    height: `${pct}%`,
-                    minHeight: point.lessonsCount === 0 ? '0.5rem' : '2.5rem',
-                    backgroundColor: isCurrent ? '#023047' : 'var(--secondary)',
-                  }}
-                  title={`${point.label}: ${point.lessonsCount} lezioni`}
-                >
-                  {point.lessonsCount > 0 && (
-                    <span className="text-sm font-extrabold text-white tabular-nums leading-none">
-                      {point.lessonsCount}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <span className={`w-full text-sm font-bold text-center leading-tight whitespace-nowrap ${isCurrent ? 'text-[#023047]' : 'text-secondary'}`}>
-                {point.label}
-              </span>
-            </div>
-          );
-        })}
+      <div className="min-w-0">
+        <p className="font-semibold text-white text-sm truncate">{label}</p>
+        <p className="text-xs text-white/70 mt-0.5">
+          {previousLabel}: {format(delta.previous)}
+        </p>
       </div>
-    </div>
-  );
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  lezione_privata: "Lezione privata",
-  lezione_gruppo: "Lezione gruppo",
-  campo: "Prenotazione campo",
-  torneo: "Torneo",
-};
-
-const TYPE_STYLES: Record<string, string> = {
-  lezione_privata: "bg-emerald-100 text-emerald-700",
-  lezione_gruppo: "bg-amber-100 text-amber-700",
-  campo: "bg-violet-100 text-violet-700",
-  torneo: "bg-rose-100 text-rose-700",
-};
-
-function UpcomingItem({
-  item,
-  variant = "maestro",
-  basePath = "/dashboard/maestro",
-}: {
-  item: BookingRow;
-  variant?: "maestro" | "admin";
-  basePath?: string;
-}) {
-  const start = new Date(item.start_time);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const dayAfter = new Date(today);
-  dayAfter.setDate(today.getDate() + 2);
-
-  let pill: { text: string; cls: string } | null = null;
-  if (start >= today && start < tomorrow) {
-    pill = { text: "Oggi", cls: "bg-primary text-white" };
-  } else if (start >= tomorrow && start < dayAfter) {
-    pill = { text: "Domani", cls: "bg-secondary/10 text-secondary" };
-  }
-
-  const typeLabel = TYPE_LABELS[item.type] || item.type.replace(/_/g, " ");
-  const typeCls = TYPE_STYLES[item.type] || "bg-secondary/10 text-secondary";
-  const roleLabel =
-    item.involvementRole === "maestro" ? "Come maestro" : "Come atleta";
-
-  const adminTypeColors: Record<string, string> = {
-    lezione_privata: "#023047",
-    lezione_gruppo: "#023047",
-    campo: "var(--secondary)",
-    lezione: "#023047",
-    arena: "var(--color-frozen-lake-600)",
-    torneo: "var(--color-frozen-lake-600)",
-  };
-
-  if (variant === "admin") {
-    const typeBg = adminTypeColors[item.type] || "var(--secondary)";
-    return (
-      <li>
-        <Link
-          href={`${basePath}/bookings/${item.id}`}
-          className="flex items-center gap-4 py-3 px-3 rounded-lg hover:opacity-90 transition-opacity"
-          style={{ background: typeBg }}
-        >
-          <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-            <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-              {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-            </span>
-            <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
-              {start.getDate()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-white text-sm truncate">
-              {item.counterpartName || "Impegno"}
-            </p>
-            <p className="text-xs text-white/70 mt-0.5">
-              {formatItalianTime(item.start_time)}–{formatItalianTime(item.end_time)} · {item.court}
-            </p>
-          </div>
-          <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
-            {typeLabel}
-          </span>
-        </Link>
-      </li>
-    );
-  }
-
-  return (
-    <li className="py-3 first:pt-0 last:pb-0 hover:bg-secondary/5 transition-colors">
-      <div className="flex items-start gap-3">
-        <div className="flex flex-col items-center justify-center bg-secondary/5 rounded-lg w-12 py-1.5 flex-shrink-0">
-          <span className="text-[10px] uppercase font-bold text-secondary/60 leading-none">
-            {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-          </span>
-          <span className="text-lg font-bold text-secondary leading-none mt-0.5 tabular-nums">
-            {start.getDate()}
-          </span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-secondary text-sm truncate">
-              {item.counterpartName || "Impegno"}
-            </p>
-            {pill && (
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${pill.cls}`}
-              >
-                {pill.text}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-secondary/60 mt-0.5">
-            {formatItalianTime(item.start_time)}–{formatItalianTime(item.end_time)}
-            {" · "}
-            {item.court}
-            <span className="ml-2 text-secondary/40">{roleLabel}</span>
-          </p>
-          <div className="mt-1.5">
-            <span
-              className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wide ${typeCls}`}
-            >
-              {typeLabel}
-            </span>
-          </div>
-        </div>
-      </div>
-    </li>
-  );
-}
-
-function Avatar({ name, top }: { name: string; top?: boolean }) {
-  const initials = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p.charAt(0).toUpperCase())
-    .join("") || "?";
-  return (
-    <div className="relative flex-shrink-0">
-      <div className="h-10 w-10 rounded-lg bg-secondary text-white flex items-center justify-center font-bold text-sm border border-secondary/20 overflow-hidden">
-        {initials}
-      </div>
-      {top && (
-        <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-gray-400 text-white flex items-center justify-center text-[9px] font-black ring-2 ring-white">
-          ★
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center text-center py-10 px-4">
-      <div className="h-14 w-14 rounded-full bg-secondary/5 text-secondary/40 flex items-center justify-center mb-3">
-        {icon}
-      </div>
-      <p className="text-sm font-semibold text-secondary">{title}</p>
-      <p className="text-xs text-secondary/60 mt-1 max-w-xs">{description}</p>
     </div>
   );
 }

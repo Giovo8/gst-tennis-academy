@@ -65,9 +65,12 @@ export default function PublicNavbar({ home = false }: PublicNavbarProps) {
 
   return (
     <>
+    {home && (
+      <div className="hidden lg:block fixed inset-x-0 top-0 h-8 bg-white z-40 pointer-events-none" aria-hidden="true" />
+    )}
     <nav
       className={home
-        ? "bg-secondary fixed top-4 left-6 right-6 z-50 border border-black/10 rounded-lg shadow-none [transform:translateZ(0)] lg:sticky lg:top-0 lg:mx-0 lg:mt-0 lg:border lg:border-black/10 lg:rounded-none lg:shadow-sm"
+        ? "bg-secondary fixed top-4 left-6 right-6 z-50 border border-black/10 rounded-lg shadow-none [transform:translateZ(0)] lg:sticky lg:top-1 lg:mx-0 lg:mt-1 lg:rounded-none lg:rounded-t-xl lg:shadow-sm"
         : "bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-black/10 [transform:translateZ(0)]"
       }
     >

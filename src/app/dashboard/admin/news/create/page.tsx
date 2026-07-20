@@ -315,6 +315,7 @@ export default function CreateNewsPage() {
           <div className="text-xs font-semibold text-secondary/60 uppercase tracking-wider mb-1">
             GESTIONE NEWS › {editId ? "MODIFICA" : "CREA"} NEWS
           </div>
+          <p className="breadcrumb text-secondary/60">{editId ? "Modifica News" : "Crea nuova news"}</p>
           <h1 className="text-4xl font-bold text-secondary">
             {editId ? "Modifica News" : "Crea nuova news"}
           </h1>

@@ -88,15 +88,15 @@ export default function CourseBookingDetailPage() {
   return (
     <div className="space-y-6 pt-3">
       {/* Breadcrumb */}
-      <p className="breadcrumb text-secondary/60">
-        <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">
-          Prenotazioni
-        </Link>
-        {" › "}
-        <span>Dettaglio Corso</span>
-      </p>
-
       <div>
+        <p className="breadcrumb text-secondary/60">
+          <Link href="/dashboard/maestro/bookings" className="hover:text-secondary/80 transition-colors">
+            Prenotazioni
+          </Link>
+          {" › "}
+          <span>Dettaglio Corso</span>
+        </p>
+
         <h1 className="text-4xl font-bold text-secondary">Dettaglio Corso</h1>
       </div>
 

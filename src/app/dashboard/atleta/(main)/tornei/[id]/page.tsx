@@ -272,6 +272,7 @@ function AtletaTournamentDetailInner() {
 
       {/* Header con titolo e descrizione */}
       <div>
+        <p className="breadcrumb text-secondary/60">Dettaglio Competizione</p>
         <h1 className="text-3xl font-bold text-secondary mb-2">
           Dettaglio Competizione
         </h1>

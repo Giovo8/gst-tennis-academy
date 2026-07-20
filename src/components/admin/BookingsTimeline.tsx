@@ -2,8 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Users, Swords, Lock, GraduationCap } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
 import { useDragScroll } from "./hooks/useDragScroll";
+import { useBookingDrag, type DragTarget } from "./hooks/useBookingDrag";
 import { useTimelineData, type Booking } from "./hooks/useTimelineData";
 import {
   Modal,
@@ -28,6 +31,8 @@ type BookingsTimelineProps = {
   showCourses?: boolean; // When false, hides course lessons from the timeline
   showEntryModal?: boolean; // When false, clicking a booking navigates directly instead of opening the modal
   scrollToCurrentTime?: boolean; // When true, scrolls the timeline to the current time on mount
+  enableDragEdit?: boolean; // When true, bookings can be moved/resized via drag & drop (admin, or maestro on own bookings)
+  onBookingsChanged?: () => void; // Called after a successful move/resize so the parent can refetch
 };
 
 const TIME_SLOTS = [
@@ -41,14 +46,7 @@ const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
 const HALF_SLOTS_PER_DAY = TIME_SLOTS.length * 2;
 const TIMELINE_ROW_HEIGHT = 92;
 
-type TimeSlotInfo = {
-  booking: Booking | null;
-  isPartOfBooking: boolean;
-  isStart: boolean;
-  colspan: number;
-};
-
-export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true, showEntryModal = true, scrollToCurrentTime = false }: BookingsTimelineProps) {
+export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true, showEntryModal = true, scrollToCurrentTime = false, enableDragEdit = false, onBookingsChanged }: BookingsTimelineProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
@@ -69,6 +67,10 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
 
+  // Override ottimistici applicati subito dopo uno spostamento/resize, in attesa
+  // che il parent ricarichi i dati (poi vengono azzerati: vedi effetto sotto).
+  const [movedOverrides, setMovedOverrides] = useState<Record<string, { court: string; start_time: string; end_time: string }>>({});
+
   const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
   const { courts, courtsLoading, courtBlocks, blocksLoading, courseEntries, allOccupiedBookings } = useTimelineData({
     selectedDate,
@@ -76,6 +78,18 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     showCourtBlocks,
     fetchOccupied,
     highlightUserId,
+  });
+
+  // Quando arrivano nuovi dati dal parent (refetch), gli override non servono più.
+  useEffect(() => {
+    setMovedOverrides({});
+  }, [allBookings]);
+
+  const { dragState, startDrag, consumeClickSuppression } = useBookingDrag({
+    enabled: enableDragEdit,
+    halfSlotsPerDay: HALF_SLOTS_PER_DAY,
+    isRangeFree,
+    onCommit: commitBookingMove,
   });
 
   const getPrimaryParticipant = (booking: Booking) =>
@@ -98,16 +112,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     if (names.length > 0) return names;
     if (booking.user_profile?.full_name?.trim()) return [booking.user_profile.full_name.trim()];
     return [];
-  };
-
-  const getParticipantIdentityKey = (booking: Booking) => {
-    if (booking.participants && booking.participants.length > 0) {
-      return booking.participants
-        .map((participant) => participant.user_id || `guest:${participant.full_name.trim().toLowerCase()}`)
-        .join("|");
-    }
-
-    return booking.user_id;
   };
 
   // Scroll to current time on mount
@@ -135,14 +139,19 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const filteredBookings = allBookings.filter(booking => {
-      if (booking.status === "cancelled") {
-        return false;
-      }
+    const filteredBookings = allBookings
+      .map((booking) => {
+        const override = movedOverrides[booking.id];
+        return override ? { ...booking, ...override } : booking;
+      })
+      .filter((booking) => {
+        if (booking.status === "cancelled") {
+          return false;
+        }
 
-      const bookingDate = new Date(booking.start_time);
-      return bookingDate >= startOfDay && bookingDate <= endOfDay;
-    });
+        const bookingDate = new Date(booking.start_time);
+        return bookingDate >= startOfDay && bookingDate <= endOfDay;
+      });
 
     // Merge bookings, blocks and courses
     const allEntries = [...filteredBookings, ...courtBlocks, ...courseEntries].sort(
@@ -150,7 +159,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     );
 
     return allEntries;
-  }, [allBookings, selectedDate, courtBlocks, courseEntries]);
+  }, [allBookings, selectedDate, courtBlocks, courseEntries, movedOverrides]);
 
   const loading = parentLoading || blocksLoading || courtsLoading;
 
@@ -265,101 +274,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   }
 
   // Build a map of time slots for each court
-  const courtTimeline = useMemo(() => {
-    const timeline: Record<string, TimeSlotInfo[]> = {};
-
-    courts.forEach(court => {
-      // Get bookings for this court and sort by start time
-      const courtBookings = bookingsForSelectedDate
-        .filter(b => b.court === court)
-        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-      
-      // Merge consecutive bookings for the same user
-      const mergedBookings: Booking[] = [];
-      courtBookings.forEach((booking, idx) => {
-        if (idx === 0) {
-          mergedBookings.push({ ...booking });
-          return;
-        }
-        
-        const prevMerged = mergedBookings[mergedBookings.length - 1];
-        const prevEnd = new Date(prevMerged.end_time).getTime();
-        const currentStart = new Date(booking.start_time).getTime();
-        
-        // Check if consecutive and same user/type
-        if (
-          prevEnd === currentStart &&
-          getParticipantIdentityKey(prevMerged) === getParticipantIdentityKey(booking) &&
-          prevMerged.type === booking.type &&
-          prevMerged.coach_id === booking.coach_id
-        ) {
-          // Merge by extending end time
-          prevMerged.end_time = booking.end_time;
-        } else {
-          mergedBookings.push({ ...booking });
-        }
-      });
-      
-      const slots: TimeSlotInfo[] = [];
-      let skipUntilIndex = -1;
-      
-      TIME_SLOTS.forEach((timeSlot, index) => {
-        // Skip if we're in the middle of a booking
-        if (index <= skipUntilIndex) {
-          return;
-        }
-        
-        const [hour] = timeSlot.split(":").map(Number);
-        
-        // Find if there's a booking starting within this hour (00-59 minutes)
-        const bookingAtSlot = mergedBookings.find(booking => {
-          const bookingStart = new Date(booking.start_time);
-          const bookingHour = bookingStart.getHours();
-          // Check if booking starts in this hour slot (any minute from 00 to 59)
-          return bookingHour === hour;
-        });
-        
-        if (bookingAtSlot) {
-          // Calculate duration in hours (round up to include partial hours)
-          const start = new Date(bookingAtSlot.start_time);
-          const end = new Date(bookingAtSlot.end_time);
-          const durationMs = end.getTime() - start.getTime();
-          const durationHours = Math.ceil(durationMs / (1000 * 60 * 60));
-          
-          slots.push({
-            booking: bookingAtSlot,
-            isPartOfBooking: true,
-            isStart: true,
-            colspan: durationHours
-          });
-          
-          // Skip the next slots that are part of this booking
-          skipUntilIndex = index + durationHours - 1;
-        } else {
-          // Empty slot
-          slots.push({
-            booking: null,
-            isPartOfBooking: false,
-            isStart: false,
-            colspan: 1
-          });
-        }
-      });
-      
-      timeline[court] = slots;
-    });
-    
-    return timeline;
-  }, [bookingsForSelectedDate, courts]);
-
-  function getBookingColor(booking: Booking): string {
-    if (booking.status === "cancelled") {
-      return "";
-    }
-    
-    return "";
-  }
-  
   function getBookingStyle(booking: Booking) {
     const isArenaBooking =
       booking.type === "arena" || booking.notes?.toLowerCase().includes("sfida arena");
@@ -468,15 +382,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return { text: reason, isAltro: false };
   }
 
-  function getBookingTypeIcon(booking: Booking) {
-    if (booking.isCourse) return <GraduationCap className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.isBlock) return <Lock className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.type === "lezione_privata") return <User className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.type === "lezione_gruppo") return <Users className="h-5 w-5 text-secondary flex-shrink-0" />;
-    if (booking.type === "arena") return <Swords className="h-5 w-5 text-secondary flex-shrink-0" />;
-    return <CalendarIcon className="h-5 w-5 text-secondary flex-shrink-0" />;
-  }
-
   function formatEntryTimeRange(booking: Booking): string {
     const start = new Date(booking.start_time).toLocaleTimeString("it-IT", {
       hour: "2-digit",
@@ -552,10 +457,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     ).join(' ');
   }
 
-  function isToday(): boolean {
-    const today = new Date();
-    return selectedDate.toDateString() === today.toDateString();
-  }
 
   function getBookingSlotRange(booking: Booking) {
     const start = new Date(booking.start_time);
@@ -572,32 +473,123 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return { startSlot, duration };
   }
 
-  function mergeForeignSlotRanges(bookings: any[]): { startSlot: number; duration: number }[] {
-    const ranges = bookings
-      .map(b => getBookingSlotRange(b))
-      .filter(r => r.startSlot >= 0 && r.duration > 0)
-      .sort((a, b) => a.startSlot - b.startSlot);
-    if (ranges.length === 0) return [];
-    const merged: { startSlot: number; duration: number }[] = [];
-    let current = { ...ranges[0] };
-    for (let i = 1; i < ranges.length; i++) {
-      const next = ranges[i];
-      if (next.startSlot <= current.startSlot + current.duration) {
-        const end = Math.max(current.startSlot + current.duration, next.startSlot + next.duration);
-        current = { startSlot: current.startSlot, duration: end - current.startSlot };
-      } else {
-        merged.push(current);
-        current = { ...next };
+  // Converte un mezzo-slot (indice 0..31, ognuno 30 min a partire dalle 07:00)
+  // nelle date ISO di inizio/fine sulla data selezionata.
+  function slotToTimes(startSlot: number, duration: number) {
+    const start = new Date(selectedDate);
+    start.setHours(7 + Math.floor(startSlot / 2), (startSlot % 2) * 30, 0, 0);
+    const end = new Date(start.getTime() + duration * 30 * 60 * 1000);
+    return { start, end };
+  }
+
+  function slotRangeLabel(startSlot: number, duration: number): string {
+    const { start, end } = slotToTimes(startSlot, duration);
+    const fmt = (d: Date) => d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    return `${fmt(start)} - ${fmt(end)}`;
+  }
+
+  // Vero se sul campo il range [startSlot, startSlot+duration) è libero,
+  // ignorando la prenotazione con id = excludeId. Usato durante il drag.
+  function isRangeFree(court: string, startSlot: number, duration: number, excludeId: string): boolean {
+    if (startSlot < 0 || duration <= 0 || startSlot + duration > HALF_SLOTS_PER_DAY) return false;
+    const entries =
+      fetchOccupied && allOccupiedBookings.length > 0
+        ? [...bookingsForSelectedDate, ...(allOccupiedBookings as Booking[])]
+        : bookingsForSelectedDate;
+    for (const b of entries) {
+      if (b.court !== court || b.id === excludeId) continue;
+      if (b.status === "cancelled") continue;
+      const range = getBookingSlotRange(b);
+      if (range.startSlot < 0 || range.duration <= 0) continue;
+      if (startSlot < range.startSlot + range.duration && startSlot + duration > range.startSlot) {
+        return false;
       }
     }
-    merged.push(current);
-    return merged;
+    return true;
+  }
+
+  // Un blocco è trascinabile solo se il drag è abilitato, non è un corso/blocco/
+  // annullata, e (per maestro/atleta) appartiene all'utente evidenziato.
+  function canDragBooking(booking: Booking): boolean {
+    if (!enableDragEdit) return false;
+    if (booking.isBlock || booking.isCourse) return false;
+    if (booking.status === "cancelled") return false;
+    if (!highlightUserId) return true; // contesto admin/gestore
+    return booking.user_id === highlightUserId || booking.coach_id === highlightUserId;
+  }
+
+  // Spostamento/resize: aggiorna subito (ottimistico) e conferma via PUT.
+  async function commitBookingMove(bookingId: string, target: DragTarget) {
+    const booking = bookingsForSelectedDate.find((b) => b.id === bookingId);
+    if (!booking) return;
+
+    const { start, end } = slotToTimes(target.startSlot, target.duration);
+    const startISO = start.toISOString();
+    const endISO = end.toISOString();
+
+    // Applica subito l'override ottimistico.
+    setMovedOverrides((prev) => ({
+      ...prev,
+      [bookingId]: { court: target.court, start_time: startISO, end_time: endISO },
+    }));
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      const res = await fetch(`/api/bookings?id=${bookingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ court: target.court, start_time: startISO, end_time: endISO }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setMovedOverrides((prev) => {
+          const next = { ...prev };
+          delete next[bookingId];
+          return next;
+        });
+        toast.error(data?.error || "Impossibile spostare la prenotazione");
+        return;
+      }
+
+      toast.success("Prenotazione spostata");
+      onBookingsChanged?.();
+    } catch {
+      setMovedOverrides((prev) => {
+        const next = { ...prev };
+        delete next[bookingId];
+        return next;
+      });
+      toast.error("Errore di rete durante lo spostamento");
+    }
   }
 
   const occupiedSource = fetchOccupied && allOccupiedBookings.length > 0
     ? allOccupiedBookings
     : bookingsForSelectedDate;
   const timelineColumnsCount = Math.max(courts.length, 1);
+
+  // Set di mezzi-slot occupati (chiave "campo|indice"), precalcolato una volta
+  // per non ripetere il parsing delle date in ogni cella a ogni render/frame.
+  const occupiedSlotSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of occupiedSource as Booking[]) {
+      const start = new Date(b.start_time).getTime();
+      const end = new Date(b.end_time).getTime();
+      for (let idx = 0; idx < HALF_SLOTS_PER_DAY; idx++) {
+        const slotTime = new Date(selectedDate);
+        slotTime.setHours(7 + Math.floor(idx / 2), (idx % 2) * 30, 0, 0);
+        const t = slotTime.getTime();
+        if (t >= start && t < end) set.add(`${b.court}|${idx}`);
+      }
+    }
+    return set;
+  }, [occupiedSource, selectedDate]);
   const selectedEntryParticipants = useMemo(
     () => (selectedEntry ? getParticipantNames(selectedEntry) : []),
     [selectedEntry]
@@ -724,23 +716,42 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             if (startSlot < 0 || duration <= 0) return null;
                             const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
                             const isClickable = canOpenEntry(booking);
+                            const draggable = canDragBooking(booking);
+                            const drag = dragState?.bookingId === booking.id ? dragState : null;
+                            const isMoving = drag?.mode === "move";
+                            const isResizing = drag?.mode === "resize";
+                            const effDuration = isResizing && drag?.ghost ? drag.ghost.duration : duration;
+                            const resizeInvalid = isResizing && drag?.ghost?.invalid;
                             return (
                               <div
                                 key={booking.id}
-                                onClick={isClickable ? () => openEntryModal(booking) : undefined}
-                                className={`absolute p-2 text-white text-[11px] font-bold flex flex-col justify-center rounded-lg z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
+                                data-booking-block
+                                onClick={isClickable ? () => { if (consumeClickSuppression()) return; openEntryModal(booking); } : undefined}
+                                onMouseDown={draggable ? (e) => e.stopPropagation() : undefined}
+                                onPointerDown={draggable ? (e) => startDrag(e, { bookingId: booking.id, court, startSlot, duration, mode: "move" }) : undefined}
+                                className={`absolute p-2 text-white text-[11px] font-bold flex flex-col justify-center rounded-lg z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90" : ""} ${draggable ? "cursor-grab active:cursor-grabbing touch-none select-none" : isClickable ? "cursor-pointer" : "cursor-default"} ${resizeInvalid ? "ring-2 ring-white" : ""}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `${(startSlot / HALF_SLOTS_PER_DAY) * 100}%`,
-                                  width: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
+                                  width: `calc(${(effDuration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
                                   top: '4px',
                                   bottom: '4px',
-                                  marginLeft: '2px'
+                                  marginLeft: '2px',
+                                  opacity: isMoving ? 0.35 : 1,
+                                  pointerEvents: dragState ? 'none' : undefined,
                                 }}
                                 title={isClickable
-                                  ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
+                                  ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}${draggable ? " · trascina per spostare" : ""}`
                                   : "Prenotazione non apribile"}
                               >
+                                {draggable && (
+                                  <div
+                                    onPointerDown={(e) => { e.stopPropagation(); startDrag(e, { bookingId: booking.id, court, startSlot, duration, mode: "resize" }); }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-0 bottom-0 w-2.5 cursor-ew-resize rounded-r-lg hover:bg-white/25"
+                                    title="Trascina per cambiare la durata"
+                                  />
+                                )}
                                 {showBookingContent ? (
                                   booking.isCourse ? (
                                     highlightUserId && booking.coach_id !== highlightUserId ? (
@@ -811,7 +822,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   width: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
                                   top: '4px',
                                   bottom: '4px',
-                                  marginLeft: '2px'
+                                  marginLeft: '2px',
+                                  pointerEvents: dragState ? 'none' : undefined,
                                 }}
                                 title={label}
                               >
@@ -832,23 +844,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                         const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
                         const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
 
-                        const isOccupied1 = occupiedSource.some(b => {
-                          if (b.court !== court) return false;
-                          const bookingStart = new Date(b.start_time);
-                          const bookingEnd = new Date(b.end_time);
-                          const slotTime = new Date(selectedDate);
-                          slotTime.setHours(hour, 0, 0, 0);
-                          return slotTime >= bookingStart && slotTime < bookingEnd;
-                        });
-
-                        const isOccupied2 = occupiedSource.some(b => {
-                          if (b.court !== court) return false;
-                          const bookingStart = new Date(b.start_time);
-                          const bookingEnd = new Date(b.end_time);
-                          const slotTime = new Date(selectedDate);
-                          slotTime.setHours(hour, 30, 0, 0);
-                          return slotTime >= bookingStart && slotTime < bookingEnd;
-                        });
+                        const isOccupied1 = occupiedSlotSet.has(`${court}|${hourIndex * 2}`);
+                        const isOccupied2 = occupiedSlotSet.has(`${court}|${hourIndex * 2 + 1}`);
 
                         return (
                           <div
@@ -857,6 +854,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                           >
                             {/* Prima metà - :00 */}
                             <div
+                              data-slot-cell
+                              data-court={court}
+                              data-slot-index={hourIndex * 2}
                               onClick={() => !isOccupied1 && toggleSlotSelection(court, time1)}
                               className={`flex-1 transition-colors ${
                                 isOccupied1
@@ -868,6 +868,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             />
                             {/* Seconda metà - :30 */}
                             <div
+                              data-slot-cell
+                              data-court={court}
+                              data-slot-index={hourIndex * 2 + 1}
                               onClick={() => !isOccupied2 && toggleSlotSelection(court, time2)}
                               className={`flex-1 transition-colors ${
                                 isOccupied2
@@ -939,23 +942,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                           const isSelected1 = selectedSlots.some(s => s.court === court && s.time === time1);
                           const isSelected2 = selectedSlots.some(s => s.court === court && s.time === time2);
 
-                          const isOccupied1 = occupiedSource.some(b => {
-                            if (b.court !== court) return false;
-                            const bookingStart = new Date(b.start_time);
-                            const bookingEnd = new Date(b.end_time);
-                            const slotTime = new Date(selectedDate);
-                            slotTime.setHours(hour, 0, 0, 0);
-                            return slotTime >= bookingStart && slotTime < bookingEnd;
-                          });
-
-                          const isOccupied2 = occupiedSource.some(b => {
-                            if (b.court !== court) return false;
-                            const bookingStart = new Date(b.start_time);
-                            const bookingEnd = new Date(b.end_time);
-                            const slotTime = new Date(selectedDate);
-                            slotTime.setHours(hour, 30, 0, 0);
-                            return slotTime >= bookingStart && slotTime < bookingEnd;
-                          });
+                          const isOccupied1 = occupiedSlotSet.has(`${court}|${hourIndex * 2}`);
+                          const isOccupied2 = occupiedSlotSet.has(`${court}|${hourIndex * 2 + 1}`);
 
                           return (
                             <div
@@ -964,6 +952,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                               style={{ height: `${TIMELINE_ROW_HEIGHT}px` }}
                             >
                               <div
+                                data-slot-cell
+                                data-court={court}
+                                data-slot-index={hourIndex * 2}
                                 onClick={() => !isOccupied1 && toggleSlotSelection(court, time1)}
                                 className={`flex-1 transition-colors ${
                                   isOccupied1
@@ -974,6 +965,9 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                 }`}
                               />
                               <div
+                                data-slot-cell
+                                data-court={court}
+                                data-slot-index={hourIndex * 2 + 1}
                                 onClick={() => !isOccupied2 && toggleSlotSelection(court, time2)}
                                 className={`flex-1 transition-colors border-t border-gray-200/70 ${
                                   isOccupied2
@@ -1003,22 +997,41 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             if (startSlot < 0 || duration <= 0) return null;
                             const isLesson = booking.type === "lezione_privata" || booking.type === "lezione_gruppo";
                             const isClickable = canOpenEntry(booking);
+                            const draggable = canDragBooking(booking);
+                            const drag = dragState?.bookingId === booking.id ? dragState : null;
+                            const isMoving = drag?.mode === "move";
+                            const isResizing = drag?.mode === "resize";
+                            const effDuration = isResizing && drag?.ghost ? drag.ghost.duration : duration;
+                            const resizeInvalid = isResizing && drag?.ghost?.invalid;
                             return (
                               <div
                                 key={`swap-${court}-${booking.id}`}
-                                onClick={isClickable ? () => openEntryModal(booking) : undefined}
-                                className={`absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 transition-[filter] duration-200 ${isClickable ? "hover:brightness-90 cursor-pointer" : "cursor-default"}`}
+                                data-booking-block
+                                onClick={isClickable ? () => { if (consumeClickSuppression()) return; openEntryModal(booking); } : undefined}
+                                onMouseDown={draggable ? (e) => e.stopPropagation() : undefined}
+                                onPointerDown={draggable ? (e) => startDrag(e, { bookingId: booking.id, court, startSlot, duration, mode: "move" }) : undefined}
+                                className={`absolute px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 transition-[filter] duration-200 ${dragState ? "" : "pointer-events-auto"} ${isClickable ? "hover:brightness-90" : ""} ${draggable ? "cursor-grab active:cursor-grabbing touch-none select-none" : isClickable ? "cursor-pointer" : "cursor-default"} ${resizeInvalid ? "ring-2 ring-white" : ""}`}
                                 style={{
                                   ...getBookingStyle(booking),
                                   left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
                                   width: `calc(${(1 / timelineColumnsCount) * 100}% - 4px)`,
                                   top: `calc(${(startSlot / HALF_SLOTS_PER_DAY) * 100}% + 2px)`,
-                                  height: `calc(${(duration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`
+                                  height: `calc(${(effDuration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
+                                  opacity: isMoving ? 0.35 : 1,
+                                  pointerEvents: dragState ? 'none' : undefined,
                                 }}
                                 title={isClickable
-                                  ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}`
+                                  ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}${draggable ? " · trascina per spostare" : ""}`
                                   : "Prenotazione non apribile"}
                               >
+                                {draggable && (
+                                  <div
+                                    onPointerDown={(e) => { e.stopPropagation(); startDrag(e, { bookingId: booking.id, court, startSlot, duration, mode: "resize" }); }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute left-0 right-0 bottom-0 h-2.5 cursor-ns-resize rounded-b-lg hover:bg-white/25"
+                                    title="Trascina per cambiare la durata"
+                                  />
+                                )}
                                 {showBookingContent ? (
                                   booking.isCourse ? (
                                     highlightUserId && booking.coach_id !== highlightUserId ? (
@@ -1082,7 +1095,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             return (
                               <div
                                 key={`swap-foreign-${court}-${i}`}
-                                className="absolute pointer-events-auto px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-default"
+                                className={`absolute px-2 py-1.5 text-white text-xs font-bold flex flex-col justify-center rounded-lg z-10 cursor-default ${dragState ? "" : "pointer-events-auto"}`}
                                 style={{
                                   background: '#94a3b8',
                                   left: `calc(${(courtIndex / timelineColumnsCount) * 100}% + 2px)`,
@@ -1122,6 +1135,29 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             </div>
         </div>
       )}
+
+      {/* Anteprima a grandezza piena durante lo spostamento (colore della prenotazione) */}
+      {dragState?.mode === "move" && dragState.pointer && dragState.preview && dragState.ghost && (() => {
+        const dragBooking = bookingsForSelectedDate.find((b) => b.id === dragState.bookingId);
+        if (!dragBooking) return null;
+        return (
+          <div
+            className={`fixed z-[60] pointer-events-none rounded-lg p-2 text-white text-[11px] font-bold flex flex-col justify-center shadow-2xl overflow-hidden ${dragState.ghost.invalid ? "ring-2 ring-white" : ""}`}
+            style={{
+              left: dragState.pointer.x - dragState.preview.offsetX,
+              top: dragState.pointer.y - dragState.preview.offsetY,
+              width: dragState.preview.width,
+              height: dragState.preview.height,
+              ...getBookingStyle(dragBooking),
+              opacity: 0.92,
+            }}
+          >
+            <div className="truncate">{dragState.ghost.court.replace(/^Campo\s+/i, "Campo ")}</div>
+            <div className="truncate text-white/90 text-[10px]">{slotRangeLabel(dragState.ghost.startSlot, dragState.ghost.duration)}</div>
+            {dragState.ghost.invalid && <div className="truncate text-white text-[10px]">Slot non disponibile</div>}
+          </div>
+        );
+      })()}
 
       <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
         <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">

@@ -101,6 +101,7 @@ export default function NotificationsPage() {
     <div className="p-6">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
+          <p className="breadcrumb text-secondary/60">Notifiche</p>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Notifiche
           </h1>
