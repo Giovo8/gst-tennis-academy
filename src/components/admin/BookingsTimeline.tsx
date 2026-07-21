@@ -3,11 +3,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Users, Swords, Lock, GraduationCap } from "lucide-react";
+import { User, Users, Swords, Lock, GraduationCap } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useDragScroll } from "./hooks/useDragScroll";
 import { useBookingDrag, type DragTarget } from "./hooks/useBookingDrag";
 import { useTimelineData, type Booking } from "./hooks/useTimelineData";
+import DateNavigator from "@/components/bookings/DateNavigator";
 import {
   Modal,
   ModalContent,
@@ -41,8 +42,6 @@ const TIME_SLOTS = [
   "19:00", "20:00", "21:00", "22:00"
 ];
 
-const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
-
 const HALF_SLOTS_PER_DAY = TIME_SLOTS.length * 2;
 const TIMELINE_ROW_HEIGHT = 92;
 
@@ -56,20 +55,21 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
   const [selectedSlots, setSelectedSlots] = useState<{ court: string; time: string }[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<Booking | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
-  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
-  const [pendingDate, setPendingDate] = useState<Date>(() => {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
-    return today;
-  });
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
-    const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), 1);
-  });
 
-  // Override ottimistici applicati subito dopo uno spostamento/resize, in attesa
-  // che il parent ricarichi i dati (poi vengono azzerati: vedi effetto sotto).
-  const [movedOverrides, setMovedOverrides] = useState<Record<string, { court: string; start_time: string; end_time: string }>>({});
+  // Spostamenti/resize in sospeso: applicati solo visivamente finché l'utente
+  // non preme "Salva modifiche" (che li invia) o "Annulla" (che li scarta).
+  const [pendingMoves, setPendingMoves] = useState<Record<string, { court: string; start_time: string; end_time: string }>>({});
+  const [savingMoves, setSavingMoves] = useState(false);
+  const pendingMovesCount = Object.keys(pendingMoves).length;
+  const hasPendingMoves = enableDragEdit && pendingMovesCount > 0;
+
+  // Modifiche già salvate ma non ancora riflesse nei dati del parent: le teniamo
+  // applicate finché il refetch non arriva, così i blocchi non "tornano indietro".
+  const [savedOverrides, setSavedOverrides] = useState<Record<string, { court: string; start_time: string; end_time: string }>>({});
+
+  useEffect(() => {
+    setSavedOverrides({});
+  }, [allBookings]);
 
   const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
   const { courts, courtsLoading, courtBlocks, blocksLoading, courseEntries, allOccupiedBookings } = useTimelineData({
@@ -80,16 +80,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     highlightUserId,
   });
 
-  // Quando arrivano nuovi dati dal parent (refetch), gli override non servono più.
-  useEffect(() => {
-    setMovedOverrides({});
-  }, [allBookings]);
-
   const { dragState, startDrag, consumeClickSuppression } = useBookingDrag({
     enabled: enableDragEdit,
     halfSlotsPerDay: HALF_SLOTS_PER_DAY,
     isRangeFree,
-    onCommit: commitBookingMove,
+    onCommit: stagePendingMove,
   });
 
   const getPrimaryParticipant = (booking: Booking) =>
@@ -141,7 +136,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
     const filteredBookings = allBookings
       .map((booking) => {
-        const override = movedOverrides[booking.id];
+        const override = pendingMoves[booking.id] || savedOverrides[booking.id];
         return override ? { ...booking, ...override } : booking;
       })
       .filter((booking) => {
@@ -159,72 +154,13 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     );
 
     return allEntries;
-  }, [allBookings, selectedDate, courtBlocks, courseEntries, movedOverrides]);
+  }, [allBookings, selectedDate, courtBlocks, courseEntries, pendingMoves, savedOverrides]);
 
   const loading = parentLoading || blocksLoading || courtsLoading;
 
-  function changeDate(days: number) {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + days);
-    newDate.setHours(12, 0, 0, 0);
-    setSelectedDate(newDate);
+  function handleSelectDate(date: Date) {
+    setSelectedDate(date);
     setSelectedSlots([]); // Reset selection when changing date
-  }
-
-  function isSameCalendarDay(a: Date, b: Date): boolean {
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
-  }
-
-  function normalizeDate(date: Date): Date {
-    const normalized = new Date(date);
-    normalized.setHours(12, 0, 0, 0);
-    return normalized;
-  }
-
-  function openDatePickerModal() {
-    const normalizedSelected = normalizeDate(selectedDate);
-    setPendingDate(normalizedSelected);
-    setCalendarViewDate(new Date(normalizedSelected.getFullYear(), normalizedSelected.getMonth(), 1));
-    setDatePickerModalOpen(true);
-  }
-
-  function changeCalendarMonth(delta: number) {
-    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
-  }
-
-  function selectCalendarDay(day: Date) {
-    const normalized = normalizeDate(day);
-    setPendingDate(normalized);
-    setCalendarViewDate(new Date(normalized.getFullYear(), normalized.getMonth(), 1));
-  }
-
-  function applyDateSelection() {
-    setSelectedDate(normalizeDate(pendingDate));
-    setSelectedSlots([]);
-    setDatePickerModalOpen(false);
-  }
-
-  function handleDatePickerToday() {
-    const today = normalizeDate(new Date());
-    setPendingDate(today);
-    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
-  }
-
-  function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", {
-      month: "long",
-      year: "numeric"
-    });
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }
-
-  function goToToday() {
-    setSelectedDate(normalizeDate(new Date()));
-    setSelectedSlots([]);
   }
 
   function toggleSlotSelection(court: string, time: string) {
@@ -434,30 +370,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     router.push(getEntryDetailsPath(selectedEntry));
   }
 
-  function formatDateHeader(short: boolean = false): string {
-    if (short) {
-      const formatted = selectedDate.toLocaleDateString("it-IT", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-      });
-      return formatted.split(' ').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
-    }
-    const formatted = selectedDate.toLocaleDateString("it-IT", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
-    return formatted.split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-  }
-
-
   function getBookingSlotRange(booking: Booking) {
     const start = new Date(booking.start_time);
     const end = new Date(booking.end_time);
@@ -518,54 +430,120 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     return booking.user_id === highlightUserId || booking.coach_id === highlightUserId;
   }
 
-  // Spostamento/resize: aggiorna subito (ottimistico) e conferma via PUT.
-  async function commitBookingMove(bookingId: string, target: DragTarget) {
-    const booking = bookingsForSelectedDate.find((b) => b.id === bookingId);
-    if (!booking) return;
+  // Spostamento/resize: registra la modifica in sospeso, senza salvarla.
+  // Se il blocco torna dov'era già salvato la modifica viene rimossa.
+  function stagePendingMove(bookingId: string, target: DragTarget) {
+    const original = allBookings.find((b) => b.id === bookingId);
+    if (!original) return;
+
+    // Riferimento = ultimo stato persistito: l'override salvato se il parent non
+    // ha ancora ricaricato, altrimenti il dato originale.
+    const persisted = savedOverrides[bookingId] || original;
 
     const { start, end } = slotToTimes(target.startSlot, target.duration);
     const startISO = start.toISOString();
     const endISO = end.toISOString();
 
-    // Applica subito l'override ottimistico.
-    setMovedOverrides((prev) => ({
-      ...prev,
-      [bookingId]: { court: target.court, start_time: startISO, end_time: endISO },
-    }));
+    const isBackToPersisted =
+      persisted.court === target.court &&
+      new Date(persisted.start_time).getTime() === start.getTime() &&
+      new Date(persisted.end_time).getTime() === end.getTime();
 
+    setPendingMoves((prev) => {
+      const next = { ...prev };
+      if (isBackToPersisted) {
+        delete next[bookingId];
+      } else {
+        next[bookingId] = { court: target.court, start_time: startISO, end_time: endISO };
+      }
+      return next;
+    });
+  }
+
+  function resetPendingMoves() {
+    if (pendingMovesCount === 0) return;
+    setPendingMoves({});
+    toast.info("Modifiche annullate");
+  }
+
+  // Invia le modifiche in sospeso passando dal PUT (stesso workflow della pagina
+  // di modifica: email ai destinatari, notifica all'atleta, activity log).
+  //
+  // Le PUT vanno una alla volta: il vincolo anti-overlap valuta lo stato reale
+  // del DB, non quello mostrato a schermo. Con più passate le catene di
+  // spostamenti (A→slot libero, B→slot di A) si risolvono da sole; restano
+  // fuori solo gli scambi circolari veri e propri, che segnaliamo.
+  async function savePendingMoves() {
+    if (pendingMovesCount === 0 || savingMoves) return;
+
+    setSavingMoves(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
-      const res = await fetch(`/api/bookings?id=${bookingId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ court: target.court, start_time: startISO, end_time: endISO }),
-      });
+      let remaining = Object.entries(pendingMoves);
+      const saved: Record<string, { court: string; start_time: string; end_time: string }> = {};
+      let savedCount = 0;
+      let lastError: string | null = null;
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setMovedOverrides((prev) => {
-          const next = { ...prev };
-          delete next[bookingId];
-          return next;
-        });
-        toast.error(data?.error || "Impossibile spostare la prenotazione");
-        return;
+      while (remaining.length > 0) {
+        const stillPending: typeof remaining = [];
+
+        for (const [bookingId, move] of remaining) {
+          try {
+            const res = await fetch(`/api/bookings?id=${bookingId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify(move),
+            });
+
+            if (res.ok) {
+              saved[bookingId] = move;
+              savedCount++;
+            } else {
+              const payload = await res.json().catch(() => ({}));
+              lastError = payload?.error || "Impossibile salvare la modifica";
+              stillPending.push([bookingId, move]);
+            }
+          } catch {
+            lastError = "Errore di rete durante il salvataggio";
+            stillPending.push([bookingId, move]);
+          }
+        }
+
+        // Nessun progresso in questa passata: le rimanenti sono in conflitto
+        // reciproco, inutile insistere.
+        if (stillPending.length === remaining.length) {
+          remaining = stillPending;
+          break;
+        }
+        remaining = stillPending;
       }
 
-      toast.success("Prenotazione spostata");
-      onBookingsChanged?.();
-    } catch {
-      setMovedOverrides((prev) => {
-        const next = { ...prev };
-        delete next[bookingId];
-        return next;
-      });
-      toast.error("Errore di rete durante lo spostamento");
+      // Restano in sospeso solo le modifiche non salvate, così l'utente può
+      // correggerle senza rifare tutto. Quelle salvate restano applicate come
+      // override finché il parent non ricarica i dati.
+      setPendingMoves(Object.fromEntries(remaining));
+      setSavedOverrides((prev) => ({ ...prev, ...saved }));
+
+      if (remaining.length === 0) {
+        toast.success(
+          savedCount === 1 ? "Prenotazione aggiornata" : `${savedCount} prenotazioni aggiornate`
+        );
+      } else if (savedCount > 0) {
+        toast.warning(
+          `${savedCount} salvate, ${remaining.length} non salvate. ${lastError || ""}`.trim()
+        );
+      } else {
+        toast.error(lastError || "Impossibile salvare le modifiche");
+      }
+
+      if (savedCount > 0) onBookingsChanged?.();
+    } finally {
+      setSavingMoves(false);
     }
   }
 
@@ -594,64 +572,11 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     () => (selectedEntry ? getParticipantNames(selectedEntry) : []),
     [selectedEntry]
   );
-  const calendarDays = useMemo(() => {
-    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
-    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
-    const gridStartDate = new Date(firstOfMonth);
-    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
-
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(gridStartDate);
-      date.setDate(gridStartDate.getDate() + index);
-      return {
-        date,
-        isCurrentMonth: date.getMonth() === calendarViewDate.getMonth(),
-      };
-    });
-  }, [calendarViewDate]);
 
   return (
     <div className="space-y-4 font-sans">
       {/* Date Navigation */}
-      <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
-        <button
-          onClick={() => changeDate(-1)}
-          className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
-        >
-          <span className="text-lg font-semibold text-white">&lt;</span>
-        </button>
-        
-        <div className="min-w-0 flex justify-center">
-          <button
-            type="button"
-            className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
-            title="Scegli data"
-            onClick={openDatePickerModal}
-          >
-            <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
-              <span
-                className="font-bold text-white text-xl leading-none text-center whitespace-nowrap"
-              >
-                {formatDateHeader(true)}
-              </span>
-            </span>
-            <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
-              <span
-                className="font-bold text-white text-xl leading-none text-left min-w-0 truncate max-w-none capitalize"
-              >
-                {formatDateHeader()}
-              </span>
-            </span>
-          </button>
-        </div>
-
-        <button
-          onClick={() => changeDate(1)}
-          className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
-        >
-          <span className="text-lg font-semibold text-white">&gt;</span>
-        </button>
-      </div>
+      <DateNavigator selectedDate={selectedDate} onSelectDate={handleSelectDate} />
 
       {/* Timeline Grid */}
       {loading ? (
@@ -673,7 +598,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
               <div className="min-w-[3280px]">
                 {/* Header Row with Time Slots */}
                 <div className="flex mb-3">
-                  <div className="sticky left-0 z-20 flex-shrink-0 w-[70px] bg-secondary rounded-l-lg shadow-sm" style={{ height: '52px' }} />
+                  <div className="flex-shrink-0 w-[70px] bg-secondary rounded-l-lg shadow-sm" style={{ height: '52px' }} />
                   <div className="bg-secondary rounded-r-lg shadow-sm flex-1">
                     <div className="grid timeline-grid" style={{ gridTemplateColumns: 'repeat(16, 1fr)' }}>
                       {TIME_SLOTS.map((time) => (
@@ -696,7 +621,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                     className="flex"
                   >
                     {/* Sticky court label */}
-                    <div className="sticky left-0 z-20 flex-shrink-0 w-[70px] bg-secondary rounded-lg p-3 flex items-center justify-center shadow-sm border border-black/5" style={{ minHeight: '70px' }}>
+                    <div className="sticky left-0 z-20 flex-shrink-0 w-[70px] bg-[color-mix(in_srgb,var(--secondary)_90%,white_10%)] rounded-lg p-3 flex items-center justify-center shadow-sm border border-white/10" style={{ minHeight: '70px' }}>
                       <span className="text-xl font-bold text-white tabular-nums">
                         {court.replace(/^Campo\s+/i, "")}
                       </span>
@@ -722,6 +647,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             const isResizing = drag?.mode === "resize";
                             const effDuration = isResizing && drag?.ghost ? drag.ghost.duration : duration;
                             const resizeInvalid = isResizing && drag?.ghost?.invalid;
+                            const isPending = Boolean(pendingMoves[booking.id]);
                             return (
                               <div
                                 key={booking.id}
@@ -739,6 +665,13 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   marginLeft: '2px',
                                   opacity: isMoving ? 0.35 : 1,
                                   pointerEvents: dragState ? 'none' : undefined,
+                                  // Modifica non ancora salvata: bordo bianco
+                                  // dentro il blocco (fuori sparirebbe sul fondo
+                                  // bianco della timeline) + alone scuro esterno
+                                  // che lo stacca dallo sfondo.
+                                  boxShadow: isPending
+                                    ? 'inset 0 0 0 2px #ffffff, 0 0 0 2px rgba(2, 48, 71, 0.55)'
+                                    : undefined,
                                 }}
                                 title={isClickable
                                   ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}${draggable ? " · trascina per spostare" : ""}`
@@ -863,7 +796,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   ? 'bg-gray-100 cursor-not-allowed'
                                   : isSelected1
                                   ? 'bg-secondary cursor-pointer'
-                                  : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
+                                  : 'bg-white hover:bg-frozen-800/10 cursor-pointer'
                               }`}
                             />
                             {/* Seconda metà - :30 */}
@@ -877,7 +810,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   ? 'bg-gray-100 cursor-not-allowed'
                                   : isSelected2
                                   ? 'bg-secondary cursor-pointer'
-                                  : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
+                                  : 'bg-white hover:bg-frozen-800/10 cursor-pointer'
                               }`}
                             />
                             {/* Tacchetta centrale */}
@@ -961,7 +894,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                     ? 'bg-gray-100 cursor-not-allowed'
                                     : isSelected1
                                     ? 'bg-secondary cursor-pointer'
-                                    : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
+                                    : 'bg-white hover:bg-frozen-800/10 cursor-pointer'
                                 }`}
                               />
                               <div
@@ -974,7 +907,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                     ? 'bg-gray-100 cursor-not-allowed'
                                     : isSelected2
                                     ? 'bg-secondary cursor-pointer'
-                                    : 'bg-white hover:bg-emerald-50/40 cursor-pointer'
+                                    : 'bg-white hover:bg-frozen-800/10 cursor-pointer'
                                 }`}
                               />
                               <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-px bg-gray-300" />
@@ -1003,6 +936,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                             const isResizing = drag?.mode === "resize";
                             const effDuration = isResizing && drag?.ghost ? drag.ghost.duration : duration;
                             const resizeInvalid = isResizing && drag?.ghost?.invalid;
+                            const isPending = Boolean(pendingMoves[booking.id]);
                             return (
                               <div
                                 key={`swap-${court}-${booking.id}`}
@@ -1019,6 +953,13 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                   height: `calc(${(effDuration / HALF_SLOTS_PER_DAY) * 100}% - 4px)`,
                                   opacity: isMoving ? 0.35 : 1,
                                   pointerEvents: dragState ? 'none' : undefined,
+                                  // Modifica non ancora salvata: bordo bianco
+                                  // dentro il blocco (fuori sparirebbe sul fondo
+                                  // bianco della timeline) + alone scuro esterno
+                                  // che lo stacca dallo sfondo.
+                                  boxShadow: isPending
+                                    ? 'inset 0 0 0 2px #ffffff, 0 0 0 2px rgba(2, 48, 71, 0.55)'
+                                    : undefined,
                                 }}
                                 title={isClickable
                                   ? `Clicca per vedere i dettagli${booking.isBlock ? '' : ` - ${getBookingDisplayName(booking)}`}${draggable ? " · trascina per spostare" : ""}`
@@ -1120,19 +1061,41 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             </div>
           )}
 
-          {/* Book Button */}
-          <div className="mt-6">
+          {/* Azioni: con spostamenti in sospeso "Prenota Campo" lascia il posto
+              a salva/annulla, così è chiaro che c'è del lavoro da confermare. */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            {hasPendingMoves ? (
+              <>
+                <button
+                  onClick={savePendingMoves}
+                  disabled={savingMoves}
+                  title="Salva gli spostamenti e invia le notifiche"
+                  className="flex-1 px-6 py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {savingMoves ? "Salvataggio..." : "Salva modifiche"}
+                </button>
+
+                <button
+                  onClick={resetPendingMoves}
+                  disabled={savingMoves}
+                  title="Riporta le prenotazioni alla posizione originale"
+                  // Colore delle lezioni private (vedi getBookingStyle): niente
+                  // classe Tailwind, è un hex della palette prenotazioni.
+                  style={{ background: "#023047" }}
+                  className="flex-1 px-6 py-3 text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Annulla
+                </button>
+              </>
+            ) : (
               <button
                 onClick={handleBookSlots}
-                disabled={false}
-                className="w-full px-6 py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
               >
                 Prenota Campo
-                {selectedSlots.length > 0 && (
-                  <span className="text-white/70 font-normal text-sm">· {selectedSlots.length} slot selezionat{selectedSlots.length === 1 ? 'o' : 'i'}</span>
-                )}
               </button>
-            </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1158,87 +1121,6 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
           </div>
         );
       })()}
-
-      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
-            <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
-          </ModalHeader>
-
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white font-semibold"
-                          : isCurrentMonth
-                          ? "text-gray-800 hover:bg-gray-100"
-                          : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button
-              type="button"
-              onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
         <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">

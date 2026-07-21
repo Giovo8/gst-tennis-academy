@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
+import NewsImage from "@/components/ui/NewsImage";
 
 const ITEMS_PER_PAGE = 21;
 
@@ -207,11 +208,7 @@ export default function AdminNewsBoard() {
             {/* Image */}
             <div className="w-full aspect-[16/9] overflow-hidden">
               {post.image_url ? (
-                <img
-                  src={post.image_url}
-                  alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+                <NewsImage src={post.image_url} alt={post.title} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-secondary/5">
                   <svg

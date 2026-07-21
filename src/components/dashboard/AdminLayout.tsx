@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Shield,
   Wallet,
+  Bell,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -159,6 +160,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Contabilità",
       href: "/dashboard/admin/contabilita",
       icon: <Wallet className="h-5 w-5" />,
+    },
+    {
+      label: "Centro Notifiche",
+      href: "/dashboard/admin/notifications",
+      icon: <Bell className="h-5 w-5" />,
     },
   ];
 

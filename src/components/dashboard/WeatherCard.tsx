@@ -92,7 +92,7 @@ export default function WeatherCard({
   const globalMax = forecast.length ? Math.max(...forecast.map((d) => d.tempMax)) : 1;
 
   return (
-    <div className="bg-secondary rounded-xl border border-black/10 text-white overflow-hidden">
+    <div className="bg-secondary rounded-lg text-white overflow-hidden">
       <button
         type="button"
         onClick={() => canExpand && setExpanded((v) => !v)}

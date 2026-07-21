@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
       .from("certificates")
       .upload(fileName, file, {
         contentType: "application/pdf",
-        cacheControl: "3600",
+        // Nome file immutabile (timestamp+random, upsert:false) → cache 1 anno
+        cacheControl: "31536000",
         upsert: false,
       });
 

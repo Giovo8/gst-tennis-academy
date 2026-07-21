@@ -3,6 +3,7 @@ import { requireAdminOrGestore } from "@/lib/ai-news/auth";
 import { callGeneraNewsEdge, normalizeCategoria } from "@/lib/ai-news/utils";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { optimizeImage } from "@/lib/images/optimize";
 import Parser from "rss-parser";
 
 export const dynamic = "force-dynamic";
@@ -326,11 +327,14 @@ async function resolveNewsImageUrl(sourceUrl: string | null, articleUrl: string 
   for (const candidate of candidates) {
     try {
       const result = await fetchValidatedImage(candidate);
-      const fileName = `news/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${result.ext}`;
+      const optimized = await optimizeImage(result.buffer, result.contentType, result.ext);
 
-      const { error: uploadError } = await supabaseServer.storage.from("avatars").upload(fileName, result.buffer, {
-        contentType: result.contentType,
-        cacheControl: "3600",
+      const fileName = `news/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${optimized.ext}`;
+
+      const { error: uploadError } = await supabaseServer.storage.from("avatars").upload(fileName, optimized.buffer, {
+        contentType: optimized.contentType,
+        // Nome file immutabile (timestamp+random, upsert:false) → cache 1 anno
+        cacheControl: "31536000",
         upsert: false,
       });
 

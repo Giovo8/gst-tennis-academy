@@ -1,21 +1,15 @@
-export type BookingEmailAction = "created" | "deleted";
+export type BookingEmailAction = "created" | "updated" | "deleted";
 
-type BookingTypeTemplate = {
-  created: {
+type BookingTypeTemplate = Record<
+  BookingEmailAction,
+  {
     subjectPrefix: string;
     bannerLabel: string;
     title: string;
     intro: string;
     textLead: string;
-  };
-  deleted: {
-    subjectPrefix: string;
-    bannerLabel: string;
-    title: string;
-    intro: string;
-    textLead: string;
-  };
-};
+  }
+>;
 
 export type BookingEmailCopy = {
   subjectPrefix: string;
@@ -41,6 +35,13 @@ const TYPE_TEMPLATES: Record<string, BookingTypeTemplate> = {
       intro: "E stata registrata una nuova lezione privata.",
       textLead: "Nuova lezione privata prenotata",
     },
+    updated: {
+      subjectPrefix: "Lezione privata modificata",
+      bannerLabel: "Notifica modifica lezione privata",
+      title: "Lezione privata modificata",
+      intro: "Una lezione privata e stata modificata: qui sotto trovi i nuovi dettagli.",
+      textLead: "Lezione privata modificata",
+    },
     deleted: {
       subjectPrefix: "Lezione privata eliminata",
       bannerLabel: "Notifica eliminazione lezione privata",
@@ -56,6 +57,13 @@ const TYPE_TEMPLATES: Record<string, BookingTypeTemplate> = {
       title: "Nuova lezione di gruppo prenotata",
       intro: "E stata registrata una nuova lezione di gruppo.",
       textLead: "Nuova lezione di gruppo prenotata",
+    },
+    updated: {
+      subjectPrefix: "Lezione di gruppo modificata",
+      bannerLabel: "Notifica modifica lezione di gruppo",
+      title: "Lezione di gruppo modificata",
+      intro: "Una lezione di gruppo e stata modificata: qui sotto trovi i nuovi dettagli.",
+      textLead: "Lezione di gruppo modificata",
     },
     deleted: {
       subjectPrefix: "Lezione di gruppo eliminata",
@@ -73,6 +81,13 @@ const TYPE_TEMPLATES: Record<string, BookingTypeTemplate> = {
       intro: "E stata registrata una nuova lezione.",
       textLead: "Nuova lezione prenotata",
     },
+    updated: {
+      subjectPrefix: "Lezione modificata",
+      bannerLabel: "Notifica modifica lezione",
+      title: "Lezione modificata",
+      intro: "Una lezione e stata modificata: qui sotto trovi i nuovi dettagli.",
+      textLead: "Lezione modificata",
+    },
     deleted: {
       subjectPrefix: "Lezione eliminata",
       bannerLabel: "Notifica eliminazione lezione",
@@ -88,6 +103,13 @@ const TYPE_TEMPLATES: Record<string, BookingTypeTemplate> = {
       title: "Nuova prenotazione registrata",
       intro: "E stata registrata una nuova prenotazione e il calendario campi e stato aggiornato.",
       textLead: "Nuova prenotazione registrata",
+    },
+    updated: {
+      subjectPrefix: "Prenotazione modificata",
+      bannerLabel: "Notifica modifica prenotazione",
+      title: "Prenotazione modificata",
+      intro: "Una prenotazione e stata modificata e il calendario campi e stato aggiornato.",
+      textLead: "Prenotazione modificata",
     },
     deleted: {
       subjectPrefix: "Prenotazione eliminata",

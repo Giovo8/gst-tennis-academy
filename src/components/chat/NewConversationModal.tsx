@@ -5,6 +5,7 @@ import { X, Search, UserPlus, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import StatusDot from "./StatusDot";
 import { toast } from "sonner";
+import Avatar from "@/components/ui/Avatar";
 
 interface Profile {
   id: string;
@@ -237,11 +238,7 @@ export default function NewConversationModal({
                 >
                   <div className="relative">
                     {user.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt={user.full_name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
+                      <Avatar src={user.avatar_url} name={user.full_name} size={40} />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold">
                         {user.full_name.charAt(0)}

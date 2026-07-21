@@ -5,6 +5,7 @@ import { Users, Trophy, TrendingUp, RefreshCw, Target, Calendar } from 'lucide-r
 import BracketMatchCard from './BracketMatchCard';
 import { getAvatarUrl } from '@/lib/utils';
 import { toast } from 'sonner';
+import Avatar from "@/components/ui/Avatar";
 
 type TabType = 'participants' | 'standings' | 'matches';
 
@@ -358,11 +359,7 @@ export default function GroupStageView({
                 <div className="flex items-center gap-4">
                   <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                     {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={fullName}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
+                      <Avatar src={avatarUrl} name={fullName} fill />
                     ) : (
                       <span>{initials || 'U'}</span>
                     )}
@@ -456,11 +453,7 @@ export default function GroupStageView({
                         </div>
                         <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-lg bg-secondary text-white flex items-center justify-center text-xs font-bold overflow-hidden relative">
                           {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={fullName}
-                              className="absolute inset-0 w-full h-full object-cover"
-                            />
+                            <Avatar src={avatarUrl} name={fullName} fill />
                           ) : (
                             <span>{initials || 'U'}</span>
                           )}

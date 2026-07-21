@@ -2,6 +2,7 @@
 
 import { MoreVertical, Trash2 } from "lucide-react";
 import { getAvatarUrl } from "@/lib/utils";
+import Avatar from "@/components/ui/Avatar";
 
 interface GroupInfo {
   id: string;
@@ -54,11 +55,7 @@ export function ParticipantCard({
             }`}
           >
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={fullName}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              <Avatar src={avatarUrl} name={fullName} fill />
             ) : (
               <span>{fullName?.charAt(0)?.toUpperCase() || "U"}</span>
             )}

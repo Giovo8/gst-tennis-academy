@@ -13,6 +13,7 @@ import {
   Swords,
   GraduationCap,
   User,
+  Bell,
 } from "lucide-react";
 
 interface AthleteLayoutProps {
@@ -132,6 +133,11 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       label: "Profilo",
       href: "/dashboard/atleta/profile",
       icon: <User className="h-5 w-5" />,
+    },
+    {
+      label: "Centro Notifiche",
+      href: "/dashboard/atleta/notifications",
+      icon: <Bell className="h-5 w-5" />,
     },
   ];
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { optimizeImage } from "@/lib/images/optimize";
 
 const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
@@ -101,13 +102,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const fileName = `news/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const optimized = await optimizeImage(fileBuffer, contentType, fileExt);
+
+    const fileName = `news/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${optimized.ext}`;
 
     const { error: uploadError } = await supabaseServer.storage
       .from("avatars")
-      .upload(fileName, fileBuffer, {
-        contentType: contentType,
-        cacheControl: "3600",
+      .upload(fileName, optimized.buffer, {
+        contentType: optimized.contentType,
+        // Nome file immutabile (timestamp+random, upsert:false) → cache 1 anno
+        cacheControl: "31536000",
         upsert: false,
       });
 

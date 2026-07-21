@@ -155,6 +155,7 @@ export default function DashboardShell({
     staff: "Staff",
     "invite-codes": "Codici Invito",
     "job-applications": "Lavora con Noi",
+    notifications: "Centro Notifiche",
   };
 
   const isDashboardRootPath =

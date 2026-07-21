@@ -14,6 +14,7 @@ import {
   sendBookingCreatedEmailToAthlete,
   sendBookingCreatedEmailToMaestro,
   sendBookingDeletedEmailToRecipients,
+  sendBookingUpdatedEmailToRecipients,
 } from "@/lib/email/booking-notifications";
 import { buildAdminsNotificationForUserBookingDeletion } from "@/lib/bookings/bookingDeletionNotifications";
 import {
@@ -53,6 +54,17 @@ interface BookingParticipantRow {
   email: string | null;
   is_registered?: boolean;
   order_index?: number;
+}
+
+/** Riga `bookings` dopo un aggiornamento, limitata ai campi usati dalle notifiche. */
+interface UpdatedBookingRow {
+  user_id: string;
+  court: string;
+  type?: string | null;
+  coach_id?: string | null;
+  start_time: string;
+  end_time: string;
+  notes?: string | null;
 }
 
 // ─── POST side effects ────────────────────────────────────────────────────────
@@ -372,6 +384,185 @@ export async function handleBookingCreatedSideEffects({
       participantsCount: participantsInserted,
     },
   });
+}
+
+// ─── PUT side effects ─────────────────────────────────────────────────────────
+
+/**
+ * Dopo l'aggiornamento di una prenotazione: email a tutti i destinatari
+ * (atleti, segreteria, maestro se lezione privata) e notifica push all'atleta
+ * quando la modifica arriva dallo staff.
+ *
+ * Usato sia dallo spostamento via timeline sia dalla pagina di modifica:
+ * entrambi passano dal PUT, quindi il workflow resta identico.
+ */
+export async function handleBookingUpdatedSideEffects({
+  booking,
+  previous,
+  bookingId,
+  user,
+  profile,
+  shouldNotifyAthlete,
+}: {
+  booking: UpdatedBookingRow;
+  previous: { court?: string | null; start_time?: string | null; end_time?: string | null };
+  bookingId: string;
+  user: AuthUser;
+  profile: AuthProfile | null;
+  shouldNotifyAthlete: boolean;
+}): Promise<void> {
+  const actorDisplayName = profile?.full_name || user.email || "Lo staff";
+
+  const { data: ownerProfile, error: ownerProfileError } = await supabaseServer
+    .from("profiles")
+    .select("full_name, email, role")
+    .eq("id", booking.user_id)
+    .single();
+
+  if (ownerProfileError) {
+    logger.warn("Failed to resolve booking owner for update email", {
+      bookingId,
+      ownerId: booking.user_id,
+      error: ownerProfileError.message,
+    });
+  }
+
+  const { data: bookingParticipants, error: participantsError } = await supabaseServer
+    .from("booking_participants")
+    .select("user_id, full_name, email, is_registered, order_index")
+    .eq("booking_id", bookingId)
+    .order("order_index", { ascending: true });
+
+  if (participantsError) {
+    logger.warn("Failed to fetch participants for booking update email", {
+      bookingId,
+      error: participantsError.message,
+    });
+  }
+
+  const participantRows: BookingParticipantRow[] = bookingParticipants || [];
+
+  // Per i partecipanti registrati l'email affidabile e quella del profilo.
+  const participantUserIds: string[] = Array.from(
+    new Set<string>(
+      participantRows
+        .map((p) => p.user_id)
+        .filter((uid): uid is string => Boolean(uid))
+    )
+  );
+  const participantEmailsFromProfilesById = new Map<string, string>();
+
+  if (participantUserIds.length > 0) {
+    const { data: participantProfiles, error: participantProfilesError } = await supabaseServer
+      .from("profiles")
+      .select("id, email")
+      .in("id", participantUserIds);
+
+    if (participantProfilesError) {
+      logger.warn("Failed to resolve participant emails for booking update email", {
+        bookingId,
+        error: participantProfilesError.message,
+      });
+    } else {
+      for (const pp of participantProfiles || []) {
+        const normalizedEmail = pp.email?.trim().toLowerCase();
+        if (!normalizedEmail || !isValidEmail(normalizedEmail)) continue;
+        participantEmailsFromProfilesById.set(pp.id, normalizedEmail);
+      }
+    }
+  }
+
+  const participantsForEmail = participantRows.map((p) => ({
+    full_name: p.full_name || null,
+    email:
+      p.email ||
+      (p.user_id ? participantEmailsFromProfilesById.get(p.user_id) || null : null),
+  }));
+
+  const athleteContext = resolveBookingEmailAthleteContext({
+    owner: ownerProfile,
+    participants: participantsForEmail,
+    fallbackName: ownerProfile?.full_name || "Un utente",
+  });
+
+  let coachName: string | null = null;
+  if (booking.type === "lezione_privata" && booking.coach_id) {
+    const { data: coachProfile, error: coachProfileError } = await supabaseServer
+      .from("profiles")
+      .select("full_name")
+      .eq("id", booking.coach_id)
+      .single();
+
+    if (coachProfileError) {
+      logger.warn("Failed to resolve coach name for booking update email", {
+        bookingId,
+        coachId: booking.coach_id,
+        error: coachProfileError.message,
+      });
+    } else {
+      coachName = coachProfile?.full_name?.trim() || null;
+    }
+  }
+
+  const bookingMode =
+    booking.type === "campo" ? (participantRows.length > 2 ? "doppio" : "singolo") : undefined;
+
+  await sendBookingUpdatedEmailToRecipients({
+    bookingId,
+    athleteName: athleteContext.athleteName,
+    athleteEmail: athleteContext.athleteEmail,
+    athleteRecipientEmails: athleteContext.athleteRecipientEmails,
+    additionalAthleteNames: athleteContext.additionalAthleteNames,
+    coachId: booking.coach_id || null,
+    coachName,
+    court: booking.court,
+    type: booking.type || "campo",
+    bookingMode,
+    startTime: booking.start_time,
+    endTime: booking.end_time,
+    notes: booking.notes || null,
+    updatedByName: actorDisplayName,
+    updatedByRole: profile?.role || "utente",
+    previous: {
+      court: previous.court ?? null,
+      startTime: previous.start_time ?? null,
+      endTime: previous.end_time ?? null,
+    },
+  });
+
+  // Notifica push all'atleta solo se la modifica non e sua.
+  if (shouldNotifyAthlete) {
+    const bookingDate = new Date(booking.start_time);
+    const dateLabel = bookingDate.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const timeLabel = bookingDate.toLocaleTimeString("it-IT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const { error: notificationError } = await supabaseServer.from("notifications").insert({
+      user_id: booking.user_id,
+      type: "booking",
+      title:
+        booking.type === "lezione_privata"
+          ? "Lezione privata modificata"
+          : "Prenotazione campo modificata",
+      message: `La tua prenotazione ${booking.court} del ${dateLabel} alle ${timeLabel} è stata modificata da ${actorDisplayName}.`,
+      link: "/dashboard/atleta/bookings",
+      is_read: false,
+    });
+
+    if (notificationError) {
+      logger.warn("Failed to create booking update notification", {
+        bookingId,
+        recipientUserId: booking.user_id,
+        error: notificationError.message,
+      });
+    }
+  }
 }
 
 // ─── DELETE side effects ──────────────────────────────────────────────────────

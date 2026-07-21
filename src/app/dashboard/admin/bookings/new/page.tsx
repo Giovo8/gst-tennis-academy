@@ -8,8 +8,6 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
   User,
   Users,
   Swords,
@@ -29,6 +27,7 @@ import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import ParticipantsCard from "@/components/bookings/ParticipantsCard";
 import CoachCard from "@/components/bookings/CoachCard";
+import DateNavigator from "@/components/bookings/DateNavigator";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
@@ -125,9 +124,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
   const [existingBookings, setExistingBookings] = useState<ExistingBooking[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<ExistingBooking | null>(null);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
-  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
-  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
-  const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const pendingSlotsSelection = useRef<string[]>([]);
   const urlParamsApplied = useRef<boolean>(false);
   
@@ -812,84 +808,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
     return slot ? slot.available : false;
   };
 
-  const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
-
-  const calendarDays = useMemo(() => {
-    const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
-    const mondayBasedDayIndex = (firstOfMonth.getDay() + 6) % 7;
-    const gridStartDate = new Date(firstOfMonth);
-    gridStartDate.setDate(firstOfMonth.getDate() - mondayBasedDayIndex);
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(gridStartDate);
-      date.setDate(gridStartDate.getDate() + index);
-      return { date, isCurrentMonth: date.getMonth() === calendarViewDate.getMonth() };
-    });
-  }, [calendarViewDate]);
-
-  function normalizeDate(date: Date): Date {
-    const d = new Date(date); d.setHours(12, 0, 0, 0); return d;
-  }
-
-  function isSameCalendarDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  }
-
-  function openDatePickerModal() {
-    const n = normalizeDate(selectedDate);
-    setPendingDate(n);
-    setCalendarViewDate(new Date(n.getFullYear(), n.getMonth(), 1));
-    setDatePickerModalOpen(true);
-  }
-
-  function changeCalendarMonth(delta: number) {
-    setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
-  }
-
-  function selectCalendarDay(day: Date) {
-    const n = normalizeDate(day);
-    setPendingDate(n);
-    setCalendarViewDate(new Date(n.getFullYear(), n.getMonth(), 1));
-  }
-
-  function applyDateSelection() {
-    setSelectedDate(normalizeDate(pendingDate));
-    setDatePickerModalOpen(false);
-  }
-
-  function handleDatePickerToday() {
-    const today = normalizeDate(new Date());
-    setPendingDate(today);
-    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
-  }
-
-  function getCalendarMonthLabel(date: Date): string {
-    const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }
-
-  function formatDateHeader(short: boolean = false): string {
-    if (short) {
-      const formatted = selectedDate.toLocaleDateString("it-IT", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-      return formatted.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    }
-    const formatted = selectedDate.toLocaleDateString("it-IT", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-    return formatted.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-  }
-
-  const fullDateLabel = (() => { const s = selectedDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); return s.charAt(0).toUpperCase() + s.slice(1); })();
-  const mobileWeekdayLabel = selectedDate.toLocaleDateString("it-IT", { weekday: "short" });
-  const mobileDateLabel = (() => { const raw = `${mobileWeekdayLabel.slice(0, 1).toUpperCase()}${mobileWeekdayLabel.slice(1, 3).toLowerCase()} ${selectedDate.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}`; return raw.replace(/(\d{2} )(\w)/, (_, d, c) => d + c.toUpperCase()); })();
-
   return (
     <div className="space-y-6 pt-3">
       {/* Messages */}
@@ -921,41 +839,7 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
       <div>
         <div className="space-y-6">
           {/* Selettore Data */}
-          <div className="rounded-lg p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center transition-all bg-secondary">
-            <button
-              onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
-              className="justify-self-start h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
-            >
-              <span className="text-lg font-semibold text-white">&lt;</span>
-            </button>
-
-            <div className="min-w-0 flex justify-center">
-              <button
-                type="button"
-                onClick={openDatePickerModal}
-                className="relative inline-flex items-center justify-center rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-white/10"
-                title="Scegli data"
-              >
-                <span className="inline-flex items-center justify-center sm:hidden" style={{ gap: "6px" }}>
-                  <span className="font-bold text-white text-xl leading-none text-center whitespace-nowrap">
-                    {formatDateHeader(true)}
-                  </span>
-                </span>
-                <span className="hidden min-w-0 sm:inline-flex sm:items-center sm:gap-2">
-                  <span className="font-bold text-white text-xl leading-none text-left min-w-0 truncate max-w-none capitalize">
-                    {formatDateHeader()}
-                  </span>
-                </span>
-              </button>
-            </div>
-
-            <button
-              onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
-              className="justify-self-end h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-colors hover:bg-white/10 inline-flex items-center justify-center"
-            >
-              <span className="text-lg font-semibold text-white">&gt;</span>
-            </button>
-          </div>
+          <DateNavigator selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Card Dettagli prenotazione */}
           <div className={bookingCardClassName}>
@@ -1260,83 +1144,6 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
       {/* Bottom Spacer */}
       <div className="h-8" />
-
-      {/* Date Picker Modal */}
-      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200 flex flex-col max-h-[90dvh]">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
-            <ModalTitle className="font-semibold text-white">Seleziona Data</ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white overflow-y-auto flex-1">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white font-semibold"
-                          : isCurrentMonth
-                          ? "text-gray-800 hover:bg-gray-100"
-                          : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="px-7! py-3! border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button
-              type="button"
-              onClick={handleDatePickerToday}
-              className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyDateSelection}
-              className="flex-1 py-2.5 bg-secondary text-white font-semibold hover:opacity-90 rounded-lg transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       <Modal open={entryModalOpen} onOpenChange={setEntryModalOpen}>
         <ModalContent size="md" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">

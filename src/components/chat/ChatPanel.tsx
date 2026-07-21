@@ -21,6 +21,7 @@ import StatusDot from "./StatusDot";
 import TypingIndicator from "./TypingIndicator";
 import { useCurrentUserPresence, useTypingIndicator } from "@/lib/chat/presence";
 import { toast } from "sonner";
+import Avatar from "@/components/ui/Avatar";
 
 interface Profile {
   id: string;
@@ -488,11 +489,7 @@ export default function ChatPanel() {
     const participant = conversation.participants[0];
     if (participant?.avatar_url) {
       return (
-        <img
-          src={participant.avatar_url}
-          alt={participant.full_name}
-          className="w-12 h-12 rounded-full object-cover"
-        />
+        <Avatar src={participant.avatar_url} name={participant.full_name} size={48} />
       );
     }
     
@@ -673,17 +670,11 @@ export default function ChatPanel() {
                   {!isOwn && (
                     <div className="w-8 h-8 flex-shrink-0">
                       {showAvatar && (
-                        message.profiles.avatar_url ? (
-                          <img
-                            src={message.profiles.avatar_url}
-                            alt={message.profiles.full_name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold">
-                            {message.profiles.full_name.charAt(0)}
-                          </div>
-                        )
+                        <Avatar
+                          src={message.profiles.avatar_url}
+                          name={message.profiles.full_name}
+                          size={32}
+                        />
                       )}
                     </div>
                   )}

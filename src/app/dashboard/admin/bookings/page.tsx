@@ -95,18 +95,22 @@ function localDateStr(d: Date): string {
 
 function getNextCourseLessonDate(course: CourseData, fromDateStr: string): string | null {
   const { start_date, end_date, schedule_days, cancelled_dates, extra_dates } = course;
-  if (!start_date || !end_date || !schedule_days?.length) return null;
-  const allowed = new Set(schedule_days.map((d) => COURSE_DAY_INDEX[d] ?? -1));
+  const hasDays = schedule_days?.length;
+  if (!hasDays && !extra_dates?.length) return null;
+  const allowed = new Set((schedule_days ?? []).map((d) => COURSE_DAY_INDEX[d] ?? -1));
   const cancelled = new Set(cancelled_dates ?? []);
-  const startStr = fromDateStr > start_date ? fromDateStr : start_date;
-  const cur = new Date(startStr + "T12:00:00");
-  const endD = new Date(end_date + "T12:00:00");
-  while (cur <= endD) {
-    const dateStr = cur.toISOString().split("T")[0];
-    if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) return dateStr;
-    cur.setDate(cur.getDate() + 1);
+  const startStr = start_date && fromDateStr < start_date ? start_date : fromDateStr;
+  if (hasDays) {
+    const cur = new Date(startStr + "T12:00:00");
+    const limit = end_date ? new Date(end_date + "T12:00:00") : null;
+    for (let i = 0; i < 365; i++) {
+      if (limit && cur > limit) break;
+      const dateStr = cur.toISOString().split("T")[0];
+      if (allowed.has(cur.getDay()) && !cancelled.has(dateStr)) return dateStr;
+      cur.setDate(cur.getDate() + 1);
+    }
   }
-  const futureExtras = (extra_dates ?? []).filter((d) => d >= fromDateStr).sort();
+  const futureExtras = (extra_dates ?? []).filter((d) => !cancelled.has(d) && d >= fromDateStr).sort();
   return futureExtras[0] ?? null;
 }
 
@@ -191,7 +195,6 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   async function loadCourseNextLessons() {
     const now = new Date();
     const todayStr = localDateStr(now);
-    const tomorrowStr = localDateStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
     const { data } = await supabase
       .from("courses")
       .select("id, name, instructor_name, schedule_days, start_date, end_date, cancelled_dates, extra_dates, lesson_overrides, lesson_time_overrides, schedule_periods, court_name, schedule_time")
@@ -199,21 +202,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     if (!data) return;
     const lessons: CourseLesson[] = [];
     for (const course of data as CourseData[]) {
-      let dateStr = getNextCourseLessonDate(course, todayStr);
-      if (!dateStr) continue;
-      if (dateStr === todayStr) {
-        const time = getCourseTimeForDate(course, dateStr);
-        if (time) {
-          const endMatch = time.match(/(\d{1,2}):(\d{2})\s*$/);
-          if (endMatch) {
-            const lessonEnd = new Date();
-            lessonEnd.setHours(parseInt(endMatch[1]), parseInt(endMatch[2]), 0, 0);
-            if (now > lessonEnd) {
-              dateStr = getNextCourseLessonDate(course, tomorrowStr);
-            }
-          }
-        }
-      }
+      const dateStr = getNextCourseLessonDate(course, todayStr);
       if (!dateStr) continue;
       lessons.push({
         courseId: course.id,
@@ -606,6 +595,15 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     const matchesDateFrom = !filterDateFrom || bookingDate >= filterDateFrom;
     const matchesDateTo = !filterDateTo || bookingDate <= filterDateTo;
     const normalizedSearch = search.toLowerCase();
+    const bookingStartDate = new Date(booking.start_time);
+    const bookingDateSearchable = [
+      bookingDate,
+      bookingStartDate.toLocaleDateString("it-IT"),
+      bookingStartDate.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }),
+      bookingStartDate.toLocaleDateString("it-IT", { day: "2-digit", month: "short" }).replace(".", ""),
+    ]
+      .join(" ")
+      .toLowerCase();
     const matchesSearch =
       !search ||
       getAthleteDisplayName(booking).toLowerCase().includes(normalizedSearch) ||
@@ -616,7 +614,8 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           participant.email?.toLowerCase().includes(normalizedSearch)
       ) ||
       booking.coach_profile?.full_name?.toLowerCase().includes(normalizedSearch) ||
-      booking.court?.toLowerCase().includes(normalizedSearch);
+      booking.court?.toLowerCase().includes(normalizedSearch) ||
+      bookingDateSearchable.includes(normalizedSearch);
     return (
       matchesVisibility &&
       matchesUser &&
@@ -633,13 +632,37 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
   const filteredCourseNextLessons: CourseLesson[] = mode !== "history"
     ? courseNextLessons.filter((lesson) => {
         const q = search.toLowerCase();
-        const matchesSearch = !search || lesson.courseName.toLowerCase().includes(q) || (lesson.instructorName?.toLowerCase().includes(q) ?? false);
+        const lessonDateObj = new Date(lesson.dateStr + "T12:00:00");
+        const lessonDateSearchable = [
+          lesson.dateStr,
+          lessonDateObj.toLocaleDateString("it-IT"),
+          lessonDateObj.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }),
+          lessonDateObj.toLocaleDateString("it-IT", { day: "2-digit", month: "short" }).replace(".", ""),
+        ]
+          .join(" ")
+          .toLowerCase();
+        const matchesSearch =
+          !search ||
+          lesson.courseName.toLowerCase().includes(q) ||
+          (lesson.instructorName?.toLowerCase().includes(q) ?? false) ||
+          lessonDateSearchable.includes(q);
         const matchesType = filterType === "all" || filterType === "corso";
         const isToday = lesson.dateStr === localDateStr(new Date());
         const matchesDateFrom = !filterDateFrom || lesson.dateStr >= filterDateFrom;
         const matchesDateTo = !filterDateTo || lesson.dateStr <= filterDateTo;
         if (filterVisibility === "today") return matchesSearch && matchesType && isToday && matchesDateFrom && matchesDateTo;
-        const matchesVisibility = filterVisibility === "active" || filterVisibility === "all";
+        if (filterVisibility === "active") {
+          if (isToday) {
+            const endMatch = lesson.time?.match(/(\d{1,2}):(\d{2})\s*$/);
+            if (endMatch) {
+              const lessonEnd = new Date();
+              lessonEnd.setHours(parseInt(endMatch[1]), parseInt(endMatch[2]), 0, 0);
+              if (new Date() > lessonEnd) return false;
+            }
+          }
+          return matchesSearch && matchesType && matchesDateFrom && matchesDateTo;
+        }
+        const matchesVisibility = filterVisibility === "all";
         return matchesSearch && matchesType && matchesVisibility && matchesDateFrom && matchesDateTo;
       })
     : [];
@@ -754,7 +777,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
           <input
             type="text"
-            placeholder="Cerca per nome atleta, maestro, email o campo..."
+            placeholder="Cerca per nome atleta, maestro, email, campo o data..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { UserPlus, Search, X, Loader2, Check } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/utils';
 import { toast } from 'sonner';
+import Avatar from "@/components/ui/Avatar";
 
 interface ManualEnrollmentProps {
   tournamentId: string;
@@ -247,11 +248,7 @@ export default function ManualEnrollment({
 
                         <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-lg bg-secondary text-white flex items-center justify-center text-sm font-bold overflow-hidden relative">
                           {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={fullName}
-                              className="absolute inset-0 w-full h-full object-cover"
-                            />
+                            <Avatar src={avatarUrl} name={fullName} fill />
                           ) : (
                             <span>{fullName.charAt(0).toUpperCase()}</span>
                           )}

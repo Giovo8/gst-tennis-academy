@@ -15,6 +15,7 @@ import { resolveBookingUpdatePermission, pickBookingMoveFields } from "@/lib/boo
 import {
   handleBookingCreatedSideEffects,
   handleBookingPendingSideEffects,
+  handleBookingUpdatedSideEffects,
   handleBookingDeletedSideEffects,
 } from "@/lib/bookings/bookingService";
 import { logActivityServer } from "@/lib/activity/logActivity";
@@ -722,44 +723,23 @@ export async function PUT(req: Request) {
       );
     }
 
-    if (shouldNotifyAthlete) {
-      const actorDisplayName = profile?.full_name || user.email || "Lo staff";
-      const updatedBooking = data?.[0];
-      const bookingCourt = updatedBooking?.court || booking.court || "campo";
-      const bookingStartTime = updatedBooking?.start_time || booking.start_time;
+    // Email ai destinatari + notifica push all'atleta.
+    // Il record aggiornato può non tornare (RLS/select vuota): in quel caso
+    // ricostruiamo lo stato finale unendo i valori precedenti alla modifica.
+    const updatedBooking = data?.[0] || { ...booking, ...normalizedUpdate };
 
-      const bookingDate = new Date(bookingStartTime);
-      const dateLabel = bookingDate.toLocaleDateString("it-IT", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      const timeLabel = bookingDate.toLocaleTimeString("it-IT", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const bookingTypeForPut = updatedBooking?.type || booking.type;
-      const { error: notificationError } = await supabaseServer
-        .from("notifications")
-        .insert({
-          user_id: booking.user_id,
-          type: "booking",
-          title: bookingTypeForPut === "lezione_privata" ? "Lezione privata modificata" : "Prenotazione campo modificata",
-          message: `La tua prenotazione ${bookingCourt} del ${dateLabel} alle ${timeLabel} è stata modificata da ${actorDisplayName}.`,
-
-          link: "/dashboard/atleta/bookings",
-          is_read: false,
-        });
-
-      if (notificationError) {
-        logger.warn("Failed to create booking update notification", {
-          bookingId: id,
-          recipientUserId: booking.user_id,
-          error: notificationError.message,
-        });
-      }
-    }
+    await handleBookingUpdatedSideEffects({
+      booking: updatedBooking,
+      previous: {
+        court: booking.court,
+        start_time: booking.start_time,
+        end_time: booking.end_time,
+      },
+      bookingId: id,
+      user,
+      profile,
+      shouldNotifyAthlete,
+    });
 
     await logActivityServer({
       userId: user.id,

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 import NewsShareButtons from "@/components/news/NewsShareButtons";
+import NewsImage from "@/components/ui/NewsImage";
 import env from "@/lib/config/env";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeAINewsBody, sanitizeAINewsTitle } from "@/lib/ai-news/contentSanitizer";
@@ -225,10 +226,12 @@ export default async function NewsDetailPage({
           {sanitizedPost.image_url && (
             <div className="mx-auto max-w-7xl px-6 sm:px-6 lg:px-8 pt-6 mb-8">
               <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl">
-                <img
+                <NewsImage
                   src={sanitizedPost.image_url}
                   alt={displayTitle}
-                  className="w-full h-full object-cover"
+                  sizes="(max-width: 1024px) 100vw, 1280px"
+                  className="object-cover"
+                  priority
                 />
               </div>
             </div>
@@ -317,10 +320,9 @@ export default async function NewsDetailPage({
                   >
                     <div className="w-full aspect-[16/9] overflow-hidden">
                       {relatedPost.image_url ? (
-                        <img
+                        <NewsImage
                           src={relatedPost.image_url}
                           alt={normalizeLegacyTitle(relatedPost.title)}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-secondary/5">

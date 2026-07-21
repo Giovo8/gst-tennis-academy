@@ -379,7 +379,8 @@ async function resolveNewsImageUrl(
 
       const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, result.buffer, {
         contentType: result.contentType,
-        cacheControl: "3600",
+        // Nome file immutabile (timestamp+random, upsert:false) → cache 1 anno
+        cacheControl: "31536000",
         upsert: false,
       });
 

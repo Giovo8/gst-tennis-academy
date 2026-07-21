@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import NewsImage from "@/components/ui/NewsImage";
 
 type NewsItem = {
   id: string;
@@ -36,30 +37,6 @@ function formatNewsDate(dateString: string | undefined): string {
     month: "short",
     year: "numeric",
   }).format(date);
-}
-
-function NewsImage({ src, alt }: { src: string; alt: string }) {
-  const [error, setError] = useState(false);
-
-  if (error) {
-    return (
-      <div className="h-full w-full bg-secondary/5 flex items-center justify-center">
-        <svg className="w-10 h-10 text-secondary/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      draggable={false}
-      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-      onError={() => setError(true)}
-    />
-  );
 }
 
 export default function AthleteNewsCarousel() {

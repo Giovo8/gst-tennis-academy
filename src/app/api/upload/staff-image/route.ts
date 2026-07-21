@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { getRouteAuth, unauthorized, forbidden, isAdmin } from "@/lib/auth/routeAuth";
+import { optimizeImage } from "@/lib/images/optimize";
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,15 +85,23 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const fileName = `staff/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-    // Upload file directly (Supabase handles the conversion)
-    // For mobile compatibility, upload File object directly instead of converting to Buffer
+    // Le foto profilo/staff sono mostrate al massimo a ~200px: 800px basta e avanza
+    const optimized = await optimizeImage(
+      await file.arrayBuffer(),
+      file.type || "image/jpeg",
+      fileExt,
+      { maxWidth: 800 }
+    );
+
+    const fileName = `staff/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${optimized.ext}`;
+
     const { error: uploadError } = await supabaseServer.storage
       .from("avatars")
-      .upload(fileName, file, {
-        contentType: file.type || "image/jpeg",
-        cacheControl: "3600",
+      .upload(fileName, optimized.buffer, {
+        contentType: optimized.contentType,
+        // Nome file immutabile (timestamp+random, upsert:false) → cache 1 anno
+        cacheControl: "31536000",
         upsert: false,
       });
 
