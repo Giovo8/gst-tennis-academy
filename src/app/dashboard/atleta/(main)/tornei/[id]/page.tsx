@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
+import TournamentTabBar, { type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
 import {
   Trophy,
   Loader2,
@@ -40,12 +41,16 @@ function AtletaTournamentDetailInner() {
   const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
   const pathname = usePathname();
   const dashboardBase = pathname.split("/tornei")[0];
+  const sectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
+  const sectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [currentParticipants, setCurrentParticipants] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
+  const [managerTab, setManagerTab] = useState<TournamentTabKey>('overview');
+  const [managerMeta, setManagerMeta] = useState<{ tournamentType?: string; currentPhase?: string; participantsCount: number } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -258,27 +263,12 @@ function AtletaTournamentDetailInner() {
 
   return (
     <div className="space-y-6 pt-3">
-      {/* Breadcrumb */}
-      <p className="breadcrumb text-secondary/60">
-        <Link
-          href={`${dashboardBase}/tornei`}
-          className="hover:text-secondary/80 transition-colors"
-        >
-          Competizioni
-        </Link>
-        {" › "}
-        <span>Dettaglio</span>
-      </p>
-
       {/* Header con titolo e descrizione */}
       <div>
         <p className="breadcrumb text-secondary/60">Dettaglio Competizione</p>
         <h1 className="text-3xl font-bold text-secondary mb-2">
           Dettaglio Competizione
         </h1>
-        <p className="text-secondary/70 font-medium">
-          Visualizza informazioni e partecipa al torneo
-        </p>
       </div>
 
       {/* Messaggio errore globale */}
@@ -290,13 +280,13 @@ function AtletaTournamentDetailInner() {
 
       {/* Header con info torneo */}
       <div
-        className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4"
+        className="bg-secondary rounded-lg border border-black/10 p-6 border-l-4"
         style={{ borderLeftColor: getStatusBorderColor() }}
       >
         <div className="flex items-start gap-6">
           <TournamentIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{tournament.title}</h1>
+            <h2 className="text-2xl font-bold text-white">{tournament.title}</h2>
           </div>
         </div>
       </div>
@@ -312,9 +302,11 @@ function AtletaTournamentDetailInner() {
       )}
 
       {/* Dettagli torneo */}
-      <div className="page-card p-6">
-        <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
-
+      <div className={sectionClassName}>
+        <div className={sectionHeaderClassName}>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
+        </div>
+        <div className="p-6">
         <div className="space-y-6">
           {/* Descrizione */}
           {tournament.description && (
@@ -412,16 +404,28 @@ function AtletaTournamentDetailInner() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
-      {/* Tournament Manager (Partecipanti/Tabellone/Gironi/Calendario/Classifica) */}
+      {/* Tab Partecipanti/Tabellone/Gironi/Calendario/Classifica */}
+      {currentParticipants > 0 && managerMeta && (
+        <TournamentTabBar
+          meta={managerMeta}
+          activeTab={managerTab}
+          onChange={setManagerTab}
+        />
+      )}
+
+      {/* Tournament Manager */}
       {currentParticipants > 0 && (
-        <div className="page-card p-6">
-          <TournamentManagerWrapper
-            tournamentId={tournament.id}
-            isAdmin={false}
-          />
-        </div>
+        <TournamentManagerWrapper
+          tournamentId={tournament.id}
+          isAdmin={false}
+          activeTab={managerTab}
+          onActiveTabChange={setManagerTab}
+          hideTabBar
+          onMetaChange={setManagerMeta}
+        />
       )}
 
       {/* Pulsanti azioni */}

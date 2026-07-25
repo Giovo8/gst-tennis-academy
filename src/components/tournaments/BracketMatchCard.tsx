@@ -80,7 +80,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
       ) : (
         <div className={`p-3 space-y-1.5 ${isPending ? 'opacity-60' : ''}`}>
           {/* Player 1 */}
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: isCompleted && !isWinner(match.player1?.id) ? '#9ca3af' : isCompleted ? '#023047' : 'var(--secondary)' }}>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: isCompleted && !isWinner(match.player1?.id) ? 'var(--secondary)' : isCompleted ? '#023047' : 'var(--secondary)' }}>
             <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-sm font-bold text-white leading-none">
                 {getPlayerName(match.player1).charAt(0).toUpperCase()}
@@ -92,7 +92,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
             {sets.length > 0 && (
               <div className="flex gap-1.5">
                 {sets.map((set, idx) => (
-                  <span key={idx} className={`text-xs font-bold px-2 py-0.5 rounded min-w-[28px] text-center ${set.player1_score > set.player2_score ? 'bg-white/20 text-white' : 'text-white'}`}>
+                  <span key={idx} className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold bg-white/20 text-white">
                     {set.player1_score}
                   </span>
                 ))}
@@ -104,7 +104,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
           </div>
 
           {/* Player 2 */}
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: isCompleted && !isWinner(match.player2?.id) ? '#9ca3af' : isCompleted ? '#023047' : 'var(--secondary)' }}>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: isCompleted && !isWinner(match.player2?.id) ? 'var(--secondary)' : isCompleted ? '#023047' : 'var(--secondary)' }}>
             <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
               <span className="text-sm font-bold text-white leading-none">
                 {getPlayerName(match.player2).charAt(0).toUpperCase()}
@@ -116,7 +116,7 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
             {sets.length > 0 && (
               <div className="flex gap-1.5">
                 {sets.map((set, idx) => (
-                  <span key={idx} className={`text-xs font-bold px-2 py-0.5 rounded min-w-[28px] text-center ${set.player2_score > set.player1_score ? 'bg-white/20 text-white' : 'text-white'}`}>
+                  <span key={idx} className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold bg-white/20 text-white">
                     {set.player2_score}
                   </span>
                 ))}

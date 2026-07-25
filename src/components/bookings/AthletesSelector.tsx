@@ -237,6 +237,7 @@ export default function AthletesSelector({
                       return (
                         <button
                           key={athlete.id}
+                          type="button"
                           onClick={() => {
                             if (!canToggle) return;
                             if (isSelected) {
@@ -290,6 +291,7 @@ export default function AthletesSelector({
                       return (
                         <button
                           key={idx}
+                          type="button"
                           onClick={() => {
                             if (alreadySelected || !canAddMore) return;
                             onAthleteAdd({
@@ -337,6 +339,7 @@ export default function AthletesSelector({
                   <div className={inlineMode ? "pt-2" : "p-6 bg-white"}>
                     {!inlineMode && (
                       <button
+                        type="button"
                         onClick={() => setShowGuestForm((prev) => !prev)}
                         className="mb-2 w-full px-6 py-3 bg-secondary hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center justify-center"
                       >
@@ -368,6 +371,7 @@ export default function AthletesSelector({
                           className="w-full px-3 py-2 border border-black/10 rounded-lg text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                         />
                         <button
+                          type="button"
                           onClick={handleAddGuest}
                           disabled={!canAddMore}
                           className="h-11 w-full px-3 bg-secondary text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
@@ -423,6 +427,7 @@ export default function AthletesSelector({
                 )}
                 {!isNonRemovable && (
                   <button
+                    type="button"
                     onClick={() => onAthleteRemove(originalIndex)}
                     className="flex-shrink-0 inline-flex items-center justify-center p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all focus:outline-none w-8 h-8"
                     aria-label={`Rimuovi ${athlete.fullName}`}

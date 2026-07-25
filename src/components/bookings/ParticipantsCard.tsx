@@ -13,6 +13,9 @@ interface ParticipantsCardProps {
   onAthleteRemove: (index: number) => void;
   maxAthletes: number | null;
   previousGuests?: PreviousGuest[];
+  title?: string;
+  allowGuestParticipants?: boolean;
+  searchPlaceholder?: string;
 }
 
 export default function ParticipantsCard({
@@ -22,11 +25,14 @@ export default function ParticipantsCard({
   onAthleteRemove,
   maxAthletes,
   previousGuests = [],
+  title = "Partecipanti",
+  allowGuestParticipants = true,
+  searchPlaceholder,
 }: ParticipantsCardProps) {
   return (
     <div className="bg-white border border-black/10 rounded-lg overflow-hidden overflow-visible relative z-20">
       <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
-        <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-secondary">{title}</h2>
       </div>
       <div className="p-4 sm:p-6">
         <AthletesSelector
@@ -40,6 +46,8 @@ export default function ParticipantsCard({
           onAthleteRemove={onAthleteRemove}
           maxAthletes={maxAthletes}
           previousGuests={previousGuests}
+          allowGuestParticipants={allowGuestParticipants}
+          searchPlaceholder={searchPlaceholder}
         />
       </div>
     </div>

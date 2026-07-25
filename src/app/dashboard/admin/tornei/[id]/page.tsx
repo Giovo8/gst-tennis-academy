@@ -441,7 +441,7 @@ function AdminTournamentDetailInner() {
           <div className="flex items-start gap-6">
             <TournamentIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white">{tournament.title}</h1>
+              <h2 className="text-2xl font-bold text-white">{tournament.title}</h2>
             </div>
           </div>
         </div>

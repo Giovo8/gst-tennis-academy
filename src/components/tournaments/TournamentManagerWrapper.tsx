@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import TournamentManager from './TournamentManager';
+import type { TournamentTabKey } from './TournamentTabBar';
 
 interface TournamentManagerMeta {
   participantsCount: number;
   maxParticipants: number;
   currentPhase: string;
   status: string;
+  tournamentType?: string;
 }
 
 interface TournamentManagerWrapperProps {
@@ -17,9 +19,12 @@ interface TournamentManagerWrapperProps {
   viewOnly?: boolean;
   sectioned?: boolean;
   onMetaChange?: (meta: TournamentManagerMeta) => void;
+  activeTab?: TournamentTabKey;
+  onActiveTabChange?: (tab: TournamentTabKey) => void;
+  hideTabBar?: boolean;
 }
 
-export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, sectioned = false, onMetaChange }: TournamentManagerWrapperProps) {
+export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, sectioned = false, onMetaChange, activeTab, onActiveTabChange, hideTabBar = false }: TournamentManagerWrapperProps) {
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +95,9 @@ export default function TournamentManagerWrapper({ tournamentId, isAdmin = true,
       isAdmin={isAdmin && !viewOnly}
       sectioned={sectioned}
       onMetaChange={onMetaChange}
+      activeTab={activeTab}
+      onActiveTabChange={onActiveTabChange}
+      hideTabBar={hideTabBar}
     />
   );
 }

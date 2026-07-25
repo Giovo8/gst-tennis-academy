@@ -6,14 +6,11 @@ import { createNotification } from "@/lib/notifications/createNotification";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Trophy,
-  Users as UsersIcon,
   Loader2,
   Search,
-  Archive,
-  BarChart3,
-  Target,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
-import Link from "next/link";
 
 interface Tournament {
   id: string;
@@ -46,6 +43,7 @@ function AtletaTorneiPageInner() {
   const [activeTab, setActiveTab] = useState<"all" | "available" | "my">("my");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
   useEffect(() => {
     loadTournaments();
@@ -167,94 +165,94 @@ function AtletaTorneiPageInner() {
     return "var(--secondary)"; // default
   };
 
-  // Get tournament icon based on type
-  const getTournamentIcon = (tournament: Tournament) => {
+  // Get tournament type label
+  const getTournamentTypeLabel = (tournament: Tournament) => {
     const tournamentType = tournament.tournament_type || tournament.competition_type;
-    if (tournamentType === 'eliminazione_diretta') {
-      return <Trophy className="h-5 w-5 text-secondary/60" />;
-    }
-    if (tournamentType === 'girone_eliminazione') {
-      return <Target className="h-5 w-5 text-secondary/60" />;
-    }
-    if (tournamentType === 'campionato') {
-      return <UsersIcon className="h-5 w-5 text-secondary/60" />;
-    }
-    return <Trophy className="h-5 w-5 text-secondary/60" />;
+    if (tournamentType === 'eliminazione_diretta') return 'Elim. Diretta';
+    if (tournamentType === 'girone_eliminazione') return 'Girone';
+    if (tournamentType === 'campionato') return 'Campionato';
+    return 'Torneo';
   };
 
   return (
     <div className="space-y-6 pt-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <p className="breadcrumb text-secondary/60">Competizioni</p>
-          <h1 className="text-4xl font-bold text-secondary">Competizioni</h1>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Link
-            href={`${dashboardBase}/tornei/archivio`}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-white text-secondary/70 border border-black/10 hover:bg-secondary hover:text-white hover:border-secondary"
-          >
-            <Archive className="h-5 w-5" />
-            <span>Archivio</span>
-          </Link>
-          <Link
-            href={`${dashboardBase}/tornei/statistiche`}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-white text-secondary/70 border border-black/10 hover:bg-secondary hover:text-white hover:border-secondary"
-          >
-            <BarChart3 className="h-5 w-5" />
-            <span>Statistiche</span>
-          </Link>
-        </div>
+      <div>
+        <p className="breadcrumb text-secondary/60">Competizioni</p>
+        <h1 className="text-4xl font-bold text-secondary">Competizioni</h1>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col gap-3">
-        {/* Tab Toggle */}
-        <div className="flex gap-1 bg-white border border-black/10 rounded-lg p-1 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+            <input
+              type="text"
+              placeholder="Cerca per nome, descrizione o categoria..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-11 w-full pl-10 pr-4 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+            />
+          </div>
+
           <button
-            onClick={() => setActiveTab("all")}
-            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center ${
-              activeTab === "all"
-                ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary"
+            type="button"
+            onClick={() => setIsAdvancedFiltersOpen((prev) => !prev)}
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+              isAdvancedFiltersOpen || activeTab !== "my"
+                ? "border-secondary bg-secondary text-white hover:opacity-90"
+                : "border-black/10 bg-white text-secondary hover:bg-gray-50"
             }`}
+            aria-label="Mostra o nascondi filtri"
+            title="Filtri"
           >
-            Tutti
-          </button>
-          <button
-            onClick={() => setActiveTab("my")}
-            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center ${
-              activeTab === "my"
-                ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary"
-            }`}
-          >
-            I Miei Tornei
-          </button>
-          <button
-            onClick={() => setActiveTab("available")}
-            className={`flex-1 px-3 py-2.5 rounded text-xs font-semibold transition-all flex items-center justify-center ${
-              activeTab === "available"
-                ? "bg-secondary text-white"
-                : "text-secondary/60 hover:text-secondary"
-            }`}
-          >
-            Disponibili
+            <SlidersHorizontal className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
-          <input
-            type="text"
-            placeholder="Cerca per nome, descrizione o categoria..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-black/10 text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
-          />
-        </div>
+        {isAdvancedFiltersOpen && (
+          <div className="w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:w-full">
+              <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
+                {[
+                  { value: "all", label: "Tutti" },
+                  { value: "my", label: "I Miei Tornei" },
+                  { value: "available", label: "Disponibili" },
+                ].map((option) => {
+                  const isSelected = activeTab === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setActiveTab(option.value as "all" | "available" | "my")}
+                      className={`h-11 shrink-0 rounded-lg border px-4 text-sm font-semibold transition-colors sm:flex-1 sm:min-w-0 ${
+                        isSelected
+                          ? "border-secondary bg-secondary text-white"
+                          : "border-black/10 bg-white text-secondary hover:bg-gray-50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setActiveTab("my");
+                }}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
+                aria-label="Reset filtri"
+                title="Reset filtri"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tournaments List */}
@@ -298,84 +296,55 @@ function AtletaTorneiPageInner() {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <style>{`
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <div className="space-y-3 min-w-[640px]">
-            {/* Header Row */}
-            <div className="bg-secondary border border-secondary rounded-lg px-5 py-3 mb-3">
-              <div className="flex items-center gap-4">
-                <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">#</div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-white/80 uppercase">Nome Torneo</div>
-                </div>
-                <div className="w-32 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Data</div>
-                </div>
-                <div className="w-24 flex-shrink-0 text-center">
-                  <div className="text-xs font-bold text-white/80 uppercase">Partecipanti</div>
+        <div className="space-y-2">
+          {filteredTournaments.map((tournament) => {
+            const bg = getBorderColor(tournament);
+            const typeLabel = getTournamentTypeLabel(tournament);
+            const participantCount = tournament.current_participants || tournament.participant_count || 0;
+            const maxParticipants = tournament.max_participants || 0;
+            const start = tournament.starts_at ? new Date(tournament.starts_at) : null;
+
+            return (
+              <div
+                key={tournament.id}
+                onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
+                className="rounded-lg overflow-visible cursor-pointer hover:opacity-95 transition-opacity"
+                style={{ background: bg }}
+              >
+                <div className="flex items-center gap-4 py-3 px-3">
+                  <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
+                    {start ? (
+                      <>
+                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
+                          {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
+                        </span>
+                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
+                          {start.getDate()}
+                        </span>
+                      </>
+                    ) : (
+                      <Trophy className="h-4 w-4 text-white/70" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
+                      {tournament.title}
+                    </p>
+                    <p className="text-xs text-white/70 mt-0.5">
+                      {participantCount}/{maxParticipants} partecipanti
+                      {tournament.category && <span> · {tournament.category}</span>}
+                    </p>
+                  </div>
+
+                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
+                    {typeLabel}
+                  </span>
                 </div>
               </div>
-            </div>
-
-              {/* Data Rows */}
-              {filteredTournaments.map((tournament) => {
-                const borderColor = getBorderColor(tournament);
-                const participantCount = tournament.current_participants || tournament.participant_count || 0;
-                const maxParticipants = tournament.max_participants || 0;
-
-                return (
-                  <div
-                    key={tournament.id}
-                    onClick={() => router.push(`${dashboardBase}/tornei/${tournament.id}`)}
-                    className="bg-white border border-black/10 hover:border-gray-300 rounded-lg px-5 py-4 transition-all cursor-pointer border-l-4"
-                    style={{ borderLeftColor: borderColor }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        {getTournamentIcon(tournament)}
-                      </div>
-
-                      {/* Nome */}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-secondary truncate">
-                          {tournament.title}
-                        </div>
-                      </div>
-
-                      {/* Data */}
-                      <div className="w-32 flex-shrink-0 text-center">
-                        {tournament.starts_at ? (
-                          <div className="text-sm font-semibold text-secondary capitalize">
-                            {new Date(tournament.starts_at).toLocaleDateString('it-IT', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-secondary/40">-</div>
-                        )}
-                      </div>
-
-                      {/* Partecipanti */}
-                      <div className="w-24 flex-shrink-0 text-center">
-                        <div className="text-sm font-semibold text-secondary">
-                          {participantCount}/{maxParticipants}
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-                );
-              })}
+            );
+          })}
         </div>
-      </div>
       )}
 
       {/* Error notification */}

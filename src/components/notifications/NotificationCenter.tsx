@@ -165,25 +165,28 @@ export default function NotificationCenter() {
         <h1 className="text-4xl font-bold text-secondary">Centro Notifiche</h1>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={markAllAsRead}
-          disabled={unreadCount === 0}
-          className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:opacity-40"
-        >
-          <CheckCheck className="h-4 w-4" />
-          Segna tutte come lette
-        </button>
-        {userRole !== "atleta" && (
-          <button
-            onClick={() => toast.info("Funzionalità in arrivo")}
-            className="flex-1 px-4 py-3 text-sm font-semibold text-secondary bg-white border border-black/10 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-          >
-            <Send className="h-4 w-4" />
-            Invia Notifica
-          </button>
-        )}
-      </div>
+      {(unreadCount > 0 || userRole !== "atleta") && (
+        <div className="flex gap-3">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            >
+              <CheckCheck className="h-4 w-4" />
+              Segna tutte come lette
+            </button>
+          )}
+          {userRole !== "atleta" && (
+            <button
+              onClick={() => toast.info("Funzionalità in arrivo")}
+              className="flex-1 px-4 py-3 text-sm font-semibold text-secondary bg-white border border-black/10 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+            >
+              <Send className="h-4 w-4" />
+              Invia Notifica
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 w-full">
         <div className="flex items-center gap-2 w-full">
@@ -291,9 +294,17 @@ export default function NotificationCenter() {
                     <p className={`font-semibold text-sm truncate ${n.is_read ? "text-white/80" : "text-white"}`}>{n.title}</p>
                     <p className="text-xs text-white/70 mt-0.5 truncate">{n.message}</p>
                   </div>
-                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
-                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: it })}
-                  </span>
+                  {n.is_read ? (
+                    <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: it })}
+                    </span>
+                  ) : (
+                    <span
+                      className="h-2.5 w-2.5 rounded-full bg-white flex-shrink-0 shadow-[0_0_0_3px_rgba(255,255,255,0.2)]"
+                      aria-label="Non letta"
+                      title="Non letta"
+                    />
+                  )}
                 </div>
               </div>
             );

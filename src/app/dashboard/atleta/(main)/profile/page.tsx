@@ -328,21 +328,21 @@ export default function AthleteProfilePage({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:auto-rows-min lg:items-stretch">
-        <div className={`${sectionCardClassName} flex flex-col lg:col-start-2 lg:row-start-1`}>
+      <div className="grid gap-6 grid-cols-1">
+        <div className={`${sectionCardClassName} flex flex-col`}>
           <div className={sectionCardHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
           </div>
           <div className="flex flex-1 p-6">
-            <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden flex-1 border border-black/10 lg:min-h-[360px]">
+            <div className="relative w-full rounded-xl bg-secondary/10 overflow-hidden flex-1 border border-black/10">
               {user.avatar_url ? (
                 <img
                   src={user.avatar_url}
                   alt={user.full_name || "Avatar"}
-                  className="block w-full h-auto object-cover lg:absolute lg:inset-0 lg:h-full lg:w-full"
+                  className="block w-full h-auto object-cover"
                 />
               ) : (
-                <div className="flex min-h-[260px] items-center justify-center lg:absolute lg:inset-0 lg:min-h-0">
+                <div className="flex min-h-[260px] items-center justify-center">
                   <User className="h-40 w-40 text-secondary" />
                 </div>
               )}
@@ -350,7 +350,7 @@ export default function AthleteProfilePage({
           </div>
         </div>
 
-        <div className={`${sectionCardClassName} lg:col-start-1 lg:row-start-1`}>
+        <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
           </div>
@@ -421,7 +421,7 @@ export default function AthleteProfilePage({
           </div>
         </div>
 
-        <div className={`${sectionCardClassName} lg:col-start-1 lg:row-start-2`}>
+        <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
           </div>
@@ -464,7 +464,7 @@ export default function AthleteProfilePage({
           </div>
         </div>
 
-        <div className={`${sectionCardClassName} lg:col-start-2 lg:row-start-2`}>
+        <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
           </div>
@@ -525,7 +525,7 @@ export default function AthleteProfilePage({
       </div>
 
       {user.bio && user.bio.trim() ? (
-        <div className={`${sectionCardClassName} lg:col-span-2`}>
+        <div className={sectionCardClassName}>
           <div className={sectionCardHeaderClassName}>
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
           </div>

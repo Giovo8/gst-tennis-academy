@@ -1063,7 +1063,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
           {/* Azioni: con spostamenti in sospeso "Prenota Campo" lascia il posto
               a salva/annulla, così è chiaro che c'è del lavoro da confermare. */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 flex flex-row gap-3">
             {hasPendingMoves ? (
               <>
                 <button

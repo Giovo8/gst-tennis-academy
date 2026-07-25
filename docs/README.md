@@ -20,5 +20,6 @@ Numeri chiave: **89 API route handler**, **67 migrazioni SQL** (~60 tabelle, RLS
 | [EMAIL.md](EMAIL.md) | Email transazionali via Resend, template e logging |
 | [AI-NEWS.md](AI-NEWS.md) | Pipeline notizie AI: fonti RSS, Gemini, workflow bozza/approvazione, cron su Supabase |
 | [FRONTEND.md](FRONTEND.md) | Convenzioni UI e design system (colori, componenti, layout) |
+| [CAMERAS.md](CAMERAS.md) | Live view telecamere Tapo: setup go2rtc + Cloudflare Tunnel, prerequisiti privacy |
 
 Il [README principale](../README.md) nella root del repository contiene overview, setup locale e comandi.

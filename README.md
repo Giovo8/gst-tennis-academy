@@ -199,6 +199,7 @@ La documentazione completa è in [`docs/`](docs/README.md):
 | [AI-NEWS.md](docs/AI-NEWS.md) | Pipeline notizie AI (RSS + Gemini) |
 | [FRONTEND.md](docs/FRONTEND.md) | Convenzioni UI e design system |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy e configurazione |
+| [CAMERAS.md](docs/CAMERAS.md) | Live view telecamere Tapo (go2rtc + Cloudflare Tunnel) |
 
 ## Licenza
 

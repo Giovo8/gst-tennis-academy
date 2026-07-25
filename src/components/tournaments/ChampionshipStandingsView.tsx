@@ -471,7 +471,7 @@ export default function ChampionshipStandingsView({
                         : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
                     }`}
                   >
-                    Giornata {round}
+                    {round}
                   </button>
                 ))}
             </div>
@@ -515,7 +515,7 @@ export default function ChampionshipStandingsView({
               <p className="text-secondary/60">Completa alcune partite per vedere la classifica</p>
             </div>
           ) : (
-            <ul className="flex flex-col gap-2 max-h-[560px] overflow-y-auto pr-1">
+            <ul className="flex flex-col gap-2">
               {standings.map((standing, index) => {
                 const fullName = standing.participant.profiles?.full_name || standing.participant.player_name || 'Sconosciuto';
                 const pos = standing.position;
@@ -547,7 +547,7 @@ export default function ChampionshipStandingsView({
                       <div className="flex items-center gap-4 flex-shrink-0">
                         <div className="text-center hidden sm:block">
                           <p className="text-xs text-white/50 uppercase tracking-wide">Set</p>
-                          <p className={`text-sm font-bold tabular-nums ${standing.setsDiff > 0 ? 'text-emerald-300' : standing.setsDiff < 0 ? 'text-red-300' : 'text-white/60'}`}>
+                          <p className="text-sm font-bold tabular-nums text-white">
                             {standing.setsDiff > 0 ? '+' : ''}{standing.setsDiff}
                           </p>
                         </div>

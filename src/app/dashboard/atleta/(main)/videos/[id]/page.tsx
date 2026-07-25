@@ -284,7 +284,7 @@ export default function VideoPlayerPage() {
       <div className="bg-black rounded-xl overflow-hidden aspect-video mt-2">
         {youtubeId ? (
           <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}`}
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
             title={video.title}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -302,7 +302,7 @@ export default function VideoPlayerPage() {
         <div className="flex items-start gap-6">
           <Play className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{video.title}</h1>
+            <h2 className="text-2xl font-bold text-white">{video.title}</h2>
           </div>
         </div>
       </div>

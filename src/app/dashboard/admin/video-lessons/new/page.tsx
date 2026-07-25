@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { createNotification } from "@/lib/notifications/createNotification";
 import AuthGuard from "@/components/auth/AuthGuard";
-import AthletesSelector from "@/components/bookings/AthletesSelector";
+import ParticipantsCard from "@/components/bookings/ParticipantsCard";
 import { type UserRole } from "@/lib/roles";
 import { toast } from "sonner";
 
@@ -388,31 +388,25 @@ export default function VideoLessonFormPage() {
             </div>
           </div>
 
-          <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-              <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
-            </div>
-            <div className="p-4 sm:p-6">
-              <AthletesSelector
-                athletes={users}
-                selectedAthletes={selectedAthletes}
-                onAthleteAdd={(athlete) => {
-                  if (athlete.userId && !selectedUsers.includes(athlete.userId)) {
-                    setSelectedUsers((prev) => [...prev, athlete.userId as string]);
-                  }
-                }}
-                onAthleteRemove={(index) => {
-                  const athleteToRemove = selectedAthletes[index];
-                  if (athleteToRemove?.userId) {
-                    setSelectedUsers((prev) => prev.filter((id) => id !== athleteToRemove.userId));
-                  }
-                }}
-                maxAthletes={null}
-                useSecondaryParticipantBorder
-                allowGuestParticipants={false}
-              />
-            </div>
-          </div>
+          <ParticipantsCard
+            title="Utenti Assegnati"
+            athletes={users}
+            selectedAthletes={selectedAthletes}
+            onAthleteAdd={(athlete) => {
+              if (athlete.userId && !selectedUsers.includes(athlete.userId)) {
+                setSelectedUsers((prev) => [...prev, athlete.userId as string]);
+              }
+            }}
+            onAthleteRemove={(index) => {
+              const athleteToRemove = selectedAthletes[index];
+              if (athleteToRemove?.userId) {
+                setSelectedUsers((prev) => prev.filter((id) => id !== athleteToRemove.userId));
+              }
+            }}
+            maxAthletes={null}
+            allowGuestParticipants={false}
+            searchPlaceholder="Cerca atleta o maestro..."
+          />
 
         </form>
 

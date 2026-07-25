@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { Video, Loader2, Search, Plus, Play } from "lucide-react";
+import { Video, Loader2, Search, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import AuthGuard from "@/components/auth/AuthGuard";
+
+function getYouTubeVideoId(url: string) {
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  return match ? match[1] : null;
+}
 
 type VideoLesson = {
   id: string;
@@ -28,7 +32,6 @@ type VideoLesson = {
 };
 
 export default function VideoLessonsPage() {
-  const router = useRouter();
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -96,20 +99,18 @@ export default function VideoLessonsPage() {
   return (
     <AuthGuard allowedRoles={["admin", "gestore"]}>
       <div className="space-y-6 pt-3">{/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <div>
-              <p className="breadcrumb text-secondary/60">Video Lab</p>
-              <h1 className="text-4xl font-bold text-secondary">Video Lab</h1>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/admin/video-lessons/new"
-            className="px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            Nuovo Video
-          </Link>
+        <div>
+          <p className="breadcrumb text-secondary/60">Video Lab</p>
+          <h1 className="text-4xl font-bold text-secondary">Video Lab</h1>
         </div>
+
+        <Link
+          href="/dashboard/admin/video-lessons/new"
+          className="w-full px-4 py-2.5 text-sm font-medium text-white bg-secondary rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Nuovo Video
+        </Link>
 
         {/* Search */}
         <div className="relative">
@@ -149,81 +150,53 @@ export default function VideoLessonsPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+          <div className="space-y-2">
             {filteredVideos.map((video) => {
-              const getYouTubeVideoId = (url: string) => {
-                const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-                return match ? match[1] : null;
-              };
               const videoId = getYouTubeVideoId(video.video_url);
               const thumbnailUrl = videoId
-                ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
                 : video.thumbnail_url;
+              const categoryLabel =
+                categories.find((c) => c.value === video.category)?.label ?? video.category;
+              const meta = [
+                format(new Date(video.created_at), "d MMM yyyy", { locale: it }),
+                categoryLabel,
+                video.duration_minutes ? `${video.duration_minutes} min` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ");
 
               return (
-                <div
+                <Link
                   key={video.id}
-                  onClick={() => router.push(`/dashboard/admin/video-lessons/${video.id}`)}
-                  className="group bg-white rounded-xl border border-black/10 overflow-hidden hover:border-secondary/40 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                  href={`/dashboard/admin/video-lessons/${video.id}`}
+                  className="block rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                  style={{
+                    background: video.is_active ? "var(--color-frozen-lake-900)" : "#9ca3af",
+                  }}
                 >
-                  {/* Thumbnail */}
-                  <div className="relative aspect-video bg-gray-100 overflow-hidden">
-                    {thumbnailUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumbnailUrl}
-                        alt={video.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-secondary/5">
-                        <Video className="w-12 h-12 text-secondary/20" />
-                      </div>
-                    )}
-
-                    {/* Play overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play className="w-5 h-5 text-secondary fill-secondary ml-0.5" />
-                      </div>
+                  <div className="flex items-center gap-3 px-3 py-3.5">
+                    <div className="flex h-10 aspect-video flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
+                      {thumbnailUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <Video className="h-4 w-4 text-white/50" strokeWidth={2} />
+                      )}
                     </div>
 
-                    {/* Duration badge */}
-                    {video.duration_minutes && (
-                      <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded">
-                        {video.duration_minutes}:00
-                      </div>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white text-sm truncate">{video.title}</p>
+                      <p className="text-xs text-white/70 mt-0.5 truncate">{meta}</p>
+                    </div>
 
-                    {/* Status badge */}
                     {!video.is_active && (
-                      <div className="absolute top-2 left-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded bg-gray-200 text-secondary">
-                          Bozza
-                        </span>
-                      </div>
+                      <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded bg-white/20 text-white">
+                        Bozza
+                      </span>
                     )}
                   </div>
-
-                  {/* Content */}
-                  <div className="p-4 flex flex-col gap-2 flex-1">
-                    <h3 className="font-bold text-secondary text-xl sm:text-2xl line-clamp-2 leading-tight">
-                      {video.title}
-                    </h3>
-                    {video.description ? (
-                      <p className="text-xs text-secondary/60 line-clamp-2">
-                        {video.description}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-secondary/40 italic">Aggiungi descrizione</p>
-                    )}
-                  </div>
-
-                  {/* Meta footer */}
-                  <div className="px-4 py-2.5 bg-secondary text-xs text-white">
-                    {format(new Date(video.created_at), 'd MMM yyyy', { locale: it })}
-                  </div>
-                </div>
+                </Link>
               );
             })}
           </div>
