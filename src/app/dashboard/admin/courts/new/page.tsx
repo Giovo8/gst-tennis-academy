@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
+  Calendar as CalendarIcon,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
@@ -13,15 +15,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { checkCourtBlockConflicts, formatBlockConflictMessage } from "@/lib/courts/blockConflicts";
-import {
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-} from "@/components/ui";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 
 const COURTS = ["Campo 1", "Campo 2", "Campo 3", "Campo 4"];
@@ -35,16 +28,16 @@ const BLOCK_TYPES = [
 ];
 
 const WEEK_DAYS = [
-  { value: 1, label: "Lun" },
-  { value: 2, label: "Mar" },
-  { value: 3, label: "Mer" },
-  { value: 4, label: "Gio" },
-  { value: 5, label: "Ven" },
-  { value: 6, label: "Sab" },
-  { value: 0, label: "Dom" },
+  { value: 1, label: "Lun", fullLabel: "Lunedì" },
+  { value: 2, label: "Mar", fullLabel: "Martedì" },
+  { value: 3, label: "Mer", fullLabel: "Mercoledì" },
+  { value: 4, label: "Gio", fullLabel: "Giovedì" },
+  { value: 5, label: "Ven", fullLabel: "Venerdì" },
+  { value: 6, label: "Sab", fullLabel: "Sabato" },
+  { value: 0, label: "Dom", fullLabel: "Domenica" },
 ];
 
-const CALENDAR_WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+const CALENDAR_WEEK_DAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
 
 type CourtBlockPeriod = {
   court: string;
@@ -77,9 +70,7 @@ export default function NewCourtBlockPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
   const [activeDateContext, setActiveDateContext] = useState<{ pidx: number; field: "start" | "end" } | null>(null);
-  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -139,40 +130,110 @@ export default function NewCourtBlockPage() {
     setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
   };
 
-  const openDatePickerModal = (pidx: number, field: "start" | "end") => {
+  const toggleDatePickerPanel = (pidx: number, field: "start" | "end") => {
+    if (activeDateContext?.pidx === pidx && activeDateContext?.field === field) {
+      setActiveDateContext(null);
+      return;
+    }
     const period = periods[pidx];
     const currentValue = field === "start" ? period.startDate : period.endDate;
     const parsed = parseDateInput(currentValue) || parseDateInput(period.startDate) || new Date();
     setActiveDateContext({ pidx, field });
-    setPendingDate(parsed);
     setCalendarViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
-    setDatePickerModalOpen(true);
   };
 
-  const handleDatePickerToday = () => {
-    const today = new Date();
-    setPendingDate(today);
-    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
-  };
-
-  const applyDateSelection = () => {
+  const selectCalendarDay = (day: Date) => {
     if (!activeDateContext) return;
     const { pidx, field } = activeDateContext;
-    const selected = toInputDateValue(pendingDate);
+    const selected = toInputDateValue(day);
+    const dayOfWeek = day.getDay();
 
     setPeriods((prev) =>
       prev.map((p, i) => {
         if (i !== pidx) return p;
+        const weekDays = p.weekDays.includes(dayOfWeek) ? p.weekDays : [...p.weekDays, dayOfWeek];
         if (field === "start") {
           const endDate = p.endDate && p.endDate < selected ? selected : p.endDate;
-          return { ...p, startDate: selected, endDate };
+          return { ...p, startDate: selected, endDate, weekDays };
         }
         const endDate = p.startDate && selected < p.startDate ? p.startDate : selected;
-        return { ...p, endDate };
+        return { ...p, endDate, weekDays };
       }),
     );
 
-    setDatePickerModalOpen(false);
+    setActiveDateContext(null);
+  };
+
+  const renderDateCalendarPanel = (pidx: number, field: "start" | "end") => {
+    const isOpen = activeDateContext?.pidx === pidx && activeDateContext?.field === field;
+    const period = periods[pidx];
+    const selectedValue = field === "start" ? period?.startDate : period?.endDate;
+    const selectedDate = selectedValue ? parseDateInput(selectedValue) : null;
+    return (
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="calendar-panel"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {CALENDAR_WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="calendar-grid grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white"
+                          : isCurrentMonth
+                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
+                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
   };
 
   const toggleWeekDay = (pidx: number, day: number) => {
@@ -484,26 +545,38 @@ export default function NewCourtBlockPage() {
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
                 <div className="flex-1">
-                  <button
-                    type="button"
-                    onClick={() => openDatePickerModal(pidx, "start")}
-                    className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  >
-                    {formatDateButtonLabel(period.startDate)}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDatePickerPanel(pidx, "start")}
+                      className="flex-1 min-w-0 text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                    >
+                      {formatDateButtonLabel(period.startDate)}
+                    </button>
+                    <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white">
+                      <CalendarIcon className="h-4 w-4" />
+                    </span>
+                  </div>
+                  {renderDateCalendarPanel(pidx, "start")}
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
                 <div className="flex-1">
-                  <button
-                    type="button"
-                    onClick={() => openDatePickerModal(pidx, "end")}
-                    className="w-full text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  >
-                    {formatDateButtonLabel(period.endDate)}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDatePickerPanel(pidx, "end")}
+                      className="flex-1 min-w-0 text-left rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
+                    >
+                      {formatDateButtonLabel(period.endDate)}
+                    </button>
+                    <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white">
+                      <CalendarIcon className="h-4 w-4" />
+                    </span>
+                  </div>
+                  {renderDateCalendarPanel(pidx, "end")}
                 </div>
               </div>
 
@@ -524,7 +597,8 @@ export default function NewCourtBlockPage() {
                             : "bg-white text-secondary border-gray-300 hover:border-secondary"
                         }`}
                       >
-                        {day.label}
+                        <span className="sm:hidden">{day.fullLabel}</span>
+                        <span className="hidden sm:inline">{day.label}</span>
                       </button>
                     ))}
                   </div>
@@ -646,93 +720,6 @@ export default function NewCourtBlockPage() {
           <span>Crea Blocco</span>
         )}
       </button>
-
-      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent
-          size="sm"
-          showBuiltinClose={false}
-          className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200"
-        >
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
-            <ModalTitle className="font-semibold text-white">
-              {activeDateContext?.field === "start" ? "Seleziona Data Inizio" : "Seleziona Data Fine"}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {CALENDAR_WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">
-                    {day}
-                  </span>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => setPendingDate(date)}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white font-semibold"
-                          : isCurrentMonth
-                            ? "text-gray-800 hover:bg-gray-100"
-                            : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button
-              type="button"
-              onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </div>
   );
 }

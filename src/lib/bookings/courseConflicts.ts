@@ -16,7 +16,8 @@ import { parseItalyLocalToUTC } from "./bookingTimeRestrictions";
 export interface CourseSchedulePeriod {
   days: string[];
   time: string | null;
-  court: string | null;
+  court?: string | null;
+  courts?: string[] | null;
 }
 
 export interface CourseScheduleRow {
@@ -71,6 +72,51 @@ export function italyDayName(instant: Date): string {
   return WEEKDAY_MAP[wd] ?? "";
 }
 
+/** Campi di un periodo: `courts` (multi-campo) se presente, altrimenti `court` singolo legacy. */
+function periodCourts(p: CourseSchedulePeriod | undefined | null): string[] {
+  if (!p) return [];
+  if (p.courts && p.courts.length > 0) return p.courts;
+  if (p.court) return [p.court];
+  return [];
+}
+
+/**
+ * Risolve i campi occupati da un corso in una data specifica, con la stessa
+ * precedenza usata in tutta l'app: override per-singola-lezione > periodo del
+ * giorno > `court_name` (fallback legacy per corsi a schedule singolo).
+ * Un periodo può occupare più campi contemporaneamente (stesso giorno/ora).
+ */
+export function resolveCourseCourtsForDate(
+  course: Pick<CourseScheduleRow, "court_name" | "schedule_periods" | "lesson_overrides">,
+  dateStr: string,
+  dayCode: string
+): string[] {
+  if (course.lesson_overrides?.[dateStr]) {
+    return [course.lesson_overrides[dateStr]];
+  }
+  const periods = course.schedule_periods ?? [];
+  if (periods.length > 0) {
+    const mp = periods.find((p) => p.days.includes(dayCode));
+    const courts = periodCourts(mp);
+    if (courts.length > 0) return courts;
+  }
+  return course.court_name ? [course.court_name] : [];
+}
+
+/**
+ * Unione deduplicata di tutti i campi usati in tutti i periodi del corso,
+ * senza riferimento a una data specifica (per viste elenco/ricerca).
+ */
+export function courseAllCourtsSummary(
+  course: Pick<CourseScheduleRow, "court_name" | "schedule_periods">
+): string[] {
+  const periods = course.schedule_periods ?? [];
+  const fromPeriods = periods.flatMap((p) => periodCourts(p));
+  const unique = [...new Set(fromPeriods)];
+  if (unique.length > 0) return unique;
+  return course.court_name ? [course.court_name] : [];
+}
+
 /**
  * Verifica se un singolo corso occupa il campo `court` nell'intervallo
  * [startISO, endISO) per la data/orario indicati.
@@ -96,19 +142,12 @@ export function courseOccupiesSlot(
 
   const periods = course.schedule_periods ?? [];
 
-  // Campo del corso per quel giorno: override per-data > periodo > court_name.
-  let courseCourtForDay: string | null = course.court_name ?? null;
-  if (course.lesson_overrides?.[dateStr]) {
-    courseCourtForDay = course.lesson_overrides[dateStr];
-  } else if (periods.length > 0) {
-    const mp = periods.find((p) => p.days.includes(dayName));
-    if (mp?.court) courseCourtForDay = mp.court;
-  }
-
-  const normalizedCourseCourt = courseCourtForDay?.trim();
+  const candidateCourts = resolveCourseCourtsForDate(course, dateStr, dayName)
+    .map((c) => c.trim())
+    .filter(Boolean);
   // Un corso senza campo risolto per il giorno non blocca alcuna prenotazione.
-  if (!normalizedCourseCourt) return false;
-  if (normalizedCourseCourt !== court) return false;
+  if (candidateCourts.length === 0) return false;
+  if (!candidateCourts.includes(court)) return false;
 
   // Orario del corso per quel giorno: override per-data > periodo > schedule_time.
   let timeStr: string | null = course.schedule_time ?? null;

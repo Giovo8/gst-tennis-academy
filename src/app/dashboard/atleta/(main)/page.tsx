@@ -169,7 +169,7 @@ export default function AtletaDashboard() {
       <WeatherCard />
 
       <Link href="/dashboard/atleta/bookings" className="block bg-secondary rounded-lg text-white overflow-hidden hover:opacity-90 transition-opacity">
-        <div className="flex items-center justify-between gap-4 px-3 py-3.5">
+        <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
               <CalendarClock className="h-5 w-5 text-white" strokeWidth={2.5} />

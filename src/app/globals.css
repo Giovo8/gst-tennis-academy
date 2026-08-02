@@ -36,7 +36,16 @@
     min-height: unset;
     min-width: unset;
   }
-  
+
+  /* Exception: calendar day cells. Devono restare larghi quanto la colonna
+     della griglia a 7 colonne, altrimenti sbordano a destra e i numeri non
+     risultano piu allineati con le intestazioni dei giorni. L'altezza del
+     tap target resta garantita dalla classe h-11 sul bottone. */
+  button.calendar-day {
+    min-height: unset;
+    min-width: unset;
+  }
+
   /* Disable hover effects on touch devices */
   *:hover {
     transition-duration: 0s !important;
@@ -875,8 +884,10 @@ html {
     padding-bottom: 3rem;
   }
   
-  /* Better grid layouts on mobile */
-  .grid:not(.timeline-grid) {
+  /* Better grid layouts on mobile.
+     .calendar-grid e' escluso: il calendario usa gap-1 (4px) e con 1rem di
+     gap le 7 colonne diventano troppo strette. */
+  .grid:not(.timeline-grid):not(.calendar-grid) {
     gap: 1rem;
   }
 }
@@ -888,6 +899,11 @@ html {
   }
 
   button.filter-chip {
+    min-height: unset;
+    min-width: unset;
+  }
+
+  button.calendar-day {
     min-height: unset;
     min-width: unset;
   }

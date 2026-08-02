@@ -9,6 +9,7 @@ import HourBucketChart from "@/components/maestro/HourBucketChart";
 import LessonsCompositionChart from "@/components/maestro/LessonsCompositionChart";
 import TodoListCard from "@/components/maestro/TodoListCard";
 import { supabase } from "@/lib/supabase/client";
+import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
 
 type Stats = {
   totalCoachLessonsDone: number;
@@ -661,12 +662,7 @@ export default function MaestroOverviewPage({
                 const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
                 if (period?.time) timeStr = period.time;
               }
-              let courtName: string = c.court_name || "";
-              if (c.lesson_overrides?.[dateStr]) courtName = c.lesson_overrides[dateStr];
-              else if (c.schedule_periods?.length > 0) {
-                const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
-                if (period?.court) courtName = period.court;
-              }
+              const courtName = resolveCourseCourtsForDate(c, dateStr, dayCode).join(", ");
               const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
               const sh = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
               const sm = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;

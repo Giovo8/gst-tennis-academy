@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { getCourts } from "@/lib/courts/getCourts";
 import { DEFAULT_COURTS } from "@/lib/courts/constants";
+import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
 
 export type Booking = {
   id: string;
@@ -171,17 +172,8 @@ export function useTimelineData({
         if (period?.time) timeStr = period.time;
       }
 
-      let courtName: string | null = c.court_name;
-      if (c.lesson_overrides?.[dateStr]) {
-        courtName = c.lesson_overrides[dateStr];
-      } else if (c.schedule_periods?.length > 0) {
-        const period = c.schedule_periods.find((p: { days: string[] }) =>
-          p.days?.includes(dayCode)
-        );
-        if (period?.court) courtName = period.court;
-      }
-
-      if (!courtName) continue;
+      const courtsForDay = resolveCourseCourtsForDate(c, dateStr, dayCode);
+      if (courtsForDay.length === 0) continue;
 
       const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
       const startHour = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
@@ -214,20 +206,22 @@ export function useTimelineData({
           ? instructorNames.find((name: string) => nameToId.get(name) === highlightUserId) ?? instructorNames[0] ?? null
           : instructorNames[0] ?? null;
 
-      entries.push({
-        id: c.id,
-        court: courtName,
-        user_id: "",
-        coach_id: resolvedCoachId,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        status: "confirmed",
-        type: "corso",
-        notes: c.name,
-        isCourse: true,
-        user_profile: lessonInstructor ? { full_name: lessonInstructor, email: "" } : null,
-        coach_profile: resolvedCoachName ? { full_name: resolvedCoachName, email: "" } : null,
-      } as Booking);
+      for (const courtName of courtsForDay) {
+        entries.push({
+          id: c.id,
+          court: courtName,
+          user_id: "",
+          coach_id: resolvedCoachId,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "confirmed",
+          type: "corso",
+          notes: c.name,
+          isCourse: true,
+          user_profile: lessonInstructor ? { full_name: lessonInstructor, email: "" } : null,
+          coach_profile: resolvedCoachName ? { full_name: resolvedCoachName, email: "" } : null,
+        } as Booking);
+      }
     }
     setCourseEntries(entries);
   }

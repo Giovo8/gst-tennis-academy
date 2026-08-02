@@ -1023,12 +1023,12 @@ export default function CreateChallengePage() {
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+              <div className="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
                 {WEEK_DAYS.map((day) => (
                   <span key={day} className="py-1">{day}</span>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
+              <div className="calendar-grid grid grid-cols-7 gap-1">
                 {calendarDays.map(({ date, isCurrentMonth }) => {
                   const isSelected = isSameCalendarDay(date, pendingDate);
                   const isTodayDate = isSameCalendarDay(date, new Date());
@@ -1043,7 +1043,7 @@ export default function CreateChallengePage() {
                       type="button"
                       onClick={() => !isDisabled && selectCalendarDay(date)}
                       disabled={isDisabled}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
+                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-lg text-sm leading-none transition-colors ${
                         isDisabled
                           ? "text-gray-300 cursor-not-allowed"
                           : isSelected

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   Calendar as CalendarIcon,
@@ -19,14 +20,6 @@ import { DEFAULT_COURTS } from "@/lib/courts/constants";
 import { findBookingsBlockedByCourse } from "@/lib/bookings/courseConflicts";
 import AthletesSelector from "@/components/bookings/AthletesSelector";
 import AuthGuard from "@/components/auth/AuthGuard";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalBody,
-  ModalFooter,
-} from "@/components/ui";
 
 interface Athlete {
   id: string;
@@ -44,7 +37,7 @@ type SelectedAthlete = {
   isRegistered: boolean;
 };
 
-type SchedulePeriod = { days: string[]; slots: string[]; court: string; start_date: string; end_date: string };
+type SchedulePeriod = { days: string[]; slots: string[]; courts: string[]; start_date: string; end_date: string };
 
 function slotsToTimeStr(slots: string[]): string | null {
   if (slots.length === 0) return null;
@@ -53,11 +46,11 @@ function slotsToTimeStr(slots: string[]): string | null {
   const [lh, lm] = sorted[sorted.length - 1].split(":").map(Number);
   let endH = lh, endM = lm + 30;
   if (endM >= 60) { endH++; endM -= 60; }
-  return `${first} \u2013 ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+  return `${first} – ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 }
 
 function parseTimeToSlots(timeStr: string): string[] {
-  const match = timeStr.match(/(\d{1,2}:\d{2})\s*[\u2013-]\s*(\d{1,2}:\d{2})/);
+  const match = timeStr.match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/);
   if (!match) return [];
   const [, start, end] = match;
   const slots: string[] = [];
@@ -72,13 +65,13 @@ function parseTimeToSlots(timeStr: string): string[] {
 }
 
 const DAYS = [
-  { value: "lun", label: "Lun" },
-  { value: "mar", label: "Mar" },
-  { value: "mer", label: "Mer" },
-  { value: "gio", label: "Gio" },
-  { value: "ven", label: "Ven" },
-  { value: "sab", label: "Sab" },
-  { value: "dom", label: "Dom" },
+  { value: "lun", label: "Lun", fullLabel: "Lunedì" },
+  { value: "mar", label: "Mar", fullLabel: "Martedì" },
+  { value: "mer", label: "Mer", fullLabel: "Mercoledì" },
+  { value: "gio", label: "Gio", fullLabel: "Giovedì" },
+  { value: "ven", label: "Ven", fullLabel: "Venerdì" },
+  { value: "sab", label: "Sab", fullLabel: "Sabato" },
+  { value: "dom", label: "Dom", fullLabel: "Domenica" },
 ];
 
 export default function NuovoCorsoPage() {
@@ -95,7 +88,7 @@ export default function NuovoCorsoPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pricePerMonth, setPricePerMonth] = useState(0);
-  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [], court: "", start_date: "", end_date: "" }]);
+  const [periods, setPeriods] = useState<SchedulePeriod[]>([{ days: [], slots: [], courts: [], start_date: "", end_date: "" }]);
   const [periodStartTexts, setPeriodStartTexts] = useState<string[]>([""]);
   const [periodEndTexts, setPeriodEndTexts] = useState<string[]>([""]);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -107,9 +100,7 @@ export default function NuovoCorsoPage() {
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<SelectedAthlete[]>([]);
-  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
   const [activeDateContext, setActiveDateContext] = useState<{ pidx: number; field: "start" | "end" } | null>(null);
-  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
   useEffect(() => {
@@ -165,10 +156,10 @@ export default function NuovoCorsoPage() {
       setDescription(data.description ?? "");
       setPricePerMonth(data.price_per_month ?? 0);
       if (data.schedule_periods && data.schedule_periods.length > 0) {
-        const loaded = data.schedule_periods.map((p: { days: string[]; time: string | null; court?: string; start_date?: string; end_date?: string }) => ({
+        const loaded = data.schedule_periods.map((p: { days: string[]; time: string | null; court?: string | null; courts?: string[] | null; start_date?: string; end_date?: string }) => ({
           days: p.days ?? [],
           slots: p.time ? parseTimeToSlots(p.time) : [],
-          court: p.court ?? "",
+          courts: p.courts && p.courts.length > 0 ? p.courts : p.court ? [p.court] : [],
           start_date: p.start_date ?? data.start_date ?? "",
           end_date: p.end_date ?? data.end_date ?? "",
         }));
@@ -179,7 +170,7 @@ export default function NuovoCorsoPage() {
         const single: SchedulePeriod = {
           days: data.schedule_days ?? [],
           slots: parseTimeToSlots(data.schedule_time ?? ""),
-          court: data.court_name ?? "",
+          courts: data.court_name ? [data.court_name] : [],
           start_date: data.start_date ?? "",
           end_date: data.end_date ?? "",
         };
@@ -225,7 +216,7 @@ export default function NuovoCorsoPage() {
     loadCourse();
   }, [courseId, isEditMode]);
 
-  const WEEK_DAYS_CAL = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+  const WEEK_DAYS_CAL = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
 
   const calendarDays = useMemo(() => {
     const firstOfMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
@@ -275,47 +266,119 @@ export default function NuovoCorsoPage() {
     }
   }
 
-  function openDatePicker(pidx: number, field: "start" | "end") {
+  function toggleDatePicker(pidx: number, field: "start" | "end") {
+    if (activeDateContext?.pidx === pidx && activeDateContext?.field === field) {
+      setActiveDateContext(null);
+      return;
+    }
     const existing = field === "start" ? periods[pidx]?.start_date : periods[pidx]?.end_date;
     const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
     setActiveDateContext({ pidx, field });
-    setPendingDate(base);
     setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
-    setDatePickerModalOpen(true);
   }
 
   function changeCalendarMonth(delta: number) {
     setCalendarViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
   }
 
-  function selectCalendarDay(day: Date) {
-    setPendingDate(normalizeDate(day));
+  function dayValueFromDate(date: Date): string {
+    return ["dom", "lun", "mar", "mer", "gio", "ven", "sab"][date.getDay()];
   }
 
-  function applyDateSelection() {
+  function selectCalendarDay(day: Date) {
     if (!activeDateContext) return;
-    const iso = pendingDate.toISOString().split("T")[0];
+    const iso = normalizeDate(day).toISOString().split("T")[0];
     const display = isoToDisplay(iso);
     const { pidx, field } = activeDateContext;
     const key = field === "start" ? "start_date" : "end_date";
-    setPeriods((prev) => prev.map((p, i) => i !== pidx ? p : { ...p, [key]: iso }));
+    const dayValue = dayValueFromDate(day);
+    setPeriods((prev) => prev.map((p, i) => {
+      if (i !== pidx) return p;
+      const days = p.days.includes(dayValue) ? p.days : [...p.days, dayValue];
+      return { ...p, [key]: iso, days };
+    }));
     if (field === "start") {
       setPeriodStartTexts((prev) => prev.map((t, i) => i === pidx ? display : t));
     } else {
       setPeriodEndTexts((prev) => prev.map((t, i) => i === pidx ? display : t));
     }
-    setDatePickerModalOpen(false);
-  }
-
-  function handleDatePickerToday() {
-    const today = normalizeDate(new Date());
-    setPendingDate(today);
-    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setActiveDateContext(null);
   }
 
   function getCalendarMonthLabel(date: Date): string {
     const label = date.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
     return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function renderDateCalendarPanel(pidx: number, field: "start" | "end") {
+    const isOpen = activeDateContext?.pidx === pidx && activeDateContext?.field === field;
+    const selectedIso = field === "start" ? periods[pidx]?.start_date : periods[pidx]?.end_date;
+    const selectedDate = selectedIso ? normalizeDate(new Date(selectedIso)) : null;
+    return (
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="calendar-panel"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS_CAL.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="calendar-grid grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white"
+                          : isCurrentMonth
+                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
+                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
   }
 
   function toggleSlot(pidx: number, time: string) {
@@ -367,8 +430,16 @@ export default function NuovoCorsoPage() {
     }));
   }
 
+  function toggleCourt(pidx: number, court: string) {
+    setPeriods((prev) => prev.map((p, pIdx) => {
+      if (pIdx !== pidx) return p;
+      const courts = p.courts.includes(court) ? p.courts.filter((c) => c !== court) : [...p.courts, court];
+      return { ...p, courts };
+    }));
+  }
+
   function addPeriod() {
-    setPeriods((prev) => [...prev, { days: [], slots: [], court: "", start_date: "", end_date: "" }]);
+    setPeriods((prev) => [...prev, { days: [], slots: [], courts: [], start_date: "", end_date: "" }]);
     setPeriodStartTexts((prev) => [...prev, ""]);
     setPeriodEndTexts((prev) => [...prev, ""]);
   }
@@ -394,7 +465,8 @@ export default function NuovoCorsoPage() {
       const periodsData = periods.map((p) => ({
         days: p.days,
         time: slotsToTimeStr(p.slots),
-        court: p.court || null,
+        courts: p.courts,
+        court: p.courts[0] || null,
         start_date: p.start_date || null,
         end_date: p.end_date || null,
       }));
@@ -408,7 +480,7 @@ export default function NuovoCorsoPage() {
         schedule_time: periodsData[0]?.time ?? null,
         schedule_periods: periodsData,
         instructor_name: selectedMaestros.map((m) => m.full_name).join(", ") || null,
-        court_name: periods[0]?.court || null,
+        court_name: periods[0]?.courts?.[0] || null,
         start_date: allStartDates[0] ?? null,
         end_date: allEndDates[allEndDates.length - 1] ?? null,
         is_active: true,
@@ -417,7 +489,7 @@ export default function NuovoCorsoPage() {
       // Avviso: prenotazioni gia' presenti negli slot che questo corso occuperebbe.
       const involvedCourts = [
         ...new Set(
-          [payload.court_name, ...periodsData.map((p) => p.court)].filter(
+          [payload.court_name, ...periodsData.flatMap((p) => p.courts)].filter(
             (c): c is string => Boolean(c)
           )
         ),
@@ -558,7 +630,7 @@ export default function NuovoCorsoPage() {
           <div className="divide-y divide-black/10">
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">
-                Nome corso <span className="text-red-500">*</span>
+                Nome corso
               </label>
               <div className="flex-1">
                 <input
@@ -587,8 +659,7 @@ export default function NuovoCorsoPage() {
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
               <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Quota</label>
               <div className="flex-1">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-secondary/50">€</span>
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     min="0"
@@ -596,8 +667,11 @@ export default function NuovoCorsoPage() {
                     value={pricePerMonth || ""}
                     onChange={(e) => setPricePerMonth(parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 bg-white pl-7 pr-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
+                    className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10"
                   />
+                  <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-sm font-semibold text-white">
+                    €
+                  </span>
                 </div>
               </div>
             </div>
@@ -675,66 +749,69 @@ export default function NuovoCorsoPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
                   <div className="flex-1">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => openDatePicker(pidx, "start")}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                        tabIndex={-1}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                      </button>
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="GG/MM/AAAA"
                         value={periodStartTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "start", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => toggleDatePicker(pidx, "start")}
+                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                        aria-label="Apri calendario"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
                     </div>
+                    {renderDateCalendarPanel(pidx, "start")}
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data fine</label>
                   <div className="flex-1">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => openDatePicker(pidx, "end")}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                        tabIndex={-1}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                      </button>
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="GG/MM/AAAA"
                         value={periodEndTexts[pidx] ?? ""}
                         onChange={(e) => handlePeriodDateText(pidx, "end", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => toggleDatePicker(pidx, "end")}
+                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                        aria-label="Apri calendario"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
                     </div>
+                    {renderDateCalendarPanel(pidx, "end")}
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
-                  <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
-                  <div className="flex-1 grid grid-cols-4 sm:grid-cols-7 gap-2">
+                  <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Giorni settimana</label>
+                  <div className="flex-1 flex flex-col sm:flex-row sm:flex-wrap gap-2">
                     {DAYS.map((day) => (
                       <button
                         key={day.value}
                         type="button"
                         onClick={() => toggleDay(pidx, day.value)}
-                        className={`w-full px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
+                        className={`w-full sm:w-auto sm:grow sm:basis-0 px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
                           period.days.includes(day.value)
                             ? "bg-secondary text-white border-secondary"
                             : "bg-white text-secondary border-gray-300 hover:border-secondary"
                         }`}
                       >
-                        {day.label}
+                        <span className="sm:hidden">{day.fullLabel}</span>
+                        <span className="hidden sm:inline">{day.label}</span>
                       </button>
                     ))}
                   </div>
@@ -742,14 +819,14 @@ export default function NuovoCorsoPage() {
 
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 p-6">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-4 gap-2">
                     {courts.map((court) => (
                       <button
                         key={court}
                         type="button"
-                        onClick={() => setPeriods((prev) => prev.map((p, pIdx) => pIdx !== pidx ? p : { ...p, court }))}
+                        onClick={() => toggleCourt(pidx, court)}
                         className={`w-full px-4 py-2 text-sm font-medium text-center rounded-lg border transition-all ${
-                          period.court === court
+                          period.courts.includes(court)
                             ? "bg-secondary text-white border-secondary"
                             : "bg-white text-secondary border-gray-300 hover:border-secondary"
                         }`}
@@ -842,85 +919,6 @@ export default function NuovoCorsoPage() {
           </button>
         </div>
       </div>
-
-      {/* Date Picker Modal */}
-      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
-            <ModalTitle className="text-white text-lg">
-              {activeDateContext?.field === "start" ? "Data inizio" : "Data fine"}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS_CAL.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white font-semibold"
-                          : isCurrentMonth
-                          ? "text-gray-800 hover:bg-gray-100"
-                          : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button
-              type="button"
-              onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </AuthGuard>
   );
 }

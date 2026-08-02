@@ -27,6 +27,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
+import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
 import { toast } from 'sonner';
 
 type Booking = {
@@ -61,7 +62,7 @@ type CourseData = {
   name: string;
   description: string | null;
   instructor_name: string | null;
-  schedule_periods: { days: string[]; time: string | null; court: string | null }[] | null;
+  schedule_periods: { days: string[]; time: string | null; court?: string | null; courts?: string[] | null }[] | null;
   court_name: string | null;
   schedule_time: string | null;
   lesson_overrides: Record<string, string> | null;
@@ -81,13 +82,9 @@ const COURSE_DAY_CODE: Record<number, string> = {
 };
 
 function getCourseCourtForDate(course: CourseData, dateStr: string): string | null {
-  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
-  if (course.schedule_periods?.length) {
-    const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
-    const period = course.schedule_periods.find((p) => p.days?.includes(dayCode));
-    if (period?.court) return period.court;
-  }
-  return course.court_name;
+  const dayCode = COURSE_DAY_CODE[new Date(dateStr + "T12:00:00").getDay()];
+  const courts = resolveCourseCourtsForDate(course, dateStr, dayCode);
+  return courts.length > 0 ? courts.join(", ") : null;
 }
 
 function getCourseTimeForDate(course: CourseData, dateStr: string): string | null {

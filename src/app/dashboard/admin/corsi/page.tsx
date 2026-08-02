@@ -8,19 +8,16 @@ import {
   Plus,
   Search,
   Loader2,
-  Pencil,
-  Trash2,
   SlidersHorizontal,
   ArrowUpDown,
   X,
-  MoreVertical,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import { toast } from 'sonner';
+import { courseAllCourtsSummary } from "@/lib/bookings/courseConflicts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SchedulePeriod = { days: string[]; time: string | null; court?: string | null; start_date?: string | null; end_date?: string | null };
+type SchedulePeriod = { days: string[]; time: string | null; court?: string | null; courts?: string[] | null; start_date?: string | null; end_date?: string | null };
 
 type Course = {
   id: string;
@@ -61,8 +58,6 @@ export default function CorsiAdminPage() {
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("active");
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     loadCourses();
@@ -78,13 +73,6 @@ export default function CorsiAdminPage() {
     setLoading(false);
   }
 
-  async function handleDelete(course: Course) {
-    if (!confirm(`Sei sicuro di voler eliminare il corso "${course.name}"?`)) return;
-    const { error } = await supabase.from("courses").delete().eq("id", course.id);
-    if (error) toast.error("Errore: " + error.message);
-    else setCourses((prev) => prev.filter((c) => c.id !== course.id));
-  }
-
   async function toggleActive(course: Course) {
     const { error } = await supabase
       .from("courses")
@@ -95,20 +83,6 @@ export default function CorsiAdminPage() {
         prev.map((c) => (c.id === course.id ? { ...c, is_active: !c.is_active } : c))
       );
   }
-
-  const closeMenu = () => { setOpenMenuId(null); setMenuPosition(null); };
-
-  const openMenu = (id: string, rect: DOMRect) => {
-    const menuWidth = 176;
-    const menuHeight = 120;
-    const pad = 8;
-    let left = rect.right - menuWidth;
-    left = Math.max(pad, Math.min(left, window.innerWidth - menuWidth - pad));
-    let top = rect.bottom + 6;
-    if (top + menuHeight > window.innerHeight - pad) top = Math.max(pad, rect.top - menuHeight - 6);
-    setOpenMenuId(id);
-    setMenuPosition({ top, left });
-  };
 
   const hasActiveFilters = filterActive !== "active";
 
@@ -138,7 +112,7 @@ export default function CorsiAdminPage() {
         c.name.toLowerCase().includes(q) ||
         c.description?.toLowerCase().includes(q) ||
         c.instructor_name?.toLowerCase().includes(q) ||
-        c.court_name?.toLowerCase().includes(q);
+        courseAllCourtsSummary(c).some((court) => court.toLowerCase().includes(q));
       const matchesActive =
         filterActive === "all" ||
         (filterActive === "active" && hasUpcomingLessons(c)) ||
@@ -300,53 +274,6 @@ export default function CorsiAdminPage() {
                     <p className="font-semibold text-white text-sm truncate">{course.name}</p>
                     {subtitle && (
                       <p className="text-xs text-white/70 mt-0.5 truncate">{subtitle}</p>
-                    )}
-                  </div>
-
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (openMenuId === course.id) { closeMenu(); return; }
-                        openMenu(course.id, e.currentTarget.getBoundingClientRect());
-                      }}
-                      className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]"
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </button>
-                    {openMenuId === course.id && menuPosition && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeMenu(); }} />
-                        <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
-                          style={{ top: menuPosition.top, left: menuPosition.left }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Link
-                            href={`/dashboard/admin/corsi/${course.id}`}
-                            onClick={(e) => { e.stopPropagation(); closeMenu(); }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Modifica
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              closeMenu();
-                              void handleDelete(course);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Elimina
-                          </button>
-                        </div>
-                      </>
                     )}
                   </div>
                 </div>

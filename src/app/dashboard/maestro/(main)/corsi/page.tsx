@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GraduationCap, Loader2, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { courseAllCourtsSummary } from "@/lib/bookings/courseConflicts";
 
 type Course = {
   id: string;
@@ -15,6 +16,7 @@ type Course = {
   schedule_time: string | null;
   instructor_name: string | null;
   court_name: string | null;
+  schedule_periods: { days: string[]; time: string | null; court?: string | null; courts?: string[] | null }[] | null;
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
@@ -70,7 +72,7 @@ export default function MaestroCorsiPage() {
     return (
       !search ||
       c.name.toLowerCase().includes(q) ||
-      c.court_name?.toLowerCase().includes(q) ||
+      courseAllCourtsSummary(c).some((court) => court.toLowerCase().includes(q)) ||
       c.description?.toLowerCase().includes(q)
     );
   });
@@ -110,7 +112,7 @@ export default function MaestroCorsiPage() {
         <div className="space-y-2">
           {filtered.map((course) => {
             const days = (course.schedule_days ?? []).map((d) => DAYS[d] ?? d).join(", ");
-            const subtitle = course.court_name ?? "";
+            const subtitle = courseAllCourtsSummary(course).join(", ");
 
             return (
               <div

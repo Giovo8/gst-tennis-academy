@@ -67,7 +67,7 @@ type Course = {
   extra_dates: string[] | null;
   lesson_overrides: Record<string, string> | null;
   lesson_time_overrides: Record<string, string> | null;
-  schedule_periods: { days: string[]; time: string | null; court: string | null; start_date?: string | null; end_date?: string | null }[] | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null; courts?: string[] | null; start_date?: string | null; end_date?: string | null }[] | null;
   created_by: string | null;
 };
 
@@ -93,11 +93,16 @@ function getPeriodForDate(course: Course, dateStr: string) {
   return course.schedule_periods.find((p) => p.days?.includes(dayCode)) ?? null;
 }
 
-function getCourtForDate(course: Course, dateStr: string): string | null {
-  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+function getCourtsForDate(course: Course, dateStr: string): string[] {
+  if (course.lesson_overrides?.[dateStr]) return [course.lesson_overrides[dateStr]];
   const period = getPeriodForDate(course, dateStr);
-  if (period?.court) return period.court;
-  return course.court_name;
+  if (period?.courts && period.courts.length > 0) return period.courts;
+  if (period?.court) return [period.court];
+  return course.court_name ? [course.court_name] : [];
+}
+
+function getCourtForDate(course: Course, dateStr: string): string | null {
+  return getCourtsForDate(course, dateStr)[0] ?? null;
 }
 
 function getTimeForDate(course: Course, dateStr: string): string | null {
@@ -514,7 +519,7 @@ export default function CorsoDetailPage() {
         const periodsToShow = course.schedule_periods && course.schedule_periods.length > 0
           ? course.schedule_periods
           : (course.schedule_days?.length || course.schedule_time || course.court_name)
-            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, start_date: course.start_date, end_date: course.end_date }]
+            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, courts: course.court_name ? [course.court_name] : [], start_date: course.start_date, end_date: course.end_date }]
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
@@ -547,10 +552,10 @@ export default function CorsoDetailPage() {
                   <p className="text-secondary font-semibold">{(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}</p>
                 </div>
               )}
-              {p.court && (
+              {(p.courts?.length ? p.courts : p.court ? [p.court] : []).length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-200">
                   <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <p className="text-secondary font-semibold">{p.court}</p>
+                  <p className="text-secondary font-semibold">{(p.courts?.length ? p.courts : p.court ? [p.court] : []).join(", ")}</p>
                 </div>
               )}
               {p.time && (
@@ -676,9 +681,9 @@ export default function CorsoDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {(getCourtForDate(course, dateStr) || getTimeForDate(course, dateStr)) && (
+                        {(getCourtsForDate(course, dateStr).length > 0 || getTimeForDate(course, dateStr)) && (
                           <p className="text-xs text-white/70 mt-0.5">
-                            {[getCourtForDate(course, dateStr), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
+                            {[getCourtsForDate(course, dateStr).join(", "), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
                           </p>
                         )}
                       </div>
@@ -858,10 +863,10 @@ export default function CorsoDetailPage() {
                 <p className="text-sm font-semibold text-gray-900 capitalize">{getCalendarMonthLabel(calendarViewDate)}</p>
                 <button type="button" onClick={() => setCalendarViewDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"><ChevronRight className="h-4 w-4" /></button>
               </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+              <div className="calendar-grid grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
                 {WEEK_DAYS_CAL.map((d) => <span key={d} className="py-1">{d}</span>)}
               </div>
-              <div className="grid grid-cols-7 gap-1">
+              <div className="calendar-grid grid grid-cols-7 gap-1">
                 {calendarDays.map(({ date, isCurrentMonth }) => {
                   const isSelected = isSameCalendarDay(date, pendingDate);
                   const isToday = isSameCalendarDay(date, new Date());
@@ -870,7 +875,7 @@ export default function CorsoDetailPage() {
                       key={date.toISOString()}
                       type="button"
                       onClick={() => setPendingDate(normalizeDate(date))}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
+                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-lg text-sm leading-none transition-colors ${
                         isSelected ? "bg-secondary text-white font-semibold" :
                         isCurrentMonth ? "text-gray-800 hover:bg-gray-100" : "text-gray-400 hover:bg-gray-50"
                       } ${!isSelected && isToday ? "ring-1 ring-secondary/40" : ""}`}

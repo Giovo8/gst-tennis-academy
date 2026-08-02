@@ -29,6 +29,7 @@ import ParticipantsCard from "@/components/bookings/ParticipantsCard";
 import CoachCard from "@/components/bookings/CoachCard";
 import DateNavigator from "@/components/bookings/DateNavigator";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
+import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
 
@@ -442,16 +443,9 @@ function NewAdminBookingPageInner({ basePath = "/dashboard/admin" }: NewAdminBoo
 
     // Build course fake-bookings for timeline
     const coursesAsBookings: ExistingBooking[] = activeCourses.flatMap(course => {
-      let courseCourtForDay: string | null = course.court_name ?? null;
       let timeStr: string | null = course.schedule_time ?? null;
-      // lesson_overrides: per-date court override has highest priority
-      if (course.lesson_overrides && (course.lesson_overrides as Record<string, string>)[dateStr]) {
-        courseCourtForDay = (course.lesson_overrides as Record<string, string>)[dateStr];
-      } else if (course.schedule_periods && course.schedule_periods.length > 0) {
-        const mp = course.schedule_periods.find((p: { days: string[]; time: string | null; court: string | null }) => p.days.includes(_dayName));
-        if (mp?.court) courseCourtForDay = mp.court;
-      }
-      if (courseCourtForDay !== selectedCourt) return [];
+      const courtsForDay = resolveCourseCourtsForDate(course, dateStr, _dayName);
+      if (!courtsForDay.includes(selectedCourt)) return [];
       // lesson_time_overrides: per-date time override has highest priority
       if (course.lesson_time_overrides && (course.lesson_time_overrides as Record<string, string>)[dateStr]) {
         timeStr = (course.lesson_time_overrides as Record<string, string>)[dateStr];

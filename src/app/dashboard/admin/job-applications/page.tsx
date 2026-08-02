@@ -4,13 +4,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import {
   FileText,
-  Trash2,
   Users,
   Dumbbell,
   Search,
   Loader2,
-  MoreVertical,
-  Pencil,
 } from "lucide-react";
 
 interface JobApplication {
@@ -31,8 +28,6 @@ export default function JobApplicationsPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "name" | "role" | "status" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   async function loadApplications() {
     setLoading(true);
@@ -129,11 +124,6 @@ export default function JobApplicationsPage() {
     rejected: applications.filter(a => a.status === "rejected").length,
   };
 
-  const closeActionMenu = () => {
-    setOpenMenuId(null);
-    setMenuPosition(null);
-  };
-
   const getStatusLabel = (status: JobApplication["status"]) => {
     switch (status) {
       case "pending":
@@ -151,14 +141,6 @@ export default function JobApplicationsPage() {
 
   return (
     <div className="space-y-6 pt-3">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="breadcrumb text-secondary/60">Candidature Lavoro</p>
-          <h1 className="text-4xl font-bold text-secondary">Candidature Lavoro</h1>
-        </div>
-      </div>
-
       {/* Search */}
       <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
@@ -212,78 +194,11 @@ export default function JobApplicationsPage() {
                     </p>
                   </div>
 
-                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
-                    {app.role === "maestro" ? "Maestro" : "Preparatore"}
-                  </span>
-
                   {app.status !== "pending" && (
                     <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden md:block">
                       {getStatusLabel(app.status)}
                     </span>
                   )}
-
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (openMenuId === app.id) {
-                          closeActionMenu();
-                          return;
-                        }
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setMenuPosition({ top: rect.bottom + 4, left: rect.left - 136 + rect.width });
-                        setOpenMenuId(app.id);
-                      }}
-                      className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all focus:outline-none touch-manipulation min-w-[40px] min-h-[40px]"
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </button>
-                    {openMenuId === app.id && menuPosition && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); closeActionMenu(); }} />
-                        <div
-                          className="fixed z-50 w-44 bg-white rounded-lg shadow-lg border border-black/10 py-1"
-                          style={{ top: menuPosition.top, left: menuPosition.left }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              closeActionMenu();
-                              window.location.href = `/dashboard/admin/job-applications/${app.id}`;
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Visualizza
-                          </button>
-                          {app.cv_url && (
-                            <a
-                              href={app.cv_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={() => { closeActionMenu(); }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-gray-50 transition-colors w-full"
-                            >
-                              <FileText className="h-3.5 w-3.5" />
-                              Curriculum
-                            </a>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => { closeActionMenu(); }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors w-full"
-                            style={{ color: "#022431" }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Elimina
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
             );

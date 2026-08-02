@@ -18,10 +18,8 @@ import {
   Swords,
   FileText,
   Activity,
-  BarChart2,
   GraduationCap,
   Shield,
-  Wallet,
   Bell,
 } from "lucide-react";
 
@@ -150,16 +148,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: "Log",
       href: "/dashboard/admin/platform-logs",
       icon: <Activity className="h-5 w-5" />,
-    },
-    {
-      label: "Statistiche",
-      href: "/dashboard/admin/statistiche",
-      icon: <BarChart2 className="h-5 w-5" />,
-    },
-    {
-      label: "Contabilità",
-      href: "/dashboard/admin/contabilita",
-      icon: <Wallet className="h-5 w-5" />,
     },
     {
       label: "Centro Notifiche",

@@ -43,7 +43,7 @@ type Course = {
   extra_dates: string[] | null;
   lesson_overrides: Record<string, string> | null;
   lesson_time_overrides: Record<string, string> | null;
-  schedule_periods: { days: string[]; time: string | null; court: string | null; start_date?: string | null; end_date?: string | null }[] | null;
+  schedule_periods: { days: string[]; time: string | null; court: string | null; courts?: string[] | null; start_date?: string | null; end_date?: string | null }[] | null;
 };
 
 const DAYS: Record<string, string> = {
@@ -63,11 +63,12 @@ function getPeriodForDate(course: Course, dateStr: string) {
   return course.schedule_periods.find((p) => p.days?.includes(dayCode)) ?? null;
 }
 
-function getCourtForDate(course: Course, dateStr: string): string | null {
-  if (course.lesson_overrides?.[dateStr]) return course.lesson_overrides[dateStr];
+function getCourtsForDate(course: Course, dateStr: string): string[] {
+  if (course.lesson_overrides?.[dateStr]) return [course.lesson_overrides[dateStr]];
   const period = getPeriodForDate(course, dateStr);
-  if (period?.court) return period.court;
-  return course.court_name;
+  if (period?.courts && period.courts.length > 0) return period.courts;
+  if (period?.court) return [period.court];
+  return course.court_name ? [course.court_name] : [];
 }
 
 function getTimeForDate(course: Course, dateStr: string): string | null {
@@ -258,7 +259,7 @@ export default function MaestroCorsoDetailPage() {
         const periodsToShow = course.schedule_periods && course.schedule_periods.length > 0
           ? course.schedule_periods
           : (course.schedule_days?.length || course.schedule_time || course.court_name)
-            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, start_date: course.start_date, end_date: course.end_date }]
+            ? [{ days: course.schedule_days ?? [], time: course.schedule_time, court: course.court_name, courts: course.court_name ? [course.court_name] : [], start_date: course.start_date, end_date: course.end_date }]
             : [];
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
@@ -291,10 +292,10 @@ export default function MaestroCorsoDetailPage() {
                   <p className="text-secondary font-semibold">{(p.days ?? []).map((d) => DAYS[d] ?? d).join(", ")}</p>
                 </div>
               )}
-              {p.court && (
+              {(p.courts?.length ? p.courts : p.court ? [p.court] : []).length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 pb-5 border-b border-gray-100">
                   <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Campo</label>
-                  <p className="text-secondary font-semibold">{p.court}</p>
+                  <p className="text-secondary font-semibold">{(p.courts?.length ? p.courts : p.court ? [p.court] : []).join(", ")}</p>
                 </div>
               )}
               {p.time && (
@@ -421,9 +422,9 @@ export default function MaestroCorsoDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{label}</p>
-                        {(getCourtForDate(course, dateStr) || getTimeForDate(course, dateStr)) && (
+                        {(getCourtsForDate(course, dateStr).length > 0 || getTimeForDate(course, dateStr)) && (
                           <p className="text-xs text-white/70 mt-0.5">
-                            {[getCourtForDate(course, dateStr), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
+                            {[getCourtsForDate(course, dateStr).join(", "), getTimeForDate(course, dateStr)].filter(Boolean).join(" · ")}
                           </p>
                         )}
                       </div>

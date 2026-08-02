@@ -17,6 +17,7 @@ import WeatherCard from "@/components/dashboard/WeatherCard";
 import NotificationsList from "@/components/dashboard/NotificationsList";
 import { UpcomingCommitmentsCard } from "@/components/dashboard/UpcomingCommitmentsCard";
 import BookingsTimeline from "@/components/admin/BookingsTimeline";
+import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
 
 function localDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -237,12 +238,7 @@ export default function MaestroDashboardPage() {
                   const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
                   if (period?.time) timeStr = period.time;
                 }
-                let courtName: string = c.court_name || "";
-                if (c.lesson_overrides?.[dateStr]) courtName = c.lesson_overrides[dateStr];
-                else if (c.schedule_periods?.length > 0) {
-                  const period = c.schedule_periods.find((p: { days: string[] }) => p.days?.includes(dayCode));
-                  if (period?.court) courtName = period.court;
-                }
+                const courtName = resolveCourseCourtsForDate(c, dateStr, dayCode).join(", ");
                 const rangeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
                 const sh = rangeMatch ? parseInt(rangeMatch[1], 10) : 9;
                 const sm = rangeMatch ? parseInt(rangeMatch[2], 10) : 0;

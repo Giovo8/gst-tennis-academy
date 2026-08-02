@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { parseItalyLocalToUTC } from "@/lib/bookings/bookingTimeRestrictions";
+import { resolveCourseCourtsForDate } from "@/lib/bookings/courseConflicts";
 
 /**
  * API per verificare disponibilità slot in tempo reale
@@ -94,16 +95,9 @@ export async function GET(request: Request) {
           return isExtraDate || isRegularDay;
         })
         .flatMap((c) => {
-          let courseCourtForDay: string | null = c.court_name ?? null;
           let timeStr: string | null = c.schedule_time ?? null;
-          // lesson_overrides: per-date court override has highest priority
-          if (c.lesson_overrides && (c.lesson_overrides as Record<string, string>)[dateStr]) {
-            courseCourtForDay = (c.lesson_overrides as Record<string, string>)[dateStr];
-          } else if (c.schedule_periods && c.schedule_periods.length > 0) {
-            const mp = c.schedule_periods.find((p: { days: string[]; time: string | null; court: string | null }) => p.days.includes(dayName));
-            if (mp?.court) courseCourtForDay = mp.court;
-          }
-          if (courseCourtForDay !== court) return [];
+          const courtsForDay = resolveCourseCourtsForDate(c, dateStr, dayName);
+          if (!courtsForDay.includes(court)) return [];
           // lesson_time_overrides: per-date time override has highest priority
           if (c.lesson_time_overrides && (c.lesson_time_overrides as Record<string, string>)[dateStr]) {
             timeStr = (c.lesson_time_overrides as Record<string, string>)[dateStr];

@@ -181,7 +181,6 @@ export default function DashboardShell({
     edit: "Modifica",
     modifica: "Modifica",
     archivio: "Archivio",
-    statistiche: "Statistiche",
     history: "Storico",
   };
 

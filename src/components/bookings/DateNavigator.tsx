@@ -100,9 +100,9 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
   }
 
   return (
-    <div className="rounded-lg transition-all bg-secondary">
+    <div className="rounded-lg transition-all overflow-hidden">
       <div
-        className="p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center cursor-pointer"
+        className="px-4 sm:px-5 py-3 sm:py-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center cursor-pointer bg-secondary hover:opacity-90 transition-all"
         role="button"
         tabIndex={0}
         title="Scegli data"
@@ -178,16 +178,16 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
                 </button>
               </div>
 
-              <div className="mt-3 grid grid-cols-7 gap-1 text-xs font-bold text-gray-500 uppercase">
+              <div className="calendar-grid mt-3 grid grid-cols-7 gap-1 text-xs font-bold text-gray-500 uppercase">
                 {WEEK_DAYS_SHORT.map((day, index) => (
-                  <div key={day} className="w-full box-border flex items-center justify-center py-1 border border-transparent">
+                  <div key={day} className="w-full min-w-0 box-border flex items-center justify-center py-1 border border-transparent">
                     <span className="sm:hidden truncate">{day}</span>
                     <span className="hidden sm:inline truncate">{WEEK_DAYS_FULL[index]}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-1">
+              <div className="calendar-grid grid grid-cols-7 gap-1">
                 {calendarDays.map(({ date, isCurrentMonth }) => {
                   const isSelected = isSameCalendarDay(date, selectedDate);
                   const isTodayDate = isSameCalendarDay(date, new Date());
@@ -197,9 +197,9 @@ export default function DateNavigator({ selectedDate, onSelectDate }: DateNaviga
                       key={date.toISOString()}
                       type="button"
                       onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-md text-sm font-bold transition-colors ${
+                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
                         isSelected
-                          ? "bg-secondary text-white"
+                          ? "bg-secondary text-white border border-transparent"
                           : isCurrentMonth
                           ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
                           : "text-gray-400 border border-gray-100 hover:bg-gray-50"

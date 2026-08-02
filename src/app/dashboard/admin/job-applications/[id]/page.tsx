@@ -170,7 +170,7 @@ export default function JobApplicationDetailPage() {
         <div className="flex items-start gap-6">
           <RoleIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{application.full_name}</h1>
+            <h2 className="text-2xl font-bold text-white">{application.full_name}</h2>
           </div>
         </div>
       </div>
@@ -181,14 +181,6 @@ export default function JobApplicationDetailPage() {
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni candidato</h2>
         </div>
         <div className="p-6 space-y-6">
-          {/* Nome Completo */}
-          <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8 pb-6 border-b border-gray-200">
-            <label className="w-full md:w-48 md:pt-0.5 text-sm text-secondary font-medium flex-shrink-0">Nome completo</label>
-            <div className="flex-1">
-              <p className="text-secondary font-semibold">{application.full_name}</p>
-            </div>
-          </div>
-
           {/* Email */}
           <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8 pb-6 border-b border-gray-200">
             <label className="w-full md:w-48 md:pt-0.5 text-sm text-secondary font-medium flex-shrink-0">Email</label>

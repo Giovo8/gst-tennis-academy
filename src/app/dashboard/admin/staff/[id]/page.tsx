@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from 'sonner';
 
@@ -113,34 +113,44 @@ export default function AdminStaffDetailPage() {
         <h1 className="text-4xl font-bold text-secondary">Dettaglio Staff</h1>
       </div>
 
+      <div
+        className="rounded-lg border border-black/10 p-6 overflow-hidden"
+        style={{ backgroundColor: "#023047" }}
+      >
+        <div className="flex items-start gap-6">
+          <User className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-white">{staff.full_name}</h2>
+          </div>
+        </div>
+      </div>
+
+      <div className="page-card">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Immagine</h2>
+        </div>
+
+        <div className="p-6">
+          {staff.image_url ? (
+            <img
+              src={staff.image_url}
+              alt={staff.full_name}
+              className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg object-contain object-left bg-secondary/5 border border-black/10"
+            />
+          ) : (
+            <div className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg bg-secondary/10 border border-black/10 flex items-center justify-center">
+              <span className="font-bold text-4xl text-secondary">{staff.full_name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="page-card">
         <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
 
         <div className="p-6 space-y-6">
-          <div className="flex flex-col gap-4 pb-6 border-b border-gray-200 md:border-b-0">
-            <label className="text-sm font-semibold text-secondary">Immagine</label>
-            <div className="w-full">
-              {staff.image_url ? (
-                <img
-                  src={staff.image_url}
-                  alt={staff.full_name}
-                  className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg object-contain object-left bg-secondary/5 border border-black/10 md:border-0"
-                />
-              ) : (
-                <div className="w-full h-72 sm:h-[30rem] lg:h-[34rem] rounded-lg bg-secondary/10 border border-black/10 md:border-0 flex items-center justify-center">
-                  <span className="font-bold text-4xl text-secondary">{staff.full_name.charAt(0).toUpperCase()}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
-            <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Nome</label>
-            <div className="font-semibold text-secondary">{staff.full_name}</div>
-          </div>
-
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 pb-6 border-b border-gray-200">
             <label className="text-sm font-semibold text-secondary sm:w-48 flex-shrink-0">Ruolo</label>
             <div className="font-semibold text-secondary">{staff.role}</div>

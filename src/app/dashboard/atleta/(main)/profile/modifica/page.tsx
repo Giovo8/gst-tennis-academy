@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Loader2,
   User,
@@ -18,16 +19,8 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from 'sonner';
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalBody,
-  ModalFooter,
-} from "@/components/ui";
 
-const WEEK_DAYS = ["lu", "ma", "me", "gi", "ve", "sa", "do"];
+const WEEK_DAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
 
 type Profile = {
   id: string;
@@ -71,9 +64,7 @@ export default function AthleteProfileEditPage({
   const [uploadingCertificato, setUploadingCertificato] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showCertificatoModal, setShowCertificatoModal] = useState(false);
-  const [datePickerModalOpen, setDatePickerModalOpen] = useState(false);
-  const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita">("certificato");
-  const [pendingDate, setPendingDate] = useState<Date>(() => new Date());
+  const [activeDateField, setActiveDateField] = useState<"certificato" | "tesserato" | "nascita" | null>(null);
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -478,7 +469,11 @@ export default function AthleteProfileEditPage({
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
 
-  function openDatePicker(field: "certificato" | "tesserato" | "nascita") {
+  function toggleDatePicker(field: "certificato" | "tesserato" | "nascita") {
+    if (activeDateField === field) {
+      setActiveDateField(null);
+      return;
+    }
     const existing = field === "certificato"
       ? formData.certificato_medico_scadenza
       : field === "tesserato"
@@ -486,9 +481,7 @@ export default function AthleteProfileEditPage({
         : formData.birth_date;
     const base = existing ? normalizeDate(new Date(existing)) : normalizeDate(new Date());
     setActiveDateField(field);
-    setPendingDate(base);
     setCalendarViewDate(new Date(base.getFullYear(), base.getMonth(), 1));
-    setDatePickerModalOpen(true);
   }
 
   function changeCalendarMonth(delta: number) {
@@ -496,11 +489,8 @@ export default function AthleteProfileEditPage({
   }
 
   function selectCalendarDay(day: Date) {
-    setPendingDate(normalizeDate(day));
-  }
-
-  function applyDateSelection() {
-    const iso = pendingDate.toISOString().split("T")[0];
+    if (!activeDateField) return;
+    const iso = normalizeDate(day).toISOString().split("T")[0];
     const display = isoToDisplay(iso);
 
     if (activeDateField === "certificato") {
@@ -514,13 +504,7 @@ export default function AthleteProfileEditPage({
       setDateTexts((prev) => ({ ...prev, birth_date: display }));
     }
 
-    setDatePickerModalOpen(false);
-  }
-
-  function handleDatePickerToday() {
-    const today = normalizeDate(new Date());
-    setPendingDate(today);
-    setCalendarViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setActiveDateField(null);
   }
 
   function getCalendarMonthLabel(date: Date): string {
@@ -528,10 +512,77 @@ export default function AthleteProfileEditPage({
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  function getCalendarModalTitle(): string {
-    if (activeDateField === "certificato") return "Scadenza Certificato";
-    if (activeDateField === "tesserato") return "Scadenza Tesseramento";
-    return "Data di Nascita";
+  function renderDateCalendarPanel(field: "certificato" | "tesserato" | "nascita") {
+    const isOpen = activeDateField === field;
+    const selectedIso = field === "certificato" ? formData.certificato_medico_scadenza
+      : field === "tesserato" ? formData.tesserato_scadenza
+      : formData.birth_date;
+    const selectedDate = selectedIso ? normalizeDate(new Date(selectedIso)) : null;
+    return (
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="calendar-panel"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(-1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese precedente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {getCalendarMonthLabel(calendarViewDate)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => changeCalendarMonth(1)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
+                  aria-label="Mese successivo"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="calendar-grid mt-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
+                {WEEK_DAYS.map((day) => (
+                  <span key={day} className="py-1">{day}</span>
+                ))}
+              </div>
+              <div className="calendar-grid grid grid-cols-7 gap-1">
+                {calendarDays.map(({ date, isCurrentMonth }) => {
+                  const isSelected = !!selectedDate && isSameCalendarDay(date, selectedDate);
+                  const isTodayDate = isSameCalendarDay(date, new Date());
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => selectCalendarDay(date)}
+                      className={`calendar-day w-full min-w-0 h-11 sm:h-9 box-border inline-flex items-center justify-center rounded-md text-sm font-bold leading-none transition-colors ${
+                        isSelected
+                          ? "bg-secondary text-white"
+                          : isCurrentMonth
+                          ? "text-gray-800 border border-gray-200 hover:bg-gray-100"
+                          : "text-gray-400 border border-gray-100 hover:bg-gray-50"
+                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
   }
 
   function isoToDisplay(iso: string): string {
@@ -676,24 +727,25 @@ export default function AthleteProfileEditPage({
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Data di Nascita</label>
                 <div className="flex-1">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => openDatePicker("nascita")}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                      tabIndex={-1}
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                    </button>
+                  <div className="flex items-center gap-2">
                     <input
                       type="text"
                       placeholder="GG/MM/AAAA"
                       value={dateTexts.birth_date}
                       onChange={(e) => handleDateTextChange("birth_date", e.target.value)}
                       maxLength={10}
-                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                      className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => toggleDatePicker("nascita")}
+                      className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                      aria-label="Apri calendario"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
                   </div>
+                  {renderDateCalendarPanel("nascita")}
                 </div>
               </div>
 
@@ -881,24 +933,25 @@ export default function AthleteProfileEditPage({
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Certificato</label>
                   <div className="flex-1">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => openDatePicker("certificato")}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                        tabIndex={-1}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                      </button>
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="GG/MM/AAAA"
                         value={dateTexts.certificato_medico_scadenza}
                         onChange={(e) => handleDateTextChange("certificato_medico_scadenza", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => toggleDatePicker("certificato")}
+                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                        aria-label="Apri calendario"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
                     </div>
+                    {renderDateCalendarPanel("certificato")}
                   </div>
                 </div>
 
@@ -938,24 +991,25 @@ export default function AthleteProfileEditPage({
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Scadenza Tesseramento</label>
                   <div className="flex-1">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => openDatePicker("tesserato")}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-secondary/40 hover:text-secondary transition-colors"
-                        tabIndex={-1}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                      </button>
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="GG/MM/AAAA"
                         value={dateTexts.tesserato_scadenza}
                         onChange={(e) => handleDateTextChange("tesserato_scadenza", e.target.value)}
                         maxLength={10}
-                        className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
+                        className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-secondary placeholder:text-secondary/30 focus:outline-none focus:ring-0 focus:border-black/10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => toggleDatePicker("tesserato")}
+                        className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-white hover:opacity-90 transition-all"
+                        aria-label="Apri calendario"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
                     </div>
+                    {renderDateCalendarPanel("tesserato")}
                   </div>
                 </div>
               </div>
@@ -1034,85 +1088,6 @@ export default function AthleteProfileEditPage({
           </button>
         </div>
       </form>
-
-      <Modal open={datePickerModalOpen} onOpenChange={setDatePickerModalOpen}>
-        <ModalContent size="sm" showBuiltinClose={false} className="overflow-hidden rounded-lg !border-gray-200 shadow-xl !bg-white dark:!bg-white dark:!border-gray-200">
-          <ModalHeader withCloseButton closeButtonClassName="text-white/70 hover:text-white hover:bg-white/10" className="px-4 py-3 bg-secondary border-b border-secondary dark:!border-secondary">
-            <ModalTitle className="text-white text-lg">
-              {getCalendarModalTitle()}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="px-4 py-4 bg-white dark:!bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(-1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese precedente"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
-                  {getCalendarMonthLabel(calendarViewDate)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => changeCalendarMonth(1)}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-black/10 text-secondary hover:bg-gray-50 transition-colors"
-                  aria-label="Mese successivo"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 uppercase">
-                {WEEK_DAYS.map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map(({ date, isCurrentMonth }) => {
-                  const isSelected = isSameCalendarDay(date, pendingDate);
-                  const isTodayDate = isSameCalendarDay(date, new Date());
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      type="button"
-                      onClick={() => selectCalendarDay(date)}
-                      className={`h-9 rounded-lg text-sm transition-colors ${
-                        isSelected
-                          ? "bg-secondary text-white font-semibold"
-                          : isCurrentMonth
-                            ? "text-gray-800 hover:bg-gray-100"
-                            : "text-gray-400 hover:bg-gray-50"
-                      } ${!isSelected && isTodayDate ? "ring-1 ring-secondary/40" : ""}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="p-0 border-t border-gray-200 bg-white dark:!bg-white dark:!border-gray-200">
-            <button
-              type="button"
-              onClick={handleDatePickerToday}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={applyDateSelection}
-              className="flex-1 py-3 bg-secondary text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Applica
-            </button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
