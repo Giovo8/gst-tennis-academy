@@ -158,6 +158,7 @@ Tutte le route del modulo richiedono **sessione + admin/gestore** tramite `requi
 | `/api/invite-code-logs` | GET | **Nessuna** | Log utilizzi codici invito — **manca la verifica di autenticazione** (nota di sicurezza) |
 | `/api/registration-logs` | GET | Sessione + admin/gestore | Log registrazioni |
 | `/api/activity-logs` | GET | Sessione + admin/gestore | Log attività (`activity_log`) |
+| `/api/security-events` | GET | Sessione + admin/gestore | Eventi di sicurezza (`security_events`) + riepilogo IP più attivi nelle 24h. Filtri: `limit` (max 1000), `tipo`, `severita` |
 | `/api/email-logs` | GET | Sessione + admin/gestore | Esiti invii email (`email_logs`) |
 | `/api/recruitment-applications` | GET, PATCH, DELETE | Sessione + admin/gestore | Gestione candidature "lavora con noi" |
 
@@ -197,5 +198,9 @@ Tutte le route del modulo richiedono **sessione + admin/gestore** tramite `requi
 ## Note trasversali
 
 - **Route senza autenticazione che dovrebbero averla** (rilevate a luglio 2026, da correggere): `PATCH/PUT/DELETE /api/arena/challenges`, `GET /api/invite-code-logs`, `POST /api/upload/news-image`, `GET /api/bookings/availability` (information disclosure), `POST /api/invite-codes/validate` (upsert profilo senza ownership check), `GET /api/tournaments/reports`.
-- **Rate limiting** (`src/lib/security/rate-limiter.ts`, in-memory): applicato a signup, ricerca utenti, weather e ad alcune route bookings/tournaments. Non copre il login (gestito client-side da Supabase Auth).
+- **Rate limiting**: applicato **a tutte le route `/api/*`** dal middleware, secondo le regole per path in `src/lib/security/rateLimitRules.ts` (auth e upload stretti, `/api/ai-news/genera` a 5/ora, default 300/min in lettura e 60/min in scrittura). Bucket separati per gruppo di endpoint, così path diversi non condividono il contatore. Esclusi i webhook, che sono chiamate server-to-server da un solo IP. Le route con un `applyRateLimit` interno (signup, bookings, tournaments, users/search, weather) mantengono il proprio limite più stretto: i due livelli si sommano.
+
+  Superato il limite la risposta è `429` con header `Retry-After` e viene registrato un evento in `security_events` (solo al primo superamento della finestra, non a ogni tentativo).
+
+  ⚠️ Il contatore è in memoria (`src/lib/security/rate-limiter.ts`): su Vercel ogni istanza ha il proprio, quindi il limite effettivo è per-istanza e si azzera ai cold start. Regge un client insistente, non un attacco distribuito — per quello serve un contatore condiviso (Postgres/Redis) o un WAF.
 - La directory `src/app/api/email/scheduler/` esiste ma è vuota: non è una route attiva e non è conteggiata tra le 89.

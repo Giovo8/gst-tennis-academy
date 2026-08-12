@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { NextResponse } from "next/server";
+import { logSecurityEvent } from "@/lib/security/securityEvents";
 
 type UserRole = "admin" | "gestore" | "maestro" | "atleta";
 
@@ -40,10 +41,26 @@ export function isAdmin(role: string | null): boolean {
   return role === "admin" || role === "gestore";
 }
 
-export function unauthorized() {
+/**
+ * `request` è opzionale per non dover toccare le decine di chiamate esistenti:
+ * quando c'è, l'evento registrato porta con sé path, metodo e IP. Passarlo nelle
+ * route nuove.
+ */
+export function unauthorized(request?: Request) {
+  void logSecurityEvent({
+    tipo: "auth.sessione_assente",
+    request,
+    statusCode: 401,
+  });
   return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
 }
 
-export function forbidden() {
+export function forbidden(request?: Request, userId?: string) {
+  void logSecurityEvent({
+    tipo: "auth.ruolo_insufficiente",
+    request,
+    statusCode: 403,
+    userId,
+  });
   return NextResponse.json({ error: "Permessi insufficienti" }, { status: 403 });
 }

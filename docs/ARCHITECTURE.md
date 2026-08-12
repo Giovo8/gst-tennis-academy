@@ -66,10 +66,13 @@ Non integrati: **Stripe** e **Sentry**. I pagamenti sono tracciati solo a livell
 
 ## Middleware (`src/middleware.ts`)
 
-Il middleware esegue due compiti, su tutte le richieste tranne gli asset statici:
+Il middleware esegue tre compiti, su tutte le richieste tranne gli asset statici:
 
-1. **Protezione CSRF** — per le richieste mutanti (`POST/PUT/PATCH/DELETE`) verso `/api/*`: se l'header `Origin` è presente e non corrisponde all'host corrente (http/https) o a `NEXT_PUBLIC_SITE_URL`, la richiesta viene rifiutata con 403. Le richieste senza `Origin` (server-to-server) passano; il path `/api/webhooks/*` è escluso.
-2. **Refresh della sessione Supabase** — tramite `createServerClient` di `@supabase/ssr` viene chiamato `supabase.auth.getUser()`, che rinnova il token nei cookie e mantiene viva la sessione tra le richieste.
+1. **Protezione CSRF** — per le richieste mutanti (`POST/PUT/PATCH/DELETE`) verso `/api/*`: se l'header `Origin` è presente e non corrisponde all'host corrente (http/https) o a `NEXT_PUBLIC_SITE_URL`, la richiesta viene rifiutata con 403. Le richieste senza `Origin` (server-to-server) passano; il path `/api/webhooks/*` è escluso. Ogni blocco viene registrato in `security_events`.
+2. **Rate limiting** — su tutte le route `/api/*`, secondo le regole per path in `src/lib/security/rateLimitRules.ts`. Oltre il limite: `429` con `Retry-After`. Dettagli e limiti in `docs/API.md`.
+3. **Refresh della sessione Supabase** — tramite `createServerClient` di `@supabase/ssr` viene chiamato `supabase.auth.getUser()`, che rinnova il token nei cookie e mantiene viva la sessione tra le richieste.
+
+Il matcher esclude `_next/static`, `_next/image`, la favicon e le immagini: le richieste all'endpoint di ottimizzazione immagini **non passano di qui** e non sono osservabili dai log applicativi.
 
 Il middleware **non esegue alcun controllo di ruolo** sulle route `/dashboard/*`: la protezione delle pagine è client-side (vedi sotto).
 

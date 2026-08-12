@@ -1,3 +1,5 @@
+import { logSecurityEvent } from '@/lib/security/securityEvents';
+
 // Rate limit configurations
 export const RATE_LIMITS = {
   // Authentication endpoints
@@ -25,7 +27,7 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every minute
-if (typeof setInterval !== "undefined") {
+if (typeof setInterval !== 'undefined') {
   const cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of store.entries()) {
@@ -34,7 +36,7 @@ if (typeof setInterval !== "undefined") {
   }, 60_000);
 
   // Avoid keeping the Node.js event loop alive in tests/runtime shutdown.
-  if (typeof (cleanupInterval as { unref?: () => void }).unref === "function") {
+  if (typeof (cleanupInterval as { unref?: () => void }).unref === 'function') {
     (cleanupInterval as { unref: () => void }).unref();
   }
 }
@@ -43,16 +45,11 @@ if (typeof setInterval !== "undefined") {
  * Returns a unique identifier for the client from request headers.
  */
 export function getClientIdentifier(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+  const cfConnectingIp = request.headers.get('cf-connecting-ip');
 
-  return (
-    forwardedFor?.split(",")[0].trim() ||
-    realIp ||
-    cfConnectingIp ||
-    "unknown"
-  );
+  return forwardedFor?.split(',')[0].trim() || realIp || cfConnectingIp || 'unknown';
 }
 
 /**
@@ -61,7 +58,14 @@ export function getClientIdentifier(request: Request): string {
  */
 export async function applyRateLimit(
   identifier: string,
-  limitConfig: (typeof RATE_LIMITS)[keyof typeof RATE_LIMITS]
+  /**
+   * Tipo strutturale e non `typeof RATE_LIMITS[...]`: le regole per path in
+   * `rateLimitRules.ts` definiscono anche limiti propri, che con il tipo
+   * letterale prodotto da `as const` non sarebbero assegnabili.
+   */
+  limitConfig: { maxRequests: number; windowMs: number },
+  /** Passare la richiesta per arricchire l'evento con path e metodo. */
+  request?: Request,
 ): Promise<{ allowed: boolean; remaining: number; reset: number }> {
   const { maxRequests, windowMs } = limitConfig;
   const now = Date.now();
@@ -73,11 +77,34 @@ export async function applyRateLimit(
   }
 
   if (entry.count >= maxRequests) {
+    // Solo al primo superamento della finestra: chi continua a martellare
+    // genererebbe altrimenti una riga per tentativo, cioè l'amplificazione che
+    // questo registro vuole evitare.
+    if (entry.count === maxRequests) {
+      entry.count++;
+      void logSecurityEvent({
+        tipo: 'rate_limit.superato',
+        request,
+        statusCode: 429,
+        // Con la richiesta l'IP si ricava dagli header; senza, `identifier` è
+        // già l'IP puro prodotto da getClientIdentifier.
+        ipAddress: request ? undefined : identifier,
+        dettagli: {
+          max_richieste: maxRequests,
+          finestra_ms: windowMs,
+          identificativo: identifier,
+        },
+      });
+    }
     return { allowed: false, remaining: 0, reset: Math.ceil((entry.resetTime - now) / 1000) };
   }
 
   entry.count++;
-  return { allowed: true, remaining: maxRequests - entry.count, reset: Math.ceil((entry.resetTime - now) / 1000) };
+  return {
+    allowed: true,
+    remaining: maxRequests - entry.count,
+    reset: Math.ceil((entry.resetTime - now) / 1000),
+  };
 }
 
 export default { getClientIdentifier, applyRateLimit, RATE_LIMITS };

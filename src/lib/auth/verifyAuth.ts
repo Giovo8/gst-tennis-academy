@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
 import { type UserRole, isAdminOrGestore, canManageUsers } from "@/lib/roles";
+import { logSecurityEvent } from "@/lib/security/securityEvents";
 
 export type { UserRole };
 export { isAdminOrGestore, canManageUsers };
@@ -39,6 +40,11 @@ export async function verifyAuth(
   const authHeader = req.headers.get("authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    await logSecurityEvent({
+      tipo: "auth.token_mancante",
+      request: req,
+      statusCode: 401,
+    });
     return {
       success: false,
       response: NextResponse.json(
@@ -57,6 +63,11 @@ export async function verifyAuth(
     } = await supabaseServer.auth.getUser(token);
 
     if (authError || !user) {
+      await logSecurityEvent({
+        tipo: "auth.token_non_valido",
+        request: req,
+        statusCode: 401,
+      });
       return {
         success: false,
         response: NextResponse.json(
@@ -81,6 +92,15 @@ export async function verifyAuth(
     if (allowedRoles && allowedRoles.length > 0) {
       const userRole = profile?.role as UserRole;
       if (!userRole || !allowedRoles.includes(userRole)) {
+        // Un utente autenticato che tenta una route non sua è il segnale più
+        // interessante del registro: qui l'identità è nota.
+        await logSecurityEvent({
+          tipo: "auth.ruolo_insufficiente",
+          request: req,
+          statusCode: 403,
+          userId: user.id,
+          dettagli: { ruolo: userRole ?? null, ruoli_ammessi: allowedRoles },
+        });
         return {
           success: false,
           response: NextResponse.json(

@@ -6,9 +6,15 @@ import Image from "next/image";
 /**
  * Immagine di copertina di una news.
  *
- * Usa next/image: Vercel scarica l'originale da Supabase una volta sola, poi
- * serve WebP/AVIF ridimensionati dalla propria CDN. Senza questo ogni visita
- * scaricava il file pieno da Supabase Storage (egress CDN).
+ * Usa next/image con `unoptimized`: le immagini arrivano da Supabase Storage
+ * già ottimizzate all'upload (WebP, max 1280px, quality 80 — vedi
+ * `src/lib/images/optimize.ts`), quindi la trasformazione a runtime di Vercel
+ * ricomprimerebbe materiale già compresso. Con il piano free quelle
+ * trasformazioni sono limitate a 5.000/mese e un crawler che percorre
+ * l'archivio news le esaurisce in un giorno, facendo poi fallire il rendering
+ * di ogni nuova immagine.
+ *
+ * Restano di next/image il lazy loading e la stabilità di layout con `fill`.
  *
  * Si occupa da sé del wrapper `relative`, quindi funziona dentro qualsiasi
  * contenitore con dimensioni definite (es. `aspect-[16/9]`).
@@ -16,6 +22,7 @@ import Image from "next/image";
 export default function NewsImage({
   src,
   alt,
+  /** Ignorato finché l'immagine è `unoptimized`: tenuto per un eventuale rientro. */
   sizes = "(max-width: 640px) 320px, 400px",
   className = "object-cover transition-transform duration-300 group-hover:scale-105",
   priority = false,
@@ -56,6 +63,7 @@ export default function NewsImage({
         alt={alt}
         fill
         sizes={sizes}
+        unoptimized
         priority={priority}
         draggable={false}
         className={className}

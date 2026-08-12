@@ -5,11 +5,13 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * Avatar utente servito tramite next/image.
+ * Avatar utente servito tramite next/image con `unoptimized`.
  *
- * Gli avatar compaiono in liste lunghe (chat, classifiche, partecipanti): senza
- * ottimizzazione ogni riga scaricava il file originale da Supabase Storage.
- * Qui viene richiesto solo il ritaglio alla dimensione effettiva di rendering.
+ * Gli avatar sono già ridimensionati e convertiti in WebP all'upload (vedi
+ * `src/lib/images/optimize.ts`), quindi la trasformazione a runtime di Vercel
+ * aggiungeva poco e consumava la quota del piano free (5.000/mese), condivisa
+ * con le immagini delle news. Qui il file viene servito direttamente da
+ * Supabase Storage, dove ha cache-control di un anno.
  *
  * Se `src` manca o il caricamento fallisce mostra l'iniziale del nome.
  */
@@ -53,6 +55,7 @@ export default function Avatar({
         alt={name || "Avatar"}
         fill
         sizes="96px"
+        unoptimized
         className={cn("object-cover", className)}
         onError={() => setError(true)}
       />
@@ -66,6 +69,7 @@ export default function Avatar({
       width={size}
       height={size}
       sizes={`${size}px`}
+      unoptimized
       className={cn("rounded-full object-cover", className)}
       onError={() => setError(true)}
     />

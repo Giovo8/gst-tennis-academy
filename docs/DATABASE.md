@@ -112,7 +112,8 @@ Schema del database **Supabase (PostgreSQL)** di GST Tennis Academy: ~60 tabelle
 | Tabella | Colonne chiave / note |
 |---|---|
 | `notifications` | Notifiche in-app per utente |
-| `activity_log` | Log attività applicative, scritto via `log_activity()` (024) |
+| `activity_log` | Log attività applicative, scritto via `log_activity()` (024). Nessuna retention automatica |
+| `security_events` | Anomalie di sicurezza: 401/403, blocchi CSRF, rate limit superati (082). Scritta solo con service role da `src/lib/security/securityEvents.ts`; retention 90 giorni via pg_cron (`purge-security-events`) |
 | `email_logs` | Esiti invii Resend (025, 034) |
 | `email_campaigns`, `email_settings`, `email_templates`, `email_unsubscribes` | Sistema campagne email (007b, 023) — templates/settings solo configurazione |
 | `system_settings` | Impostazioni chiave/valore |
