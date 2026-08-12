@@ -103,11 +103,12 @@ export default function LoginClient() {
           <div className="mb-6 sm:mb-10 text-center">
             <div className="flex items-center justify-center gap-3 mb-3">
               <Image
-                src="/images/logo-tennis.png"
+                src="/images/logo-tennis-96.png"
                 alt="GST Tennis Academy"
                 width={48}
                 height={48}
                 priority
+                unoptimized
                 className="h-10 w-10"
               />
               <span className="text-3xl sm:text-4xl font-bold text-secondary">Area GST</span>

@@ -266,7 +266,7 @@ export default function DashboardShell({
             <MenuCloseIcon isOpen={mobileOpen} size={44} />
           </button>
           <Link href="/" aria-label="Home" className="absolute left-1/2 -translate-x-1/2" onClick={() => setNotifCloseSignal(s => s + 1)}>
-            <Image src="/images/logo-tennis.png" alt="GST" width={40} height={40} className="h-10 w-10 object-contain" />
+            <Image src="/images/logo-tennis-96.png" alt="GST" width={40} height={40} unoptimized className="h-10 w-10 object-contain" />
           </Link>
           <div className="ml-auto">
             <NotificationsDropdown
@@ -343,7 +343,7 @@ export default function DashboardShell({
           {/* Logo */}
           <div className="flex items-center justify-center gap-2 h-20 border-b border-black/10 flex-shrink-0 px-4">
             <Link href="/" aria-label="Home" className="rounded-lg hover:opacity-80 transition-opacity flex items-center gap-2 min-w-0">
-              <Image src="/images/logo-tennis.png" alt="GST" width={48} height={48} className="h-10 w-10 object-contain flex-shrink-0" />
+              <Image src="/images/logo-tennis-96.png" alt="GST" width={48} height={48} unoptimized className="h-10 w-10 object-contain flex-shrink-0" />
               {!sidebarCollapsed && <span className="text-2xl font-bold text-secondary truncate">Area GST</span>}
             </Link>
           </div>

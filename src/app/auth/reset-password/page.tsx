@@ -152,7 +152,7 @@ function ResetPasswordForm() {
         <div className="sticky top-0 z-50 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-center h-16 sm:h-20">
-              <img src="/images/logo-tennis.png" alt="GST Tennis Academy" className="h-10 w-10 sm:h-12 sm:w-12" />
+              <img src="/images/logo-tennis-96.png" alt="GST Tennis Academy" className="h-10 w-10 sm:h-12 sm:w-12" />
             </div>
           </div>
         </div>

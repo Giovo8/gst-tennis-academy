@@ -10,7 +10,7 @@ export default function Footer() {
         {/* Logo centered */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <img src="/images/logo-tennis.png" alt="GST Academy" className="h-10 w-10" />
+            <img src="/images/logo-tennis-96.png" alt="GST Academy" className="h-10 w-10" />
             <span className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-urbanist)' }}>GST Academy</span>
           </div>
           

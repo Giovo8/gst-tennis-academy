@@ -82,12 +82,13 @@ export default function PublicNavbar({ home = false }: PublicNavbarProps) {
             aria-label="Home - GST Tennis Academy"
             className="flex items-center gap-1.5 lg:gap-2 min-w-0"
           >
-            <Image 
-              src="/images/logo-tennis.png" 
-              alt="GST Tennis Academy" 
-              width={48} 
+            <Image
+              src="/images/logo-tennis-96.png"
+              alt="GST Tennis Academy"
+              width={48}
               height={48}
               priority
+              unoptimized
               className={home ? "h-7 w-7 lg:h-8 lg:w-8" : "h-8 w-8"}
             />
             <span className={home ? "text-base lg:text-lg font-bold leading-none text-white whitespace-nowrap" : "text-lg font-bold leading-none text-secondary"}>GST Academy</span>
