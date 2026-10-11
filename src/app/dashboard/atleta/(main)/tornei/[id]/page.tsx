@@ -2,17 +2,17 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
 import TournamentTabBar, { type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
 import {
   Trophy,
   Loader2,
-  CheckCircle2,
   X,
   Target,
-  Users as UsersIcon
+  Users as UsersIcon,
+  Eye
 } from "lucide-react";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
@@ -52,6 +52,11 @@ function AtletaTournamentDetailInner() {
   const [managerTab, setManagerTab] = useState<TournamentTabKey>('overview');
   const [managerMeta, setManagerMeta] = useState<{ tournamentType?: string; currentPhase?: string; participantsCount: number } | null>(null);
   const router = useRouter();
+  const viewAsId = useSearchParams().get("viewAs");
+  const [viewAsName, setViewAsName] = useState<string | null>(null);
+  // Vista admin "come atleta": attiva solo dopo la verifica del ruolo (vedi load)
+  const [isViewAs, setIsViewAs] = useState(false);
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -81,8 +86,21 @@ function AtletaTournamentDetailInner() {
         // get user and check participation
         const { data: userData } = await supabase.auth.getUser();
         const user = userData.user;
-        if (user) {
-          const pRes = await fetch(`/api/tournament_participants?user_id=${user.id}&tournament_id=${id}`);
+        let participantUserId = user?.id ?? null;
+        if (user && viewAsId) {
+          const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+          if (['admin', 'gestore'].includes(me?.role ?? '')) {
+            participantUserId = viewAsId;
+            const { data: target } = await supabase.from('profiles').select('full_name').eq('id', viewAsId).single();
+            if (mounted) {
+              setIsViewAs(true);
+              setViewAsName(target?.full_name || 'Atleta');
+            }
+          }
+        }
+        if (participantUserId) {
+          if (mounted) setTargetUserId(participantUserId);
+          const pRes = await fetch(`/api/tournament_participants?user_id=${participantUserId}&tournament_id=${id}`);
           let pJson: any = {};
           try {
             pJson = await pRes.json();
@@ -102,7 +120,7 @@ function AtletaTournamentDetailInner() {
     load();
 
     return () => { mounted = false; };
-  }, [id]);
+  }, [id, viewAsId]);
 
   const handleJoin = async () => {
     setError(null);
@@ -200,18 +218,6 @@ function AtletaTournamentDetailInner() {
 
   const TournamentIcon = getTournamentIcon();
 
-  // Determina colore bordo in base allo stato - using CSS variables from design system
-  function getStatusBorderColor() {
-    if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") {
-      return "var(--foreground-muted)"; // #056c94 - frozen-700
-    } else if (tournament?.status === "In Corso" || tournament?.status === "In corso") {
-      return "var(--secondary)"; // #034863 - frozen-800
-    } else if (tournament?.status === "Aperto") {
-      return "var(--primary)"; // #08b3f7 - frozen-500
-    }
-    return "var(--secondary)"; // default
-  }
-
   const spotsLeft = (tournament?.max_participants ?? 0) - currentParticipants;
   const isCampionato = tournament?.competition_type === 'campionato' || tournament?.tournament_type === 'campionato';
   const isFull = tournament?.status === 'Aperto' && spotsLeft <= 0;
@@ -271,6 +277,22 @@ function AtletaTournamentDetailInner() {
         </h1>
       </div>
 
+      {/* Banner vista admin */}
+      {isViewAs && (
+        <div className="p-4 rounded-lg bg-orange-50 border border-orange-200 flex flex-wrap items-center gap-3">
+          <Eye className="h-5 w-5 text-orange-600 flex-shrink-0" />
+          <p className="flex-1 text-sm text-orange-800">
+            Stai vedendo il torneo come <strong>{viewAsName}</strong>. Puoi modificare solo i punteggi delle sue partite (il salvataggio avviene con il tuo account admin).
+          </p>
+          <Link
+            href={`/dashboard/admin/tornei/${id}`}
+            className="text-sm font-medium text-orange-700 underline hover:text-orange-900"
+          >
+            Esci dalla vista atleta
+          </Link>
+        </div>
+      )}
+
       {/* Messaggio errore globale */}
       {error && (
         <div className="p-4 rounded-lg bg-red-50 border border-red-200">
@@ -281,7 +303,7 @@ function AtletaTournamentDetailInner() {
       {/* Header con info torneo */}
       <div
         className="bg-secondary rounded-lg border border-black/10 p-6 border-l-4"
-        style={{ borderLeftColor: getStatusBorderColor() }}
+        style={{ borderLeftColor: 'var(--secondary)' }}
       >
         <div className="flex items-start gap-6">
           <TournamentIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
@@ -290,16 +312,6 @@ function AtletaTournamentDetailInner() {
           </div>
         </div>
       </div>
-
-      {/* Badge iscritto */}
-      {joined && (
-        <div className="bg-white border border-black/10 rounded-lg p-4 border-l-4" style={{ borderLeftColor: 'var(--primary)' }}>
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--primary)' }} />
-            <h3 className="text-lg font-bold text-secondary">Sei iscritto a questo torneo</h3>
-          </div>
-        </div>
-      )}
 
       {/* Dettagli torneo */}
       <div className={sectionClassName}>
@@ -421,6 +433,8 @@ function AtletaTournamentDetailInner() {
         <TournamentManagerWrapper
           tournamentId={tournament.id}
           isAdmin={false}
+          highlightUserId={targetUserId}
+          canEditOwnMatches
           activeTab={managerTab}
           onActiveTabChange={setManagerTab}
           hideTabBar
@@ -431,7 +445,7 @@ function AtletaTournamentDetailInner() {
       {/* Pulsanti azioni */}
       <div className="flex flex-wrap gap-3">
         {/* Bottone Iscriviti */}
-        {!joined && tournament.status === 'Aperto' && (
+        {!isViewAs && !joined && tournament.status === 'Aperto' && (
           <button
             onClick={handleJoin}
             disabled={actionLoading || spotsLeft <= 0}
@@ -463,7 +477,7 @@ function AtletaTournamentDetailInner() {
         )}
 
         {/* Bottone Cancella Iscrizione */}
-        {joined && tournament.status === 'Aperto' && (
+        {!isViewAs && joined && tournament.status === 'Aperto' && (
           <button
             onClick={handleLeave}
             disabled={actionLoading}

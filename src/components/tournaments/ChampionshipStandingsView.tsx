@@ -59,6 +59,8 @@ interface ChampionshipStandingsViewProps {
   isAdmin?: boolean;
   defaultView?: TabType;
   hideInternalTabs?: boolean;
+  highlightUserId?: string | null;
+  canEditOwnMatches?: boolean;
 }
 
 export default function ChampionshipStandingsView({
@@ -68,12 +70,15 @@ export default function ChampionshipStandingsView({
   onMatchUpdate,
   isAdmin = false,
   defaultView = 'participants',
-  hideInternalTabs = false
+  hideInternalTabs = false,
+  highlightUserId = null,
+  canEditOwnMatches = false
 }: ChampionshipStandingsViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>(defaultView);
   const [matches, setMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [onlyMine, setOnlyMine] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -287,10 +292,16 @@ export default function ChampionshipStandingsView({
     return Array.from(rounds).sort((a, b) => a - b);
   };
 
+  const isMyMatch = (m: Match) =>
+    !!highlightUserId && (m.player1?.user_id === highlightUserId || m.player2?.user_id === highlightUserId);
+  const hasMyMatches = matches.some(isMyMatch);
+
   const rounds = getRounds();
-  const filteredMatches = selectedRound
-    ? matches.filter(m => m.round_number === selectedRound)
-    : matches;
+  const filteredMatches = onlyMine
+    ? matches.filter(isMyMatch)
+    : selectedRound
+      ? matches.filter(m => m.round_number === selectedRound)
+      : matches;
 
   if (matches.length === 0 && !loading) {
     return (
@@ -452,23 +463,37 @@ export default function ChampionshipStandingsView({
               onMouseLeave={() => { isDragging.current = false; }}
             >
                 <button
-                  onClick={() => setSelectedRound(null)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                    selectedRound === null
-                      ? 'border border-secondary bg-secondary text-white'
-                      : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                  onClick={() => { setSelectedRound(null); setOnlyMine(false); }}
+                  className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                    selectedRound === null && !onlyMine
+                      ? 'border-[#023047] bg-[#023047] text-white'
+                      : 'border-secondary bg-secondary text-white hover:opacity-90'
                   }`}
                 >
                   Tutte
                 </button>
+                {hasMyMatches && (
+                  <button
+                    onClick={() => { setSelectedRound(null); setOnlyMine(true); }}
+                    aria-label="Mostra solo le mie partite"
+                    title="Mostra solo le mie partite"
+                    className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors flex items-center justify-center ${
+                      onlyMine
+                        ? 'border-[#023047] bg-[#023047] text-white'
+                        : 'border-secondary bg-secondary text-white hover:opacity-90'
+                    }`}
+                  >
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-white" />
+                  </button>
+                )}
                 {rounds.map(round => (
                   <button
                     key={round}
-                    onClick={() => setSelectedRound(round)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                      selectedRound === round
-                        ? 'border border-secondary bg-secondary text-white'
-                        : 'border border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                    onClick={() => { setSelectedRound(round); setOnlyMine(false); }}
+                    className={`grow shrink-0 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                      selectedRound === round && !onlyMine
+                        ? 'border-[#023047] bg-[#023047] text-white'
+                        : 'border-secondary bg-secondary text-white hover:opacity-90'
                     }`}
                   >
                     {round}
@@ -494,6 +519,8 @@ export default function ChampionshipStandingsView({
                   key={match.id}
                   match={match}
                   isAdmin={isAdmin}
+                  highlightUserId={highlightUserId}
+                  canEditOwn={canEditOwnMatches}
                   bestOf={bestOf}
                   onScoreSubmit={handleScoreSubmit}
                 />
@@ -537,14 +564,32 @@ export default function ChampionshipStandingsView({
 
                       {/* Nome */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{fullName}</p>
-                        <p className="text-xs text-white/50 mt-0.5">
-                          {standing.matchesPlayed} partite &middot; {standing.matchesWon}V {standing.matchesLost}P
+                        <p className="font-semibold text-white text-sm truncate flex items-center gap-2">
+                          <span className="truncate">{fullName}</span>
+                          {highlightUserId && standing.participant.user_id === highlightUserId && (
+                            <span
+                              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-white"
+                              aria-label="Sei tu"
+                              title="Sei tu"
+                            />
+                          )}
                         </p>
                       </div>
 
                       {/* Stats */}
                       <div className="flex items-center gap-4 flex-shrink-0">
+                        <div className="text-center hidden sm:block">
+                          <p className="text-xs text-white/50 uppercase tracking-wide">PG</p>
+                          <p className="text-sm font-bold tabular-nums text-white">{standing.matchesPlayed}</p>
+                        </div>
+                        <div className="text-center hidden sm:block">
+                          <p className="text-xs text-white/50 uppercase tracking-wide">V</p>
+                          <p className="text-sm font-bold tabular-nums text-white">{standing.matchesWon}</p>
+                        </div>
+                        <div className="text-center hidden sm:block">
+                          <p className="text-xs text-white/50 uppercase tracking-wide">P</p>
+                          <p className="text-sm font-bold tabular-nums text-white">{standing.matchesLost}</p>
+                        </div>
                         <div className="text-center hidden sm:block">
                           <p className="text-xs text-white/50 uppercase tracking-wide">Set</p>
                           <p className="text-sm font-bold tabular-nums text-white">
@@ -553,7 +598,7 @@ export default function ChampionshipStandingsView({
                         </div>
                         <div className="text-center">
                           <p className="text-xs text-white/50 uppercase tracking-wide">Pt</p>
-                          <p className="text-sm font-bold text-white tabular-nums">{standing.points}</p>
+                          <p className="text-xl font-bold text-white tabular-nums">{standing.points}</p>
                         </div>
                       </div>
                     </div>

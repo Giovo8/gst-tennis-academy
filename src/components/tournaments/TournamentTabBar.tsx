@@ -25,24 +25,17 @@ export function getTournamentTabs(meta: TournamentTabBarMeta): TabDef[] {
 
   if (tournamentType === 'eliminazione_diretta') {
     if (currentPhase === 'eliminazione' || currentPhase === 'completato') {
-      return [
-        { key: 'overview', label: 'Partecipanti', icon: Users },
-        { key: 'bracket', label: 'Tabellone', icon: Trophy },
-      ];
+      return [{ key: 'bracket', label: 'Tabellone', icon: Trophy }];
     }
     return [{ key: 'overview', label: 'Partecipanti', icon: Users }];
   }
 
   if (tournamentType === 'girone_eliminazione') {
     if (currentPhase === 'gironi') {
-      return [
-        { key: 'overview', label: 'Partecipanti', icon: Users },
-        { key: 'groups', label: 'Gironi', icon: Target },
-      ];
+      return [{ key: 'groups', label: 'Gironi', icon: Target }];
     }
     if (currentPhase === 'eliminazione' || currentPhase === 'completato') {
       return [
-        { key: 'overview', label: 'Partecipanti', icon: Users },
         { key: 'groups', label: 'Gironi', icon: Target },
         { key: 'bracket', label: 'Tabellone', icon: Trophy },
       ];
@@ -51,11 +44,13 @@ export function getTournamentTabs(meta: TournamentTabBarMeta): TabDef[] {
   }
 
   if (tournamentType === 'campionato') {
-    return [
-      { key: 'overview', label: 'Partecipanti', icon: Users },
-      { key: 'calendar', label: 'Calendario', icon: Calendar },
-      { key: 'standings', label: 'Classifica', icon: Trophy },
-    ];
+    if (currentPhase === 'campionato' || currentPhase === 'completato') {
+      return [
+        { key: 'standings', label: 'Classifica', icon: Trophy },
+        { key: 'calendar', label: 'Calendario', icon: Calendar },
+      ];
+    }
+    return [{ key: 'overview', label: 'Partecipanti', icon: Users }];
   }
 
   return [{ key: 'overview', label: 'Partecipanti', icon: Users }];
@@ -72,7 +67,7 @@ export default function TournamentTabBar({ meta, activeTab, onChange }: Tourname
   if (tabs.length <= 1) return null;
 
   return (
-    <div className="flex gap-1 sm:gap-2">
+    <div className="flex gap-2 w-full">
       {tabs.map((tab) => {
         const isActive = tab.key === activeTab;
         return (
@@ -80,13 +75,13 @@ export default function TournamentTabBar({ meta, activeTab, onChange }: Tourname
             key={tab.key}
             type="button"
             onClick={() => onChange(tab.key)}
-            className={`flex-1 px-2 sm:px-4 py-2 rounded-lg transition-colors flex justify-center items-center border ${
+            className={`h-11 flex-1 min-w-0 rounded-lg border text-sm font-semibold transition-colors ${
               isActive
-                ? 'border-secondary bg-secondary text-white'
-                : 'border-black/10 bg-white text-secondary/70 hover:text-secondary hover:border-secondary'
+                ? 'border-[#023047] bg-[#023047] text-white'
+                : 'border-secondary bg-secondary text-white hover:opacity-90'
             }`}
           >
-            <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
+            {tab.label}
           </button>
         );
       })}

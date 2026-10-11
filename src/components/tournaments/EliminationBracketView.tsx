@@ -44,6 +44,8 @@ interface EliminationBracketProps {
   onMatchUpdate?: () => void;
   onBracketGenerated?: () => void;
   onDeleteMatches?: () => Promise<void>;
+  /** Se definito, sostituisce il rilevamento automatico del ruolo (es. vista atleta per admin) */
+  isAdmin?: boolean;
 }
 
 export default function EliminationBracket({
@@ -53,18 +55,20 @@ export default function EliminationBracket({
   bestOf = 3,
   onMatchUpdate,
   onBracketGenerated,
-  onDeleteMatches
+  onDeleteMatches,
+  isAdmin: isAdminProp
 }: EliminationBracketProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminDetected, setIsAdminDetected] = useState(false);
+  const isAdmin = isAdminProp ?? isAdminDetected;
 
   useEffect(() => {
     loadMatches();
-    checkAdminRole();
-  }, [tournamentId]);
+    if (isAdminProp === undefined) checkAdminRole();
+  }, [tournamentId, isAdminProp]);
 
   const checkAdminRole = async () => {
     try {
@@ -76,7 +80,7 @@ export default function EliminationBracket({
           .select('role')
           .eq('id', user.id)
           .single();
-        setIsAdmin(['admin', 'gestore'].includes(profile?.role?.toLowerCase() || ''));
+        setIsAdminDetected(['admin', 'gestore'].includes(profile?.role?.toLowerCase() || ''));
       }
     } catch (error) {
       console.error('Error checking role:', error);

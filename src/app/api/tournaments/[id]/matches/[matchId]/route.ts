@@ -78,7 +78,7 @@ export async function PUT(
         *,
         player1:player1_id(user_id),
         player2:player2_id(user_id),
-        tournament:tournaments(best_of)
+        tournament:tournaments(best_of, tournament_type)
       `)
       .eq("id", params.matchId)
       .single();
@@ -99,6 +99,17 @@ export async function PUT(
 
     if (!isAdmin && !isParticipant) {
       return NextResponse.json({ error: "Permesso negato" }, { status: 403 });
+    }
+
+    // Una volta inserito il punteggio, solo admin/gestore possono modificarlo
+    const alreadyScored =
+      (Array.isArray(currentMatch.sets) && currentMatch.sets.length > 0) ||
+      currentMatch.match_status === 'completed';
+    if (!isAdmin && alreadyScored) {
+      return NextResponse.json(
+        { error: "Il punteggio è già stato inserito: solo un admin può modificarlo" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -184,8 +195,12 @@ export async function PUT(
 
     if (updateError) throw updateError;
 
+    // Nel campionato le giornate sono indipendenti (punteggi inseribili in qualsiasi ordine):
+    // nessun avanzamento del vincitore e nessuna chiusura automatica del torneo.
+    const isCampionato = currentMatch.tournament?.tournament_type === 'campionato';
+
     // If match completed, advance winner to next round
-    if (winner_id && match_status === 'completed') {
+    if (winner_id && match_status === 'completed' && !isCampionato) {
       await advanceWinnerToNextRound(
         supabase,
         params.id,

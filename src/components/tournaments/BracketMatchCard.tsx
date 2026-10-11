@@ -7,11 +7,15 @@ import TennisScoreInput from './TennisScoreInput';
 interface BracketMatchCardProps {
   match: any;
   isAdmin: boolean;
+  /** Mostra il pallino se uno dei due giocatori è questo utente */
+  highlightUserId?: string | null;
+  /** Consente all'utente evidenziato di inserire il punteggio della propria partita */
+  canEditOwn?: boolean;
   bestOf: number;
   onScoreSubmit: (matchId: string, sets: Array<{ player1_score: number; player2_score: number }>) => Promise<void>;
 }
 
-export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit }: BracketMatchCardProps) {
+export default function BracketMatchCard({ match, isAdmin, highlightUserId = null, canEditOwn = false, bestOf, onScoreSubmit }: BracketMatchCardProps) {
   const [editing, setEditing] = useState(false);
 
   const getPlayerName = (player: any) => {
@@ -26,12 +30,20 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
     return match.winner_id && match.winner_id === playerId;
   };
   
+  const isMine =
+    !!highlightUserId &&
+    (match.player1?.user_id === highlightUserId || match.player2?.user_id === highlightUserId);
+
   const matchStatus = match.match_status || match.status || 'scheduled';
   const isCompleted = matchStatus === 'completed' || matchStatus === 'completata';
   const isPending = matchStatus === 'pending' || (!match.player1 || !match.player2);
 
   // Parse sets from match data
   const sets: Array<{ player1_score: number; player2_score: number }> = match.sets || [];
+
+  // L'atleta può inserire il punteggio solo se non c'è ancora; poi solo admin/gestore possono modificarlo
+  const hasScore = sets.length > 0 || isCompleted;
+  const canEdit = isAdmin || (canEditOwn && isMine && !hasScore);
   
   // Calculate sets won
   const player1SetsWon = sets.filter(s => s.player1_score > s.player2_score).length;
@@ -44,18 +56,25 @@ export default function BracketMatchCard({ match, isAdmin, bestOf, onScoreSubmit
 
   return (
     <div className="rounded-xl overflow-hidden bg-white border border-black/10">
-      {/* Match Header - colored */}
-      <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'var(--secondary)' }}>
-        <span className="text-xs font-bold text-white uppercase tracking-wide">
+      {/* Match Header */}
+      <div className="px-4 py-2.5 flex items-center justify-between border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+        <span className="text-xs font-bold text-secondary uppercase tracking-wide flex items-center gap-2">
           {match.round_name} · Match {match.match_number}
+          {isMine && (
+            <span
+              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full bg-secondary"
+              aria-label="Tua partita"
+              title="Tua partita"
+            />
+          )}
         </span>
         <div className="flex items-center gap-2">
-          {isPending && <span className="text-xs text-white/40">In attesa</span>}
-          {isCompleted && <Trophy className="h-4 w-4 text-white" />}
-          {isAdmin && !isPending && !editing && (
+          {isPending && <span className="text-xs text-secondary/40">In attesa</span>}
+          {isCompleted && <Trophy className="h-4 w-4 text-secondary" />}
+          {canEdit && !isPending && !editing && (
             <button
               onClick={() => setEditing(true)}
-              className="p-1 text-white hover:bg-white/10 rounded transition-colors"
+              className="p-1 text-secondary hover:bg-secondary/10 rounded transition-colors"
               title="Modifica punteggio"
             >
               <Edit2 className="h-3.5 w-3.5" />

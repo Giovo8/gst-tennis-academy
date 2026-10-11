@@ -45,7 +45,12 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
         .eq("id", user.id)
         .single();
 
-      if (!profile || profile.role !== "atleta") {
+      // Gli admin possono aprire le pagine atleta solo in modalità "vedi come" (?viewAs=<id>)
+      const isViewAs =
+        ["admin", "gestore"].includes(profile?.role ?? "") &&
+        !!new URLSearchParams(window.location.search).get("viewAs");
+
+      if (!profile || (profile.role !== "atleta" && !isViewAs)) {
         router.push("/login");
         return;
       }
@@ -54,7 +59,7 @@ export default function AthleteLayout({ children }: AthleteLayoutProps) {
       setUserAvatar(profile.avatar_url || "");
 
       // Count unread messages
-      await loadUnreadMessages();
+      if (!isViewAs) await loadUnreadMessages();
 
       setLoading(false);
     }

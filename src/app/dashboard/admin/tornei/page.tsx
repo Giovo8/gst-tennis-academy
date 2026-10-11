@@ -208,12 +208,14 @@ function AdminTorneiPageInner() {
       ) : (
         <div className="space-y-2">
           {filteredTournaments.map((tournament) => {
-            // Colore sfondo card in base allo stato
+            // Colore sfondo card in base allo stato (allineato alla palette di dashboard/admin/bookings)
             let cardBg = "var(--secondary)";
             if (tournament.status === "Aperto") {
               cardBg = (tournament.current_participants || 0) >= (tournament.max_participants || 0)
-                ? "#dc2626"
-                : "#059669";
+                ? "#023047"
+                : "var(--secondary)";
+            } else if (tournament.status === "In Corso") {
+              cardBg = "#023b52";
             } else if (tournament.status === "Completato" || tournament.status === "Concluso" || tournament.status === "Chiuso") {
               cardBg = "#9ca3af";
             }

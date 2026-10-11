@@ -22,9 +22,11 @@ interface TournamentManagerWrapperProps {
   activeTab?: TournamentTabKey;
   onActiveTabChange?: (tab: TournamentTabKey) => void;
   hideTabBar?: boolean;
+  highlightUserId?: string | null;
+  canEditOwnMatches?: boolean;
 }
 
-export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, sectioned = false, onMetaChange, activeTab, onActiveTabChange, hideTabBar = false }: TournamentManagerWrapperProps) {
+export default function TournamentManagerWrapper({ tournamentId, isAdmin = true, viewOnly = false, sectioned = false, onMetaChange, activeTab, onActiveTabChange, hideTabBar = false, highlightUserId = null, canEditOwnMatches = false }: TournamentManagerWrapperProps) {
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +100,8 @@ export default function TournamentManagerWrapper({ tournamentId, isAdmin = true,
       activeTab={activeTab}
       onActiveTabChange={onActiveTabChange}
       hideTabBar={hideTabBar}
+      highlightUserId={highlightUserId}
+      canEditOwnMatches={canEditOwnMatches}
     />
   );
 }

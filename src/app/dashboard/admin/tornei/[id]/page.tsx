@@ -3,9 +3,10 @@
 import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Trash2, PlayCircle, Trophy, Target, Users as UsersIcon, RotateCw } from "lucide-react";
+import { Loader2, Trash2, PlayCircle, Trophy, Target, Users as UsersIcon, RotateCw, Eye } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
+import { getTournamentTabs, type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
 import ManualEnrollment from "@/components/tournaments/ManualEnrollment";
 import { toast } from 'sonner';
 
@@ -19,6 +20,7 @@ function AdminTournamentDetailInner() {
   const [regeneratingCalendar, setRegeneratingCalendar] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [managerTab, setManagerTab] = useState<TournamentTabKey>("overview");
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<{
@@ -52,11 +54,23 @@ function AdminTournamentDetailInner() {
     loadTournamentData();
   }, [id, reloadKey]);
 
-  const isCampionato = tournament?.tournament_type === 'campionato';
+  // Iscritti con account, per la vista "come atleta" (sempre disponibile, anche a torneo in corso)
+  const [athletes, setAthletes] = useState<{ user_id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!id || typeof id !== "string") return;
+    fetch(`/api/tournament_participants?tournament_id=${id}`)
+      .then((r) => r.json())
+      .then((json) => {
+        const list = (json.participants || [])
+          .filter((p: any) => p.user_id)
+          .map((p: any) => ({ user_id: p.user_id as string, name: (p.profiles?.full_name || "Atleta") as string }))
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        setAthletes(list);
+      })
+      .catch(() => setAthletes([]));
+  }, [id, reloadKey]);
 
-  const spotsLeft = tournament && meta 
-    ? (tournament.max_participants ?? 0) - meta.participantsCount 
-    : 0;
+  const isCampionato = tournament?.tournament_type === 'campionato';
 
   const hasValidId = id && typeof id === "string";
 
@@ -369,18 +383,18 @@ function AdminTournamentDetailInner() {
 
   const TournamentIcon = getTournamentIcon();
 
-  // Determina colore bordo in base allo stato
+  // Determina colore bordo in base allo stato (allineato alla palette di dashboard/admin/bookings)
   function getStatusBorderColor() {
     if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") {
-      return "border-gray-500";
+      return "border-gray-400";
     } else if (tournament?.status === "In Corso" || tournament?.status === "In corso") {
-      return "border-secondary";
+      return "border-[#023b52]";
     } else if (tournament?.status === "Aperto") {
-      // Rosso se posti esauriti, verde altrimenti
+      // Navy se posti esauriti, secondary altrimenti
       if (meta && meta.participantsCount >= (tournament?.max_participants || 0)) {
-        return "border-red-500";
+        return "border-[#023047]";
       }
-      return "border-emerald-500";
+      return "border-secondary";
     } else {
       return "border-secondary";
     }
@@ -420,20 +434,23 @@ function AdminTournamentDetailInner() {
           style={{
             backgroundColor: (() => {
               if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#9ca3af";
-              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#dc2626";
-              if (tournament?.status === "Aperto") return "#059669";
+              if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#023b52";
+              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#023047";
+              if (tournament?.status === "Aperto") return "var(--secondary)";
               return "var(--secondary)";
             })(),
             borderColor: (() => {
               if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#9ca3af";
-              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#dc2626";
-              if (tournament?.status === "Aperto") return "#059669";
+              if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#023b52";
+              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#023047";
+              if (tournament?.status === "Aperto") return "var(--secondary)";
               return "var(--secondary)";
             })(),
             borderLeftColor: (() => {
               if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280";
-              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#b91c1c";
-              if (tournament?.status === "Aperto") return "#047857";
+              if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#012b3b";
+              if (tournament?.status === "Aperto" && meta && meta.participantsCount >= (tournament?.max_participants || 0)) return "#011f33";
+              if (tournament?.status === "Aperto") return "#023047";
               return "#023047";
             })(),
           }}
@@ -449,12 +466,12 @@ function AdminTournamentDetailInner() {
 
       {/* Dettagli torneo */}
       {hasValidId && !loading && tournament && (
-        <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
           </div>
-          <div className="px-6 py-4">
-          
+          <div className="px-6 py-6">
+
           <div className="space-y-6">
             {/* Descrizione */}
             {tournament.description && (
@@ -495,24 +512,6 @@ function AdminTournamentDetailInner() {
               </div>
             </div>
 
-            {/* Stato */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
-              <div className="flex-1">
-                <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
-              </div>
-            </div>
-
-            {/* Fase Corrente */}
-            {meta && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
-                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Fase corrente</label>
-                <div className="flex-1">
-                  <p className="text-secondary font-semibold capitalize">{meta.currentPhase}</p>
-                </div>
-              </div>
-            )}
-
             {/* Partecipanti */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
@@ -520,11 +519,6 @@ function AdminTournamentDetailInner() {
                 <p className="text-secondary font-semibold">
                   {meta?.participantsCount ?? 0} / {tournament.max_participants}
                 </p>
-                {spotsLeft > 0 && (
-                  <p className="text-sm text-secondary/70 mt-1">
-                    {spotsLeft} {spotsLeft === 1 ? 'posto disponibile' : 'posti disponibili'}
-                  </p>
-                )}
               </div>
             </div>
 
@@ -540,7 +534,7 @@ function AdminTournamentDetailInner() {
 
             {/* Formato Partita */}
             {tournament.match_format && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">
@@ -552,10 +546,69 @@ function AdminTournamentDetailInner() {
                 </div>
               </div>
             )}
+
+            {/* Stato */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+              <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
+              <div className="flex-1">
+                <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
+              </div>
+            </div>
           </div>
           </div>
         </div>
       )}
+
+      {/* Vedi il torneo come un atleta iscritto */}
+      {hasValidId && athletes.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Eye className="h-5 w-5 text-secondary flex-shrink-0" />
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) window.location.assign(`/dashboard/atleta/tornei/${id}?viewAs=${e.target.value}`);
+            }}
+            className="h-11 flex-1 min-w-0 rounded-lg border border-black/10 bg-white px-3 text-sm text-secondary"
+            aria-label="Vedi il torneo come atleta"
+          >
+            <option value="" disabled>Vedi il torneo come atleta…</option>
+            {athletes.map((a) => (
+              <option key={a.user_id} value={a.user_id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Tab Partecipanti / Gironi / Tabellone / Calendario / Classifica */}
+      {hasValidId && meta && (() => {
+        const tabs = getTournamentTabs({
+          tournamentType: meta.tournamentType,
+          currentPhase: meta.currentPhase,
+          participantsCount: meta.participantsCount,
+        });
+        if (tabs.length <= 1) return null;
+        return (
+          <div className="flex gap-2 w-full">
+            {tabs.map((tab) => {
+              const selected = tab.key === managerTab;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setManagerTab(tab.key)}
+                  className={`h-11 flex-1 min-w-0 rounded-lg border text-sm font-semibold transition-colors ${
+                    selected
+                      ? "border-[#023047] bg-[#023047] text-white"
+                      : "border-secondary bg-secondary text-white hover:opacity-90"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Main content - TournamentManager con i tab - SEMPRE VISIBILE */}
       {hasValidId && (
@@ -564,6 +617,8 @@ function AdminTournamentDetailInner() {
           tournamentId={id}
           isAdmin={true}
           sectioned={true}
+          activeTab={managerTab}
+          onActiveTabChange={setManagerTab}
           onMetaChange={setMeta}
         />
       )}
@@ -636,7 +691,7 @@ function AdminTournamentDetailInner() {
             <button
               onClick={handleCompleteTournament}
               disabled={completing}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023047] rounded-lg hover:bg-[#023047]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {completing ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
               Concludi

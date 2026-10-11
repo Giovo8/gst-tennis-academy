@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, X, Plus, Trash2 } from 'lucide-react';
+import { Fragment, useRef, useState } from 'react';
 
-interface Set {
+interface SetScore {
   player1_score: number;
   player2_score: number;
 }
@@ -12,11 +11,14 @@ interface TennisScoreInputProps {
   matchId: string;
   player1Name: string;
   player2Name: string;
-  currentSets: Set[];
+  currentSets: SetScore[];
   bestOf: number; // 3 or 5
-  onSubmit: (matchId: string, sets: Set[]) => Promise<void>;
+  onSubmit: (matchId: string, sets: SetScore[]) => Promise<void>;
   onCancel: () => void;
 }
+
+type PlayerKey = 'p1' | 'p2';
+type Cell = Record<PlayerKey, string>;
 
 export default function TennisScoreInput({
   matchId,
@@ -27,220 +29,191 @@ export default function TennisScoreInput({
   onSubmit,
   onCancel,
 }: TennisScoreInputProps) {
-  const [sets, setSets] = useState<Set[]>(
-    currentSets.length > 0 ? currentSets : [{ player1_score: 0, player2_score: 0 }]
+  const [cells, setCells] = useState<Cell[]>(() =>
+    Array.from({ length: bestOf }, (_, i) => {
+      const s = currentSets[i];
+      return s ? { p1: String(s.player1_score), p2: String(s.player2_score) } : { p1: '', p2: '' };
+    })
   );
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState('');
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const addSet = () => {
-    if (sets.length >= bestOf) {
-      setError(`Massimo ${bestOf} set per questo formato`);
-      return;
-    }
-    setSets([...sets, { player1_score: 0, player2_score: 0 }]);
-    setError('');
+  const setsToWin = Math.ceil(bestOf / 2);
+  const parsed = cells.map((c) => ({
+    p1: c.p1 === '' ? null : Number(c.p1),
+    p2: c.p2 === '' ? null : Number(c.p2),
+  }));
+
+  const setWinnerAt = (i: number): 0 | 1 | 2 => {
+    const { p1, p2 } = parsed[i];
+    if (p1 === null || p2 === null || p1 === p2) return 0;
+    return p1 > p2 ? 1 : 2;
   };
 
-  const removeSet = (index: number) => {
-    if (sets.length === 1) {
-      setError('Serve almeno un set');
-      return;
-    }
-    const newSets = sets.filter((_, i) => i !== index);
-    setSets(newSets);
+  let won1 = 0;
+  let won2 = 0;
+  let decidedAt = -1;
+  for (let i = 0; i < bestOf && decidedAt === -1; i++) {
+    const w = setWinnerAt(i);
+    if (w === 1) won1++;
+    if (w === 2) won2++;
+    if (won1 === setsToWin || won2 === setsToWin) decidedAt = i;
+  }
+  const matchWinner = decidedAt === -1 ? 0 : won1 > won2 ? 1 : 2;
+  const visibleSets = decidedAt === -1 ? bestOf : decidedAt + 1;
+
+  const updateCell = (setIndex: number, player: PlayerKey, raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 2);
+    setCells((prev) => prev.map((c, i) => (i === setIndex ? { ...c, [player]: digits } : c)));
     setError('');
+
+    // "1" può essere l'inizio di 10+ (tie-break lungo): in quel caso non avanzare
+    if (digits.length === 2 || (digits.length === 1 && digits !== '1')) {
+      const flatIndex = setIndex * 2 + (player === 'p1' ? 0 : 1);
+      inputRefs.current[flatIndex + 1]?.focus();
+    }
   };
 
-  const updateSet = (index: number, player: 'player1' | 'player2', value: string) => {
-    const score = parseInt(value) || 0;
-    if (score < 0 || score > 99) return;
+  const validate = (): { sets?: SetScore[]; error?: string } => {
+    const limit = decidedAt === -1 ? bestOf : decidedAt + 1;
+    const result: SetScore[] = [];
 
-    const newSets = [...sets];
-    newSets[index] = {
-      ...newSets[index],
-      [`${player}_score`]: score,
-    };
-    setSets(newSets);
-    setError('');
-  };
+    for (let i = 0; i < limit; i++) {
+      const { p1, p2 } = parsed[i];
+      if (p1 === null && p2 === null) break;
+      if (p1 === null || p2 === null) return { error: `Set ${i + 1}: inserisci entrambi i punteggi` };
 
-  const validateSets = (): string | null => {
-    // Check if at least one set is filled
-    const hasValidSet = sets.some(
-      (set) => set.player1_score > 0 || set.player2_score > 0
-    );
-    if (!hasValidSet) {
-      return 'Inserisci almeno un punteggio';
-    }
-
-    // Validate each set
-    for (let i = 0; i < sets.length; i++) {
-      const set = sets[i];
-      const max = Math.max(set.player1_score, set.player2_score);
-      const min = Math.min(set.player1_score, set.player2_score);
-
-      // Skip empty sets
-      if (max === 0 && min === 0) continue;
-
-      // Tennis rules validation
-      if (max === 7 && min === 6) {
-        // Valid: 7-6 tiebreak
-        continue;
-      } else if (max >= 6) {
-        if (max - min < 2) {
-          return `Set ${i + 1}: Devi vincere con 2 game di differenza (${set.player1_score}-${set.player2_score})`;
-        }
-      } else if (max > 0) {
-        return `Set ${i + 1}: Servono almeno 6 game per vincere (${set.player1_score}-${set.player2_score})`;
+      const max = Math.max(p1, p2);
+      const min = Math.min(p1, p2);
+      if (!(max === 7 && min === 6)) {
+        if (max < 6) return { error: `Set ${i + 1}: servono almeno 6 game per vincere (${p1}-${p2})` };
+        if (max - min < 2) return { error: `Set ${i + 1}: servono 2 game di differenza (${p1}-${p2})` };
       }
+      result.push({ player1_score: p1, player2_score: p2 });
     }
 
-    // Check if match is complete (someone won enough sets)
-    const setsToWin = Math.ceil(bestOf / 2);
-    const player1Sets = sets.filter(s => s.player1_score > s.player2_score).length;
-    const player2Sets = sets.filter(s => s.player2_score > s.player1_score).length;
-
-    if (player1Sets < setsToWin && player2Sets < setsToWin) {
-      return `Match incompleto: servono ${setsToWin} set per vincere (al meglio dei ${bestOf})`;
+    if (decidedAt === -1) {
+      return {
+        error: result.length === 0
+          ? 'Inserisci almeno un set'
+          : `Match incompleto: servono ${setsToWin} set per vincere`,
+      };
     }
-
-    return null;
+    return { sets: result };
   };
 
   const handleSubmit = async () => {
-    const validationError = validateSets();
-    if (validationError) {
-      setError(validationError);
+    const { sets, error: validationError } = validate();
+    if (validationError || !sets) {
+      setError(validationError || 'Punteggio non valido');
       return;
     }
 
     setSubmitting(true);
     setError('');
-
     try {
-      // Filter out empty sets
-      const validSets = sets.filter(
-        (set) => set.player1_score > 0 || set.player2_score > 0
-      );
-      await onSubmit(matchId, validSets);
-    } catch (err: any) {
-      setError(err.message || 'Errore nel salvataggio del punteggio');
+      await onSubmit(matchId, sets);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore nel salvataggio del punteggio');
       setSubmitting(false);
     }
   };
 
-  const calculateSetsWon = () => {
-    let p1 = 0, p2 = 0;
-    sets.forEach(set => {
-      if (set.player1_score > set.player2_score) p1++;
-      else if (set.player2_score > set.player1_score) p2++;
-    });
-    return { p1, p2 };
-  };
-
-  const setsWon = calculateSetsWon();
-  const setsToWin = Math.ceil(bestOf / 2);
+  const players: { key: PlayerKey; num: 1 | 2; name: string }[] = [
+    { key: 'p1', num: 1, name: player1Name },
+    { key: 'p2', num: 2, name: player2Name },
+  ];
 
   return (
-    <div className="rounded-lg border border-black/10 bg-white overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+    <div className="rounded-lg border border-black/10 bg-white overflow-hidden">
       {/* Header */}
-      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-bold text-secondary">Inserisci Punteggio</h4>
-            <p className="text-xs text-secondary/60 mt-0.5">Al meglio di {bestOf} set (vince con {setsToWin} set)</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="bg-secondary/10 px-3 py-1.5 rounded-lg">
-              <span className="text-lg font-bold text-secondary">{setsWon.p1}</span>
-            </div>
-            <span className="text-secondary/40 font-semibold">-</span>
-            <div className="bg-secondary/10 px-3 py-1.5 rounded-lg">
-              <span className="text-lg font-bold text-secondary">{setsWon.p2}</span>
-            </div>
-          </div>
-        </div>
+      <div className="px-4 sm:px-5 py-3 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+        <h4 className="text-sm font-bold text-secondary">Inserisci Punteggio</h4>
       </div>
 
-      {/* Sets */}
-      <div className="p-5 space-y-4">
-        {sets.map((set, index) => {
-          const isPlayer1Winning = set.player1_score > set.player2_score;
-          const isPlayer2Winning = set.player2_score > set.player1_score;
-          
-          return (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-bold text-secondary">Set {index + 1}</div>
-                {sets.length > 1 && (
-                  <button
-                    onClick={() => removeSet(index)}
-                    className="p-1 text-[#022431] hover:bg-[#022431]/10 rounded transition-colors"
-                    type="button"
-                    title="Rimuovi set"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Player 1 Row */}
-              <div className={`flex items-center gap-3 px-5 py-4 rounded-lg border-l-4 transition-all ${
-                isPlayer1Winning 
-                  ? 'border-secondary bg-secondary/5' 
-                  : 'border-gray-200 bg-gray-50'
-              }`}>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-secondary">{player1Name}</div>
-                </div>
-                <input
-                  type="number"
-                  value={set.player1_score}
-                  onChange={(e) => updateSet(index, 'player1', e.target.value)}
-                  className="w-20 rounded-lg border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  min="0"
-                  max="99"
-                  placeholder="0"
-                />
-              </div>
-
-              {/* Player 2 Row */}
-              <div className={`flex items-center gap-3 px-5 py-4 rounded-lg border-l-4 transition-all ${
-                isPlayer2Winning 
-                  ? 'border-secondary bg-secondary/5' 
-                  : 'border-gray-200 bg-gray-50'
-              }`}>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-secondary">{player2Name}</div>
-                </div>
-                <input
-                  type="number"
-                  value={set.player2_score}
-                  onChange={(e) => updateSet(index, 'player2', e.target.value)}
-                  className="w-20 rounded-lg border border-gray-300 bg-white px-3 py-2 text-center text-2xl font-bold text-secondary focus:outline-none focus:ring-0 focus:border-black/10"
-                  min="0"
-                  max="99"
-                  placeholder="0"
-                />
-              </div>
+      <div className="p-3 sm:p-5 space-y-4">
+        {/* Scoreboard */}
+        <div
+          className="grid items-center gap-x-1.5 gap-y-2 sm:gap-x-2"
+          style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${visibleSets}, auto) auto` }}
+        >
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-secondary/60">
+            Partecipanti
+          </div>
+          {cells.slice(0, visibleSets).map((_, i) => (
+            <div
+              key={i}
+              className="text-center text-[11px] font-semibold uppercase tracking-wide text-secondary/60"
+            >
+              Set {i + 1}
             </div>
-          );
-        })}
+          ))}
+          <div className="text-center text-[11px] font-semibold uppercase tracking-wide text-secondary/60">
+            Tot
+          </div>
 
-        {/* Add Set Button */}
-        {sets.length < bestOf && (
-          <button
-            onClick={addSet}
-            className="w-full rounded-lg border-2 border-dashed border-secondary/30 bg-white px-4 py-3 text-sm font-semibold text-secondary hover:bg-secondary/5 hover:border-secondary/50 transition-all flex items-center justify-center gap-2"
-            type="button"
-          >
-            <Plus className="h-4 w-4" />
-            Aggiungi Set
-          </button>
-        )}
+          {players.map((player) => {
+            const isMatchWinner = matchWinner === player.num;
+            return (
+              <Fragment key={player.key}>
+                <div
+                  className={`flex h-11 sm:h-12 min-w-0 items-center gap-1.5 rounded-lg border px-3 ${
+                    isMatchWinner ? 'border-[#023047] bg-[#023047]' : 'border-secondary bg-secondary'
+                  }`}
+                >
+                  <span className="truncate text-sm font-semibold text-white" title={player.name}>
+                    {player.name}
+                  </span>
+                </div>
 
-        {/* Error Message */}
+                {cells.slice(0, visibleSets).map((cell, i) => {
+                  const winner = setWinnerAt(i);
+                  const stateClass =
+                    cell.p1 === '' || cell.p2 === '' || winner === 0
+                      ? 'border-black/10 bg-white text-secondary'
+                      : winner === player.num
+                        ? 'border-[#023047] bg-[#023047] text-white'
+                        : 'border-secondary bg-secondary text-white';
+                  return (
+                    <input
+                      key={i}
+                      ref={(el) => {
+                        inputRefs.current[i * 2 + (player.key === 'p1' ? 0 : 1)] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      enterKeyHint="next"
+                      maxLength={2}
+                      value={cell[player.key]}
+                      onChange={(e) => updateCell(i, player.key, e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      disabled={submitting}
+                      placeholder="–"
+                      aria-label={`${player.name} set ${i + 1}`}
+                      className={`h-11 w-10 sm:h-12 sm:w-14 rounded-lg border text-center text-lg sm:text-xl font-bold tabular-nums placeholder:text-secondary/30 focus:outline-none focus:border-secondary transition-colors disabled:opacity-40 ${stateClass}`}
+                    />
+                  );
+                })}
+
+                <div
+                  className={`flex h-11 w-10 sm:h-12 sm:w-14 items-center justify-center rounded-lg border text-lg sm:text-xl font-bold tabular-nums ${
+                    won1 + won2 === 0
+                      ? 'border-black/10 bg-white text-secondary'
+                      : (player.num === 1 ? won1 > won2 : won2 > won1)
+                        ? 'border-[#023047] bg-[#023047] text-white'
+                        : 'border-secondary bg-secondary text-white'
+                  }`}
+                  aria-label={`Set vinti da ${player.name}`}
+                >
+                  {player.num === 1 ? won1 : won2}
+                </div>
+              </Fragment>
+            );
+          })}
+        </div>
+
         {error && (
           <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
             {error}
@@ -248,21 +221,19 @@ export default function TennisScoreInput({
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2 sm:gap-3">
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 rounded-lg bg-secondary px-5 py-3 text-sm font-semibold text-white hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm"
+            className="flex-1 rounded-lg bg-secondary px-4 sm:px-5 py-3 text-sm font-semibold text-white hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
-            <Check className="h-4 w-4" />
             {submitting ? 'Salvataggio...' : 'Salva Punteggio'}
           </button>
           <button
             onClick={onCancel}
             disabled={submitting}
-            className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-secondary hover:bg-gray-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            className="rounded-lg border border-[#023047] bg-[#023047] px-4 sm:px-5 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center"
           >
-            <X className="h-4 w-4" />
             Annulla
           </button>
         </div>

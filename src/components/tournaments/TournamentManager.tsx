@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trophy, Users, Target, Loader2, Trash2, Calendar, MoreVertical } from 'lucide-react';
+import { Trophy, Users, Target, Loader2, Trash2, Calendar, MoreVertical, X, Eye } from 'lucide-react';
 import EliminationBracketView from './EliminationBracketView';
 import GroupStageView from './GroupStageView';
 import ChampionshipStandingsView from './ChampionshipStandingsView';
 import { useTournamentData } from './hooks/useTournamentData';
 import { ParticipantCard } from './ParticipantCard';
+import { getTournamentTabs } from './TournamentTabBar';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -45,9 +46,11 @@ interface TournamentManagerProps {
   activeTab?: TournamentTabKey;
   onActiveTabChange?: (tab: TournamentTabKey) => void;
   hideTabBar?: boolean;
+  highlightUserId?: string | null;
+  canEditOwnMatches?: boolean;
 }
 
-export default function TournamentManager({ tournament, isAdmin = false, sectioned = false, onMetaChange, activeTab: controlledActiveTab, onActiveTabChange, hideTabBar = false }: TournamentManagerProps) {
+export default function TournamentManager({ tournament, isAdmin = false, sectioned = false, onMetaChange, activeTab: controlledActiveTab, onActiveTabChange, hideTabBar = false, highlightUserId = null, canEditOwnMatches = false }: TournamentManagerProps) {
   const { participants, groups, loading, loadData, handleRemoveParticipant, handleDeleteTournament } = useTournamentData({
     tournamentId: tournament.id,
     tournamentType: tournament.tournament_type,
@@ -63,6 +66,18 @@ export default function TournamentManager({ tournament, isAdmin = false, section
   const sectionClassName = 'page-card';
   const sectionHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent';
   const [openParticipantMenuId, setOpenParticipantMenuId] = useState<string | null>(null);
+
+  // Se la tab attiva non è più disponibile (es. torneo avviato, "Partecipanti" sostituita da Gironi/Tabellone/Classifica), passa alla prima tab valida
+  useEffect(() => {
+    const availableTabs = getTournamentTabs({
+      tournamentType: tournament.tournament_type,
+      currentPhase: tournament.current_phase as string,
+      participantsCount: participants.length,
+    });
+    if (availableTabs.length > 0 && !availableTabs.some((t) => t.key === activeTab)) {
+      setActiveTab(availableTabs[0].key);
+    }
+  }, [tournament.tournament_type, tournament.current_phase, participants.length, activeTab, setActiveTab]);
 
   const getTournamentTypeInfo = () => {
     switch (tournament.tournament_type) {
@@ -129,7 +144,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
     return (
       <div className={sectionClassName}>
         <div className={sectionHeaderClassName}>
-          <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Iscritti</h2>
         </div>
         <div className="px-6 py-4 space-y-3">
           <ul className="flex flex-col gap-2">
@@ -137,7 +152,8 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               const fullName = participant.profiles?.full_name || participant.player_name || 'Giocatore';
               const isGuest = !participant.user_id;
               const initials = fullName.trim().split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-              const bg = isGuest ? '#023b52' : 'var(--secondary)';
+              const isMine = !!highlightUserId && participant.user_id === highlightUserId;
+              const bg = isMine ? '#023047' : isGuest ? '#023b52' : 'var(--secondary)';
               const groupLabel = showGroupInfo && participant.group_id
                 ? `${groups.find((g) => g.id === participant.group_id)?.group_name || 'Girone'}${
                     showGroupPosition && participant.group_position != null
@@ -157,29 +173,26 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs font-bold text-white/50 uppercase tracking-wide">
-                      {isGuest ? 'OSPITE' : 'ATLETA'}
-                    </span>
+                    {isGuest && (
+                      <span className="text-xs font-bold text-white/50 uppercase tracking-wide">OSPITE</span>
+                    )}
+                    {isAdmin && participant.user_id && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.assign(`/dashboard/atleta/tornei/${tournament.id}?viewAs=${participant.user_id}`); }}
+                        className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors touch-manipulation min-w-[40px] min-h-[40px]"
+                        title={`Vedi il torneo come ${fullName}`}
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                    )}
                     {isAdmin && (tournament.current_phase as string) === 'iscrizioni' && (
-                      <div className="relative">
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenParticipantMenuId(openParticipantMenuId === participant.id ? null : participant.id); }}
-                          className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors touch-manipulation min-w-[40px] min-h-[40px]"
-                        >
-                          <MoreVertical className="h-5 w-5" />
-                        </button>
-                        {openParticipantMenuId === participant.id && (
-                          <div className="absolute right-0 top-8 z-20 bg-white border border-black/10 rounded-lg shadow-lg min-w-[160px] py-1" onClick={() => setOpenParticipantMenuId(null)}>
-                            <button
-                              onClick={() => handleRemoveParticipant(participant.id, fullName)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#022431] hover:bg-[#022431]/10 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Rimuovi
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemoveParticipant(participant.id, fullName); }}
+                        className="inline-flex items-center justify-center p-2.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors touch-manipulation min-w-[40px] min-h-[40px]"
+                        title="Rimuovi partecipante"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -207,24 +220,24 @@ export default function TournamentManager({ tournament, isAdmin = false, section
     const type = tournament.tournament_type;
     return (
       <div className="space-y-6">
-        {renderParticipantsSection()}
+        {activeTab === 'overview' && renderParticipantsSection()}
 
         {/* Tabellone - eliminazione_diretta */}
-        {type === 'eliminazione_diretta' && (phase === 'eliminazione' || phase === 'completato') && (
+        {activeTab === 'bracket' && type === 'eliminazione_diretta' && (phase === 'eliminazione' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
             </div>
             <div className="px-6 py-4">
-              <EliminationBracketView tournamentId={tournament.id} maxParticipants={tournament.max_participants} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} onBracketGenerated={() => {}} />
+              <EliminationBracketView isAdmin={isAdmin} tournamentId={tournament.id} maxParticipants={tournament.max_participants} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} onBracketGenerated={() => {}} />
             </div>
           </div>
         )}
 
         {/* Gironi - girone_eliminazione */}
-        {type === 'girone_eliminazione' && (phase === 'gironi' || phase === 'eliminazione' || phase === 'completato') && (
+        {activeTab === 'groups' && type === 'girone_eliminazione' && (phase === 'gironi' || phase === 'eliminazione' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
             </div>
             <div className="px-6 py-4">
@@ -234,37 +247,39 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         )}
 
         {/* Tabellone - girone_eliminazione fase eliminazione */}
-        {type === 'girone_eliminazione' && (phase === 'eliminazione' || phase === 'completato') && (
+        {activeTab === 'bracket' && type === 'girone_eliminazione' && (phase === 'eliminazione' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
             </div>
             <div className="px-6 py-4">
-              <EliminationBracketView tournamentId={tournament.id} maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)} participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} />
+              <EliminationBracketView isAdmin={isAdmin} tournamentId={tournament.id} maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)} participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} />
             </div>
           </div>
         )}
 
-        {/* Calendario + Classifica - campionato */}
-        {type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
-          <>
-            <div className="page-card">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
-              </div>
-              <div className="px-6 py-4">
-                <ChampionshipStandingsView tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
-              </div>
+        {/* Calendario - campionato */}
+        {activeTab === 'calendar' && type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
+          <div className="page-card">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
             </div>
-            <div className="page-card">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
-                <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
-              </div>
-              <div className="px-6 py-4">
-                <ChampionshipStandingsView tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="standings" hideInternalTabs={true} />
-              </div>
+            <div className="px-6 py-4">
+              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
             </div>
-          </>
+          </div>
+        )}
+
+        {/* Classifica - campionato */}
+        {activeTab === 'standings' && type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
+          <div className="page-card">
+            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+              <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
+            </div>
+            <div className="px-6 py-4">
+              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="standings" hideInternalTabs={true} />
+            </div>
+          </div>
         )}
       </div>
     );
@@ -301,7 +316,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </button>
                 </div>
               </div>
-              <EliminationBracketView
+              <EliminationBracketView isAdmin={isAdmin}
                 tournamentId={tournament.id}
                 maxParticipants={tournament.max_participants}
                 participants={participants}
@@ -316,7 +331,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
                 </div>
                 <div className="p-6">
-                  <EliminationBracketView
+                  <EliminationBracketView isAdmin={isAdmin}
                     tournamentId={tournament.id}
                     maxParticipants={tournament.max_participants}
                     participants={participants}
@@ -619,7 +634,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                 )}
               </div>
 
-              <EliminationBracketView
+              <EliminationBracketView isAdmin={isAdmin}
                 tournamentId={tournament.id}
                 maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)}
                 participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))}
@@ -633,7 +648,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
                 </div>
                 <div className="p-6">
-                  <EliminationBracketView
+                  <EliminationBracketView isAdmin={isAdmin}
                     tournamentId={tournament.id}
                     maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)}
                     participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))}
@@ -748,7 +763,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </div>
                 )}
               </div>
-              <ChampionshipStandingsView
+              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                 tournamentId={tournament.id}
                 participants={participants}
                 bestOf={tournament.best_of || 3}
@@ -764,7 +779,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
                 </div>
                 <div className="p-6">
-                  <ChampionshipStandingsView
+                  <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     participants={participants}
                     bestOf={tournament.best_of || 3}
@@ -808,7 +823,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               </div>
             )}
           </div>
-          <ChampionshipStandingsView
+          <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
             tournamentId={tournament.id}
             participants={participants}
             bestOf={tournament.best_of || 3}
@@ -824,7 +839,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
                 </div>
                 <div className="p-6">
-                  <ChampionshipStandingsView
+                  <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     participants={participants}
                     bestOf={tournament.best_of || 3}
