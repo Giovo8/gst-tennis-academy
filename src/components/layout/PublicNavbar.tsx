@@ -8,9 +8,11 @@ import type { User } from "@supabase/supabase-js";
 
 type PublicNavbarProps = {
   home?: boolean;
+  /** Barra a filo: senza bordi, angoli arrotondati e distanza dai margini */
+  flush?: boolean;
 };
 
-export default function PublicNavbar({ home = false }: PublicNavbarProps) {
+export default function PublicNavbar({ home = false, flush = false }: PublicNavbarProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -65,17 +67,19 @@ export default function PublicNavbar({ home = false }: PublicNavbarProps) {
 
   return (
     <>
-    {home && (
+    {home && !flush && (
       <div className="hidden lg:block fixed inset-x-0 top-0 h-8 bg-white z-40 pointer-events-none" aria-hidden="true" />
     )}
     <nav
-      className={home
-        ? "bg-secondary fixed top-4 left-6 right-6 z-50 border border-black/10 rounded-lg shadow-none [transform:translateZ(0)] lg:sticky lg:top-1 lg:mx-0 lg:mt-1 lg:rounded-none lg:rounded-t-xl lg:shadow-sm"
+      className={flush
+        ? "bg-secondary fixed top-0 left-0 right-0 z-50 [transform:translateZ(0)] lg:sticky"
+        : home
+        ? "bg-secondary fixed top-4 left-6 right-6 z-50 border border-black/10 rounded-lg shadow-none [transform:translateZ(0)] lg:sticky lg:top-1 lg:mx-0 lg:mt-1 lg:rounded-none lg:rounded-t-xl"
         : "bg-white fixed top-4 left-6 right-6 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:mx-6 lg:mt-4 z-50 shadow-sm rounded-xl border border-black/10 [transform:translateZ(0)]"
       }
     >
-      <div className={home ? "relative max-w-7xl mx-auto px-4" : "relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"}>
-        <div className={home ? "relative flex items-center h-16" : "relative flex items-center h-[4.5rem] lg:h-[5rem]"}>
+      <div className={home ? "relative max-w-7xl mx-auto px-6 lg:px-8" : "relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"}>
+        <div className={home ? "relative flex items-center h-20" : "relative flex items-center h-[4.5rem] lg:h-[5rem]"}>
           {/* Logo + title, left aligned on all breakpoints */}
           <Link
             href="/"
@@ -91,22 +95,27 @@ export default function PublicNavbar({ home = false }: PublicNavbarProps) {
               unoptimized
               className={home ? "h-7 w-7 lg:h-8 lg:w-8" : "h-8 w-8"}
             />
-            <span className={home ? "text-base lg:text-lg font-bold leading-none text-white whitespace-nowrap" : "text-lg font-bold leading-none text-secondary"}>GST Academy</span>
+            <span className={home ? "text-xl lg:text-2xl font-bold leading-none text-white whitespace-nowrap" : "text-lg font-bold leading-none text-secondary"}>GST Academy</span>
           </Link>
 
           <Link
             href={getDashboardLink()}
-            className={home
-              ? "ml-auto inline-flex !h-9 !min-h-0 items-center justify-center px-4 !py-0 rounded-lg text-sm font-semibold text-secondary bg-white hover:bg-white/90 transition-colors"
-              : "ml-auto inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-secondary hover:bg-secondary/90 transition-colors"
-            }
+            className={`group relative overflow-hidden ml-auto inline-flex items-center justify-center rounded-lg text-[15px] font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 ${home
+              ? "!h-9 !min-h-0 px-4 !py-0 text-secondary bg-white shadow-md shadow-black/30 ring-1 ring-white/60 hover:bg-sky-50 hover:shadow-lg hover:shadow-black/40 hover:ring-4 hover:ring-white/35 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
+              : "px-4 py-2 text-white bg-secondary shadow-md shadow-secondary/30 hover:bg-secondary/85 hover:shadow-lg hover:shadow-secondary/40 hover:ring-4 hover:ring-secondary/25 focus-visible:ring-secondary focus-visible:ring-offset-2"
+            }`}
           >
-            {user ? "Area GST" : "Accedi"}
+            {/* Riflesso lucido che attraversa il pulsante all'hover */}
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-y-0 -left-full w-3/4 -skew-x-12 bg-gradient-to-r from-transparent to-transparent transition-[left] duration-500 ease-out group-hover:left-[130%] motion-reduce:hidden ${home ? "via-secondary/30" : "via-white/45"}`}
+            />
+            <span className="relative">{user ? "Area GST" : "Accedi"}</span>
           </Link>
         </div>
       </div>
     </nav>
-    <div className={home ? "h-16 lg:hidden" : "h-[4.5rem] lg:hidden"} aria-hidden="true" />
+    <div className={home ? "h-20 lg:hidden" : "h-[4.5rem] lg:hidden"} aria-hidden="true" />
     </>
   );
 }

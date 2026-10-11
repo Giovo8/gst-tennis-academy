@@ -93,7 +93,7 @@ export default function LoginClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1400px] mx-auto min-h-screen flex flex-col bg-gray-50">
+      <div className="max-w-[1400px] mx-auto min-h-screen flex flex-col bg-white border border-black/10 rounded-lg">
 
         {/* Login Form */}
         <main className="flex-1 flex items-center justify-center px-6 sm:px-4 py-10">

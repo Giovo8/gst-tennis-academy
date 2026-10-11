@@ -316,17 +316,17 @@ export default function DashboardShell({
             })}
           </nav>
           <div className="p-3">
-            <div className="flex items-center gap-1.5">
-              <Link href={profileHref} onClick={() => setMobileOpen(false)} className="group flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-secondary hover:text-white flex-1 min-w-0">
-                <div className="w-7 h-7 rounded-lg overflow-hidden bg-secondary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0 ring-1 ring-transparent group-hover:bg-white group-hover:text-secondary">
+            <div className="flex items-center gap-1.5 rounded-xl bg-secondary p-1.5 shadow-sm">
+              <Link href={profileHref} onClick={() => setMobileOpen(false)} className="group flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-white/10 flex-1 min-w-0">
+                <div className="w-7 h-7 rounded-lg overflow-hidden bg-white text-secondary flex items-center justify-center text-xs font-semibold flex-shrink-0">
                   {userAvatar ? <img src={userAvatar} alt={userName || "User"} className="w-full h-full object-cover" /> : <span>{userName?.charAt(0)?.toUpperCase() || "U"}</span>}
                 </div>
-                {userName && <span className="text-sm font-semibold tracking-tight text-gray-700 truncate group-hover:text-white">{userName}</span>}
+                {userName && <span className="text-sm font-semibold tracking-tight text-white truncate">{userName}</span>}
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 transition-colors hover:bg-secondary hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10"
                 aria-label="Esci"
               >
                 <LogOut className="h-4 w-4" />

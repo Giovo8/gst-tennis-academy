@@ -91,7 +91,7 @@ export default function TorneiPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto bg-white min-h-screen">
-      <PublicNavbar home />
+      <PublicNavbar home flush />
       <main>
         <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">

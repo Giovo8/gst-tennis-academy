@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { Facebook, Instagram, Mail, Youtube } from "lucide-react";
 
-export default function Footer() {
+export default function Footer({ flush = false }: { flush?: boolean }) {
   return (
-    <footer className="pt-12 pb-8 lg:mb-1 lg:rounded-b-xl lg:border lg:border-black/10" style={{ backgroundColor: 'var(--secondary)' }}>
+    <footer className={flush ? "pt-12 pb-8" : "pt-12 pb-8 lg:mb-1 lg:rounded-b-xl lg:border lg:border-black/10"} style={{ backgroundColor: 'var(--secondary)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Logo centered */}
         <div className="text-center mb-8">

@@ -6,6 +6,8 @@ import { createNotification } from "@/lib/notifications/createNotification";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Trophy,
+  Target,
+  Users as UsersIcon,
   Loader2,
   Search,
   SlidersHorizontal,
@@ -40,7 +42,7 @@ function AtletaTorneiPageInner() {
   const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "available" | "my">("my");
+  const [activeTab, setActiveTab] = useState<"all" | "available" | "my">("all");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
@@ -55,7 +57,7 @@ function AtletaTorneiPageInner() {
 
     try {
       // Load all tournaments using API
-      const res = await fetch('/api/tournaments');
+      const res = await fetch('/api/tournaments?includeCounts=true');
       const json = await res.json();
 
       if (res.ok && json.tournaments) {
@@ -138,7 +140,12 @@ function AtletaTorneiPageInner() {
       case "my":
         return myTournaments;
       case "available":
-        return tournaments;
+        // Solo tornei non iscritti, con iscrizioni aperte e posti liberi
+        return tournaments.filter(
+          (t) =>
+            t.status === "Aperto" &&
+            !(t.max_participants > 0 && (t.current_participants || 0) >= t.max_participants)
+        );
       default:
         return [];
     }
@@ -155,23 +162,18 @@ function AtletaTorneiPageInner() {
 
   // Determine border color based on status - using CSS variables from design system
   const getBorderColor = (tournament: Tournament) => {
+    // Palette allineata a dashboard/admin/tornei
     if (tournament.status === "Aperto") {
-      return "var(--primary)"; // #08b3f7 - frozen-500
+      return (tournament.current_participants || 0) >= (tournament.max_participants || 0) &&
+        (tournament.max_participants || 0) > 0
+        ? "#023047"
+        : "var(--secondary)";
     } else if (tournament.status === "In Corso" || tournament.status === "In corso") {
-      return "var(--secondary)"; // #034863 - frozen-800
+      return "#023b52";
     } else if (tournament.status === "Completato" || tournament.status === "Concluso" || tournament.status === "Chiuso") {
-      return "var(--foreground-muted)"; // #056c94 - frozen-700
+      return "#9ca3af";
     }
     return "var(--secondary)"; // default
-  };
-
-  // Get tournament type label
-  const getTournamentTypeLabel = (tournament: Tournament) => {
-    const tournamentType = tournament.tournament_type || tournament.competition_type;
-    if (tournamentType === 'eliminazione_diretta') return 'Elim. Diretta';
-    if (tournamentType === 'girone_eliminazione') return 'Girone';
-    if (tournamentType === 'campionato') return 'Campionato';
-    return 'Torneo';
   };
 
   return (
@@ -200,7 +202,7 @@ function AtletaTorneiPageInner() {
             type="button"
             onClick={() => setIsAdvancedFiltersOpen((prev) => !prev)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
-              isAdvancedFiltersOpen || activeTab !== "my"
+              isAdvancedFiltersOpen || activeTab !== "all"
                 ? "border-secondary bg-secondary text-white hover:opacity-90"
                 : "border-black/10 bg-white text-secondary hover:bg-gray-50"
             }`}
@@ -242,7 +244,7 @@ function AtletaTorneiPageInner() {
                 type="button"
                 onClick={() => {
                   setSearch("");
-                  setActiveTab("my");
+                  setActiveTab("all");
                 }}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#023047] bg-[#023047] text-white hover:opacity-90 transition-colors"
                 aria-label="Reset filtri"
@@ -299,10 +301,11 @@ function AtletaTorneiPageInner() {
         <div className="space-y-2">
           {filteredTournaments.map((tournament) => {
             const bg = getBorderColor(tournament);
-            const typeLabel = getTournamentTypeLabel(tournament);
+            const tType = tournament.tournament_type || tournament.competition_type;
+            const TournamentIcon =
+              tType === "girone_eliminazione" ? Target : tType === "campionato" ? UsersIcon : Trophy;
             const participantCount = tournament.current_participants || tournament.participant_count || 0;
             const maxParticipants = tournament.max_participants || 0;
-            const start = tournament.starts_at ? new Date(tournament.starts_at) : null;
 
             return (
               <div
@@ -312,33 +315,25 @@ function AtletaTorneiPageInner() {
                 style={{ background: bg }}
               >
                 <div className="flex items-center gap-4 py-3 px-3">
-                  <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                    {start ? (
-                      <>
-                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                          {start.toLocaleDateString("it-IT", { month: "short" }).replace(".", "")}
-                        </span>
-                        <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
-                          {start.getDate()}
-                        </span>
-                      </>
-                    ) : (
-                      <Trophy className="h-4 w-4 text-white/70" />
-                    )}
+                  <div className="flex items-center justify-center bg-white/10 rounded-lg w-11 h-11 flex-shrink-0">
+                    <TournamentIcon className="h-5 w-5 text-white" strokeWidth={2} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">
                       {tournament.title}
                     </p>
-                    <p className="text-xs text-white/70 mt-0.5">
-                      {participantCount}/{maxParticipants} partecipanti
-                      {tournament.category && <span> · {tournament.category}</span>}
+                    <p className="text-xs text-white/70 mt-0.5 truncate">
+                      {participantCount}/{maxParticipants} iscritti
                     </p>
                   </div>
 
-                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
-                    {typeLabel}
+                  <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
+                    {tournament.is_registered
+                      ? "Iscritto"
+                      : !tournament.status || tournament.status === "Aperto"
+                        ? "Iscrizioni aperte"
+                        : tournament.status}
                   </span>
                 </div>
               </div>

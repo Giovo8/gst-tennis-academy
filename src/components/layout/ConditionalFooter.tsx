@@ -19,7 +19,7 @@ export default function ConditionalFooter() {
   
   return (
     <div className="max-w-[1400px] mx-auto">
-      <Footer />
+      <Footer flush />
     </div>
   );
 }

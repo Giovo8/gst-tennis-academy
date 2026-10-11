@@ -252,7 +252,7 @@ function AdminTorneiPageInner() {
                   </div>
 
                   <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
-                    {tournament.status || 'Aperto'}
+                    {!tournament.status || tournament.status === 'Aperto' ? 'Iscrizioni aperte' : tournament.status}
                   </span>
                 </div>
               </div>

@@ -9,7 +9,6 @@ import TournamentTabBar, { type TournamentTabKey } from "@/components/tournament
 import {
   Trophy,
   Loader2,
-  X,
   Target,
   Users as UsersIcon,
   Eye
@@ -443,19 +442,14 @@ function AtletaTournamentDetailInner() {
       )}
 
       {/* Pulsanti azioni */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         {/* Bottone Iscriviti */}
         {!isViewAs && !joined && tournament.status === 'Aperto' && (
           <button
             onClick={handleJoin}
             disabled={actionLoading || spotsLeft <= 0}
             title={spotsLeft <= 0 ? "Posti esauriti" : "Iscriviti al torneo"}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white rounded-lg font-medium transition-all"
-            style={{
-              backgroundColor: spotsLeft <= 0 ? '#9CA3AF' : '#08b3f7',
-              opacity: spotsLeft <= 0 || actionLoading ? 0.6 : 1,
-              cursor: spotsLeft <= 0 || actionLoading ? 'not-allowed' : 'pointer'
-            }}
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-secondary rounded-lg hover:bg-secondary/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {actionLoading ? (
               <>
@@ -463,15 +457,9 @@ function AtletaTournamentDetailInner() {
                 Iscrizione in corso...
               </>
             ) : spotsLeft <= 0 ? (
-              <>
-                <X className="h-5 w-5" />
-                Posti Esauriti
-              </>
+              "Posti Esauriti"
             ) : (
-              <>
-                <Trophy className="h-5 w-5" />
-                Iscriviti al Torneo
-              </>
+              "Iscriviti al Torneo"
             )}
           </button>
         )}
@@ -481,7 +469,7 @@ function AtletaTournamentDetailInner() {
           <button
             onClick={handleLeave}
             disabled={actionLoading}
-            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#056c94] rounded-lg hover:bg-[#056c94]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-6 py-3 text-white bg-[#023b52] rounded-lg hover:bg-[#023b52]/90 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {actionLoading ? (
               <>
@@ -489,10 +477,7 @@ function AtletaTournamentDetailInner() {
                 Cancellazione in corso...
               </>
             ) : (
-              <>
-                <X className="h-5 w-5" />
-                Cancella Iscrizione
-              </>
+              "Cancella Iscrizione"
             )}
           </button>
         )}

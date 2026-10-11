@@ -220,7 +220,7 @@ export default async function NewsDetailPage({
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto bg-white">
-        <PublicNavbar home />
+        <PublicNavbar home flush />
         <main>
           {/* Hero Image */}
           {sanitizedPost.image_url && (
