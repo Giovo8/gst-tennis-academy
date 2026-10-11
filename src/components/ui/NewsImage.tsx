@@ -19,6 +19,16 @@ import Image from "next/image";
  * Si occupa da sé del wrapper `relative`, quindi funziona dentro qualsiasi
  * contenitore con dimensioni definite (es. `aspect-[16/9]`).
  */
+const LOCAL_FALLBACK_IMAGES = ["/images/1.jpeg", "/images/2.jpeg", "/images/3.jpeg"];
+
+function pickLocalFallback(seed: string): string {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  return LOCAL_FALLBACK_IMAGES[hash % LOCAL_FALLBACK_IMAGES.length];
+}
+
 export default function NewsImage({
   src,
   alt,
@@ -35,6 +45,26 @@ export default function NewsImage({
   priority?: boolean;
 }) {
   const [error, setError] = useState(false);
+  const [fallbackError, setFallbackError] = useState(false);
+
+  // Le news AI linkano l'immagine direttamente sul sito della fonte: se il link
+  // si rompe o è bloccato si ripiega su un'immagine locale.
+  if (error && !fallbackError) {
+    return (
+      <div className="relative h-full w-full">
+        <Image
+          src={pickLocalFallback(src)}
+          alt={alt}
+          fill
+          sizes={sizes}
+          unoptimized
+          draggable={false}
+          className={className}
+          onError={() => setFallbackError(true)}
+        />
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -67,6 +97,8 @@ export default function NewsImage({
         priority={priority}
         draggable={false}
         className={className}
+        // Molti siti bloccano l'hotlink in base al Referer: senza Referer l'immagine passa.
+        referrerPolicy="no-referrer"
         onError={() => setError(true)}
       />
     </div>

@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Trophy, Calendar, Users, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { Trophy, Target, Users, Loader2 } from "lucide-react";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 
 type Tournament = {
@@ -77,13 +75,6 @@ export default function TorneiPage() {
     return "border border-secondary/30 text-secondary/70 bg-white";
   };
 
-  const getTournamentTypeLabel = (type?: string) => {
-    if (!type) return "Torneo";
-    const normalized = type.toLowerCase();
-    if (normalized === "campionato") return "Campionato";
-    return "Torneo";
-  };
-
   const matchFilter = (t: Tournament): boolean => {
     const status = t.status?.toLowerCase() ?? "";
     if (activeFilter === "all") return true;
@@ -98,12 +89,12 @@ export default function TorneiPage() {
   const filteredTournaments = tournaments.filter(matchFilter);
 
   return (
-    <div className="min-h-screen bg-white">
-
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1400px] mx-auto bg-white min-h-screen">
       <PublicNavbar home />
       <main>
         <section className="py-12 sm:py-16 md:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-8 sm:mb-12 flex flex-col items-center">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3 text-secondary">
@@ -143,67 +134,36 @@ export default function TorneiPage() {
                   <p className="text-sm text-secondary/70">Nessun torneo trovato.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {filteredTournaments.map((t) => {
-                    const typeLabel = getTournamentTypeLabel(t.tournament_type);
-                    const startDate = t.start_date ? new Date(t.start_date) : null;
-                    const weekday = startDate
-                      ? format(startDate, "EEE", { locale: it })
-                      : "";
-                    const day = startDate
-                      ? format(startDate, "dd", { locale: it })
-                      : "";
-                    const monthYear = startDate
-                      ? format(startDate, "MMM yyyy", { locale: it }).toUpperCase()
-                      : "DATA DA DEFINIRE";
-                    
-                    // Determina il colore del bordo in base allo stato
-                    const getBorderColor = () => {
-                      const status = t.status?.toLowerCase();
-                      if (status === "aperto") return "#10b981"; // verde emerald
-                      if (status === "in corso") return "#0ea5e9"; // blu secondary
-                      if (status === "concluso" || status === "completato" || status === "chiuso") return "#6b7280"; // grigio
-                      return "#0ea5e9"; // default blu
-                    };
+                    const type = t.tournament_type || t.competition_type;
+                    const TypeIcon = type === "campionato" ? Users : type === "girone_eliminazione" ? Target : Trophy;
+                    const status = t.status?.toLowerCase();
+                    const phaseLabel =
+                      status === "aperto" ? "Iscrizioni aperte" :
+                      status === "in corso" ? "In corso" :
+                      t.status || "In preparazione";
 
                     return (
                       <Link
                         key={t.id}
                         href={`/tornei/${t.id}`}
-                        className="bg-white px-0 py-0 flex flex-row items-stretch border-l-4 border border-black/10 rounded-lg overflow-hidden hover:bg-gray-50 transition-colors cursor-pointer"
-                        style={{ borderLeftColor: getBorderColor() }}
+                        className="block rounded-lg overflow-hidden hover:opacity-95 transition-opacity"
+                        style={{ background: status === "in corso" ? "#023047" : "var(--secondary)" }}
                       >
-                        {/* Colonna data */}
-                        <div className="bg-secondary flex flex-col items-center justify-center w-20 sm:w-28 flex-shrink-0 px-3 py-5">
-                          <p className="text-xs font-semibold uppercase text-white/70 text-center mb-1">
-                            {weekday}
-                          </p>
-                          <p className="text-4xl sm:text-3xl md:text-4xl font-bold text-white leading-none text-center">
-                            {day}
-                          </p>
-                          <p className="text-xs font-semibold uppercase text-white/70 mt-1.5 text-center whitespace-nowrap">
-                            {monthYear}
-                          </p>
-                        </div>
-
-                        {/* Barra separatrice */}
-                        <div className="w-px bg-gray-200"></div>
-
-                        {/* Contenuto centrale */}
-                        <div className="flex-1 min-w-0 px-5 sm:px-6 py-5 sm:py-6">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-secondary/60">
-                              {typeLabel}
-                            </span>
+                        <div className="flex items-center gap-4 py-3 px-3">
+                          <div className="flex items-center justify-center bg-white/10 rounded-lg w-11 h-11 flex-shrink-0">
+                            <TypeIcon className="h-5 w-5 text-white" strokeWidth={2.5} />
                           </div>
-                          <h3 className="text-base sm:text-lg font-semibold text-secondary truncate">
-                            {t.title}
-                          </h3>
-                          {t.description && (
-                            <p className="text-sm text-secondary/70 mt-2 line-clamp-2">
-                              {t.description}
-                            </p>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white text-sm truncate">{t.title}</p>
+                            {t.description && (
+                              <p className="text-xs text-white/70 mt-0.5 truncate">{t.description}</p>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
+                            {phaseLabel}
+                          </span>
                         </div>
                       </Link>
                     );
@@ -215,6 +175,7 @@ export default function TorneiPage() {
         </div>
         </section>
       </main>
+      </div>
     </div>
   );
 }

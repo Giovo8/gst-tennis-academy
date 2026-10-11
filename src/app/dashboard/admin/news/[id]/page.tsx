@@ -137,7 +137,7 @@ export default function AdminNewsDetailPage() {
           <div className="p-6 space-y-6">
             {news.image_url && (
               <div className="rounded-xl overflow-hidden border border-black/10 bg-secondary/5">
-                <img src={news.image_url} alt={news.title} className="w-full h-auto object-cover" />
+                <img src={news.image_url} alt={news.title} referrerPolicy="no-referrer" className="w-full h-auto object-cover" />
               </div>
             )}
 

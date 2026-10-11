@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
+import TournamentTabBar, { type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
 import PublicNavbar from "@/components/layout/PublicNavbar";
 import { Trophy, Award, Calendar, Users, Target, Zap, ArrowLeft, Loader2 } from "lucide-react";
 
@@ -17,6 +18,7 @@ type Tournament = {
   end_date?: string;
   category?: string;
   level?: string;
+  match_format?: string;
   max_participants?: number;
   status?: string;
   tournament_type?: TournamentType;
@@ -38,6 +40,8 @@ export default function TournamentDetail() {
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [joined, setJoined] = useState(false);
+  const [managerTab, setManagerTab] = useState<TournamentTabKey>("overview");
+  const [managerMeta, setManagerMeta] = useState<{ tournamentType?: string; currentPhase?: string; participantsCount: number } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -174,10 +178,11 @@ export default function TournamentDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
+<div className="max-w-[1400px] mx-auto bg-white min-h-screen">
 
         <PublicNavbar home />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center">
               <Loader2 className="h-10 w-10 animate-spin text-secondary mx-auto" />
@@ -185,15 +190,16 @@ export default function TournamentDetail() {
             </div>
           </div>
         </main>
-      </div>
+      </div></div>
     );
   }
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
+<div className="max-w-[1400px] mx-auto bg-white min-h-screen">
         <PublicNavbar home />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
           <div className="text-center py-16">
             <Trophy className="h-16 w-16 text-secondary/40 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-secondary mb-2">Torneo non trovato</h2>
@@ -207,7 +213,7 @@ export default function TournamentDetail() {
             </button>
           </div>
         </main>
-      </div>
+      </div></div>
     );
   }
 
@@ -228,6 +234,9 @@ export default function TournamentDetail() {
     }
   };
 
+  const tType = tournament.tournament_type || tournament.competition_type;
+  const TournamentIcon = tType === 'girone_eliminazione' ? Target : tType === 'campionato' ? Users : Trophy;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Aperto':
@@ -245,22 +254,17 @@ export default function TournamentDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+<div className="max-w-[1400px] mx-auto bg-white min-h-screen">
       <PublicNavbar home />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
+      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8 sm:py-10 md:py-12">
         {/* Header con info torneo */}
         <div
-          className="bg-secondary rounded-xl border-t border-r border-b border-secondary p-6 border-l-4 mb-6"
-          style={{ borderLeftColor: (() => {
-            if (tournament?.status === "Chiuso" || tournament?.status === "Completato" || tournament?.status === "Concluso") return "#6b7280";
-            if (tournament?.status === "In Corso" || tournament?.status === "In corso") return "#0ea5e9";
-            if (tournament?.status === "Aperto" && (tournament?.max_participants || 0) > 0 && currentParticipants >= (tournament?.max_participants || 0)) return "#ef4444";
-            if (tournament?.status === "Aperto") return "#10b981";
-            return "#0ea5e9";
-          })() }}
+          className="bg-secondary rounded-lg border border-black/10 p-6 border-l-4 mb-6"
+          style={{ borderLeftColor: 'var(--secondary)' }}
         >
           <div className="flex items-start gap-6">
-            <Trophy className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
+            <TournamentIcon className="h-8 w-8 text-white flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-white">{tournament.title}</h1>
             </div>
@@ -268,13 +272,15 @@ export default function TournamentDetail() {
         </div>
 
         {/* Dettagli torneo */}
-        <div className="page-card p-6 mb-6">
-          <h2 className="text-lg font-semibold text-secondary mb-6">Dettagli competizione</h2>
-          
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+            <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
+          </div>
+          <div className="p-6">
           <div className="space-y-6">
             {/* Descrizione */}
             {tournament.description && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Descrizione</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">{tournament.description}</p>
@@ -284,7 +290,7 @@ export default function TournamentDetail() {
 
             {/* Data Inizio */}
             {tournament.start_date && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Data inizio</label>
                 <div className="flex-1">
                   <p className="text-secondary font-semibold">
@@ -300,7 +306,7 @@ export default function TournamentDetail() {
             )}
 
             {/* Tipo */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Tipo competizione</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
@@ -310,7 +316,7 @@ export default function TournamentDetail() {
             </div>
 
             {/* Stato */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Stato</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">{tournament.status || "In preparazione"}</p>
@@ -318,7 +324,7 @@ export default function TournamentDetail() {
             </div>
 
             {/* Partecipanti */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
               <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Partecipanti</label>
               <div className="flex-1">
                 <p className="text-secondary font-semibold">
@@ -334,7 +340,7 @@ export default function TournamentDetail() {
 
             {/* Categoria */}
             {tournament.category && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 pb-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Categoria</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">{tournament.category}</p>
@@ -342,20 +348,31 @@ export default function TournamentDetail() {
               </div>
             )}
 
+            {/* Livello */}
+            {tournament.level && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8 pb-6 border-b border-gray-200">
+                <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Livello</label>
+                <div className="flex-1">
+                  <p className="text-secondary/70">{tournament.level}</p>
+                </div>
+              </div>
+            )}
+
             {/* Formato Partita */}
-            {tournament.best_of && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
+            {(tournament.match_format || tournament.best_of) && (
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-8">
                 <label className="sm:w-48 text-sm text-secondary font-medium flex-shrink-0">Formato partita</label>
                 <div className="flex-1">
                   <p className="text-secondary/70">
-                    {tournament.best_of === 3 ? 'Al meglio di 3 set' :
-                     tournament.best_of === 5 ? 'Al meglio di 5 set' :
-                     tournament.best_of === 1 ? '1 set unico' :
-                     `Best of ${tournament.best_of}`}
+                    {tournament.match_format === 'best_of_3' || tournament.best_of === 3 ? 'Al meglio di 3 set' :
+                     tournament.match_format === 'best_of_5' || tournament.best_of === 5 ? 'Al meglio di 5 set' :
+                     tournament.match_format === 'best_of_1' || tournament.best_of === 1 ? '1 set unico' :
+                     tournament.match_format || `Best of ${tournament.best_of}`}
                   </p>
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
 
@@ -407,13 +424,22 @@ export default function TournamentDetail() {
         )}
 
         {/* Competition View Section */}
-        <div className="page-card p-6">
+        {currentParticipants > 0 && managerMeta && (
+          <div className="mb-6">
+            <TournamentTabBar meta={managerMeta} activeTab={managerTab} onChange={setManagerTab} />
+          </div>
+        )}
+        {currentParticipants > 0 && (
           <TournamentManagerWrapper
             tournamentId={id}
             isAdmin={false}
+            activeTab={managerTab}
+            onActiveTabChange={setManagerTab}
+            hideTabBar
+            onMetaChange={setManagerMeta}
           />
-        </div>
+        )}
       </main>
-    </div>
+    </div></div>
   );
 }

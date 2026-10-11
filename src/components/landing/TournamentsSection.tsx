@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trophy, Target, Users } from "lucide-react";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -106,17 +106,14 @@ export default function TournamentsSection() {
         ) : (
           <div className="space-y-2">
             {items.map((tournament) => {
-              const date = tournament.start_date ? new Date(tournament.start_date) : null;
-              const monthStr = date
-                ? date.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')
-                : null;
-              const dayStr = date ? date.getDate().toString() : null;
+              const type = tournament.tournament_type || tournament.competition_type;
+              const TypeIcon = type === 'campionato' ? Users : type === 'girone_eliminazione' ? Target : Trophy;
 
-              const getTypeLabel = () => {
-                const type = tournament.tournament_type || tournament.competition_type;
-                if (type === 'campionato') return 'Campionato';
-                if (type === 'girone_eliminazione') return 'Girone';
-                return 'Torneo';
+              const getPhaseLabel = () => {
+                const status = tournament.status?.toLowerCase();
+                if (status === 'aperto') return 'Iscrizioni aperte';
+                if (status === 'in corso') return 'In corso';
+                return tournament.status || 'In preparazione';
               };
 
               const bgColor = tournament.status?.toLowerCase() === 'in corso'
@@ -131,20 +128,9 @@ export default function TournamentsSection() {
                   style={{ background: bgColor }}
                 >
                   <div className="flex items-center gap-4 py-3 px-3">
-                    {/* Date box */}
-                    <div className="flex flex-col items-center justify-center bg-white/10 rounded-lg w-11 py-1.5 flex-shrink-0">
-                      {date ? (
-                        <>
-                          <span className="text-[10px] uppercase font-bold text-white/70 leading-none">
-                            {monthStr}
-                          </span>
-                          <span className="text-lg font-bold text-white leading-none mt-0.5 tabular-nums">
-                            {dayStr}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-[10px] uppercase font-bold text-white/70 leading-none">TBD</span>
-                      )}
+                    {/* Icona competizione */}
+                    <div className="flex items-center justify-center bg-white/10 rounded-lg w-11 h-11 flex-shrink-0">
+                      <TypeIcon className="h-5 w-5 text-white" strokeWidth={2.5} />
                     </div>
 
                     {/* Info */}
@@ -155,9 +141,9 @@ export default function TournamentsSection() {
                       )}
                     </div>
 
-                    {/* Type label */}
-                    <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide hidden sm:block">
-                      {getTypeLabel()}
+                    {/* Fase */}
+                    <span className="text-[10px] font-semibold text-white/70 flex-shrink-0 uppercase tracking-wide">
+                      {getPhaseLabel()}
                     </span>
                   </div>
                 </Link>

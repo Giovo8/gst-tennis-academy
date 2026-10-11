@@ -63,7 +63,10 @@ export async function POST(request: Request) {
 
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const gemini = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
-    const model = gemini ? gemini.getGenerativeModel({ model: "gemini-2.0-flash" }) : null;
+    const model = gemini ? gemini.getGenerativeModel({
+      // gemini-2.0-flash è stato dismesso (giugno 2026): Flash-Lite ha la quota free più ampia.
+      model: process.env.GEMINI_MODEL?.split(",")[0]?.trim() || "gemini-3.5-flash-lite",
+    }) : null;
     const geminiAvailable = model !== null;
 
     let scanned = 0;

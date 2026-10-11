@@ -190,7 +190,7 @@ export default function AdminNewsPage() {
                     <div className="flex h-10 aspect-video flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
                       {item.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                        <img src={item.image_url} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
                       ) : (
                         <Newspaper className="h-4 w-4 text-white/50" strokeWidth={2} />
                       )}
