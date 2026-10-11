@@ -135,21 +135,27 @@ export default function TennisScoreInput({
       <div className="p-3 sm:p-5 space-y-4">
         {/* Scoreboard */}
         <div
-          className="grid items-center gap-x-1.5 gap-y-2 sm:gap-x-2"
-          style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${visibleSets}, auto) auto` }}
+          className="grid grid-cols-[var(--cols-mobile)] sm:grid-cols-[var(--cols-desktop)] items-center gap-x-1.5 gap-y-2 sm:gap-x-2"
+          style={
+            {
+              '--cols-mobile': `repeat(${visibleSets + 1}, minmax(0, 1fr))`,
+              '--cols-desktop': `minmax(0, 1fr) repeat(${visibleSets}, auto) auto`,
+            } as React.CSSProperties
+          }
         >
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-secondary/60">
+          {/* Intestazione (solo desktop) */}
+          <div className="hidden sm:block text-[11px] font-semibold uppercase tracking-wide text-secondary/60">
             Partecipanti
           </div>
           {cells.slice(0, visibleSets).map((_, i) => (
             <div
               key={i}
-              className="text-center text-[11px] font-semibold uppercase tracking-wide text-secondary/60"
+              className="hidden sm:block text-center text-[11px] font-semibold uppercase tracking-wide text-secondary/60"
             >
               Set {i + 1}
             </div>
           ))}
-          <div className="text-center text-[11px] font-semibold uppercase tracking-wide text-secondary/60">
+          <div className="hidden sm:block text-center text-[11px] font-semibold uppercase tracking-wide text-secondary/60">
             Tot
           </div>
 
@@ -158,13 +164,25 @@ export default function TennisScoreInput({
             return (
               <Fragment key={player.key}>
                 <div
-                  className={`flex h-11 sm:h-12 min-w-0 items-center gap-1.5 rounded-lg border px-3 ${
+                  className={`col-span-full sm:col-span-1 mt-1 sm:mt-0 flex h-10 sm:h-12 min-w-0 items-center gap-1.5 rounded-lg border px-3 ${
                     isMatchWinner ? 'border-[#023047] bg-[#023047]' : 'border-secondary bg-secondary'
                   }`}
                 >
                   <span className="truncate text-sm font-semibold text-white" title={player.name}>
                     {player.name}
                   </span>
+                </div>
+
+                {cells.slice(0, visibleSets).map((_, i) => (
+                  <div
+                    key={`label-${i}`}
+                    className="sm:hidden -mb-1 text-center text-[10px] leading-none font-semibold uppercase tracking-wide text-secondary/60"
+                  >
+                    Set {i + 1}
+                  </div>
+                ))}
+                <div className="sm:hidden -mb-1 text-center text-[10px] leading-none font-semibold uppercase tracking-wide text-secondary/60">
+                  Tot
                 </div>
 
                 {cells.slice(0, visibleSets).map((cell, i) => {
@@ -192,13 +210,13 @@ export default function TennisScoreInput({
                       disabled={submitting}
                       placeholder="–"
                       aria-label={`${player.name} set ${i + 1}`}
-                      className={`h-11 w-10 sm:h-12 sm:w-14 rounded-lg border text-center text-lg sm:text-xl font-bold tabular-nums placeholder:text-secondary/30 focus:outline-none focus:border-secondary transition-colors disabled:opacity-40 ${stateClass}`}
+                      className={`h-12 w-full sm:w-14 min-w-0 rounded-lg border text-center text-lg sm:text-xl font-bold tabular-nums placeholder:text-secondary/30 focus:outline-none focus:border-secondary transition-colors disabled:opacity-40 ${stateClass}`}
                     />
                   );
                 })}
 
                 <div
-                  className={`flex h-11 w-10 sm:h-12 sm:w-14 items-center justify-center rounded-lg border text-lg sm:text-xl font-bold tabular-nums ${
+                  className={`flex h-12 w-full sm:w-14 min-w-0 items-center justify-center rounded-lg border text-lg sm:text-xl font-bold tabular-nums ${
                     won1 + won2 === 0
                       ? 'border-black/10 bg-white text-secondary'
                       : (player.num === 1 ? won1 > won2 : won2 > won1)
