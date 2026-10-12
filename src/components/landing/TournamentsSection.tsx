@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Trophy, Target, Users } from "lucide-react";
+import Reveal from "@/components/landing/Reveal";
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -74,16 +75,17 @@ export default function TournamentsSection() {
     <section id="tornei" className="pt-6 pb-20 sm:py-24 md:py-28 bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
+        <Reveal className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             Competizioni
           </h2>
-          <p className="text-base sm:text-lg max-w-2xl text-gray-500">
+          <p className="text-lg sm:text-xl md:text-2xl max-w-5xl text-gray-500">
             Scopri i prossimi eventi in programma alla GST Academy e trova il torneo giusto per te.
           </p>
-        </div>
+        </Reveal>
 
         {/* Lista eventi stile "Events" */}
+        <Reveal delay={0.1}>
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-secondary mb-2" />
@@ -151,16 +153,17 @@ export default function TournamentsSection() {
             })}
           </div>
         )}
+        </Reveal>
 
         {/* Pulsante "Vedi tutti" */}
-        <div className="text-center mt-8 sm:mt-10">
+        <Reveal className="text-center mt-8 sm:mt-10">
           <Link
             href="/tornei"
             className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3.5 sm:py-3 text-sm font-medium text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all"
           >
             Vedi tutti i tornei
           </Link>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

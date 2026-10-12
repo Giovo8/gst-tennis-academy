@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Reveal from "@/components/landing/Reveal";
 
 export default function CTASection() {
   return (
@@ -8,15 +9,17 @@ export default function CTASection() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Top Section - Title and Buttons */}
         <div className="text-center">
-          <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
-            Scendi in campo con noi
-          </h2>
-          <p className="text-base sm:text-lg mb-8 text-gray-500">
-            Contattaci su WhatsApp o via email e prenota la tua prima lezione
-          </p>
-          
+          <Reveal>
+            <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
+              Scendi in campo con noi
+            </h2>
+            <p className="text-lg sm:text-xl md:text-2xl mb-8 text-gray-500">
+              Contattaci su WhatsApp o via email e prenota la tua prima lezione
+            </p>
+          </Reveal>
+
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+          <Reveal delay={0.15} className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
             <a
               href="https://wa.me/393762351777"
               target="_blank"
@@ -31,7 +34,7 @@ export default function CTASection() {
             >
               Email
             </a>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>

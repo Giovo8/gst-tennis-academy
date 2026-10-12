@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2, Facebook, Instagram, Linkedin, Twitter, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import Reveal from "@/components/landing/Reveal";
 
 type StaffMember = {
   id: string;
@@ -221,16 +222,17 @@ export default function StaffSection() {
     <section id="staff" className="py-20 sm:py-24 md:py-28 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
+        <Reveal className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             I nostri maestri
           </h2>
-          <p className="text-base sm:text-lg max-w-2xl text-gray-500">
+          <p className="text-lg sm:text-xl md:text-2xl max-w-5xl text-gray-500">
             Professionisti con anni di esperienza nel tennis agonistico e didattico.
           </p>
-        </div>
+        </Reveal>
 
         {/* Staff Scroll Row */}
+        <Reveal delay={0.1}>
         <div
           ref={scrollRef}
           onPointerDown={handlePointerDown}
@@ -353,13 +355,14 @@ export default function StaffSection() {
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
+        </Reveal>
 
         {/* Join Team CTA */}
-        <div className="text-center pt-0 pb-2 mt-0">
+        <Reveal className="text-center pt-0 pb-2 mt-0">
           <h3 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             Unisciti al team
           </h3>
-          <p className="text-base sm:text-lg mb-8 max-w-2xl mx-auto text-gray-500">
+          <p className="text-lg sm:text-xl md:text-2xl mb-8 max-w-5xl mx-auto text-gray-500">
             Cerchiamo maestri e istruttori appassionati di tennis e di insegnamento.
           </p>
           <Link
@@ -368,7 +371,7 @@ export default function StaffSection() {
           >
             Candidati
           </Link>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

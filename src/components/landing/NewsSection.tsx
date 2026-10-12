@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import NewsImage from "@/components/ui/NewsImage";
+import Reveal from "@/components/landing/Reveal";
 
 type NewsItem = {
   id: string;
@@ -215,16 +216,17 @@ export default function NewsSection() {
     <section id="news" className="py-20 sm:py-24 md:py-28 bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-14 sm:mb-16 text-center flex flex-col items-center">
+        <Reveal className="mb-14 sm:mb-16 text-center flex flex-col items-center">
           <h2 className="text-[12vw] md:text-6xl font-extrabold mb-4 text-secondary leading-[1.05] tracking-tight">
             News
           </h2>
-          <p className="text-base sm:text-lg max-w-2xl text-gray-500">
+          <p className="text-lg sm:text-xl md:text-2xl max-w-5xl text-gray-500">
             Aggiornamenti della scuola tennis e notizie ATP/WTA dal mondo del tennis.
           </p>
-        </div>
+        </Reveal>
 
         {/* Cards */}
+        <Reveal delay={0.1}>
         {news.length === 0 ? (
           <div className="text-center py-12 border border-black/10 rounded-2xl bg-white">
             <p className="text-secondary/80 font-medium">Nessuna news pubblicata al momento.</p>
@@ -355,15 +357,17 @@ export default function NewsSection() {
           </div>
         )}
 
+        </Reveal>
+
         {/* Pulsante Vedi tutte */}
-        <div className="text-center mt-2">
+        <Reveal className="text-center mt-2">
           <Link
             href="/news"
             className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3.5 sm:py-3 text-sm font-medium text-white bg-secondary rounded-lg shadow-sm hover:bg-secondary/90 transition-all"
           >
             Leggi tutte le news
           </Link>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

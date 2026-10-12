@@ -11,6 +11,7 @@ import ImageOnlySection from "@/components/landing/ImageOnlySection";
 import NewsSection from "@/components/landing/NewsSection";
 import StaffSection from "@/components/landing/StaffSection";
 import TournamentsSection from "@/components/landing/TournamentsSection";
+import Reveal from "@/components/landing/Reveal";
 
 function AuthCodeHandler() {
   const router = useRouter();
@@ -55,16 +56,18 @@ export default function Home() {
             <StaffSection />
             <NewsSection />
             <CTASection />
-            <div
-              className="h-[56vw] sm:h-[400px] md:h-[500px] w-full"
-              style={{
-                backgroundImage: 'url(/images/3.jpeg)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center top',
-              }}
-              role="img"
-              aria-label="Campo da tennis GST Tennis Academy"
-            />
+            <Reveal>
+              <div
+                className="h-[56vw] sm:h-[400px] md:h-[500px] w-full"
+                style={{
+                  backgroundImage: 'url(/images/3.jpeg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                }}
+                role="img"
+                aria-label="Campo da tennis GST Tennis Academy"
+              />
+            </Reveal>
             <LogoScrollSection />
           </div>
         </main>
