@@ -64,6 +64,9 @@ interface ChampionshipStandingsViewProps {
   canEditOwnMatches?: boolean;
 }
 
+/** Ultimi match caricati per torneo: evita lo spinner quando si passa da Classifica a Calendario */
+const MATCHES_CACHE = new Map<string, Match[]>();
+
 export default function ChampionshipStandingsView({
   tournamentId,
   participants,
@@ -76,12 +79,12 @@ export default function ChampionshipStandingsView({
   canEditOwnMatches = false
 }: ChampionshipStandingsViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>(defaultView);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<Match[]>(() => MATCHES_CACHE.get(tournamentId) ?? []);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !MATCHES_CACHE.has(tournamentId));
   const [generating, setGenerating] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -100,7 +103,8 @@ export default function ChampionshipStandingsView({
 
   const loadMatches = async () => {
     try {
-      setLoading(true);
+      // Con dati già in cache (cambio tab) si aggiorna in silenzio, senza spinner
+      if (!MATCHES_CACHE.has(tournamentId)) setLoading(true);
       const { supabase } = await import('@/lib/supabase/client');
 
       // Carica i match con i participant IDs
@@ -126,6 +130,7 @@ export default function ChampionshipStandingsView({
         player2: participantsMap.get(match.player2_id)
       }));
 
+      MATCHES_CACHE.set(tournamentId, enrichedMatches);
       setMatches(enrichedMatches);
     } catch (error) {
       console.error('Error loading matches:', error);

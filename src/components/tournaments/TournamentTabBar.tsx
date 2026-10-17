@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+import { motion } from 'framer-motion';
 import { Users, Trophy, Target, Calendar, type LucideIcon } from 'lucide-react';
 
 export type TournamentTabKey = 'overview' | 'bracket' | 'groups' | 'calendar' | 'standings';
@@ -63,11 +65,12 @@ interface TournamentTabBarProps {
 }
 
 export default function TournamentTabBar({ meta, activeTab, onChange }: TournamentTabBarProps) {
+  const pillId = useId();
   const tabs = getTournamentTabs(meta);
   if (tabs.length <= 1) return null;
 
   return (
-    <div className="flex gap-2 w-full">
+    <div className="flex gap-1 w-full p-1 rounded-lg bg-secondary shadow-sm">
       {tabs.map((tab) => {
         const isActive = tab.key === activeTab;
         return (
@@ -75,13 +78,18 @@ export default function TournamentTabBar({ meta, activeTab, onChange }: Tourname
             key={tab.key}
             type="button"
             onClick={() => onChange(tab.key)}
-            className={`h-11 flex-1 min-w-0 rounded-lg border text-sm font-semibold transition-colors ${
-              isActive
-                ? 'border-[#023047] bg-[#023047] text-white'
-                : 'border-secondary bg-secondary text-white hover:opacity-90'
+            className={`relative h-10 flex-1 min-w-0 rounded-md text-sm font-semibold transition-colors ${
+              isActive ? 'text-white' : 'text-white/70 hover:text-white'
             }`}
           >
-            {tab.label}
+            {isActive && (
+              <motion.span
+                layoutId={pillId}
+                className="absolute inset-0 rounded-md bg-[#023047] shadow-sm"
+                transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+              />
+            )}
+            <span className="relative z-10">{tab.label}</span>
           </button>
         );
       })}

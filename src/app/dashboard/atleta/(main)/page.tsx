@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 import AthleteNewsCarousel from "@/components/dashboard/AthleteNewsCarousel";
+import LiveScoresSection from "@/components/landing/LiveScoresSection";
 
 interface UpcomingBooking {
   id: string;
@@ -192,6 +193,15 @@ export default function AtletaDashboard() {
           >
             Vedi tutte le news
           </Link>
+        </div>
+      </div>
+
+      <div className={dashboardCardClassName}>
+        <div className={dashboardCardHeaderClassName}>
+          <h2 className="text-base sm:text-lg font-semibold text-secondary">Live</h2>
+        </div>
+        <div className="px-6 py-4">
+          <LiveScoresSection embedded />
         </div>
       </div>
 

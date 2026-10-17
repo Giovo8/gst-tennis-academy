@@ -9,6 +9,7 @@ import PublicNavbar from "@/components/layout/PublicNavbar";
 import TextHeroSection from "@/components/landing/TextHeroSection";
 import ImageOnlySection from "@/components/landing/ImageOnlySection";
 import NewsSection from "@/components/landing/NewsSection";
+import LiveScoresSection from "@/components/landing/LiveScoresSection";
 import StaffSection from "@/components/landing/StaffSection";
 import TournamentsSection from "@/components/landing/TournamentsSection";
 import Reveal from "@/components/landing/Reveal";
@@ -55,6 +56,7 @@ export default function Home() {
             <TournamentsSection />
             <StaffSection />
             <NewsSection />
+            <LiveScoresSection />
             <CTASection />
             <Reveal>
               <div
