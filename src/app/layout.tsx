@@ -1,23 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter_Tight, Urbanist } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import { defaultMetadata, generateOrganizationSchema } from "@/lib/seo/metadata";
 import { ThemeProvider } from "@/components/theme";
 import { Toaster } from "sonner";
 
-const inter = Inter_Tight({
-  subsets: ["latin"],
+// Font self-hosted (variable, subset latin): evita il fetch da Google Fonts in fase di build
+const inter = localFont({
+  src: "./fonts/InterTight-latin.woff2",
   variable: "--font-inter",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: "300 900",
 });
 
-const urbanist = Urbanist({
-  subsets: ["latin"],
+const urbanist = localFont({
+  src: "./fonts/Urbanist-latin.woff2",
   variable: "--font-urbanist",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: "300 900",
 });
 
 export const metadata: Metadata = {
