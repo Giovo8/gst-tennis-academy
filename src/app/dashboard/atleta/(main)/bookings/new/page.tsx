@@ -18,6 +18,9 @@ import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { getClosingMinutes, getCourtHoursLabel } from "@/lib/bookings/bookingTimeRestrictions";
+import TournamentMatchCard from "@/components/bookings/TournamentMatchCard";
+import { useBookableTournaments } from "@/lib/hooks/useBookableTournaments";
+import { TOURNAMENT_BOOKING_TYPE, type BookableTournamentMatch } from "@/lib/bookings/tournamentBookings";
 
 interface Coach {
   id: string;
@@ -50,6 +53,8 @@ const BOOKING_TYPES = [
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata", icon: "👤" },
 ];
 
+const TOURNAMENT_BOOKING_OPTION = { value: TOURNAMENT_BOOKING_TYPE, label: "Torneo", shortLabel: "Torneo", icon: "🏆" };
+
 function NewBookingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -78,6 +83,12 @@ function NewBookingPageInner() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAthlete, setCurrentUserAthlete] = useState<SelectedAthlete | null>(null);
 
+  // Torneo: visibile solo se l'utente è iscritto ad almeno un torneo in corso
+  const { tournaments } = useBookableTournaments();
+  const [selectedTournamentMatch, setSelectedTournamentMatch] = useState<BookableTournamentMatch | null>(null);
+  const isTournamentBooking = bookingType === TOURNAMENT_BOOKING_TYPE;
+  const bookingTypes = tournaments.length > 0 ? [...BOOKING_TYPES, TOURNAMENT_BOOKING_OPTION] : BOOKING_TYPES;
+
   // Available slots
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -96,8 +107,11 @@ function NewBookingPageInner() {
         : 4;
 
   // Validation
-  const canSubmit = selectedAthletes.length > 0 && selectedDate && selectedCourt && selectedSlots.length > 0 &&
-    ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoach));
+  const canSubmit = selectedDate && selectedCourt && selectedSlots.length > 0 &&
+    (isTournamentBooking
+      ? Boolean(selectedTournamentMatch)
+      : selectedAthletes.length > 0 &&
+        ((bookingType === "campo") || (bookingType === "lezione_privata" && selectedCoach)));
 
   useEffect(() => {
     loadCourtsAndCoaches();
@@ -412,20 +426,32 @@ function NewBookingPageInner() {
   };
 
   async function handleSubmit() {
-    if (selectedAthletes.length === 0 || !selectedDate || !selectedCourt || selectedSlots.length === 0) {
+    if (!selectedDate || !selectedCourt || selectedSlots.length === 0) {
       setError("Completa tutti i campi obbligatori");
       return;
     }
 
-    if (maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
-      setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
+    if (isTournamentBooking && !selectedTournamentMatch) {
+      setError("Seleziona la partita del torneo da giocare");
       return;
     }
 
-    const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
-    if (!registeredAthlete || !registeredAthlete.userId) {
-      setError("Completa tutti i campi obbligatori");
-      return;
+    if (!isTournamentBooking) {
+      if (selectedAthletes.length === 0) {
+        setError("Completa tutti i campi obbligatori");
+        return;
+      }
+
+      if (maxAthletesAllowed !== null && selectedAthletes.length > maxAthletesAllowed) {
+        setError(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
+        return;
+      }
+
+      const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
+      if (!registeredAthlete || !registeredAthlete.userId) {
+        setError("Completa tutti i campi obbligatori");
+        return;
+      }
     }
 
     if (bookingType === "lezione_privata" && !selectedCoach) {
@@ -460,22 +486,34 @@ function NewBookingPageInner() {
       const durationMinutes = orderedSlots.length * 30;
       endTime.setMinutes(startTime.getMinutes() + durationMinutes);
 
+      // Torneo: i partecipanti sono i due giocatori della partita (il server li ricalcola comunque).
+      const participants = isTournamentBooking && selectedTournamentMatch
+        ? [selectedTournamentMatch.player1, selectedTournamentMatch.player2].map((player) => ({
+            user_id: player.user_id,
+            full_name: player.full_name,
+            email: player.email,
+            phone: null,
+            is_registered: Boolean(player.user_id),
+          }))
+        : selectedAthletes.map((athlete) => ({
+            user_id: athlete.userId || null,
+            full_name: athlete.fullName,
+            email: athlete.email || null,
+            phone: athlete.phone || null,
+            is_registered: athlete.isRegistered,
+          }));
+
       const bookingData = {
         user_id: user.id,
-        coach_id: selectedCoach || null,
+        coach_id: isTournamentBooking ? null : selectedCoach || null,
         court: selectedCourt,
         type: bookingType,
+        tournament_match_id: isTournamentBooking ? selectedTournamentMatch?.id ?? null : null,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         status: "confirmed",
         notes: notes || null,
-        participants: selectedAthletes.map((athlete) => ({
-          user_id: athlete.userId || null,
-          full_name: athlete.fullName,
-          email: athlete.email || null,
-          phone: athlete.phone || null,
-          is_registered: athlete.isRegistered,
-        })),
+        participants,
       };
 
       const response = await fetch("/api/bookings", {
@@ -561,16 +599,16 @@ function NewBookingPageInner() {
                   {/* Tipo prenotazione */}
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                     <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
-                    <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
-                      {BOOKING_TYPES.map((type) => (
+                    <div className={`flex-1 flex flex-col sm:grid ${bookingTypes.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-2 sm:gap-3`}>
+                      {bookingTypes.map((type) => (
                         <button
                           key={type.value}
                           type="button"
                           onClick={() => setBookingType(type.value)}
                           className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                             bookingType === type.value
-                              ? 'bg-secondary text-white border-secondary'
-                              : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                              ? 'bg-[#023047] text-white border-[#023047]'
+                              : 'bg-secondary text-white border-secondary hover:opacity-90'
                           }`}
                         >
                           <span className="sm:hidden">{type.shortLabel}</span>
@@ -592,8 +630,8 @@ function NewBookingPageInner() {
                             onClick={() => setMatchFormat(formatOption.value)}
                             className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                               matchFormat === formatOption.value
-                                ? 'bg-secondary text-white border-secondary'
-                                : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                                ? 'bg-[#023047] text-white border-[#023047]'
+                                : 'bg-secondary text-white border-secondary hover:opacity-90'
                             }`}
                           >
                             {formatOption.label}
@@ -622,8 +660,8 @@ function NewBookingPageInner() {
                             onClick={() => setSelectedCourt(court)}
                             className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                               selectedCourt === court
-                                ? 'bg-secondary text-white border-secondary'
-                                : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                                ? 'bg-[#023047] text-white border-[#023047]'
+                                : 'bg-secondary text-white border-secondary hover:opacity-90'
                             }`}
                           >
                             {court}
@@ -682,7 +720,17 @@ function NewBookingPageInner() {
             </div>
           )}
 
+          {/* Card Partita torneo: sostituisce la scelta dei partecipanti */}
+          {isTournamentBooking && (
+            <TournamentMatchCard
+              tournaments={tournaments}
+              selectedMatchId={selectedTournamentMatch?.id ?? null}
+              onSelectMatch={setSelectedTournamentMatch}
+            />
+          )}
+
           {/* Card Partecipanti */}
+          {!isTournamentBooking && (
           <div className={`${bookingCardClassName} overflow-visible relative z-20`}>
             <div className={bookingCardHeaderClassName}>
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
@@ -709,6 +757,7 @@ function NewBookingPageInner() {
               />
             </div>
           </div>
+          )}
 
           {/* Card Orari disponibili */}
           <div className={bookingCardClassName}>

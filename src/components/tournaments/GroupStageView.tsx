@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Users, Trophy, TrendingUp, RefreshCw, Target, Calendar } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 import { getAvatarUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import Avatar from "@/components/ui/Avatar";
@@ -42,7 +43,7 @@ interface Match {
   player2?: Participant;
   player1_score: number;
   player2_score: number;
-  sets?: Array<{ player1_score: number; player2_score: number }>;
+  sets?: SetScore[];
   winner_id?: string;
   match_status: string;
   status: string;
@@ -58,6 +59,9 @@ interface GroupStageViewProps {
   teamsAdvancing: number;
   onMatchUpdate?: () => void;
   isAdmin?: boolean;
+  highlightUserId?: string | null;
+  /** Consente all'utente evidenziato di inserire il punteggio delle proprie partite */
+  canEditOwnMatches?: boolean;
 }
 
 export default function GroupStageView({
@@ -67,7 +71,9 @@ export default function GroupStageView({
   bestOf = 3,
   teamsAdvancing,
   onMatchUpdate,
-  isAdmin = false
+  isAdmin = false,
+  highlightUserId = null,
+  canEditOwnMatches = false
 }: GroupStageViewProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,7 +182,7 @@ export default function GroupStageView({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, sets: Array<{ player1_score: number; player2_score: number }>) => {
+  const handleScoreSubmit = async (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
       const { data: { session } } = await supabase.auth.getSession();
@@ -191,7 +197,7 @@ export default function GroupStageView({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ sets })
+        body: JSON.stringify({ sets, retired_player: retiredPlayer })
       });
 
       if (!res.ok) {
@@ -247,9 +253,41 @@ export default function GroupStageView({
     }
   };
 
+  // Statistiche calcolate dalle partite del girone caricate: participant.stats (aggiornato dal
+  // trigger DB) non conteggia set e game e non si corregge quando un admin modifica un risultato.
+  const computeStats = (participantId: string): NonNullable<Participant['stats']> => {
+    const stats = { matches_played: 0, matches_won: 0, matches_lost: 0, sets_won: 0, sets_lost: 0, games_won: 0, games_lost: 0, points: 0 };
+    for (const m of matches) {
+      const isP1 = m.player1?.id === participantId;
+      const isP2 = m.player2?.id === participantId;
+      const completed = (m.status === 'completata' || m.match_status === 'completed') && !!m.winner_id;
+      if (!completed || (!isP1 && !isP2)) continue;
+
+      stats.matches_played++;
+      if (m.winner_id === participantId) {
+        stats.matches_won++;
+        stats.points += 2; // 2 punti per vittoria, come in advance-from-groups
+      } else {
+        stats.matches_lost++;
+      }
+
+      const sets = m.sets || [];
+      const [won1, won2] = countSetsWon(sets);
+      stats.sets_won += isP1 ? won1 : won2;
+      stats.sets_lost += isP1 ? won2 : won1;
+      for (const s of sets) {
+        stats.games_won += isP1 ? s.player1_score : s.player2_score;
+        stats.games_lost += isP1 ? s.player2_score : s.player1_score;
+      }
+    }
+    return stats;
+  };
+
   const getGroupStandings = (groupId: string): Participant[] => {
-    const groupParticipants = participants.filter(p => p.group_id === groupId);
-    
+    const groupParticipants = participants
+      .filter(p => p.group_id === groupId)
+      .map(p => ({ ...p, stats: computeStats(p.id) }));
+
     return groupParticipants.sort((a, b) => {
       const aStats = a.stats || { points: 0, sets_won: 0, sets_lost: 0, games_won: 0, games_lost: 0 };
       const bStats = b.stats || { points: 0, sets_won: 0, sets_lost: 0, games_won: 0, games_lost: 0 };
@@ -501,6 +539,8 @@ export default function GroupStageView({
                       key={match.id}
                       match={match}
                       isAdmin={isAdmin}
+                      highlightUserId={highlightUserId}
+                      canEditOwn={canEditOwnMatches}
                       bestOf={bestOf}
                       onScoreSubmit={handleScoreSubmit}
                     />

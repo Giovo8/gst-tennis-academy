@@ -141,8 +141,9 @@ export async function GET(
 // POST: Genera partite per un girone (round-robin)
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const { profile } = await getUserProfile(req);
     

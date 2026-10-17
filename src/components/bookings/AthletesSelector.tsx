@@ -75,6 +75,9 @@ export default function AthletesSelector({
   const [guestPhone, setGuestPhone] = useState("");
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  // Modalità inline: la lista si apre al click/focus sul campo di ricerca (anche senza scrivere)
+  // e si chiude cliccando fuori o dopo aver aggiunto una persona.
+  const [listOpen, setListOpen] = useState(false);
 
   const hasMaxLimit = typeof maxAthletes === "number" && Number.isFinite(maxAthletes);
   const canAddMore = !hasMaxLimit || selectedAthletes.length < maxAthletes;
@@ -106,6 +109,17 @@ export default function AthletesSelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [inlineMode, isOpen]);
 
+  useEffect(() => {
+    if (!inlineMode || !listOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setListOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [inlineMode, listOpen]);
+
   const visiblePreviousGuests = allowGuestParticipants ? previousGuests : [];
 
   const filteredPreviousGuests = visiblePreviousGuests.filter((guest) => {
@@ -128,6 +142,7 @@ export default function AthletesSelector({
       isRegistered: true,
     });
     setSearchTerm("");
+    setListOpen(false);
   };
 
   const handleAddGuest = () => {
@@ -193,6 +208,8 @@ export default function AthletesSelector({
                   placeholder={inputPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setListOpen(true)}
+                  onClick={() => setListOpen(true)}
                   className={`${inlineMode ? "h-11 w-full" : "w-full"} rounded-lg border border-black/10 bg-white pl-4 pr-10 ${inlineMode ? "" : "py-3"} text-secondary placeholder:text-secondary/40 focus:outline-none focus:ring-0 focus:border-black/10`}
                 />
                 {searchTerm.trim().length > 0 && (
@@ -222,7 +239,7 @@ export default function AthletesSelector({
               </div>
             </div>
 
-              {(searchTerm.trim().length > 0 || !inlineMode) && (
+              {(searchTerm.trim().length > 0 || listOpen || !inlineMode) && (
                 <div className={`max-h-[360px] overflow-y-auto scrollbar-hide space-y-2 ${inlineMode ? "mt-3" : "p-6 bg-white"}`}>
                 {/* Atleti registrati */}
                 {athletes.length > 0 && (
@@ -301,6 +318,7 @@ export default function AthletesSelector({
                               isRegistered: false,
                             });
                             setSearchTerm("");
+                            setListOpen(false);
                           }}
                           className={`w-full text-left p-3 rounded-lg transition flex items-center gap-3 text-sm border ${
                             alreadySelected

@@ -24,6 +24,7 @@ const TYPE_LABELS: Record<string, string> = {
   lezione: "Lezione",
   lezione_privata: "Lezione privata",
   lezione_gruppo: "Lezione di gruppo",
+  torneo: "Partita di torneo",
 };
 
 const TYPE_TEMPLATES: Record<string, BookingTypeTemplate> = {

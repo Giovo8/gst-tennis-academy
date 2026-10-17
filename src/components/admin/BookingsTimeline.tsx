@@ -44,6 +44,8 @@ const TIME_SLOTS = [
 
 const HALF_SLOTS_PER_DAY = TIME_SLOTS.length * 2;
 const TIMELINE_ROW_HEIGHT = 92;
+// Partite di torneo: sfumatura più scura del blu delle lezioni (#023047), coerente in tutte le timeline.
+const TOURNAMENT_BOOKING_BACKGROUND = "#02283a";
 
 export default function BookingsTimeline({ bookings: allBookings, loading: parentLoading, basePath = "/dashboard/admin", fetchOccupied = false, swapAxes = false, showBlockReason = true, showCourtBlocks = true, highlightUserId, showBookingContent = true, showCourses = true, showEntryModal = true, scrollToCurrentTime = false, enableDragEdit = false, onBookingsChanged }: BookingsTimelineProps) {
   const router = useRouter();
@@ -92,6 +94,16 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
 
   const getBookingDisplayName = (booking: Booking) =>
     getPrimaryParticipant(booking)?.full_name || booking.user_profile?.full_name || "Sconosciuto";
+
+  // Partita di torneo: i due giocatori (partecipanti ordinati), con fallback al titolare.
+  const getTournamentPlayerNames = (booking: Booking): string[] => {
+    const names = [...(booking.participants ?? [])]
+      .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+      .map((participant) => participant.full_name?.trim())
+      .filter((name): name is string => Boolean(name))
+      .slice(0, 2);
+    return names.length > 0 ? names : [getBookingDisplayName(booking)];
+  };
 
   const getCourseInstructorName = (booking: Booking) => {
     if (!booking.isCourse) return null;
@@ -244,6 +256,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
             return { background: isArenaBooking ? "#023b52" : "var(--color-frozen-lake-600)" }; // teal medio
           case "arena":
             return { background: "var(--color-frozen-lake-600)" };
+          case "torneo":
+            return { background: TOURNAMENT_BOOKING_BACKGROUND };
           default:
             return { background: "#023047" };
         }
@@ -257,6 +271,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
           return { background: isArenaBooking ? "#023b52" : "var(--secondary)" }; // verde — hai prenotato un campo
         case "arena":
           return { background: "var(--color-frozen-lake-600)" };
+        case "torneo":
+          return { background: TOURNAMENT_BOOKING_BACKGROUND };
         default:
           return { background: "var(--secondary-light)" };
       }
@@ -281,6 +297,8 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
         return { background: isArenaBooking ? "#023b52" : "var(--secondary)" };
       case "arena":
         return { background: "var(--color-frozen-lake-600)" };
+      case "torneo":
+        return { background: TOURNAMENT_BOOKING_BACKGROUND };
       default:
         return { background: "var(--secondary-light)" };
     }
@@ -294,6 +312,7 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
     if (booking.isBlock) return showBlockReason ? booking.reason || "Blocco Campo" : "Blocco Campo";
     if (booking.type === "lezione_privata") return asCoach ? "Lezione Privata" : "Lezione Privata";
     if (booking.type === "lezione_gruppo") return asCoach ? "Lezione Gruppo" : "Lezione Gruppo";
+    if (booking.type === "torneo") return "Torneo";
     if (isArenaBooking) return "Arena";
     return "Campo";
   }
@@ -724,9 +743,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="truncate leading-tight mt-0.5">
-                                        {getBookingDisplayName(booking)}
-                                      </div>
+                                      {booking.type === "torneo" ? (
+                                        getTournamentPlayerNames(booking).map((name, index) => (
+                                          <div key={index} className="truncate leading-tight mt-0.5">{name}</div>
+                                        ))
+                                      ) : (
+                                        <div className="truncate leading-tight mt-0.5">
+                                          {getBookingDisplayName(booking)}
+                                        </div>
+                                      )}
                                       {isLesson && booking.coach_profile && (
                                         <div className="truncate text-white/95 mt-0.5 text-[9px] leading-tight">
                                           {booking.coach_profile.full_name}
@@ -1012,9 +1037,15 @@ export default function BookingsTimeline({ bookings: allBookings, loading: paren
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="truncate leading-tight mt-0.5">
-                                        {getBookingDisplayName(booking)}
-                                      </div>
+                                      {booking.type === "torneo" ? (
+                                        getTournamentPlayerNames(booking).map((name, index) => (
+                                          <div key={index} className="truncate leading-tight mt-0.5">{name}</div>
+                                        ))
+                                      ) : (
+                                        <div className="truncate leading-tight mt-0.5">
+                                          {getBookingDisplayName(booking)}
+                                        </div>
+                                      )}
                                       {isLesson && booking.coach_profile && (
                                         <div className="truncate text-white/95 mt-0.5 text-[9px] leading-tight">
                                           {booking.coach_profile.full_name}

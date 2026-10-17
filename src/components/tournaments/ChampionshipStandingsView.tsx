@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
 import { getAvatarUrl } from '@/lib/utils';
 import Avatar from "@/components/ui/Avatar";
@@ -27,7 +28,7 @@ interface Match {
   player2?: Participant;
   player1_id: string;
   player2_id: string;
-  sets?: Array<{ player1_score: number; player2_score: number }>;
+  sets?: SetScore[];
   winner_id?: string;
   status: string;
   scheduled_at?: string;
@@ -170,14 +171,14 @@ export default function ChampionshipStandingsView({
 
         // Count sets and games from match sets
         const sets = match.sets || [];
+        const [won1, won2] = countSetsWon(sets);
+        player1Stats.setsWon += won1;
+        player1Stats.setsLost += won2;
+        player2Stats.setsWon += won2;
+        player2Stats.setsLost += won1;
         sets.forEach(set => {
-          player1Stats.setsWon += set.player1_score > set.player2_score ? 1 : 0;
-          player1Stats.setsLost += set.player1_score < set.player2_score ? 1 : 0;
           player1Stats.gamesWon += set.player1_score;
           player1Stats.gamesLost += set.player2_score;
-
-          player2Stats.setsWon += set.player2_score > set.player1_score ? 1 : 0;
-          player2Stats.setsLost += set.player2_score < set.player1_score ? 1 : 0;
           player2Stats.gamesWon += set.player2_score;
           player2Stats.gamesLost += set.player1_score;
         });
@@ -253,7 +254,7 @@ export default function ChampionshipStandingsView({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, sets: Array<{ player1_score: number; player2_score: number }>) => {
+  const handleScoreSubmit = async (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
       const { data: { session } } = await supabase.auth.getSession();
@@ -268,7 +269,7 @@ export default function ChampionshipStandingsView({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ sets })
+        body: JSON.stringify({ sets, retired_player: retiredPlayer })
       });
 
       if (!res.ok) {

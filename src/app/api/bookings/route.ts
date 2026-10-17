@@ -19,6 +19,8 @@ import {
   handleBookingDeletedSideEffects,
 } from "@/lib/bookings/bookingService";
 import { logActivityServer } from "@/lib/activity/logActivity";
+import { TOURNAMENT_BOOKING_TYPE } from "@/lib/bookings/tournamentBookings";
+import { resolveTournamentMatchForBooking } from "@/lib/bookings/tournamentBookingsServer";
 
 export async function GET(req: Request) {
   const startTime = Date.now();
@@ -198,10 +200,43 @@ export async function POST(req: Request) {
     }
 
     const bookingData = validationResult.data;
-    const { user_id, coach_id, court, type, start_time, end_time, participants } = bookingData;
+    const { court, type, start_time, end_time } = bookingData;
+    let { user_id, coach_id, participants } = bookingData;
+
+    const canBookForOthers = isAdminOrGestore(profile?.role);
+
+    // Prenotazione torneo: titolare e partecipanti derivano dalla partita, non dal client.
+    // Atleti/maestri possono prenotare solo le proprie partite, admin/gestore tutte.
+    let tournamentMatchId: string | null = null;
+    if (type === TOURNAMENT_BOOKING_TYPE) {
+      const resolved = await resolveTournamentMatchForBooking(bookingData.tournament_match_id as string, {
+        userId: user.id,
+        isPrivileged: canBookForOthers,
+      });
+
+      if (resolved.error) {
+        logger.warn('Tournament booking rejected', {
+          userId: user.id,
+          tournamentMatchId: bookingData.tournament_match_id,
+          reason: resolved.error,
+        });
+        return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+      }
+
+      const { player1, player2 } = resolved.match;
+      tournamentMatchId = resolved.match.id;
+      coach_id = null;
+      participants = [player1, player2].map((player) => ({
+        user_id: player.user_id,
+        full_name: player.full_name,
+        email: player.email,
+        phone: null,
+        is_registered: Boolean(player.user_id),
+      }));
+      user_id = canBookForOthers ? (player1.user_id ?? player2.user_id ?? user.id) : user.id;
+    }
 
     // Authorization: users can only book for themselves, admin/gestore for anyone
-    const canBookForOthers = isAdminOrGestore(profile?.role);
     if (user_id !== user.id && !canBookForOthers) {
       logger.security('Unauthorized booking attempt for other user', {
         userId: user.id,
@@ -371,11 +406,20 @@ export async function POST(req: Request) {
           coach_confirmed: normalizedBooking.coach_confirmed,
           manager_confirmed: normalizedBooking.manager_confirmed,
           notes: bookingData.notes || null,
+          // Colonna aggiunta dalla migrazione 084: inviata solo per le prenotazioni torneo.
+          ...(tournamentMatchId ? { tournament_match_id: tournamentMatchId } : {}),
         },
       ])
       .select();
 
     if (error) {
+      // Race condition: un'altra prenotazione attiva per la stessa partita è appena stata creata
+      if (tournamentMatchId && error.code === '23505') {
+        return NextResponse.json(
+          { error: "Questa partita ha già una prenotazione attiva", conflict: true },
+          { status: HTTP_STATUS.CONFLICT }
+        );
+      }
       // Handle race condition: DB constraint violation means slot was taken concurrently
       const isOverlapConstraint =
         error.message?.includes('bookings_no_overlap') ||
@@ -524,7 +568,7 @@ export async function PUT(req: Request) {
     // Check if booking exists
     const { data: booking } = await supabaseServer
       .from("bookings")
-      .select("user_id, coach_id, court, type, start_time, end_time, notes")
+      .select("user_id, coach_id, court, type, start_time, end_time, notes, tournament_match_id")
       .eq("id", id)
       .single();
 
@@ -585,6 +629,36 @@ export async function PUT(req: Request) {
     // coach, stato o note tramite questo endpoint.
     if (permission.moveOnly) {
       sanitized = pickBookingMoveFields(sanitized);
+    }
+
+    // Prenotazione torneo: la partita va validata come in creazione (esclusa la prenotazione
+    // stessa dal controllo "già prenotata"); passando a un altro tipo il collegamento si azzera.
+    const nextType = (sanitized.type as string | undefined) ?? booking.type;
+    if (nextType === TOURNAMENT_BOOKING_TYPE) {
+      const nextMatchId =
+        (sanitized.tournament_match_id as string | null | undefined) ?? booking.tournament_match_id;
+      if (!nextMatchId || !sanitizeUuid(nextMatchId)) {
+        return NextResponse.json(
+          { error: "Seleziona la partita del torneo da giocare" },
+          { status: HTTP_STATUS.BAD_REQUEST }
+        );
+      }
+
+      if (nextMatchId !== booking.tournament_match_id || booking.type !== TOURNAMENT_BOOKING_TYPE) {
+        const resolved = await resolveTournamentMatchForBooking(
+          nextMatchId,
+          { userId: user.id, isPrivileged: isAdminOrGestore(profile?.role) },
+          { excludeBookingId: id }
+        );
+        if (resolved.error) {
+          logger.warn('Tournament booking update rejected', { userId: user.id, bookingId: id, reason: resolved.error });
+          return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+        }
+      }
+
+      sanitized = { ...sanitized, tournament_match_id: nextMatchId, coach_id: null };
+    } else if (sanitized.type !== undefined && booking.tournament_match_id) {
+      sanitized = { ...sanitized, tournament_match_id: null };
     }
 
     // Check for overlapping bookings if court/time is being changed
@@ -713,6 +787,12 @@ export async function PUT(req: Request) {
         });
         return NextResponse.json(
           { error: "Slot già prenotato. Seleziona un altro orario.", conflict: true },
+          { status: HTTP_STATUS.CONFLICT }
+        );
+      }
+      if (error.code === '23505' && sanitized.tournament_match_id) {
+        return NextResponse.json(
+          { error: "Questa partita ha già una prenotazione attiva", conflict: true },
           { status: HTTP_STATUS.CONFLICT }
         );
       }

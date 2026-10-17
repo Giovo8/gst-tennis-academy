@@ -164,6 +164,8 @@ export async function POST(
             gamesWon += playerScore;
             gamesLost += opponentScore;
 
+            // Set interrotto per ritiro: conta solo per i game
+            if (set.interrupted) return;
             if (playerScore > opponentScore) {
               setsWon++;
             } else {

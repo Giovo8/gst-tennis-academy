@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Users, Calendar, RotateCw } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
+import type { PlayerNum, SetScore } from '@/lib/tournaments/tennisScore';
 import { toast } from 'sonner';
 
 interface Participant {
@@ -46,6 +47,9 @@ interface EliminationBracketProps {
   onDeleteMatches?: () => Promise<void>;
   /** Se definito, sostituisce il rilevamento automatico del ruolo (es. vista atleta per admin) */
   isAdmin?: boolean;
+  highlightUserId?: string | null;
+  /** Consente all'utente evidenziato di inserire il punteggio delle proprie partite */
+  canEditOwnMatches?: boolean;
 }
 
 export default function EliminationBracket({
@@ -56,7 +60,9 @@ export default function EliminationBracket({
   onMatchUpdate,
   onBracketGenerated,
   onDeleteMatches,
-  isAdmin: isAdminProp
+  isAdmin: isAdminProp,
+  highlightUserId = null,
+  canEditOwnMatches = false
 }: EliminationBracketProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +93,7 @@ export default function EliminationBracket({
     }
   };
 
-  const handleScoreSubmit = async (matchId: string, sets: Array<{ player1_score: number; player2_score: number }>) => {
+  const handleScoreSubmit = async (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => {
     try {
       const { supabase } = await import('@/lib/supabase/client');
       const { data: { session } } = await supabase.auth.getSession();
@@ -102,7 +108,7 @@ export default function EliminationBracket({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ sets })
+        body: JSON.stringify({ sets, retired_player: retiredPlayer })
       });
 
       if (!res.ok) {
@@ -284,6 +290,8 @@ export default function EliminationBracket({
                       key={match.id}
                       match={match}
                       isAdmin={isAdmin}
+                      highlightUserId={highlightUserId}
+                      canEditOwn={canEditOwnMatches}
                       bestOf={bestOf}
                       onScoreSubmit={handleScoreSubmit}
                     />

@@ -105,7 +105,9 @@ export const baseBookingSchema = z.object({
   user_id: uuidSchema,
   coach_id: uuidSchema.optional().nullable(),
   court: z.string().min(1, 'Campo obbligatorio'),
-  type: z.enum(['campo', 'lezione', 'lezione_privata', 'lezione_gruppo']).default('campo'),
+  type: z.enum(['campo', 'lezione', 'lezione_privata', 'lezione_gruppo', 'torneo']).default('campo'),
+  // Solo per type 'torneo': partita del torneo da giocare nello slot prenotato.
+  tournament_match_id: uuidSchema.optional().nullable(),
   start_time: dateStringSchema,
   end_time: dateStringSchema,
   notes: z.string().max(500, 'Note troppo lunghe').optional().nullable(),
@@ -120,6 +122,9 @@ export const createBookingSchema = baseBookingSchema.refine((data) => {
 }, {
   message: 'La data di fine deve essere successiva alla data di inizio',
   path: ['end_time'],
+}).refine((data) => data.type !== 'torneo' || Boolean(data.tournament_match_id), {
+  message: 'Seleziona la partita del torneo da giocare',
+  path: ['tournament_match_id'],
 });
 
 export const updateBookingSchema = baseBookingSchema.partial().extend({

@@ -14,6 +14,9 @@ import DateNavigator from "@/components/bookings/DateNavigator";
 import { isBookableCoachProfile, type UserRole } from "@/lib/roles";
 import { useDragScroll } from "@/components/admin/hooks/useDragScroll";
 import { MATCH_FORMATS, type MatchFormat } from "@/lib/bookings/bookingTypes";
+import TournamentMatchCard from "@/components/bookings/TournamentMatchCard";
+import { useBookableTournaments } from "@/lib/hooks/useBookableTournaments";
+import { TOURNAMENT_BOOKING_TYPE, type BookableTournamentMatch } from "@/lib/bookings/tournamentBookings";
 
 interface Booking {
   id: string;
@@ -24,6 +27,7 @@ interface Booking {
   type: string;
   coach_id?: string | null;
   notes: string | null;
+  tournament_match_id?: string | null;
   user_profile?: {
     full_name: string | null;
     email: string | null;
@@ -75,6 +79,8 @@ const BOOKING_TYPES = [
   { value: "lezione_privata", label: "Lezione Privata", shortLabel: "Privata" },
 ];
 
+const TOURNAMENT_BOOKING_OPTION = { value: TOURNAMENT_BOOKING_TYPE, label: "Torneo", shortLabel: "Torneo" };
+
 interface AthleteProfile {
   id: string;
   full_name: string | null;
@@ -124,6 +130,27 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
   const [previousGuests, setPreviousGuests] = useState<{ fullName: string; email?: string; phone?: string }[]>([]);
 
+  // Torneo: admin/gestore vedono tutti i tornei in corso. La partita attuale arriva preselezionata
+  // e, se non si sceglie altro, resta invariata (anche se il torneo non è più tra quelli in corso).
+  const { tournaments } = useBookableTournaments();
+  const [initialTournamentId, setInitialTournamentId] = useState<string | null>(null);
+  const [selectedTournamentMatchId, setSelectedTournamentMatchId] = useState<string | null>(null);
+  const [selectedTournamentMatch, setSelectedTournamentMatch] = useState<BookableTournamentMatch | null>(null);
+  const isTournamentBooking = bookingType === TOURNAMENT_BOOKING_TYPE;
+  const wasTournamentBooking = booking?.type === TOURNAMENT_BOOKING_TYPE;
+  const bookingTypes =
+    tournaments.length > 0 || wasTournamentBooking ? [...BOOKING_TYPES, TOURNAMENT_BOOKING_OPTION] : BOOKING_TYPES;
+  const keepsOriginalTournamentMatch =
+    !selectedTournamentMatch &&
+    Boolean(booking?.tournament_match_id) &&
+    selectedTournamentMatchId === booking?.tournament_match_id;
+  const hasTournamentMatch = Boolean(selectedTournamentMatch) || keepsOriginalTournamentMatch;
+
+  const handleSelectTournamentMatch = (match: BookableTournamentMatch | null) => {
+    setSelectedTournamentMatch(match);
+    setSelectedTournamentMatchId(match?.id ?? null);
+  };
+
   const { scrollRef, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useDragScroll();
 
   const getPrimaryParticipant = (bookingItem: ExistingBooking | null) =>
@@ -145,7 +172,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
 
       const { data, error } = await supabase
         .from("bookings")
-        .select("id, user_id, court, start_time, end_time, notes, type, coach_id")
+        .select("id, user_id, court, start_time, end_time, notes, type, coach_id, tournament_match_id")
         .eq("id", bookingId)
         .single();
 
@@ -178,6 +205,17 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           .eq("booking_id", bookingId)
           .order("order_index", { ascending: true });
         participantsData = participantsQuery.data;
+
+        // Prenotazione torneo: torneo della partita, per aprire il riquadro sulla partita attuale
+        if (data.tournament_match_id) {
+          const { data: matchData } = await supabase
+            .from("tournament_matches")
+            .select("tournament_id")
+            .eq("id", data.tournament_match_id)
+            .maybeSingle();
+          setInitialTournamentId(matchData?.tournament_id ?? null);
+          setSelectedTournamentMatchId(data.tournament_match_id);
+        }
 
         setBooking({ ...data, user_profile: userProfile, participants: participantsData || [] } as Booking);
         setSelectedCourt(data.court);
@@ -485,8 +523,11 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
     bookingType === "lezione_privata" ? 1
     : bookingType === "campo" && matchFormat === "singolo" ? 2 : 4;
 
-  const canSave = selectedAthletes.length > 0 && !!selectedDate && !!selectedCourt && selectedSlots.length > 0 &&
-    ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoaches.length > 0));
+  const canSave = !!selectedDate && !!selectedCourt && selectedSlots.length > 0 &&
+    (isTournamentBooking
+      ? hasTournamentMatch
+      : selectedAthletes.length > 0 &&
+        ((bookingType === "campo") || ((bookingType === "lezione_privata" || bookingType === "lezione_gruppo") && selectedCoaches.length > 0)));
 
   useEffect(() => {
     setSelectedAthletes((prev) => {
@@ -515,11 +556,15 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         throw new Error("Seleziona giorno, campo e almeno uno slot orario");
       }
 
-      if (selectedAthletes.length === 0) {
+      if (isTournamentBooking && !hasTournamentMatch) {
+        throw new Error("Seleziona la partita del torneo da giocare");
+      }
+
+      if (!isTournamentBooking && selectedAthletes.length === 0) {
         throw new Error("Seleziona almeno un atleta/partecipante");
       }
 
-      if (selectedAthletes.length > maxAthletesAllowed) {
+      if (!isTournamentBooking && selectedAthletes.length > maxAthletesAllowed) {
         throw new Error(`Massimo ${maxAthletesAllowed} partecipanti per questa prenotazione`);
       }
 
@@ -534,7 +579,20 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         throw new Error("Sessione non valida. Effettua nuovamente il login.");
       }
 
-      const registeredAthlete = selectedAthletes.find((athlete) => athlete.isRegistered && athlete.userId);
+      // Torneo: con una nuova partita i partecipanti diventano i suoi due giocatori;
+      // se la partita resta quella attuale, i partecipanti non si toccano (null).
+      const participantsToSave: SelectedAthlete[] | null = isTournamentBooking
+        ? selectedTournamentMatch
+          ? [selectedTournamentMatch.player1, selectedTournamentMatch.player2].map((player) => ({
+              userId: player.user_id ?? undefined,
+              fullName: player.full_name,
+              email: player.email ?? undefined,
+              isRegistered: Boolean(player.user_id),
+            }))
+          : null
+        : selectedAthletes;
+
+      const registeredAthlete = participantsToSave?.find((athlete) => athlete.isRegistered && athlete.userId);
       const bookingUserId = registeredAthlete?.userId ?? booking?.user_id ?? sessionData?.session?.user?.id;
 
       if (!bookingUserId) {
@@ -568,6 +626,9 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
             bookingType === "lezione_privata" || bookingType === "lezione_gruppo"
               ? selectedCoaches[0] || null
               : null,
+          tournament_match_id: isTournamentBooking
+            ? selectedTournamentMatch?.id ?? booking?.tournament_match_id ?? null
+            : null,
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
           notes: notes || null,
@@ -579,15 +640,17 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
         throw new Error(payload?.error || "Errore durante l'aggiornamento della prenotazione");
       }
 
-      const { error: deleteParticipantsError } = await supabase
-        .from("booking_participants")
-        .delete()
-        .eq("booking_id", bookingId);
+      if (participantsToSave) {
+        const { error: deleteParticipantsError } = await supabase
+          .from("booking_participants")
+          .delete()
+          .eq("booking_id", bookingId);
 
-      if (deleteParticipantsError) throw deleteParticipantsError;
+        if (deleteParticipantsError) throw deleteParticipantsError;
+      }
 
-      if (selectedAthletes.length > 0) {
-        const participantsPayload = selectedAthletes.map((athlete, index) => ({
+      if (participantsToSave && participantsToSave.length > 0) {
+        const participantsPayload = participantsToSave.map((athlete, index) => ({
           booking_id: bookingId,
           user_id: athlete.userId || null,
           full_name: athlete.fullName,
@@ -602,7 +665,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
           .insert(participantsPayload);
 
         if (insertParticipantsError?.message?.toLowerCase().includes("phone")) {
-          const fallbackPayload = selectedAthletes.map((athlete, index) => ({
+          const fallbackPayload = participantsToSave.map((athlete, index) => ({
             booking_id: bookingId,
             user_id: athlete.userId || null,
             full_name: athlete.fullName,
@@ -707,8 +770,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                 {/* Tipo prenotazione */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 pb-6 border-b border-gray-200">
                   <label className="sm:w-48 sm:pt-2.5 text-sm text-secondary font-medium flex-shrink-0">Tipo prenotazione</label>
-                  <div className="flex-1 flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
-                    {BOOKING_TYPES.map((type) => (
+                  <div className={`flex-1 flex flex-col sm:grid ${bookingTypes.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-2 sm:gap-3`}>
+                    {bookingTypes.map((type) => (
                       <button
                         key={type.value}
                         type="button"
@@ -717,8 +780,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         }}
                         className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                           bookingType === type.value
-                            ? 'bg-secondary text-white border-secondary'
-                            : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                            ? 'bg-[#023047] text-white border-[#023047]'
+                            : 'bg-secondary text-white border-secondary hover:opacity-90'
                         }`}
                       >
                         <span className="sm:hidden">{type.shortLabel}</span>
@@ -740,8 +803,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                           onClick={() => handleMatchFormatChange(formatOption.value)}
                           className={`w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                             matchFormat === formatOption.value
-                              ? "bg-secondary text-white border-secondary"
-                              : "bg-white text-secondary border-gray-300 hover:border-secondary"
+                              ? "bg-[#023047] text-white border-[#023047]"
+                              : "bg-secondary text-white border-secondary hover:opacity-90"
                           }`}
                         >
                           {formatOption.label}
@@ -765,8 +828,8 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
                         }}
                         className={`w-full px-4 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all ${
                           selectedCourt === c
-                            ? 'bg-secondary text-white border-secondary'
-                            : 'bg-white text-secondary border-gray-300 hover:border-secondary'
+                            ? 'bg-[#023047] text-white border-[#023047]'
+                            : 'bg-secondary text-white border-secondary hover:opacity-90'
                         }`}
                       >
                         {c}
@@ -787,17 +850,28 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
               />
             )}
 
-            {/* Card Partecipanti */}
-            <ParticipantsCard
-              athletes={athletes}
-              selectedAthletes={selectedAthletes}
-              onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
-              onAthleteRemove={(index) =>
-                setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))
-              }
-              maxAthletes={maxAthletesAllowed}
-              previousGuests={previousGuests}
-            />
+            {/* Card Partita torneo: sostituisce la scelta dei partecipanti */}
+            {isTournamentBooking ? (
+              <TournamentMatchCard
+                tournaments={tournaments}
+                selectedMatchId={selectedTournamentMatchId}
+                onSelectMatch={handleSelectTournamentMatch}
+                initialTournamentId={initialTournamentId}
+                currentBookingId={bookingId}
+              />
+            ) : (
+              /* Card Partecipanti */
+              <ParticipantsCard
+                athletes={athletes}
+                selectedAthletes={selectedAthletes}
+                onAthleteAdd={(athlete) => setSelectedAthletes((prev) => [...prev, athlete])}
+                onAthleteRemove={(index) =>
+                  setSelectedAthletes((prev) => prev.filter((_, i) => i !== index))
+                }
+                maxAthletes={maxAthletesAllowed}
+                previousGuests={previousGuests}
+              />
+            )}
 
             {/* Card Orari disponibili */}
             <div className={bookingCardClassName}>

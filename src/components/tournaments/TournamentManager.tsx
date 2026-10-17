@@ -9,6 +9,7 @@ import ChampionshipStandingsView from './ChampionshipStandingsView';
 import { useTournamentData } from './hooks/useTournamentData';
 import { ParticipantCard } from './ParticipantCard';
 import { getTournamentTabs } from './TournamentTabBar';
+import { getBestOf } from '@/lib/tournaments/getBestOf';
 
 type TournamentType = 'eliminazione_diretta' | 'girone_eliminazione' | 'campionato';
 
@@ -26,6 +27,7 @@ interface Tournament {
   current_phase: 'iscrizioni' | 'gironi' | 'eliminazione' | 'campionato' | 'completato' | string;
   status: string;
   best_of?: number;
+  match_format?: string;
 }
 
 interface TournamentManagerMeta {
@@ -66,6 +68,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
   const sectionClassName = 'page-card';
   const sectionHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent';
   const [openParticipantMenuId, setOpenParticipantMenuId] = useState<string | null>(null);
+  const bestOf = getBestOf(tournament);
 
   // Se la tab attiva non è più disponibile (es. torneo avviato, "Partecipanti" sostituita da Gironi/Tabellone/Classifica), passa alla prima tab valida
   useEffect(() => {
@@ -229,7 +232,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
             </div>
             <div className="px-6 py-4">
-              <EliminationBracketView isAdmin={isAdmin} tournamentId={tournament.id} maxParticipants={tournament.max_participants} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} onBracketGenerated={() => {}} />
+              <EliminationBracketView isAdmin={isAdmin} highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} maxParticipants={tournament.max_participants} participants={participants} bestOf={bestOf} onMatchUpdate={loadData} onBracketGenerated={() => {}} />
             </div>
           </div>
         )}
@@ -241,7 +244,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
             </div>
             <div className="px-6 py-4">
-              <GroupStageView tournamentId={tournament.id} groups={groups} participants={participants} bestOf={tournament.best_of || 3} teamsAdvancing={tournament.teams_advancing || 2} onMatchUpdate={loadData} isAdmin={isAdmin} />
+              <GroupStageView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} groups={groups} participants={participants} bestOf={bestOf} teamsAdvancing={tournament.teams_advancing || 2} onMatchUpdate={loadData} isAdmin={isAdmin} />
             </div>
           </div>
         )}
@@ -253,7 +256,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
             </div>
             <div className="px-6 py-4">
-              <EliminationBracketView isAdmin={isAdmin} tournamentId={tournament.id} maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)} participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} />
+              <EliminationBracketView isAdmin={isAdmin} highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)} participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))} bestOf={bestOf} onMatchUpdate={loadData} />
             </div>
           </div>
         )}
@@ -265,7 +268,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
             </div>
             <div className="px-6 py-4">
-              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
+              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} participants={participants} bestOf={bestOf} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="calendar" hideInternalTabs={true} />
             </div>
           </div>
         )}
@@ -277,7 +280,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
             </div>
             <div className="px-6 py-4">
-              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} participants={participants} bestOf={tournament.best_of || 3} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="standings" hideInternalTabs={true} />
+              <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches} tournamentId={tournament.id} participants={participants} bestOf={bestOf} onMatchUpdate={loadData} isAdmin={isAdmin} defaultView="standings" hideInternalTabs={true} />
             </div>
           </div>
         )}
@@ -316,11 +319,11 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </button>
                 </div>
               </div>
-              <EliminationBracketView isAdmin={isAdmin}
+              <EliminationBracketView isAdmin={isAdmin} highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                 tournamentId={tournament.id}
                 maxParticipants={tournament.max_participants}
                 participants={participants}
-                bestOf={tournament.best_of || 3}
+                bestOf={bestOf}
                 onMatchUpdate={loadData}
                 onBracketGenerated={() => setActiveTab('bracket')}
               />
@@ -331,11 +334,11 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
                 </div>
                 <div className="p-6">
-                  <EliminationBracketView isAdmin={isAdmin}
+                  <EliminationBracketView isAdmin={isAdmin} highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     maxParticipants={tournament.max_participants}
                     participants={participants}
-                    bestOf={tournament.best_of || 3}
+                    bestOf={bestOf}
                     onMatchUpdate={loadData}
                     onBracketGenerated={() => setActiveTab('bracket')}
                   />
@@ -503,11 +506,11 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   </div>
                 )}
               </div>
-              <GroupStageView
+              <GroupStageView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                 tournamentId={tournament.id}
                 groups={groups}
                 participants={participants}
-                bestOf={tournament.best_of || 3}
+                bestOf={bestOf}
                 teamsAdvancing={tournament.teams_advancing || 2}
                 onMatchUpdate={loadData}
                 isAdmin={isAdmin}
@@ -519,11 +522,11 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
                 </div>
                 <div className="p-6">
-                  <GroupStageView
+                  <GroupStageView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     groups={groups}
                     participants={participants}
-                    bestOf={tournament.best_of || 3}
+                    bestOf={bestOf}
                     teamsAdvancing={tournament.teams_advancing || 2}
                     onMatchUpdate={loadData}
                     isAdmin={isAdmin}
@@ -634,11 +637,11 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                 )}
               </div>
 
-              <EliminationBracketView isAdmin={isAdmin}
+              <EliminationBracketView isAdmin={isAdmin} highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                 tournamentId={tournament.id}
                 maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)}
                 participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))}
-                bestOf={tournament.best_of || 3}
+                bestOf={bestOf}
                 onMatchUpdate={loadData}
               />
             </div>
@@ -648,11 +651,11 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
                 </div>
                 <div className="p-6">
-                  <EliminationBracketView isAdmin={isAdmin}
+                  <EliminationBracketView isAdmin={isAdmin} highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     maxParticipants={(tournament.num_groups || 0) * (tournament.teams_advancing || 0)}
                     participants={participants.filter(p => p.group_position && p.group_position <= (tournament.teams_advancing || 0))}
-                    bestOf={tournament.best_of || 3}
+                    bestOf={bestOf}
                     onMatchUpdate={loadData}
                   />
                 </div>
@@ -766,7 +769,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
               <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                 tournamentId={tournament.id}
                 participants={participants}
-                bestOf={tournament.best_of || 3}
+                bestOf={bestOf}
                 onMatchUpdate={loadData}
                 isAdmin={isAdmin}
                 defaultView="standings"
@@ -782,7 +785,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     participants={participants}
-                    bestOf={tournament.best_of || 3}
+                    bestOf={bestOf}
                     onMatchUpdate={loadData}
                     isAdmin={isAdmin}
                     defaultView="standings"
@@ -826,7 +829,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
           <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
             tournamentId={tournament.id}
             participants={participants}
-            bestOf={tournament.best_of || 3}
+            bestOf={bestOf}
             onMatchUpdate={loadData}
             isAdmin={isAdmin}
             defaultView="calendar"
@@ -842,7 +845,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
                   <ChampionshipStandingsView highlightUserId={highlightUserId} canEditOwnMatches={canEditOwnMatches}
                     tournamentId={tournament.id}
                     participants={participants}
-                    bestOf={tournament.best_of || 3}
+                    bestOf={bestOf}
                     onMatchUpdate={loadData}
                     isAdmin={isAdmin}
                     defaultView="calendar"

@@ -423,6 +423,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
     campo: { label: "Campo", color: "bg-secondary text-white" },
     lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
     lezione_gruppo: { label: "Lezione Gruppo", color: "bg-secondary text-white" },
+    torneo: { label: "Torneo", color: "bg-secondary text-white" },
     arena: { label: "Match Arena", color: "bg-secondary text-white" },
   };
 
@@ -978,6 +979,7 @@ export default function BookingsPage({ mode = "default", basePath = "/dashboard/
             const typeLabel =
               booking.type === "lezione_privata" ? "Lezione Priv."
               : booking.type === "lezione_gruppo" ? "Lezione Gruppo"
+              : booking.type === "torneo" ? "Torneo"
               : isArenaBooking ? "Arena"
               : "Campo";
 

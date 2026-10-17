@@ -34,6 +34,7 @@ const TYPE_LABELS: Record<string, string> = {
   campo: "Campo",
   lezione: "Lezione",
   arena: "Match Arena",
+  torneo: "Torneo",
   corso: "Corso",
 };
 
@@ -75,6 +76,7 @@ const TYPE_OPTIONS = [
   { value: "corso", label: "Corso" },
   { value: "campo", label: "Campo" },
   { value: "arena", label: "Match Arena" },
+  { value: "torneo", label: "Torneo" },
 ];
 
 export function UpcomingCommitmentsCard({

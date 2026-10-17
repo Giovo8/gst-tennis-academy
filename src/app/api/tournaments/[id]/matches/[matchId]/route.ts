@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { verifyAuth, isAdminOrGestore } from "@/lib/auth/verifyAuth";
+import logger from "@/lib/logger/secure-logger";
+import { getBestOf } from "@/lib/tournaments/getBestOf";
+import { computeMatchResult } from "@/lib/tournaments/tennisScore";
 
 // GET /api/tournaments/[id]/matches/[matchId] - Get single match details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; matchId: string } }
+  context: { params: Promise<{ id: string; matchId: string }> }
 ) {
+  const params = await context.params;
   const supabase = supabaseServer;
 
   try {
@@ -50,52 +55,41 @@ export async function GET(
 }
 
 // PUT /api/tournaments/[id]/matches/[matchId] - Update match score (tennis scoring)
+// Body: { sets: [{ player1_score, player2_score }, ...], retired_player?: 1 | 2 }
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string; matchId: string }> | { id: string; matchId: string } }
+  context: { params: Promise<{ id: string; matchId: string }> }
 ) {
-  const params = context.params instanceof Promise ? await context.params : context.params;
+  const params = await context.params;
   const supabase = supabaseServer;
 
   try {
-    // Check permission (admin/gestore or match participants)
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
-    }
+    // Admin/gestore o partecipanti dell'incontro (verificato sotto)
+    const auth = await verifyAuth(request);
+    if (!auth.success) return auth.response;
+    const userId = auth.data.user.id;
+    const isAdmin = isAdminOrGestore(auth.data.profile?.role);
 
-    const { data: { user } } = await supabase.auth.getUser(token);
-    if (!user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
-    }
-
-    // Get current match and tournament info
     const { data: currentMatch, error: matchError } = await supabase
       .from("tournament_matches")
       .select(`
         *,
         player1:player1_id(user_id),
         player2:player2_id(user_id),
-        tournament:tournaments(best_of, tournament_type)
+        tournament:tournaments(best_of, match_format, tournament_type)
       `)
       .eq("id", params.matchId)
-      .single();
+      .eq("tournament_id", params.id)
+      .maybeSingle();
 
     if (matchError) throw matchError;
+    if (!currentMatch) {
+      return NextResponse.json({ error: "Partita non trovata" }, { status: 404 });
+    }
 
-    // Check permission
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const isAdmin = profile && ["admin", "gestore"].includes(profile.role?.toLowerCase() || "");
     const isParticipant =
-      currentMatch.player1?.user_id === user.id ||
-      currentMatch.player2?.user_id === user.id;
+      currentMatch.player1?.user_id === userId ||
+      currentMatch.player2?.user_id === userId;
 
     if (!isAdmin && !isParticipant) {
       return NextResponse.json({ error: "Permesso negato" }, { status: 403 });
@@ -112,81 +106,34 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
-    const { sets } = body; // Array: [{ player1_score: 6, player2_score: 3 }, ...]
-
-    if (!sets || !Array.isArray(sets)) {
-      return NextResponse.json({ error: "Sets array richiesto" }, { status: 400 });
+    if (!currentMatch.player1_id || !currentMatch.player2_id) {
+      return NextResponse.json(
+        { error: "La partita non ha ancora entrambi i giocatori" },
+        { status: 400 }
+      );
     }
 
-    // Validate tennis scoring
-    for (const set of sets) {
-      const { player1_score, player2_score } = set;
-      
-      // Basic validation
-      if (typeof player1_score !== 'number' || typeof player2_score !== 'number') {
-        return NextResponse.json({ error: "Punteggi devono essere numeri" }, { status: 400 });
-      }
-
-      // Tennis rules validation
-      const max_score = Math.max(player1_score, player2_score);
-      const min_score = Math.min(player1_score, player2_score);
-      
-      // Must win by 2 games (unless tiebreak 7-6)
-      if (max_score === 7 && min_score === 6) {
-        // Valid: 7-6 (tiebreak)
-        continue;
-      } else if (max_score >= 6) {
-        if (max_score - min_score < 2) {
-          return NextResponse.json({ 
-            error: `Punteggio non valido: ${player1_score}-${player2_score}. Devi vincere con 2 game di differenza.` 
-          }, { status: 400 });
-        }
-      } else {
-        return NextResponse.json({ 
-          error: `Punteggio non valido: ${player1_score}-${player2_score}. Servono almeno 6 game per vincere un set.` 
-        }, { status: 400 });
-      }
+    const body = await request.json().catch(() => null);
+    const retiredPlayer = body?.retired_player ?? null;
+    if (retiredPlayer !== null && retiredPlayer !== 1 && retiredPlayer !== 2) {
+      return NextResponse.json({ error: "retired_player deve essere 1 o 2" }, { status: 400 });
     }
 
-    // Calculate sets won by each player
-    let player1_sets_won = 0;
-    let player2_sets_won = 0;
-
-    sets.forEach((set: any) => {
-      if (set.player1_score > set.player2_score) {
-        player1_sets_won++;
-      } else if (set.player2_score > set.player1_score) {
-        player2_sets_won++;
-      }
-    });
-
-    // Determine winner based on best_of format
-    const bestOf = currentMatch.tournament?.best_of || 3;
-    const setsToWin = Math.ceil(bestOf / 2); // 2 for best of 3, 3 for best of 5
-    
-    let winner_id = null;
-    let match_status = 'in_progress';
-    let status = 'in_corso';
-
-    if (player1_sets_won >= setsToWin) {
-      winner_id = currentMatch.player1_id;
-      match_status = 'completed';
-      status = 'completata';
-    } else if (player2_sets_won >= setsToWin) {
-      winner_id = currentMatch.player2_id;
-      match_status = 'completed';
-      status = 'completata';
+    const bestOf = getBestOf(currentMatch.tournament);
+    const result = computeMatchResult(body?.sets, bestOf, retiredPlayer);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    // Update match
+    const winner_id = result.winner === 1 ? currentMatch.player1_id : currentMatch.player2_id;
+
     const { data: updatedMatch, error: updateError } = await supabase
       .from("tournament_matches")
       .update({
-        sets,
+        sets: result.sets,
         winner_id,
-        match_status,
-        status,
+        match_status: 'completed',
+        status: 'completata',
         updated_at: new Date().toISOString(),
       })
       .eq("id", params.matchId)
@@ -199,8 +146,7 @@ export async function PUT(
     // nessun avanzamento del vincitore e nessuna chiusura automatica del torneo.
     const isCampionato = currentMatch.tournament?.tournament_type === 'campionato';
 
-    // If match completed, advance winner to next round
-    if (winner_id && match_status === 'completed' && !isCampionato) {
+    if (!isCampionato && !isGroupMatch(currentMatch)) {
       await advanceWinnerToNextRound(
         supabase,
         params.id,
@@ -212,13 +158,13 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      message: "Punteggio aggiornato con successo",
+      message: result.retired ? "Ritiro registrato con successo" : "Punteggio aggiornato con successo",
       match: updatedMatch,
       winner_id,
-      sets_summary: `${player1_sets_won}-${player2_sets_won}`,
+      sets_summary: `${result.setsWon[0]}-${result.setsWon[1]}`,
     });
   } catch (error: any) {
-    console.error('Error updating match score:', error);
+    logger.error('Error updating match score:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -226,44 +172,47 @@ export async function PUT(
   }
 }
 
-// PATCH /api/tournaments/[id]/matches/[matchId] - Quick score update (simple scoring)
+// PATCH /api/tournaments/[id]/matches/[matchId] - Quick score update (simple scoring, admin only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; matchId: string } }
+  context: { params: Promise<{ id: string; matchId: string }> }
 ) {
+  const params = await context.params;
   const supabase = supabaseServer;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+    const auth = await verifyAuth(request, ["admin", "gestore"]);
+    if (!auth.success) return auth.response;
+
+    const body = await request.json().catch(() => null);
+    const player1_score = body?.player1_score;
+    const player2_score = body?.player2_score;
+
+    if (!Number.isInteger(player1_score) || !Number.isInteger(player2_score) || player1_score < 0 || player2_score < 0) {
+      return NextResponse.json({ error: "Punteggi mancanti o non validi" }, { status: 400 });
     }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "gestore", "Admin", "Gestore"].includes(profile.role)) {
-      return NextResponse.json({ error: "Permesso negato" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { player1_score, player2_score } = body;
-
-    if (player1_score === undefined || player2_score === undefined) {
-      return NextResponse.json({ error: "Punteggi mancanti" }, { status: 400 });
+    if (player1_score === player2_score) {
+      return NextResponse.json({ error: "Il risultato non può essere in parità" }, { status: 400 });
     }
 
     // Get current match
     const { data: currentMatch, error: matchError } = await supabase
       .from("tournament_matches")
-      .select("*")
+      .select("*, tournament:tournaments(tournament_type)")
       .eq("id", params.matchId)
-      .single();
+      .eq("tournament_id", params.id)
+      .maybeSingle();
 
     if (matchError) throw matchError;
+    if (!currentMatch) {
+      return NextResponse.json({ error: "Partita non trovata" }, { status: 404 });
+    }
+    if (!currentMatch.player1_id || !currentMatch.player2_id) {
+      return NextResponse.json(
+        { error: "La partita non ha ancora entrambi i giocatori" },
+        { status: 400 }
+      );
+    }
 
     const winner_id = player1_score > player2_score ? currentMatch.player1_id : currentMatch.player2_id;
 
@@ -282,9 +231,10 @@ export async function PATCH(
       .single();
 
     if (updateError) throw updateError;
-    
-    // Se il match è completato, avanza il vincitore al turno successivo
-    if (winner_id) {
+
+    // Avanza il vincitore solo nei tabelloni a eliminazione (non gironi né campionato)
+    const isCampionato = currentMatch.tournament?.tournament_type === 'campionato';
+    if (!isCampionato && !isGroupMatch(currentMatch)) {
       await advanceWinnerToNextRound(
         supabase,
         params.id,
@@ -309,31 +259,20 @@ export async function PATCH(
 // DELETE /api/tournaments/[id]/matches/[matchId] - Delete match (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; matchId: string } }
+  context: { params: Promise<{ id: string; matchId: string }> }
 ) {
+  const params = await context.params;
   const supabase = supabaseServer;
 
   try {
-    // Check admin/gestore permission
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "gestore"].includes(profile.user_role)) {
-      return NextResponse.json({ error: "Permesso negato" }, { status: 403 });
-    }
+    const auth = await verifyAuth(request, ["admin", "gestore"]);
+    if (!auth.success) return auth.response;
 
     const { error } = await supabase
       .from("tournament_matches")
       .delete()
-      .eq("id", params.matchId);
+      .eq("id", params.matchId)
+      .eq("tournament_id", params.id);
 
     if (error) throw error;
 
@@ -347,6 +286,14 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Le partite dei gironi (round 0) non hanno un turno successivo: avanzare il vincitore
+ * chiuderebbe il torneo ("Concluso") o sovrascriverebbe il tabellone.
+ */
+function isGroupMatch(match: { phase?: string | null; round_number?: number | null }) {
+  return match.phase === 'gironi' || match.round_number === 0;
 }
 
 /**

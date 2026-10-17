@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 // GET - Fetch a single message with thread
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const supabaseSession = await createClient();
     const { data: { user } } = await supabaseSession.auth.getUser();
@@ -69,8 +70,9 @@ export async function GET(
 // PATCH - Mark message as read/unread
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const supabaseSession = await createClient();
     const { data: { user } } = await supabaseSession.auth.getUser();
@@ -103,8 +105,9 @@ export async function PATCH(
 // DELETE - Delete a message
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const supabaseSession = await createClient();
     const { data: { user } } = await supabaseSession.auth.getUser();

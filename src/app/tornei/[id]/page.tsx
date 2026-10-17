@@ -377,19 +377,8 @@ export default function TournamentDetail() {
         </div>
 
         {/* Action Section */}
-        {!isManager && (
+        {!isManager && !joined && spotsLeft > 0 && (
         <div className="page-card p-6 mb-6">
-            {joined ? (
-              <div>
-                <p className="text-lg font-bold text-secondary mb-2">✓ Sei iscritto a questo torneo</p>
-                <p className="text-sm text-secondary/70">Controlla la dashboard per gli aggiornamenti e il tabellone</p>
-              </div>
-            ) : spotsLeft <= 0 ? (
-              <div>
-                <p className="text-lg font-bold text-secondary mb-2">Iscrizioni chiuse</p>
-                <p className="text-sm text-secondary/70">Tutti i posti sono stati occupati</p>
-              </div>
-            ) : (
               <div>
                 <h3 className="text-lg font-semibold text-secondary mb-4">Partecipa al torneo</h3>
                 <button 
@@ -419,7 +408,6 @@ export default function TournamentDetail() {
                   </p>
                 )}
               </div>
-            )}
         </div>
         )}
 

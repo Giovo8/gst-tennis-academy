@@ -4,8 +4,9 @@ import { getRouteAuth, unauthorized } from "@/lib/auth/routeAuth";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const auth = await getRouteAuth();
     if (!auth) return unauthorized();

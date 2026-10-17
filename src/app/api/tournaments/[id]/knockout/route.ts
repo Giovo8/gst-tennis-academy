@@ -4,8 +4,9 @@ import { supabaseServer } from "@/lib/supabase/serverClient";
 // GET /api/tournaments/[id]/knockout - Get knockout bracket
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   const supabase = supabaseServer;
 
   try {

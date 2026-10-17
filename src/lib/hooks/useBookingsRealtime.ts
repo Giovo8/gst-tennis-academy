@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
-type BookingType = "campo" | "lezione_privata" | "lezione_gruppo";
+type BookingType = "campo" | "lezione_privata" | "lezione_gruppo" | "torneo";
 
 type BookingRecord = {
   id: string;

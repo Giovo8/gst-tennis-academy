@@ -1,29 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/serverClient";
+import { verifyAuth } from "@/lib/auth/verifyAuth";
 
 // POST /api/tournaments/[id]/advance-stage - Advance tournament to next stage
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   const supabase = supabaseServer;
 
   try {
     // Check admin/gestore permission
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "gestore"].includes(profile.role)) {
-      return NextResponse.json({ error: "Permesso negato" }, { status: 403 });
-    }
+    const auth = await verifyAuth(request, ["admin", "gestore"]);
+    if (!auth.success) return auth.response;
 
     // Get tournament info
     const { data: tournament, error: tournamentError } = await supabase

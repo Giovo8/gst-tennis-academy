@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Trophy, Edit2 } from 'lucide-react';
 import TennisScoreInput from './TennisScoreInput';
+import { countSetsWon, getRetiredPlayer, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 
 interface BracketMatchCardProps {
   match: any;
@@ -12,7 +13,7 @@ interface BracketMatchCardProps {
   /** Consente all'utente evidenziato di inserire il punteggio della propria partita */
   canEditOwn?: boolean;
   bestOf: number;
-  onScoreSubmit: (matchId: string, sets: Array<{ player1_score: number; player2_score: number }>) => Promise<void>;
+  onScoreSubmit: (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => Promise<void>;
 }
 
 export default function BracketMatchCard({ match, isAdmin, highlightUserId = null, canEditOwn = false, bestOf, onScoreSubmit }: BracketMatchCardProps) {
@@ -39,20 +40,30 @@ export default function BracketMatchCard({ match, isAdmin, highlightUserId = nul
   const isPending = matchStatus === 'pending' || (!match.player1 || !match.player2);
 
   // Parse sets from match data
-  const sets: Array<{ player1_score: number; player2_score: number }> = match.sets || [];
+  const sets: SetScore[] = match.sets || [];
 
   // L'atleta può inserire il punteggio solo se non c'è ancora; poi solo admin/gestore possono modificarlo
   const hasScore = sets.length > 0 || isCompleted;
   const canEdit = isAdmin || (canEditOwn && isMine && !hasScore);
   
   // Calculate sets won
-  const player1SetsWon = sets.filter(s => s.player1_score > s.player2_score).length;
-  const player2SetsWon = sets.filter(s => s.player2_score > s.player1_score).length;
+  const [player1SetsWon, player2SetsWon] = countSetsWon(sets);
+  const retiredPlayer = isCompleted ? getRetiredPlayer(match, bestOf) : null;
 
-  const handleScoreSubmit = async (matchId: string, newSets: Array<{ player1_score: number; player2_score: number }>) => {
-    await onScoreSubmit(matchId, newSets);
+  const handleScoreSubmit = async (matchId: string, newSets: SetScore[], newRetiredPlayer: PlayerNum | null) => {
+    await onScoreSubmit(matchId, newSets, newRetiredPlayer);
     setEditing(false);
   };
+
+  const retiredBadge = (
+    <span className="flex-shrink-0 rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white" title="Ritirato">
+      rit.
+    </span>
+  );
+  const setCellClass = (set: SetScore) =>
+    `flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold text-white ${
+      set.interrupted ? 'bg-white/10 italic' : 'bg-white/20'
+    }`;
 
   return (
     <div className="rounded-xl overflow-hidden bg-white border border-black/10">
@@ -91,6 +102,7 @@ export default function BracketMatchCard({ match, isAdmin, highlightUserId = nul
             player1Name={getPlayerName(match.player1)}
             player2Name={getPlayerName(match.player2)}
             currentSets={sets}
+            currentRetiredPlayer={retiredPlayer}
             bestOf={bestOf}
             onSubmit={handleScoreSubmit}
             onCancel={() => setEditing(false)}
@@ -108,10 +120,11 @@ export default function BracketMatchCard({ match, isAdmin, highlightUserId = nul
             <span className="flex-1 min-w-0 text-sm font-semibold truncate text-white">
               {getPlayerName(match.player1)}
             </span>
+            {retiredPlayer === 1 && retiredBadge}
             {sets.length > 0 && (
               <div className="flex gap-1.5">
                 {sets.map((set, idx) => (
-                  <span key={idx} className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold bg-white/20 text-white">
+                  <span key={idx} className={setCellClass(set)}>
                     {set.player1_score}
                   </span>
                 ))}
@@ -132,10 +145,11 @@ export default function BracketMatchCard({ match, isAdmin, highlightUserId = nul
             <span className="flex-1 min-w-0 text-sm font-semibold truncate text-white">
               {getPlayerName(match.player2)}
             </span>
+            {retiredPlayer === 2 && retiredBadge}
             {sets.length > 0 && (
               <div className="flex gap-1.5">
                 {sets.map((set, idx) => (
-                  <span key={idx} className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold bg-white/20 text-white">
+                  <span key={idx} className={setCellClass(set)}>
                     {set.player2_score}
                   </span>
                 ))}

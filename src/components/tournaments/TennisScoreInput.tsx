@@ -1,19 +1,17 @@
 'use client';
 
 import { Fragment, useRef, useState } from 'react';
-
-interface SetScore {
-  player1_score: number;
-  player2_score: number;
-}
+import { computeMatchResult, setsToWinFor, validateFinishedSet, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
 
 interface TennisScoreInputProps {
   matchId: string;
   player1Name: string;
   player2Name: string;
   currentSets: SetScore[];
-  bestOf: number; // 3 or 5
-  onSubmit: (matchId: string, sets: SetScore[]) => Promise<void>;
+  /** Giocatore ritirato nel risultato già salvato (per la modifica da admin) */
+  currentRetiredPlayer?: PlayerNum | null;
+  bestOf: number; // 1, 3 or 5
+  onSubmit: (matchId: string, sets: SetScore[], retiredPlayer: PlayerNum | null) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -25,6 +23,7 @@ export default function TennisScoreInput({
   player1Name,
   player2Name,
   currentSets,
+  currentRetiredPlayer = null,
   bestOf,
   onSubmit,
   onCancel,
@@ -37,9 +36,11 @@ export default function TennisScoreInput({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [retiring, setRetiring] = useState(currentRetiredPlayer !== null);
+  const [retiredPlayer, setRetiredPlayer] = useState<PlayerNum | null>(currentRetiredPlayer);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const setsToWin = Math.ceil(bestOf / 2);
+  const setsToWin = setsToWinFor(bestOf);
   const parsed = cells.map((c) => ({
     p1: c.p1 === '' ? null : Number(c.p1),
     p2: c.p2 === '' ? null : Number(c.p2),
@@ -51,16 +52,26 @@ export default function TennisScoreInput({
     return p1 > p2 ? 1 : 2;
   };
 
+  // Contano solo i set conclusi con un punteggio valido (un parziale come 4-2 non è un set vinto)
+  const isFinishedAt = (i: number) => {
+    const { p1, p2 } = parsed[i];
+    return p1 !== null && p2 !== null && validateFinishedSet(p1, p2) === null;
+  };
+
   let won1 = 0;
   let won2 = 0;
   let decidedAt = -1;
   for (let i = 0; i < bestOf && decidedAt === -1; i++) {
+    if (!isFinishedAt(i)) continue;
     const w = setWinnerAt(i);
     if (w === 1) won1++;
     if (w === 2) won2++;
     if (won1 === setsToWin || won2 === setsToWin) decidedAt = i;
   }
-  const matchWinner = decidedAt === -1 ? 0 : won1 > won2 ? 1 : 2;
+  const effectiveRetired = retiring ? retiredPlayer : null;
+  const matchWinner: 0 | PlayerNum = effectiveRetired
+    ? effectiveRetired === 1 ? 2 : 1
+    : decidedAt === -1 ? 0 : won1 > won2 ? 1 : 2;
   const visibleSets = decidedAt === -1 ? bestOf : decidedAt + 1;
 
   const updateCell = (setIndex: number, player: PlayerKey, raw: string) => {
@@ -76,31 +87,19 @@ export default function TennisScoreInput({
   };
 
   const validate = (): { sets?: SetScore[]; error?: string } => {
-    const limit = decidedAt === -1 ? bestOf : decidedAt + 1;
-    const result: SetScore[] = [];
+    if (retiring && !retiredPlayer) return { error: 'Indica quale giocatore si è ritirato' };
 
-    for (let i = 0; i < limit; i++) {
+    const raw: SetScore[] = [];
+    for (let i = 0; i < visibleSets; i++) {
       const { p1, p2 } = parsed[i];
       if (p1 === null && p2 === null) break;
       if (p1 === null || p2 === null) return { error: `Set ${i + 1}: inserisci entrambi i punteggi` };
-
-      const max = Math.max(p1, p2);
-      const min = Math.min(p1, p2);
-      if (!(max === 7 && min === 6)) {
-        if (max < 6) return { error: `Set ${i + 1}: servono almeno 6 game per vincere (${p1}-${p2})` };
-        if (max - min < 2) return { error: `Set ${i + 1}: servono 2 game di differenza (${p1}-${p2})` };
-      }
-      result.push({ player1_score: p1, player2_score: p2 });
+      raw.push({ player1_score: p1, player2_score: p2 });
     }
 
-    if (decidedAt === -1) {
-      return {
-        error: result.length === 0
-          ? 'Inserisci almeno un set'
-          : `Match incompleto: servono ${setsToWin} set per vincere`,
-      };
-    }
-    return { sets: result };
+    // Stesse regole applicate dall'API
+    const result = computeMatchResult(raw, bestOf, effectiveRetired);
+    return result.ok ? { sets: result.sets } : { error: result.error };
   };
 
   const handleSubmit = async () => {
@@ -113,7 +112,7 @@ export default function TennisScoreInput({
     setSubmitting(true);
     setError('');
     try {
-      await onSubmit(matchId, sets);
+      await onSubmit(matchId, sets, effectiveRetired);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nel salvataggio del punteggio');
       setSubmitting(false);
@@ -230,6 +229,50 @@ export default function TennisScoreInput({
               </Fragment>
             );
           })}
+        </div>
+
+        {/* Ritiro */}
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={retiring}
+              onChange={(e) => {
+                setRetiring(e.target.checked);
+                setError('');
+              }}
+              disabled={submitting}
+              className="h-4 w-4 accent-secondary"
+            />
+            Incontro interrotto per ritiro
+          </label>
+          {retiring && (
+            <div className="space-y-1.5">
+              <p className="text-xs text-secondary/70">
+                Chi si è ritirato? Inserisci i set giocati, compreso il parziale del set interrotto.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {players.map((player) => (
+                  <button
+                    key={player.key}
+                    type="button"
+                    onClick={() => {
+                      setRetiredPlayer(player.num);
+                      setError('');
+                    }}
+                    disabled={submitting}
+                    className={`min-w-0 max-w-full truncate rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                      retiredPlayer === player.num
+                        ? 'border-secondary bg-secondary text-white'
+                        : 'border-black/10 bg-white text-secondary hover:border-secondary'
+                    }`}
+                  >
+                    {player.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (

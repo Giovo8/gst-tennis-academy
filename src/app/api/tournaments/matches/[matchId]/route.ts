@@ -29,8 +29,9 @@ async function getUserProfile(req: Request) {
 
 export async function PUT(
   req: Request,
-  { params }: { params: { matchId: string } }
+  context: { params: Promise<{ matchId: string }> }
 ) {
+  const params = await context.params;
   try {
     const { profile } = await getUserProfile(req);
     
@@ -112,8 +113,9 @@ export async function PUT(
 
 export async function GET(
   req: Request,
-  { params }: { params: { matchId: string } }
+  context: { params: Promise<{ matchId: string }> }
 ) {
+  const params = await context.params;
   try {
     const { data: match, error } = await supabaseServer
       .from("tournament_matches")

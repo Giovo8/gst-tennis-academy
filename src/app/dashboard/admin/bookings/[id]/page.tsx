@@ -482,6 +482,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
     campo: { label: "Prenotazione Campo", color: "bg-secondary text-white" },
     lezione_privata: { label: "Lezione Privata", color: "bg-secondary text-white" },
     lezione_gruppo: { label: "Lezione Gruppo", color: "bg-secondary text-white" },
+    torneo: { label: "Torneo", color: "bg-secondary text-white" },
     arena: { label: "Sfida Arena", color: "bg-secondary text-white" },
   };
 
