@@ -66,7 +66,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
   const setActiveTab = onActiveTabChange ?? setInternalActiveTab;
   const showTabBar = !hideTabBar;
   const sectionClassName = 'page-card';
-  const sectionHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent';
+  const sectionHeaderClassName = 'px-6 py-4 border-b border-black/10 bg-gray-50';
   const [openParticipantMenuId, setOpenParticipantMenuId] = useState<string | null>(null);
   const bestOf = getBestOf(tournament);
 
@@ -228,7 +228,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Tabellone - eliminazione_diretta */}
         {activeTab === 'bracket' && type === 'eliminazione_diretta' && (phase === 'eliminazione' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone</h2>
             </div>
             <div className="px-6 py-4">
@@ -240,7 +240,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Gironi - girone_eliminazione */}
         {activeTab === 'groups' && type === 'girone_eliminazione' && (phase === 'gironi' || phase === 'eliminazione' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Gironi</h2>
             </div>
             <div className="px-6 py-4">
@@ -252,7 +252,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Tabellone - girone_eliminazione fase eliminazione */}
         {activeTab === 'bracket' && type === 'girone_eliminazione' && (phase === 'eliminazione' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Tabellone Eliminazione</h2>
             </div>
             <div className="px-6 py-4">
@@ -264,7 +264,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Calendario - campionato */}
         {activeTab === 'calendar' && type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Calendario Partite</h2>
             </div>
             <div className="px-6 py-4">
@@ -276,7 +276,7 @@ export default function TournamentManager({ tournament, isAdmin = false, section
         {/* Classifica - campionato */}
         {activeTab === 'standings' && type === 'campionato' && (phase === 'campionato' || phase === 'completato') && (
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica</h2>
             </div>
             <div className="px-6 py-4">

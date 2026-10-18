@@ -323,7 +323,7 @@ export default function NewStaffPage() {
       <div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Membro</h2>
             </div>
             <div className="p-6 space-y-6">
@@ -422,7 +422,7 @@ export default function NewStaffPage() {
 
           {/* Social Links */}
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Link Social</h2>
             </div>
             <div className="p-6 space-y-6">
@@ -494,7 +494,7 @@ export default function NewStaffPage() {
 
           {/* Ordine e Stato */}
           <div className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Impostazioni</h2>
             </div>
             <div className="p-6 space-y-6">

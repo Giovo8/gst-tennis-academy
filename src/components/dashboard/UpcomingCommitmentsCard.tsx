@@ -174,7 +174,7 @@ export function UpcomingCommitmentsCard({
 
   return (
     <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-      <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">{title}</h2>
       </div>
       <div className="px-6 pt-4 pb-3 flex items-center gap-2 w-full">

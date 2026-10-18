@@ -194,7 +194,7 @@ export default function InviteCodeDetailPage() {
 
       {/* Dettagli */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Codice</h2>
         </div>
         <div className="px-6 py-6">
@@ -257,7 +257,7 @@ export default function InviteCodeDetailPage() {
 
       {/* Utilizzatori */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Utilizzatori</h2>
         </div>
         <div className="px-6 py-4 space-y-4">

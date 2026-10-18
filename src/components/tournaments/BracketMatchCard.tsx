@@ -68,7 +68,7 @@ export default function BracketMatchCard({ match, isAdmin, highlightUserId = nul
   return (
     <div className="rounded-xl overflow-hidden bg-white border border-black/10">
       {/* Match Header */}
-      <div className="px-4 py-2.5 flex items-center justify-between border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-4 py-2.5 flex items-center justify-between border-b border-black/10 bg-gray-50">
         <span className="text-xs font-bold text-secondary uppercase tracking-wide flex items-center gap-2">
           {match.round_name} · Match {match.match_number}
           {isMine && (

@@ -466,7 +466,7 @@ export default function NewCourtBlockPage() {
       )}
 
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli blocco</h2>
         </div>
         <div className="p-6">
@@ -525,7 +525,7 @@ export default function NewCourtBlockPage() {
 
       {periods.map((period, pidx) => (
         <div key={pidx} className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">
               {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
             </h2>
@@ -692,7 +692,7 @@ export default function NewCourtBlockPage() {
       </button>
 
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
         </div>
         <div className="p-6">

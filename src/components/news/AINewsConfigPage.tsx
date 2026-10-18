@@ -268,7 +268,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
         </div>
 
         <section className="page-card">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Impostazioni generali</h2>
           </div>
           <div className="space-y-6 p-4 sm:p-6">
@@ -327,7 +327,7 @@ export default function AINewsConfigPage({ basePath }: Props) {
         </section>
 
         <section className="page-card">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl flex items-center justify-between gap-4">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl flex items-center justify-between gap-4">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">B. Cron job</h2>
             <button
               onClick={() => setCronForm({ id: "", nome: "", ora: 9, minuto: 0, prompt_custom: "", attivo: true })}

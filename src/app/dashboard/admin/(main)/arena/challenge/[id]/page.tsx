@@ -623,7 +623,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Players Section */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         <div className="px-6 py-4">
@@ -674,7 +674,7 @@ export default function AdminChallengeDetailPage() {
 
       {/* Match Details */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Match</h2>
         </div>
         <div className="px-6 py-6">
@@ -746,7 +746,7 @@ export default function AdminChallengeDetailPage() {
       {/* Risultato */}
       {(challenge.status === "completed" || !!challenge.winner_id || showScoreForm || canEnterScore || challenge.status === "awaiting_score") && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Risultato</h2>
           </div>
           <div className="px-6 py-6">
@@ -878,7 +878,7 @@ export default function AdminChallengeDetailPage() {
       {/* Booking Info */}
       {challenge.booking && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Prenotazione Campo</h2>
           </div>
           <div className="px-6 py-6">
@@ -921,7 +921,7 @@ export default function AdminChallengeDetailPage() {
       {/* Message */}
       {challenge.message && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio</h2>
           </div>
           <div className="px-6 py-6">

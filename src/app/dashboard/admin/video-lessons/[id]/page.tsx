@@ -229,7 +229,7 @@ export default function VideoDetailPage() {
 
         {/* Video Info & Details Combined */}
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
           </div>
           <div className="p-6 space-y-6">
@@ -282,7 +282,7 @@ export default function VideoDetailPage() {
 
         {/* Assigned Users */}
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
           </div>
           <div className="px-6 py-4">
@@ -319,7 +319,7 @@ export default function VideoDetailPage() {
 
         {/* Note */}
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-3">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             {notesDirty && (
               <button

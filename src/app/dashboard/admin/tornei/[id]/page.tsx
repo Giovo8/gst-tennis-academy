@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Loader2, Trash2, PlayCircle, Trophy, Target, Users as UsersIcon, RotateCw, Eye } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import TournamentManagerWrapper from "@/components/tournaments/TournamentManagerWrapper";
-import { getTournamentTabs, type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
+import TournamentTabBar, { type TournamentTabKey } from "@/components/tournaments/TournamentTabBar";
 import ManualEnrollment from "@/components/tournaments/ManualEnrollment";
 import { toast } from 'sonner';
 
@@ -467,7 +467,7 @@ function AdminTournamentDetailInner() {
       {/* Dettagli torneo */}
       {hasValidId && !loading && tournament && (
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
           </div>
           <div className="px-6 py-6">
@@ -580,35 +580,17 @@ function AdminTournamentDetailInner() {
       )}
 
       {/* Tab Partecipanti / Gironi / Tabellone / Calendario / Classifica */}
-      {hasValidId && meta && (() => {
-        const tabs = getTournamentTabs({
-          tournamentType: meta.tournamentType,
-          currentPhase: meta.currentPhase,
-          participantsCount: meta.participantsCount,
-        });
-        if (tabs.length <= 1) return null;
-        return (
-          <div className="flex gap-2 w-full">
-            {tabs.map((tab) => {
-              const selected = tab.key === managerTab;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setManagerTab(tab.key)}
-                  className={`h-11 flex-1 min-w-0 rounded-lg border text-sm font-semibold transition-colors ${
-                    selected
-                      ? "border-[#023047] bg-[#023047] text-white"
-                      : "border-secondary bg-secondary text-white hover:opacity-90"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        );
-      })()}
+      {hasValidId && meta && (
+        <TournamentTabBar
+          meta={{
+            tournamentType: meta.tournamentType,
+            currentPhase: meta.currentPhase,
+            participantsCount: meta.participantsCount,
+          }}
+          activeTab={managerTab}
+          onChange={setManagerTab}
+        />
+      )}
 
       {/* Main content - TournamentManager con i tab - SEMPRE VISIBILE */}
       {hasValidId && (

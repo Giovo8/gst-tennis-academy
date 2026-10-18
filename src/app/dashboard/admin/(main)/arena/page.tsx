@@ -646,7 +646,7 @@ export default function AdminArenaPage() {
 
       {/* Classifica Section */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Classifica Arena</h2>
         </div>
 
@@ -762,7 +762,7 @@ export default function AdminArenaPage() {
       {activeTab === "info" && (
         <div className="space-y-6">
             <div className="page-card">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                 <h2 className="text-base sm:text-lg font-semibold text-secondary">Sistema di Punteggio</h2>
               </div>
               <div className="px-6 py-6 space-y-4">

@@ -624,7 +624,7 @@ export default function NuovoCorsoPage() {
 
         {/* Informazioni generali */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni generali</h2>
           </div>
           <div className="divide-y divide-black/10">
@@ -680,7 +680,7 @@ export default function NuovoCorsoPage() {
 
         {/* Maestri */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
           <div className="p-6">
@@ -709,7 +709,7 @@ export default function NuovoCorsoPage() {
 
         {/* Partecipanti */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
           </div>
           <div className="p-6">
@@ -729,7 +729,7 @@ export default function NuovoCorsoPage() {
 
         {periods.map((period, pidx) => (
           <div key={pidx} className="bg-white rounded-lg border border-black/10 overflow-hidden">
-            <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-black/10 bg-gray-50 flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periods.length > 1 ? `Periodo ${pidx + 1}` : "Periodo"}
               </h2>

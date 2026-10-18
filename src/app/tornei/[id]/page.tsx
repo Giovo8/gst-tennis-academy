@@ -273,7 +273,7 @@ export default function TournamentDetail() {
 
         {/* Dettagli torneo */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden mb-6">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli competizione</h2>
           </div>
           <div className="p-6">

@@ -492,7 +492,7 @@ export default function AtletaChallengePage() {
 
       {/* Partecipanti */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         <div className="px-6 py-4">
@@ -547,7 +547,7 @@ export default function AtletaChallengePage() {
 
       {/* Match Details */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli Match</h2>
         </div>
         <div className="px-6 py-6">
@@ -615,7 +615,7 @@ export default function AtletaChallengePage() {
       {/* Risultato */}
       {(challenge.status === "completed" || !!challenge.winner_id || showScoreForm || canEnterScore || challenge.status === "awaiting_score") && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Risultato</h2>
           </div>
           <div className="px-6 py-6">
@@ -735,7 +735,7 @@ export default function AtletaChallengePage() {
       {/* Prenotazione Campo */}
       {challenge.booking && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Prenotazione Campo</h2>
           </div>
           <div className="px-6 py-6">
@@ -770,7 +770,7 @@ export default function AtletaChallengePage() {
       {/* Messaggio */}
       {challenge.message && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio</h2>
           </div>
           <div className="px-6 py-6">
@@ -784,7 +784,7 @@ export default function AtletaChallengePage() {
       {/* Controproposta ricevuta */}
       {canConfirmCounterProposal && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Controproposta Ricevuta</h2>
           </div>
           <div className="px-6 py-6">

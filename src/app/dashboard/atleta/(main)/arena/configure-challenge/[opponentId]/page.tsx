@@ -682,7 +682,7 @@ export default function ConfigureChallengePage() {
 
       {/* Dettagli Sfida */}
       <div className="page-card">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
         </div>
         <div className="p-4 sm:p-6">
@@ -778,7 +778,7 @@ export default function ConfigureChallengePage() {
 
       {/* Partecipanti */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         <div className="p-4 sm:p-6">
@@ -818,7 +818,7 @@ export default function ConfigureChallengePage() {
 
       {/* Card Orari disponibili */}
       <div className="page-card">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
           <p className="text-xs text-secondary/60 sm:text-right">
             Apertura: <span className="font-medium">{getCourtHoursLabel(selectedDate.getDay())}</span>
@@ -918,7 +918,7 @@ export default function ConfigureChallengePage() {
 
       {/* Note */}
       <div className="page-card">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Messaggio (opzionale)</h2>
         </div>
         <div className="p-4 sm:p-6">

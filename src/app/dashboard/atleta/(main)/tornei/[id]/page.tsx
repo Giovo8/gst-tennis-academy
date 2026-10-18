@@ -41,7 +41,7 @@ function AtletaTournamentDetailInner() {
   const pathname = usePathname();
   const dashboardBase = pathname.split("/tornei")[0];
   const sectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const sectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const sectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gray-50";
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [currentParticipants, setCurrentParticipants] = useState<number>(0);
   const [loading, setLoading] = useState(true);

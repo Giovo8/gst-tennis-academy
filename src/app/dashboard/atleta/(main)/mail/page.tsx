@@ -682,7 +682,7 @@ export default function AtletaMailPage() {
 
       {activeModal === "newChat" && (
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-3">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {selectedMembers.length > 1 ? "Nuovo Gruppo" : "Nuova Chat"}
@@ -821,7 +821,7 @@ export default function AtletaMailPage() {
             className={`w-full ${selectedConversation ? 'md:w-80 border-r border-gray-200' : 'md:w-full border-r-0'} flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}
           >
             {/* Sidebar Header */}
-            <div className="h-16 px-6 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center">
+            <div className="h-16 px-6 border-b border-black/10 bg-gray-50 flex items-center">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Chat</h2>
             </div>
 
@@ -931,7 +931,7 @@ export default function AtletaMailPage() {
             ) : (
               <>
                 {/* Chat Header */}
-                <div className="h-16 px-6 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center gap-3">
+                <div className="h-16 px-6 border-b border-black/10 bg-gray-50 flex items-center gap-3">
                   {selectedConversation.type === "group" ? (
                     <div className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center">
                       <Users className="h-6 w-6 text-white" />

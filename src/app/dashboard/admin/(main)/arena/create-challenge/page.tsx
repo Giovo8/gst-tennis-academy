@@ -669,7 +669,7 @@ export default function CreateChallengePage() {
 
           {/* Area Principale */}
           <div className="page-card">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli sfida</h2>
             </div>
             <div className="space-y-4 p-4 sm:p-6">
@@ -772,7 +772,7 @@ export default function CreateChallengePage() {
           </div>
 
           <div className="page-card">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -806,7 +806,7 @@ export default function CreateChallengePage() {
           </div>
 
           <div className="page-card">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-4">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-4">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Orari disponibili</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -960,7 +960,7 @@ export default function CreateChallengePage() {
           </div>
 
           <div className="page-card">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">Note</h2>
             </div>
             <div className="p-4 sm:p-6">

@@ -60,7 +60,7 @@ export default function AtletaDashboard() {
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingCourseLesson[]>([]);
 
   const dashboardCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const dashboardCardHeaderClassName = "px-6 py-4 border-b border-black/10 flex items-center gap-2 bg-gradient-to-r from-secondary/5 to-transparent";
+  const dashboardCardHeaderClassName = "px-6 py-4 border-b border-black/10 flex items-center gap-2 bg-gray-50";
 
   useEffect(() => {
     void loadDashboardData();

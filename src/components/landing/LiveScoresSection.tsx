@@ -212,7 +212,7 @@ export default function LiveScoresSection({ embedded = false }: { embedded?: boo
   return (
     <Root
       id={embedded ? undefined : 'live'}
-      className={embedded ? undefined : 'py-20 sm:py-24 md:py-28 bg-white'}
+      className={embedded ? undefined : 'py-20 sm:py-24 md:py-28'}
     >
       <div className={embedded ? undefined : 'max-w-5xl mx-auto px-6 lg:px-8'}>
         {!embedded && (

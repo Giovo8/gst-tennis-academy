@@ -33,14 +33,6 @@ function getTournamentTypeIcon(tournamentType: string | null | undefined) {
   return Trophy;
 }
 
-function formatBookingSlot(match: BookableTournamentMatch): string {
-  if (!match.booking) return "";
-  const start = new Date(match.booking.start_time);
-  const day = start.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" });
-  const time = start.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-  return `${day} ${time} · ${match.booking.court}`;
-}
-
 /** Nel campionato la giornata si mostra col solo numero; gironi/turni mantengono il nome. */
 function getRoundButtonLabel(round: TournamentRound, isChampionship: boolean): string {
   const roundNumber = round.matches[0]?.round_number;
@@ -100,7 +92,7 @@ export default function TournamentMatchCard({
 
   return (
     <div className="bg-white border border-black/10 rounded-lg overflow-hidden">
-      <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">Partita del torneo</h2>
       </div>
       <div className="space-y-6 p-4 sm:p-6">
@@ -180,22 +172,19 @@ export default function TournamentMatchCard({
             <div className={rowClassName}>
               <label className={labelClassName}>Partita</label>
               <ul className="flex-1 flex flex-col gap-2">
-                {round?.matches.map((match) => {
+                {round?.matches.filter((match) => !match.booking).map((match) => {
                   const isSelected = match.id === selectedMatchId;
-                  const isBooked = Boolean(match.booking);
-                  const bookedLabel = isBooked ? `Prenotata · ${formatBookingSlot(match)}` : null;
 
                   return (
                     <li key={match.id}>
                       <button
                         type="button"
-                        disabled={isBooked}
                         onClick={() => onSelectMatch(isSelected ? null : match)}
                         // Selezionata: stesso colore delle lezioni private (#023047)
                         style={isSelected ? { background: "#023047" } : undefined}
                         className={`w-full text-left py-3 px-3 rounded-lg transition flex items-center gap-4 text-sm text-white ${
                           isSelected ? "" : "bg-secondary hover:opacity-90"
-                        } ${isBooked ? "opacity-50 cursor-not-allowed hover:opacity-50" : ""}`}
+                        }`}
                       >
                         <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-white/10 flex items-center justify-center">
                           <TypeIcon className="h-5 w-5 text-white" strokeWidth={2} />
@@ -203,9 +192,6 @@ export default function TournamentMatchCard({
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-white text-sm truncate">{match.player1.full_name}</p>
                           <p className="font-semibold text-white text-sm truncate mt-0.5">{match.player2.full_name}</p>
-                          {bookedLabel && (
-                            <p className="text-xs text-white/60 mt-1 truncate">{bookedLabel}</p>
-                          )}
                         </div>
                       </button>
                     </li>

@@ -63,7 +63,7 @@ export default function EditBookingPage() {
   const dashboardBase = pathname.split("/bookings")[0];
   const bookingId = params?.id as string;
   const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50";
 
   const [selectedCourt, setSelectedCourt] = useState("");
   const [courts, setCourts] = useState<string[]>(DEFAULT_COURTS);

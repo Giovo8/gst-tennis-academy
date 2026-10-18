@@ -31,7 +31,7 @@ export default function ParticipantsCard({
 }: ParticipantsCardProps) {
   return (
     <div className="bg-white border border-black/10 rounded-lg overflow-hidden overflow-visible relative z-20">
-      <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">{title}</h2>
       </div>
       <div className="p-4 sm:p-6">

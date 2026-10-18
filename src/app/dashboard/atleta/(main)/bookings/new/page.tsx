@@ -62,7 +62,7 @@ function NewBookingPageInner() {
   const dashboardBase = pathname.split("/bookings")[0];
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

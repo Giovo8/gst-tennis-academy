@@ -213,7 +213,7 @@ export default function NewsSection() {
   }
 
   return (
-    <section id="news" className="py-20 sm:py-24 md:py-28 bg-gray-50">
+    <section id="news" className="py-20 sm:py-24 md:py-28">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <Reveal className="mb-14 sm:mb-16 text-center flex flex-col items-center">

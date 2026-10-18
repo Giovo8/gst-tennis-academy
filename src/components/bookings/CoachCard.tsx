@@ -18,7 +18,7 @@ interface CoachCardProps {
 export default function CoachCard({ coaches, selectedCoaches, onChange }: CoachCardProps) {
   return (
     <div className="bg-white border border-black/10 rounded-lg overflow-hidden">
-      <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestro</h2>
       </div>
       <div className="p-4 sm:p-6">

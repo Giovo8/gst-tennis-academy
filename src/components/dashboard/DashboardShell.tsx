@@ -253,7 +253,7 @@ export default function DashboardShell({
     : desktopCrumbs;
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-white">
 
       {/* Top Navbar - solo mobile */}
       <header className="lg:hidden fixed top-4 left-6 right-6 z-[110] bg-secondary border border-black/10 rounded-lg shadow-lg [transform:translateZ(0)]">
@@ -339,7 +339,7 @@ export default function DashboardShell({
       <div className="flex min-h-dvh pt-[5rem] lg:pt-0">
 
         {/* Sidebar desktop - sticky dentro il container */}
-        <aside className={`hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen bg-white border border-black/10 overflow-visible transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+        <aside className={`hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen bg-gray-50 border border-black/10 overflow-visible transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
           {/* Logo */}
           <div className="flex items-center justify-center gap-2 h-20 border-b border-black/10 flex-shrink-0 px-4">
             <Link href="/" aria-label="Home" className="rounded-lg hover:opacity-80 transition-opacity flex items-center gap-2 min-w-0">
@@ -409,7 +409,7 @@ export default function DashboardShell({
 
         {/* Main content */}
         <main className="flex-1 min-w-0">
-          <div className="hidden lg:flex sticky top-0 z-30 h-20 border-b border-black/10 bg-white items-center justify-center">
+          <div className="hidden lg:flex sticky top-0 z-30 h-20 border-b border-black/10 bg-gray-50 items-center justify-center">
             <h1 className="text-2xl font-bold text-secondary leading-none flex items-center gap-2">
               {desktopHeaderCrumbs.map((crumb, index) => (
                 <React.Fragment key={crumb.href}>

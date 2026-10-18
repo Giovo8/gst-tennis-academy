@@ -115,7 +115,7 @@ export default function BookingDetailPage({ basePath = "/dashboard/admin" }: Boo
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const isCourseType = searchParams.get("type") === "corso";
   const bookingSectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gray-50";
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [linkedChallenge, setLinkedChallenge] = useState<LinkedChallengeMeta | null>(null);

@@ -127,7 +127,7 @@ export default function TennisScoreInput({
   return (
     <div className="rounded-lg border border-black/10 bg-white overflow-hidden">
       {/* Header */}
-      <div className="px-4 sm:px-5 py-3 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-4 sm:px-5 py-3 border-b border-black/10 bg-gray-50">
         <h4 className="text-sm font-bold text-secondary">Inserisci Punteggio</h4>
       </div>
 

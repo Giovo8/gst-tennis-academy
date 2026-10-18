@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 export default function NewInviteCodePage() {
   const router = useRouter();
   const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50";
   const selectionButtonClassName = "w-full px-3 sm:px-5 py-2 text-sm text-center rounded-lg border transition-all";
   const [generating, setGenerating] = useState(false);
   const [newCodeRole, setNewCodeRole] = useState<string>("atleta");

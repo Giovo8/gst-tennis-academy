@@ -50,7 +50,11 @@ export default function Home() {
           {/* Accessibility skip link */}
           <a href="#main-content" className="sr-only focus:not-sr-only focus:translate-y-0 focus:top-4">Vai al contenuto</a>
 
-          <div className="flex flex-col gap-0" id="main-content">
+          {/* Sfondi alternati bianco/grigio: contano solo le <section>, così se una sezione non viene renderizzata (es. Live) l'alternanza resta corretta */}
+          <div
+            className="home-sections flex flex-col gap-0"
+            id="main-content"
+          >
             <TextHeroSection />
             <ImageOnlySection />
             <TournamentsSection />

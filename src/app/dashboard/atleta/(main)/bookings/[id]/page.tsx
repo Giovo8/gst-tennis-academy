@@ -103,7 +103,7 @@ export default function BookingDetailPage() {
   const isMaestroDashboard = dashboardBase.includes("/dashboard/maestro");
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const bookingSectionClassName = "bg-white rounded-lg border border-black/10 overflow-hidden";
-  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingSectionHeaderClassName = "px-6 py-4 border-b border-black/10 bg-gray-50";
 
   const searchParams = useSearchParams();
   const courseDate = searchParams?.get("date");

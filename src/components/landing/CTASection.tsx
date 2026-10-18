@@ -5,7 +5,7 @@ import Reveal from "@/components/landing/Reveal";
 
 export default function CTASection() {
   return (
-    <section id="cta" className="pt-20 sm:pt-24 md:pt-28 pb-12 sm:pb-16 md:pb-20 bg-white">
+    <section id="cta" className="pt-20 sm:pt-24 md:pt-28 pb-12 sm:pb-16 md:pb-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Top Section - Title and Buttons */}
         <div className="text-center">

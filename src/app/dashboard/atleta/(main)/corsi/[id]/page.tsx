@@ -167,7 +167,7 @@ export default function AtletaCorsoDetailPage() {
 
       {/* Informazioni */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni</h2>
         </div>
         <div className="px-6 py-6 divide-y divide-gray-100">
@@ -211,7 +211,7 @@ export default function AtletaCorsoDetailPage() {
       {/* Maestri */}
       {maestros.length > 0 && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
           <ul className="flex flex-col gap-2 px-4 py-4">
@@ -240,7 +240,7 @@ export default function AtletaCorsoDetailPage() {
       {/* Lezioni */}
       {lessonDates.length > 0 && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
           </div>
           <div className="px-6 py-4">
@@ -283,7 +283,7 @@ export default function AtletaCorsoDetailPage() {
 
       {/* Contabilità */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Contabilità</h2>
         </div>
 

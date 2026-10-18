@@ -715,7 +715,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
       <form onSubmit={updateUser} className="space-y-6">
         {/* Sezione Dati Anagrafici */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Dati Anagrafici</h2>
           </div>
           <div className="px-6 py-6">
@@ -932,7 +932,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
         <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
         {/* Sezione Informazioni Corsi */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-1">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Corsi</h2>
           </div>
           <div className="px-6 py-6">
@@ -1070,7 +1070,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
         {/* Sezione Avatar */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden h-full lg:order-2">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Avatar</h2>
           </div>
           <div className="px-6 py-6">
@@ -1124,7 +1124,7 @@ export default function ModificaUtentePage({ basePath = "/dashboard/admin" }: Mo
 
         {/* Sezione Info Sistema */}
         <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-black/10 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Info Sistema</h2>
           </div>
           <div className="px-6 py-6">

@@ -851,7 +851,7 @@ export default function MaestroOverviewPage({
 
       {/* ANDAMENTO: storico */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Andamento lezioni</h2>
         </div>
         <div className="p-6">
@@ -862,7 +862,7 @@ export default function MaestroOverviewPage({
       {/* ORE PER GIORNO + COMPOSIZIONE LEZIONI */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="page-card h-full flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Ore per giorno</h2>
           </div>
           <div className="p-6 flex-1 flex items-center">
@@ -871,7 +871,7 @@ export default function MaestroOverviewPage({
         </div>
 
         <div className="page-card h-full flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Composizione lezioni</h2>
           </div>
           <div className="p-6 flex-1 flex items-center">
@@ -885,7 +885,7 @@ export default function MaestroOverviewPage({
       </div>
 
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Fasce orarie</h2>
         </div>
         <div className="p-6">

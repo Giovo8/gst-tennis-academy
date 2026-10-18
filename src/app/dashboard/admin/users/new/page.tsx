@@ -151,7 +151,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informazioni Account */}
         <div className="page-card">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Account</h2>
           </div>
 
@@ -229,7 +229,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
 
         {/* Informazioni Utente */}
         <div className="page-card">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Utente</h2>
           </div>
 
@@ -367,7 +367,7 @@ export default function NewUserPage({ basePath = "/dashboard/admin" }: NewUserPa
 
         {/* Informazioni Piattaforma */}
         <div className="page-card">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent rounded-t-xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni Piattaforma</h2>
           </div>
 

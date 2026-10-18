@@ -106,7 +106,7 @@ export default function AdminEditBookingPage({ basePath = "/dashboard/admin" }: 
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("id");
   const bookingCardClassName = "bg-white border border-black/10 rounded-lg overflow-hidden";
-  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+  const bookingCardHeaderClassName = "px-4 sm:px-6 py-4 border-b border-black/10 bg-gray-50";
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [selectedCourt, setSelectedCourt] = useState("");

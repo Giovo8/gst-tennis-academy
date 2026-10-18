@@ -180,7 +180,7 @@ export default function UserProfilePage({ basePath = "/dashboard/admin" }: UserP
     value ? new Date(value).toLocaleDateString("it-IT") : "-";
   const sectionCardClassName = "bg-white rounded-lg border border-black/10 overflow-hidden h-full";
   const sectionCardHeaderClassName =
-    "px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent";
+    "px-6 py-4 border-b border-black/10 bg-gray-50";
 
   return (
     <div className="space-y-6 pt-3">

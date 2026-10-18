@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Trophy, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
 import BracketMatchCard from './BracketMatchCard';
 import { countSetsWon, type PlayerNum, type SetScore } from '@/lib/tournaments/tennisScore';
@@ -80,7 +80,6 @@ export default function ChampionshipStandingsView({
 }: ChampionshipStandingsViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>(defaultView);
   const [matches, setMatches] = useState<Match[]>(() => MATCHES_CACHE.get(tournamentId) ?? []);
-  const [standings, setStandings] = useState<Standing[]>([]);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
 
@@ -94,12 +93,6 @@ export default function ChampionshipStandingsView({
   useEffect(() => {
     loadMatches();
   }, [tournamentId]);
-
-  useEffect(() => {
-    if (matches.length > 0) {
-      calculateStandings();
-    }
-  }, [matches, participants]);
 
   const loadMatches = async () => {
     try {
@@ -139,7 +132,7 @@ export default function ChampionshipStandingsView({
     }
   };
 
-  const calculateStandings = () => {
+  const calculateStandings = (): Standing[] => {
     const standingsMap = new Map<string, Standing>();
 
     // Initialize standings for all participants
@@ -218,8 +211,15 @@ export default function ChampionshipStandingsView({
       standing.position = index + 1;
     });
 
-    setStandings(sortedStandings);
+    return sortedStandings;
   };
+
+  // Calcolata in render (non in un effect): al cambio tab la classifica è subito pronta, senza flash dello stato vuoto
+  const standings = useMemo(
+    () => (matches.length > 0 ? calculateStandings() : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [matches, participants]
+  );
 
   const handleGenerateChampionship = async () => {
     if (!confirm('Sei sicuro di voler generare il calendario del campionato?')) {

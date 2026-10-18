@@ -44,7 +44,7 @@ export default function TopAthletesCard({ athletes, limit = 6 }: { athletes: Ath
 
   return (
     <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-      <div className="px-6 py-4 border-b border-black/10 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-black/10 bg-gray-50 flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">Atleti più seguiti</h2>
         <span className="text-xs text-secondary/50">{athletes.length} totali</span>
       </div>

@@ -519,7 +519,7 @@ h6, .text-h6 {
 .page-card-header {
   padding: 1rem 1.5rem;          /* = py-4 px-6 */
   border-bottom: 1px solid var(--card-border);
-  background: linear-gradient(to right, rgba(3, 72, 99, 0.05), transparent); /* from-secondary/5 */
+  background: #f9fafb; /* = bg-gray-50 */
 }
 
 /* Cards */
@@ -1037,4 +1037,14 @@ html {
 .dashboard-content > div:first-child:has(> .breadcrumb):has(> h1),
 .dashboard-content [class*="space-y-"] > div:first-child:has(> .breadcrumb):has(> h1) {
   display: none !important;
+}
+
+/* Home: sfondi alternati bianco/grigio tra le sezioni. Conta solo le <section>
+   (le immagini a tutta larghezza sono <div>), così se una sezione non viene
+   renderizzata (es. Live) l'alternanza resta corretta. */
+.home-sections > section:nth-of-type(odd) {
+  background-color: #fff;
+}
+.home-sections > section:nth-of-type(even) {
+  background-color: var(--color-gray-50, #f9fafb);
 }

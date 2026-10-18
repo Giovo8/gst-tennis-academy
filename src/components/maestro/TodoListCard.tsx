@@ -60,7 +60,7 @@ export default function TodoListCard({ userId }: { userId?: string }) {
 
   return (
     <div className="page-card h-full flex flex-col">
-      <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent flex items-center justify-between gap-2">
+      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
         <h2 className="text-base sm:text-lg font-semibold text-secondary">Da fare</h2>
         {todos.length > 0 && (
           <span className="text-xs font-semibold text-secondary bg-secondary/10 rounded-full px-2.5 py-0.5">

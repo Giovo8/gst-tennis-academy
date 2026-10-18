@@ -309,7 +309,7 @@ export default function VideoPlayerPage() {
 
       {/* Video Info & Details */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Informazioni e Dettagli</h2>
         </div>
         <div className="p-6 space-y-6">
@@ -358,7 +358,7 @@ export default function VideoPlayerPage() {
 
       {isMaestroView && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Utenti Assegnati</h2>
           </div>
           <div className="p-6">

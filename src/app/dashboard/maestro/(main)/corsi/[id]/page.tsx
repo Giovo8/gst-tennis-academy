@@ -227,7 +227,7 @@ export default function MaestroCorsoDetailPage() {
 
       {/* Dettagli */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Dettagli corso</h2>
         </div>
         <div className="px-6 py-6 space-y-5">
@@ -264,7 +264,7 @@ export default function MaestroCorsoDetailPage() {
         if (periodsToShow.length === 0) return null;
         return periodsToShow.map((p, i) => (
           <div key={i} className="page-card">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
               <h2 className="text-base sm:text-lg font-semibold text-secondary">
                 {periodsToShow.length > 1 ? `Periodo ${i + 1}` : "Periodo"}
               </h2>
@@ -312,7 +312,7 @@ export default function MaestroCorsoDetailPage() {
       {/* Maestri */}
       {maestros.length > 0 && (
         <div className="page-card">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h2 className="text-base sm:text-lg font-semibold text-secondary">Maestri</h2>
           </div>
           <ul className="flex flex-col gap-2 px-4 py-4">
@@ -343,7 +343,7 @@ export default function MaestroCorsoDetailPage() {
 
       {/* Partecipanti */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Partecipanti</h2>
         </div>
         {athletes.length === 0 ? (
@@ -390,7 +390,7 @@ export default function MaestroCorsoDetailPage() {
 
       {/* Lezioni */}
       <div className="page-card">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-secondary/5 to-transparent">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 className="text-base sm:text-lg font-semibold text-secondary">Lezioni</h2>
         </div>
         {lessonDates.length === 0 ? (
